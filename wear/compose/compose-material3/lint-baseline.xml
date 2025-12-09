@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha02)" variant="all" version="8.12.0-alpha02">
+<issues format="6" by="lint 9.0.0-alpha13" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha13)" variant="all" version="9.0.0-alpha13">
 
     <issue
         id="ComposableLambdaParameterNaming"
@@ -17,87 +17,6 @@
         errorLine2="        ~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/SwipeToReveal.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledButton(status: Status): Color {"
-        errorLine2="            ~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledTonalButton(status: Status): Color {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledVariantButton(status: Status): Color {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun OutlinedButton(status: Status): Color {"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun ChildButton(status: Status): Color {"
-        errorLine2="            ~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
     </issue>
 
     <issue
@@ -355,15 +274,6 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                                &quot;0123456789\n&quot; + shortMonthNames.joinToString(&quot;\n&quot;),"
-        errorLine2="                                                                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/DatePicker.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
         errorLine1="            .map { it as ResponsiveTransformationSpecImpl }"
         errorLine2="             ~~~">
         <location
@@ -390,7 +300,7 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
         errorLine1="                    { progress.value },"
         errorLine2="                               ~~~~~">
         <location
@@ -399,7 +309,7 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
         errorLine1="            smoothProgress = rememberAnimatedStateOf({ progress.value }, snap())"
         errorLine2="                                                                ~~~~~">
         <location
@@ -408,7 +318,7 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
         errorLine1="            LaunchedEffect(Unit) { progress.value = 1f }"
         errorLine2="                                            ~~~~~">
         <location
@@ -417,65 +327,11 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
         errorLine1="                    { progress.value },"
         errorLine2="                               ~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/AnimatedStateTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="                    progress = { progress.value },"
-        errorLine2="                                          ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/LinearProgressIndicatorScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="        rule.runOnIdle { progress.value = 1f }"
-        errorLine2="                                  ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/LinearProgressIndicatorScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="                    progress = { progress.value },"
-        errorLine2="                                          ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ProgressIndicatorScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="        rule.runOnIdle { progress.value = 1f }"
-        errorLine2="                                  ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ProgressIndicatorScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="                    progress = { progress.value },"
-        errorLine2="                                          ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ProgressIndicatorScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="        rule.runOnIdle { progress.value = 1f }"
-        errorLine2="                                  ~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material3/ProgressIndicatorScreenshotTest.kt"/>
     </issue>
 
 </issues>

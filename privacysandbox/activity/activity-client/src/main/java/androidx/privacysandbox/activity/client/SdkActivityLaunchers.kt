@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+@file:Suppress("DEPRECATION", "DEPRECATED_JAVA_ANNOTATION")
+@file:JvmDeprecated
 @file:JvmName("SdkActivityLaunchers")
 
 package androidx.privacysandbox.activity.client
@@ -28,6 +29,7 @@ import androidx.privacysandbox.activity.core.ISdkActivityLauncherCallback
 import androidx.privacysandbox.activity.core.ProtocolConstants.SDK_ACTIVITY_LAUNCHER_BINDER_KEY
 import androidx.privacysandbox.activity.core.SdkActivityLauncher
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
+import java.lang.Deprecated as JvmDeprecated
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +48,7 @@ import kotlinx.coroutines.withContext
  * @param allowLaunch predicate called each time an activity is about to be launched by the SDK, the
  *   activity will only be launched if it returns true.
  */
+@Deprecated("This library is no longer supported.")
 public fun <T> T.createManagedSdkActivityLauncher(
     allowLaunch: () -> Boolean
 ): LocalManagedSdkActivityLauncher<T> where T : Activity, T : LifecycleOwner {
@@ -76,6 +79,7 @@ public fun <T> T.createManagedSdkActivityLauncher(
  *   activity will only be launched if it returns true.
  * @see [createManagedSdkActivityLauncher]
  */
+@Deprecated("This library is no longer supported.")
 public fun <T> T.createUnmanagedSdkActivityLauncher(
     allowLaunch: () -> Boolean
 ): LocalUnmanagedSdkActivityLauncher<T> where T : Activity {
@@ -86,6 +90,7 @@ public fun <T> T.createUnmanagedSdkActivityLauncher(
  * Returns a [Bundle] with the information necessary to recreate this launcher. Possibly in a
  * different process.
  */
+@Deprecated("This library is no longer supported.")
 public fun SdkActivityLauncher.toLauncherInfo(): Bundle {
     val binderDelegate = SdkActivityLauncherBinderDelegate(this)
     return Bundle().also { bundle ->
@@ -100,6 +105,7 @@ public fun SdkActivityLauncher.toLauncherInfo(): Bundle {
  * @see LocalManagedSdkActivityLauncher
  * @see LocalUnmanagedSdkActivityLauncher
  */
+@Deprecated("This library is no longer supported.")
 public interface LocalSdkActivityLauncher : SdkActivityLauncher {
     /**
      * Clears references used to launch activities.
@@ -119,6 +125,7 @@ public interface LocalSdkActivityLauncher : SdkActivityLauncher {
  *
  * It allows callers in the app process to dispose resources used to launch SDK activities.
  */
+@Deprecated("This library is no longer supported.")
 public class LocalManagedSdkActivityLauncher<T>
 internal constructor(activity: T, allowLaunch: () -> Boolean, onDispose: () -> Unit) :
     LocalSdkActivityLauncher where T : Activity, T : LifecycleOwner {
@@ -148,6 +155,7 @@ internal constructor(activity: T, allowLaunch: () -> Boolean, onDispose: () -> U
  *
  * @see [LocalManagedSdkActivityLauncher]
  */
+@Deprecated("This library is no longer supported.")
 public class LocalUnmanagedSdkActivityLauncher<T>
 internal constructor(activity: T, allowLaunch: () -> Boolean) : LocalSdkActivityLauncher where
 T : Activity {

@@ -19,6 +19,7 @@ package androidx.xr.scenecore.testapp.environment
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -32,9 +33,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.KhronosPbrMaterial
+import androidx.xr.scenecore.Material
 import androidx.xr.scenecore.SpatialEnvironment
+import androidx.xr.scenecore.Texture
+import androidx.xr.scenecore.TextureSampler
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.EventType
@@ -49,7 +55,6 @@ import com.google.android.material.slider.Slider
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -66,6 +71,9 @@ class EnvironmentActivity : AppCompatActivity() {
     private lateinit var blueSkybox: ExrImage
     private lateinit var groundGeometry: GltfModel
     private lateinit var rockGeometry: GltfModel
+    private lateinit var dragonGeometry: GltfModel
+    private lateinit var khronosPbrMaterial: KhronosPbrMaterial
+    private lateinit var patternTexture: Texture
     private var spatialEnvironmentPreference: SpatialEnvironment.SpatialEnvironmentPreference? =
         null
 
@@ -106,9 +114,9 @@ class EnvironmentActivity : AppCompatActivity() {
         createEventLogRecyclerView()
 
         // Toggle passthrough
-        findViewById<Button>(R.id.environment_toggle_passthrough).setOnClickListener {
-            togglePassthrough()
-        }
+        val togglePassthroughButton = findViewById<Button>(R.id.environment_toggle_passthrough)
+        togglePassthroughButton.setOnClickListener { togglePassthrough() }
+        togglePassthroughButton.visibility = View.GONE
 
         // Event listeners
         addSpatialEventListeners()
@@ -128,8 +136,8 @@ class EnvironmentActivity : AppCompatActivity() {
 
         // Add other handlers
         lifecycleScope.launch {
-            // load images and models
-            loadExrImagesAndModels()
+            // load environment resources
+            loadResources()
 
             // add skybox handlers
             skyBoxButtonHandlers()
@@ -146,7 +154,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle grey skybox
         findViewById<Button>(R.id.environment_button2_1).setOnClickListener {
             setGeoAndSkybox(greySkybox, spatialEnvironmentPreference?.geometry)
-            addEvent(EventType.SKYBOX_CHANGED, "Skybox set to GREY")
+            addEvent(EventType.SKYBOX_CHANGED, "Skybox set to BAR")
         }
 
         // handle blue skybox
@@ -158,7 +166,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle unset skybox
         findViewById<Button>(R.id.environment_button2_3).setOnClickListener {
             setGeoAndSkybox(null, spatialEnvironmentPreference?.geometry)
-            addEvent(EventType.SKYBOX_CHANGED, "Skybox unset")
+            addEvent(EventType.SKYBOX_CHANGED, "Skybox unset (set to black)")
         }
     }
 
@@ -169,16 +177,28 @@ class EnvironmentActivity : AppCompatActivity() {
             addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to GROUND")
         }
 
-        // handle night geometry
+        // handle rock geometry
         findViewById<Button>(R.id.environment_button3_2).setOnClickListener {
             setGeoAndSkybox(spatialEnvironmentPreference?.skybox, rockGeometry)
-            addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to NIGHT")
+            addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to ROCKS")
+        }
+
+        // handle animated with mesh override geometry
+        findViewById<Button>(R.id.environment_button3_3).setOnClickListener {
+            setGeoAndSkybox(
+                spatialEnvironmentPreference?.skybox,
+                dragonGeometry,
+                khronosPbrMaterial,
+                "Dragon",
+                "Fast_Flying",
+            )
+            addEvent(EventType.GEOMETRY_CHANGED, "Geometry set to DRAGON")
         }
 
         // handle unset geometry
-        findViewById<Button>(R.id.environment_button3_3).setOnClickListener {
+        findViewById<Button>(R.id.environment_button3_4).setOnClickListener {
             setGeoAndSkybox(spatialEnvironmentPreference?.skybox, null)
-            addEvent(EventType.GEOMETRY_CHANGED, "Geometry unset")
+            addEvent(EventType.GEOMETRY_CHANGED, "Geometry unset (no Geometry visible)")
         }
     }
 
@@ -195,7 +215,10 @@ class EnvironmentActivity : AppCompatActivity() {
         // handle unset geometry and skybox
         findViewById<Button>(R.id.environment_button4_2).setOnClickListener {
             session!!.scene.spatialEnvironment.preferredSpatialEnvironment = null
-            addEvent(EventType.SKYBOX_AND_GEOMETRY_CHANGED, "Skybox and geometry unset")
+            addEvent(
+                EventType.SKYBOX_AND_GEOMETRY_CHANGED,
+                "Skybox and Geometry reverted to Home Environment",
+            )
         }
     }
 
@@ -205,7 +228,7 @@ class EnvironmentActivity : AppCompatActivity() {
             addEvent(EventType.CAPABILITIES_CHANGED, logCapabilities(session!!))
         }
         // Listener for bounds change
-        session!!.scene.activitySpace.addBoundsChangedListener { bounds ->
+        session!!.scene.activitySpace.addOnBoundsChangedListener { bounds ->
             addEvent(
                 EventType.BOUNDS_CHANGED,
                 "w=${bounds.width}, h=${bounds.height}, d=${bounds.depth}",
@@ -216,18 +239,38 @@ class EnvironmentActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun loadExrImagesAndModels() {
-        this.greySkybox =
-            ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "GreySkybox.zip")).await()
-        this.blueSkybox =
-            ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip")).await()
+    private suspend fun loadResources() {
+        this.greySkybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "GreySkybox.zip"))
+        this.blueSkybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
         this.groundGeometry = GltfModel.create(session!!, Paths.get("models", "GroundGeometry.glb"))
         this.rockGeometry = GltfModel.create(session!!, Paths.get("models", "RocksGeometry.glb"))
+        this.dragonGeometry =
+            GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
+        this.patternTexture = Texture.create(session!!, Paths.get("textures", "pattern.png"))
+        this.khronosPbrMaterial = KhronosPbrMaterial.create(session!!, AlphaMode.OPAQUE)
+        this.khronosPbrMaterial.setBaseColorTexture(patternTexture, TextureSampler())
     }
 
-    private fun setGeoAndSkybox(skybox: ExrImage?, geometry: GltfModel?) {
-        spatialEnvironmentPreference =
-            SpatialEnvironment.SpatialEnvironmentPreference(skybox, geometry)
+    private fun setGeoAndSkybox(
+        skybox: ExrImage?,
+        geometry: GltfModel?,
+        material: Material? = null,
+        nodeName: String? = null,
+        animationName: String? = null,
+    ) {
+        if (material == null && nodeName == null && animationName == null) {
+            spatialEnvironmentPreference =
+                SpatialEnvironment.SpatialEnvironmentPreference(skybox, geometry)
+        } else {
+            spatialEnvironmentPreference =
+                SpatialEnvironment.SpatialEnvironmentPreference(
+                    skybox,
+                    geometry,
+                    material,
+                    nodeName,
+                    animationName,
+                )
+        }
         session!!.scene.spatialEnvironment.preferredSpatialEnvironment =
             spatialEnvironmentPreference
     }
@@ -252,14 +295,34 @@ class EnvironmentActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n", "RestrictedApi")
     private fun manageOpacity() {
         val opacityTextView = findViewById<TextView>(R.id.sliderValueTextView)
-        val opacitySlider = findViewById<Slider>(R.id.environment_mySlider)
-        opacitySlider.addOnChangeListener { _, value, _ ->
-            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = value
-            passthroughOpacityPreference.value = value
-            opacityTextView.text = opacityValueText(value, currentPassthroughOpacity.value)
-        }
+        passthroughOpacityPreference.value = 0.0f
+        session!!.scene.spatialEnvironment.preferredPassthroughOpacity =
+            passthroughOpacityPreference.value
+        currentPassthroughOpacity.value =
+            session!!.scene.spatialEnvironment.currentPassthroughOpacity
+        opacityTextView.text =
+            opacityValueText(passthroughOpacityPreference.value, currentPassthroughOpacity.value)
 
-        session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        val opacitySlider = findViewById<Slider>(R.id.environment_mySlider)
+        opacitySlider.addOnSliderTouchListener(
+            object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {}
+
+                override fun onStopTrackingTouch(slider: Slider) {
+                    Log.i(TAG, "Passthrough opacity slider set to value: ${slider.value}")
+                    session!!.scene.spatialEnvironment.preferredPassthroughOpacity = slider.value
+                    passthroughOpacityPreference.value = slider.value
+                    currentPassthroughOpacity.value =
+                        session!!.scene.spatialEnvironment.currentPassthroughOpacity
+                    opacityTextView.text =
+                        opacityValueText(
+                            passthroughOpacityPreference.value,
+                            currentPassthroughOpacity.value,
+                        )
+                }
+            }
+        )
+
         session!!.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener { newOpacity ->
             currentPassthroughOpacity.value = newOpacity
             opacityTextView.text =
@@ -269,7 +332,11 @@ class EnvironmentActivity : AppCompatActivity() {
                 )
             addEvent(
                 EventType.OPACITY_CHANGED,
-                "Opacity preference: ${passthroughOpacityPreference.value}, Current opacity: $newOpacity",
+                opacityValueText(
+                    passthroughOpacityPreference.value,
+                    currentPassthroughOpacity.value,
+                    ", ",
+                ),
             )
         }
 
@@ -278,7 +345,23 @@ class EnvironmentActivity : AppCompatActivity() {
         unsetOpacityPrefButton.setOnClickListener {
             session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
             opacitySlider.value = 0f
-            opacityTextView.text = opacityValueText(0f, 0f)
+            passthroughOpacityPreference.value =
+                session!!.scene.spatialEnvironment.preferredPassthroughOpacity
+            currentPassthroughOpacity.value =
+                session!!.scene.spatialEnvironment.currentPassthroughOpacity
+            opacityTextView.text =
+                opacityValueText(
+                    passthroughOpacityPreference.value,
+                    currentPassthroughOpacity.value,
+                )
+            addEvent(
+                EventType.OPACITY_CHANGED,
+                opacityValueText(
+                    passthroughOpacityPreference.value,
+                    currentPassthroughOpacity.value,
+                    ", ",
+                ),
+            )
         }
     }
 
@@ -311,10 +394,14 @@ class EnvironmentActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun opacityValueText(preference: Float, actual: Float): String {
+    private fun opacityValueText(
+        preference: Float,
+        actual: Float,
+        separator: String = "\n",
+    ): String {
         val decimalFormat = DecimalFormat("#.##")
         val p = decimalFormat.format(preference)
         val a = decimalFormat.format(actual)
-        return "Opacity Preference: $p\nCurrent Actual Opacity: $a"
+        return "Opacity Preference: $p" + separator + "Current Actual Opacity: $a"
     }
 }

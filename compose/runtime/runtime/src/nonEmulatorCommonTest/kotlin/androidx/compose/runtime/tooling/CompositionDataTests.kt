@@ -331,6 +331,41 @@ class CompositionDataTests {
             assertEquals(identity, group.identity)
         }
     }
+
+    @Test
+    fun groupsCreatedCanCompareEqual() {
+        val slots =
+            SlotTable().also {
+                it.collectSourceInformation()
+                it.write { writer ->
+                    with(writer) {
+                        insert {
+                            group(100) {
+                                group(200) {
+                                    grouplessCall(300, "CC300") {
+                                        grouplessCall(400, "CC400") {
+                                            group(500) {}
+                                            grouplessCall(600, "CC600") { group(700) {} }
+                                            group(800) {}
+                                            grouplessCall(900, "CC900") {}
+                                        }
+                                        grouplessCall(1000, "CC1000") {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        val firstIteration = findAll(slots) { true }
+        val secondIterations = findAll(slots) { true }
+
+        for ((first, second) in firstIteration.zip(secondIterations)) {
+            assertTrue(first == second)
+            assertTrue(first.hashCode() == second.hashCode())
+        }
+    }
 }
 
 fun findAll(

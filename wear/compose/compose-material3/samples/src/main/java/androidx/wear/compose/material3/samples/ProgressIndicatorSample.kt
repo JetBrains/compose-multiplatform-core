@@ -184,7 +184,7 @@ fun CircularProgressIndicatorCustomAnimationSample() {
     ) {
         Button(
             modifier = Modifier.align(Alignment.Center).padding(12.dp),
-            onClick = { progress.value = if (progress.value == 0f) 1f else 0f },
+            onClick = { progress.floatValue = if (progress.floatValue == 0f) 1f else 0f },
             label = { Text("Animate") },
         )
 
@@ -193,7 +193,6 @@ fun CircularProgressIndicatorCustomAnimationSample() {
             Modifier.fillMaxSize().focusable().drawBehind {
                 drawCircularProgressIndicator(
                     progress = animatedProgress.value,
-                    targetProgress = animatedProgress.targetValue,
                     strokeWidth = 10.dp,
                     colors = colors,
                     startAngle = 120f,

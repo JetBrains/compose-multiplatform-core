@@ -17,7 +17,9 @@
 package androidx.wear.compose.material3
 
 import androidx.annotation.FloatRange
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.AnimationVector2D
@@ -29,6 +31,7 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorizedFiniteAnimationSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +89,26 @@ internal fun <T> FiniteAnimationSpec<T>.slower(
     }
     return speedFactor(1 - slowdownPct / 100)
 }
+
+/**
+ * Returns the animated color based on enabled state.
+ *
+ * @param enabled Boolean flag checking if the component is enabled.
+ * @param enabledColor Color when [enabled] = true.
+ * @param disabledColor Color when [enabled] = false.
+ * @param animationSpec AnimationSpec for the color transition animations.
+ */
+@Composable
+internal fun animateEnabledStateColor(
+    enabled: Boolean,
+    enabledColor: Color,
+    disabledColor: Color,
+    animationSpec: AnimationSpec<Color>,
+): State<Color> =
+    animateColorAsState(
+        targetValue = if (enabled) enabledColor else disabledColor,
+        animationSpec = animationSpec,
+    )
 
 /**
  * Returns a modified [FiniteAnimationSpec] with a delay of [startDelayMillis].

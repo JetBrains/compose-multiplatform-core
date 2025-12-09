@@ -19,7 +19,6 @@ package androidx.credentials
 import android.content.Context
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
@@ -142,7 +141,6 @@ interface CredentialProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     fun onSignalCredentialState(
         request: SignalCredentialStateRequest,
         executor: Executor,

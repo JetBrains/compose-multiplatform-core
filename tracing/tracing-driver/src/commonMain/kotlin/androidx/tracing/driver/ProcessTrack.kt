@@ -16,63 +16,41 @@
 
 package androidx.tracing.driver
 
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
+import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableScatterMapOf
 
 /** Represents a track for a process in a perfetto trace. */
+@RestrictTo(Scope.LIBRARY_GROUP)
 public open class ProcessTrack(
     /** The tracing context. */
     context: TraceContext,
     /** The process id */
-    internal val id: Int,
+    public val id: Int,
     /** The name of the process. */
-    internal val name: String,
+    public val name: String,
 ) : SliceTrack(context = context, uuid = monotonicId()) {
-    internal val packetLock = Any()
-    internal val threads = mutableScatterMapOf<String, ThreadTrack>()
+
+    internal val threads = mutableIntObjectMapOf<ThreadTrack>()
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
 
     init {
-        synchronized(packetLock) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+        synchronized(traceEventScope) {
+            val event = obtainTraceEvent()
+            if (event != null) {
                 event.setPreamble(
                     TrackDescriptor(
                         name,
                         uuid,
-                        parentUuid = INVALID_LONG,
+                        parentUuid = DEFAULT_LONG,
                         type = TRACK_DESCRIPTOR_TYPE_PROCESS,
                         pid = id,
-                        tid = INVALID_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
+                dispatchTraceEvent(event, immediateDispatch = true)
             }
-        }
-    }
-
-    public override fun beginSection(name: String, flowIds: List<Long>) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSectionWithFlows(uuid, name, flowIds) }
-            }
-        }
-    }
-
-    public override fun beginSection(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSection(uuid, name) }
-            }
-        }
-    }
-
-    public override fun endSection() {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setEndSection(uuid) } }
-        }
-    }
-
-    public override fun instant(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setInstant(uuid, name) } }
         }
     }
 
@@ -81,24 +59,16 @@ public open class ProcessTrack(
      *   [name].
      */
     public open fun getOrCreateThreadTrack(id: Int, name: String): ThreadTrack {
-        // Thread ids are only unique for lifetime of the thread and can be potentially reused.
-        // Therefore we end up combining the `name` of the thread and its `id` as a key.
-        val key = "$id/$name"
-        return threads[key]
-            ?: synchronized(threads) {
-                val track =
-                    threads.getOrPut(key) { ThreadTrack(id = id, name = name, process = this) }
-                check(track.name == name)
-                track
-            }
+        return synchronized(threads) {
+            threads.getOrPut(key = id) { ThreadTrack(id = id, name = name, process = this) }
+        }
     }
 
     /** @return A [CounterTrack] for a given [ProcessTrack] and the provided counter [name]. */
     public open fun getOrCreateCounterTrack(name: String): CounterTrack {
-        return counters[name]
-            ?: synchronized(counters) {
-                counters.getOrPut(name) { CounterTrack(name = name, parent = this) }
-            }
+        return synchronized(counters) {
+            counters.getOrPut(key = name) { CounterTrack(name = name, parent = this) }
+        }
     }
 }
 

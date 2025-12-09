@@ -316,6 +316,7 @@ public class BiometricFragment extends Fragment {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     // TODO(b/178855209): Move to AuthenticationInternalHelper
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -722,7 +723,7 @@ public class BiometricFragment extends Fragment {
     @VisibleForTesting
     void onAuthenticationError(int errorCode, @Nullable CharSequence errorMessage) {
         // Ensure we're only sending publicly defined errors.
-        final int knownErrorCode = ErrorUtils.toKnownErrorCode(errorCode);
+        final int knownErrorCode = ErrorUtils.toKnownErrorCodeForAuthenticate(errorCode);
 
         final Context context = getContext();
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ErrorUtils.isLockoutError(
@@ -833,6 +834,7 @@ public class BiometricFragment extends Fragment {
      * Launches the confirm device credential Settings activity, where the user can authenticate
      * using their PIN, pattern, or password.
      */
+    @SuppressWarnings("deprecation")
     private void launchConfirmCredentialActivity() {
         final Context context = getContext();
 
@@ -852,8 +854,8 @@ public class BiometricFragment extends Fragment {
         final CharSequence description = mViewModel.getDescription();
         final CharSequence credentialDescription = subtitle != null ? subtitle : description;
 
-        final Intent intent = Api21Impl.createConfirmDeviceCredentialIntent(
-                keyguardManager, title, credentialDescription);
+        final Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title,
+                credentialDescription);
 
         // A null intent from KeyguardManager means that the device is not secure.
         if (intent == null) {
@@ -1418,33 +1420,6 @@ public class BiometricFragment extends Fragment {
                 android.hardware.biometrics.BiometricPrompt.@NonNull AuthenticationCallback
                         callback) {
             biometricPrompt.authenticate(crypto, cancellationSignal, executor, callback);
-        }
-    }
-
-    /**
-     * Nested class to avoid verification errors for methods introduced in Android 5.0 (API 21).
-     */
-    private static class Api21Impl {
-        // Prevent instantiation.
-        private Api21Impl() {}
-
-        /**
-         * Calls
-         * {@link KeyguardManager#createConfirmDeviceCredentialIntent(CharSequence, CharSequence)}
-         * for the given keyguard manager.
-         *
-         * @param keyguardManager An instance of {@link KeyguardManager}.
-         * @param title           The title for the confirm device credential activity.
-         * @param description     The description for the confirm device credential activity.
-         * @return An intent that can be used to launch the confirm device credential activity.
-         */
-        @SuppressWarnings("deprecation")
-        @DoNotInline
-        static @Nullable Intent createConfirmDeviceCredentialIntent(
-                @NonNull KeyguardManager keyguardManager,
-                @Nullable CharSequence title,
-                @Nullable CharSequence description) {
-            return keyguardManager.createConfirmDeviceCredentialIntent(title, description);
         }
     }
 }

@@ -15,11 +15,15 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
+import java.util.Set;
 
 /** The base communication buffer capable of encoding and decoding various types */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WireBuffer {
     private static final int BUFFER_SIZE = 1024 * 1024;
     int mMaxSize;
@@ -286,7 +290,7 @@ public class WireBuffer {
 
     /**
      * Read a byte buffer limited to max size. bytes are encoded as 4 byte length followed by length
-     * bytes index is increased by 4 + number of bytes Throw an exception if the read excedes the
+     * bytes index is increased by 4 + number of bytes Throw an exception if the read exceeds the
      * max size. This is the preferred form of read buffer.
      *
      * @return byte array
@@ -460,6 +464,20 @@ public class WireBuffer {
     public void setVersion(int documentApiLevel, int profiles) {
         for (int i = 0; i < mValidOperations.length; i++) {
             mValidOperations[i] = Operations.valid(i, documentApiLevel, profiles);
+        }
+    }
+
+    /**
+     * Sets the operations that are considered valid for this buffer. This is typically used to
+     * restrict operations based on a specific version or profile. By default, all operations
+     * (0-255) are considered valid.
+     *
+     * @param supportedOperations A set of integers representing the operation codes that are valid.
+     *     Any operation code not in this set will be considered invalid.
+     */
+    public void setValidOperations(@NonNull Set<Integer> supportedOperations) {
+        for (Integer o : supportedOperations) {
+            mValidOperations[o] = true;
         }
     }
 }

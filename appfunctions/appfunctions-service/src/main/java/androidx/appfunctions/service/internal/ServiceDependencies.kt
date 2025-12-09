@@ -24,11 +24,6 @@ import androidx.appfunctions.internal.findImpl
 @RequiresApi(Build.VERSION_CODES.S)
 internal object ServiceDependencies {
 
-    /** The instance of [AggregatedAppFunctionInventory]. */
-    internal val aggregatedAppFunctionInventory: AggregatedAppFunctionInventory by lazy {
-        AggregatedAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
-    }
-
     /** The instance of [AggregatedAppFunctionInvoker]. */
     internal val aggregatedAppFunctionInvoker: AggregatedAppFunctionInvoker by lazy {
         AggregatedAppFunctionInvoker::class.java.findImpl(prefix = "$", suffix = "_Impl")

@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.OutputStatus
@@ -33,7 +32,7 @@ import org.robolectric.annotation.Config
 
 /** Tests for [OutputDistributor] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class OutputDistributorTest {
     private val fakeOutput1 = FakeOutput(101)
     private val fakeOutput2 = FakeOutput(102)

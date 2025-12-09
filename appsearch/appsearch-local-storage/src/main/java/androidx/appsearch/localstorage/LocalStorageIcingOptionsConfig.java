@@ -124,4 +124,9 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     public int getCompressionThresholdBytes() {
         return DEFAULT_COMPRESSION_THRESHOLD_BYTES;
     }
+
+    @Override
+    public int getEmbeddingIndexNumShards() {
+        return DEFAULT_EMBEDDING_INDEX_NUM_SHARDS;
+    }
 }

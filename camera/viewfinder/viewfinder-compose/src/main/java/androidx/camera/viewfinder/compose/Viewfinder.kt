@@ -26,9 +26,9 @@ import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurfaceScop
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
 import androidx.camera.viewfinder.core.TransformationInfo.Companion.DEFAULT
+import androidx.camera.viewfinder.core.ViewfinderDefaults
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSessionScope
-import androidx.camera.viewfinder.core.impl.ImplementationModeCompat
 import androidx.camera.viewfinder.core.impl.OffsetF
 import androidx.camera.viewfinder.core.impl.RefCounted
 import androidx.camera.viewfinder.core.impl.ScaleFactorF
@@ -70,9 +70,10 @@ import kotlinx.coroutines.coroutineScope
  * [androidx.compose.foundation.AndroidEmbeddedExternalSurface] for [ImplementationMode.EMBEDDED] or
  * on [androidx.compose.foundation.AndroidExternalSurface] for [ImplementationMode.EXTERNAL]. These
  * can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If
- * `implementationMode` is `null`, [ImplementationMode.EXTERNAL] is chosen by default, switching to
- * [ImplementationMode.EMBEDDED] on API levels 24 and below, or on devices with known compatibility
- * issues with the `EXTERNAL` mode.
+ * `implementationMode` is `null`, a default is chosen based on device compatibility. This default
+ * value, which can be retrieved from [ViewfinderDefaults.implementationMode], will be
+ * [ImplementationMode.EXTERNAL] by default, switching to [ImplementationMode.EMBEDDED] on API
+ * levels 24 and below, or on devices with known compatibility issues with the `EXTERNAL` mode.
  *
  * The [onInit] lambda, and the callback registered with [ViewfinderInitScope.onSurfaceSession], are
  * always called from the main thread. [onInit] will be called every time a new [surfaceRequest] is
@@ -112,8 +113,7 @@ fun Viewfinder(
             val surfaceHeight = surfaceRequest.height
             val implementationMode =
                 remember(surfaceRequest.implementationMode) {
-                    surfaceRequest.implementationMode
-                        ?: ImplementationModeCompat.chooseCompatibleMode()
+                    surfaceRequest.implementationMode ?: ViewfinderDefaults.implementationMode
                 }
 
             // Due to https://issuetracker.google.com/183864890, we should only perform

@@ -27,15 +27,17 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime"))
+    api(project(":xr:arcore:arcore-runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
+    implementation(project(":xr:arcore:arcore-openxr"))
+    implementation(project(":xr:arcore:arcore-projected"))
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
@@ -45,16 +47,14 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
     testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:arcore:arcore-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation(libs.testRules)
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 23
-    }
     namespace = "androidx.xr.arcore"
-    sourceSets.main.resources.srcDirs += "src/main/resources"
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 }
 
 androidx {

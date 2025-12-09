@@ -37,7 +37,6 @@ import androidx.camera.testing.impl.StressTestRule
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
@@ -59,7 +58,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ImageCaptureStressTest(
     val implName: String,
     val cameraConfig: CameraXConfig,
@@ -79,7 +77,10 @@ class ImageCaptureStressTest(
 
     @get:Rule
     val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        GrantPermissionRule.grant(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
@@ -124,17 +125,21 @@ class ImageCaptureStressTest(
 
     @After
     fun tearDown(): Unit = runBlocking {
+        device.pressHome()
+        device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
+
+        // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
+        // to other tests :)
+        device.unfreezeRotation()
+
+        // shutdownAsync should be invoked at the very last step, e.g. device.unfreezeRotation() may
+        // lead to onCreate invocation on test app which may depend on the camera provider still
+        // being active.
         if (::cameraProvider.isInitialized) {
             withContext(Dispatchers.Main) {
                 cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
             }
         }
-
-        // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
-        // to other tests :)
-        device.unfreezeRotation()
-        device.pressHome()
-        device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
     }
 
     @LabTestRule.LabTestOnly

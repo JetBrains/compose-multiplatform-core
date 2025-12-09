@@ -17,15 +17,15 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.squareup.wire")
+    alias(libs.plugins.kotlinBenchmark)
 }
 
 androidXMultiplatform {
-    jvm()
+    desktop()
     androidLibrary {
         namespace = "androidx.tracing.driver.wire"
     }
@@ -35,32 +35,34 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":tracing:tracing-driver"))
+                api(libs.kotlinCoroutinesCore)
+                api(libs.androidx.annotation)
                 implementation(libs.wireRuntime)
                 implementation(libs.okio)
             }
         }
         commonTest {
             dependencies {
-                implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinCoroutinesTest)
             }
         }
-        jvmTest {
+        desktopTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
+                implementation(libs.kotlinBenchmarkRuntime)
             }
         }
-        jvmMain {
+        desktopMain {
             dependsOn(commonMain)
         }
         androidMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             // Declaring this source set even though we don't really have any instrumentation tests.
             // This is because commonTest is implicitly treated as something that can be used for
             // instrumentation tests. Therefore we need to include the test runner; otherwise the
@@ -83,6 +85,12 @@ tasks.named("multiplatformSourceJar").configure {
     dependsOn(tasks.named("generateCommonMainProtos"))
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
+    }
+}
+
 wire {
     kotlin {
         mutableTypes = true
@@ -92,13 +100,16 @@ wire {
     }
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        // Make sure to opt-in to expect-actual classes.
-        // https://youtrack.jetbrains.com/issue/KT-61573
-        freeCompilerArgs += [
-                "-Xexpect-actual-classes",
-        ]
+benchmark {
+    configurations {
+        // There is always a main configuration that applies to all targets.
+        named("main") {
+            warmups = 1
+        }
+    }
+    targets {
+        // Benchmarks live in the `desktopTest` sourceSet.
+        register("desktopTest")
     }
 }
 

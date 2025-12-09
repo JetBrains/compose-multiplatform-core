@@ -16,8 +16,6 @@
 package androidx.work.impl
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.work.Logger
 import java.io.File
@@ -41,7 +39,7 @@ public object WorkDatabasePathHelper {
     @JvmStatic
     public fun migrateDatabase(context: Context) {
         val defaultDatabasePath = getDefaultDatabasePath(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && defaultDatabasePath.exists()) {
+        if (defaultDatabasePath.exists()) {
             Logger.get().debug(TAG, "Migrating WorkDatabase to the no-backup directory")
             migrationPaths(context).forEach { (source, destination) ->
                 if (source.exists()) {
@@ -68,15 +66,13 @@ public object WorkDatabasePathHelper {
      * @return a [Map] of paths to be migrated from source -> destination
      */
     public fun migrationPaths(context: Context): Map<File, File> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val databasePath = getDefaultDatabasePath(context)
-            val migratedPath = getDatabasePath(context)
-            val map =
-                DATABASE_EXTRA_FILES.associate { extra ->
-                    File(databasePath.path + extra) to File(migratedPath.path + extra)
-                }
-            map + (databasePath to migratedPath)
-        } else emptyMap()
+        val databasePath = getDefaultDatabasePath(context)
+        val migratedPath = getDatabasePath(context)
+        val map =
+            DATABASE_EXTRA_FILES.associate { extra ->
+                File(databasePath.path + extra) to File(migratedPath.path + extra)
+            }
+        return map + (databasePath to migratedPath)
     }
 
     /**
@@ -92,30 +88,6 @@ public object WorkDatabasePathHelper {
      * @return The the migrated database path.
      */
     public fun getDatabasePath(context: Context): File {
-        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            // No notion of a backup directory exists.
-            getDefaultDatabasePath(context)
-        } else {
-            getNoBackupPath(context)
-        }
-    }
-
-    /**
-     * Return the path for a [File] path in the [Context.getNoBackupFilesDir] identified by the
-     * [String] fragment.
-     *
-     * @param context The application [Context]
-     * @return the [File]
-     */
-    @RequiresApi(23)
-    private fun getNoBackupPath(context: Context): File {
-        return File(Api21Impl.getNoBackupFilesDir(context), WORK_DATABASE_NAME)
-    }
-}
-
-@RequiresApi(21)
-internal object Api21Impl {
-    fun getNoBackupFilesDir(context: Context): File {
-        return context.noBackupFilesDir
+        return File(context.noBackupFilesDir, WORK_DATABASE_NAME)
     }
 }

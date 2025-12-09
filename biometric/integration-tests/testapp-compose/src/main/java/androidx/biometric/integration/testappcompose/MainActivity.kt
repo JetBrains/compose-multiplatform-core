@@ -42,17 +42,17 @@ class MainActivity : FragmentActivity() {
 
 @Composable
 private fun RememberLauncherForAuthResult() {
-    var result by rememberSaveable { mutableStateOf("") }
+    var authResult by rememberSaveable { mutableStateOf("") }
     val launcher =
         rememberAuthenticationLauncher(
             resultCallback =
                 object : AuthenticationResultCallback {
-                    override fun onAuthResult(authResult: AuthenticationResult) {
-                        result = authResult.toText()
+                    override fun onAuthResult(result: AuthenticationResult) {
+                        authResult = result.toText()
                     }
 
                     override fun onAuthFailure() {
-                        result = "fail, try again"
+                        authResult = "fail, try again"
                     }
                 }
         )
@@ -72,7 +72,7 @@ private fun RememberLauncherForAuthResult() {
         ) {
             Text(text = "Start Authentication")
         }
-        Text(text = "Result: $result")
+        Text(text = "Result: $authResult")
     }
 }
 

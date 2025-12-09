@@ -78,30 +78,27 @@ private constructor(
             PartitionedMeshNative.newCopiesOfMeshes(nativePointer, groupIndex).map(Mesh::wrapNative)
         }
 
-    private var _bounds: Box? = null
+    private val bounds: Box? by lazy {
+        if (meshesByGroup.isEmpty()) {
+            null
+        } else {
+            BoxAccumulator()
+                .apply {
+                    for (meshes in meshesByGroup) {
+                        for (mesh in meshes) {
+                            add(mesh.bounds)
+                        }
+                    }
+                }
+                .box
+        }
+    }
 
     /**
      * Returns the minimum bounding box of the [PartitionedMesh]. This will be null if the
      * [PartitionedMesh] is empty.
      */
-    public fun computeBoundingBox(): Box? {
-        // If we've already computed the bounding box, re-use it -- it won't change over the
-        // lifetime of
-        // this object.
-        if (_bounds != null) return _bounds
-
-        // If we have no meshes, then the bounding box is null.
-        if (meshesByGroup.isEmpty()) return null
-
-        val envelope = BoxAccumulator()
-        for (meshes in meshesByGroup) {
-            for (mesh in meshes) {
-                envelope.add(mesh.bounds)
-            }
-        }
-        _bounds = envelope.box
-        return envelope.box
-    }
+    public fun computeBoundingBox(): Box? = bounds
 
     /** Returns the [MeshFormat] used for each [Mesh] in the specified render group. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
@@ -291,8 +288,8 @@ private constructor(
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
+            parallelogramShearFactor = parallelogram.skew,
             parallelogramToThisTransformA = parallelogramToThis.m00,
             parallelogramToThisTransformB = parallelogramToThis.m10,
             parallelogramToThisTransformC = parallelogramToThis.m20,
@@ -440,8 +437,8 @@ private constructor(
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
+            parallelogramShearFactor = parallelogram.skew,
             coverageThreshold = coverageThreshold,
             parallelogramToThisTransformA = parallelogramToThis.m00,
             parallelogramToThisTransformB = parallelogramToThis.m10,
@@ -505,8 +502,14 @@ private constructor(
             "nativePointer=$address)"
     }
 
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS--Not tested post garbage collection.
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         PartitionedMeshNative.free(nativePointer)
     }
 

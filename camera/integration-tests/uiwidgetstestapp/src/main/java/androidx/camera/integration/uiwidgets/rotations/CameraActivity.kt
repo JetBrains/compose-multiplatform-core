@@ -42,6 +42,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.integration.uiwidgets.databinding.ActivityRotationsMainBinding
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -63,6 +64,7 @@ open class CameraActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = ActivityRotationsMainBinding.inflate(layoutInflater)
         setContentView(mBinding.root)
+        EdgeToEdgeUtil.enableEdgeToEdge(this)
         mAnalysisExecutor = Executors.newSingleThreadExecutor()
         if (shouldRequestPermissionsAtRuntime() && !hasPermissions()) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_CODE_PERMISSIONS)

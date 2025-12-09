@@ -37,7 +37,6 @@ import androidx.credentials.provider.PasswordCredentialEntry
 import androidx.credentials.provider.ProviderClearCredentialStateRequest
 import androidx.credentials.provider.ProviderCreateCredentialRequest
 import androidx.credentials.provider.ProviderGetCredentialRequest
-import androidx.credentials.provider.ProviderSignalCredentialStateRequest
 import androidx.credentials.provider.PublicKeyCredentialEntry
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -254,7 +253,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -269,7 +269,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -285,7 +286,8 @@ fun assertEquals(context: Context, actual: CredentialEntry, expected: Credential
             assertThat(actual.typeDisplayName).isEqualTo(expected.typeDisplayName)
             assertThat(actual.pendingIntent).isEqualTo(expected.pendingIntent)
             if (Build.VERSION.SDK_INT >= 26) {
-                assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
+                assertThat(actual.lastUsedTime?.toEpochMilli())
+                    .isEqualTo(expected.lastUsedTime?.toEpochMilli())
             }
             assertEquals(context, actual.icon, expected.icon)
             assertThat(actual.isAutoSelectAllowed).isEqualTo(expected.isAutoSelectAllowed)
@@ -316,16 +318,6 @@ fun assertEquals(
     assertThat(actual.biometricPromptResult).isEqualTo(expected.biometricPromptResult)
     assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
     assertEquals(context, actual.callingRequest, expected.callingRequest)
-}
-
-@RequiresApi(28)
-fun assertEquals(
-    actual: ProviderSignalCredentialStateRequest,
-    expected: ProviderSignalCredentialStateRequest,
-) {
-    if (actual === expected) return
-    assertThat(actual.callingAppInfo).isEqualTo(expected.callingAppInfo)
-    assertEquals(actual.callingRequest, expected.callingRequest)
 }
 
 @RequiresApi(28)
@@ -567,12 +559,8 @@ fun assertEquals(context: Context, actual: CreateEntry, expected: CreateEntry) {
     assertEquals(context, actual.icon, expected.icon)
     assertThat(actual.description).isEqualTo(expected.description)
     if (Build.VERSION.SDK_INT >= 26) {
-        if (Build.VERSION.SDK_INT >= 34) {
-            assertThat(actual.lastUsedTime?.toEpochMilli())
-                .isEqualTo(expected.lastUsedTime?.toEpochMilli())
-        } else {
-            assertThat(actual.lastUsedTime).isEqualTo(expected.lastUsedTime)
-        }
+        assertThat(actual.lastUsedTime?.toEpochMilli())
+            .isEqualTo(expected.lastUsedTime?.toEpochMilli())
     }
     assertThat(actual.getTotalCredentialCount()).isEqualTo(expected.getTotalCredentialCount())
     assertThat(actual.getPasswordCredentialCount()).isEqualTo(expected.getPasswordCredentialCount())

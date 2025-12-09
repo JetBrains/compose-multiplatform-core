@@ -20,8 +20,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +63,7 @@ import androidx.wear.compose.material.assertContainsColor
 import androidx.wear.compose.material.setContentWithTheme
 import androidx.wear.compose.material.setContentWithThemeForSizeAssertions
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -71,7 +75,7 @@ internal const val BUTTON_TAG = "Button"
 internal const val CHIP_TAG = "Chip"
 
 class DialogBehaviourTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun supports_testtag_on_alert_with_buttons() {
@@ -444,7 +448,7 @@ class DialogBehaviourTest {
 }
 
 class DialogContentSizeAndPositionTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun spaces_icon_and_title_correctly_on_alert_with_buttons() {
@@ -666,7 +670,7 @@ class DialogContentSizeAndPositionTest {
 }
 
 class DialogContentColorTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun gives_icon_onbackground_on_alert_for_buttons() {
@@ -977,14 +981,16 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                negativeButton = {},
-                positiveButton = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    negativeButton = {},
+                    positiveButton = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -996,13 +1002,15 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                message = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    message = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -1014,12 +1022,14 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Confirmation(
-                onTimeout = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Confirmation(
+                    onTimeout = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -1034,7 +1044,12 @@ class DialogContentColorTest {
         var expectedBackground = Color.Transparent
 
         rule.setContentWithTheme {
-            Box(modifier = Modifier.fillMaxSize().background(testBackground)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.Companion.navigationBars)
+                        .background(testBackground)
+            ) {
                 expectedBackground = expected()
                 content()
             }
@@ -1048,7 +1063,7 @@ class DialogContentColorTest {
 }
 
 class DialogTextStyleTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun gives_title_correct_textstyle_on_alert_for_buttons() {

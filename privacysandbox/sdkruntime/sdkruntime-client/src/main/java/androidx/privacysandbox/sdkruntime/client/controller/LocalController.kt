@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.client.controller
 
@@ -22,7 +23,6 @@ import android.os.IBinder
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
 import androidx.privacysandbox.sdkruntime.client.controller.impl.LocalClientImportanceListenerRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
-import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
@@ -44,12 +44,7 @@ internal class LocalController(
         executor: Executor,
         callback: LoadSdkCallback,
     ) {
-        try {
-            val result = localSdkRegistry.loadSdk(sdkName, params)
-            executor.execute { callback.onResult(result) }
-        } catch (ex: LoadSdkCompatException) {
-            executor.execute { callback.onError(ex) }
-        }
+        localSdkRegistry.loadSdk(sdkName, params, executor, callback)
     }
 
     override fun getSandboxedSdks(): List<SandboxedSdkCompat> {

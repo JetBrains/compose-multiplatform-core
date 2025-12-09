@@ -23,7 +23,6 @@ import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
 import androidx.baselineprofile.gradle.utils.EXPECTED_PROFILE_FOLDER
 import androidx.baselineprofile.gradle.utils.Fixtures
 import androidx.baselineprofile.gradle.utils.TestAgpVersion
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_1_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_CURRENT
 import androidx.baselineprofile.gradle.utils.VariantProfile
@@ -1509,22 +1508,19 @@ class BaselineProfileConsumerPluginTest(private val agpVersion: TestAgpVersion) 
             """
                         .trimIndent(),
             )
-            gradleRunner.build("generateFreeReleaseBaselineProfile", "assembleFreeRelease") {}
+            gradleRunner.build(
+                "generateFreeReleaseBaselineProfile",
+                "assembleFreeRelease",
+                // Disable lint due to b/419294997
+                "-x",
+                "lintVitalAnalyzeFreeRelease",
+                "-x",
+                "lintVitalReportFreeRelease",
+                "-x",
+                "lintVitalFreeRelease",
+            ) {}
         }
     }
-}
-
-@RunWith(Parameterized::class)
-class BaselineProfileConsumerPluginTestWithAgp81(private val agpVersion: TestAgpVersion) {
-
-    companion object {
-        @Parameterized.Parameters(name = "agpVersion={0}")
-        @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_1)
-    }
-
-    @get:Rule
-    val projectSetup = BaselineProfileProjectSetupRule(forceAgpVersion = agpVersion.versionString)
 
     @Test
     fun verifyGenerateTasks() {
@@ -1971,6 +1967,16 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
                     f.deleteOnExit()
                 }
 
+        // TODO: remove when b/442018105 is fixed
+        projectSetup.rootFolder.root
+            .resolve("gradle.properties")
+            .writeText(
+                """
+                android.newDsl=false
+                android.builtInKotlin=false
+            """
+                    .trimIndent()
+            )
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }
@@ -2024,6 +2030,16 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
                     f.deleteOnExit()
                 }
 
+        // TODO: remove when b/442018105 is fixed
+        projectSetup.rootFolder.root
+            .resolve("gradle.properties")
+            .writeText(
+                """
+                android.newDsl=false
+                android.builtInKotlin=false
+            """
+                    .trimIndent()
+            )
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }

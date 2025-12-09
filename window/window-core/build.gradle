@@ -22,8 +22,9 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
+
 import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -39,13 +40,15 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
             }
         }
@@ -53,19 +56,28 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesCore)
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testRunner)
             }
         }
     }
+}
 
-    enableBinaryCompatibilityValidator = false
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.5.0-beta01, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this stable version once out
+        commonMainImplementation("org.jetbrains.androidx.window:window-core:1.5.0-beta01") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {
@@ -73,6 +85,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":window:window-core-samples"))
 }

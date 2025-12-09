@@ -21,11 +21,10 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     // Pin to the stable release of compose.
@@ -51,6 +50,7 @@ dependencies {
 android {
     namespace = "androidx.photopicker.compose"
     compileSdk = 36
+    compileSdkExtension = 19
     defaultConfig {
         minSdk = 34
     }

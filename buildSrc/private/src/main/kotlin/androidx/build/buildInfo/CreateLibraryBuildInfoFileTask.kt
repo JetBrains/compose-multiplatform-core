@@ -58,6 +58,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
+import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
@@ -125,6 +126,10 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
     @get:[Input Optional]
     abstract val kmpChildren: SetProperty<String>
 
+    /** The list Gradle plugin IDs */
+    @get:[Input Optional]
+    abstract val gradlePluginIds: SetProperty<String>
+
     private fun writeJsonToFile(info: LibraryBuildInfoFile) {
         val resolvedOutputFile: File = outputFile.get().asFile
         val outputDir = resolvedOutputFile.parentFile
@@ -170,6 +175,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             if (kmpChildren.isPresent) kmpChildren.get() else emptySet()
         libraryBuildInfoFile.testModuleNames =
             if (testModuleNames.isPresent) testModuleNames.get() else emptySet()
+        libraryBuildInfoFile.gradlePluginIds =
+            if (gradlePluginIds.isPresent) gradlePluginIds.get() else emptySet()
         return libraryBuildInfoFile
     }
 
@@ -198,6 +205,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             target: String,
             kmpChildren: Set<String>,
             testModuleNames: Provider<Set<String>>,
+            gradlePluginIds: Set<String>,
         ): TaskProvider<CreateLibraryBuildInfoFileTask> {
             return project.tasks.register(
                 TASK_NAME + variant.taskSuffix,
@@ -206,7 +214,9 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 val group = project.group.toString()
                 val artifactId = variant.artifactId
                 task.outputFile.set(
-                    File(project.getBuildInfoDirectory(), "${group}_${artifactId}_build_info.txt")
+                    project.getBuildInfoDirectory().map {
+                        it.file("${group}_${artifactId.get()}_build_info.txt")
+                    }
                 )
                 task.artifactId.set(artifactId)
                 task.groupId.set(group)
@@ -240,6 +250,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 task.kmp.set(isKmp)
                 task.target.set(target)
                 task.kmpChildren.set(kmpChildren)
+                task.gradlePluginIds.set(gradlePluginIds)
 
                 // We only want test module names for the parent build info file for Gradle projects
                 // that have multiple build info files, like KMP.
@@ -253,7 +264,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             filter { it.group.isAndroidXDependency() }
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
-                        this.artifactId = it.name.toString()
+                        this.artifactId = it.name
                         this.groupId = it.group!!
                         this.version = it.version!!
                         this.isTipOfTree =
@@ -268,7 +279,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             filter { it.group.isAndroidXDependency() }
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
-                        this.artifactId = it.name.toString()
+                        this.artifactId = it.name
                         this.groupId = it.group
                         this.version = it.version!!
                         this.isTipOfTree = it is DefaultProjectDependencyConstraint
@@ -319,13 +330,17 @@ fun Project.addCreateLibraryBuildInfoFileTasks(
                         anchorTask = anchorTask,
                         pub = mavenPub,
                         libraryGroup = androidXExtension.mavenGroup,
-                        artifactId = mavenPub.artifactId,
+                        // `mavenPub.artifactId` is a var annotated @ToBeReplacedByLazyProperty
+                        // It may not yet be set to the right value at configuration time, so wrap
+                        // it in a provider.
+                        artifactId = project.provider { mavenPub.artifactId },
                         shouldPublishDocs = androidXExtension.requiresDocs(),
                         isKmp = androidXKmpExtension.supportedPlatforms.isNotEmpty(),
                         buildTarget = buildTarget,
                         kmpChildren = androidXKmpExtension.supportedPlatforms.map { it.id }.toSet(),
                         testModuleNames = androidXExtension.testModuleNames,
                         isolatedProjectEnabled = androidXExtension.isIsolatedProjectsEnabled(),
+                        variantName = mavenPub.name,
                     )
                 }
             }
@@ -337,13 +352,14 @@ private fun Project.createTaskForComponent(
     anchorTask: TaskProvider<Task>,
     pub: ProjectComponentPublication,
     libraryGroup: LibraryGroup?,
-    artifactId: String,
+    artifactId: Provider<String>,
     shouldPublishDocs: Boolean,
     isKmp: Boolean,
     buildTarget: String,
     kmpChildren: Set<String>,
     testModuleNames: Provider<Set<String>>,
     isolatedProjectEnabled: Boolean,
+    variantName: String,
 ) {
     val task =
         createBuildInfoTask(
@@ -356,6 +372,7 @@ private fun Project.createTaskForComponent(
             buildTarget = buildTarget,
             kmpChildren = kmpChildren,
             testModuleNames = testModuleNames,
+            variantName = variantName,
         )
     anchorTask.configure { it.dependsOn(task) }
     if (!isolatedProjectEnabled) {
@@ -366,15 +383,16 @@ private fun Project.createTaskForComponent(
 private fun Project.createBuildInfoTask(
     pub: ProjectComponentPublication,
     libraryGroup: LibraryGroup?,
-    artifactId: String,
+    artifactId: Provider<String>,
     shaProvider: Provider<String>,
     shouldPublishDocs: Boolean,
     isKmp: Boolean,
     buildTarget: String,
     kmpChildren: Set<String>,
     testModuleNames: Provider<Set<String>>,
+    variantName: String,
 ): TaskProvider<CreateLibraryBuildInfoFileTask> {
-    val kmpTaskSuffix = computeTaskSuffix(name, artifactId)
+    val kmpTaskSuffix = computeTaskSuffix(variantName, isKmp)
     return CreateLibraryBuildInfoFileTask.setup(
         project = project,
         mavenGroup = libraryGroup,
@@ -401,6 +419,12 @@ private fun Project.createBuildInfoTask(
         target = buildTarget,
         kmpChildren = kmpChildren.map { modifyKmpChildrenForBuildInfo(it) }.toSet(),
         testModuleNames = testModuleNames,
+        gradlePluginIds =
+            project.extensions
+                .findByType(GradlePluginDevelopmentExtension::class.java)
+                ?.plugins
+                ?.map { it.id }
+                ?.toSet() ?: emptySet(),
     )
 }
 
@@ -423,11 +447,24 @@ private fun ModuleVersionIdentifier.asDependency() =
 class BuildInfoVariantDependency(group: String, name: String, version: String) :
     DefaultExternalModuleDependency(group, name, version)
 
-// For examples, see CreateLibraryBuildInfoFileTaskTest
+/**
+ * Returns the suffix which should be used for a build info file task name.
+ *
+ * For a non-KMP project, this is an empty string.
+ *
+ * For a KMP project, there is one build info task for each variant published, so to disambiguate
+ * the tasks each gets a suffix based on the name of the variant. For the main anchor publication
+ * (variant "kotlinMultiplatform") the suffix will be empty, for all other variants it will be based
+ * on the variant name.
+ *
+ * For examples, see CreateLibraryBuildInfoFileTaskTest
+ */
 @VisibleForTesting
-fun computeTaskSuffix(projectName: String, artifactId: String) =
-    artifactId.substringAfter(projectName).split("-").joinToString("") { word ->
-        word.replaceFirstChar { it.uppercase() }
+fun computeTaskSuffix(variantName: String, isKmp: Boolean) =
+    if (isKmp && variantName != "kotlinMultiplatform") {
+        variantName.split("-").joinToString("") { word -> word.replaceFirstChar { it.uppercase() } }
+    } else {
+        ""
     }
 
 /**

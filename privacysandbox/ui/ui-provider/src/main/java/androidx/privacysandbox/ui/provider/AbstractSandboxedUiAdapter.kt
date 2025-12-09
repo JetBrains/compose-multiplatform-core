@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.provider
 
@@ -31,6 +32,7 @@ import androidx.privacysandbox.ui.core.SessionObserverFactory
  *
  * UI providers should use this class rather than implementing [SandboxedUiAdapter] directly.
  */
+@Deprecated("This library is no longer supported.")
 public abstract class AbstractSandboxedUiAdapter :
     SandboxedUiAdapter, SessionObserverFactoryRegistry {
     private val registryProvider = SessionObserverFactoryRegistryProvider()

@@ -15,11 +15,15 @@
  */
 package androidx.compose.remote.core.operations.layout;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.RemoteContext;
 
+import org.jspecify.annotations.NonNull;
+
 /** Interface to represent operations that can handle click events */
-public interface ClickHandler {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface ClickHandler extends TouchOperation {
 
     /**
      * callback for a click event
@@ -31,5 +35,9 @@ public interface ClickHandler {
      * @param y the y position of the click in document coordinates
      */
     void onClick(
-            RemoteContext context, CoreDocument document, Component component, float x, float y);
+            @NonNull RemoteContext context,
+            @NonNull CoreDocument document,
+            @NonNull Component component,
+            float x,
+            float y);
 }

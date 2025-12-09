@@ -28,13 +28,14 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.common.truth.TruthJUnit.assume
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /** Tests for [Viewfinder] with various output transforms via [ContentScale] and [Alignment] */
-@SdkSuppress(minSdkVersion = 33) // Required for screenshot tests
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @LargeTest
 @RunWith(Parameterized::class)
 class ViewfinderTransformsScreenshotTest(
@@ -63,7 +64,7 @@ class ViewfinderTransformsScreenshotTest(
             }
     }
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_CAMERA_VIEWFINDER_COMPOSE)
 

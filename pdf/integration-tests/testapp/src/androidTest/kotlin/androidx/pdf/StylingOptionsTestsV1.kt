@@ -20,6 +20,7 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.widget.ImageView
 import androidx.annotation.RequiresExtension
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.Lifecycle
@@ -27,16 +28,13 @@ import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.testapp.R
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.widget.FastScrollView
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.isRoot
-import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -100,13 +98,7 @@ class StylingOptionsTestsV1 {
             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
 
-        // Espresso will wait on the idling resource on the next action performed hence adding a
-        // click which is essentially a no-op. This removes the flakiness in the load op.
-        onView(isRoot()).perform(click())
-
-        // Delay required for the PDF to load
-        onView(withId(androidx.pdf.R.id.loadingView))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        Espresso.onIdle()
 
         swipeAndAssertThumbDrawableSize()
 
@@ -129,11 +121,23 @@ class StylingOptionsTestsV1 {
             val scrollHandle =
                 fragment.view?.findViewById<ImageView>(androidx.pdf.R.id.scrollHandle)
 
+            // Get WindowMetrics
+            val windowMetrics = fragment.requireActivity().windowManager.currentWindowMetrics
+            val insets = windowMetrics.windowInsets
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+
+            // Get the right inset value
+            val rightInset = navBarInsets.right
+
             // assert size of view is equivalent to what specified for drawable
             assertEquals(round(THUMB_DRAWABLE_HEIGHT.dpToPx(context)).toInt(), scrollHandle?.height)
             assertEquals(round(THUMB_DRAWABLE_WIDTH.dpToPx(context)).toInt(), scrollHandle?.width)
+
+            // With API 35, edge-to-edge is enabled by default, allowing content to be drawn behind
+            // system UI. Add the right inset to account for the navigation bar in the absolute end
+            // margin when the device is in landscape orientation.
             assertEquals(
-                round(THUMB_END_MARGIN.dpToPx(context)).toInt(),
+                round(THUMB_END_MARGIN.dpToPx(context)).toInt() + rightInset,
                 fastScrollView?.trackRightMargin,
             )
         }

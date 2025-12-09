@@ -29,26 +29,26 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api("androidx.compose.foundation:foundation:1.8.0")
-    api("androidx.compose.runtime:runtime:1.8.0")
-    api("androidx.compose.ui:ui:1.8.2")
-    api("androidx.compose.ui:ui-text:1.8.0")
+    api("androidx.compose.foundation:foundation:1.9.0")
+    api("androidx.compose.runtime:runtime:1.9.0")
+    api("androidx.compose.ui:ui:1.9.0")
+    api("androidx.compose.ui:ui-text:1.9.0")
     api(project(":wear:compose:compose-foundation"))
 
     implementation(libs.kotlinCoroutinesCore)
-    implementation("androidx.compose.animation:animation:1.8.0")
-    implementation("androidx.compose.material:material-icons-core:1.7.7")
-    implementation("androidx.compose.material:material-ripple:1.7.7")
-    implementation("androidx.compose.ui:ui-util:1.8.0")
+    implementation("androidx.compose.animation:animation:1.9.0")
+    implementation("androidx.compose.material:material-icons-core:1.7.8")
+    implementation("androidx.compose.material:material-ripple:1.9.0")
+    implementation("androidx.compose.ui:ui-util:1.9.0")
     implementation("androidx.core:core:1.15.0")
     implementation(project(":wear:compose:compose-material-core"))
     implementation("androidx.profileinstaller:profileinstaller:1.4.0")
     implementation("androidx.graphics:graphics-shapes:1.0.1")
-    implementation("androidx.compose.animation:animation-graphics:1.8.0")
+    implementation("androidx.compose.animation:animation-graphics:1.9.0")
 
     androidTestImplementation(project(":compose:ui:ui-test"))
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
@@ -74,11 +74,8 @@ dependencies {
 
 android {
     compileSdk = 35
-
     defaultConfig {
         minSdk = 25
-    }
-    buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
     testOptions.unitTests.returnDefaultValues = true
@@ -95,12 +92,4 @@ androidx {
             "the Jetpack Compose libraries."
     samples(project(":wear:compose:compose-material3-samples"))
     addGoldenImageAssets()
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
-                "-Xjvm-default=all",
-        ]
-    }
 }

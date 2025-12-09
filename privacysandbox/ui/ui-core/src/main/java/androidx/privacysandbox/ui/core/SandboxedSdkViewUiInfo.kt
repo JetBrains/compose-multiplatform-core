@@ -22,6 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.core.os.BundleCompat
 
 /** A class representing the UI state of a SandboxedSdkView. */
+@Deprecated("This library is no longer supported.")
+@Suppress("DEPRECATION")
 public class SandboxedSdkViewUiInfo(
     /** Returns the width of the UI container in pixels. */
     public val uiContainerWidth: Int,

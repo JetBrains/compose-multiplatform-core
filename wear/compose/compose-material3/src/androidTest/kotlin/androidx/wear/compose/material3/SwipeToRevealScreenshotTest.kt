@@ -16,21 +16,25 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
-import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.testutils.WithTouchSlop
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -38,12 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material3.RevealState.SingleSwipeCoordinator
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
 import androidx.wear.compose.materialcore.screenWidthDp
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -52,9 +57,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SwipeToRevealScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -421,7 +426,7 @@ class SwipeToRevealScreenshotTest {
                         )
                     },
                     revealState = rememberRevealState(initialValue = RevealValue.LeftRevealing),
-                    revealDirection = Bidirectional,
+                    revealDirection = RevealDirection.Bidirectional,
                 ) {
                     Button({}, Modifier.fillMaxWidth()) {
                         Text("This text should be partially visible.")
@@ -432,12 +437,115 @@ class SwipeToRevealScreenshotTest {
     }
 
     @Test
+    fun swipeToReveal_vertically_centers_top(@TestParameter screenSize: ScreenSize) {
+        testSwipeToRevealCentering(screenSize, 0)
+    }
+
+    @Test
+    fun swipeToReveal_vertically_centers_bottom(@TestParameter screenSize: ScreenSize) {
+        testSwipeToRevealCentering(screenSize, 2)
+    }
+
+    private fun testSwipeToRevealCentering(screenSize: ScreenSize, indexToSwipe: Int) {
+        var screenWidthPx: Float? = null
+        val swipeTag = "SWIPE_TAG"
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                screenWidthPx = with(LocalDensity.current) { screenWidthDp().dp.toPx() }
+
+                WithTouchSlop(0f) {
+                    Box(modifier = Modifier.fillMaxSize().testTag(TEST_TAG)) {
+                        ScalingLazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            contentPadding =
+                                PaddingValues(
+                                    horizontal =
+                                        LocalConfiguration.current.screenWidthDp.dp * 0.052f
+                                ),
+                        ) {
+                            items(3) {
+                                val revealState = rememberRevealState()
+
+                                SwipeToReveal(
+                                    revealState = revealState,
+                                    primaryAction = {
+                                        PrimaryActionButton(
+                                            onClick = {},
+                                            icon = {
+                                                Icon(
+                                                    Icons.Outlined.Delete,
+                                                    contentDescription = "Delete",
+                                                )
+                                            },
+                                            text = { Text("Delete") },
+                                        )
+                                    },
+                                    onSwipePrimaryAction = {},
+                                    modifier = Modifier.testTag(swipeTag + it),
+                                ) {
+                                    if (it == 1) {
+                                        Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+                                            Text("Item [$it]")
+                                        }
+                                    } else {
+                                        TitleCard(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            title = { Text("Title [$it]") },
+                                            onClick = {},
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                            ) {
+                                                Text(
+                                                    "Body line 1",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                                Text(
+                                                    "Body line 2",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                                Text(
+                                                    "Body line 3",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                                Text(
+                                                    "Body line 4",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                                Text(
+                                                    "Body line 5",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Swipe to reveal action
+        rule.onNodeWithTag(swipeTag + indexToSwipe).performTouchInput {
+            down(center)
+            moveTo(Offset(center.x - (screenWidthPx!! * 0.25f), center.y))
+        }
+
+        rule.verifyScreenshot(testName, screenshotRule, testTag = TEST_TAG)
+    }
+
+    @Test
     fun swipeToReveal_beforeButtonVisibleThreshold_doesNotShowActions(
         @TestParameter screenSize: ScreenSize
     ) {
         val swipeScreenPercent = 0.05f
 
-        verifyScreenshotAfterSwipe(screenSize, testName.goldenIdentifier(), swipeScreenPercent)
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
     }
 
     @Test
@@ -446,21 +554,17 @@ class SwipeToRevealScreenshotTest {
     ) {
         val swipeScreenPercent = 0.11f
 
-        verifyScreenshotAfterSwipe(screenSize, testName.goldenIdentifier(), swipeScreenPercent)
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
     }
 
     @Test
     fun swipeToReveal_showsPrimaryActionWithLabel(@TestParameter screenSize: ScreenSize) {
         val swipeScreenPercent = 0.85f
 
-        verifyScreenshotAfterSwipe(screenSize, testName.goldenIdentifier(), swipeScreenPercent)
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
     }
 
-    private fun verifyScreenshotAfterSwipe(
-        screenSize: ScreenSize,
-        goldenIdentifier: String,
-        swipeScreenPercent: Float,
-    ) {
+    private fun verifyScreenshotAfterSwipe(screenSize: ScreenSize, swipeScreenPercent: Float) {
         var screenWidthPx: Float? = null
         rule.setContentWithTheme {
             ScreenConfiguration(screenSize.size) {
@@ -496,17 +600,11 @@ class SwipeToRevealScreenshotTest {
             moveTo(Offset(center.x - (screenWidthPx!! * swipeScreenPercent), center.y))
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, goldenIdentifier)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     private fun verifyScreenshotForSize(screenSize: ScreenSize, content: @Composable () -> Unit) {
-        rule.verifyScreenshot(
-            screenshotRule = screenshotRule,
-            methodName = testName.goldenIdentifier(),
-        ) {
+        rule.verifyScreenshot(screenshotRule = screenshotRule, testName = testName) {
             ScreenConfiguration(screenSize.size) { content() }
         }
     }

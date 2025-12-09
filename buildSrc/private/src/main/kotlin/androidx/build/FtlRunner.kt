@@ -100,7 +100,7 @@ abstract class FtlRunner : DefaultTask() {
         option = "api",
         description =
             "repeatable argument for which apis to run ftl tests on. " +
-                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34, 35.",
+                "Only relevant to $FTL_ON_APIS_NAME. Can be 23, 26, 28, 30, 33, 34, 35.",
     )
     abstract val apis: ListProperty<Int>
 
@@ -231,13 +231,14 @@ private const val HWCOR = "HWCOR,version=27"
 private const val Q2Q = "q2q,version=31"
 
 private const val PHYSICAL_PIXEL9 = "tokay,version=34"
-private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
+private const val MEDIUM_PHONE_36 = "MediumPhone.arm,version=36"
 private const val MEDIUM_PHONE_35 = "MediumPhone.arm,version=35"
+private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
 private const val MEDIUM_PHONE_33 = "MediumPhone.arm,version=33"
 private const val MEDIUM_PHONE_30 = "MediumPhone.arm,version=30"
 private const val MEDIUM_PHONE_28 = "MediumPhone.arm,version=28"
 private const val MEDIUM_PHONE_26 = "MediumPhone.arm,version=26"
-private const val NEXUS4_21 = "Nexus4.gce_x86,version=21"
+private const val NEXUS5_23 = "Nexus5.gce_x86,version=23"
 private const val PIXEL2_33 = "Pixel2.arm,version=33"
 private const val PIXEL2_30 = "Pixel2.arm,version=30"
 private const val PIXEL2_28 = "Pixel2.arm,version=28"
@@ -245,13 +246,14 @@ private const val PIXEL2_26 = "Pixel2.arm,version=26"
 
 private val API_TO_MODEL_MAP =
     mapOf(
-        34 to MEDIUM_PHONE_34,
+        36 to MEDIUM_PHONE_36,
         35 to MEDIUM_PHONE_35,
+        34 to MEDIUM_PHONE_34,
         33 to MEDIUM_PHONE_33,
         30 to MEDIUM_PHONE_30,
         28 to MEDIUM_PHONE_28,
         26 to MEDIUM_PHONE_26,
-        21 to NEXUS4_21,
+        23 to NEXUS5_23,
     )
 
 private const val FTL_ON_APIS_NAME = "ftlOnApis"
@@ -259,13 +261,14 @@ private val devicesToRunOn =
     listOf(
         FTL_ON_APIS_NAME to listOf(), // instead read devices via repeatable --api
         "ftlphysicalpixel9api34" to listOf(PHYSICAL_PIXEL9),
-        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
+        "ftlmediumphoneapi36" to listOf(MEDIUM_PHONE_36),
         "ftlmediumphoneapi35" to listOf(MEDIUM_PHONE_35),
+        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
         "ftlmediumphoneapi33" to listOf(MEDIUM_PHONE_33),
         "ftlmediumphoneapi30" to listOf(MEDIUM_PHONE_30),
         "ftlmediumphoneapi28" to listOf(MEDIUM_PHONE_28),
         "ftlmediumphoneapi26" to listOf(MEDIUM_PHONE_26),
-        "ftlnexus4api21" to listOf(NEXUS4_21),
+        "ftlnexus5api23" to listOf(NEXUS5_23),
         "ftlCoreTelecomDeviceSet" to listOf(NEXUS_6P, A10, PETTYL, HWCOR, Q2Q),
         "ftlpixel2api33" to listOf(PIXEL2_33),
         "ftlpixel2api30" to listOf(PIXEL2_30),

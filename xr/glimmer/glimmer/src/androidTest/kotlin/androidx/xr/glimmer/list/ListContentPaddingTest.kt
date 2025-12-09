@@ -18,7 +18,6 @@ package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -37,7 +36,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +49,6 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
 
     private val ListTag = "List"
     private val ItemTag = "item"
-    private val ContainerTag = "container"
 
     private var itemSize: Dp = Dp.Infinity
     private var smallPaddingSize: Dp = Dp.Infinity
@@ -70,7 +69,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         val containerSize = itemSize * 2
         val largePaddingSize = itemSize
 
-        rule.setContentAndSaveScope {
+        rule.setContent {
             TestList(
                 modifier = Modifier.requiredSize(containerSize).testTag(ListTag),
                 state = rememberListState().also { state = it },
@@ -89,9 +88,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
             .assertCrossAxisSizeIsEqualTo(containerSize - smallPaddingSize * 2)
             .assertMainAxisSizeIsEqualTo(itemSize)
 
-        rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { largePaddingSize.toPx() }) }
-        }
+        state.scrollContentBy(largePaddingSize)
 
         rule
             .onNodeWithTag(ItemTag)
@@ -102,7 +99,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
     @Test
     fun contentPaddingIsNotAffectingScrollPosition() {
         lateinit var state: ListState
-        rule.setContentAndSaveScope {
+        rule.setContent {
             TestList(
                 modifier = Modifier.requiredSize(itemSize * 2).testTag(ListTag),
                 state = rememberListState().also { state = it },
@@ -115,7 +112,8 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
 
         state.assertScrollPosition(0, 0.dp)
 
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { itemSize.toPx() }) } }
+        state.scrollContentBy(itemSize)
+        rule.waitForIdle()
 
         state.assertScrollPosition(0, itemSize)
     }
@@ -124,7 +122,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
     fun scrollForwardItemWithinStartPaddingDisplayed() {
         lateinit var state: ListState
         val padding = itemSize * 1.5f
-        rule.setContentAndSaveScope {
+        rule.setContent {
             TestList(
                 modifier = Modifier.requiredSize(padding * 2 + itemSize).testTag(ListTag),
                 state = rememberListState().also { state = it },
@@ -139,7 +137,8 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.onNodeWithTag("1").assertStartPositionInRootIsEqualTo(itemSize + padding)
         rule.onNodeWithTag("2").assertStartPositionInRootIsEqualTo(itemSize * 2 + padding)
 
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { padding.toPx() }) } }
+        state.scrollContentBy(padding)
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, padding - itemSize)
 
@@ -153,7 +152,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
     fun scrollBackwardItemWithinStartPaddingDisplayed() {
         lateinit var state: ListState
         val padding = itemSize * 1.5f
-        rule.setContentAndSaveScope {
+        rule.setContent {
             TestList(
                 modifier = Modifier.requiredSize(itemSize + padding * 2).testTag(ListTag),
                 state = rememberListState().also { state = it },
@@ -164,10 +163,9 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
             }
         }
 
-        rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 3).toPx() }) }
-            scope.launch { state.scrollBy(with(rule.density) { (-itemSize * 1.5f).toPx() }) }
-        }
+        state.scrollContentBy(itemSize * 3)
+        state.scrollContentBy(-itemSize * 1.5f)
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, itemSize * 0.5f)
 
@@ -181,7 +179,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
     fun scrollForwardTillTheEnd() {
         lateinit var state: ListState
         val padding = itemSize * 1.5f
-        rule.setContentAndSaveScope {
+        rule.setContent {
             TestList(
                 modifier = Modifier.requiredSize(padding * 2 + itemSize).testTag(ListTag),
                 state = rememberListState().also { state = it },
@@ -192,9 +190,8 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
             }
         }
 
-        rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 3).toPx() }) }
-        }
+        state.scrollContentBy(itemSize * 4)
+        rule.waitForIdle()
 
         state.assertScrollPosition(3, 0.dp)
 
@@ -203,7 +200,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.onNodeWithTag("3").assertStartPositionInRootIsEqualTo(itemSize * 3 - padding)
 
         // there are no space to scroll anymore, so it should change nothing
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { 10.dp.toPx() }) } }
+        state.scrollContentBy(10.dp)
 
         state.assertScrollPosition(3, 0.dp)
 
@@ -216,7 +213,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
     fun unevenPaddingWithRtl() {
         val padding = PaddingValues(start = 20.dp, end = 8.dp)
         lateinit var state: ListState
-        rule.setContentAndSaveScope {
+        rule.setContent {
             state = rememberListState()
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 TestList(
@@ -251,9 +248,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
                 )
         }
 
-        rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 4).toPx() }) }
-        }
+        state.scrollContentBy(itemSize * 4)
 
         if (vertical) {
             rule
@@ -270,6 +265,11 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
                     padding.calculateLeftPadding(LayoutDirection.Rtl)
                 )
         }
+    }
+
+    private fun ListState.scrollContentBy(value: Dp) {
+        val px = with(rule.density) { value.toPx() }
+        runBlocking(Dispatchers.Main) { scrollContentBy(px) }
     }
 
     private fun ListState.assertScrollPosition(index: Int, offset: Dp) =

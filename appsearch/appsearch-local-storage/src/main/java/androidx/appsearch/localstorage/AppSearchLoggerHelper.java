@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
@@ -30,6 +31,7 @@ import com.google.android.icing.proto.DeleteByQueryStatsProto;
 import com.google.android.icing.proto.DeleteStatsProto;
 import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.OptimizeStatsProto;
+import com.google.android.icing.proto.PersistToDiskStatsProto;
 import com.google.android.icing.proto.PutDocumentStatsProto;
 import com.google.android.icing.proto.QueryStatsProto;
 import com.google.android.icing.proto.SetSchemaResultProto;
@@ -122,7 +124,7 @@ public final class AppSearchLoggerHelper {
      * Copies native Query stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull QueryStatsProto fromNativeStats,
             QueryStats.@NonNull Builder toStatsBuilder) {
@@ -184,6 +186,12 @@ public final class AppSearchLoggerHelper {
                         fromNativeStats.getQueryProcessorParserConsumeQueryLatencyMs())
                 .setNativeQueryProcessorQueryVisitorLatencyMillis(
                         fromNativeStats.getQueryProcessorQueryVisitorLatencyMs())
+                .setNativeNumUnquantizedEmbeddingsScored(
+                        fromNativeStats.getNumUnquantizedEmbeddingsScored())
+                .setNativeNumQuantizedEmbeddingsScored(
+                        fromNativeStats.getNumQuantizedEmbeddingsScored())
+                .setNativeNumEmbeddingShardsRead(fromNativeStats.getNumEmbeddingShardsRead())
+                .setNativeNumEmbeddingBytesRead(fromNativeStats.getNumEmbeddingBytesRead())
                 .build();
     }
 
@@ -191,7 +199,7 @@ public final class AppSearchLoggerHelper {
      * Copies native Delete stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteStatsProto fromNativeStats,
             RemoveStats.@NonNull Builder toStatsBuilder) {
@@ -207,7 +215,7 @@ public final class AppSearchLoggerHelper {
      * Copies native DeleteByQuery stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteByQueryStatsProto fromNativeStats,
             RemoveStats.@NonNull Builder toStatsBuilder) {
@@ -230,7 +238,7 @@ public final class AppSearchLoggerHelper {
      * Copies native {@link OptimizeStatsProto} to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull OptimizeStatsProto fromNativeStats,
             OptimizeStats.@NonNull Builder toStatsBuilder) {
@@ -252,7 +260,7 @@ public final class AppSearchLoggerHelper {
                 .setNumDeletedNamespaces(fromNativeStats.getNumDeletedNamespaces());
     }
 
-    /*
+    /**
      * Copy SetSchema result stats to builder.
      *
      * @param fromProto Stats copied from.
@@ -268,7 +276,66 @@ public final class AppSearchLoggerHelper {
                 .setCompatibleTypeChangeCount(fromProto.getFullyCompatibleChangedSchemaTypesCount())
                 .setIndexIncompatibleTypeChangeCount(
                         fromProto.getIndexIncompatibleChangedSchemaTypesCount())
+                .setJoinIndexIncompatibleTypeChangeCount(
+                        fromProto.getJoinIncompatibleChangedSchemaTypesCount())
+                .setScorablePropertyIncompatibleTypeChangeCount(
+                        fromProto.getScorablePropertyIncompatibleChangedSchemaTypesCount())
                 .setBackwardsIncompatibleTypeChangeCount(
-                        fromProto.getIncompatibleSchemaTypesCount());
+                        fromProto.getIncompatibleSchemaTypesCount())
+                .setDeletedDocumentCount(fromProto.getDeletedDocumentCount())
+                .setIsTermIndexRestored(fromProto.getHasTermIndexRestored())
+                .setIsIntegerIndexRestored(fromProto.getHasIntegerIndexRestored())
+                .setIsEmbeddingIndexRestored(fromProto.getHasEmbeddingIndexRestored())
+                .setIsQualifiedIdJoinIndexRestored(fromProto.getHasQualifiedIdJoinIndexRestored())
+                .setNativeSchemaStoreSetSchemaLatencyMillis(
+                        fromProto.getSetSchemaStats().getSchemaStoreSetSchemaLatencyMs())
+                .setNativeDocumentStoreUpdateSchemaLatencyMillis(
+                        fromProto.getSetSchemaStats().getDocumentStoreUpdateSchemaLatencyMs())
+                .setNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis(
+                        fromProto
+                                .getSetSchemaStats()
+                                .getDocumentStoreOptimizedUpdateSchemaLatencyMs())
+                .setNativeIndexRestorationLatencyMillis(
+                        fromProto.getSetSchemaStats().getIndexRestorationLatencyMs())
+                .setNativeScorablePropertyCacheRegenerationLatencyMillis(
+                        fromProto
+                                .getSetSchemaStats()
+                                .getScorablePropertyCacheRegenerationLatencyMs())
+                .addGetVmLatencyMillis(fromProto.getGetVmLatencyMs());
+    }
+
+    /*
+     * Copy PersistToDiskStatsProto to builder.
+     *
+     * @param fromProto Stats copied from.
+     * @param toStatsBuilder Stats copied to.
+     */
+    static void copyNativeStats(@NonNull PersistToDiskStatsProto fromProto,
+            PersistToDiskStats.@NonNull Builder toStatsBuilder) {
+        Preconditions.checkNotNull(fromProto);
+        Preconditions.checkNotNull(toStatsBuilder);
+        toStatsBuilder
+                .setPersistType(fromProto.getPersistType())
+                .setNativeLatencyMillis(fromProto.getLatencyMs())
+                .setNativeBlobStorePersistLatencyMillis(fromProto.getBlobStorePersistLatencyMs())
+                .setNativeDocumentStoreTotalPersistLatencyMillis(
+                        fromProto.getDocumentStoreTotalPersistLatencyMs())
+                .setNativeDocumentStoreComponentsPersistLatencyMillis(
+                        fromProto.getDocumentStoreComponentsPersistLatencyMs())
+                .setNativeDocumentStoreChecksumUpdateLatencyMillis(
+                        fromProto.getDocumentStoreChecksumUpdateLatencyMs())
+                .setNativeDocumentLogChecksumUpdateLatencyMillis(
+                        fromProto.getDocumentLogChecksumUpdateLatencyMs())
+                .setNativeDocumentLogDataSyncLatencyMillis(
+                        fromProto.getDocumentLogDataSyncLatencyMs())
+                .setNativeSchemaStorePersistLatencyMillis(
+                        fromProto.getSchemaStorePersistLatencyMs())
+                .setNativeIndexPersistLatencyMillis(fromProto.getIndexPersistLatencyMs())
+                .setNativeIntegerIndexPersistLatencyMillis(
+                        fromProto.getIntegerIndexPersistLatencyMs())
+                .setNativeQualifiedIdJoinIndexPersistLatencyMillis(
+                        fromProto.getQualifiedIdJoinIndexPersistLatencyMs())
+                .setNativeEmbeddingIndexPersistLatencyMillis(
+                        fromProto.getEmbeddingIndexPersistLatencyMs());
     }
 }

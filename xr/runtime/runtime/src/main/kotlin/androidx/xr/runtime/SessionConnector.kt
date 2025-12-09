@@ -17,8 +17,7 @@
 package androidx.xr.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.runtime.internal.JxrRuntime
 
 /**
  * Describes classes that have a lifecycle equivalent of a particular [Session] (i.e. singletons)
@@ -29,7 +28,7 @@ import androidx.xr.runtime.internal.LifecycleManager
 @Suppress("NotCloseable")
 public interface SessionConnector {
     /** Initializes the [SessionConnector]. */
-    public fun initialize(lifecycleManager: LifecycleManager, platformAdapter: JxrPlatformAdapter)
+    public fun initialize(runtimes: List<JxrRuntime>)
 
     /** Closes the [SessionConnector]. Called when the [Session] is destroyed. */
     public fun close()

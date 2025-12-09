@@ -109,10 +109,7 @@ public class WorkerWrapper internal constructor(builder: Builder) {
                 Callable {
                     when (resolution) {
                         is Resolution.Finished -> onWorkFinished(resolution.result)
-                        is Resolution.Failed -> {
-                            setFailed(resolution.result)
-                            false
-                        }
+                        is Resolution.Failed -> onWorkFailed(resolution.result)
                         is ResetWorkerStatus -> resetWorkerStatus(resolution.reason)
                     }
                 }
@@ -341,6 +338,16 @@ public class WorkerWrapper internal constructor(builder: Builder) {
         } else {
             false
         }
+    }
+
+    private fun onWorkFailed(result: ListenableWorker.Result): Boolean {
+        logi(TAG) { "Worker result FAILURE for $workDescription" }
+        if (workSpec.isPeriodic) {
+            resetPeriodic()
+        } else {
+            setFailed(result)
+        }
+        return false
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

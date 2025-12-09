@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro.perfetto
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
 import androidx.benchmark.macro.runSingleSessionServer
@@ -27,7 +29,6 @@ import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.benchmark.traceprocessor.toSlices
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.tracing.Trace
 import androidx.tracing.trace
 import kotlin.test.assertEquals
@@ -46,7 +47,6 @@ import org.junit.runner.RunWith
  * These can't be defined in the androidx.tracing library, as Trace capture / validation APIs are
  * only available to the benchmark group.
  */
-@SdkSuppress(minSdkVersion = 23)
 @RunWith(AndroidJUnit4::class)
 class AndroidxTracingTraceTest {
     @get:Rule val linkRule = FileLinkingRule()
@@ -60,6 +60,8 @@ class AndroidxTracingTraceTest {
     @LargeTest
     @Test
     fun captureAndValidateTrace() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
 
         val traceFilePath = linkRule.createReportedTracePath(Packages.TEST)

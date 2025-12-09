@@ -15,10 +15,13 @@
  */
 package androidx.compose.remote.core.operations.utilities;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** high performance matrix processing engine */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MatrixOperations {
 
     /** The START POINT in the float NaN space for operators */
@@ -151,7 +154,7 @@ public class MatrixOperations {
      * @param var variables
      * @return resulting Matrix object
      */
-    public Matrix eval(float @NonNull [] exp, float @NonNull ... var) {
+    public @NonNull Matrix eval(float @NonNull [] exp, float @NonNull ... var) {
         mStack = exp;
         mVar = var;
         mMatrixIndex = 0;
@@ -204,7 +207,7 @@ public class MatrixOperations {
     }
 
     /**
-     * Convert an expression encoded as an array of floats int ot a string
+     * Convert an expression encoded as an array of floats int to a string
      *
      * @param exp
      * @param labels

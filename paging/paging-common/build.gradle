@@ -33,7 +33,6 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm()
     mac()
     linux()
     ios()
@@ -42,16 +41,16 @@ androidXMultiplatform {
     js()
     wasmJs()
     mingwX64()
+    desktop()
     androidLibrary {
         namespace = "androidx.paging.common"
     }
 
-    defaultPlatform(PlatformIdentifier.JVM)
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api("androidx.annotation:annotation:1.9.1")
             }
@@ -81,6 +80,26 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(project(":internal-testutils-common"))
                 implementation(project(":internal-testutils-ktx"))
+            }
+        }
+
+        jvmMain {
+            dependsOn(commonJvmAndroidMain)
+        }
+
+        jvmTest {
+            dependsOn(commonJvmAndroidTest)
+        }
+
+        androidMain {
+            dependsOn(commonJvmAndroidMain)
+        }
+
+        androidDeviceTest {
+            dependsOn(commonJvmAndroidTest)
+            dependencies {
+                implementation(libs.testRunner)
+                implementation(libs.mockitoAndroid5)
             }
         }
 
@@ -119,52 +138,16 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibJs)
-            }
+        desktopMain {
+            dependsOn(jvmMain)
         }
 
-        jsTest {
-            dependsOn(webTest)
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jvmTest {
-            dependsOn(commonJvmAndroidTest)
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonJvmAndroidTest)
-            dependencies {
-                implementation(libs.testRunner)
-                implementation(libs.mockitoAndroid5)
-            }
+        desktopTest {
+            dependsOn(jvmTest)
         }
 
         targets.configureEach { target ->
-            if (target.platformType in [KotlinPlatformType.jvm, KotlinPlatformType.androidJvm] ) {
-                target.compilations["main"].defaultSourceSet.dependsOn(commonJvmAndroidMain)
-            } else if (target.platformType == KotlinPlatformType.native) {
+            if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     if (target.konanTarget.family.appleFamily) {
                         dependsOn(darwinMain)
@@ -176,6 +159,9 @@ androidXMultiplatform {
                         throw new GradleException("unknown native target ${target}")
                     }
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

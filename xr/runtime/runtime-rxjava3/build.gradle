@@ -27,10 +27,19 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
+    api(project(":xr:runtime:runtime"))
+    api(libs.kotlinCoroutinesRx3)
 
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(project(":xr:arcore:arcore-testing"))
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testExtTruth)
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
 }
 
 android {
@@ -42,4 +51,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "XR Runtime compatibility APIs for Java/RxJava3 users."
+
+    enableRobolectric()
 }

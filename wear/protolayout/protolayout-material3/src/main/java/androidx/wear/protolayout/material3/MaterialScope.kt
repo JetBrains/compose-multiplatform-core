@@ -24,6 +24,7 @@ import androidx.wear.protolayout.DimensionBuilders.ImageDimension
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.ContentScaleMode
+import androidx.wear.protolayout.LayoutElementBuilders.Image
 import androidx.wear.protolayout.LayoutElementBuilders.Layout
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
@@ -32,6 +33,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.TextAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.TextOverflow
 import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Padding
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.material3.Typography.TypographyToken
 import androidx.wear.protolayout.material3.tokens.ColorTokens
 import androidx.wear.protolayout.material3.tokens.ShapeTokens
@@ -68,6 +70,7 @@ public open class MaterialScope
 internal constructor(
     public val context: Context,
     public val deviceConfiguration: DeviceParameters,
+    private val _protoLayoutScope: ProtoLayoutScope?,
     internal val allowDynamicTheme: Boolean,
     internal val theme: MaterialTheme,
     internal val defaultTextElementStyle: TextElementStyle,
@@ -82,6 +85,36 @@ internal constructor(
 
     /** Shapes theme used within this scope and its components. */
     public val shapes: Shapes = theme.shapes
+
+    /**
+     * Checks whether [ProtoLayoutScope] exists in this [MaterialScope].
+     *
+     * It is guaranteed that exists when the [MaterialScope] is created with
+     * [materialScopeWithResources].
+     */
+    @get:JvmName("hasProtoLayoutScope")
+    public val hasProtoLayoutScope: Boolean = _protoLayoutScope != null
+
+    /**
+     * The [ProtoLayoutScope] for the Tile service, that is responsible for handling internal
+     * details of ProtoLayout layouts and Tiles and can be used to create image resources with
+     * automatic resources registration.
+     *
+     * This field can safely be used when [MaterialScope] is created with
+     * [materialScopeWithResources].
+     *
+     * @throws IllegalArgumentException When the [ProtoLayoutScope] within this [MaterialScope] is
+     *   null, which can happen if [materialScope] is used to create it. It is guaranteed that this
+     *   method will return value and not throw when [MaterialScope] is created with
+     *   [materialScopeWithResources]. In other cases, presence of [ProtoLayoutScope] can be checked
+     *   with [hasProtoLayoutScope].
+     */
+    // TODO: b/445117978 - Link M3TS when available in AndroidX.
+    public val protoLayoutScope: ProtoLayoutScope
+        get() {
+            requireNotNull(_protoLayoutScope)
+            return _protoLayoutScope
+        }
 
     internal fun withStyle(
         defaultTextElementStyle: TextElementStyle = this.defaultTextElementStyle,
@@ -103,6 +136,7 @@ internal constructor(
                 defaultAvatarImageStyle = defaultAvatarImageStyle,
                 layoutSlotsPresence = layoutSlotsPresence,
                 defaultProgressIndicatorStyle = defaultProgressIndicatorStyle,
+                _protoLayoutScope = _protoLayoutScope,
             )
             .layout()
 
@@ -126,6 +160,7 @@ internal constructor(
                 defaultAvatarImageStyle = defaultAvatarImageStyle,
                 layoutSlotsPresence = layoutSlotsPresence,
                 defaultProgressIndicatorStyle = defaultProgressIndicatorStyle,
+                _protoLayoutScope = _protoLayoutScope,
             )
             .margins()
 }
@@ -158,28 +193,47 @@ public fun materialScope(
     defaultColorScheme: ColorScheme = ColorScheme(),
     layout: MaterialScope.() -> LayoutElement,
 ): LayoutElement =
-    MaterialScope(
+    createMaterialScope(context, deviceConfiguration, allowDynamicTheme, defaultColorScheme)
+        .layout()
+
+/**
+ * Creates a top-level receiver scope [MaterialScope] that calls the given [layout] to support for
+ * opinionated defaults and building Material3 components and layout, with default dynamic theme
+ * colors defined in [dynamicColorScheme] and automatic resource registration for [Image] elements
+ * created with [ProtoLayoutScope].
+ *
+ * The colors of elements in this receiver scope will automatically follow colors from the system
+ * theme, including whenever user changes the theme. If dynamic color scheme is switched off by user
+ * or unavailable on device, defaults to static, default [ColorScheme].
+ *
+ * @param context The Android Context for the Tile service
+ * @param protoLayoutScope The [ProtoLayoutScope] for the Tile service, which should be obtained via
+ *   `androidx.wear.tiles.RequestBuilders#TileRequest.getScope`
+ * @param deviceConfiguration The device parameters for where the components will be rendered
+ * @param allowDynamicTheme Whether dynamic colors theme should be used on components, meaning that
+ *   colors will follow the system theme if enabled on the device. If not set, defaults to using the
+ *   system theme
+ * @param defaultColorScheme Color Scheme with static colors. The color theme to be used, when
+ *   `allowDynamicTheme` is false, or when dynamic theming is disabled by the system or user. If not
+ *   set, defaults to default theme.
+ * @param layout Scoped slot for the content of layout to be displayed
+ */
+// TODO: b/370976767 - Specify in docs that MaterialTileService should be used instead of using this
+// directly.
+public fun materialScopeWithResources(
+    context: Context,
+    protoLayoutScope: ProtoLayoutScope,
+    deviceConfiguration: DeviceParameters,
+    allowDynamicTheme: Boolean = true,
+    defaultColorScheme: ColorScheme = ColorScheme(),
+    layout: MaterialScope.() -> LayoutElement,
+): LayoutElement =
+    createMaterialScope(
             context = context,
             deviceConfiguration = deviceConfiguration,
+            protoLayoutScope = protoLayoutScope,
             allowDynamicTheme = allowDynamicTheme,
-            theme =
-                MaterialTheme(
-                    colorScheme =
-                        if (allowDynamicTheme) {
-                            dynamicColorScheme(
-                                context = context,
-                                defaultColorScheme = defaultColorScheme,
-                            )
-                        } else {
-                            defaultColorScheme
-                        }
-                ),
-            defaultTextElementStyle = TextElementStyle(),
-            defaultIconStyle = IconStyle(),
-            defaultBackgroundImageStyle = BackgroundImageStyle(),
-            defaultAvatarImageStyle = AvatarImageStyle(),
-            layoutSlotsPresence = LayoutSlotsPresence(),
-            defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+            defaultColorScheme = defaultColorScheme,
         )
         .layout()
 
@@ -193,30 +247,41 @@ public fun materialScopeFromLayout(
     defaultColorScheme: ColorScheme = ColorScheme(),
     layout: MaterialScope.() -> Layout,
 ): Layout =
-    MaterialScope(
-            context = context,
-            deviceConfiguration = deviceConfiguration,
-            allowDynamicTheme = allowDynamicTheme,
-            theme =
-                MaterialTheme(
-                    colorScheme =
-                        if (allowDynamicTheme) {
-                            dynamicColorScheme(
-                                context = context,
-                                defaultColorScheme = defaultColorScheme,
-                            )
-                        } else {
-                            defaultColorScheme
-                        }
-                ),
-            defaultTextElementStyle = TextElementStyle(),
-            defaultIconStyle = IconStyle(),
-            defaultBackgroundImageStyle = BackgroundImageStyle(),
-            defaultAvatarImageStyle = AvatarImageStyle(),
-            layoutSlotsPresence = LayoutSlotsPresence(),
-            defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
-        )
+    createMaterialScope(context, deviceConfiguration, allowDynamicTheme, defaultColorScheme)
         .layout()
+
+/** Creates default [MaterialScope] from the given parameters and with proper default values. */
+internal fun createMaterialScope(
+    context: Context,
+    deviceConfiguration: DeviceParameters,
+    allowDynamicTheme: Boolean,
+    defaultColorScheme: ColorScheme,
+    protoLayoutScope: ProtoLayoutScope? = null,
+): MaterialScope =
+    MaterialScope(
+        context = context,
+        deviceConfiguration = deviceConfiguration,
+        _protoLayoutScope = protoLayoutScope,
+        allowDynamicTheme = allowDynamicTheme,
+        theme =
+            MaterialTheme(
+                colorScheme =
+                    if (allowDynamicTheme) {
+                        dynamicColorScheme(
+                            context = context,
+                            defaultColorScheme = defaultColorScheme,
+                        )
+                    } else {
+                        defaultColorScheme
+                    }
+            ),
+        defaultTextElementStyle = TextElementStyle(),
+        defaultIconStyle = IconStyle(),
+        defaultBackgroundImageStyle = BackgroundImageStyle(),
+        defaultAvatarImageStyle = AvatarImageStyle(),
+        layoutSlotsPresence = LayoutSlotsPresence(),
+        defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+    )
 
 /** DSL marker used to distinguish between [MaterialScope] and other item scopes. */
 @DslMarker public annotation class MaterialScopeMarker

@@ -26,12 +26,11 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.annotation:annotation:1.6.0")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -44,7 +43,7 @@ android {
     namespace = "androidx.text.vertical"
 
     defaultConfig {
-        minSdk = 36
+        minSdk = 23
     }
     compileSdk = 36
 }

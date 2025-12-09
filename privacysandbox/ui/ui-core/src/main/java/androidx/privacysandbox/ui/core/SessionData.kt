@@ -27,6 +27,8 @@ import androidx.annotation.RestrictTo
  * A class containing values that will be constant for the lifetime of a
  * [SandboxedUiAdapter.Session].
  */
+@Deprecated("This library is no longer supported.")
+@Suppress("DEPRECATION")
 public class SessionData
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(

@@ -16,21 +16,23 @@
 
 package androidx.xr.arcore.playservices
 
-import android.Manifest
 import android.app.Activity
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
+import com.google.ar.core.Config as ArConfig
+import com.google.ar.core.Config.AugmentedFaceMode
+import com.google.ar.core.Config.DepthMode
 import com.google.ar.core.Config.GeospatialMode
 import com.google.ar.core.Config.PlaneFindingMode
 import com.google.ar.core.Config.TextureUpdateMode
@@ -76,12 +78,8 @@ internal constructor(
      * [ArCorePerceptionManager].
      */
     override fun create() {
-        try {
-            checkARCoreSupportedAndUpToDate(activity)
-            _session = Session(activity)
-        } catch (e: SecurityException) {
-            throw PermissionNotGrantedException(listOf(Manifest.permission.CAMERA), e)
-        }
+        checkARCoreSupportedAndUpToDate(activity)
+        _session = Session(activity)
         perceptionManager.session = _session
     }
 
@@ -92,7 +90,27 @@ internal constructor(
     override fun configure(config: Config) {
         val arConfig = _session.config
 
-        arConfig.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
+        if (config.cameraFacingDirection != this.config.cameraFacingDirection) {
+            try {
+                perceptionManager.setCameraFacingDirection(config.cameraFacingDirection)
+            } catch (e: Exception) {
+                val message =
+                    when (e) {
+                        is UnsupportedDeviceException ->
+                            "This device does not have a front-facing (selfie) camera"
+                        is IllegalArgumentException ->
+                            "${config.cameraFacingDirection} is not supported."
+                        else -> throw (e)
+                    }
+                throw UnsupportedOperationException(message, e)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= 27) {
+            setTextureUpdateModeToHardwareBuffer(arConfig)
+        } else {
+            setTextureUpdateModeToExternalOES(arConfig)
+        }
 
         arConfig.planeFindingMode =
             if (config.planeTracking == Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL) {
@@ -102,19 +120,32 @@ internal constructor(
             }
 
         if (config.handTracking != Config.HandTrackingMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
-        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
-        }
+        arConfig.depthMode =
+            when (config.depthEstimation) {
+                Config.DepthEstimationMode.SMOOTH_ONLY,
+                Config.DepthEstimationMode.SMOOTH_AND_RAW -> DepthMode.AUTOMATIC
+                Config.DepthEstimationMode.RAW_ONLY -> DepthMode.RAW_DEPTH_ONLY
+                else -> DepthMode.DISABLED
+            }
+
+        perceptionManager.setDepthEstimationMode(config.depthEstimation)
 
         if (config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
+        arConfig.augmentedFaceMode =
+            when (config.faceTracking) {
+                Config.FaceTrackingMode.MESHES -> AugmentedFaceMode.MESH3D
+                Config.FaceTrackingMode.DISABLED -> AugmentedFaceMode.DISABLED
+                else -> throw UnsupportedOperationException()
+            }
+
         arConfig.geospatialMode =
-            if (config.geospatial == Config.GeospatialMode.EARTH) {
+            if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
                 GeospatialMode.ENABLED
             } else {
                 GeospatialMode.DISABLED
@@ -123,11 +154,11 @@ internal constructor(
         try {
             _session.configure(arConfig)
         } catch (e: FineLocationPermissionNotGrantedException) {
-            throw PermissionNotGrantedException(listOf(Manifest.permission.ACCESS_FINE_LOCATION), e)
+            throw SecurityException(e)
         } catch (e: ARCore1xGooglePlayServicesLocationLibraryNotLinkedException) {
             throw GooglePlayServicesLocationLibraryNotLinkedException(e)
         } catch (e: UnsupportedConfigurationException) {
-            throw ConfigurationNotSupportedException(cause = e)
+            throw UnsupportedOperationException(e)
         }
 
         this.config = config
@@ -163,6 +194,7 @@ internal constructor(
     }
 
     override fun stop() {
+        perceptionManager.dispose()
         _session.close()
     }
 
@@ -193,6 +225,15 @@ internal constructor(
                 throw ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
             }
         }
+    }
+
+    private fun setTextureUpdateModeToExternalOES(config: ArConfig) {
+        config.textureUpdateMode = TextureUpdateMode.BIND_TO_TEXTURE_EXTERNAL_OES
+    }
+
+    @RequiresApi(27)
+    private fun setTextureUpdateModeToHardwareBuffer(config: ArConfig) {
+        config.textureUpdateMode = TextureUpdateMode.EXPOSE_HARDWARE_BUFFER
     }
 
     private companion object {

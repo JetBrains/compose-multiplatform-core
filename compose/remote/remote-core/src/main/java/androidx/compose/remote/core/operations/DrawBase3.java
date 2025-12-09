@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations;
 
 import static androidx.compose.remote.core.operations.Utils.floatToString;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
@@ -31,6 +32,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Base class for commands that take 3 float */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class DrawBase3 extends PaintOperation implements VariableSupport, Serializable {
 
     @NonNull protected String mName = "DrawRectBase";
@@ -78,8 +80,18 @@ public abstract class DrawBase3 extends PaintOperation implements VariableSuppor
 
     protected abstract void write(@NonNull WireBuffer buffer, float v1, float v2, float v3);
 
-    interface Maker {
-        DrawBase3 create(float v1, float v2, float v3);
+    /** interface for the operation builder with 3 float parameters */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public interface Maker {
+        /**
+         * creation function for operation with 3 float parameters
+         *
+         * @param v1 param 1
+         * @param v2 param 2
+         * @param v3 param 3
+         * @return operation
+         */
+        @NonNull DrawBase3 create(float v1, float v2, float v3);
     }
 
     @NonNull
@@ -123,8 +135,11 @@ public abstract class DrawBase3 extends PaintOperation implements VariableSuppor
         return null;
     }
 
-    protected MapSerializer serialize(
-            MapSerializer serializer, String v1Name, String v2Name, String v3Name) {
+    protected @NonNull MapSerializer serialize(
+            @NonNull MapSerializer serializer,
+            @NonNull String v1Name,
+            @NonNull String v2Name,
+            @NonNull String v3Name) {
         return serializer
                 .add(v1Name, mValue1, mV1)
                 .add(v2Name, mValue2, mV2)

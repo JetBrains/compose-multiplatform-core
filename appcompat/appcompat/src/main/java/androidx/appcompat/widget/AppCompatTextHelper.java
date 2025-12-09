@@ -141,9 +141,6 @@ class AppCompatTextHelper {
                 mView.getTransformationMethod() instanceof PasswordTransformationMethod;
         boolean allCaps = false;
         boolean allCapsSet = false;
-        ColorStateList textColor = null;
-        ColorStateList textColorHint = null;
-        ColorStateList textColorLink = null;
         String localeListString = null;
 
         // First check TextAppearance's textAllCaps value
@@ -155,21 +152,6 @@ class AppCompatTextHelper {
             }
 
             updateTypefaceAndStyle(context, a);
-            if (Build.VERSION.SDK_INT < 23) {
-                // If we're running on < API 23, the text color may contain theme references
-                // so let's re-set using our own inflater
-                if (a.hasValue(R.styleable.TextAppearance_android_textColor)) {
-                    textColor = a.getColorStateList(R.styleable.TextAppearance_android_textColor);
-                }
-                if (a.hasValue(R.styleable.TextAppearance_android_textColorHint)) {
-                    textColorHint = a.getColorStateList(
-                            R.styleable.TextAppearance_android_textColorHint);
-                }
-                if (a.hasValue(R.styleable.TextAppearance_android_textColorLink)) {
-                    textColorLink = a.getColorStateList(
-                            R.styleable.TextAppearance_android_textColorLink);
-                }
-            }
             if (a.hasValue(R.styleable.TextAppearance_textLocale)) {
                 localeListString = a.getString(R.styleable.TextAppearance_textLocale);
             }
@@ -182,21 +164,6 @@ class AppCompatTextHelper {
         if (!hasPwdTm && a.hasValue(R.styleable.TextAppearance_textAllCaps)) {
             allCapsSet = true;
             allCaps = a.getBoolean(R.styleable.TextAppearance_textAllCaps, false);
-        }
-        if (Build.VERSION.SDK_INT < 23) {
-            // If we're running on < API 23, the text color may contain theme references
-            // so let's re-set using our own inflater
-            if (a.hasValue(R.styleable.TextAppearance_android_textColor)) {
-                textColor = a.getColorStateList(R.styleable.TextAppearance_android_textColor);
-            }
-            if (a.hasValue(R.styleable.TextAppearance_android_textColorHint)) {
-                textColorHint = a.getColorStateList(
-                        R.styleable.TextAppearance_android_textColorHint);
-            }
-            if (a.hasValue(R.styleable.TextAppearance_android_textColorLink)) {
-                textColorLink = a.getColorStateList(
-                        R.styleable.TextAppearance_android_textColorLink);
-            }
         }
         if (a.hasValue(R.styleable.TextAppearance_textLocale)) {
             localeListString = a.getString(R.styleable.TextAppearance_textLocale);
@@ -213,15 +180,6 @@ class AppCompatTextHelper {
         updateTypefaceAndStyle(context, a);
         a.recycle();
 
-        if (textColor != null) {
-            mView.setTextColor(textColor);
-        }
-        if (textColorHint != null) {
-            mView.setHintTextColor(textColorHint);
-        }
-        if (textColorLink != null) {
-            mView.setLinkTextColor(textColorLink);
-        }
         if (!hasPwdTm && allCapsSet) {
             setAllCaps(allCaps);
         }
@@ -231,10 +189,10 @@ class AppCompatTextHelper {
         if (localeListString != null) {
             if (Build.VERSION.SDK_INT >= 24) {
                 Api24Impl.setTextLocales(mView, Api24Impl.forLanguageTags(localeListString));
-            } else if (Build.VERSION.SDK_INT >= 21) {
+            } else {
                 @SuppressWarnings("StringSplitter")
                 final String firstLanTag = localeListString.split(",")[0];
-                mView.setTextLocale(Api21Impl.forLanguageTag(firstLanTag));
+                mView.setTextLocale(Locale.forLanguageTag(firstLanTag));
             }
         }
 
@@ -544,31 +502,6 @@ class AppCompatTextHelper {
             // may have been set to true in this text appearance, we need to make sure that
             // app:textAllCaps has the chance to override it
             setAllCaps(a.getBoolean(R.styleable.TextAppearance_textAllCaps, false));
-        }
-        if (Build.VERSION.SDK_INT < 23) {
-            // If we're running on < API 23, the text colors may contain theme references
-            // so let's re-set using our own inflater
-            if (a.hasValue(R.styleable.TextAppearance_android_textColor)) {
-                final ColorStateList textColor =
-                        a.getColorStateList(R.styleable.TextAppearance_android_textColor);
-                if (textColor != null) {
-                    mView.setTextColor(textColor);
-                }
-            }
-            if (a.hasValue(R.styleable.TextAppearance_android_textColorLink)) {
-                final ColorStateList textColorLink =
-                        a.getColorStateList(R.styleable.TextAppearance_android_textColorLink);
-                if (textColorLink != null) {
-                    mView.setLinkTextColor(textColorLink);
-                }
-            }
-            if (a.hasValue(R.styleable.TextAppearance_android_textColorHint)) {
-                final ColorStateList textColorHint =
-                        a.getColorStateList(R.styleable.TextAppearance_android_textColorHint);
-                if (textColorHint != null) {
-                    mView.setHintTextColor(textColorHint);
-                }
-            }
         }
         // For SDK <= P, when the text size attribute is 0, this would not be set. Fix this here.
         if (a.hasValue(R.styleable.TextAppearance_android_textSize)) {
@@ -965,18 +898,6 @@ class AppCompatTextHelper {
         }
     }
 
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static Locale forLanguageTag(String languageTag) {
-            return Locale.forLanguageTag(languageTag);
-        }
-
-    }
-
     @RequiresApi(28)
     static class Api28Impl {
         private Api28Impl() {
@@ -1027,6 +948,7 @@ class AppCompatTextHelper {
             mTypefaceSetter = typefaceSetter;
         }
 
+        @SuppressWarnings("ReferenceEquality") // mLastKnownTypefaceSetOnPaint !=paint.getTypeface()
         public boolean setFontVariationSettings(@Nullable String fontVariationSettings) {
             Typeface baseTypeface = mOriginalTypeface;
             // Try to work around apps mutating the result of getPaint()

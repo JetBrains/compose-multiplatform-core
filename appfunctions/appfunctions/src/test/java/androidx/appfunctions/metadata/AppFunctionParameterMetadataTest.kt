@@ -16,84 +16,75 @@
 
 package androidx.appfunctions.metadata
 
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class AppFunctionParameterMetadataTest {
+
     @Test
     fun appFunctionParameterMetadata_equalsAndHashCode() {
+        val dataType1 = AppFunctionIntTypeMetadata(false)
+        val dataType2 = AppFunctionStringTypeMetadata(true)
+
         val parameter1a =
-            AppFunctionParameterMetadata(
-                name = "parameter1",
-                isRequired = true,
-                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
-            )
+            AppFunctionParameterMetadata("param1", false, dataType1, "Test description")
         val parameter1b =
-            AppFunctionParameterMetadata(
-                name = "parameter1",
-                isRequired = true,
-                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
-            )
+            AppFunctionParameterMetadata("param1", false, dataType1, "Test description")
         val parameter2 =
-            AppFunctionParameterMetadata(
-                name = "parameter1",
-                isRequired = true,
-                dataType =
-                    AppFunctionObjectTypeMetadata(
-                        properties = emptyMap(),
-                        required = emptyList(),
-                        qualifiedName = "qualifedName",
-                        isNullable = true,
-                    ),
-            )
+            AppFunctionParameterMetadata("param2", true, dataType2, "Another description")
 
         assertThat(parameter1a).isEqualTo(parameter1b)
         assertThat(parameter1a.hashCode()).isEqualTo(parameter1b.hashCode())
+
         assertThat(parameter1a).isNotEqualTo(parameter2)
         assertThat(parameter1a.hashCode()).isNotEqualTo(parameter2.hashCode())
     }
 
     @Test
-    fun appFunctionParameterMetadata_toAppFunctionParameterMetadataDocument_returnsCorrectDocument() {
-        val parameter =
-            AppFunctionParameterMetadata(
-                name = "parameter1",
-                isRequired = false,
-                dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
-            )
+    fun toAppFunctionParameterMetadataDocument_returnsCorrectDocument() {
+        val dataType = AppFunctionIntTypeMetadata(false)
+        val parameter = AppFunctionParameterMetadata("param1", false, dataType, "Test description")
 
         val document = parameter.toAppFunctionParameterMetadataDocument()
 
         assertThat(document)
             .isEqualTo(
                 AppFunctionParameterMetadataDocument(
-                    name = "parameter1",
+                    name = "param1",
                     isRequired = false,
                     dataTypeMetadata =
-                        AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false),
+                        AppFunctionDataTypeMetadataDocument(
+                            type = AppFunctionDataTypeMetadata.TYPE_INT,
+                            isNullable = false,
+                        ),
+                    description = "Test description",
                 )
             )
     }
 
     @Test
-    fun appFunctionParameterMetadataDocument_toAppFunctionParameterMetadata_returnsCorrectMetadata() {
-        val parameterMetadataDocument =
+    fun document_toAppFunctionParameterMetadata_returnsCorrectMetadata() {
+        val document =
             AppFunctionParameterMetadataDocument(
-                name = "parameter1",
+                name = "param1",
                 isRequired = false,
                 dataTypeMetadata =
-                    AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = false),
+                    AppFunctionDataTypeMetadataDocument(
+                        type = AppFunctionDataTypeMetadata.TYPE_INT,
+                        isNullable = false,
+                    ),
+                description = "Test description",
             )
 
-        val parameterMetadata = parameterMetadataDocument.toAppFunctionParameterMetadata()
+        val parameter = document.toAppFunctionParameterMetadata()
 
-        assertThat(parameterMetadata)
+        assertThat(parameter)
             .isEqualTo(
                 AppFunctionParameterMetadata(
-                    name = "parameter1",
+                    name = "param1",
                     isRequired = false,
-                    dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                    dataType = AppFunctionIntTypeMetadata(false),
+                    description = "Test description",
                 )
             )
     }

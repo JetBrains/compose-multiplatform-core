@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Permissions
 import androidx.camera.camera2.pipe.core.SystemTimeSource
@@ -35,7 +34,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Camera2MetadataCacheTest {
     @Test
     fun metadataIsCachedAndShimmed() = runTest {
@@ -82,6 +81,7 @@ internal class Camera2MetadataCacheTest {
         assertThat(metadata0.requestKeys).isNotNull()
         assertThat(metadata0.resultKeys).isNotNull()
         assertThat(metadata0.sessionKeys).isNotNull()
+        assertThat(metadata0.sessionCharacteristicsKeys).isNotNull()
         assertThat(metadata0.physicalCameraIds).isNotNull()
         assertThat(metadata0.physicalRequestKeys).isNotNull()
         assertThat(metadata0[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]).isEqualTo(2)
@@ -93,6 +93,7 @@ internal class Camera2MetadataCacheTest {
         assertThat(metadata1.requestKeys).isNotNull()
         assertThat(metadata1.resultKeys).isNotNull()
         assertThat(metadata1.sessionKeys).isNotNull()
+        assertThat(metadata1.sessionCharacteristicsKeys).isNotNull()
         assertThat(metadata1.physicalCameraIds).isNotNull()
         assertThat(metadata1.physicalRequestKeys).isNotNull()
         assertThat(metadata1[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]).isEqualTo(3)

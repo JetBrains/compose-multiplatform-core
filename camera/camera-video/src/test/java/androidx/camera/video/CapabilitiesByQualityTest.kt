@@ -24,7 +24,6 @@ import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_720P
 import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_HIGH
 import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_LOW
 import android.media.CamcorderProfile.QUALITY_LOW
-import android.os.Build
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
@@ -55,7 +54,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CapabilitiesByQualityTest(private val qualitySource: Int) {
 
     companion object {

@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.workaround
 
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.impl.EncoderProfilesProxy
@@ -58,7 +57,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class DefaultEncoderProfilesProviderTest {
 
     private val targetQualities = listOf(UHD, FHD, HD, SD)

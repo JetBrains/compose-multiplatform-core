@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress", "PrimitiveInCollection")
 
 package androidx.compose.runtime
 
@@ -683,8 +683,8 @@ internal class SlotTable : CompositionData, Iterable<CompositionGroup> {
  * An [Anchor] tracks a groups as its index changes due to other groups being inserted and removed
  * before it. If the group the [Anchor] is tracking is removed, directly or indirectly, [valid] will
  * return false. The current index of the group can be determined by passing either the [SlotTable]
- * or [SlotWriter] to [toIndexFor]. If a [SlotWriter] is active, it must be used instead of the
- * [SlotTable] as the anchor index could have shifted due to operations performed on the writer.
+ * or [] to [toIndexFor]. If a [SlotWriter] is active, it must be used instead of the [SlotTable] as
+ * the anchor index could have shifted due to operations performed on the writer.
  */
 internal class Anchor(loc: Int) {
     internal var location: Int = loc
@@ -1360,6 +1360,13 @@ internal class SlotWriter(
     fun groupObjectKey(index: Int): Any? {
         val address = groupIndexToAddress(index)
         return if (groups.hasObjectKey(address)) slots[groups.objectKeyIndex(address)] else null
+    }
+
+    fun isValid(index: Int): Boolean = groupIndexToAddress(index) * Group_Fields_Size < groups.size
+
+    fun hasObjectKey(index: Int): Boolean {
+        val address = groupIndexToAddress(index)
+        return groups.hasObjectKey(address)
     }
 
     /** Return the size of the group at [index]. */
@@ -2097,12 +2104,11 @@ internal class SlotWriter(
                     val address = dataIndexToDataAddress(slotIndex)
                     val value = slots[address]
                     if (value is RememberObserverHolder) {
-                        val after = value.after
-                        if (after != null && after.valid) {
+                        val after = value.afterGroupIndex
+                        if (after >= 0) {
                             // If the data is a remember holder that has an anchor, it must be
-                            // emitted
-                            // after the group it is anchored so defer it now.
-                            val index = anchorIndex(after)
+                            // emitted after the group it is anchored so defer it now.
+                            val index = childGroupAtIndex(child, after)
                             val afters =
                                 deferredAfters ?: mutableIntSetOf().also { deferredAfters = it }
                             val slots =
@@ -2147,6 +2153,18 @@ internal class SlotWriter(
                 }
             },
         )
+    }
+
+    private fun childGroupAtIndex(parent: Int, index: Int): Int {
+        val end = parent + groupSize(parent)
+        var childGroup = parent + 1
+        var current = 0
+        while (childGroup < end && current < index) {
+            val childAddress = groupIndexToAddress(childGroup)
+            childGroup += groups.groupSize(childAddress)
+            if (childGroup < end && !groups.hasObjectKey(childAddress)) current++
+        }
+        return childGroup
     }
 
     /**
@@ -3414,6 +3432,14 @@ private class SlotTableGroup(
             else -> null
         }
     }
+
+    override fun equals(other: Any?): Boolean =
+        other is SlotTableGroup &&
+            other.group == group &&
+            other.version == version &&
+            other.table == table
+
+    override fun hashCode(): Int = group + 31 * table.hashCode()
 }
 
 private data class SourceInformationSlotTableGroupIdentity(val parentIdentity: Any, val index: Int)
@@ -3426,6 +3452,10 @@ private class AnchoredGroupPath(val group: Int) : SourceInformationGroupPath() {
     override fun getIdentity(table: SlotTable): Any {
         return table.anchor(group)
     }
+
+    override fun equals(other: Any?): Boolean = other is AnchoredGroupPath && other.group == group
+
+    override fun hashCode(): Int = group * 31
 }
 
 private class RelativeGroupPath(val parent: SourceInformationGroupPath, val index: Int) :
@@ -3433,6 +3463,11 @@ private class RelativeGroupPath(val parent: SourceInformationGroupPath, val inde
     override fun getIdentity(table: SlotTable): Any {
         return SourceInformationSlotTableGroupIdentity(parent.getIdentity(table), index)
     }
+
+    override fun equals(other: Any?): Boolean =
+        other is RelativeGroupPath && other.parent == parent && other.index == index
+
+    override fun hashCode(): Int = index * 31 + parent.hashCode()
 }
 
 private class SourceInformationSlotTableGroup(
@@ -3460,6 +3495,21 @@ private class SourceInformationSlotTableGroup(
 
     override fun iterator(): Iterator<CompositionGroup> =
         SourceInformationGroupIterator(table, parent, sourceInformation, identityPath)
+
+    override fun equals(other: Any?): Boolean =
+        other is SourceInformationSlotTableGroup &&
+            // sourceInformation is intentionally omitted from this list as its value is implied
+            // by parent, table and identityPath. In other words, these form a key to the
+            // sourceInformation and it will never compare unequal when the others are equal.
+            other.parent == parent &&
+            other.table == table &&
+            other.identityPath == identityPath
+
+    override fun hashCode(): Int {
+        var result = parent * 31 + table.hashCode()
+        result = result * 31 + identityPath.hashCode()
+        return result
+    }
 }
 
 private class GroupIterator(val table: SlotTable, start: Int, val end: Int) :

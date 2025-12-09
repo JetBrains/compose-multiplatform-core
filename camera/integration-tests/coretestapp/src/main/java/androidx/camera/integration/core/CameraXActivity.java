@@ -54,6 +54,7 @@ import static java.util.Objects.requireNonNull;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -101,21 +102,22 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.camera2.internal.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk;
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailWithAutoFlashQuirk;
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFlashNotFireQuirk;
+import androidx.camera.camera2.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk;
+import androidx.camera.camera2.compat.quirk.ImageCaptureFailWithAutoFlashQuirk;
+import androidx.camera.camera2.compat.quirk.ImageCaptureFlashNotFireQuirk;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CameraPresenceListener;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DisplayOrientedMeteringPointFactory;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalLensFacing;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
@@ -140,6 +142,7 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect;
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil;
 import androidx.camera.video.ExperimentalPersistentRecording;
 import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.MediaStoreOutputOptions;
@@ -154,7 +157,7 @@ import androidx.camera.video.VideoCapabilities;
 import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.ScreenFlashView;
-import androidx.camera.view.impl.ZoomGestureDetector;
+import androidx.camera.viewfinder.core.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.math.MathUtils;
 import androidx.core.util.Consumer;
@@ -199,7 +202,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * resumed and when the device is rotated. The complex interactions between the camera and these
  * lifecycle events are handled internally by CameraX.
  */
-@SuppressLint("NullAnnotationGroup")
 public class CameraXActivity extends AppCompatActivity {
     private static final String TAG = "CameraXActivity";
     private static final String[] REQUIRED_PERMISSIONS;
@@ -469,6 +471,8 @@ public class CameraXActivity extends AppCompatActivity {
             } catch (IllegalStateException e) {
                 Log.e(TAG, "Unexpected decrement. Continuing");
             }
+        } else {
+            Log.d(TAG, mPreviewFrameCount.get() + " frames counted on preview.");
         }
     };
 
@@ -598,7 +602,6 @@ public class CameraXActivity extends AppCompatActivity {
         mSessionVideosUriSet.deleteAllUris();
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     @ImageCapture.CaptureMode
     int getCaptureMode() {
@@ -637,7 +640,7 @@ public class CameraXActivity extends AppCompatActivity {
 
                     Quirks deviceQuirks = CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION.equals(
                             getConfiguredCameraXCameraImplementation()) ? DeviceQuirks.all
-                            : androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.getAll();
+                            : androidx.camera.camera2.compat.quirk.DeviceQuirks.getAll();
                     Quirks cameraQuirks = ((CameraInfoInternal) cameraInfo).getCameraQuirks();
 
                     if (deviceQuirks.contains(CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.class)
@@ -709,7 +712,7 @@ public class CameraXActivity extends AppCompatActivity {
         getImageCapture().setFlashMode(FLASH_MODE_SCREEN);
     }
 
-    @SuppressLint({"MissingPermission", "NullAnnotationGroup"})
+    @SuppressLint("MissingPermission")
     @OptIn(markerClass = ExperimentalPersistentRecording.class)
     private void setUpRecordButton() {
         mRecordUi.getButtonRecord().setOnClickListener((view) -> {
@@ -1159,6 +1162,7 @@ public class CameraXActivity extends AppCompatActivity {
                 v -> switchCamera(mCameraSwitcher.getNextSelector()));
     }
 
+    @SuppressWarnings("ObjectToString") // Log.d with switchedCameraSelector
     private void switchCamera(@NonNull CameraSelector switchedCameraSelector) {
         Log.d(TAG,
                 "Current camera selector: " + mCurrentCameraSelector + " Try next camera selector: "
@@ -1361,7 +1365,7 @@ public class CameraXActivity extends AppCompatActivity {
         mButtonImageOutputFormat.setVisibility(visible);
     }
 
-    @SuppressLint({"NullAnnotationGroup", "RestrictedApiAndroidX"})
+    @SuppressLint("RestrictedApiAndroidX")
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     private void updateButtonsUi() {
         mRecordUi.setEnabled(mVideoToggle.isChecked());
@@ -1534,7 +1538,7 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressLint("NullAnnotationGroup")
+    @SuppressWarnings("RestrictedApiAndroidX")
     @OptIn(markerClass = ExperimentalLensFacing.class)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -1545,6 +1549,10 @@ public class CameraXActivity extends AppCompatActivity {
         closeAppIfCameraProviderMismatch(this.getIntent());
 
         setContentView(R.layout.activity_camera_xmain);
+
+        EdgeToEdgeUtil.enableEdgeToEdge(this, R.id.constraintLayout,
+                Collections.singletonList(R.id.top_buttons_layout));
+
         mFileWriterExecutorService = Executors.newSingleThreadExecutor();
         mImageCaptureExecutorService = Executors.newSingleThreadExecutor();
         mDisplaySupportedHighDynamicRanges = Collections.emptySet();
@@ -1711,6 +1719,10 @@ public class CameraXActivity extends AppCompatActivity {
             mInitializationIdlingResource.decrement();
             if (cameraProviderResult.hasProvider()) {
                 mCameraProvider = cameraProviderResult.getProvider();
+                requireNonNull(mCameraProvider).addCameraPresenceListener(
+                        CameraXExecutors.mainThreadExecutor(),
+                        new CameraPresenceChangeListener(CameraXActivity.this,
+                                mCameraIterateButton));
 
                 // Initialize CameraSelectorList
                 mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
@@ -1727,6 +1739,63 @@ public class CameraXActivity extends AppCompatActivity {
         });
 
         setupPermissions();
+    }
+
+    @SuppressWarnings("RestrictedApiAndroidX")
+    private class CameraPresenceChangeListener implements CameraPresenceListener {
+
+        private final Context mContext;
+        private final ImageButton mSwitchButton;
+
+        CameraPresenceChangeListener(@NonNull Context context,
+                @NonNull ImageButton switchButton) {
+            mContext = context;
+            mSwitchButton = switchButton;
+        }
+
+        @Override
+        public void onCamerasAdded(@NonNull Set<CameraIdentifier> cameraIdentifiers) {
+            // The Set contains all cameras that were just made available.
+            // This includes the full list on initial registration.
+            String message = cameraIdentifiers.size() + " camera(s) now available.";
+            Log.i(TAG, message + " IDs: " + cameraIdentifiers);
+            Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+
+            // Refresh the list of cameras for the UI switcher.
+            mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
+        }
+
+        @Override
+        public void onCamerasRemoved(@NonNull Set<CameraIdentifier> removedIdentifiers) {
+            String message = removedIdentifiers.size() + " camera(s) removed.";
+            Log.w(TAG, message + " IDs: " + removedIdentifiers);
+
+            boolean activeCameraWasRemoved = false;
+            // Assume getCameraInfo() returns the active CameraInfo, null if no camera is bound.
+            CameraInfo currentCameraInfo = getCameraInfo();
+
+            if (currentCameraInfo != null) {
+                // Check if the set of removed cameras contains our currently active camera.
+                if (removedIdentifiers.contains(currentCameraInfo.getCameraIdentifier())) {
+                    activeCameraWasRemoved = true;
+                }
+            }
+
+            // Always refresh the UI list with the new set of available cameras.
+            mCameraSwitcher.updateCameraInfos(mCameraProvider.getAvailableCameraInfos());
+
+            // If our active camera was removed, we must take action.
+            if (activeCameraWasRemoved) {
+                Log.w(TAG, "The active camera was removed! Triggering switch.");
+                Toast.makeText(mContext, "Active camera disconnected. Switching...",
+                        Toast.LENGTH_LONG).show();
+
+                // Programmatically "click" the switch button to select the next available camera.
+                mSwitchButton.performClick();
+            } else {
+                Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -2182,7 +2251,6 @@ public class CameraXActivity extends AppCompatActivity {
     /**
      * Binds use cases to the current lifecycle.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private Camera bindToLifecycleSafely(List<UseCase> useCases) {
         Log.d(TAG, "bindToLifecycleSafely: mDisableViewPort = " + mDisableViewPort
                 + ", mForceEnableStreamSharing = " + mForceEnableStreamSharing);
@@ -2273,11 +2341,12 @@ public class CameraXActivity extends AppCompatActivity {
             };
 
     @SuppressLint("NewApi")
+    @SuppressWarnings("FutureReturnValueIgnored") // getCameraControl().setTorchStrengthLevel()
     private void setupTorchStrengthSeeker() {
         if (mCamera.getCameraInfo().isTorchStrengthSupported()) {
             mTorchStrengthText.setVisibility(View.VISIBLE);
             mTorchStrengthText.setText(
-                    "L" + (mCamera.getCameraInfo().getTorchStrengthLevel().getValue()));
+                    "L" + mCamera.getCameraInfo().getTorchStrengthLevel().getValue());
 
             mTorchStrengthSeekBar.setVisibility(View.VISIBLE);
             mTorchStrengthSeekBar.setMin(1);
@@ -2936,7 +3005,6 @@ public class CameraXActivity extends AppCompatActivity {
         return isCamera2LegacyDevice(cameraInfo);
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static boolean isCamera2LegacyDevice(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
@@ -2944,7 +3012,6 @@ public class CameraXActivity extends AppCompatActivity {
         ) == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass =
             androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
     private static boolean isCameraPipeLegacyDevice(@NonNull CameraInfo cameraInfo) {
@@ -2962,13 +3029,11 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static @NonNull String getCamera2CameraId(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraId();
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass =
             androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
     private static @NonNull String getCameraPipeCameraId(@NonNull CameraInfo cameraInfo) {
@@ -3041,6 +3106,7 @@ public class CameraXActivity extends AppCompatActivity {
                 for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
                     if (Objects.equals(mLaunchCameraId, mCameraSelectorInfos.get(i).mCameraId)) {
                         mCurrentSelectorIndex = i;
+                        mLaunchCameraId = null;
                         break;
                     }
                 }
@@ -3050,6 +3116,7 @@ public class CameraXActivity extends AppCompatActivity {
                 for (int i = 0; i < mCameraSelectorInfos.size(); i++) {
                     if (targetLensFacing == mCameraSelectorInfos.get(i).mLensFacing) {
                         mCurrentSelectorIndex = i;
+                        mLaunchDirection = null;
                         break;
                     }
                 }

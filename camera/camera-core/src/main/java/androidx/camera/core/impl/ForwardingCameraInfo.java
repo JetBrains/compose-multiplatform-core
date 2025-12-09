@@ -21,18 +21,19 @@ import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.IntRange;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ExperimentalZeroShutterLag;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
 import org.jspecify.annotations.NonNull;
@@ -119,6 +120,19 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.getCameraState();
     }
 
+    @VisibleForTesting
+    @Override
+    public void addCameraStateListener(@NonNull Executor executor,
+            @NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.addCameraStateListener(executor, listener);
+    }
+
+    @VisibleForTesting
+    @Override
+    public void removeCameraStateListener(@NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.removeCameraStateListener(listener);
+    }
+
     @Override
     public @NonNull String getImplementationType() {
         return mCameraInfoInternal.getImplementationType();
@@ -127,6 +141,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public int getLensFacing() {
         return mCameraInfoInternal.getLensFacing();
+    }
+
+    @Override
+    public boolean isExternalCamera() {
+        return mCameraInfoInternal.isExternalCamera();
     }
 
     @Override
@@ -150,7 +169,6 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.getSupportedFrameRateRanges();
     }
 
-    @ExperimentalSessionConfig
     @Override
     public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
             @NonNull SessionConfig sessionConfig) {
@@ -299,5 +317,10 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     public void setCameraUseCaseAdapterProvider(
             @NonNull CameraUseCaseAdapterProvider cameraUseCaseAdapterProvider) {
         mCameraInfoInternal.setCameraUseCaseAdapterProvider(cameraUseCaseAdapterProvider);
+    }
+
+    @Override
+    public @NonNull Set<Integer> getAvailableCapabilities() {
+        return mCameraInfoInternal.getAvailableCapabilities();
     }
 }

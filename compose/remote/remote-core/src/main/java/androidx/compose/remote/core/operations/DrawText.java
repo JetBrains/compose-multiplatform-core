@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations;
 
 import static androidx.compose.remote.core.operations.Utils.floatToString;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -33,6 +34,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Draw Text */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DrawText extends PaintOperation implements VariableSupport {
     private static final int OP_CODE = Operations.DRAW_TEXT_RUN;
     private static final String CLASS_NAME = "DrawText";
@@ -48,7 +50,7 @@ public class DrawText extends PaintOperation implements VariableSupport {
     boolean mRtl = false;
 
     public DrawText(
-            int textID,
+            int textId,
             int start,
             int end,
             int contextStart,
@@ -56,7 +58,7 @@ public class DrawText extends PaintOperation implements VariableSupport {
             float x,
             float y,
             boolean rtl) {
-        mTextID = textID;
+        mTextID = textId;
         mStart = start;
         mEnd = end;
         mContextStart = contextStart;
@@ -145,7 +147,7 @@ public class DrawText extends PaintOperation implements VariableSupport {
      * Writes out the operation to the buffer
      *
      * @param buffer write the command to the buffer
-     * @param textID id of the text
+     * @param textId id of the text
      * @param start Start position
      * @param end end position
      * @param contextStart start of the context
@@ -156,7 +158,7 @@ public class DrawText extends PaintOperation implements VariableSupport {
      */
     public static void apply(
             @NonNull WireBuffer buffer,
-            int textID,
+            int textId,
             int start,
             int end,
             int contextStart,
@@ -165,7 +167,7 @@ public class DrawText extends PaintOperation implements VariableSupport {
             float y,
             boolean rtl) {
         buffer.start(Operations.DRAW_TEXT_RUN);
-        buffer.writeInt(textID);
+        buffer.writeInt(textId);
         buffer.writeInt(start);
         buffer.writeInt(end);
         buffer.writeInt(contextStart);

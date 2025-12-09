@@ -232,7 +232,7 @@ class FragmentReceiveResultTest {
         internal val resultReceiveLatch = arrayListOf(CountDownLatch(1), CountDownLatch(1))
         internal var onActivityResultCount = 0
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             hasResult.add(true)
             this.requestCode.add(requestCode)

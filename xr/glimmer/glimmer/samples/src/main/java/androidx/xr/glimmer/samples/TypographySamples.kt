@@ -37,7 +37,7 @@ fun TypographySample() {
     val typography = GlimmerTheme.typography
     VerticalList(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item { TypeItem("titleLarge", style = typography.titleLarge) }
         item { TypeItem("titleMedium", style = typography.titleMedium) }

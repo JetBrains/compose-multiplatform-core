@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.integration.impl
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import androidx.camera.camera2.pipe.FrameNumber
@@ -51,7 +50,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class EvCompControlTest {
     private val fakeUseCaseThreads by lazy {
         val executor = Executors.newSingleThreadExecutor()

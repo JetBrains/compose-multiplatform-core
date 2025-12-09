@@ -19,10 +19,10 @@ package androidx.camera.camera2.pipe.integration.config
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl
@@ -35,7 +35,6 @@ import androidx.camera.core.impl.DeferrableSurface
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
-import java.util.concurrent.CancellationException
 import javax.inject.Scope
 
 @Scope public annotation class UseCaseCameraScope
@@ -65,13 +64,16 @@ public abstract class UseCaseCameraModule {
 
 /** Dagger module for binding the [UseCase]'s to the [UseCaseCamera]. */
 @Module
-public class UseCaseCameraConfig(
+public data class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
-    private val sessionConfigAdapter: SessionConfigAdapter,
-    private val cameraStateAdapter: CameraStateAdapter,
-    private val cameraGraph: CameraGraph,
     private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
+    private val cameraGraphFactory: (CameraGraph.Config) -> CameraGraph,
+    public val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+    public val sessionConfigAdapter: SessionConfigAdapter,
+    public val cameraGraphConfig: CameraGraph.Config,
 ) {
+    public val cameraGraph: CameraGraph by lazy { cameraGraphFactory(cameraGraphConfig) }
+
     @UseCaseCameraScope
     @Provides
     public fun provideUseCaseList(): java.util.ArrayList<UseCase> {
@@ -103,39 +105,14 @@ public class UseCaseCameraConfig(
             cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
         }
 
-        Log.debug { "Prepare UseCaseCameraGraphConfig: $cameraGraph " }
-
-        // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and we
-        // will close the CameraGraph when that happens, and we cannot start a closed CameraGraph.
-        cameraGraph.start()
-
-        Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
-        if (sessionConfigAdapter.isSessionConfigValid()) {
-            useCaseSurfaceManager
-                .setupAsync(cameraGraph, sessionConfigAdapter, surfaceToStreamMap)
-                .invokeOnCompletion { throwable ->
-                    // Only show logs for error cases, ignore CancellationException since the
-                    // task could be cancelled by UseCaseSurfaceManager#stopAsync().
-                    if (throwable != null && throwable !is CancellationException) {
-                        Log.error(throwable) { "Surface setup error!" }
-                    }
-                }
-        } else {
-            Log.error { "Unable to create capture session due to conflicting configurations" }
-        }
-
-        return UseCaseGraphConfig(
-            graph = cameraGraph,
-            surfaceToStreamMap = surfaceToStreamMap,
-            cameraStateAdapter = cameraStateAdapter,
-        )
+        Camera2Logger.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
+        return UseCaseGraphConfig(graph = cameraGraph, surfaceToStreamMap = surfaceToStreamMap)
     }
 }
 
 public data class UseCaseGraphConfig(
     val graph: CameraGraph,
     val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
-    val cameraStateAdapter: CameraStateAdapter,
 ) {
     public fun getStreamIdsFromSurfaces(
         deferrableSurfaces: Collection<DeferrableSurface>

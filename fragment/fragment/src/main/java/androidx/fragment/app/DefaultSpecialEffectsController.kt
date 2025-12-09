@@ -641,7 +641,7 @@ internal class DefaultSpecialEffectsController(container: ViewGroup) :
                 object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(anim: Animator) {
                         container.endViewTransition(viewToAnimate)
-                        if (isHideOperation) {
+                        if (isHideOperation || operation.finalState === Operation.State.GONE) {
                             // Specifically for hide operations with Animator, we can't
                             // applyState until the Animator finishes
                             operation.finalState.applyState(viewToAnimate, container)

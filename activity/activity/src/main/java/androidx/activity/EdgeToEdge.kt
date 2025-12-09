@@ -23,14 +23,22 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.os.Build
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.Window
 import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+import androidx.activity.SystemBarStyle.Companion.dark
+import androidx.activity.SystemBarStyle.Companion.light
 import androidx.annotation.ColorInt
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.insets.ColorProtection
+import androidx.core.view.insets.ProtectionLayout
 
 // The light scrim color used in the platform API 29+
 // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/com/android/internal/policy/DecorView.java;drc=6ef0f022c333385dba2c294e35b8de544455bf19;l=142
@@ -75,23 +83,20 @@ fun ComponentActivity.enableEdgeToEdge(
     val navigationBarIsDark = navigationBarStyle.detectDarkMode(view.resources)
     val impl =
         Impl
-            ?: if (Build.VERSION.SDK_INT >= 30) {
-                EdgeToEdgeApi30()
-            } else if (Build.VERSION.SDK_INT >= 29) {
-                EdgeToEdgeApi29()
-            } else if (Build.VERSION.SDK_INT >= 28) {
-                EdgeToEdgeApi28()
-            } else if (Build.VERSION.SDK_INT >= 26) {
-                EdgeToEdgeApi26()
-            } else if (Build.VERSION.SDK_INT >= 23) {
-                EdgeToEdgeApi23()
-            } else
-                if (Build.VERSION.SDK_INT >= 21) {
-                        EdgeToEdgeApi21()
-                    } else {
-                        EdgeToEdgeBase()
-                    }
-                    .also { Impl = it }
+            ?: (if (Build.VERSION.SDK_INT >= 35) {
+                    EdgeToEdgeApi35()
+                } else if (Build.VERSION.SDK_INT >= 30) {
+                    EdgeToEdgeApi30()
+                } else if (Build.VERSION.SDK_INT >= 29) {
+                    EdgeToEdgeApi29()
+                } else if (Build.VERSION.SDK_INT >= 28) {
+                    EdgeToEdgeApi28()
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    EdgeToEdgeApi26()
+                } else {
+                    EdgeToEdgeApi23()
+                })
+                .also { Impl = it }
     impl.setUp(
         statusBarStyle,
         navigationBarStyle,
@@ -214,44 +219,13 @@ private interface EdgeToEdgeImpl {
     fun adjustLayoutInDisplayCutoutMode(window: Window)
 }
 
-private open class EdgeToEdgeBase : EdgeToEdgeImpl {
-
-    override fun setUp(
-        statusBarStyle: SystemBarStyle,
-        navigationBarStyle: SystemBarStyle,
-        window: Window,
-        view: View,
-        statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean,
-    ) {
-        // No edge-to-edge before SDK 21.
-    }
+private abstract class EdgeToEdgeBase : EdgeToEdgeImpl {
 
     override fun adjustLayoutInDisplayCutoutMode(window: Window) {
         // No display cutout before SDK 28.
     }
 }
 
-@RequiresApi(21)
-private class EdgeToEdgeApi21 : EdgeToEdgeBase() {
-
-    @Suppress("DEPRECATION")
-    @DoNotInline
-    override fun setUp(
-        statusBarStyle: SystemBarStyle,
-        navigationBarStyle: SystemBarStyle,
-        window: Window,
-        view: View,
-        statusBarIsDark: Boolean,
-        navigationBarIsDark: Boolean,
-    ) {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-    }
-}
-
-@RequiresApi(23)
 private class EdgeToEdgeApi23 : EdgeToEdgeBase() {
 
     @Suppress("DEPRECATION")
@@ -332,11 +306,60 @@ private open class EdgeToEdgeApi29 : EdgeToEdgeApi28() {
 }
 
 @RequiresApi(30)
-private class EdgeToEdgeApi30 : EdgeToEdgeApi29() {
+private open class EdgeToEdgeApi30 : EdgeToEdgeApi29() {
 
     @DoNotInline
     override fun adjustLayoutInDisplayCutoutMode(window: Window) {
         window.attributes.layoutInDisplayCutoutMode =
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+    }
+}
+
+@RequiresApi(35)
+private class EdgeToEdgeApi35 : EdgeToEdgeApi30() {
+
+    @Suppress("DEPRECATION")
+    @DoNotInline
+    override fun setUp(
+        statusBarStyle: SystemBarStyle,
+        navigationBarStyle: SystemBarStyle,
+        window: Window,
+        view: View,
+        statusBarIsDark: Boolean,
+        navigationBarIsDark: Boolean,
+    ) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // TODO(b/438675320): Remove the attributes check after `activity` depends on a version of
+        //                    `core` which doesn't have b/434987937.
+        // The attributes check is safe because when the window size is WRAP_CONTENT, DecorView
+        // would consume the system window insets, and the protection is not necessary.
+        val attrs = window.attributes
+        if (
+            (attrs.flags and FLAG_LAYOUT_IN_SCREEN) != 0 ||
+                attrs.width != WRAP_CONTENT ||
+                attrs.height != WRAP_CONTENT
+        ) {
+            window.statusBarColor = Color.TRANSPARENT
+            window.navigationBarColor = Color.TRANSPARENT
+            val statusBarColor = statusBarStyle.getScrimWithEnforcedContrast(statusBarIsDark)
+            val navBarColor = navigationBarStyle.getScrimWithEnforcedContrast(navigationBarIsDark)
+            (view as ViewGroup).addView(
+                ProtectionLayout(
+                    view.context,
+                    listOf(
+                        ColorProtection(WindowInsetsCompat.Side.TOP, statusBarColor),
+                        ColorProtection(WindowInsetsCompat.Side.LEFT, navBarColor),
+                        ColorProtection(WindowInsetsCompat.Side.RIGHT, navBarColor),
+                        ColorProtection(WindowInsetsCompat.Side.BOTTOM, navBarColor),
+                    ),
+                )
+            )
+        }
+        window.isNavigationBarContrastEnforced =
+            navigationBarStyle.nightMode == UiModeManager.MODE_NIGHT_AUTO
+        WindowInsetsControllerCompat(window, view).run {
+            isAppearanceLightStatusBars = !statusBarIsDark
+            isAppearanceLightNavigationBars = !navigationBarIsDark
+        }
     }
 }

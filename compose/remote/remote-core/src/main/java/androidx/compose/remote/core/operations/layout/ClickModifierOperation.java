@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Represents a click modifier + actions */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ClickModifierOperation extends PaintOperation
         implements Container,
                 ModifierOperation,
@@ -75,7 +77,7 @@ public class ClickModifierOperation extends PaintOperation
     }
 
     @Override
-    public CoreSemantics.Mode getMode() {
+    public CoreSemantics.@NonNull Mode getMode() {
         return CoreSemantics.Mode.MERGE;
     }
 
@@ -119,10 +121,6 @@ public class ClickModifierOperation extends PaintOperation
 
     @Override
     public void apply(@NonNull RemoteContext context) {
-        RootLayoutComponent root = context.getDocument().getRootLayoutComponent();
-        if (root != null) {
-            root.setHasTouchListeners(true);
-        }
         for (Operation op : mList) {
             if (op instanceof TextData) {
                 op.apply(context);
@@ -212,8 +210,10 @@ public class ClickModifierOperation extends PaintOperation
         locationInWindow[0] = 0f;
         locationInWindow[1] = 0f;
         component.getLocationInWindow(locationInWindow);
-        animateRipple(
-                x - locationInWindow[0], y - locationInWindow[1], context.getClock().millis());
+        if (context.isAnimationEnabled()) {
+            animateRipple(
+                    x - locationInWindow[0], y - locationInWindow[1], context.getClock().millis());
+        }
         for (Operation o : mList) {
             if (o instanceof ActionOperation) {
                 ((ActionOperation) o).runAction(context, document, component, x, y);

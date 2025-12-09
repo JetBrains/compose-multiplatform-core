@@ -16,7 +16,14 @@
 
 package androidx.text.vertical
 
+import android.graphics.Paint
 import android.text.Spanned
+import android.text.TextPaint
+import android.util.ArrayMap
+import java.text.BreakIterator
+import java.text.CharacterIterator
+import java.util.Locale
+import kotlin.concurrent.getOrSet
 
 /**
  * Iterates through spans of a specific type within a given range of a CharSequence.
@@ -99,4 +106,140 @@ internal inline fun CharSequence.forEachParagraph(
 
         paraStart = paraEnd
     }
+}
+
+/**
+ * Executes a block of code with a temporary applying scaling of the text size of a given
+ * [TextPaint].
+ */
+internal inline fun <T : Paint, R> withTempScale(
+    textPaint: T,
+    scale: Float,
+    crossinline block: () -> R,
+): R {
+    val originalSize = textPaint.textSize
+    textPaint.textSize *= scale
+    try {
+        return block()
+    } finally {
+        textPaint.textSize = originalSize
+    }
+}
+
+/**
+ * A [CharacterIterator] implementation that iterates over a substring of a [CharSequence].
+ *
+ * This class is used to provide a `CharacterIterator` for `BreakIterator` when working with a
+ * portion of a `CharSequence`.
+ *
+ * @param text The source `CharSequence`.
+ * @param start The starting index (inclusive) of the substring in the `text`.
+ * @param end The ending index (exclusive) of the substring in the `text`.
+ */
+internal class CharSequenceCharacterIterator(
+    private val text: CharSequence,
+    private val start: Int,
+    private val end: Int,
+) : CharacterIterator {
+
+    private var index: Int = start
+
+    override fun clone(): Any {
+        val it = CharSequenceCharacterIterator(text, start, end)
+        it.index = index
+        return it
+    }
+
+    override fun current(): Char {
+        return if (index == end) CharacterIterator.DONE else text[index]
+    }
+
+    override fun first(): Char {
+        index = start
+        return current()
+    }
+
+    override fun getBeginIndex(): Int = start
+
+    override fun getEndIndex(): Int = end
+
+    override fun getIndex(): Int = index
+
+    override fun last(): Char {
+        return if (start == end) {
+            index = end
+            CharacterIterator.DONE
+        } else {
+            index = end - 1
+            text[index]
+        }
+    }
+
+    override fun next(): Char {
+        index++
+        return if (index >= end) {
+            index = end
+            CharacterIterator.DONE
+        } else {
+            text[index]
+        }
+    }
+
+    override fun previous(): Char {
+        return if (index <= start) {
+            CharacterIterator.DONE
+        } else {
+            index--
+            text[index]
+        }
+    }
+
+    override fun setIndex(pos: Int): Char {
+        return if (pos in start..end) {
+            index = pos
+            current()
+        } else {
+            throw IllegalArgumentException("index out of range")
+        }
+    }
+}
+
+private val sGraphemeIteratorPool = ThreadLocal<ArrayMap<Locale, BreakIterator>>()
+
+private fun acquireGraphemeIterator(locale: Locale): BreakIterator {
+    val map = sGraphemeIteratorPool.getOrSet { ArrayMap() }
+    val pooled = map[locale]
+    if (pooled != null) {
+        map[locale] = null
+        return pooled
+    } else {
+        return BreakIterator.getCharacterInstance(locale)
+    }
+}
+
+private fun releaseGraphemeIterator(locale: Locale, iterator: BreakIterator) {
+    val map = sGraphemeIteratorPool.getOrSet { ArrayMap() }
+    if (map[locale] == null) {
+        map[locale] = iterator
+    }
+}
+
+internal inline fun CharSequence.forEachGrapheme(
+    start: Int,
+    end: Int,
+    locale: Locale,
+    crossinline block: (Int, Int) -> Unit,
+) {
+    val it = acquireGraphemeIterator(locale)
+    it.text = CharSequenceCharacterIterator(this, start, end)
+
+    var grStart = start
+    var grNext = it.following(grStart)
+    while (grNext != BreakIterator.DONE) {
+        block(grStart, grNext)
+        grStart = grNext
+        grNext = it.next()
+    }
+
+    releaseGraphemeIterator(locale, it)
 }

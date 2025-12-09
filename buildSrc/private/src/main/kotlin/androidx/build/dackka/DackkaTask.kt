@@ -68,11 +68,6 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
     @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
     abstract val frameworkSamplesDir: DirectoryProperty
 
-    // Directory containing the code samples derived via the old method. This will be removed
-    // as soon as all libraries have been published with samples. b/329424152
-    @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
-    abstract val samplesDeprecatedDir: DirectoryProperty
-
     // Directory containing the code samples for non-KMP libraries
     @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
     abstract val samplesJvmDir: DirectoryProperty
@@ -151,6 +146,14 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
     var includeVersionMetadata: Boolean = true
 
     private fun sourceSets(): List<DokkaInputModels.SourceSet> {
+        fun getSampleSourceFileCollection(): FileCollection {
+            // Filter out non-existent directories as Dackka crashes if you pass it in b/332262321
+            val dirs =
+                listOf(samplesJvmDir, samplesKmpDir, frameworkSamplesDir).mapNotNull {
+                    if (it.get().asFile.exists()) it else null
+                }
+            return objects.fileCollection().from(dirs)
+        }
         val externalDocs =
             externalLinks.map { (name, url) ->
                 DokkaInputModels.GlobalDocsLink(
@@ -191,14 +194,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                 // samples are in common
                                 samples =
                                     if (analysisPlatform == DokkaAnalysisPlatform.COMMON) {
-                                        objects
-                                            .fileCollection()
-                                            .from(
-                                                samplesDeprecatedDir,
-                                                samplesJvmDir,
-                                                samplesKmpDir,
-                                                frameworkSamplesDir.get().asFile,
-                                            )
+                                        getSampleSourceFileCollection()
                                     } else {
                                         objects.fileCollection()
                                     },
@@ -222,15 +218,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 displayName = "main",
                 analysisPlatform = "jvm",
                 sourceRoots = objects.fileCollection().from(jvmSourcesDir),
-                samples =
-                    objects
-                        .fileCollection()
-                        .from(
-                            samplesDeprecatedDir,
-                            samplesJvmDir,
-                            samplesKmpDir,
-                            frameworkSamplesDir.get().asFile,
-                        ),
+                samples = getSampleSourceFileCollection(),
                 includes = objects.fileCollection().from(includesFiles(jvmSourcesDir.get().asFile)),
                 classpath = dependenciesClasspath,
                 externalDocumentationLinks = externalDocs,

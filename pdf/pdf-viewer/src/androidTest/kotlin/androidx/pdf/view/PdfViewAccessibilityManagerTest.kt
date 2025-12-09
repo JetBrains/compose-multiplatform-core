@@ -18,7 +18,6 @@ package androidx.pdf.view
 
 import android.graphics.RectF
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.pdf.R
 import androidx.pdf.view.PdfViewAccessibilityManager.Companion.FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET
@@ -50,18 +49,16 @@ class PdfViewAccessibilityManagerTest {
     fun setupPdfView() {
         // Setup the test activity to host the PdfView
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container =
-                FrameLayout(activity).apply {
-                    addView(
-                        PdfView(activity).apply {
-                            isFormFillingEnabled = true
-                            this.pdfDocument = pdfDocument
-                            id = PDF_VIEW_ID
-                        },
-                        ViewGroup.LayoutParams(100, 1000),
-                    )
-                }
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        isFormFillingEnabled = true
+                        this.pdfDocument = pdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(100, 1000),
+                )
+            }
         }
 
         activityScenario =
@@ -195,10 +192,13 @@ class PdfViewAccessibilityManagerTest {
             }
 
         val topPageMargin = pdfView.context.getDimensions(R.dimen.top_page_margin)
-        val pageSpacing = pdfView.context.getDimensions(R.dimen.page_spacing)
+        val pageSpacing = pdfView.context.getDimensions(R.dimen.vertical_page_spacing)
 
         // Wait until layout completes for the required pages
-        pdfDocument.waitForLayout(untilPage = 0)
+        pdfDocument.waitForLayout(untilPage = 5)
+
+        // Hide the fast scroller to prevent it from overlapping with the bounds of other views.
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
 
         val testCases =
             listOf(

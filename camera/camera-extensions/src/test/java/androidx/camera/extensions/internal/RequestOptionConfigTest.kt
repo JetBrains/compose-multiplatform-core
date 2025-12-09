@@ -17,7 +17,6 @@
 package androidx.camera.extensions.internal
 
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import androidx.camera.core.impl.Config.Option
 import androidx.camera.core.impl.MutableOptionsBundle
 import com.google.common.truth.Truth.assertThat
@@ -30,7 +29,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [Config.ALL_SDKS],
     instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
 )
 class RequestOptionConfigTest {

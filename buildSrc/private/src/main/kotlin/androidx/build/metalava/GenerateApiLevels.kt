@@ -90,8 +90,10 @@ internal val Project.versionMetadataUsage: Usage
 internal fun Project.registerVersionMetadataComponent(
     generateApiTask: TaskProvider<GenerateApiTask>
 ) {
-    configurations.register("libraryVersionMetadata") { configuration ->
-        configuration.isVisible = false
+    // This needs to non-eager because we call registerAsComponentForPublishing
+    // which has an enforced timing when we are allowed to add new artifacts
+    // https://github.com/gradle/gradle/issues/34570
+    configurations.create("libraryVersionMetadata") { configuration ->
         configuration.isCanBeResolved = false
 
         configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.versionMetadataUsage)

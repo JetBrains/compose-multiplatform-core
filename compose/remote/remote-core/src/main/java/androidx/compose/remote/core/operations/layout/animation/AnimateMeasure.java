@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout.animation;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.RemoteContext;
@@ -33,15 +34,16 @@ import org.jspecify.annotations.NonNull;
  *
  * <p>Handles position, size and visibility
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnimateMeasure {
-    private long mStartTime;
+    private final long mStartTime;
     private final @NonNull Component mComponent;
     private final @NonNull ComponentMeasure mOriginal;
     private final @NonNull ComponentMeasure mTarget;
     private float mDuration;
     private float mDurationVisibilityChange = mDuration;
-    private AnimationSpec.ANIMATION mEnterAnimation = AnimationSpec.ANIMATION.FADE_IN;
-    private AnimationSpec.ANIMATION mExitAnimation = AnimationSpec.ANIMATION.FADE_OUT;
+    private AnimationSpec.@NonNull ANIMATION mEnterAnimation = AnimationSpec.ANIMATION.FADE_IN;
+    private AnimationSpec.@NonNull ANIMATION mExitAnimation = AnimationSpec.ANIMATION.FADE_OUT;
     private int mMotionEasingType = GeneralEasing.CUBIC_STANDARD;
     private int mVisibilityEasingType = GeneralEasing.CUBIC_ACCELERATE;
 
@@ -66,8 +68,8 @@ public class AnimateMeasure {
             @NonNull ComponentMeasure target,
             float duration,
             float durationVisibilityChange,
-            AnimationSpec.ANIMATION enterAnimation,
-            AnimationSpec.ANIMATION exitAnimation,
+            AnimationSpec.@NonNull ANIMATION enterAnimation,
+            AnimationSpec.@NonNull ANIMATION exitAnimation,
             int motionEasingType,
             int visibilityEasingType) {
         this.mStartTime = startTime;

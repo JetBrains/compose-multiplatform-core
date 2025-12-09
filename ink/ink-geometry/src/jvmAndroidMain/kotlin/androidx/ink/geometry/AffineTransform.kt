@@ -44,7 +44,7 @@ import kotlin.math.abs
  * B*A), and the left-hand transformation is composed "after" the right hand transformation. E.g.,
  * if you have:
  * ```
- * val rotate = ImmutableAffineTransform.rotate(Angle.degreesToRadians(45))
+ * val rotate = ImmutableAffineTransform.rotateDegrees(45f)
  * val translate = ImmutableAffineTransform.translate(Vec(10, 0))
  * ```
  *
@@ -69,11 +69,11 @@ public abstract class AffineTransform internal constructor() {
     public abstract val m21: Float
 
     /**
-     * Returns an immutable copy of this object. This will return itself if called on an immutable
-     * instance.
+     * Returns an immutable equivalent of this object. This will return itself if called on an
+     * immutable instance.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract fun asImmutable(): ImmutableAffineTransform
+    public abstract fun toImmutable(): ImmutableAffineTransform
 
     /**
      * Returns the inverse of the [AffineTransform].
@@ -83,8 +83,8 @@ public abstract class AffineTransform internal constructor() {
      *
      * @throws IllegalArgumentException if the [AffineTransform] cannot be inverted.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeInverse(): ImmutableAffineTransform {
+        if (this == IDENTITY) return IDENTITY
         val determinant = m00 * m11 - m10 * m01
         require(determinant != 0F) {
             "The inverse of the AffineTransform cannot be found because the determinant is 0."
@@ -142,8 +142,8 @@ public abstract class AffineTransform internal constructor() {
      * Performance-sensitive code should use the [applyTransform] overload that takes a
      * pre-allocated [MutableVec], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun applyTransform(point: Vec): ImmutableVec {
+        if (this == IDENTITY) return point.toImmutable()
         return ImmutableVec(applyTransformX(point.x, point.y), applyTransformY(point.x, point.y))
     }
 
@@ -176,8 +176,8 @@ public abstract class AffineTransform internal constructor() {
      * Performance-sensitive code should use the [applyTransform] overload that takes a
      * pre-allocated [MutableSegment], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun applyTransform(segment: Segment): ImmutableSegment {
+        if (this == IDENTITY) return segment.toImmutable()
         return ImmutableSegment(applyTransform(segment.start), applyTransform(segment.end))
     }
 
@@ -199,8 +199,8 @@ public abstract class AffineTransform internal constructor() {
      * Performance-sensitive code should use the [applyTransform] overload that takes a
      * pre-allocated [MutableTriangle], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun applyTransform(triangle: Triangle): ImmutableTriangle {
+        if (this == IDENTITY) return triangle.toImmutable()
         return ImmutableTriangle(
             applyTransform(triangle.p0),
             applyTransform(triangle.p1),
@@ -231,7 +231,6 @@ public abstract class AffineTransform internal constructor() {
      * Performance-sensitive code should use the [applyTransform] overload that takes a
      * pre-allocated [MutableParallelogram], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun applyTransform(box: Box): ImmutableParallelogram {
         return AffineTransformNative.createTransformedParallelogram(
             affineTransformA = m00,
@@ -244,7 +243,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
             parallelogramHeight = box.height,
-            parallelogramRotation = 0f,
+            parallelogramRotationDegrees = 0f,
             parallelogramShearFactor = 0f,
         )
     }
@@ -269,7 +268,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
             parallelogramHeight = box.height,
-            parallelogramRotation = 0f,
+            parallelogramRotationDegrees = 0f,
             parallelogramShearFactor = 0f,
             out = outParallelogram,
         )
@@ -283,8 +282,8 @@ public abstract class AffineTransform internal constructor() {
      * Performance-sensitive code should use the [applyTransform] overload that takes a
      * pre-allocated [MutableParallelogram], so that instance can be reused across multiple calls.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun applyTransform(parallelogram: Parallelogram): ImmutableParallelogram {
+        if (this == IDENTITY) return parallelogram.toImmutable()
         return AffineTransformNative.createTransformedParallelogram(
             affineTransformA = m00,
             affineTransformB = m10,
@@ -296,8 +295,8 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramRotation = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramRotationDegrees = parallelogram.rotationDegrees,
+            parallelogramShearFactor = parallelogram.skew,
         )
     }
 
@@ -321,8 +320,8 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramRotation = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramRotationDegrees = parallelogram.rotationDegrees,
+            parallelogramShearFactor = parallelogram.skew,
             out = outParallelogram,
         )
         return outParallelogram
@@ -360,17 +359,17 @@ public abstract class AffineTransform internal constructor() {
      * Compares this [AffineTransform] with [other], and returns true if each component of the
      * transform matrix is within [tolerance] of the corresponding component of [other].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun isAlmostEqual(
         other: AffineTransform,
         @FloatRange(from = 0.0) tolerance: Float,
     ): Boolean =
-        abs(m00 - other.m00) < tolerance &&
-            abs(m10 - other.m10) < tolerance &&
-            abs(m20 - other.m20) < tolerance &&
-            abs(m01 - other.m01) < tolerance &&
-            abs(m11 - other.m11) < tolerance &&
-            abs(m21 - other.m21) < tolerance
+        this === other ||
+            (abs(m00 - other.m00) < tolerance &&
+                abs(m10 - other.m10) < tolerance &&
+                abs(m20 - other.m20) < tolerance &&
+                abs(m01 - other.m01) < tolerance &&
+                abs(m11 - other.m11) < tolerance &&
+                abs(m21 - other.m21) < tolerance)
 
     public companion object {
         /**
@@ -420,7 +419,7 @@ public abstract class AffineTransform internal constructor() {
          * applied after the [rhs] transform; i.e., after calling this method, [output] contains a
          * transform equivalent to applying [rhs], then [lhs].
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+        @JvmStatic
         public fun multiply(
             lhs: AffineTransform,
             rhs: AffineTransform,
@@ -455,7 +454,7 @@ private object AffineTransformNative {
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
         parallelogramHeight: Float,
-        parallelogramRotation: Float,
+        parallelogramRotationDegrees: Float,
         parallelogramShearFactor: Float,
         out: MutableParallelogram,
     )
@@ -472,7 +471,7 @@ private object AffineTransformNative {
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
         parallelogramHeight: Float,
-        parallelogramRotation: Float,
+        parallelogramRotationDegrees: Float,
         parallelogramShearFactor: Float,
     ): ImmutableParallelogram
 }

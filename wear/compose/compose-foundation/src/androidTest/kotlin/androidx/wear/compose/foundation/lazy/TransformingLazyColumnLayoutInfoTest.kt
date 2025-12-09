@@ -35,6 +35,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformingLazyColumnLayoutInfoTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private var itemSizePx: Int = 50
     private var itemSizeDp: Dp = Dp.Infinity
@@ -258,10 +259,32 @@ class TransformingLazyColumnLayoutInfoTest {
             }
         }
 
-        rule.runOnIdle { runBlocking { state.scrollToItem(2, scrollOffset = -10) } }
+        rule.runOnIdle { runBlocking { state.scrollToItem(2, scrollOffset = 10) } }
         rule.runOnIdle {
             state.layoutInfo.assertVisibleItems(count = 4, startIndex = 1, startOffset = -10)
         }
+    }
+
+    @Test
+    fun reverseLayout_isReportedCorrectly() {
+        lateinit var state: TransformingLazyColumnState
+        var reverseLayout by mutableStateOf(false)
+
+        rule.setContent {
+            TransformingLazyColumn(
+                state = rememberTransformingLazyColumnState().also { state = it },
+                reverseLayout = reverseLayout,
+            ) {
+                items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.reverseLayout).isFalse()
+            reverseLayout = true
+        }
+
+        rule.runOnIdle { assertThat(state.layoutInfo.reverseLayout).isTrue() }
     }
 
     private fun TransformingLazyColumnLayoutInfo.assertVisibleItems(

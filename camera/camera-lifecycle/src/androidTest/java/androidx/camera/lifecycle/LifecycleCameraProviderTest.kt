@@ -35,7 +35,6 @@ import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
@@ -56,7 +55,6 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class LifecycleCameraProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -85,8 +83,8 @@ class LifecycleCameraProviderTest(
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val lifecycleOwner1 = FakeLifecycleOwner()
-    private val lifecycleOwner2 = FakeLifecycleOwner()
+    private lateinit var lifecycleOwner1: FakeLifecycleOwner
+    private lateinit var lifecycleOwner2: FakeLifecycleOwner
     private val preview =
         Preview.Builder().build().apply {
             instrumentation.runOnMainSync {
@@ -128,8 +126,10 @@ class LifecycleCameraProviderTest(
                     )
             }
         }
-        lifecycleOwner1.startAndResume()
-        lifecycleOwner2.startAndResume()
+        instrumentation.runOnMainSync {
+            lifecycleOwner1 = FakeLifecycleOwner().apply { startAndResume() }
+            lifecycleOwner2 = FakeLifecycleOwner().apply { startAndResume() }
+        }
     }
 
     @After
@@ -249,20 +249,23 @@ class LifecycleCameraProviderTest(
     @Test
     fun shutdown_onlyRemoveNecessaryCamerasFromRepository() {
         // Arrange.
-        val repository = LifecycleCameraRepository.getInstance()
-        val fakeCamera =
-            repository.createLifecycleCamera(
-                FakeLifecycleOwner(),
-                CameraUseCaseAdapter(
-                    FakeCamera("2"),
-                    FakeCameraCoordinator(),
-                    StreamSpecsCalculatorImpl(
+        val repository = LifecycleCameraRepositories.getInstance()
+        var fakeCamera: LifecycleCamera? = null
+        instrumentation.runOnMainSync {
+            fakeCamera =
+                repository.createLifecycleCamera(
+                    FakeLifecycleOwner(),
+                    CameraUseCaseAdapter(
+                        FakeCamera("2"),
+                        FakeCameraCoordinator(),
+                        StreamSpecsCalculatorImpl(
+                            FakeUseCaseConfigFactory(),
+                            FakeCameraDeviceSurfaceManager(),
+                        ),
                         FakeUseCaseConfigFactory(),
-                        FakeCameraDeviceSurfaceManager(),
                     ),
-                    FakeUseCaseConfigFactory(),
-                ),
-            )
+                )
+        }
 
         // Act: Bind to a provider then shut it down.
         instrumentation.runOnMainSync {

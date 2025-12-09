@@ -92,7 +92,6 @@ import kotlin.math.roundToInt
  * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
  */
 @OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ShortNavigationBar(
     modifier: Modifier = Modifier,
@@ -124,11 +123,10 @@ fun ShortNavigationBar(
 object DefaultShortNavigationBarOverride : ShortNavigationBarOverride {
     @Composable
     override fun ShortNavigationBarOverrideScope.ShortNavigationBar() {
-        Surface(color = containerColor, contentColor = contentColor) {
+        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
             Layout(
                 modifier =
-                    modifier
-                        .windowInsetsPadding(windowInsets)
+                    Modifier.windowInsetsPadding(windowInsets)
                         .defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)
                         .selectableGroup(),
                 content = content,
@@ -210,7 +208,6 @@ value class ShortNavigationBarArrangement private constructor(private val value:
  *   preview the item in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ShortNavigationBarItem(
     selected: Boolean,
@@ -262,7 +259,6 @@ fun ShortNavigationBarItem(
 }
 
 /** Defaults used in [ShortNavigationBar]. */
-@ExperimentalMaterial3ExpressiveApi
 object ShortNavigationBarDefaults {
     /** Default container color for a short navigation bar. */
     val containerColor: Color
@@ -286,7 +282,6 @@ object ShortNavigationBarDefaults {
 }
 
 /** Defaults used in [ShortNavigationBarItem]. */
-@ExperimentalMaterial3ExpressiveApi
 object ShortNavigationBarItemDefaults {
     /**
      * Creates a [NavigationItemColors] with the provided colors according to the Material

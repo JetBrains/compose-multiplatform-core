@@ -96,7 +96,7 @@ class IntListTest {
     fun joinToString() {
         assertEquals("${1}, ${2}, ${3}, ${4}, ${5}", list.joinToString())
         assertEquals(
-            "x${1}, ${2}, ${3}...",
+            "x${1}, ${2}, ${3}, ...y",
             list.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -104,7 +104,7 @@ class IntListTest {
             list.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it.toInt()) {
                     1 -> "one"

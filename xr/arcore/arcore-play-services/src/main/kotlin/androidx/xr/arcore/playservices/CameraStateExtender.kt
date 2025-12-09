@@ -16,11 +16,13 @@
 
 package androidx.xr.arcore.playservices
 
+import android.os.Build
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Runtime
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Coordinates2d
 import com.google.ar.core.TrackingState as ARCoreTrackingState
@@ -42,8 +44,10 @@ internal class CameraStateExtender : StateExtender {
 
     internal lateinit var perceptionManager: ArCorePerceptionManager
 
-    override fun initialize(runtime: Runtime) {
-        perceptionManager = runtime.perceptionManager as ArCorePerceptionManager
+    override fun initialize(runtimes: List<JxrRuntime>) {
+        perceptionManager =
+            runtimes.filterIsInstance<PerceptionRuntime>().first().perceptionManager
+                as ArCorePerceptionManager
     }
 
     override suspend fun extend(coreState: CoreState) {
@@ -80,7 +84,16 @@ internal class CameraStateExtender : StateExtender {
 
     private fun getCameraState(coreState: CoreState): CameraState {
         val camera = perceptionManager._latestFrame.camera
-        if (camera.trackingState == ARCoreTrackingState.TRACKING) {
+
+        /**
+         * When using the front-facing camera in ARCore 1.x, the Camera's TrackingState will always
+         * be PAUSED, so in that case we need to ignore trackingState and populate the rest of the
+         * values anyway, since an AR feature like FaceMesh tracking is likely being done.
+         */
+        if (
+            camera.trackingState == ARCoreTrackingState.TRACKING ||
+                perceptionManager.usingFrontFacingCamera
+        ) {
             val projectionMatrixData = FloatArray(16)
             camera.getProjectionMatrix(
                 projectionMatrixData,
@@ -97,7 +110,8 @@ internal class CameraStateExtender : StateExtender {
                 camera.displayOrientedPose.toRuntimePose(),
                 Matrix4(projectionMatrixData),
                 Matrix4(viewMatrixData),
-                perceptionManager._latestFrame.hardwareBuffer,
+                if (Build.VERSION.SDK_INT >= 27) perceptionManager._latestFrame.hardwareBuffer
+                else null,
                 getTransformCoordinates2DFunction(),
             )
         } else {

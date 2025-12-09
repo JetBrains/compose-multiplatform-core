@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.Cameraswitch
@@ -46,11 +45,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role.Companion.RadioButton
@@ -77,23 +76,24 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel()) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LifecycleStartEffect(Unit) {
-        viewModel.init(context.applicationContext, lifecycleOwner)
+        viewModel.setupCamera(context.applicationContext, lifecycleOwner)
         onStopOrDispose {}
     }
 
     ContentScreen(
         isRearCamera = viewModel.isRearCamera.collectAsStateWithLifecycle().value,
-        isVideoMode = viewModel.isVideoMode.collectAsStateWithLifecycle().value,
+        isVideoOnlyMode = viewModel.isVideoOnlyMode.collectAsStateWithLifecycle().value,
         featureUis = viewModel.featureUiList.collectAsStateWithLifecycle().value,
         useCaseDetails = viewModel.useCaseDetails.collectAsStateWithLifecycle().value,
         onToggleCamera = { viewModel.toggleCamera(lifecycleOwner) },
         onCapture = { viewModel.capture(context) },
+        onRecord = { viewModel.record(context) },
         onToggleVideoMode = { viewModel.toggleVideoMode(lifecycleOwner) },
         onSurfaceProviderAvailable = viewModel::setSurfaceProvider,
         onFeatureUpdated = { featureUi, newValueIndex ->
             viewModel.updateFeature(featureUi, newValueIndex, lifecycleOwner)
         },
-        onReset = { viewModel.resetFeatureCombination(lifecycleOwner) },
+        onReset = { viewModel.resetUseCasesAndFeatureCombo(lifecycleOwner) },
     )
 }
 
@@ -101,11 +101,12 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel()) {
 @Composable
 fun ContentScreen(
     isRearCamera: Boolean,
-    isVideoMode: Boolean,
+    isVideoOnlyMode: Boolean,
     featureUis: List<FeatureUi>,
     useCaseDetails: String,
     onToggleCamera: () -> Unit,
     onCapture: () -> Unit,
+    onRecord: () -> Unit,
     onToggleVideoMode: () -> Unit,
     onSurfaceProviderAvailable: (SurfaceProvider) -> Unit,
     onFeatureUpdated: (FeatureUi, Int) -> Unit,
@@ -127,7 +128,7 @@ fun ContentScreen(
         FeatureCombinationRow(
             modifier =
                 Modifier.fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.75f))
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.75f))
                     .align(Alignment.TopCenter),
             featureList = featureUis,
             onFeatureUpdated = onFeatureUpdated,
@@ -135,7 +136,8 @@ fun ContentScreen(
 
         Column(
             modifier =
-                Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f))
+                Modifier.align(Alignment.BottomCenter)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.75f))
         ) {
             UseCasesAndResetRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -146,9 +148,10 @@ fun ContentScreen(
             CameraControlsRow(
                 modifier = Modifier.fillMaxWidth(),
                 isRearCamera = isRearCamera,
-                isVideoMode = isVideoMode,
+                isVideoOnlyMode = isVideoOnlyMode,
                 onToggleCamera = onToggleCamera,
                 onCapture = onCapture,
+                onRecord = onRecord,
                 onToggleVideoMode = onToggleVideoMode,
             )
         }
@@ -198,9 +201,9 @@ fun FeatureCombinationRow(
                                 text = value,
                                 color =
                                     if (!feature.unsupportedValues.contains(value)) {
-                                        MaterialTheme.colorScheme.primary
+                                        MaterialTheme.colorScheme.onBackground
                                     } else {
-                                        Color.Gray
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38F)
                                     },
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(start = 4.dp),
@@ -217,9 +220,10 @@ fun FeatureCombinationRow(
 fun CameraControlsRow(
     modifier: Modifier = Modifier,
     isRearCamera: Boolean,
-    isVideoMode: Boolean,
+    isVideoOnlyMode: Boolean,
     onToggleCamera: () -> Unit,
     onCapture: () -> Unit,
+    onRecord: () -> Unit,
     onToggleVideoMode: () -> Unit,
 ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -243,19 +247,18 @@ fun CameraControlsRow(
             )
         }
 
-        IconButton(modifier = Modifier.padding(16.dp), onClick = onCapture) {
-            Icon(
-                imageVector = Icons.Default.Camera,
-                contentDescription = stringResource(R.string.capture),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(54.dp),
-            )
+        if (!isVideoOnlyMode) {
+            TextButton(modifier = Modifier.padding(16.dp), onClick = onCapture) {
+                Text(text = "Capture")
+            }
         }
+
+        TextButton(modifier = Modifier.padding(16.dp), onClick = onRecord) { Text(text = "Record") }
 
         IconButton(modifier = Modifier.padding(16.dp), onClick = onToggleVideoMode) {
             Icon(
                 imageVector =
-                    if (isVideoMode) Icons.Default.Videocam else Icons.Default.PhotoCamera,
+                    if (isVideoOnlyMode) Icons.Default.Videocam else Icons.Default.PhotoCamera,
                 contentDescription = stringResource(R.string.toggle_photo_video),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(54.dp),

@@ -20,16 +20,18 @@ import android.os.Build
 import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlin.test.assertFailsWith
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,11 +46,11 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = 100L
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType =
-                    AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = isNullable)
+                valueType = AppFunctionLongTypeMetadata(isNullable = isNullable)
             )
 
-        val returnValue = responseMetadata.unsafeBuildReturnValue(result)
+        val returnValue =
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
 
         assertThat(returnValue.getLong(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE))
             .isEqualTo(100L)
@@ -58,12 +60,10 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
     fun testUnsafeBuildExecuteAppFunctionResponse_buildNonNullSingleResponse_wrongResultType() {
         val result: Double = 5.0
         val responseMetadata =
-            AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-            )
+            AppFunctionResponseMetadata(valueType = AppFunctionLongTypeMetadata(isNullable = false))
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
-            responseMetadata.unsafeBuildReturnValue(result)
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
         }
     }
 
@@ -72,11 +72,11 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
+                valueType = AppFunctionDoubleTypeMetadata(isNullable = false)
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
-            responseMetadata.unsafeBuildReturnValue(result)
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
         }
     }
 
@@ -85,10 +85,11 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
         val result = null
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
-        val returnValue = responseMetadata.unsafeBuildReturnValue(result)
+        val returnValue =
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
 
         assertThat(returnValue.getString(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE))
             .isNull()
@@ -103,16 +104,13 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_DOUBLE,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                         isNullable = isNullable,
                     )
             )
 
-        val returnValue = responseMetadata.unsafeBuildReturnValue(result)
+        val returnValue =
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
 
         assertThat(
                 returnValue.getDoubleArray(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
@@ -128,17 +126,13 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_STRING,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionStringTypeMetadata(isNullable = false),
                         isNullable = false,
                     )
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
-            responseMetadata.unsafeBuildReturnValue(result)
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
         }
     }
 
@@ -149,17 +143,13 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(
-                                type = TYPE_BOOLEAN,
-                                isNullable = false,
-                            ),
+                        itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
                         isNullable = false,
                     )
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
-            responseMetadata.unsafeBuildReturnValue(result)
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
         }
     }
 
@@ -170,17 +160,31 @@ class AppFunctionResponseMetadataReturnValueBuilderTest {
             AppFunctionResponseMetadata(
                 valueType =
                     AppFunctionArrayTypeMetadata(
-                        itemType =
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                        itemType = AppFunctionLongTypeMetadata(isNullable = false),
                         isNullable = true,
                     )
             )
 
-        val returnValue = responseMetadata.unsafeBuildReturnValue(result)
+        val returnValue =
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
 
         assertThat(
                 returnValue.getLongArray(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
             )
             .isNull()
+    }
+
+    @Test
+    fun testUnsafeBuildExecuteAppFunctionResponse_failsForInvalidSpec() {
+        val result = 10
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType =
+                    AppFunctionIntTypeMetadata(isNullable = false, enumValues = setOf(1, 2, 3))
+            )
+
+        assertFailsWith<AppFunctionAppUnknownException> {
+            responseMetadata.unsafeBuildReturnValue(result, AppFunctionComponentsMetadata())
+        }
     }
 }

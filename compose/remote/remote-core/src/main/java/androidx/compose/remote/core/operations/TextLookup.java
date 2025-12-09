@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -33,9 +34,10 @@ import java.util.List;
 
 /**
  * Operation convert floats to text This command is structured
- * [command][textID][before,after][flags] before and after define number of digits before and after
+ * [command][textId][before,after][flags] before and after define number of digits before and after
  * the decimal point
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TextLookup extends Operation implements VariableSupport, Serializable {
     private static final int OP_CODE = Operations.TEXT_LOOKUP;
     private static final String CLASS_NAME = "TextFromFloat";

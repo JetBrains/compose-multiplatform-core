@@ -17,7 +17,6 @@
 package androidx.camera.view
 
 import android.content.Context
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.view.Window
 import androidx.camera.core.CameraSelector
@@ -41,7 +40,7 @@ import org.robolectric.shadows.ShadowWindow
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ScreenFlashViewTest {
     private val noOpListener = ScreenFlashListener {
         // no-op

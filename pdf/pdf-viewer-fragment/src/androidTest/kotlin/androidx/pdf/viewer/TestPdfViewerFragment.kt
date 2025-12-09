@@ -47,7 +47,7 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
 
     constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
-    val pdfLoadingIdlingResource = PdfCountingIdlingResource(PDF_LOAD_RESOURCE_NAME)
+    val pdfLoadingIdlingResource = PdfCountingIdlingResource(newPdfLoadingIdlingResourceName())
     val pdfScrollIdlingResource = PdfCountingIdlingResource(PDF_SCROLL_RESOURCE_NAME)
     val pdfSearchFocusIdlingResource = PdfCountingIdlingResource(PDF_SEARCH_FOCUS_RESOURCE_NAME)
     val pdfSearchViewVisibleIdlingResource =
@@ -157,15 +157,21 @@ internal class TestPdfViewerFragment : PdfViewerFragment {
         pdfLoadingIdlingResource.decrement()
     }
 
+    // Callback invoked when the password dialog is requested (i.e., becomes visible).
+    override fun onPasswordRequestedState() {
+        pdfLoadingIdlingResource.decrement()
+    }
+
     companion object {
         // Resource name must be unique to avoid conflicts while running multiple test scenarios
-        private val PDF_LOAD_RESOURCE_NAME = "PdfLoad-${UUID.randomUUID()}"
         private val PDF_SCROLL_RESOURCE_NAME = "PdfScroll-${UUID.randomUUID()}"
         private val PDF_SEARCH_FOCUS_RESOURCE_NAME = "PdfSearchFocus-${UUID.randomUUID()}"
         private val PDF_SEARCH_VIEW_VISIBLE_RESOURCE_NAME =
             "PdfSearchViewVisible-${UUID.randomUUID()}"
         private val PDF_PAGES_FULLY_RENDERED_RESOURCE_NAME =
             "PdfPagesFullyRendered-${UUID.randomUUID()}"
+
+        private fun newPdfLoadingIdlingResourceName(): String = "PdfLoad-${UUID.randomUUID()}"
 
         fun handleInsets(hostView: View) {
             ViewCompat.setOnApplyWindowInsetsListener(hostView) { view, insets ->

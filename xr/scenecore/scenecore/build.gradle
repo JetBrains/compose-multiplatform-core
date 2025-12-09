@@ -29,22 +29,22 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
-    api(libs.guavaListenableFuture)
     api(project(":xr:arcore:arcore"))
     api(project(":xr:runtime:runtime"))
+    api(project(":xr:scenecore:scenecore-runtime"))
+
+    implementation(project(":xr:scenecore:scenecore-spatial-core"))
+    implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(libs.androidx.core)
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
-    implementation(project(":xr:runtime:runtime-openxr"))
-    implementation("com.google.ar:impress:0.0.4")
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
@@ -60,36 +60,16 @@ dependencies {
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testExtTruth)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.mockitoAndroid5)
-    androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation("androidx.appcompat:appcompat:1.2.0")
-    androidTestImplementation(project(":xr:scenecore:scenecore-testing"))
-
     // For com.android.xr.extensions.
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
-    testCompileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
-    testCompileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
+    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
+    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
 }
 
 android {
     defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
-        minSdkVersion 24
-    }
-    sourceSets {
-        test {
-            assets {
-                srcDirs += ["src/test/java/androidx/xr/scenecore/impl/fake_assets"]
-            }
-        }
-        androidTest {
-            jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
-        }
+        consumerProguardFiles("proguard-rules.pro")
+        minSdk = 24
     }
     namespace = "androidx.xr.scenecore"
 }

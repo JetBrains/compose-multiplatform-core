@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.ui.client.test
 
 import android.annotation.SuppressLint
@@ -107,6 +109,16 @@ class SandboxedSdkViewTest {
         testSandboxedUiAdapter.assertSessionOpened()
 
         activityScenarioRule.withActivity { view.setAdapter(null) }
+        testSandboxedUiAdapter.assertSessionClosed()
+    }
+
+    @Test
+    fun onDetachFromWindowClosesEstablishedSessionTest() {
+        addViewToLayout()
+        testSandboxedUiAdapter.assertSessionOpened()
+
+        removeAllViewsFromLayout()
+
         testSandboxedUiAdapter.assertSessionClosed()
     }
 
@@ -789,6 +801,7 @@ class SandboxedSdkViewTest {
         assertThat(obstruction.height()).isEqualTo(obstructionHeight)
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     // TODO(b/345688233): Remove when no longer necessary.
     fun obstructionsNotReportedIfZAbove() {
@@ -813,6 +826,7 @@ class SandboxedSdkViewTest {
     }
 
     // TODO(b/406433094): Test Z-above transparent obstructions.
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionsNotReportedIfObstructionIsTransparent() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)
@@ -836,6 +850,7 @@ class SandboxedSdkViewTest {
         assertThat(sandboxedSdkViewUiInfo.obstructedGeometry).isEmpty()
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionNotReportedIfElevationIsLowerThanTarget() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)
@@ -915,6 +930,32 @@ class SandboxedSdkViewTest {
                     removeChildRunnable.run()
                 }
             assertThat(exception.message).isEqualTo("Cannot remove a view from SandboxedSdkView")
+        }
+    }
+
+    @Test
+    fun setContentView_calledTwice_throwsIllegalStateException() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            sandboxedSdkView.setContentView(View(context))
+            val exception =
+                assertThrows(IllegalStateException::class.java) {
+                    sandboxedSdkView.setContentView(View(context))
+                }
+            assertThat(exception.message).isEqualTo("Child view is already attached")
+        }
+    }
+
+    @Test
+    fun setContentView_withTemporarySurfaceViewAttached_succeeds() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            val surfaceView = SurfaceView(context)
+            sandboxedSdkView.setContentView(surfaceView)
+            sandboxedSdkView.tempSurfaceView = surfaceView
+            val newView = View(context)
+            // This call should not fail, since the only child is the temporary SurfaceView
+            sandboxedSdkView.setContentView(newView)
         }
     }
 

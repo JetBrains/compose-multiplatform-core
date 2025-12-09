@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout.modifiers;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
@@ -24,7 +25,6 @@ import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
-import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.TouchHandler;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.ColorUtils;
@@ -39,6 +39,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Represents a ripple effect */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RippleModifierOperation extends DecoratorModifierOperation implements TouchHandler {
     private static final int OP_CODE = Operations.MODIFIER_RIPPLE;
 
@@ -76,14 +77,6 @@ public class RippleModifierOperation extends DecoratorModifierOperation implemen
     @Override
     public String toString() {
         return "RippleModifier";
-    }
-
-    @Override
-    public void apply(@NonNull RemoteContext context) {
-        RootLayoutComponent root = context.getDocument().getRootLayoutComponent();
-        if (root != null) {
-            root.setHasTouchListeners(true);
-        }
     }
 
     @NonNull

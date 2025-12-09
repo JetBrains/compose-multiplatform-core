@@ -27,12 +27,11 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.12.0")
     api("androidx.compose.ui:ui:1.8.2")
@@ -40,7 +39,6 @@ dependencies {
 
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -53,9 +51,9 @@ dependencies {
     androidTestImplementation(project(":appcompat:appcompat"))
     androidTestImplementation(project(":privacysandbox:ui:ui-provider"))
     androidTestImplementation(project(":privacysandbox:ui:integration-tests:testingutils"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.8.0")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation("androidx.compose.foundation:foundation-layout:1.8.0")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.8.0")
+    debugImplementation(project(":compose:ui:ui-test-manifest"))
 }
 
 android {

@@ -20,7 +20,6 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
@@ -83,7 +82,7 @@ private val TEST_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 /** Unit tests for [Preview]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 // Option Declarations:
 // *********************************************************************************************
 class PreviewTest {
@@ -129,6 +128,7 @@ class PreviewTest {
                 _: CameraThreadConfig?,
                 _: CameraSelector?,
                 _: Long?,
+                _: CameraXConfig?,
                 _: StreamSpecsCalculator ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertDefaultBackCamera(backCamera.cameraInfoInternal.cameraId) {

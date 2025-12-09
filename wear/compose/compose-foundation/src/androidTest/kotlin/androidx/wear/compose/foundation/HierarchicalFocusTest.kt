@@ -43,6 +43,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +52,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalWearFoundationApi::class)
 @RunWith(TestParameterInjector::class)
 class HierarchicalFocusTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test fun basic_OnFocusChange_works_1_of_3() = basic_OnFocusChange_works(0, 3)
 

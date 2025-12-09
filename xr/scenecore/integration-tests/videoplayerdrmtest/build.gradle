@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -62,9 +62,9 @@ androidx {
 dependencies {
     implementation(project(":xr:assets"))
     implementation(project(":xr:runtime:runtime"))
-    implementation(project(":xr:scenecore:integration-tests:commontestview"))
     implementation(project(":xr:scenecore:scenecore"))
-    implementation(project(":xr:compose:integration-tests:common"))
+    implementation(project(":xr:scenecore:scenecore-spatial-core"))
+    implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
     implementation(project(":xr:compose:compose"))
 
     implementation(libs.kotlinCoroutinesGuava)

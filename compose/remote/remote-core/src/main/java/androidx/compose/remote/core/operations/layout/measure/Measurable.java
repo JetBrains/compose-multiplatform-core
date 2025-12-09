@@ -15,12 +15,14 @@
  */
 package androidx.compose.remote.core.operations.layout.measure;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.RemoteContext;
 
 import org.jspecify.annotations.NonNull;
 
 /** Interface describing the measure/layout contract for components */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Measurable {
 
     /**
@@ -50,5 +52,5 @@ public interface Measurable {
      *
      * @param context
      */
-    void animatingBounds(RemoteContext context);
+    void animatingBounds(@NonNull RemoteContext context);
 }

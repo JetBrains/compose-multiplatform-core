@@ -22,8 +22,8 @@ import androidx.compose.foundation.text.selection.MultiWidgetSelectionDelegate
 import androidx.compose.foundation.text.selection.Selectable
 import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.hasSelection
-import androidx.compose.foundation.text.selection.selectionGestureInput
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextOverflow
@@ -166,7 +167,13 @@ internal class SelectionController(
 
 // this is not chained, but is a standalone factory
 @Suppress("ModifierFactoryExtensionFunction")
-private fun SelectionRegistrar.makeSelectionModifier(
+internal expect fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?,
+): Modifier
+
+@Suppress("ModifierFactoryExtensionFunction")
+internal fun SelectionRegistrar.makeDefaultSelectionModifier(
     selectableId: Long,
     layoutCoordinates: () -> LayoutCoordinates?,
 ): Modifier {
@@ -184,6 +191,8 @@ private fun SelectionRegistrar.makeSelectionModifier(
              */
             var dragTotalDistance = Offset.Zero
 
+            var selectionAdjustmentMode = SelectionAdjustment.None
+
             override fun onDown(point: Offset) {
                 // Not supported for long-press-drag.
             }
@@ -192,14 +201,15 @@ private fun SelectionRegistrar.makeSelectionModifier(
                 // Nothing to do.
             }
 
-            override fun onStart(startPoint: Offset) {
+            override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
+                selectionAdjustmentMode = selectionAdjustment
                 layoutCoordinates()?.let {
                     if (!it.isAttached) return
 
                     notifySelectionUpdateStart(
                         layoutCoordinates = it,
                         startPosition = startPoint,
-                        adjustment = SelectionAdjustment.Word,
+                        adjustment = selectionAdjustmentMode,
                         isInTouchMode = true,
                     )
 
@@ -231,7 +241,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
                             previousPosition = lastPosition,
                             newPosition = newPosition,
                             isStartHandle = false,
-                            adjustment = SelectionAdjustment.Word,
+                            adjustment = selectionAdjustmentMode,
                             isInTouchMode = true,
                         )
                     if (consumed) {
@@ -348,5 +358,7 @@ private fun SelectionRegistrar.makeSelectionModifier(
             }
         }
 
-    return Modifier.selectionGestureInput(mouseSelectionObserver, longPressDragObserver)
+    return Modifier.pointerInput(mouseSelectionObserver, longPressDragObserver) {
+        awaitSelectionGestures(mouseSelectionObserver, longPressDragObserver)
+    }
 }

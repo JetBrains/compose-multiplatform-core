@@ -348,6 +348,54 @@ class FragmentLifecycleTest {
 
     @Test
     @UiThreadTest
+    fun setMaxLifecyclePopCommit() {
+        val viewModelStore = ViewModelStore()
+        val fc = activityRule.startupFragmentController(viewModelStore)
+
+        val fm = fc.supportFragmentManager
+
+        val fragment = StrictViewFragment()
+        fm.beginTransaction().add(android.R.id.content, fragment).addToBackStack(null).commit()
+        executePendingTransactions(fm)
+
+        assertThat(fragment.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+
+        assertThat(fragment.calledOnResume).isTrue()
+
+        val fragment2 = StrictViewFragment()
+        fm.beginTransaction()
+            .hide(fragment)
+            .setMaxLifecycle(fragment, Lifecycle.State.STARTED)
+            .add(android.R.id.content, fragment2)
+            .addToBackStack(null)
+            .commit()
+        executePendingTransactions(fm)
+
+        assertThat(fragment.lifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
+        assertThat(fragment2.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+
+        val fragment3 = StrictViewFragment()
+
+        fm.popBackStack()
+        fm.beginTransaction()
+            .hide(fragment)
+            .setMaxLifecycle(fragment, Lifecycle.State.STARTED)
+            .add(android.R.id.content, fragment3)
+            .addToBackStack(null)
+            .commit()
+        executePendingTransactions(fm)
+
+        assertThat(fragment.lifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
+        assertThat(fragment3.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+
+        fm.popBackStack()
+        executePendingTransactions(fm)
+
+        assertThat(fragment.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+    }
+
+    @Test
+    @UiThreadTest
     fun setMaxLifecycleOnDifferentFragments() {
         val viewModelStore = ViewModelStore()
         val fc = activityRule.startupFragmentController(viewModelStore)
@@ -1573,7 +1621,7 @@ class FragmentLifecycleTest {
             setHasOptionsMenu(true)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onPrepareOptionsMenu(menu: Menu) {
             onPrepareOptionsMenuCalled = true
             assertThat(context).isNotNull()

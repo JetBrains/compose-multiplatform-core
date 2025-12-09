@@ -61,6 +61,7 @@ import kotlin.math.absoluteValue
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Ignore
@@ -68,7 +69,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class PagerTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private val pagerTestTag = "Pager"
     private var lcItemSizePx: Float = 20f

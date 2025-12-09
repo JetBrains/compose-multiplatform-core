@@ -31,7 +31,7 @@ import androidx.benchmark.Shell
 import androidx.benchmark.macro.MacrobenchmarkScope.Companion.Api24ContextHelper.createDeviceProtectedStorageContextCompat
 import androidx.benchmark.macro.perfetto.forceTrace
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiAutomatorTestScope
 import androidx.tracing.trace
 import java.io.File
 
@@ -49,9 +49,7 @@ public class MacrobenchmarkScope(
      * just resume.
      */
     private val launchWithClearTask: Boolean,
-) {
-
-    internal val instrumentation = InstrumentationRegistry.getInstrumentation()
+) : UiAutomatorTestScope() {
 
     internal val context = instrumentation.context
 
@@ -157,14 +155,6 @@ public class MacrobenchmarkScope(
     private val methodTraces: MutableList<Pair<String, String>> = mutableListOf()
 
     /**
-     * Get the [UiDevice] instance, to use in reading target app UI state, or interacting with the
-     * UI via touches, scrolls, or other inputs.
-     *
-     * Convenience for `UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())`
-     */
-    val device: UiDevice = UiDevice.getInstance(instrumentation)
-
-    /**
      * Start an activity, by default the launcher activity of the package, and wait until its launch
      * completes.
      *
@@ -224,6 +214,10 @@ public class MacrobenchmarkScope(
         } else {
             amStartAndWait(uri)
         }
+    }
+
+    override fun startActivityIntent(intent: Intent) {
+        startActivityAndWait(intent)
     }
 
     @SuppressLint("BanThreadSleep") // Cannot always detect activity launches.

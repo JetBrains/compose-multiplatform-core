@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.client.view
 
@@ -37,6 +38,7 @@ import androidx.tracing.trace
 import kotlin.math.min
 
 /** A listener for events relating to the SandboxedSdkView UI presentation. */
+@Deprecated("This library is no longer supported.")
 public interface SandboxedSdkViewEventListener {
     /**
      * Called when the UI is committed to the display. The UI might still not be visible to the user
@@ -65,6 +67,7 @@ internal interface RefreshableSessionClient : SessionClient {
     fun onSessionRefreshRequested(callback: Consumer<Boolean>)
 }
 
+@Deprecated("This library is no longer supported.")
 public class SandboxedSdkView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
@@ -90,6 +93,7 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
     private var eventListener: SandboxedSdkViewEventListener? = null
     private val frameCommitCallback = Runnable { sendUiDisplayedEvents() }
     private var closeSessionOnWindowDetachment = true
+    internal var tempSurfaceView: SurfaceView? = null
     private val poolingContainerListenerDelegate = PoolingContainerListenerDelegate(this)
     internal var signalMeasurer: SandboxedSdkViewSignalMeasurer? = null
 
@@ -235,8 +239,9 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
     }
 
     internal fun setContentView(contentView: View) {
-        if (childCount > 0) {
-            throw IllegalStateException("Number of children views must not exceed 1")
+        val isTempSurfaceViewOnlyChild = childCount == 1 && getChildAt(0) === tempSurfaceView
+        if (childCount > 0 && !isTempSurfaceViewOnlyChild) {
+            throw IllegalStateException("Child view is already attached")
         }
 
         this.contentView = contentView
@@ -352,14 +357,31 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         contentView?.alpha = alpha
     }
 
-    internal fun closeClient() {
-        client?.close()
-        client = null
+    /**
+     * Schedules the client to close the UI session and release its resources.
+     *
+     * If [viewTreeObserver] is not set or is not alive, the UI session is closed immediately.
+     */
+    internal fun scheduleClientClose(viewTreeObserver: ViewTreeObserver? = this.viewTreeObserver) {
+        if (viewTreeObserver == null || !viewTreeObserver.isAlive) {
+            client?.close()
+            return
+        } else {
+            val clientScheduledForClose = this.client
+            CompatImpl.registerFrameCommitCallback(
+                viewTreeObserver,
+                { clientScheduledForClose?.close() },
+            )
+        }
+        this.client = null
         sessionData = null
     }
 
     private fun maybeAttachPoolingContainerListener() {
-        poolingContainerListenerDelegate.maybeAttachListener { closeClient() }
+        poolingContainerListenerDelegate.maybeAttachListener {
+            val viewTreeObserver = poolingContainerListenerDelegate.poolingContainerViewTreeObserver
+            scheduleClientClose(viewTreeObserver)
+        }
     }
 
     override fun onAttachedToWindow() {
@@ -372,9 +394,10 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         signalMeasurer?.resumeMeasuringIfNecessary()
     }
 
+    // TODO(b/421851884): add e2e tests to validate the session is closed on detach.
     override fun onDetachedFromWindow() {
-        if (!this.isWithinPoolingContainer && closeSessionOnWindowDetachment) {
-            closeClient()
+        if (closeSessionOnWindowDetachment && !this.isWithinPoolingContainer) {
+            scheduleClientClose()
         }
         signalMeasurer?.stopMeasuring()
         removeCallbacksOnWindowDetachment()
@@ -629,6 +652,7 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
                 sandboxedSdkView: SandboxedSdkView,
             ) {
                 val surfaceView = SurfaceView(context).apply { visibility = GONE }
+                sandboxedSdkView.tempSurfaceView = surfaceView
                 val onSurfaceViewAttachedListener =
                     object : OnAttachStateChangeListener {
                         override fun onViewAttachedToWindow(view: View) {

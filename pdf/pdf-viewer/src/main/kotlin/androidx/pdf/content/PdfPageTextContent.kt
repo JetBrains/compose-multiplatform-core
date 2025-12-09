@@ -24,4 +24,5 @@ import android.graphics.RectF
  * @param bounds: Bounds for the text content
  * @param text: Text content within the bounds.
  */
-public class PdfPageTextContent(public val bounds: List<RectF>, public val text: String)
+public class PdfPageTextContent(bounds: List<RectF>, public val text: String) :
+    PdfPageContent(bounds)

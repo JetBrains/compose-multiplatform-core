@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.core
 
 import androidx.camera.camera2.pipe.testing.FakeThreads
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
@@ -28,7 +27,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@SdkSuppress(minSdkVersion = 21)
 class ThreadingTest {
     private val threads = FakeThreads.fromDispatcher(Dispatchers.IO)
 

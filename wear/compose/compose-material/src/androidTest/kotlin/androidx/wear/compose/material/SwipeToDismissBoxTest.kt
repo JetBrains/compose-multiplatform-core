@@ -63,7 +63,9 @@ import org.junit.Test
 
 @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class SwipeToDismissBoxTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457630005
+    @get:Rule
+    val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {

@@ -17,6 +17,7 @@ package androidx.compose.remote.core.types;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -31,6 +32,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Represents a single integer typically used for states or named for input into the system */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class IntegerConstant extends Operation implements Serializable {
     private static final String CLASS_NAME = "IntegerConstant";
 
@@ -47,7 +49,7 @@ public class IntegerConstant extends Operation implements Serializable {
      *
      * @param ic the integer constant to copy
      */
-    public void update(IntegerConstant ic) {
+    public void update(@NonNull IntegerConstant ic) {
         mValue = ic.mValue;
     }
 

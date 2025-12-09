@@ -35,6 +35,7 @@
     <string name="cuj_transformation_test">Transformation APIs Test Case</string>
     <string name="cuj_scene_viewer_test">3D Model Viewer - SceneViewer XR Test Case</string>
     <string name="cuj_standalone_test">Positional Test Case</string>
+    <string name="cuj_gltf_model_test">GLTF Model Test Case</string>
     <string name="cuj_movable_test">AnchorPlacement Test Case</string>
     <string name="cuj_panel_rounded_corner">Rounded Corners Test Case</string>
     <string name="cuj_head_locked_ui_test">Headlocked UI Test Case </string>
@@ -46,6 +47,12 @@
     <string name="cuj_spatial_audio_setting_pointsourceparams_test">Spatial Audio Setting PointSourceParams Test Case</string>
     <string name="cuj_field_of_view_visibility_test">Field Of View Visibility Test Case</string>
     <string name="cuj_hit_test">Digital Hit Test Case</string>
+    <string name="cuj_accessibility_test">Accessibility Test Case</string>
+    <string name="cuj_surface_entity_imagetest">Surface Entity Image Display Test Case</string>
+    <string name="cuj_surface_entity_interaction_test">Surface Entity Interaction Test Case</string>
+    <string name="cuj_surface_entity_playbacktest">Surface Entity Playback Test Case</string>
+    <string name="dev_memory_leak_test">Memory Leak (Dev) Test Case</string>
+    <string name="cuj_gravity_aligned_pose_test">Gravity Aligned Pose Test</string>
 
     <string name="recreate_activity" description="button text to recreate current activity [CHAR LIMIT=40]">Recreate Activity</string>
     <string name="panel_text" description="Arbitrary test string which appears in a TestPanel. [CHAR_LIMIT=30]">Dragons!!</string>
@@ -105,6 +112,7 @@
     <string name="scale_in_z_label" description="Label for the aspect ratio radio button [CHAR LIMIT=30]">Scale In Z</string>
 
     <string name="launch_settings_app_in_fsm">Launch Settings App in a new task in FSM</string>
+    <string name="launch_settings_app_in_fsm_with_environment_inherited">Launch Settings App in a new task in FSM with environment inherited</string>
     <string name="fsm_hsm_transition_test">FSM/HSM Transition Test</string>
     <string name="intent_into_scene_viewer">Intent into Scene Viewer</string>
 
@@ -114,7 +122,7 @@
     <string name="button_resize_in_fsm_portrait">Resize in FSM (Portrait)</string>
     <string name="button_resize_in_fsm_landscape">Resize in FSM (Landscape)</string>
     <string name="button_toggle_skybox">Toggle Skybox</string>
-    <string name="choice_any_aspect_ratio_in_hsm">Any Aspect Ragio in HSM</string>
+    <string name="choice_any_aspect_ratio_in_hsm">Any Aspect Ratio in HSM</string>
     <string name="choice_portrait_in_hsm">Portrait</string>
     <string name="choice_landscape_in_hsm">Landscape</string>
     <string name="text_activity_space_dimensions">Activity Space Dimensions</string>
@@ -132,5 +140,17 @@
     <!-- spatialaudiotest -->
     <string name="spatial_panel_label" description="Label for the spatial audio panel. [CHAR_LIMIT=50]">Spatial Audio Panel</string>
     <string name="sound_panel_help_text">Drag around this panel to experience the spatial audio</string>
+
+    <!-- gravityaligned -->
+    <string name="gravity_aligned_parent_panel">Parent Panel</string>
+    <string name="gravity_aligned_child_panel">Child Panel</string>
+    <string name="default_pose_button">Default Pose (Parent)</string>
+    <string name="default_pose_button_activity">Default Pose (Activity)</string>
+    <string name="default_pose_button_world">Default Pose (World)</string>
+    <string name="gravity_aligned_pose_button">Gravity Aligned Pose (Parent)</string>
+    <string name="gravity_aligned_pose_button_activity">Gravity Aligned Pose (Activity)</string>
+    <string name="gravity_aligned_pose_button_world">Gravity Aligned Pose (World)</string>
+    <string name="create_surface_entity">Create Surface Entity</string>
+    <string name="destroy_surface_entity">Destroy Surface Entity</string>
 
 </resources>

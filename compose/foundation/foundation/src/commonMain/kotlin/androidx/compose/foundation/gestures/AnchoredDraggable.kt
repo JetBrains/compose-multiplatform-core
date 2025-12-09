@@ -40,6 +40,7 @@ import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,7 +53,7 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireLayoutDirection
@@ -427,10 +428,10 @@ private class AnchoredDraggableNode<T>(
 
     override fun onDragStarted(startedPosition: Offset) {}
 
-    override fun onDragStopped(velocity: Velocity) {
+    override fun onDragStopped(event: DragEvent.DragStopped) {
         if (!isAttached) return
         coroutineScope.launch {
-            val oneDirectionalVelocity = velocity.reverseIfNeeded().toFloat()
+            val oneDirectionalVelocity = event.velocity.reverseIfNeeded().toFloat()
             if (overscrollEffect == null) {
                 fling(oneDirectionalVelocity)
             } else {
@@ -535,7 +536,7 @@ private class AnchoredDraggableNode<T>(
     private fun Offset.reverseIfNeeded() = if (isReverseDirection) this * -1f else this * 1f
 }
 
-private val AlwaysDrag: (PointerInputChange) -> Boolean = { true }
+private val AlwaysDrag: (PointerType) -> Boolean = { true }
 
 /**
  * Structure that represents the anchors of a [AnchoredDraggableState].
@@ -581,10 +582,10 @@ interface DraggableAnchors<T> {
      */
     fun closestAnchor(position: Float, searchUpwards: Boolean): T?
 
-    /** The smallest anchor position, or [Float.NEGATIVE_INFINITY] if the anchors are empty. */
+    /** The smallest anchor position, or [Float.NaN] if the anchors are empty. */
     fun minPosition(): Float
 
-    /** The biggest anchor position, or [Float.POSITIVE_INFINITY] if the anchors are empty. */
+    /** The biggest anchor position, or [Float.NaN] if the anchors are empty. */
     fun maxPosition(): Float
 
     /** Get the anchor key at the specified index, or null if the index is out of bounds. */
@@ -880,6 +881,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * Strongly consider using [requireOffset] which will throw if the offset is read before it is
      * initialized. This helps catch issues early in your workflow.
      */
+    @get:FrequentlyChangingValue
     var offset: Float by mutableFloatStateOf(Float.NaN)
         private set
 
@@ -889,6 +891,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @throws IllegalStateException If the offset has not been initialized yet
      * @see offset
      */
+    @FrequentlyChangingValue
     fun requireOffset(): Float {
         checkPrecondition(!offset.isNaN()) {
             "The offset was read before being initialized. Did you access the offset in a phase " +
@@ -908,6 +911,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param from The starting value used to calculate the distance
      * @param to The end value used to calculate the distance
      */
+    @FrequentlyChangingValue
     @FloatRange(from = 0.0, to = 1.0)
     fun progress(from: T, to: T): Float {
         val fromOffset = anchors.positionOf(from)
@@ -933,6 +937,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
             "Use the progress function to query the progress between two specified " + "anchors.",
         replaceWith = ReplaceWith("progress(state.settledValue, state.targetValue)"),
     )
+    @get:FrequentlyChangingValue
     @get:FloatRange(from = 0.0, to = 1.0)
     val progress: Float by
         derivedStateOf(structuralEqualityPolicy()) {
@@ -1591,6 +1596,7 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
+        if (minAnchorIndex == -1) return null
         return keys[minAnchorIndex]
     }
 
@@ -1605,12 +1611,13 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
+        if (minAnchorIndex == -1) return null
         return keys[minAnchorIndex]
     }
 
-    override fun minPosition() = anchors.minOrNull() ?: Float.NaN
+    override fun minPosition() = anchors.minOrNaN()
 
-    override fun maxPosition() = anchors.maxOrNull() ?: Float.NaN
+    override fun maxPosition() = anchors.maxOrNaN()
 
     override val size = anchors.size
 
@@ -1646,6 +1653,30 @@ private class DefaultDraggableAnchors<T>(
             }
         }
         append("})")
+    }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.minOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = minOf(min, e)
+        }
+        return min
+    }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.maxOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = maxOf(min, e)
+        }
+        return min
     }
 }
 
@@ -1708,14 +1739,20 @@ private fun <T> AnchoredDraggableLayoutInfoProvider(
 
         override fun calculateSnapOffset(velocity: Float): Float {
             val currentOffset = state.requireOffset()
-            val target =
+            val proposedTargetValue =
                 state.anchors.computeTarget(
                     currentOffset = currentOffset,
                     velocity = velocity,
                     positionalThreshold = positionalThreshold,
                     velocityThreshold = velocityThreshold,
                 )
-            return state.anchors.positionOf(target) - currentOffset
+            val targetValue =
+                if (state.confirmValueChange(proposedTargetValue)) {
+                    proposedTargetValue
+                } else {
+                    state.settledValue
+                }
+            return state.anchors.positionOf(targetValue) - currentOffset
         }
     }
 

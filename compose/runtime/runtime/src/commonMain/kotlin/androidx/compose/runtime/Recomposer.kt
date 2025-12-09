@@ -50,6 +50,7 @@ import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastGroupBy
 import androidx.compose.runtime.snapshots.fastMap
 import androidx.compose.runtime.snapshots.fastMapNotNull
+import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionRegistrationObserver
@@ -79,9 +80,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
+internal const val recomposerKey = 1000
+
 // TODO: Can we use rootKey for this since all compositions will have an eventual Recomposer parent?
 private inline val RecomposerCompoundHashKey
-    get() = CompositeKeyHashCode(1000)
+    get() = CompositeKeyHashCode(recomposerKey)
 
 /**
  * Runs [block] with a new, active [Recomposer] applying changes in the calling [CoroutineContext].
@@ -164,18 +167,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     public var changeCount: Long = 0L
         private set
 
-    private val broadcastFrameClock = BroadcastFrameClock {
-        synchronized(stateLock) {
-                deriveStateLocked().also {
-                    if (_state.value <= State.ShuttingDown)
-                        throw CancellationException(
-                            "Recomposer shutdown; frame clock awaiter will never resume",
-                            closeCause,
-                        )
-                }
-            }
-            ?.resume(Unit)
-    }
+    private val broadcastFrameClock = BroadcastFrameClock { onNewFrameAwaiter() }
+    private val nextFrameEndCallbackQueue = NextFrameEndCallbackQueue { onNewFrameAwaiter() }
 
     /** Valid operational states of a [Recomposer]. */
     public enum class State {
@@ -314,6 +307,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private val hasBroadcastFrameClockAwaitersLocked: Boolean
         get() = !frameClockPaused && broadcastFrameClock.hasAwaiters
 
+    private val hasNextFrameEndAwaitersLocked: Boolean
+        get() = !frameClockPaused && nextFrameEndCallbackQueue.hasAwaiters
+
     private val hasBroadcastFrameClockAwaiters: Boolean
         get() = synchronized(stateLock) { hasBroadcastFrameClockAwaitersLocked }
 
@@ -346,7 +342,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 runnerJob == null -> {
                     snapshotInvalidations = MutableScatterSet()
                     compositionInvalidations.clear()
-                    if (hasBroadcastFrameClockAwaitersLocked) State.InactivePendingWork
+                    if (hasBroadcastFrameClockAwaitersLocked || hasNextFrameEndAwaitersLocked)
+                        State.InactivePendingWork
                     else State.Inactive
                 }
                 compositionInvalidations.isNotEmpty() ||
@@ -355,6 +352,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     movableContentAwaitingInsert.isNotEmpty() ||
                     concurrentCompositionsOutstanding > 0 ||
                     hasBroadcastFrameClockAwaitersLocked ||
+                    hasNextFrameEndAwaitersLocked ||
                     movableContentRemoved.isNotEmpty() -> State.PendingWork
                 else -> State.Idle
             }
@@ -363,6 +361,19 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         return if (newState == State.PendingWork) {
             workContinuation.also { workContinuation = null }
         } else null
+    }
+
+    private fun onNewFrameAwaiter() {
+        synchronized(stateLock) {
+                deriveStateLocked().also {
+                    if (_state.value <= State.ShuttingDown)
+                        throw CancellationException(
+                            "Recomposer shutdown; frame clock awaiter will never resume",
+                            closeCause,
+                        )
+                }
+            }
+            ?.resume(Unit)
     }
 
     /** `true` if there is still work to do for an active caller of [runRecomposeAndApplyChanges] */
@@ -758,6 +769,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 }
 
                 discardUnusedMovableContentState()
+                nextFrameEndCallbackQueue.markFrameComplete()
             }
         }
 
@@ -795,6 +807,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // composeInitial will throw because of corrupted composition while original exception
             // won't be recorded.
             synchronized(stateLock) {
+                logError("Error was captured in composition.", e)
                 val errorState = errorState
                 if (errorState == null) {
                     // Record exception if current error state is empty.
@@ -856,7 +869,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
     private fun clearKnownCompositionsLocked() {
-        knownCompositionsLocked().forEach { composition ->
+        knownCompositionsLocked().fastForEach { composition ->
             unregisterCompositionLocked(composition)
         }
         _knownCompositions.clear()
@@ -1092,14 +1105,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             synchronized(stateLock) {
                 snapshotInvalidations.isNotEmpty() ||
                     compositionInvalidations.isNotEmpty() ||
-                    hasBroadcastFrameClockAwaitersLocked
+                    hasBroadcastFrameClockAwaitersLocked ||
+                    hasNextFrameEndAwaitersLocked
             }
 
     private suspend fun awaitWorkAvailable() {
         if (!hasSchedulingWork) {
             // NOTE: Do not remove the `<Unit>` from the next line even if the IDE reports it as
-            // redundant. Removing this causes the Kotlin compiler to crash without reporting
-            // an error message
+            // redundant. Removing this causes reports it cannot infer the type. (KT-79553)
+            @Suppress("RemoveExplicitTypeArguments") // See note above
             suspendCancellableCoroutine<Unit> { co ->
                 synchronized(stateLock) {
                         if (hasSchedulingWork) {
@@ -1208,6 +1222,25 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     /** Await the completion of a [cancel] operation. */
     public suspend fun join() {
         currentState.first { it == State.ShutDown }
+    }
+
+    /**
+     * Schedules an [action] to be invoked when the recomposer finishes the next composition of a
+     * frame (including the completion of subcompositions). If a frame is currently in-progress,
+     * [action] will be invoked when the current frame fully finishes composing. If a frame isn't
+     * currently in-progress, a new frame will be scheduled (if one hasn't been already) and
+     * [action] will execute at the completion of the next frame's composition. If a new frame is
+     * scheduled and there is no other work to execute, [action] will still execute.
+     *
+     * [action] will always execute on the applier thread.
+     *
+     * @return A [CancellationHandle] that can be used to unregister the [action]. The returned
+     *   handle is thread-safe and may be cancelled from any thread. Cancelling the handle only
+     *   removes the callback from the queue. If [action] is currently executing, it will not be
+     *   cancelled by this handle.
+     */
+    public override fun scheduleFrameEndCallback(action: () -> Unit): CancellationHandle {
+        return nextFrameEndCallbackQueue.scheduleFrameEndCallback(action)
     }
 
     internal override fun composeInitial(
@@ -1412,13 +1445,13 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                     // We have at least one nested state we could use, if a state
                                     // is available for the container then schedule the state to be
                                     // removed from the container when it is released.
-                                    pairs.map { pair ->
+                                    pairs.fastMap { pair ->
                                         if (pair.second == null) {
                                             val nestedContentReference =
                                                 movableContentNestedStatesAvailable.removeLast(
                                                     pair.first.content
                                                 )
-                                            if (nestedContentReference == null) return@map pair
+                                            if (nestedContentReference == null) return@fastMap pair
                                             val content = nestedContentReference.content
                                             val container = nestedContentReference.container
                                             movableContentNestedExtractionsPending.add(
@@ -1545,6 +1578,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     concurrentCompositionsOutstanding > 0 ||
                     compositionsAwaitingApply.isNotEmpty() ||
                     hasBroadcastFrameClockAwaitersLocked ||
+                    hasNextFrameEndAwaitersLocked ||
                     movableContentRemoved.isNotEmpty()
             }
 
@@ -1552,10 +1586,14 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         get() =
             compositionInvalidations.isNotEmpty() ||
                 hasBroadcastFrameClockAwaitersLocked ||
+                hasNextFrameEndAwaitersLocked ||
                 movableContentRemoved.isNotEmpty()
 
     private val hasConcurrentFrameWorkLocked: Boolean
-        get() = compositionsAwaitingApply.isNotEmpty() || hasBroadcastFrameClockAwaitersLocked
+        get() =
+            compositionsAwaitingApply.isNotEmpty() ||
+                hasBroadcastFrameClockAwaitersLocked ||
+                hasNextFrameEndAwaitersLocked
 
     /**
      * Suspends until the currently pending recomposition frame is complete. Any recomposition for
@@ -1614,7 +1652,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         get() = false
 
     internal override val collectingSourceInformation: Boolean
-        get() = composeStackTraceEnabled
+        get() = composeStackTraceMode == ComposeStackTraceMode.SourceInformation
+
+    internal override val stackTraceEnabled: Boolean
+        get() = composeStackTraceMode != ComposeStackTraceMode.None
 
     internal override fun recordInspectionTable(table: MutableSet<CompositionData>) {
         // TODO: The root recomposer might be a better place to set up inspection

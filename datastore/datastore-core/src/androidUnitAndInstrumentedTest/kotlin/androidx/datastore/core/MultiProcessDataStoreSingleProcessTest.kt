@@ -25,7 +25,6 @@ import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
-import androidx.test.filters.LargeTest
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -69,7 +68,6 @@ import org.junit.runner.RunWith
  */
 @OptIn(DelicateCoroutinesApi::class)
 @ExperimentalCoroutinesApi
-@LargeTest
 @RunWith(AndroidJUnit4::class)
 abstract class MultiProcessDataStoreSingleProcessTest<F : TestFile<F>>(
     protected val testIO: TestIO<F, *>

@@ -64,7 +64,6 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testMatchingOnEndpointName() {
-        setUpBackwardsCompatTest()
         runBlocking {
             // Represent a BluetoothDevice since the object cannot be mocked
             val btDeviceName = "Pixel Buds"
@@ -96,7 +95,6 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testMatchingOnEndpointNameWithDifferentAddresses() {
-        setUpBackwardsCompatTest()
         runBlocking {
             // Represent a BluetoothDevice since the object cannot be mocked
             val btDeviceName = "Pixel Buds"
@@ -129,7 +127,6 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testRemovalOfEarpieceEndpointIfWiredEndpointIsPresent() {
-        setUpBackwardsCompatTest()
         runBlocking {
             val callSession = initCallSessionLegacy(coroutineContext, null)
             val supportedRouteMask = ROUTE_EARPIECE or ROUTE_WIRED_HEADSET
@@ -150,7 +147,6 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testPlatformEndpointsAreRemappedToExistingEndpoints() {
-        setUpBackwardsCompatTest()
         runBlocking {
             val callSession = initCallSessionLegacy(coroutineContext, null)
             val supportedRouteMask = CallAudioState.ROUTE_EARPIECE or CallAudioState.ROUTE_SPEAKER
@@ -184,7 +180,6 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testOnCallAudioStateChangedWithNullActiveDevice() {
-        setUpBackwardsCompatTest()
         runBlocking {
             val callSession = initCallSessionLegacy(coroutineContext, null)
 

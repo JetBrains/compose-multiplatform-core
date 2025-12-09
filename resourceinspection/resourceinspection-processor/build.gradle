@@ -37,7 +37,6 @@ dependencies {
     implementation(libs.gradleIncapHelper)
     implementation(libs.guava)
     implementation(libs.javapoet)
-    implementation(libs.kotlinStdlib)
 
     kapt(libs.gradleIncapHelperProcessor)
     kapt(libs.autoService)

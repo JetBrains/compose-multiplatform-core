@@ -54,7 +54,6 @@ private const val DEFAULT_JPEG_QUALITY = 100
 /** Unit tests for {@link ImageUtil}. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class ImageUtilDeviceTest {
 
     @Test(expected = IllegalArgumentException::class)

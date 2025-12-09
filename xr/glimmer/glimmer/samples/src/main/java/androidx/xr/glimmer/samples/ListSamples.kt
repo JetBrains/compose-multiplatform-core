@@ -18,32 +18,25 @@ package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.ListItem
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.list.VerticalList
-import androidx.xr.glimmer.surface
 
 @Sampled
 @Composable
 private fun VerticalListSample() {
     VerticalList(
-        contentPadding = PaddingValues(horizontal = 10.dp, 12.dp),
-        horizontalAlignment = Alignment.End,
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        item { Box(Modifier.surface().padding(10.dp)) { Text("Header") } }
-        items(count = 10) { index ->
-            Box(Modifier.surface().padding(10.dp)) { Text("Item-$index") }
-        }
-        item { Box(Modifier.surface().padding(10.dp)) { Text("Footer") } }
+        item { ListItem { Text("Header") } }
+        items(count = 10) { index -> ListItem { Text("Item-$index") } }
+        item { ListItem { Text("Footer") } }
     }
 }
 

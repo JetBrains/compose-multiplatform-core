@@ -16,18 +16,19 @@
 
 package androidx.xr.compose.spatial
 
+import android.graphics.Color
 import android.view.View
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,26 +36,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFold
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.xr.compose.platform.LocalCoreEntity
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
+import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.node.SubspaceNodeApplier
+import androidx.xr.compose.subspace.rememberComposeView
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.scenecore.PanelEntity
 
 /** Set the scrim alpha to 32% opacity across orbiters. */
 private const val DEFAULT_SCRIM_ALPHA = 0x52000000
@@ -72,9 +81,14 @@ public object OrbiterDefaults {
 /**
  * A composable that creates an orbiter along the top or bottom edges of a view.
  *
- * Orbiters are floating elements that contain controls for spatial content. They allow the content
- * to have more space and give users quick access to features like navigation without obstructing
- * the main content.
+ * Orbiters are floating elements that are typically used to control the content within spatial
+ * panels and other entities that they're anchored to. They allow the content to have more space and
+ * give users quick access to features like navigation without obstructing the main content.
+ *
+ * The size of the [Orbiter] is constrained by the dimensions of the parent spatial component it is
+ * anchored to (e.g., a [androidx.xr.compose.subspace.SpatialPanel]). If it's not placed within a
+ * specific spatial component, it defaults to the main window's size. Consequently, an [Orbiter]'s
+ * content cannot be larger than its parent's dimensions.
  *
  * @param position The edge of the orbiter. Use [ContentEdge.Top] or [ContentEdge.Bottom].
  * @param offset The offset of the orbiter based on the outer edge of the orbiter.
@@ -90,7 +104,7 @@ public object OrbiterDefaults {
  *
  * Example:
  * ```
- * Orbiter(position = OrbiterEdge.Top, offset = 10.dp) {
+ * Orbiter(position = ContentEdge.Top, offset = 10.dp) {
  *   Text("This is a top edge Orbiter")
  * }
  * ```
@@ -124,9 +138,14 @@ public fun Orbiter(
 /**
  * A composable that creates an orbiter along the start or end edges of a view.
  *
- * Orbiters are floating elements that contain controls for spatial content. They allow the content
- * to have more space and give users quick access to features like navigation without obstructing
- * the main content.
+ * Orbiters are floating elements that are typically used to control the content within spatial
+ * panels and other entities that they're anchored to. They allow the content to have more space and
+ * give users quick access to features like navigation without obstructing the main content.
+ *
+ * The size of the [Orbiter] is constrained by the dimensions of the parent spatial component it is
+ * anchored to (e.g., a [androidx.xr.compose.subspace.SpatialPanel]). If it's not placed within a
+ * specific spatial component, it defaults to the main window's size. Consequently, an [Orbiter]'s
+ * content cannot be larger than its parent's dimensions.
  *
  * @param position The edge of the orbiter. Use [ContentEdge.Start] or [ContentEdge.End].
  * @param offset The offset of the orbiter based on the outer edge of the orbiter.
@@ -142,7 +161,7 @@ public fun Orbiter(
  *
  * Example:
  * ```
- * Orbiter(position = OrbiterEdge.Start, offset = 10.dp) {
+ * Orbiter(position = ContentEdge.Start, offset = 10.dp) {
  *   Text("This is a start edge Orbiter")
  * }
  * ```
@@ -175,11 +194,12 @@ public fun Orbiter(
 
 @Composable
 private fun Orbiter(data: OrbiterData) {
+    // TODO(b/441560422): We should use movableContentOf here to maintain state between HSM and FSM.
     // We use movableContentOf here to avoid recreating this content when the spatial capabilities
     // changes. This allows us to use the same orbiter content both in an orbiter when spatial
     // capabilities are granted and inline in a non-spatial environment in a way that retains the
     // orbiter content's internal state.
-    val content = remember(data.content) { movableContentOf(data.content) }
+    val content = remember(data.content) { data.content }
     if (
         LocalSpatialCapabilities.current.isSpatialUiEnabled ||
             currentComposer.applier is SubspaceNodeApplier
@@ -193,11 +213,7 @@ private fun Orbiter(data: OrbiterData) {
 @Composable
 internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiComposable () -> Unit) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val density = LocalDensity.current
-    val dialogManager = LocalDialogManager.current
-    var contentSize: IntSize? by remember { mutableStateOf(null) }
 
-    val parentEntity = LocalCoreEntity.current
     /**
      * Determine the reference panel size for Orbiter positioning.
      * 1. If parent entity is present, Orbiter is nested within a specific spatial component (e.g.,
@@ -208,38 +224,88 @@ internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiCompos
      *    provider. In these cases, Orbiter defaults to the main window's size, which are fetched
      *    and kept updated by getMainWindowSize().
      */
-    val panelSize: IntVolumeSize = parentEntity?.size ?: getMainWindowSize(session)
+    val targetEntity = LocalCoreEntity.current
+    val parentEntity = targetEntity ?: LocalCoreMainPanelEntity.current
+    val panelSize: IntVolumeSize = targetEntity?.mutableSize ?: getMainWindowSize(session)
 
-    ElevatedPanel(
-        contentSize = contentSize ?: IntSize.Zero,
-        pose =
-            contentSize?.let {
-                rememberCalculatePose(
-                    data.calculateOffset(panelSize.run { IntSize2d(width, height) }, it, density),
-                    panelSize.run { IntSize(width, height) },
-                    it,
-                    data.elevation,
+    val view = rememberComposeView()
+    val panelEntity = remember {
+        CorePanelEntity(
+                PanelEntity.create(
+                    session = session,
+                    view = view,
+                    pixelDimensions = IntSize2d(0, 0),
+                    name = "Orbiter:${view.id}",
                 )
-            },
-        shape = data.shape,
-    ) {
+            )
+            .apply { enabled = false }
+    }
+
+    DisposableEffect(panelEntity) { onDispose { panelEntity.dispose() } }
+
+    view.setContent {
+        val constraints = Constraints(maxWidth = panelSize.width, maxHeight = panelSize.height)
+
+        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
+            Layout(content = content) { measurables, _ ->
+                val placeables = measurables.fastMap { it.measure(constraints) }
+                val contentSize =
+                    placeables.fastFold(IntSize.Zero) { acc, placeable ->
+                        IntSize(
+                            acc.width.coerceAtLeast(placeable.width),
+                            acc.height.coerceAtLeast(placeable.height),
+                        )
+                    }
+
+                layout(contentSize.width, contentSize.height) {
+                    placeables.fastForEach { it.place(0, 0) }
+
+                    panelEntity.size = IntVolumeSize(contentSize.width, contentSize.height, 0)
+                    val pose =
+                        calculatePose(
+                            data.calculateOffset(
+                                IntSize(constraints.maxWidth, constraints.maxHeight),
+                                contentSize,
+                                this@Layout,
+                            ),
+                            IntSize(constraints.maxWidth, constraints.maxHeight),
+                            contentSize,
+                            this@Layout,
+                            data.elevation,
+                        )
+                    panelEntity.poseInMeters = pose
+                    panelEntity.parent = parentEntity
+                    panelEntity.setShape(data.shape, this@Layout)
+                    panelEntity.enabled = true
+                }
+            }
+
+            // The scrim needs to be after the content so that it can capture input.
+            PanelScrim()
+        }
+    }
+}
+
+@Composable
+private fun PanelScrim() {
+    val view = LocalView.current
+    val dialogManager = LocalDialogManager.current
+    val isDialogActive = dialogManager.isSpatialDialogActive.value
+    if (isDialogActive) {
         Box(
             modifier =
-                Modifier.constrainTo(Constraints(0, panelSize.width, 0, panelSize.height))
-                    .onSizeChanged { contentSize = it }
-        ) {
-            content()
-        }
-        if (dialogManager.isSpatialDialogActive.value) {
-            Box(
-                modifier =
-                    Modifier.fillMaxSize().background(Color(DEFAULT_SCRIM_ALPHA)).pointerInput(
-                        Unit
-                    ) {
-                        detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
-                    }
-            ) {}
-        }
+                Modifier.fillMaxSize().pointerInput(Unit) {
+                    detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
+                }
+        )
+    }
+    SideEffect {
+        view.foreground =
+            if (isDialogActive) {
+                DEFAULT_SCRIM_ALPHA.toDrawable()
+            } else {
+                Color.TRANSPARENT.toDrawable()
+            }
     }
 }
 
@@ -343,15 +409,15 @@ public value class OrbiterOffsetType private constructor(private val value: Int)
 }
 
 internal data class OrbiterData(
-    public val position: ContentEdge,
-    public val verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    public val horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    public val offset: Dp,
-    public val offsetType: OrbiterOffsetType,
-    public val content: @Composable () -> Unit,
-    public val shape: SpatialShape,
-    public val elevation: Dp = OrbiterDefaults.Elevation,
-    public val shouldRenderInNonSpatial: Boolean = true,
+    val position: ContentEdge,
+    val verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    val horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    val offset: Dp,
+    val offsetType: OrbiterOffsetType,
+    val content: @Composable () -> Unit,
+    val shape: SpatialShape,
+    val elevation: Dp = OrbiterDefaults.Elevation,
+    val shouldRenderInNonSpatial: Boolean = true,
 )
 
 /**
@@ -359,7 +425,7 @@ internal data class OrbiterData(
  * and the size of the orbiter content, using the specified density to convert Dp to pixels.
  */
 private fun OrbiterData.calculateOffset(
-    viewSize: IntSize2d,
+    viewSize: IntSize,
     contentSize: IntSize,
     density: Density,
 ): Offset {
@@ -379,7 +445,7 @@ private fun OrbiterData.calculateOffset(
             when (position) {
                 ContentEdge.Start -> xOffset
                 ContentEdge.End -> viewSize.width - contentSize.width - xOffset
-                else -> error("Unexpected OrbiterEdge: $position")
+                else -> error("Unexpected ContentEdge: $position")
             }
         return Offset(x, y.toFloat())
     } else {
@@ -399,7 +465,7 @@ private fun OrbiterData.calculateOffset(
             when (position) {
                 ContentEdge.Top -> yOffset
                 ContentEdge.Bottom -> viewSize.height - contentSize.height - yOffset
-                else -> error("Unexpected OrbiterEdge: $position")
+                else -> error("Unexpected ContentEdge: $position")
             }
         return Offset(x.toFloat(), y)
     }

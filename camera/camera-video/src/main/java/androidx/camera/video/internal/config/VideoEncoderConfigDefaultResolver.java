@@ -92,16 +92,21 @@ public class VideoEncoderConfigDefaultResolver implements Supplier<VideoEncoderC
                 + "Capture frame rate = " + resolvedFrameRates.getCaptureRate() + "fps. "
                 + "Encode frame rate = " + resolvedFrameRates.getEncodeRate() + "fps.");
 
-        Range<Integer> videoSpecBitrateRange = mVideoSpec.getBitrate();
-        Logger.d(TAG, "Using fallback VIDEO bitrate");
-        // We have no other information to go off of. Scale based on fallback defaults.
-        int resolvedBitrate = VideoConfigUtil.scaleAndClampBitrate(
-                VIDEO_BITRATE_BASE,
-                mDynamicRange.getBitDepth(), VIDEO_BIT_DEPTH_BASE,
-                resolvedFrameRates.getEncodeRate(), VIDEO_FRAME_RATE_BASE,
-                mSurfaceSize.getWidth(), VIDEO_SIZE_BASE.getWidth(),
-                mSurfaceSize.getHeight(), VIDEO_SIZE_BASE.getHeight(),
-                videoSpecBitrateRange);
+        int resolvedBitrate;
+        int videoSpecBitrate = mVideoSpec.getBitrate();
+        if (videoSpecBitrate != VideoSpec.BITRATE_AUTO) {
+            resolvedBitrate = videoSpecBitrate;
+        } else {
+            Logger.d(TAG, "Using fallback VIDEO bitrate");
+            // We have no other information to go off of. Scale based on fallback defaults.
+            resolvedBitrate = VideoConfigUtil.scaleBitrate(
+                    VIDEO_BITRATE_BASE,
+                    mDynamicRange.getBitDepth(), VIDEO_BIT_DEPTH_BASE,
+                    resolvedFrameRates.getEncodeRate(), VIDEO_FRAME_RATE_BASE,
+                    mSurfaceSize.getWidth(), VIDEO_SIZE_BASE.getWidth(),
+                    mSurfaceSize.getHeight(), VIDEO_SIZE_BASE.getHeight()
+            );
+        }
 
         int resolvedProfile = DynamicRangeUtil.dynamicRangeToCodecProfileLevelForMime(
                 mMimeType, mDynamicRange);

@@ -24,6 +24,7 @@ package androidx.privacysandbox.sdkruntime.client
  *
  * @see [android.app.sdksandbox.SdkSandboxManager.SdkSandboxProcessDeathCallback]
  */
+@Deprecated("This library is no longer supported.")
 public interface SdkSandboxProcessDeathCallbackCompat {
     /**
      * Notifies the client application that the SDK sandbox has died. The sandbox could die for

@@ -76,17 +76,84 @@ class BrushFamilyTest {
         assertThat(BrushFamily(inputModel = BrushFamily.SPRING_MODEL).toString())
             .isEqualTo(
                 "BrushFamily(coats=[BrushCoat(tip=BrushTip(scale=(1.0, 1.0), " +
-                    "cornerRounding=1.0, slant=0.0, pinch=0.0, rotation=0.0, opacityMultiplier=1.0, " +
-                    "particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
-                    "behaviors=[]), paint=BrushPaint(textureLayers=[]))], clientBrushFamilyId=, " +
-                    "inputModel=SpringModel)"
+                    "cornerRounding=1.0, slantDegrees=0.0, pinch=0.0, rotationDegrees=0.0, " +
+                    "particleGapDistanceScale=0.0, particleGapDurationMillis=0, behaviors=[]), " +
+                    "paintPreferences=[BrushPaint(textureLayers=[], colorFunctions=[], " +
+                    "selfOverlap=SelfOverlap.ANY)])], clientBrushFamilyId=, inputModel=SpringModel)"
             )
     }
 
     @Test
     fun inputModelToString_returnsExpectedValues() {
-
         assertThat(BrushFamily.SPRING_MODEL.toString()).isEqualTo("SpringModel")
+        assertThat(BrushFamily.EXPERIMENTAL_RAW_POSITION_MODEL.toString())
+            .isEqualTo("ExperimentalRawPositionModel")
+        assertThat(BrushFamily.EXPERIMENTAL_NAIVE_MODEL.toString())
+            .isEqualTo("ExperimentalNaiveModel")
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                        windowDurationMillis = 47,
+                        upsamplingFrequencyHz = 150,
+                    )
+                    .toString()
+            )
+            .isEqualTo("SlidingWindowModel(windowDurationMillis=47, upsamplingFrequencyHz=150)")
+    }
+
+    @Test
+    fun inputModelEquals() {
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+        assertThat(BrushFamily.SPRING_MODEL).isEqualTo(BrushFamily.SPRING_MODEL)
+
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 48,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 151,
+                )
+            )
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(BrushFamily.SPRING_MODEL)
+        assertThat(BrushFamily.SPRING_MODEL)
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
     }
 
     @Test
@@ -159,10 +226,9 @@ class BrushFamilyTest {
             scaleX = 0.1f,
             scaleY = 0.2f,
             cornerRounding = 0.3f,
-            slant = 0.4f,
+            slantDegrees = 0.4f,
             pinch = 0.5f,
-            rotation = 0.6f,
-            opacityMultiplier = 0.7f,
+            rotationDegrees = 0.6f,
             particleGapDistanceScale = 0.8f,
             particleGapDurationMillis = 9L,
             listOf(customBehavior),
@@ -181,11 +247,12 @@ class BrushFamilyTest {
                     sizeY = 678.90F,
                     offsetX = 0.123f,
                     offsetY = 0.678f,
-                    rotation = 0.1f,
+                    rotationDegrees = 0.1f,
                     opacity = 0.123f,
-                    animationFrames = 1,
-                    animationRows = 1,
-                    animationColumns = 1,
+                    animationFrames = 2,
+                    animationRows = 3,
+                    animationColumns = 4,
+                    animationDurationMillis = 5000,
                     BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                     BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
                     BrushPaint.TextureMapping.TILING,
@@ -196,11 +263,12 @@ class BrushFamilyTest {
                     sizeY = 256F,
                     offsetX = 0.456f,
                     offsetY = 0.567f,
-                    rotation = 0.2f,
+                    rotationDegrees = 0.2f,
                     opacity = 0.987f,
-                    animationFrames = 1,
-                    animationRows = 1,
-                    animationColumns = 1,
+                    animationFrames = 2,
+                    animationRows = 3,
+                    animationColumns = 4,
+                    animationDurationMillis = 5000,
                     BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                     BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
                     BrushPaint.TextureMapping.TILING,

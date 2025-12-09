@@ -197,6 +197,6 @@ private class SceneCoreEntityMeasurePolicy(private val originalSize: IntVolumeSi
 }
 
 private fun <T : Entity> ComposeSubspaceNode.getAdaptableCoreEntity(): AdaptableCoreEntity<T>? =
-    coreEntity.castTo<AdaptableCoreEntity<T>>()
+    entity.castTo<AdaptableCoreEntity<T>>()
 
 private inline fun <reified T> Any?.castTo() = this as? T

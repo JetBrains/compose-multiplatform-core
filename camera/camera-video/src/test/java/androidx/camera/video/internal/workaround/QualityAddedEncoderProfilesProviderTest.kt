@@ -17,7 +17,6 @@
 package androidx.camera.video.internal.workaround
 
 import android.media.CamcorderProfile.QUALITY_480P
-import android.os.Build
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.EncoderProfilesProxy
@@ -42,7 +41,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class QualityAddedEncoderProfilesProviderTest {
 
     @Test

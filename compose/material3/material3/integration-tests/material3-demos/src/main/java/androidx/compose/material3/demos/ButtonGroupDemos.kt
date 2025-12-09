@@ -80,7 +80,7 @@ fun ButtonGroupDemos() {
                     FilledIconToggleButton(
                         checked = false,
                         onCheckedChange = {
-                            if (menuState.isExpanded) {
+                            if (menuState.isShowing) {
                                 menuState.dismiss()
                             } else {
                                 menuState.show()
@@ -94,6 +94,7 @@ fun ButtonGroupDemos() {
                     }
                 },
                 modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.Top,
             ) {
                 customItem(
                     buttonGroupContent = {

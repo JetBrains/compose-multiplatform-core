@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.tests.endtoend
 
@@ -44,6 +45,7 @@ import androidx.privacysandbox.ui.tests.util.TestSessionManager.TestSandboxedUiA
 import androidx.privacysandbox.ui.tests.util.TestSessionManager.TestSessionClient
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -204,6 +206,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         assertThat(testSession.zOrderChanged).isFalse()
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427561653
     @Test
     fun testHostCanSetZOrderAboveBeforeOpeningSession() {
         // TODO(b/301976432): Stop skipping this for backwards compat flow

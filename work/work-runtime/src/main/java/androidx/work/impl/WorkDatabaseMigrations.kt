@@ -17,7 +17,6 @@ package androidx.work.impl
 
 import android.content.ContentValues
 import android.content.Context
-import android.os.Build
 import androidx.room.OnConflictStrategy
 import androidx.room.RenameColumn
 import androidx.room.migration.AutoMigrationSpec
@@ -155,9 +154,7 @@ public object Migration_1_2 : Migration(VERSION_1, VERSION_2) {
 /** Marks `SCHEDULE_REQUESTED_AT` to something other than `SCHEDULE_NOT_REQUESTED_AT`. */
 public object Migration_3_4 : Migration(VERSION_3, VERSION_4) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            db.execSQL(PERIODIC_WORK_SET_SCHEDULE_REQUESTED_AT)
-        }
+        db.execSQL(PERIODIC_WORK_SET_SCHEDULE_REQUESTED_AT)
     }
 }
 

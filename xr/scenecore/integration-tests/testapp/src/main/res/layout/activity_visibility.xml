@@ -175,6 +175,13 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical">
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/visibility_hide_panel1_pointer"
+                        android:layout_width="425dp"
+                        android:layout_height="wrap_content"
+                        android:textFontWeight="400"
+                        android:textSize="16sp"
+                        android:text="HIDE POINTER FOR 1ST CHILD PANEL" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/visibility_hide_parent_panel"

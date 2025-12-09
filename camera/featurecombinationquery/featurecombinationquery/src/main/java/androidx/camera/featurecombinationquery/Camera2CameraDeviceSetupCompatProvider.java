@@ -36,6 +36,13 @@ class Camera2CameraDeviceSetupCompatProvider implements CameraDeviceSetupCompatP
         mCameraManager = context.getSystemService(CameraManager.class);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws UnsupportedOperationException if
+     * {@link android.hardware.camera2.CameraDevice.CameraDeviceSetup} cannot be created for the
+     * provided {@code cameraId}
+     */
     @Override
     public @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
             throws CameraAccessException {

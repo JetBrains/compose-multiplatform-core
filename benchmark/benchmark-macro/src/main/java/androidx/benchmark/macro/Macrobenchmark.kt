@@ -26,6 +26,7 @@ import androidx.annotation.RestrictTo
 import androidx.benchmark.Arguments
 import androidx.benchmark.ConfigurationError
 import androidx.benchmark.DeviceInfo
+import androidx.benchmark.DeviceMirroring
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
 import androidx.benchmark.InstrumentationResults
@@ -179,6 +180,12 @@ internal fun checkErrors(packageName: String): ConfigurationError.SuppressionSta
                     with benchmark runs that don't have method tracing enabled.
                 """
                                 .trimIndent(),
+                    ),
+                    conditionalError(
+                        hasError = DeviceMirroring.isAndroidStudioDeviceMirroringActive(),
+                        id = DeviceMirroring.Error.ID,
+                        summary = DeviceMirroring.Error.SUMMARY,
+                        message = DeviceMirroring.Error.MESSAGE.trimIndent(),
                     ),
                 )
                 .sortedBy { it.id }

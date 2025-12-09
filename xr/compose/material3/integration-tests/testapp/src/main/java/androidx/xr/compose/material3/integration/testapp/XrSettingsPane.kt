@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -43,58 +42,50 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
-import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.OrbiterOffsetType
-import androidx.xr.scenecore.scene
+import androidx.xr.compose.material3.SpaceToggleButton
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 internal fun XrSettingsPane(
+    selectedNavSuiteType: NavigationSuiteType?,
+    selectedOrbiterPosition: OrbiterPosition,
     onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit,
+    onOrbiterPositionChanged: (OrbiterPosition) -> Unit,
 ) {
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ListItem(headlineContent = { XrModeButton() })
-            ListItem(headlineContent = { NavigationSuiteTypeButton(onNavSuiteTypeChanged) })
             ListItem(
-                headlineContent = { XrNavigationOrbiterEdgeOffset(onOrbiterEdgeOffsetChanged) }
+                headlineContent = {
+                    SpaceToggleButton(
+                        Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp)
+                    )
+                }
+            )
+            ListItem(
+                headlineContent = {
+                    NavigationSuiteTypeDropdown(selectedNavSuiteType, onNavSuiteTypeChanged)
+                }
+            )
+            ListItem(
+                headlineContent = {
+                    XrNavigationOrbiterPositionDropdown(
+                        selectedOrbiterPosition,
+                        onOrbiterPositionChanged,
+                    )
+                }
             )
         }
     }
 }
 
 @Composable
-private fun XrModeButton() {
-    val session = LocalSession.current
-    val isDeviceXr = session != null
-    val isFullSpaceMode = LocalSpatialCapabilities.current.isSpatialUiEnabled
-
-    Button(
-        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
-        enabled = isDeviceXr,
-        onClick = {
-            if (isFullSpaceMode) {
-                session?.scene?.requestHomeSpaceMode()
-            } else {
-                session?.scene?.requestFullSpaceMode()
-            }
-        },
-    ) {
-        Text(
-            text = if (isDeviceXr) "Toggle FullSpace/HomeSpace Mode" else "XR unsupported",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-    }
-}
-
-@Composable
-private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit) {
-    val navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
+private fun NavigationSuiteTypeDropdown(
+    navSuiteType: NavigationSuiteType?,
+    onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
+) {
     val expanded = remember { mutableStateOf(false) }
     SimpleDropdown(
         dropdownLabel = "NavigationSuiteType",
@@ -102,6 +93,8 @@ private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteTyp
             listOf(
                 null,
                 NavigationSuiteType.NavigationRail,
+                NavigationSuiteType.WideNavigationRailExpanded,
+                NavigationSuiteType.WideNavigationRailCollapsed,
                 NavigationSuiteType.NavigationBar,
                 NavigationSuiteType.ShortNavigationBarCompact,
                 NavigationSuiteType.ShortNavigationBarMedium,
@@ -112,6 +105,8 @@ private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteTyp
             when (it) {
                 null -> "Default"
                 NavigationSuiteType.NavigationRail -> "Rail"
+                NavigationSuiteType.WideNavigationRailExpanded -> "Expressive Rail (Expanded)"
+                NavigationSuiteType.WideNavigationRailCollapsed -> "Expressive Rail (Collapsed)"
                 NavigationSuiteType.NavigationBar -> "Bar"
                 NavigationSuiteType.ShortNavigationBarCompact -> "Expressive Bar (Compact)"
                 NavigationSuiteType.ShortNavigationBarMedium -> "Expressive Bar (Medium)"
@@ -122,37 +117,20 @@ private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteTyp
     )
 }
 
-private enum class OrbiterEdgeOffsetTypeChoices {
-    /** The default Orbiter EdgeOffset, as defined in the implementation. */
-    Default,
-    /** An inner Orbiter EdgeOffset. */
-    Inner,
-    /** An overlapping inner Orbiter EdgeOffset. */
-    Overlap,
-}
-
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
-private fun XrNavigationOrbiterEdgeOffset(
-    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit
+private fun XrNavigationOrbiterPositionDropdown(
+    selectedItem: OrbiterPosition,
+    onOrbiterPositionChanged: (OrbiterPosition) -> Unit,
 ) {
-    val selectedItem = remember { mutableStateOf(OrbiterEdgeOffsetTypeChoices.Default) }
     val expanded = remember { mutableStateOf(false) }
-
-    val selectedEdgeOffsetType =
-        when (selectedItem.value) {
-            OrbiterEdgeOffsetTypeChoices.Default -> OrbiterOffsetType.OuterEdge
-            OrbiterEdgeOffsetTypeChoices.Inner -> OrbiterOffsetType.InnerEdge
-            OrbiterEdgeOffsetTypeChoices.Overlap -> OrbiterOffsetType.Overlap
-        }
-
     SimpleDropdown(
-        dropdownLabel = "NavigationRail Orbiter EdgeOffset",
-        items = OrbiterEdgeOffsetTypeChoices.values().asList(),
+        dropdownLabel = "NavigationSuite Orbiter Position",
+        items = OrbiterPosition.entries.toList(),
         selectedItem = selectedItem,
         expanded = expanded,
         itemLabel = { it.name },
-        onSelectedChange = { onOrbiterEdgeOffsetChanged(selectedEdgeOffsetType) },
+        onSelectedChange = onOrbiterPositionChanged,
     )
 }
 
@@ -161,12 +139,12 @@ private fun XrNavigationOrbiterEdgeOffset(
 private fun <T> SimpleDropdown(
     dropdownLabel: String,
     items: List<T>,
-    selectedItem: MutableState<T>,
+    selectedItem: T,
     expanded: MutableState<Boolean>,
     itemLabel: (T) -> String,
     onSelectedChange: (T) -> Unit,
 ) {
-    var state = rememberTextFieldState(itemLabel(selectedItem.value))
+    var state = rememberTextFieldState(itemLabel(selectedItem))
     Column {
         Text(text = dropdownLabel, style = MaterialTheme.typography.labelMedium)
         ExposedDropdownMenuBox(
@@ -178,7 +156,7 @@ private fun <T> SimpleDropdown(
                 state = state,
                 readOnly = true,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                label = { itemLabel(selectedItem.value) },
+                label = { itemLabel(selectedItem) },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded.value)
                 },
@@ -193,7 +171,6 @@ private fun <T> SimpleDropdown(
                     DropdownMenuItem(
                         text = { Text(itemLabel(item)) },
                         onClick = {
-                            selectedItem.value = item
                             state.setTextAndPlaceCursorAtEnd(itemLabel(item))
                             onSelectedChange(item)
                             expanded.value = false

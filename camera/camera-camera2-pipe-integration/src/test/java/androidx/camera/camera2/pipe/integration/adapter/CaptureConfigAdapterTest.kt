@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk
@@ -52,7 +51,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class CaptureConfigAdapterTest {
     private val fakeUseCaseThreads by lazy {
@@ -348,7 +347,6 @@ class CaptureConfigAdapterTest {
                 UseCaseGraphConfig(
                     graph = FakeCameraGraph(),
                     surfaceToStreamMap = mapOf(surface to StreamId(0)),
-                    cameraStateAdapter = CameraStateAdapter(),
                 ),
             cameraProperties = fakeCameraProperties,
             zslControl = ZslControlNoOpImpl(),

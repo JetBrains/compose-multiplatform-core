@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
@@ -33,7 +32,6 @@ import androidx.xr.scenecore.SpatialPointerIcon
  * @param icon The [SpatialPointerIcon] to be displayed on hover.
  * @return A [SubspaceModifier] that includes the hover icon behavior.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.pointerHoverIcon(icon: SpatialPointerIcon): SubspaceModifier =
     this.then(SpatialPointerHoverIconElement(icon))
 
@@ -73,8 +71,10 @@ internal class SpatialPointerHoverIconNode(internal var icon: SpatialPointerIcon
 
     override fun CoreEntityScope.modifyCoreEntity() {
         if (!isComponentAttached) {
-            check(coreEntity.addComponent(component)) {
-                "Could not add SpatialPointerComponent to Core Entity"
+            coreEntity.onEntityAttached {
+                check(coreEntity.addComponent(component) == true) {
+                    "Could not add SpatialPointerComponent to Core Entity"
+                }
             }
             isComponentAttached = true
         }

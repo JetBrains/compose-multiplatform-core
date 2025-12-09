@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
+import android.graphics.ImageFormat.JPEG
 import android.graphics.ImageFormat.JPEG_R
 import android.graphics.ImageFormat.PRIVATE
 import android.graphics.SurfaceTexture
@@ -51,6 +52,7 @@ import androidx.camera.camera2.pipe.integration.adapter.GuaranteedConfigurations
 import androidx.camera.camera2.pipe.integration.adapter.GuaranteedConfigurationsUtil.getLimitedSupportedCombinationList
 import androidx.camera.camera2.pipe.integration.adapter.GuaranteedConfigurationsUtil.getRAWSupportedCombinationList
 import androidx.camera.camera2.pipe.integration.config.CameraAppComponent
+import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_10B_UNCONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_8B_SDR_UNCONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_8B_UNCONSTRAINED
@@ -61,8 +63,10 @@ import androidx.camera.camera2.pipe.integration.internal.HDR10_UNCONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.HLG10_CONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.HLG10_SDR_CONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.HLG10_UNCONSTRAINED
+import androidx.camera.camera2.pipe.integration.internal.HighSpeedResolver
 import androidx.camera.camera2.pipe.integration.internal.LATENCY_NONE
 import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil
+import androidx.camera.camera2.pipe.testing.CameraPipeSimulator
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -86,8 +90,10 @@ import androidx.camera.core.impl.CameraMode.ULTRA_HIGH_RESOLUTION_CAMERA
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.ImageInputConfig
+import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
@@ -107,6 +113,7 @@ import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
@@ -133,8 +140,8 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
-import kotlin.collections.addAll
 import kotlin.math.floor
+import kotlinx.coroutines.test.TestScope
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -153,12 +160,13 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
+import org.robolectric.shadows.ShadowLooper
 import org.robolectric.util.ReflectionHelpers
 
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SupportedSurfaceCombinationTest {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
@@ -237,7 +245,6 @@ class SupportedSurfaceCombinationTest {
 
     private val NO_STREAM_USE_CASE: StreamUseCase? = null
 
-    private val streamUseCaseOverrideValue = 3L
     private val context = InstrumentationRegistry.getInstrumentation().context
     private var cameraFactory: FakeCameraFactory? = null
     private var useCaseConfigFactory: UseCaseConfigFactory = mock()
@@ -253,6 +260,8 @@ class SupportedSurfaceCombinationTest {
 
     @Before
     fun setUp() {
+        // Release display info caches to prevent the static instance include infos for other tests.
+        DisplayInfoManager.releaseInstance()
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         Shadows.shadowOf(windowManager.defaultDisplay).setRealWidth(displaySize.width)
         Shadows.shadowOf(windowManager.defaultDisplay).setRealHeight(displaySize.height)
@@ -270,6 +279,10 @@ class SupportedSurfaceCombinationTest {
     @After
     fun tearDown() {
         CameraXUtil.shutdown()[10000, TimeUnit.MILLISECONDS]
+        // Release display info caches.
+        DisplayInfoManager.releaseInstance()
+        // Drain the main looper to clear LiveData observers triggered by shutdown
+        ShadowLooper.idleMainLooper()
     }
 
     // //////////////////////////////////////////////////////////////////////////////////////////
@@ -856,7 +869,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                ImageFormat.JPEG,
+                JPEG,
                 vgaSize,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -877,7 +890,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                ImageFormat.JPEG,
+                JPEG,
                 previewSize,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -898,7 +911,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                ImageFormat.JPEG,
+                JPEG,
                 recordSize,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -919,7 +932,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                ImageFormat.JPEG,
+                JPEG,
                 maximumSize,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -988,7 +1001,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.CONCURRENT_CAMERA,
-                ImageFormat.JPEG,
+                JPEG,
                 RESOLUTION_720P,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -1057,7 +1070,7 @@ class SupportedSurfaceCombinationTest {
         val surfaceConfig =
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.CONCURRENT_CAMERA,
-                ImageFormat.JPEG,
+                JPEG,
                 RESOLUTION_1440P,
                 DEFAULT_STREAM_USE_CASE,
             )
@@ -1105,7 +1118,7 @@ class SupportedSurfaceCombinationTest {
         assertThat(
                 supportedSurfaceCombination.transformSurfaceConfig(
                     CameraMode.DEFAULT,
-                    ImageFormat.JPEG,
+                    JPEG,
                     ultraHighMaximumSize,
                     DEFAULT_STREAM_USE_CASE,
                 )
@@ -1117,7 +1130,7 @@ class SupportedSurfaceCombinationTest {
     fun transformSurfaceConfigWithUnsupportedFormatRecordSize() {
         setupCamera(
             CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-            supportedFormats = intArrayOf(ImageFormat.YUV_420_888, ImageFormat.JPEG, PRIVATE),
+            supportedFormats = intArrayOf(ImageFormat.YUV_420_888, JPEG, PRIVATE),
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(
@@ -1141,7 +1154,7 @@ class SupportedSurfaceCombinationTest {
     fun transformSurfaceConfigWithUnsupportedFormatMaximumSize() {
         setupCamera(
             CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-            supportedFormats = intArrayOf(ImageFormat.YUV_420_888, ImageFormat.JPEG, PRIVATE),
+            supportedFormats = intArrayOf(ImageFormat.YUV_420_888, JPEG, PRIVATE),
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(
@@ -1856,7 +1869,7 @@ class SupportedSurfaceCombinationTest {
         supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? = null,
         dynamicRangeProfiles: DynamicRangeProfiles? = null,
         default10BitProfile: Long? = null,
-        isPreviewStabilizationOn: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
         hasVideoCapture: Boolean = false,
         findMaxSupportedFrameRate: Boolean = false,
         expectedSessionType: Int = SESSION_TYPE_REGULAR,
@@ -1865,6 +1878,7 @@ class SupportedSurfaceCombinationTest {
         featureCombinationQuery: FeatureCombinationQuery = NO_OP_FEATURE_COMBINATION_QUERY,
         deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
         expectedStreamUseCaseMap: Map<UseCase, StreamUseCase?>? = null,
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
     ): SurfaceStreamSpecQueryResult {
         setupCamera(
             hardwareLevel = hardwareLevel,
@@ -1875,6 +1889,7 @@ class SupportedSurfaceCombinationTest {
             supportedHighSpeedSizeAndFpsMap = supportedHighSpeedSizeAndFpsMap,
             maxFpsBySizeMap = maxFpsBySizeMap,
             deviceFPSRanges = deviceFPSRanges,
+            sessionConfigQueryVersion = sessionConfigQueryVersion,
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(
@@ -1894,7 +1909,7 @@ class SupportedSurfaceCombinationTest {
                 cameraMode,
                 attachedSurfaceInfoList,
                 useCaseConfigToOutputSizesMap,
-                isPreviewStabilizationOn,
+                videoStabilization,
                 hasVideoCapture,
                 isFeatureComboInvocation,
                 findMaxSupportedFrameRate,
@@ -2576,6 +2591,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         val attachedAnalysis =
             AttachedSurfaceInfo.create(
@@ -2588,6 +2604,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -2623,6 +2640,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
@@ -2635,6 +2653,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
 
         // These constraints say HDR10 and HDR10_PLUS can be combined, but not HLG
@@ -2685,6 +2704,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
@@ -2697,6 +2717,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
 
         getSuggestedSpecsAndVerify(
@@ -2902,7 +2923,7 @@ class SupportedSurfaceCombinationTest {
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
-                ImageFormat.JPEG,
+                JPEG,
                 Size(1280, 720),
                 SDR,
                 listOf(CaptureType.PREVIEW),
@@ -2910,6 +2931,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -2932,7 +2954,7 @@ class SupportedSurfaceCombinationTest {
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
-                ImageFormat.JPEG,
+                JPEG,
                 Size(1280, 720),
                 SDR,
                 listOf(CaptureType.PREVIEW),
@@ -2940,6 +2962,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -2962,7 +2985,7 @@ class SupportedSurfaceCombinationTest {
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
-                ImageFormat.JPEG,
+                JPEG,
                 Size(1280, 720),
                 SDR,
                 listOf(CaptureType.PREVIEW),
@@ -2970,6 +2993,7 @@ class SupportedSurfaceCombinationTest {
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -3239,6 +3263,112 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
+    fun getSuggestedStreamSpec_withCustomMaxFrameRate_isRespected() {
+        // Arrange.
+        // Device supports 60fps for 1080p.
+        val maxFpsBySizeMap = mapOf(RESOLUTION_1080P to 60)
+        // Use case with custom max frame rate set to 30fps for 1080p.
+        val useCase =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(30, 30),
+                customMaxFpsMap = mapOf(RESOLUTION_1080P to 30),
+            )
+        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
+        val useCasesOutputSizesMap = mapOf(useCase to listOf(RESOLUTION_1080P))
+
+        // Act & Assert.
+        // The final fps should be capped at 30fps.
+        getSuggestedSpecsAndVerify(
+            useCasesExpectedResultMap = useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            compareExpectedFps = Range(30, 30),
+            deviceFPSRanges = arrayOf(Range(30, 30), Range(60, 60)),
+        )
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_withCustomMaxFrameRateHigherThanDevice_deviceMaxIsUsed() {
+        // Arrange.
+        // Device supports 30fps for 1080p.
+        val maxFpsBySizeMap = mapOf(RESOLUTION_1080P to 30)
+        // Use case with custom max frame rate set to 60fps for 1080p.
+        val useCase =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(30, 30),
+                customMaxFpsMap = mapOf(RESOLUTION_1080P to 60),
+            )
+        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
+        val useCasesOutputSizesMap = mapOf(useCase to listOf(RESOLUTION_1080P))
+
+        // Act & Assert.
+        // The final fps should be capped at 30fps by the device.
+        getSuggestedSpecsAndVerify(
+            useCasesExpectedResultMap = useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            compareExpectedFps = Range(30, 30),
+            deviceFPSRanges = arrayOf(Range(30, 30), Range(60, 60)),
+        )
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_targetFpsHigherThanCustomMax_customMaxIsUsed() {
+        // Arrange.
+        // Device supports 60fps for 1080p.
+        val maxFpsBySizeMap = mapOf(RESOLUTION_1080P to 60)
+        // Use case with custom max frame rate set to 30fps for 1080p, but target is 60fps.
+        val useCase =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(60, 60),
+                customMaxFpsMap = mapOf(RESOLUTION_1080P to 30),
+            )
+        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
+        val useCasesOutputSizesMap = mapOf(useCase to listOf(RESOLUTION_1080P))
+
+        // Act & Assert.
+        // The final fps should drop to 30fps.
+        getSuggestedSpecsAndVerify(
+            useCasesExpectedResultMap = useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            compareExpectedFps = Range(30, 30),
+            deviceFPSRanges = arrayOf(Range(30, 30), Range(60, 60)),
+        )
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_multipleUseCasesOneWithCustomMax_isRespectedForBoth() {
+        // Arrange.
+        // Device supports 60fps for 720p.
+        val maxFpsBySizeMap = mapOf(RESOLUTION_720P to 60)
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range(60, 60))
+        val useCase2 =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetFrameRate = Range(60, 60),
+                customMaxFpsMap = mapOf(RESOLUTION_720P to 30),
+            )
+        val useCaseExpectedResultMap =
+            mapOf(useCase1 to RESOLUTION_720P, useCase2 to RESOLUTION_720P)
+        val useCasesOutputSizesMap =
+            mapOf(useCase1 to listOf(RESOLUTION_720P), useCase2 to listOf(RESOLUTION_720P))
+
+        // Act & Assert.
+        // The final fps should drop to 30fps.
+        getSuggestedSpecsAndVerify(
+            useCasesExpectedResultMap = useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            compareExpectedFps = Range(30, 30),
+            deviceFPSRanges = arrayOf(Range(30, 30), Range(60, 60)),
+        )
+    }
+
+    @Test
     fun getSuggestedStreamSpec_singleUseCase_returnMaxSupportedFrameRate() {
         // Arrange.
         val useCase = createUseCase(CaptureType.PREVIEW)
@@ -3429,7 +3559,7 @@ class SupportedSurfaceCombinationTest {
                 mockEncoderProfilesAdapter,
                 NO_OP_FEATURE_COMBINATION_QUERY,
             )
-        val imageFormat = ImageFormat.JPEG
+        val imageFormat = JPEG
         val surfaceSizeDefinition =
             supportedSurfaceCombination.getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)
         assertThat(surfaceSizeDefinition.s720pSizeMap[imageFormat]).isEqualTo(RESOLUTION_720P)
@@ -3452,7 +3582,7 @@ class SupportedSurfaceCombinationTest {
                 mockEncoderProfilesAdapter,
                 NO_OP_FEATURE_COMBINATION_QUERY,
             )
-        val imageFormat = ImageFormat.JPEG
+        val imageFormat = JPEG
         val surfaceSizeDefinition =
             supportedSurfaceCombination.getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)
         assertThat(surfaceSizeDefinition.s720pSizeMap[imageFormat]).isEqualTo(RESOLUTION_VGA)
@@ -3470,14 +3600,13 @@ class SupportedSurfaceCombinationTest {
                 mockEncoderProfilesAdapter,
                 NO_OP_FEATURE_COMBINATION_QUERY,
             )
-        val imageFormat = ImageFormat.JPEG
+        val imageFormat = JPEG
         val surfaceSizeDefinition =
             supportedSurfaceCombination.getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)
         assertThat(surfaceSizeDefinition.s1440pSizeMap[imageFormat]).isEqualTo(RESOLUTION_VGA)
     }
 
     @Test
-    @Config(minSdk = 23)
     fun correctMaximumSize_withHighResolutionOutputSizes() {
         setupCamera(highResolutionSupportedSizes = highResolutionSupportedSizes)
         val supportedSurfaceCombination =
@@ -3487,7 +3616,7 @@ class SupportedSurfaceCombinationTest {
                 mockEncoderProfilesAdapter,
                 NO_OP_FEATURE_COMBINATION_QUERY,
             )
-        val imageFormat = ImageFormat.JPEG
+        val imageFormat = JPEG
         val surfaceSizeDefinition =
             supportedSurfaceCombination.getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)
         assertThat(surfaceSizeDefinition.maximumSizeMap[imageFormat])
@@ -3513,7 +3642,7 @@ class SupportedSurfaceCombinationTest {
                 mockEncoderProfilesAdapter,
                 NO_OP_FEATURE_COMBINATION_QUERY,
             )
-        val imageFormat = ImageFormat.JPEG
+        val imageFormat = JPEG
         val surfaceSizeDefinition =
             supportedSurfaceCombination.getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)
         assertThat(surfaceSizeDefinition.ultraMaximumSizeMap[imageFormat])
@@ -3648,190 +3777,298 @@ class SupportedSurfaceCombinationTest {
         assertThat(resultList).containsExactlyElementsIn(expectedResultList).inOrder()
     }
 
+    // //////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // STREAM_USE_CASE tests
+    //
+    // //////////////////////////////////////////////////////////////////////////////////////////
+
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
-    fun canPopulateStreamUseCaseStreamSpecOption_jpeg() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, landscapePixelArraySize) }
-        val result = getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
-        assertThat(result.useCaseStreamSpecs.size).isEqualTo(1)
-        assertThat(result.useCaseStreamSpecs[jpegUseCase.currentConfig]!!.getStreamUseCase())
-            .isEqualTo(streamUseCaseOverrideValue)
+    fun canPopulateStreamUseCaseAsStillCaptureType_withSingleImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(maximumSize),
+            expectedStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseAsMultiPurposeType_withSinglePreview() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW),
+            expectedSizes = listOf(previewSize),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW_VIDEO_STILL),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseAsMultiPurposeType_withSingleImageAnalysis() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW_VIDEO_STILL),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(previewSize, maximumSize),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndVideoCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE),
+            expectedSizes = listOf(previewSize, recordSize),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.VIDEO_RECORD),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndImageAnalysis() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(previewSize, RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewVideoCaptureAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes =
+                listOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(previewSize, recordSize, recordSize),
+            expectedStreamUseCases =
+                listOf(
+                    StreamUseCase.PREVIEW,
+                    StreamUseCase.VIDEO_RECORD,
+                    StreamUseCase.STILL_CAPTURE,
+                ),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewImageAnalysisAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes =
+                listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(previewSize, RESOLUTION_VGA, maximumSize),
+            expectedStreamUseCases =
+                listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW, StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_overrideImageCaptureAsVideoRecordType() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(maximumSize),
+            expectedStreamUseCases = listOf(StreamUseCase.VIDEO_RECORD),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD),
+        )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun throwException_PopulateStreamUseCaseStreamSpecOption_notFullyOverride() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val yuvUseCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = false,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(jpegUseCase, landscapePixelArraySize)
-                put(yuvUseCase, previewSize)
-            }
         assertThrows(IllegalArgumentException::class.java) {
-            getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
+            populateStreamUseCaseTypesForUseCases(
+                captureTypes = listOf(CaptureType.IMAGE_CAPTURE, CaptureType.PREVIEW),
+                expectedSizes = listOf(maximumSize, previewSize),
+                expectedStreamUseCases = emptyList(), // unnecessary for the test
+                useCaseConfigStreamUseCases =
+                    listOf(StreamUseCase.STILL_CAPTURE, StreamUseCase.PREVIEW),
+                streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD, NO_STREAM_USE_CASE),
+            )
         }
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
-    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedCombination() {
-        val useCase1 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCase2 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, previewSize)
-                put(useCase2, previewSize)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        // PRIV + PRIV is supported by the Ultra-high table but not Stream use case
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            cameraMode = ULTRA_HIGH_RESOLUTION_CAMERA,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedPreviewMaxSizeCombination() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW),
+            expectedSizes = listOf(maximumSize),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW),
         )
     }
 
-    @Config(minSdk = 21, maxSdk = 32)
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedPreviewAndPreviewCombination() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.PREVIEW),
+            expectedSizes = listOf(previewSize, previewSize),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD, StreamUseCase.VIDEO_RECORD),
+        )
+    }
+
+    @Config(maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOs() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, maximumSize) }
-        val expectedStreamUseCaseMap = mapOf(jpegUseCase to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(maximumSize),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
         )
     }
 
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Config(maxSdk = 32)
     @Test
-    fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_differentMaxSize() {
-        val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(useCase1, maximumSize) }
-        // In this case, the stream use case path and limited path would produce two different max
-        // sizes, resulting in the stream use case path being dropped.
-        val expectedStreamUseCaseMap = mapOf(useCase1 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
-        )
-    }
-
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
-    @Test
-    fun populateStreamUseCaseStreamSpecOption_previewAndRecordSize_success() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap = mapOf(useCase1 to recordSize, useCase2 to previewSize)
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to StreamUseCase.VIDEO_RECORD, useCase2 to StreamUseCase.PREVIEW)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
-        )
-    }
-
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
-    @Test
-    fun populateStreamUseCaseStreamSpecOption_twoPreviewSizes_success() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCasesOutputSizesMap =
-            mapOf(useCase1 to listOf(previewSize), useCase2 to listOf(previewSize))
-        val useCaseExpectedResultMap = mapOf(useCase1 to previewSize, useCase2 to previewSize)
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to StreamUseCase.VIDEO_RECORD, useCase2 to StreamUseCase.PREVIEW)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            useCasesOutputSizesMap = useCasesOutputSizesMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOsWithOverrideStreamUseCase() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(maximumSize),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD),
         )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_wrongImageFormat() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                imageFormat = ImageFormat.JPEG,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, previewSize)
-                put(useCase2, maximumSize)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(previewSize, RESOLUTION_VGA),
+            useCaseConfigImageFormats = listOf(JPEG, null),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
         )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_wrongCaptureType() {
-        val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, recordSize)
-                put(useCase2, previewSize)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.PREVIEW),
+            expectedSizes = listOf(previewSize, recordSize),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
         )
     }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_meteringRepeatingForImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.METERING_REPEATING),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW),
+            attachedSurfaceInfoList = listOf(createImageCaptureAttachedSurfaceInfo()),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_meteringRepeatingForVideoCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.METERING_REPEATING),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW),
+            attachedSurfaceInfoList = listOf(createVideoCaptureAttachedSurfaceInfo()),
+        )
+    }
+
+    /**
+     * Creates the UseCases to populate the stream use case and verify the result.
+     *
+     * @param captureTypes capture types info for the use cases.
+     * @param expectedSizes expected sizes for the use cases.
+     * @param expectedStreamUseCases expected stream use cases for the use cases.
+     * @param useCaseConfigImageFormats image format setting in the use cases' configs.
+     * @param useCaseConfigStreamUseCases default stream use cases setting in the use cases'
+     *   configs.
+     * @param streamUseCasesOverride the stream use cases override in the use cases' configs.
+     * @param attachedSurfaceInfoList the attached surface info list.
+     */
+    private fun populateStreamUseCaseTypesForUseCases(
+        captureTypes: List<CaptureType>,
+        expectedSizes: List<Size>,
+        expectedStreamUseCases: List<StreamUseCase?>,
+        useCaseConfigImageFormats: List<Int?>? = null,
+        useCaseConfigStreamUseCases: List<StreamUseCase?>? = null,
+        streamUseCasesOverride: List<StreamUseCase?>? = null,
+        attachedSurfaceInfoList: List<AttachedSurfaceInfo> = emptyList(),
+    ) {
+        val useCasesOutputSizesMap = mutableMapOf<UseCase, List<Size>>()
+        val useCaseExpectedSizeResultMap = mutableMapOf<UseCase, Size>()
+        val useCaseExpectedStreamUseCaseResultMap = mutableMapOf<UseCase, StreamUseCase?>()
+
+        captureTypes.onEachIndexed { index, captureType ->
+            val useCase =
+                createUseCase(
+                    captureType = captureType,
+                    imageFormat = useCaseConfigImageFormats?.get(index),
+                    streamUseCaseOverride = streamUseCasesOverride?.get(index),
+                    streamUseCase = useCaseConfigStreamUseCases?.get(index),
+                )
+            useCasesOutputSizesMap[useCase] = listOf(expectedSizes[index])
+            useCaseExpectedSizeResultMap[useCase] = expectedSizes[index]
+            useCaseExpectedStreamUseCaseResultMap[useCase] = expectedStreamUseCases.getOrNull(index)
+        }
+
+        val result =
+            getSuggestedSpecsAndVerify(
+                useCasesExpectedResultMap = useCaseExpectedSizeResultMap,
+                attachedSurfaceInfoList = attachedSurfaceInfoList,
+                hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+                useCasesOutputSizesMap = useCasesOutputSizesMap,
+            )
+        assertThat(result.useCaseStreamSpecs.size).isEqualTo(captureTypes.size)
+
+        useCaseExpectedStreamUseCaseResultMap.keys.forEach { useCase ->
+            assertThat(result.useCaseStreamSpecs[useCase.currentConfig]!!.getStreamUseCase())
+                .isEqualTo(useCaseExpectedStreamUseCaseResultMap[useCase]?.value)
+        }
+    }
+
+    private fun createImageCaptureAttachedSurfaceInfo() =
+        AttachedSurfaceInfo.create(
+            SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM, StreamUseCase.STILL_CAPTURE),
+            JPEG,
+            maximumSize,
+            SDR,
+            listOf(CaptureType.IMAGE_CAPTURE),
+            MutableOptionsBundle.emptyBundle(),
+            SESSION_TYPE_REGULAR,
+            FRAME_RATE_RANGE_UNSPECIFIED,
+            false,
+            FRAME_RATE_UNLIMITED,
+        )
+
+    private fun createVideoCaptureAttachedSurfaceInfo() =
+        AttachedSurfaceInfo.create(
+            SurfaceConfig.create(ConfigType.PRIV, ConfigSize.RECORD, StreamUseCase.VIDEO_RECORD),
+            PRIVATE,
+            recordSize,
+            SDR,
+            listOf(CaptureType.VIDEO_CAPTURE),
+            MutableOptionsBundle.emptyBundle(),
+            SESSION_TYPE_REGULAR,
+            FRAME_RATE_RANGE_UNSPECIFIED,
+            false,
+            FRAME_RATE_UNLIMITED,
+        )
 
     @Config(minSdk = Build.VERSION_CODES.M)
     @Test
@@ -3864,6 +4101,26 @@ class SupportedSurfaceCombinationTest {
             useCaseExpectedResultMap,
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             compareExpectedFps = Range.create(240, 240),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_noTargetFps_useDefaultFps() {
+        val sessionType = SESSION_TYPE_HIGH_SPEED
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, sessionType = sessionType)
+        val videoUseCase = createUseCase(CaptureType.VIDEO_CAPTURE, sessionType = sessionType)
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase to listOf(RESOLUTION_720P),
+                videoUseCase to listOf(RESOLUTION_720P),
+            )
+        val useCaseExpectedResultMap =
+            mapOf(previewUseCase to RESOLUTION_720P, videoUseCase to RESOLUTION_720P)
+        getSuggestedSpecsAndVerifyForHighSpeed(
+            useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            compareExpectedFps = HighSpeedResolver.DEFAULT_FPS,
         )
     }
 
@@ -3913,21 +4170,6 @@ class SupportedSurfaceCombinationTest {
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             compareExpectedFps = Range.create(240, 240), // Find the closest max supported fps.
         )
-    }
-
-    @Config(minSdk = 21, maxSdk = 22)
-    @Test
-    fun getSuggestedStreamSpec_highSpeed_unsupportedSdkVersion_throwException() {
-        val useCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                sessionType = SESSION_TYPE_HIGH_SPEED,
-                targetFrameRate = Range.create(240, 240),
-            )
-        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
-        Assert.assertThrows(IllegalArgumentException::class.java) {
-            getSuggestedSpecsAndVerifyForHighSpeed(useCaseExpectedResultMap)
-        }
     }
 
     @Config(minSdk = Build.VERSION_CODES.M)
@@ -4191,7 +4433,7 @@ class SupportedSurfaceCombinationTest {
                 },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act: Check for a FCQ SurfaceConfig combination
         supportedSurfaceCombination.checkSupported(
@@ -4216,7 +4458,7 @@ class SupportedSurfaceCombinationTest {
                 fakeFeatureCombinationQuery.apply { isSupported = false },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act & assert
         assertThat(
@@ -4231,6 +4473,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun checkSupported_featureComboQueryReportsSupported_fcqSurfaceCombinationSupported() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. that always returns true
@@ -4243,7 +4486,7 @@ class SupportedSurfaceCombinationTest {
                 fakeFeatureCombinationQuery.apply { isSupported = true },
             )
         val surfaceConfigList =
-            GuaranteedConfigurationsUtil.QUERYABLE_FCQ_COMBINATIONS.first().surfaceConfigList
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
 
         // Act & assert
         assertThat(
@@ -4298,55 +4541,290 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
-    fun getSuggestedStreamSpecs_allFeaturesSupported_fcqInvokedWithCorrectParameters() {
-        // Arrange: Preview + ImageCapture use cases with all FCQ features - HLG10, 60 FPS, Preview
-        // Stabilization, and Ultra HDR
-        val previewUseCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                dynamicRange =
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        HLG_10_BIT
-                    } else {
-                        DynamicRange.UNSPECIFIED
-                    },
-                targetFrameRate = Range(60, 60),
+    fun checkSupported_returnsFalseForVicFcqStreamCombo_whenSessionConfigQueryVersionIsUdc() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
             )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Test
+    fun checkSupported_returnsFalseForBaklavaFcqStreamCombo_whenSessionConfigQueryVersionIsVic() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert: Baklava configs should not be supported
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenQueryVersionIsBaklava() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(requiresFeatureComboQuery = true),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isTrue()
+    }
+
+    @Test
+    fun checkSupported_returnsFalseForBaklavaFcqStreamCombo_whenPreviewStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.PREVIEW,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forPreviewStabilization() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            videoStabilization = VideoStabilization.PREVIEW,
+        ) { sessionConfig ->
+            assertThat(sessionConfig.repeatingCaptureConfig.previewStabilizationMode)
+                .isEqualTo(StabilizationMode.ON)
+        }
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forVideoStabilization() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
+        val videoCaptureUseCase = createUseCase(CaptureType.VIDEO_CAPTURE)
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, videoCaptureUseCase),
+            videoStabilization = VideoStabilization.ON,
+            sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA,
+        ) { sessionConfig ->
+            assertThat(sessionConfig.repeatingCaptureConfig.videoStabilizationMode)
+                .isEqualTo(StabilizationMode.ON)
+        }
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forUltraHdr() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
         val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE, imageFormat = JPEG_R)
 
-        val useCasesOutputSizesMap =
-            mapOf(
-                previewUseCase to listOf(RESOLUTION_1080P),
-                imageCaptureUseCase to listOf(RESOLUTION_1440P_16_9),
-            )
-        val useCaseExpectedResultMap =
-            mapOf(previewUseCase to RESOLUTION_1080P, imageCaptureUseCase to RESOLUTION_1440P_16_9)
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            imageCaptureFormat = JPEG_R,
+        ) { sessionConfig ->
+            assertThat(sessionConfig.outputConfigs.map { it.surface.prescribedStreamFormat })
+                .contains(JPEG_R)
+        }
+    }
 
-        // Act & assert that all features are supported
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            useCasesOutputSizesMap = useCasesOutputSizesMap,
-            dynamicRangeProfiles = if (Build.VERSION.SDK_INT >= 33) HLG10_CONSTRAINED else null,
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forHlg10() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, dynamicRange = HLG_10_BIT)
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
+            dynamicRangeProfiles = HLG10_CONSTRAINED,
             capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
-            isPreviewStabilizationOn = Build.VERSION.SDK_INT >= 33,
-            isFeatureComboInvocation = true,
-            featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
+        )
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_for60Fps() {
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range(60, 60))
+        val imageCaptureUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
+        verifySuggestedStreamSpecsFcqParameters(
+            useCases = listOf(previewUseCase, imageCaptureUseCase),
             maxFpsBySizeMap =
                 mapOf(RESOLUTION_1080P to 60, RESOLUTION_1440P_16_9 to 60, RESOLUTION_UHD to 60),
+        ) { sessionConfig ->
+            assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(Range(60, 60))
+        }
+    }
+
+    /**
+     * Helper function to run a Feature Combination Query (FCQ) test scenario and verify the
+     * parameters passed to the [FeatureCombinationQuery] implementation.
+     *
+     * This function sets up the necessary environment for an FCQ test, including creating default
+     * output sizes for the provided use cases, invoking the
+     * [SupportedSurfaceCombination.getSuggestedStreamSpecifications] method, and then asserting
+     * that the [FeatureCombinationQuery] received the expected [SessionConfig] parameters.
+     *
+     * Specifically, it verifies the surface parameters (format, size, container class, and dynamic
+     * range) of each output configuration. Additional custom assertions can be performed via the
+     * [additionalVerification] lambda.
+     *
+     * @param useCases The list of [UseCase] objects to be used in the test.
+     * @param videoStabilization The video stabilization mode.
+     * @param dynamicRangeProfiles The [DynamicRangeProfiles] to be used for camera setup.
+     * @param capabilities The camera capabilities to be used for camera setup.
+     * @param maxFpsBySizeMap A map of [Size] to max FPS for camera setup.
+     * @param sessionConfigQueryVersion The session configuration query version for camera setup.
+     * @param imageCaptureFormat The expected image format for [ImageCapture] use cases.
+     * @param additionalVerification An optional lambda function to perform additional assertions on
+     *   the [SessionConfig] passed to the [FeatureCombinationQuery].
+     */
+    private fun verifySuggestedStreamSpecsFcqParameters(
+        useCases: List<UseCase>,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
+        dynamicRangeProfiles: DynamicRangeProfiles? = null,
+        capabilities: IntArray? = null,
+        maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
+        imageCaptureFormat: Int = JPEG,
+        additionalVerification: ((SessionConfig) -> Unit)? = null,
+    ) {
+        val useCaseToSizesMap = mutableMapOf<UseCase, List<Size>>()
+        val useCaseToExpectedSizeMap = mutableMapOf<UseCase, Size>()
+
+        useCases.forEach {
+            val defaultSize =
+                when (it.currentConfig.captureType) {
+                    CaptureType.PREVIEW -> RESOLUTION_1080P
+                    CaptureType.IMAGE_CAPTURE -> RESOLUTION_1440P_16_9
+                    CaptureType.VIDEO_CAPTURE -> RESOLUTION_1080P
+                    else -> throw IllegalArgumentException("Unsupported CaptureType")
+                }
+            useCaseToSizesMap[it] = listOf(defaultSize)
+            useCaseToExpectedSizeMap[it] = defaultSize
+        }
+
+        // Act
+        getSuggestedSpecsAndVerify(
+            useCaseToExpectedSizeMap,
+            useCasesOutputSizesMap = useCaseToSizesMap,
+            videoStabilization = videoStabilization,
+            isFeatureComboInvocation = true,
+            featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
+            dynamicRangeProfiles = dynamicRangeProfiles,
+            capabilities = capabilities,
+            maxFpsBySizeMap = maxFpsBySizeMap,
+            sessionConfigQueryVersion = sessionConfigQueryVersion,
         )
 
-        // Assert: Correct params were passed every time FeatureCombinationQuery API was invoked
-
-        // Same dynamic range should be resolved to all use cases, HLG_10 is not supported before
-        // API 33
-        val expectedDynamicRange = if (Build.VERSION.SDK_INT >= 33) HLG_10_BIT else SDR
-
-        val expectedPreviewStabilization =
-            if (Build.VERSION.SDK_INT >= 33) StabilizationMode.ON else StabilizationMode.UNSPECIFIED
-
+        // Assert that correct params were passed to FeatureCombinationQuery
         fakeFeatureCombinationQuery.queriedConfigs.forEach { sessionConfig ->
-            // Verify surface parameters of each output config, each config dynamic range should be
-            // resolved to the same HLG10
+            val expectedOutputConfigs =
+                useCases.map {
+                    val dynamicRange =
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                dynamicRangeProfiles == HLG10_CONSTRAINED
+                        ) {
+                            HLG_10_BIT
+                        } else {
+                            SDR
+                        }
+                    when (it.currentConfig.captureType) {
+                        CaptureType.PREVIEW ->
+                            listOf(
+                                PRIVATE,
+                                RESOLUTION_1080P,
+                                UseCaseType.PREVIEW.surfaceClass,
+                                dynamicRange,
+                            )
+                        CaptureType.IMAGE_CAPTURE ->
+                            listOf(
+                                imageCaptureFormat,
+                                RESOLUTION_1440P_16_9,
+                                UseCaseType.IMAGE_CAPTURE.surfaceClass,
+                                dynamicRange,
+                            )
+                        CaptureType.VIDEO_CAPTURE ->
+                            listOf(
+                                PRIVATE,
+                                RESOLUTION_1080P,
+                                UseCaseType.VIDEO_CAPTURE.surfaceClass,
+                                dynamicRange,
+                            )
+                        else -> throw IllegalArgumentException("Unsupported CaptureType")
+                    }
+                }
             assertThat(
                     sessionConfig.outputConfigs.map {
                         listOf(
@@ -4357,27 +4835,8 @@ class SupportedSurfaceCombinationTest {
                         )
                     }
                 )
-                .containsExactly(
-                    listOf( // Preview
-                        PRIVATE,
-                        RESOLUTION_1080P,
-                        UseCaseType.PREVIEW.surfaceClass,
-                        expectedDynamicRange,
-                    ),
-                    listOf( // ImageCapture
-                        JPEG_R, // Verify Ultra HDR
-                        RESOLUTION_1440P_16_9,
-                        UseCaseType.IMAGE_CAPTURE.surfaceClass,
-                        expectedDynamicRange,
-                    ),
-                )
-
-            // Verify 60 FPS
-            assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(Range(60, 60))
-
-            // Verify Preview Stabilization
-            assertThat(sessionConfig.repeatingCaptureConfig.previewStabilizationMode)
-                .isEqualTo(expectedPreviewStabilization)
+                .containsExactlyElementsIn(expectedOutputConfigs)
+            additionalVerification?.invoke(sessionConfig)
         }
     }
 
@@ -4444,6 +4903,68 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
+    @Test
+    fun checkSupported_returnsFalseForVicFcqStreamCombo_whenVideoStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_VIC_FCQ_COMBINATIONS.first().surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.ON,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isFalse()
+    }
+
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
+    @Test
+    fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenVideoStabilizationIsOn() {
+        // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
+        setupCamera(sessionConfigQueryVersion = Build.VERSION_CODES.BAKLAVA)
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEncoderProfilesAdapter,
+                fakeFeatureCombinationQuery.apply { isSupported = true },
+            )
+        val surfaceConfigList =
+            GuaranteedConfigurationsUtil.QUERYABLE_BAKLAVA_FCQ_COMBINATIONS.first()
+                .surfaceConfigList
+
+        // Act & assert
+        assertThat(
+                supportedSurfaceCombination.checkSupported(
+                    createFeatureSettings(
+                        requiresFeatureComboQuery = true,
+                        videoStabilization = VideoStabilization.ON,
+                    ),
+                    surfaceConfigList,
+                    surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
+                    surfaceConfigList.toUseCaseConfigs(),
+                    (0 until surfaceConfigList.size).toList(),
+                )
+            )
+            .isTrue()
+    }
+
     private fun createSupportedSurfaceCombinationWithSetup(
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
     ): SupportedSurfaceCombination {
@@ -4461,6 +4982,7 @@ class SupportedSurfaceCombinationTest {
         requiresFeatureComboQuery: Boolean = false,
         targetFpsRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFpsRequired: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
     ) =
         SupportedSurfaceCombination.FeatureSettings(
             CameraMode.DEFAULT,
@@ -4469,6 +4991,7 @@ class SupportedSurfaceCombinationTest {
             requiresFeatureComboQuery = requiresFeatureComboQuery,
             targetFpsRange = targetFpsRange,
             isStrictFpsRequired = isStrictFpsRequired,
+            videoStabilization = videoStabilization,
         )
 
     private fun setupCamera(
@@ -4487,6 +5010,8 @@ class SupportedSurfaceCombinationTest {
         cameraId: CameraId = CameraId.fromCamera1Id(0),
         maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
         deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
+        // VIC used as default as it's the first version supporting FCQ combinations
+        sessionConfigQueryVersion: Int = Build.VERSION_CODES.VANILLA_ICE_CREAM,
     ) {
         cameraFactory = FakeCameraFactory()
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
@@ -4580,6 +5105,11 @@ class SupportedSurfaceCombinationTest {
                 )
             }
         characteristicsMap[CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES] = vs
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            characteristicsMap[CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION] =
+                sessionConfigQueryVersion
+        }
 
         // set up FakeCafakeCameraMetadatameraMetadata
         fakeCameraMetadata =
@@ -4730,6 +5260,8 @@ class SupportedSurfaceCombinationTest {
                     mapOf(FakeCameraBackend.FAKE_CAMERA_BACKEND_ID to listOf(fakeCameraMetadata)),
             )
         whenever(mockCameraAppComponent.getCameraDevices()).thenReturn(fakeCameraDevices)
+        whenever(mockCameraAppComponent.getCameraPipe())
+            .thenReturn(CameraPipeSimulator.create(TestScope(), context))
         cameraFactory!!.cameraManager = mockCameraAppComponent
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(CameraPipeConfig.defaultConfig())
@@ -4741,6 +5273,7 @@ class SupportedSurfaceCombinationTest {
                     _: CameraThreadConfig?,
                     _: CameraSelector?,
                     _: Long,
+                    _: CameraXConfig?,
                     _: StreamSpecsCalculator ->
                     cameraFactory!!
                 }
@@ -4761,19 +5294,21 @@ class SupportedSurfaceCombinationTest {
         sessionType: Int? = null,
         targetFrameRate: Range<Int>? = null,
         isStrictFpsRequired: Boolean = false,
+        customMaxFpsMap: Map<Size, Int>? = null,
         dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
         surfaceOccupancyPriority: Int? = null,
         streamUseCase: StreamUseCase? = null,
     ): UseCase {
         return createUseCase(
-            captureType,
-            sessionType,
-            targetFrameRate,
-            isStrictFpsRequired,
-            dynamicRange,
-            streamUseCaseOverride = false,
+            captureType = captureType,
+            sessionType = sessionType,
+            targetFrameRate = targetFrameRate,
+            isStrictFpsRequired = isStrictFpsRequired,
+            customMaxFpsMap = customMaxFpsMap,
+            dynamicRange = dynamicRange,
             surfaceOccupancyPriority = surfaceOccupancyPriority,
             streamUseCase = streamUseCase,
+            streamUseCaseOverride = null,
         )
     }
 
@@ -4789,11 +5324,12 @@ class SupportedSurfaceCombinationTest {
         sessionType: Int? = null,
         targetFrameRate: Range<Int>? = null,
         isStrictFpsRequired: Boolean? = null,
+        customMaxFpsMap: Map<Size, Int>? = null,
         dynamicRange: DynamicRange? = DynamicRange.UNSPECIFIED,
-        streamUseCaseOverride: Boolean = false,
         imageFormat: Int? = null,
         surfaceOccupancyPriority: Int? = null,
         streamUseCase: StreamUseCase? = null,
+        streamUseCaseOverride: StreamUseCase? = null,
     ): UseCase {
         val builder =
             FakeUseCaseConfig.Builder(
@@ -4802,7 +5338,7 @@ class SupportedSurfaceCombinationTest {
                 captureType,
                 imageFormat
                     ?: when (captureType) {
-                        CaptureType.IMAGE_CAPTURE -> ImageFormat.JPEG
+                        CaptureType.IMAGE_CAPTURE -> JPEG
                         CaptureType.IMAGE_ANALYSIS -> ImageFormat.YUV_420_888
                         else -> ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
                     },
@@ -4819,13 +5355,19 @@ class SupportedSurfaceCombinationTest {
                 it,
             )
         }
+        customMaxFpsMap?.let {
+            builder.mutableConfig.insertOption(
+                UseCaseConfig.OPTION_RESOLUTION_TO_MAX_FRAME_RATES,
+                it,
+            )
+        }
         streamUseCase?.let { builder.setStreamUseCase(it) }
         builder.mutableConfig.insertOption(
             ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE,
             dynamicRange,
         )
-        if (streamUseCaseOverride) {
-            builder.mutableConfig.insertOption(streamUseCaseOption, streamUseCaseOverrideValue)
+        streamUseCaseOverride?.let {
+            builder.mutableConfig.insertOption(streamUseCaseOption, it.value)
         }
 
         surfaceOccupancyPriority?.let { builder.setSurfaceOccupancyPriority(it) }

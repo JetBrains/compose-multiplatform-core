@@ -16,8 +16,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
   <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_FINE" />
   <uses-permission android:name="android.permission.HAND_TRACKING" />
   <uses-permission android:name="android.permission.HEAD_TRACKING" />
+  <uses-permission android:name="android.permission.FACE_TRACKING" />
+  <uses-permission android:name="android.permission.EYE_TRACKING_COARSE" />
+  <uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
   <application
       android:label="JXR ARCore Tests"
       android:taskAffinity="">
@@ -34,19 +38,39 @@
       </intent-filter>
     </activity>
     <activity
+        android:name=".facetracking.FaceTrackingActivity"
+        android:exported="true"
+        android:label="Face Tracking"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
         android:name=".handtracking.HandTrackingActivity"
-        android:exported="false"
+        android:exported="true"
         android:label="Hand Tracking"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
-        android:name=".helloar.HelloArActivity"
-        android:exported="false"
-        android:label="Hello AR"
+        android:name=".helloar.HelloArObjectActivity"
+        android:exported="true"
+        android:label="Hello AR Object"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
+        android:name=".helloar.HelloArPlaneActivity"
+        android:exported="true"
+        android:label="Hello AR Plane"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
         android:name=".persistentanchors.PersistentAnchorsActivity"
-        android:exported="false"
+        android:exported="true"
         android:label="Persistent Anchors"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
+        android:name=".depthmaps.DepthMapActivity"
+        android:exported="true"
+        android:label="Depth Maps"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
+        android:name=".eyetracking.EyeTrackingActivity"
+        android:exported="true"
+        android:label="Eye Tracking"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
   </application>
 </manifest>

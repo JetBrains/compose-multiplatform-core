@@ -20,7 +20,6 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.location.Location
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -53,7 +52,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
  */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class JpegBytes2DiskTest {
 
     private val operation = JpegBytes2Disk()

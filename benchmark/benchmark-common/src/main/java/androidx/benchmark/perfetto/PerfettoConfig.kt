@@ -408,6 +408,7 @@ internal fun perfettoConfig(
             TraceConfig.DataSource(DataSourceConfig("android.gpu.memory")),
             TraceConfig.DataSource(DataSourceConfig("android.surfaceflinger.frame")),
             TraceConfig.DataSource(DataSourceConfig("android.surfaceflinger.frametimeline")),
+            TraceConfig.DataSource(DataSourceConfig("linux.system_info", target_buffer = 1)),
             TraceConfig.DataSource(
                 DataSourceConfig(
                     "track_event",

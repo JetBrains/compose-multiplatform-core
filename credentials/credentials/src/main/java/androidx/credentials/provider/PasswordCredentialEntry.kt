@@ -33,7 +33,6 @@ import androidx.credentials.CredentialOption
 import androidx.credentials.PasswordCredential
 import androidx.credentials.R
 import androidx.credentials.provider.PasswordCredentialEntry.Api28Impl.toSlice
-import androidx.credentials.provider.PasswordCredentialEntry.Companion.toSlice
 import androidx.credentials.provider.utils.CryptoObjectUtils.getOperationHandle
 import java.time.Instant
 import java.util.Collections
@@ -166,7 +165,7 @@ internal constructor(
         beginGetPasswordOption: BeginGetPasswordOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_password),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_password),
         isAutoSelectAllowed: Boolean = false,
         affiliatedDomain: CharSequence? = null,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
@@ -237,7 +236,7 @@ internal constructor(
         beginGetPasswordOption: BeginGetPasswordOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_password),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_password),
         isAutoSelectAllowed: Boolean = false,
         affiliatedDomain: CharSequence? = null,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
@@ -305,7 +304,7 @@ internal constructor(
         beginGetPasswordOption: BeginGetPasswordOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_password),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_password),
         isAutoSelectAllowed: Boolean = false,
     ) : this(
         username = username,
@@ -425,7 +424,7 @@ internal constructor(
                 return entry.isDefaultIconFromSlice
             }
             return entry.icon.type == Icon.TYPE_RESOURCE &&
-                entry.icon.resId == R.drawable.ic_password
+                entry.icon.resId == R.drawable.adx_ic_password
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -684,9 +683,9 @@ internal constructor(
             // TODO: b/356939416 - provide backward compatible timestamp API.
             if (Build.VERSION.SDK_INT >= 26) {
                 this.lastUsedTime?.let {
-                    bundle.putSerializable(
-                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index",
-                        it,
+                    bundle.putLong(
+                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index",
+                        it.toEpochMilli(),
                     )
                 }
             }
@@ -734,9 +733,23 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 return if (Build.VERSION.SDK_INT >= 26) {
                     val lastUsedTime: Instant? =
-                        bundle.getSerializable(
-                            "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
-                        ) as Instant?
+                        if (
+                            bundle.containsKey(
+                                "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                            )
+                        ) {
+                            try {
+                                Instant.ofEpochMilli(
+                                    bundle.getLong(
+                                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                    )
+                                )
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else {
+                            null
+                        }
                     PasswordCredentialEntry(
                         username = username,
                         displayName = displayName,
@@ -876,7 +889,7 @@ internal constructor(
         /** Builds an instance of [PasswordCredentialEntry] */
         fun build(): PasswordCredentialEntry {
             if (icon == null && Build.VERSION.SDK_INT >= 23) {
-                icon = Icon.createWithResource(context, R.drawable.ic_password)
+                icon = Icon.createWithResource(context, R.drawable.adx_ic_password)
             }
             val typeDisplayName =
                 context.getString(R.string.android_credentials_TYPE_PASSWORD_CREDENTIAL)

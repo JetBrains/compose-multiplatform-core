@@ -428,12 +428,10 @@ class BoxAccumulatorTest {
     fun add_parallelogramToEmptyEnvelope_updatesEnvelope() {
         val envelope = BoxAccumulator()
         val parallelogram =
-            ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+            ImmutableParallelogram.fromCenterAndDimensions(
                 center = ImmutableVec(10f, 20f),
                 width = 4f,
                 height = 6f,
-                rotation = Angle.ZERO,
-                shearFactor = 0f,
             )
 
         envelope.add(parallelogram)
@@ -723,8 +721,8 @@ class BoxAccumulatorTest {
 
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
-                Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f),
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }

@@ -17,10 +17,15 @@
 package androidx.xr.glimmer.demos
 
 import androidx.xr.glimmer.samples.ButtonSampleUsage
+import androidx.xr.glimmer.samples.CardSampleUsage
 import androidx.xr.glimmer.samples.ColorsSample
+import androidx.xr.glimmer.samples.DepthLevelsSample
 import androidx.xr.glimmer.samples.IconSampleUsage
+import androidx.xr.glimmer.samples.ListItemSampleUsage
+import androidx.xr.glimmer.samples.OnIndirectPointerGestureSampleUsage
 import androidx.xr.glimmer.samples.ShapesSample
 import androidx.xr.glimmer.samples.SurfaceSampleUsage
+import androidx.xr.glimmer.samples.TitleChipSampleUsage
 import androidx.xr.glimmer.samples.TypographySample
 
 val Demos =
@@ -30,11 +35,17 @@ val Demos =
             ComposableDemo("Colors") { ColorsSample() },
             ComposableDemo("Typography") { TypographySample() },
             ComposableDemo("Shapes") { ShapesSample() },
+            ComposableDemo("Depth Levels") { DepthLevelsSample() },
             ComposableDemo("Surface") { SurfaceSampleUsage() },
             ComposableDemo("Icons") { IconSampleUsage() },
+            ComposableDemo("Cards") { CardSampleUsage() },
             ComposableDemo("Buttons") { ButtonSampleUsage() },
+            ComposableDemo("ListItems") { ListItemSampleUsage() },
+            ComposableDemo("TitleChips") { TitleChipSampleUsage() },
             DemoCategory("Focus", FocusDemos),
             DemoCategory("List", ListDemos),
+            DemoCategory("Stack", StackDemos),
+            ComposableDemo("Gesture") { OnIndirectPointerGestureSampleUsage() },
             ComposableDemo("Settings") { DemoSettings() },
         ),
     )

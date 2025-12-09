@@ -383,6 +383,12 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
         /**
+         * Guards reentrant apply notifications from accessing derived state list. This avoids
+         * b/435655844 without modifying how derived state behaves internally.
+         */
+        var readingDerivedStates = false
+
+        /**
          * Counter for skipping reads inside derived states. If count is > 0, read happens inside a
          * derived state. Reads for derived states are captured separately through
          * [DerivedState.Record.dependencies].
@@ -449,7 +455,13 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
         }
 
         /** Setup new scope for state read observation, observe them, and cleanup afterwards */
-        fun observe(scope: Any, readObserver: (Any) -> Unit, block: () -> Unit) {
+        // inlined as used only in one place to not add extra function call overhead
+        @Suppress("NOTHING_TO_INLINE")
+        inline fun observe(
+            scope: Any,
+            noinline readObserver: (Any) -> Unit,
+            noinline block: () -> Unit,
+        ) {
             val previousScope = currentScope
             val previousReads = currentScopeReads
             val previousToken = currentToken
@@ -461,7 +473,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
             observeDerivedStateRecalculations(derivedStateObserver) {
-                Snapshot.observe(readObserver, null, block)
+                Snapshot.observeInternal(readObserver, null, block)
             }
 
             clearObsoleteStateReads(currentScope!!)
@@ -535,28 +547,33 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                     return@fastForEach
                 }
 
-                if (value in dependencyToDerivedStates) {
-                    // Find derived state that is invalidated by this change
-                    dependencyToDerivedStates.forEachScopeOf(value) { derivedState ->
-                        derivedState as DerivedState<Any?>
-                        val previousValue = recordedDerivedStateValues[derivedState]
-                        val policy = derivedState.policy ?: structuralEqualityPolicy()
+                if (!readingDerivedStates && value in dependencyToDerivedStates) {
+                    readingDerivedStates = true
+                    try {
+                        // Find derived state that is invalidated by this change
+                        dependencyToDerivedStates.forEachScopeOf(value) { derivedState ->
+                            derivedState as DerivedState<Any?>
+                            val previousValue = recordedDerivedStateValues[derivedState]
+                            val policy = derivedState.policy ?: structuralEqualityPolicy()
 
-                        // Invalidate only if currentValue is different than observed on read
-                        if (
-                            !policy.equivalent(
-                                derivedState.currentRecord.currentValue,
-                                previousValue,
-                            )
-                        ) {
-                            valueToScopes.forEachScopeOf(derivedState) { scope ->
-                                invalidated.add(scope)
-                                hasValues = true
+                            // Invalidate only if currentValue is different than observed on read
+                            if (
+                                !policy.equivalent(
+                                    derivedState.currentRecord.currentValue,
+                                    previousValue,
+                                )
+                            ) {
+                                valueToScopes.forEachScopeOf(derivedState) { scope ->
+                                    invalidated.add(scope)
+                                    hasValues = true
+                                }
+                            } else {
+                                // Re-read state to ensure its dependencies are up-to-date
+                                statesToReread.add(derivedState)
                             }
-                        } else {
-                            // Re-read state to ensure its dependencies are up-to-date
-                            statesToReread.add(derivedState)
                         }
+                    } finally {
+                        readingDerivedStates = false
                     }
                 }
 
@@ -566,7 +583,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                 }
             }
 
-            if (statesToReread.isNotEmpty()) {
+            if (!readingDerivedStates && statesToReread.isNotEmpty()) {
                 statesToReread.forEach { rereadDerivedState(it) }
                 statesToReread.clear()
             }

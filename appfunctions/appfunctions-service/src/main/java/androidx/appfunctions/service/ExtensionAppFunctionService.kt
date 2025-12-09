@@ -17,24 +17,21 @@
 package androidx.appfunctions.service
 
 import android.annotation.SuppressLint
-import android.os.CancellationSignal
-import android.os.OutcomeReceiver
 import androidx.annotation.RestrictTo
+import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.ExtensionsAppFunctionService
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.Dispatchers
 import androidx.appfunctions.service.internal.ServiceDependencies
-import com.android.extensions.appfunctions.AppFunctionException as ExtensionAppFunctionException
 import com.android.extensions.appfunctions.AppFunctionService
-import com.android.extensions.appfunctions.ExecuteAppFunctionRequest as ExtensionExecuteAppFunctionRequest
-import com.android.extensions.appfunctions.ExecuteAppFunctionResponse as ExtensionExecuteAppFunctionResponse
 
 /** The implementation of [AppFunctionService] from extension library. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("NewApi")
-public class ExtensionAppFunctionService : AppFunctionService() {
+public class ExtensionAppFunctionService : ExtensionsAppFunctionService() {
 
     private lateinit var delegate: AppFunctionServiceDelegate
 
@@ -43,46 +40,21 @@ public class ExtensionAppFunctionService : AppFunctionService() {
         delegate =
             AppFunctionServiceDelegate(
                 this@ExtensionAppFunctionService,
-                Dispatchers.Worker,
                 Dispatchers.Main,
-                ServiceDependencies.aggregatedAppFunctionInventory,
+                checkNotNull(Dependencies.aggregatedAppFunctionInventory),
                 ServiceDependencies.aggregatedAppFunctionInvoker,
                 Dependencies.translatorSelector,
             )
     }
 
-    override fun onExecuteFunction(
-        request: ExtensionExecuteAppFunctionRequest,
-        callingPackage: String,
-        cancellationSignal: CancellationSignal,
-        callback:
-            OutcomeReceiver<ExtensionExecuteAppFunctionResponse, ExtensionAppFunctionException>,
-    ) {
-        val executionJob =
-            delegate.onExecuteFunction(
-                ExecuteAppFunctionRequest.fromPlatformExtensionClass(request),
-                object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
-                    override fun onResult(result: ExecuteAppFunctionResponse) {
-                        when (result) {
-                            is ExecuteAppFunctionResponse.Success -> {
-                                callback.onResult(result.toPlatformExtensionClass())
-                            }
-                            is ExecuteAppFunctionResponse.Error -> {
-                                callback.onError(result.error.toPlatformExtensionsClass())
-                            }
-                        }
-                    }
-
-                    override fun onError(error: AppFunctionException) {
-                        callback.onError(error.toPlatformExtensionsClass())
-                    }
-                },
-            )
-        cancellationSignal.setOnCancelListener { executionJob.cancel() }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        delegate.onDestroy()
-    }
+    override suspend fun executeFunction(
+        request: ExecuteAppFunctionRequest
+    ): ExecuteAppFunctionResponse =
+        try {
+            delegate.executeFunction(request)
+        } catch (e: AppFunctionException) {
+            ExecuteAppFunctionResponse.Error(e)
+        } catch (e: Exception) {
+            ExecuteAppFunctionResponse.Error(AppFunctionAppUnknownException(e.message))
+        }
 }

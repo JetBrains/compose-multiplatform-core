@@ -27,6 +27,7 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.R
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.Owner
@@ -166,6 +167,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         set(value) {
             field = value
             getChildAt(0)?.let { (it as Owner).showLayoutBounds = value }
+        }
+
+    /**
+     * Controls behavior for how focus should be automatically cleared for this [ComposeView] when
+     * responding to input. The default value is [AutoClearFocusBehavior.Default].
+     *
+     * This property should be set prior to first composition.
+     */
+    var autoClearFocusBehavior: AutoClearFocusBehavior
+        get() =
+            getTag(R.id.auto_clear_focus_behavior_tag) as? AutoClearFocusBehavior
+                ?: AutoClearFocusBehavior.Default
+        set(value) {
+            setTag(R.id.auto_clear_focus_behavior_tag, value)
         }
 
     /**

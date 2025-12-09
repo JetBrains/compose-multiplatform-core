@@ -47,7 +47,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:ui:ui"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
@@ -72,7 +71,7 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
-                implementation("androidx.core:core:1.7.0")
+                implementation("androidx.core:core:1.16.0")
                 implementation("androidx.compose.animation:animation-core:1.2.1")
             }
         }
@@ -89,7 +88,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:foundation:foundation"))
@@ -105,7 +104,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
@@ -124,4 +123,5 @@ androidx {
     description = "Compose layout implementations"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:foundation:foundation-layout:foundation-layout-samples"))
+    deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }

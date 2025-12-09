@@ -18,22 +18,45 @@ package androidx.appfunctions.compiler.core
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 
-/** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializableInterface]. */
-class AnnotatedAppFunctionSerializableInterface(private val classDeclaration: KSClassDeclaration) :
-    AnnotatedAppFunctionSerializable(classDeclaration) {
+/** Represents a class annotated with `androidx.appfunctions.AppFunctionSerializableInterface`. */
+class AnnotatedAppFunctionSerializableInterface(override val classDeclaration: KSClassDeclaration) :
+    AppFunctionSerializableType {
+
+    override val isDescribedByKdoc = false
 
     override fun validate(
         allowSerializableInterfaceTypes: Boolean
-    ): AnnotatedAppFunctionSerializable {
+    ): AnnotatedAppFunctionSerializableInterface {
         val validator = AppFunctionSerializableValidateHelper(this)
         validator.validateParameters(allowSerializableInterfaceTypes)
         return this
     }
 
-    override fun getProperties(): List<AppFunctionPropertyDeclaration> {
+    override fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String>
+    ): List<AppFunctionPropertyDeclaration> {
         return classDeclaration
             .getAllProperties()
-            .map { AppFunctionPropertyDeclaration(it) }
+            .map {
+                AppFunctionPropertyDeclaration(
+                    it,
+                    isDescribedByKdoc,
+                    // Property from interface is always required as there is no existing API
+                    // to tell if the interface property has default value or not.
+                    isRequired = true,
+                    sharedDataTypeDescriptionMap,
+                )
+            }
             .toList()
+    }
+
+    override fun getFactoryCodeBuilder(
+        resolvedAnnotatedSerializableProxies:
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
+    ): AppFunctionSerializableType.FactoryCodeBuilder {
+        throw ProcessingException(
+            "@AppFunctionSerializableInterface doesn't need a factory.",
+            this.appFunctionSerializableTypeClassDeclaration.attributeNode,
+        )
     }
 }

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 @file:JvmName("SharedUiAdapterProxy")
+@file:JvmDeprecated
+@file:Suppress("DEPRECATION", "DEPRECATED_JAVA_ANNOTATION")
 
 package androidx.privacysandbox.ui.provider
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -31,6 +32,7 @@ import androidx.privacysandbox.ui.core.ProtocolConstants
 import androidx.privacysandbox.ui.core.SdkRuntimeUiLibVersions
 import androidx.privacysandbox.ui.core.SharedUiAdapter
 import androidx.privacysandbox.ui.core.SharedUiAdapter.SessionClient
+import java.lang.Deprecated as JvmDeprecated
 import java.util.concurrent.Executor
 
 /**
@@ -38,7 +40,7 @@ import java.util.concurrent.Executor
  * to the client in order for the [SharedUiAdapter] to be used to maintain a connection with a UI
  * provider.
  */
-@SuppressLint("NullAnnotationGroup")
+@Deprecated("This library is no longer supported.")
 @ExperimentalFeatures.SharedUiPresentationApi
 public fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     // If the ui adapter has already been wrapped as a client SharedUiAdapter
@@ -59,7 +61,6 @@ public fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     return bundle
 }
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 private class BinderSharedUiAdapterDelegate(private val adapter: SharedUiAdapter) :
     ISharedUiAdapter.Stub(), LocalSharedUiAdapter {

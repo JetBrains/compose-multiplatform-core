@@ -17,9 +17,10 @@
 package androidx.text.vertical
 
 import android.graphics.Canvas
-import android.graphics.Paint
+import android.os.Build
 import android.text.Spanned
 import android.text.TextPaint
+import androidx.annotation.RequiresApi
 import kotlin.math.max
 
 /**
@@ -114,6 +115,7 @@ internal inline fun forEachRubySpanTransition(
  * @param paint The paint used for text rendering.
  * @param rubySpan The rubySpan attached to the range.
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class RubyLayoutRun(
     text: CharSequence,
     start: Int,
@@ -178,23 +180,5 @@ internal class RubyLayoutRun(
         if (out.size > 1) {
             out.fill(0f, 1, out.size)
         }
-    }
-}
-
-/**
- * Executes a block of code with a temporary applying scaling of the text size of a given
- * [TextPaint].
- */
-private inline fun <T : Paint, R> withTempScale(
-    textPaint: T,
-    scale: Float,
-    crossinline block: () -> R,
-): R {
-    val originalSize = textPaint.textSize
-    textPaint.textSize *= scale
-    try {
-        return block()
-    } finally {
-        textPaint.textSize = originalSize
     }
 }

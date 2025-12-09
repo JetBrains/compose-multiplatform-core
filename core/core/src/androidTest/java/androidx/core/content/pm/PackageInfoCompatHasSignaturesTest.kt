@@ -52,7 +52,8 @@ import org.mockito.internal.util.reflection.FieldSetter
  * manually runs itself for both [Build.VERSION_CODES.O] and the current device SDK version by
  * swapping [Build.VERSION.SDK_INT].
  */
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+// maxSdkVersion due to b/432083981
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.P, maxSdkVersion = 34)
 @LargeTest
 @RunWith(Parameterized::class)
 class PackageInfoCompatHasSignaturesTest {

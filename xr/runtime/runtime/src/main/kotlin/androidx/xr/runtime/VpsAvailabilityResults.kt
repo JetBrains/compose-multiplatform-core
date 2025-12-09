@@ -16,46 +16,41 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
-/** Result of a [Earth.checkVpsAvailability] call. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public sealed class VpsAvailabilityResult
+/** Result of a [Geospatial.checkVpsAvailability] call. */
+public sealed class VpsAvailabilityResult
 
 /**
- * Result of a successful [Earth.checkVpsAvailability] call. Vps is available at the requested
+ * Result of a successful [Geospatial.checkVpsAvailability] call. VPS is available at the requested
  * location.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class VpsAvailabilityAvailable() : VpsAvailabilityResult()
 
 /**
- * Result of an unsuccessful [Earth.checkVpsAvailability] call. An internal error occurred while
- * determining availability.
+ * Result of an unsuccessful [Geospatial.checkVpsAvailability] call. An internal error occurred
+ * while determining availability. The app should not attempt to recover from this error. Please see
+ * the Android logs for additional information.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class VpsAvailabilityErrorInternal() : VpsAvailabilityResult()
 
 /**
- * Result of an unsuccessful [Earth.checkVpsAvailability] call. The external service could not be
- * reached due to a network connection error..
+ * Result of an unsuccessful [Geospatial.checkVpsAvailability] call. The external service could not
+ * be reached due to a network connection error.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class VpsAvailabilityNetworkError() : VpsAvailabilityResult()
 
 /**
- * Result of an unsuccessful [Earth.checkVpsAvailability] call. An authorization error occurred when
- * communicating with the Google Cloud ARCore API.
+ * Result of an unsuccessful [Geospatial.checkVpsAvailability] call. An authorization error occurred
+ * when communicating with the Google Cloud ARCore API.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class VpsAvailabilityNotAuthorized() : VpsAvailabilityResult()
 
-/** Result of an unsuccessful [Earth.checkVpsAvailability] call. Too many requests were sent. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Result of an unsuccessful [Geospatial.checkVpsAvailability] call. Too many requests were sent.
+ */
 public class VpsAvailabilityResourceExhausted() : VpsAvailabilityResult()
 
 /**
- * Result of a successful [Earth.checkVpsAvailability] call. VPS is not available at the requested
- * location.
+ * Result of a successful [Geospatial.checkVpsAvailability] call. VPS is not available at the
+ * requested location.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class VpsAvailabilityUnavailable() : VpsAvailabilityResult()

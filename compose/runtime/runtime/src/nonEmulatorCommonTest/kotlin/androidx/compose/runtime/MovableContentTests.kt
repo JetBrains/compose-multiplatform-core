@@ -754,8 +754,9 @@ class MovableContentTests {
     }
 
     @Test
+    @Suppress("RememberInComposition") // See note below
     fun compositionLocalsShouldBeAvailable() = compositionTest {
-        var someValue by mutableStateOf(0)
+        var someValue by mutableIntStateOf(0)
         val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
         compose {
@@ -1812,6 +1813,53 @@ class MovableContentTests {
         advance()
     }
 
+    @Test
+    fun moveContentBetweenSubcompositions() = compositionTest {
+        var inSubcompose by mutableStateOf(true)
+        val content = movableContentOf { Text("Some text") }
+        compose {
+            if (inSubcompose) {
+                Subcompose { content() }
+            } else {
+                DeferredSubcompose { content() }
+            }
+        }
+
+        inSubcompose = false
+        advance()
+    }
+
+    @Test
+    fun movableContentReactivated() = compositionTest {
+        var value by mutableStateOf(true)
+        var text by mutableStateOf("text")
+        val movableContent = movableContentOf { Linear { Text(text) } }
+
+        val content =
+            @Composable {
+                if (value) {
+                    movableContent()
+                } else {
+                    movableContent()
+                }
+            }
+
+        compose(content)
+        validate { Linear { Text(text) } }
+
+        val c = composition as ReusableComposition
+        c.deactivate()
+        value = false
+        c.setContentWithReuse(content)
+
+        c.deactivate()
+        value = true
+        text = "new text"
+        c.setContentWithReuse(content)
+
+        revalidate()
+    }
+
     private class ManualClock : MonotonicFrameClock {
         val awaiters = mutableListOf<Awaiter<*>>()
 
@@ -1964,11 +2012,11 @@ private fun Marker(value: Int) {
 }
 
 @Composable
-private fun Stack(isHorizontal: Boolean, block: @Composable () -> Unit) {
+private fun Stack(isHorizontal: Boolean, content: @Composable () -> Unit) {
     if (isHorizontal) {
-        Column(block)
+        Column(content)
     } else {
-        Row(block)
+        Row(content)
     }
 }
 

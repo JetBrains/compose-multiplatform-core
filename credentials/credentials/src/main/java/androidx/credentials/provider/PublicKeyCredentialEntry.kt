@@ -164,7 +164,7 @@ internal constructor(
         beginGetPublicKeyCredentialOption: BeginGetPublicKeyCredentialOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_passkey),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_passkey),
         isAutoSelectAllowed: Boolean = false,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
     ) : this(
@@ -225,7 +225,7 @@ internal constructor(
         beginGetPublicKeyCredentialOption: BeginGetPublicKeyCredentialOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_passkey),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_passkey),
         isAutoSelectAllowed: Boolean = false,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
         biometricPromptData: BiometricPromptData? = null,
@@ -291,7 +291,7 @@ internal constructor(
         beginGetPublicKeyCredentialOption: BeginGetPublicKeyCredentialOption,
         displayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_passkey),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_passkey),
         isAutoSelectAllowed: Boolean = false,
     ) : this(
         username = username,
@@ -413,7 +413,7 @@ internal constructor(
                 return entry.isDefaultIconFromSlice
             }
             return entry.icon.type == Icon.TYPE_RESOURCE &&
-                entry.icon.resId == R.drawable.ic_passkey
+                entry.icon.resId == R.drawable.adx_ic_passkey
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -678,9 +678,9 @@ internal constructor(
             // TODO: b/356939416 - provide backward compatible timestamp API.
             if (Build.VERSION.SDK_INT >= 26) {
                 this.lastUsedTime?.let {
-                    bundle.putSerializable(
-                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index",
-                        it,
+                    bundle.putLong(
+                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index",
+                        it.toEpochMilli(),
                     )
                 }
             }
@@ -728,9 +728,23 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 return if (Build.VERSION.SDK_INT >= 26) {
                     val lastUsedTime: Instant? =
-                        bundle.getSerializable(
-                            "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
-                        ) as Instant?
+                        if (
+                            bundle.containsKey(
+                                "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                            )
+                        ) {
+                            try {
+                                Instant.ofEpochMilli(
+                                    bundle.getLong(
+                                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                    )
+                                )
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else {
+                            null
+                        }
                     PublicKeyCredentialEntry(
                         username = username,
                         displayName = displayName,
@@ -844,7 +858,7 @@ internal constructor(
         /** Builds an instance of [PublicKeyCredentialEntry] */
         fun build(): PublicKeyCredentialEntry {
             if (icon == null && Build.VERSION.SDK_INT >= 23) {
-                icon = Icon.createWithResource(context, R.drawable.ic_passkey)
+                icon = Icon.createWithResource(context, R.drawable.adx_ic_passkey)
             }
             val typeDisplayName =
                 context.getString(R.string.androidx_credentials_TYPE_PUBLIC_KEY_CREDENTIAL)

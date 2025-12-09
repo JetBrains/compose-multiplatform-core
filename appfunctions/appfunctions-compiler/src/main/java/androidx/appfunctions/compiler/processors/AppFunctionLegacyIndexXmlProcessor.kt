@@ -70,9 +70,6 @@ class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerato
         appFunctionsByClass: List<AnnotatedAppFunctions>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ) {
-        if (appFunctionsByClass.isEmpty()) {
-            return
-        }
         val appFunctionMetadataList =
             appFunctionsByClass.flatMap {
                 it.createAppFunctionMetadataList(resolvedAnnotatedSerializableProxies).map {

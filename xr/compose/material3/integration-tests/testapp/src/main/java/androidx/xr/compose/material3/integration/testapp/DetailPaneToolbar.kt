@@ -34,6 +34,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -102,9 +103,33 @@ internal fun DetailPaneToolbar() {
                             TrailingContent()
                         },
                     )
+                    HorizontalFloatingToolbar(
+                        modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
+                        floatingActionButton = {
+                            FloatingToolbarDefaults.StandardFloatingActionButton(
+                                onClick = { /* doSomething() */ }
+                            ) {
+                                PrimaryContent()
+                            }
+                        },
+                        expanded = expanded,
+                        content = {
+                            LeadingContent()
+                            TrailingContent()
+                        },
+                    )
                 } else {
                     VerticalFloatingToolbar(
                         modifier = Modifier.align(Alignment.CenterEnd).offset(x = -ScreenOffset),
+                        expanded = expanded,
+                        leadingContent = { LeadingContent() },
+                        trailingContent = { TrailingContent() },
+                        content = {
+                            FilledIconButton(onClick = { /* doSomething() */ }) { PrimaryContent() }
+                        },
+                    )
+                    HorizontalFloatingToolbar(
+                        modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
                         expanded = expanded,
                         leadingContent = { LeadingContent() },
                         trailingContent = { TrailingContent() },

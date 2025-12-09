@@ -17,14 +17,18 @@
 package androidx.camera.camera2.internal
 
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
+import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
+import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Range
 import android.util.Size
-import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
+import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.AttachedSurfaceInfo
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
@@ -49,12 +53,10 @@ import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
-import org.robolectric.shadow.api.Shadow
-import org.robolectric.shadows.ShadowCameraCharacteristics
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class HighSpeedResolverTest {
 
     private companion object {
@@ -93,7 +95,9 @@ class HighSpeedResolverTest {
 
     private val defaultHighSpeedResolver = createHighSpeedResolver()
     private val emptyHighSpeedResolver =
-        createHighSpeedResolver(createCharacteristics(supportedHighSpeedSizeAndFpsMap = emptyMap()))
+        createHighSpeedResolver(
+            characteristics = createCharacteristicsMap(supportedHighSpeedSizeAndFpsMap = emptyMap())
+        )
 
     @Test
     fun isHighSpeedOn_configsHaveSameSessionTypeHighSpeed_returnsTrue() {
@@ -301,17 +305,20 @@ class HighSpeedResolverTest {
     }
 
     private fun createHighSpeedResolver(
-        characteristics: CameraCharacteristicsCompat = createCharacteristics()
+        cameraId: CameraId = CameraId(CAMERA_ID),
+        characteristics: Map<CameraCharacteristics.Key<*>, Any?> = createCharacteristicsMap(),
     ): HighSpeedResolver {
-        return HighSpeedResolver(characteristics = characteristics)
+        return HighSpeedResolver(
+            cameraMetadata =
+                FakeCameraMetadata(cameraId = cameraId, characteristics = characteristics)
+        )
     }
 
-    private fun createCharacteristics(
-        cameraId: String = CAMERA_ID,
-        hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+    private fun createCharacteristicsMap(
+        hardwareLevel: Int = INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
         supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? =
             COMMON_HIGH_SPEED_SUPPORTED_SIZE_FPS_MAP,
-    ): CameraCharacteristicsCompat {
+    ): Map<CameraCharacteristics.Key<*>, Any?> {
         val mockMap =
             Mockito.mock(StreamConfigurationMap::class.java).also { map ->
                 if (supportedHighSpeedSizeAndFpsMap != null) {
@@ -344,13 +351,10 @@ class HighSpeedResolverTest {
                 }
             }
 
-        val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
-        Shadow.extract<ShadowCameraCharacteristics>(characteristics).apply {
-            set(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL, hardwareLevel)
-            set(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP, mockMap)
-        }
-
-        return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(characteristics, cameraId)
+        return mutableMapOf<CameraCharacteristics.Key<*>, Any?>(
+            INFO_SUPPORTED_HARDWARE_LEVEL to hardwareLevel,
+            SCALER_STREAM_CONFIGURATION_MAP to mockMap,
+        )
     }
 
     private fun createFakeUseCaseConfig(
@@ -372,6 +376,7 @@ class HighSpeedResolverTest {
         sessionType: Int = SESSION_TYPE_HIGH_SPEED,
         targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFrameRateRequired: Boolean = false,
+        customMaxFrameRate: Int = FRAME_RATE_UNLIMITED,
     ): AttachedSurfaceInfo =
         AttachedSurfaceInfo.create(
             surfaceConfig,
@@ -383,6 +388,7 @@ class HighSpeedResolverTest {
             sessionType,
             targetFrameRate,
             isStrictFrameRateRequired,
+            customMaxFrameRate,
         )
 
     private fun List<List<Size>>.toUseCaseSupportedSizeMap(): Map<UseCaseConfig<*>, List<Size>> {

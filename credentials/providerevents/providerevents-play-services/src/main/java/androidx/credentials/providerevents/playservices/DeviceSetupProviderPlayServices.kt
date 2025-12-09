@@ -27,11 +27,21 @@ import androidx.core.os.OutcomeReceiverCompat
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.providerevents.DeviceSetupProvider
 import androidx.credentials.providerevents.exception.ExportCredentialsException
+import androidx.credentials.providerevents.exception.ExportCredentialsInvalidJsonException
+import androidx.credentials.providerevents.exception.ExportCredentialsSystemErrorException
+import androidx.credentials.providerevents.exception.ExportCredentialsUnknownErrorException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesException
+import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesInvalidJsonException
+import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesSystemErrorException
+import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesUnknownErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
+import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
+import androidx.credentials.providerevents.exception.ImportCredentialsUnknownErrorException
+import androidx.credentials.providerevents.internal.UriUtils.Companion.writeToUri
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.DeviceSetupService
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilities
+import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsResponse
 import androidx.credentials.providerevents.transfer.ImportCredentialsResponse
@@ -82,10 +92,9 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
             callback: IExportCredentialsCallbacks,
         ) {
             if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
-                callback.onFailure(
-                    ExportCredentialsException.SYSTEM_ERROR_TYPE,
-                    "Not authorized to invoke this API",
-                )
+                val exception =
+                    ExportCredentialsSystemErrorException("Not authorized to invoke this API")
+                callback.onFailure(exception.type, exception.message!!)
                 return
                 // TODO(b/416798373): revisit the error types
             }
@@ -96,20 +105,28 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                 jetpackRequest = convertToJetpackRequest(request, context)
             } catch (e: IOException) {
                 Log.e(TAG, "Exception thrown while reading the response from the file", e)
-                callback.onFailure(
-                    ExportCredentialsException.SYSTEM_ERROR_TYPE,
-                    "Error while reading the response from the file",
-                )
+                val exception =
+                    ExportCredentialsSystemErrorException(
+                        "Error while reading the response from the file"
+                    )
+                callback.onFailure(exception.type, exception.message!!)
+                return
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Exception thrown while passing in the requestJson", e)
+                val exception =
+                    ExportCredentialsInvalidJsonException("The credentials json format is invalid")
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
             val callingAppInfoBundle =
                 request.requestData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
             val constructedCallingAppInfo = constructCallingAppInfo(callingAppInfoBundle)
             if (constructedCallingAppInfo == null) {
-                callback.onFailure(
-                    ExportCredentialsException.UNKNOWN_ERROR_TYPE,
-                    "The request did not contain the calling app info.",
-                )
+                val exception =
+                    ExportCredentialsUnknownErrorException(
+                        "The request did not contain the calling app info."
+                    )
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
 
@@ -130,7 +147,7 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                         override fun onResult(result: ExportCredentialsResponse) {
                             callback.onSuccess(
                                 ExportCredentialsToDeviceSetupResponse(
-                                    ExportCredentialsResponse.asBundle(result)
+                                    ExportCredentialsResponse.toBundle(result)
                                 )
                             )
                         }
@@ -149,26 +166,41 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
             callback: ICredentialTransferCapabilitiesCallbacks,
         ) {
             if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
-                callback.onFailure(
-                    GetCredentialTransferCapabilitiesException.SYSTEM_ERROR_TYPE,
-                    "Not authorized to invoke this API",
-                )
+                val exception =
+                    GetCredentialTransferCapabilitiesSystemErrorException(
+                        "Not authorized to invoke this API"
+                    )
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
             val callingAppInfoBundle =
                 request.requestData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
             val constructedCallingAppInfo = constructCallingAppInfo(callingAppInfoBundle)
             if (constructedCallingAppInfo == null) {
-                callback.onFailure(
-                    GetCredentialTransferCapabilitiesException.UNKNOWN_ERROR_TYPE,
-                    "The request did not contain the calling app info.",
-                )
+                val exception =
+                    GetCredentialTransferCapabilitiesUnknownErrorException(
+                        "The request did not contain the calling app info."
+                    )
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
 
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
-            val jetpackRequest = convertToJetpackRequest(request)
+            var jetpackRequest: CredentialTransferCapabilitiesRequest? = null
+            try {
+                jetpackRequest = convertToJetpackRequest(request)
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Exception thrown while constructing the request", e)
+            }
+            if (jetpackRequest == null) {
+                val exception =
+                    GetCredentialTransferCapabilitiesInvalidJsonException(
+                        "The requestJson is invalid."
+                    )
+                callback.onFailure(exception.type, exception.message!!)
+                return
+            }
             handler.post {
                 val service = serviceRef.get()
                 if (service == null) {
@@ -186,7 +218,7 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                             callback.onSuccess(
                                 com.google.android.gms.identitycredentials
                                     .CredentialTransferCapabilities(
-                                        CredentialTransferCapabilities.asBundle(result)
+                                        CredentialTransferCapabilities.toBundle(result)
                                     )
                             )
                         }
@@ -206,20 +238,20 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
             callback: IImportCredentialsCallbacks,
         ) {
             if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
-                callback.onFailure(
-                    ImportCredentialsException.SYSTEM_ERROR_TYPE,
-                    "Not authorized to invoke this API",
-                )
+                val exception =
+                    ImportCredentialsSystemErrorException("Not authorized to invoke this API")
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
             val callingAppInfoBundle =
                 request.requestData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
             val constructedCallingAppInfo = constructCallingAppInfo(callingAppInfoBundle)
             if (constructedCallingAppInfo == null) {
-                callback.onFailure(
-                    GetCredentialTransferCapabilitiesException.UNKNOWN_ERROR_TYPE,
-                    "The request did not contain the calling app info.",
-                )
+                val exception =
+                    ImportCredentialsUnknownErrorException(
+                        "The request did not contain the calling app info."
+                    )
+                callback.onFailure(exception.type, exception.message!!)
                 return
             }
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
@@ -241,10 +273,10 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                         > {
                         override fun onResult(result: ImportCredentialsResponse) {
                             try {
-                                UriUtils.writeToUri(request.uri, result.responseJson, context)
+                                writeToUri(request.uri, result.responseJson, context)
                                 callback.onSuccess(
                                     ImportCredentialsForDeviceSetupResponse(
-                                        ImportCredentialsResponse.asBundle(result)
+                                        ImportCredentialsResponse.toBundle(result)
                                     )
                                 )
                             } catch (e: IOException) {
@@ -253,10 +285,11 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                                     "Exception thrown while writing the response to the file",
                                     e,
                                 )
-                                callback.onFailure(
-                                    ImportCredentialsException.SYSTEM_ERROR_TYPE,
-                                    "Error while writing the response to file",
-                                )
+                                val exception =
+                                    ImportCredentialsSystemErrorException(
+                                        "Error while writing the response to file"
+                                    )
+                                callback.onFailure(exception.type, exception.message!!)
                             }
                         }
 

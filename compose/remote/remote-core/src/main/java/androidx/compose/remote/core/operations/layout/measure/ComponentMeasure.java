@@ -15,11 +15,13 @@
  */
 package androidx.compose.remote.core.operations.layout.measure;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 
 import org.jspecify.annotations.NonNull;
 
 /** Encapsulate the result of a measure pass for a component */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ComponentMeasure {
     int mId = -1;
     float mX;
@@ -27,6 +29,8 @@ public class ComponentMeasure {
     float mW;
     float mH;
     int mVisibility = Component.Visibility.VISIBLE;
+
+    private boolean mAllowsAnimation = true;
 
     public void setX(float value) {
         mX = value;
@@ -66,6 +70,10 @@ public class ComponentMeasure {
 
     public void setVisibility(int visibility) {
         mVisibility = visibility;
+    }
+
+    public void setAllowsAnimation(boolean allowsAnimation) {
+        mAllowsAnimation = allowsAnimation;
     }
 
     public ComponentMeasure(int id, float x, float y, float w, float h, int visibility) {
@@ -150,5 +158,11 @@ public class ComponentMeasure {
     public void addVisibilityOverride(int value) {
         mVisibility = Component.Visibility.clearOverride(mVisibility);
         mVisibility = Component.Visibility.add(mVisibility, value);
+    }
+
+    /** If true, measures applied to a component will result into an animation, if false the
+     * measure will be applied immediately */
+    public boolean getAllowsAnimation() {
+        return mAllowsAnimation;
     }
 }

@@ -48,6 +48,7 @@ import androidx.glance.unit.ColorProvider
  * @param content The content of this [CurvedRow].
  */
 @Composable
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 public fun CurvedRow(
     modifier: GlanceModifier = GlanceModifier,
     anchorDegrees: Float = 270f,
@@ -229,10 +230,15 @@ internal class EmittableCurvedSpacer : Emittable {
         "EmittableCurvedSpacer(" + "modifier=$modifier, " + "curvedModifier=$curvedModifier" + ")"
 }
 
-@DslMarker public annotation class CurvedScopeMarker
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
+@DslMarker
+public annotation class CurvedScopeMarker
 
-@CurvedScopeMarker public interface CurvedChildScope
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
+@CurvedScopeMarker
+public interface CurvedChildScope
 
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 @JvmDefaultWithCompatibility
 /** A scope for elements which can only be contained within a [CurvedRow]. */
 @CurvedScopeMarker

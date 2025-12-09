@@ -18,6 +18,7 @@ package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.CompositionLocalMap
 import androidx.xr.compose.subspace.layout.CoreEntity
+import androidx.xr.compose.subspace.layout.OpaqueEntity
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
@@ -30,56 +31,50 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 internal interface ComposeSubspaceNode {
 
     /** The [SubspaceMeasurePolicy] used to define the measure and layout behavior of this node. */
-    public var measurePolicy: SubspaceMeasurePolicy
+    var measurePolicy: SubspaceMeasurePolicy
 
     /** The [SubspaceModifier] applied to this node. */
-    public var modifier: SubspaceModifier
+    var modifier: SubspaceModifier
 
     /** The optional [CoreEntity] associated with this node. */
-    public var coreEntity: CoreEntity?
+    var entity: OpaqueEntity?
 
     /** A snapshot of the current composition local map when this node is created. */
-    public var compositionLocalMap: CompositionLocalMap
+    var compositionLocalMap: CompositionLocalMap
 
-    public companion object {
+    companion object {
         /**
          * Constructor function for creating a new [ComposeSubspaceNode].
          *
          * @return an instance of a [ComposeSubspaceNode].
          */
-        public val Constructor: () -> ComposeSubspaceNode = SubspaceLayoutNode.Constructor
+        val Constructor: () -> ComposeSubspaceNode = SubspaceLayoutNode.Constructor
 
         /**
          * Sets the [SubspaceMeasurePolicy] for the given [ComposeSubspaceNode].
          *
          * @param measurePolicy the [SubspaceMeasurePolicy] to be applied.
          */
-        public val SetMeasurePolicy: ComposeSubspaceNode.(SubspaceMeasurePolicy) -> Unit = {
+        val SetMeasurePolicy: ComposeSubspaceNode.(SubspaceMeasurePolicy) -> Unit = {
             this.measurePolicy = it
         }
 
         /**
          * Sets the [CoreEntity] for the given [ComposeSubspaceNode].
          *
-         * @param coreEntity the [CoreEntity] to be associated, or null.
+         * @param entity the [CoreEntity] to be associated, or null.
          */
-        public val SetCoreEntity: ComposeSubspaceNode.(CoreEntity?) -> Unit = {
-            this.coreEntity = it
-        }
+        val SetCoreEntity: ComposeSubspaceNode.(OpaqueEntity?) -> Unit = { this.entity = it }
 
         /**
          * Sets the [SubspaceModifier] for the given [ComposeSubspaceNode].
          *
-         * Note: [SetCoreEntity] should be called before.
-         *
          * @param modifier the [SubspaceModifier] to be applied.
          */
-        public val SetModifier: ComposeSubspaceNode.(SubspaceModifier) -> Unit = {
-            this.modifier = it
-        }
+        val SetModifier: ComposeSubspaceNode.(SubspaceModifier) -> Unit = { this.modifier = it }
 
         /** Sets a snapshot of the current composition local map when this node is created. */
-        public val SetCompositionLocalMap: ComposeSubspaceNode.(CompositionLocalMap) -> Unit = {
+        val SetCompositionLocalMap: ComposeSubspaceNode.(CompositionLocalMap) -> Unit = {
             this.compositionLocalMap = it
         }
     }

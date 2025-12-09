@@ -17,17 +17,64 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.DepthMap as RuntimeDepthMap
+import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
+import androidx.xr.runtime.Session
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Contains the depth map information corresponding to a specific [ViewCamera] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** Contains the depth map information corresponding to a specific [RenderViewpoint] */
 public class DepthMap internal constructor(internal val runtimeDepthMap: RuntimeDepthMap) :
     Updatable {
+    public companion object {
+        /**
+         * Returns the DepthMap associated with the left display.
+         *
+         * @param session the currently active [Session].
+         * @note Supported only on devices that use stereo displays for rendering.
+         */
+        @JvmStatic
+        public fun left(session: Session): DepthMap? {
+            val perceptionStateExtender = DepthMap.Companion.getPerceptionStateExtender(session)
+            return perceptionStateExtender.xrResourcesManager.leftDepthMap
+        }
+
+        /**
+         * Returns the DepthMap associated with the right display.
+         *
+         * @param session the currently active [Session].
+         * @note Supported only on devices that use stereo displays for rendering.
+         */
+        @JvmStatic
+        public fun right(session: Session): DepthMap? {
+            val perceptionStateExtender = DepthMap.Companion.getPerceptionStateExtender(session)
+            return perceptionStateExtender.xrResourcesManager.rightDepthMap
+        }
+
+        /**
+         * Returns the DepthMap associated with the single device display.
+         *
+         * @param session the currently active [Session].
+         * @note When the device uses a single display, this will return the depth map for that
+         *   display. When the device uses stereo displays, this will return the depth map for the
+         *   center of the two displays.
+         */
+        @JvmStatic
+        public fun mono(session: Session): DepthMap? {
+            val perceptionStateExtender = DepthMap.Companion.getPerceptionStateExtender(session)
+            return perceptionStateExtender.xrResourcesManager.monoDepthMap
+        }
+
+        // TODO(b/421240554): Combine getPerceptionStateExtender in different classes.
+        private fun getPerceptionStateExtender(session: Session): PerceptionStateExtender {
+            val perceptionStateExtender: PerceptionStateExtender? =
+                session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
+            check(perceptionStateExtender != null) { "PerceptionStateExtender is not available." }
+            return perceptionStateExtender
+        }
+    }
 
     /**
      * Contains the current state of depth tracking
@@ -43,7 +90,8 @@ public class DepthMap internal constructor(internal val runtimeDepthMap: Runtime
      * @property smoothConfidenceMap Confidence for each pixel in [smoothDepthMap], with 0
      *   representing the lowest confidence and 255 representing the highest confidence.
      */
-    public class State(
+    public class State
+    internal constructor(
         public val width: Int,
         public val height: Int,
         public val rawDepthMap: FloatBuffer?,
@@ -88,6 +136,7 @@ public class DepthMap internal constructor(internal val runtimeDepthMap: Runtime
     /** The current [State] of the depth map. */
     public val state: StateFlow<DepthMap.State> = _state.asStateFlow()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
             State(

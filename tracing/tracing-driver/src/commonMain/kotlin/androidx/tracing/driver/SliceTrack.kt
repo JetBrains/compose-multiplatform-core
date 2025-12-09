@@ -16,12 +16,15 @@
 
 package androidx.tracing.driver
 
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.withContext
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
 
 /**
  * Horizontal track of time in a trace which contains slice events (`beginSection` / `endSection`).
  */
+// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
+@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@RestrictTo(Scope.LIBRARY_GROUP)
 public abstract class SliceTrack(
     /** The [TraceContext] instance. */
     context: TraceContext,
@@ -34,20 +37,13 @@ public abstract class SliceTrack(
     uuid: Long,
 ) : Track(context = context, uuid = uuid) {
 
-    /**
-     * Writes a trace message indicating that a given section of code has begun.
-     *
-     * Should be followed by a corresponding call to [endSection] on the same [SliceTrack]. If a
-     * corresponding [endSection] is missing, the section will be present in the trace, but
-     * non-terminating (generally shown as fading out to the left).
-     *
-     * @param name The name of the code section to appear in the trace.
-     */
-    public open fun beginSection(name: String) {
-        if (context.isEnabled) {
-            emitTraceEvent { event -> event.setBeginSection(uuid, name) }
-        }
-    }
+    // Use a single shared trace event scope to avoid allocations.
+    @JvmField
+    internal val traceEventScope: TraceEventScope =
+        TraceEventScope().apply { owner = this@SliceTrack }
+
+    // Use a single shared instance of MetadataCloseable
+    @JvmField internal val eventMetadataCloseable: EventMetadataCloseable = EventMetadataCloseable()
 
     /**
      * Writes a trace message indicating that a given section of code has begun.
@@ -57,15 +53,68 @@ public abstract class SliceTrack(
      * non-terminating (generally shown as fading out to the left).
      *
      * @param name The name of the code section to appear in the trace.
-     * @param flowIds A list of [Long]s which will connect this trace section to other sections in
-     *   the trace, potentially on different Tracks. The start and end of each trace `flow`
-     *   (connection) between trace sections must share an ID, so each `Long` must be unique to each
-     *   `flow` in the trace.
+     * @param token A [PropagationToken] that can be used for context propagation. The default
+     *   implementation uses a list of [Long]s which will connect this trace section to other
+     *   sections in the trace, potentially on different Tracks. The start and end of each trace
+     *   `flow` (connection) between trace sections must share an ID, so each `Long` must be unique
+     *   to each `flow` in the trace.
      */
-    public open fun beginSection(name: String, flowIds: List<Long>) {
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun beginSection(
+        category: String,
+        name: String,
+        token: PropagationUnsupportedToken,
+    ): EventMetadataCloseable {
+        // This method is intentionally not being synchronized. This is because PerfettoTracer
+        // always uses the currentThreadTrack() to dispatch beginSection. This method effectively
+        // ends up running on the same thread as a result.
+        eventMetadataCloseable.metadata = EmptyEventMetadata
+        eventMetadataCloseable.closeable = EmptyCloseable
+        eventMetadataCloseable.propagationToken = PropagationUnsupportedToken
+        eventMetadataCloseable.coroutinePropagationToken = CoroutinePropagationUnsupportedToken
         if (context.isEnabled) {
-            emitTraceEvent { event -> event.setBeginSectionWithFlows(uuid, name, flowIds) }
+            val event = obtainTraceEvent()
+            if (event != null) {
+                eventMetadataCloseable.propagationToken = token
+                event.primaryCategory = category
+                traceEventScope.event = event
+                eventMetadataCloseable.metadata = traceEventScope
+                event.setBeginSection(trackUuid = uuid, name = name)
+                // The closeable will just end up calling endSection()
+                eventMetadataCloseable.closeable = this
+            }
         }
+        return eventMetadataCloseable
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun beginCoroutineSection(
+        category: String,
+        name: String,
+        token: PlatformThreadContextElement<*>,
+    ): EventMetadataCloseable {
+        eventMetadataCloseable.metadata = EmptyEventMetadata
+        eventMetadataCloseable.closeable = EmptyCloseable
+        eventMetadataCloseable.propagationToken = PropagationUnsupportedToken
+        eventMetadataCloseable.coroutinePropagationToken = CoroutinePropagationUnsupportedToken
+        if (context.isEnabled) {
+            val event = obtainTraceEvent()
+            if (event != null) {
+                traceEventScope.event = event
+                eventMetadataCloseable.coroutinePropagationToken = token
+                eventMetadataCloseable.metadata = traceEventScope
+                event.primaryCategory = category
+                event.setBeginSectionWithFlows(
+                    trackUuid = uuid,
+                    name = name,
+                    flowIds = token.flowIds,
+                )
+                // The context element knows how to endSection() while tracking
+                // suspension and resumption points
+                eventMetadataCloseable.closeable = token
+            }
+        }
+        return eventMetadataCloseable
     }
 
     /**
@@ -75,8 +124,10 @@ public abstract class SliceTrack(
      * un-paired calls to [endSection] are ignored when the trace is displayed.
      */
     public open fun endSection() {
-        if (context.isEnabled) {
-            emitTraceEvent { event -> event.setEndSection(uuid) }
+        val event = obtainTraceEvent()
+        event?.apply {
+            event.setEndSection(trackUuid = uuid)
+            dispatchTraceEvent(event)
         }
     }
 
@@ -91,59 +142,18 @@ public abstract class SliceTrack(
      *
      * Except it is faster to write, and guaranteed zero duration.
      */
-    public open fun instant(name: String) {
+    public fun instant(name: String) {
         if (context.isEnabled) {
-            emitTraceEvent { event -> event.setInstant(uuid, name) }
-        }
-    }
-
-    /**
-     * Traces the [block] as a named section of code in the trace - this is one of the primary entry
-     * points for tracing synchronous blocks of code.
-     */
-    public inline fun <T> trace(name: String, crossinline block: () -> T): T {
-        beginSection(name)
-        try {
-            return block()
-        } finally {
-            endSection()
-        }
-    }
-
-    /** [Track] scoped async trace slices. */
-    public suspend fun <T> traceFlow(
-        name: String,
-        flowId: Long = monotonicId(),
-        block: suspend () -> T,
-    ): T {
-        return if (!context.isEnabled) {
-            block()
-        } else {
-            traceFlow(name = name, flowIds = listOf(flowId), block = block)
-        }
-    }
-
-    /** [Track] scoped async trace slices. */
-    private suspend fun <T, R : Track> R.traceFlow(
-        name: String,
-        flowIds: List<Long>,
-        block: suspend () -> T,
-    ): T {
-        val element = obtainFlowContext()
-        val newFlowIds =
-            if (element == null) {
-                flowIds
-            } else {
-                element.flowIds + flowIds
-            }
-        val newElement = FlowContextElement(flowIds = newFlowIds)
-        return withContext(coroutineContext + newElement) {
-            beginSection(name = name, flowIds = newFlowIds)
-            try {
-                block()
-            } finally {
-                endSection()
+            val event = obtainTraceEvent()
+            event?.apply {
+                setInstant(trackUuid = uuid, name = name)
+                dispatchTraceEvent(event)
             }
         }
+    }
+
+    override fun close() {
+        // Used when the token is an instance of PropagationUnsupportedToken
+        endSection()
     }
 }

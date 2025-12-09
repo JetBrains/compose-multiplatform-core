@@ -1,17 +1,20 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$SimpleMessageFactory` : AppFunctionSerializableFactory<SimpleMessage> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): SimpleMessage {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.SimpleMessage")
     val simpleMessageSimpleAttachmentFactory = `$SimpleMessage$SimpleAttachmentFactory`()
 
-    val title = checkNotNull(appFunctionData.getStringOrNull("title"))
-    val content = checkNotNull(appFunctionData.getStringOrNull("content"))
-    val attachmentData = checkNotNull(appFunctionData.getAppFunctionData("attachment"))
+    val title = checkNotNull(appFunctionDataWithSpec.getStringOrNull("title"))
+    val content = checkNotNull(appFunctionDataWithSpec.getStringOrNull("content"))
+    val attachmentData = checkNotNull(appFunctionDataWithSpec.getAppFunctionData("attachment"))
     val attachment = simpleMessageSimpleAttachmentFactory.fromAppFunctionData(attachmentData)
 
     val resultSimpleMessage = SimpleMessage(title, content, attachment)
@@ -22,7 +25,7 @@ public class `$SimpleMessageFactory` : AppFunctionSerializableFactory<SimpleMess
     val simpleMessage_appFunctionSerializable = appFunctionSerializable
     val simpleMessageSimpleAttachmentFactory = `$SimpleMessage$SimpleAttachmentFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.SimpleMessage")
+    val builder = getAppFunctionDataBuilder("com.testdata.SimpleMessage")
     val title = simpleMessage_appFunctionSerializable.title
     builder.setString("title", title)
     val content = simpleMessage_appFunctionSerializable.content

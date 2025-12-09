@@ -74,6 +74,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -94,7 +95,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
     private val isInLookaheadScope: Boolean
         get() = config.isInLookaheadScope
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     // the numbers should be divisible by 8 to avoid the rounding issues as we run 4 or 8 frames
     // of the animation.
@@ -1448,25 +1449,11 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                 assertPositions(0 to 0f, 1 to itemSize, fraction = fraction)
                 rule.runOnUiThread { runBlocking { state.scrollBy(scrollDelta) } }
             }
-            if (isInLookaheadScope) {
-                assertPositions(
-                    0 to -scrollDelta,
-                    1 to
-                        spring<IntOffset>(stiffness = Spring.StiffnessMediumLow)
-                            .getValueAtFrame(
-                                (fraction * Duration / FrameDuration).toInt(),
-                                from = itemSize - scrollDelta,
-                                to = itemSize * 3 - scrollDelta,
-                            ),
-                    fraction = fraction,
-                )
-            } else {
-                assertPositions(
-                    0 to -scrollDelta,
-                    1 to itemSize + (containerSize - itemSize) * fraction,
-                    fraction = fraction,
-                )
-            }
+            assertPositions(
+                0 to -scrollDelta,
+                1 to itemSize + (containerSize - itemSize) * fraction,
+                fraction = fraction,
+            )
         }
     }
 
@@ -1526,7 +1513,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
             if (fraction == 0f) {
                 assertPositions(0 to 0f, 1 to itemSize, fraction = fraction)
                 rule.runOnUiThread { runBlocking { state.scrollBy(itemSize * 2) } }
-                val postFirstScrollItem2Offset = if (isInLookaheadScope) -itemSize else itemSize
+                val postFirstScrollItem2Offset = itemSize
                 assertPositions(
                     2 to 0f,
                     3 to itemSize,
@@ -1546,27 +1533,12 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                     fraction = fraction,
                 )
             }
-            if (!isInLookaheadScope) {
-                assertPositions(
-                    2 to -scrollDelta,
-                    3 to itemSize - scrollDelta,
-                    1 to itemSize - scrollDelta + itemSize * fraction,
-                    fraction = fraction,
-                )
-            } else {
-                // Expect interruption to lookahead placement animation on 0th frame.
-                assertPositions(
-                    2 to -scrollDelta,
-                    3 to itemSize - scrollDelta,
-                    1 to
-                        interruptionSpec.getValueAtFrame(
-                            (Duration / FrameDuration * fraction).toInt(),
-                            from = -itemSize - scrollDelta,
-                            to = 2 * itemSize - scrollDelta,
-                        ),
-                    fraction = fraction,
-                )
-            }
+            assertPositions(
+                2 to -scrollDelta,
+                3 to itemSize - scrollDelta,
+                1 to itemSize - scrollDelta + itemSize * fraction,
+                fraction = fraction,
+            )
         }
     }
 

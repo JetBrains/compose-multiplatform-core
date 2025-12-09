@@ -221,11 +221,11 @@ internal data class RowMeasurePolicy(
     ): Int {
         val childCrossAlignment = parentData?.crossAxisAlignment
         return childCrossAlignment?.align(
-            size = crossAxisLayoutSize - placeable.height,
+            size = crossAxisLayoutSize,
             layoutDirection = LayoutDirection.Ltr,
             placeable = placeable,
             beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine,
-        ) ?: verticalAlignment.align(0, crossAxisLayoutSize - placeable.height)
+        ) ?: verticalAlignment.align(placeable.height, crossAxisLayoutSize)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
@@ -376,6 +376,7 @@ interface RowScope {
     @Stable fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier
 }
 
+@PublishedApi
 internal object RowScopeInstance : RowScope {
     @Stable
     override fun Modifier.weight(weight: Float, fill: Boolean): Modifier {

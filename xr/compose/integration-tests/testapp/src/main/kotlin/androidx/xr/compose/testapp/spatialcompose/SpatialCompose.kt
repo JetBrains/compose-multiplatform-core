@@ -40,6 +40,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -49,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
@@ -66,25 +69,30 @@ import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.AnchorPolicy
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
+import androidx.xr.compose.subspace.SpatialActivityPanel
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
+import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.alpha
+import androidx.xr.compose.subspace.layout.aspectRatio
 import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
-import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
@@ -92,10 +100,14 @@ import androidx.xr.compose.testapp.common.AnotherActivity
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TestDialog
 import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.GltfModelEntity.AnimationState
 import java.nio.file.Paths
 import java.time.Clock
 import kotlin.math.cos
@@ -120,6 +132,7 @@ class SpatialCompose : ComponentActivity() {
                         .depth(0.5.meters.toDp())
                         .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp())
                 )
+                DragonEntity()
             }
         }
 
@@ -170,6 +183,19 @@ class SpatialCompose : ComponentActivity() {
                     Button(
                         onClick = {
                             val intent =
+                                Intent(
+                                    this@SpatialCompose,
+                                    FragmentBasedVideoPlayerActivity::class.java,
+                                )
+                            startActivity(intent)
+                        }
+                    ) {
+                        Text("Launch Video Player Fragment")
+                    }
+
+                    Button(
+                        onClick = {
+                            val intent =
                                 Intent(this@SpatialCompose, SpatialComposeWindowManager::class.java)
                             startActivity(intent)
                         }
@@ -203,7 +229,8 @@ class SpatialCompose : ComponentActivity() {
                 curveRadius = curveRadius,
             ) {
                 SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("LeftColumn")
+                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("LeftColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     Orbiter(
                         position = ContentEdge.Start,
@@ -220,7 +247,10 @@ class SpatialCompose : ComponentActivity() {
                     }
 
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Left")
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
+                    AnchorPanel(
+                        modifier = SubspaceModifier.height(200.dp),
+                        text = "Anchorable Panel",
+                    )
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
                         text = "Panel Bottom Left (View)",
@@ -233,27 +263,30 @@ class SpatialCompose : ComponentActivity() {
                             .padding(horizontal = 20.dp)
                             .testTag("CenterColumn"),
                     alignment = SpatialAlignment.TopCenter,
+                    verticalArrangement = SpatialArrangement.SpaceAround,
                 ) {
-                    MainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
-                    val intent = Intent(this@SpatialCompose, AnotherActivity::class.java)
+                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
+                    val intent = remember {
+                        Intent(this@SpatialCompose, AnotherActivity::class.java)
+                    }
                     intent.putExtra("SHOW_BOTTOM_BAR", true)
                     intent.putExtra("TITLE", "Top Bar")
                     intent.putExtra("BOTTOM_BAR_TEXT", "Bottom Bar")
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = intent,
                         modifier =
-                            SubspaceModifier.width(800.dp)
-                                .height(600.dp)
-                                .movable(true)
-                                .testTag("ActivityPanel"),
+                            SubspaceModifier.width(800.dp).height(600.dp).testTag("ActivityPanel"),
+                        dragPolicy = MovePolicy(true),
                     )
                 }
                 SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("RightColumn")
+                    modifier =
+                        SubspaceModifier.width(200.dp).fillMaxHeight().testTag("RightColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     AppPanel(modifier = sidePanelModifier, text = "Panel Bottom Right")
+                    AspectRatioPanel()
                 }
             }
         }
@@ -263,12 +296,16 @@ class SpatialCompose : ComponentActivity() {
     @Composable
     fun AppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         var moveResizeLocked by remember { mutableStateOf(true) }
+        var alpha by remember { mutableFloatStateOf(1f) }
         SpatialPanel(
-            modifier =
-                modifier
-                    .testTag(text)
-                    .movable(enabled = !moveResizeLocked)
-                    .resizable(enabled = !moveResizeLocked)
+            modifier = modifier.testTag(text).alpha(alpha),
+            dragPolicy = MovePolicy(isEnabled = !moveResizeLocked),
+            resizePolicy =
+                ResizePolicy(
+                    isEnabled = !moveResizeLocked,
+                    onResizeStart = { alpha = 0f },
+                    onResizeEnd = { alpha = 1f }, // setting the alpha here.. no pop!
+                ),
         ) {
             PanelContent { Text(text) }
 
@@ -288,6 +325,29 @@ class SpatialCompose : ComponentActivity() {
                             if (moveResizeLocked) "Enable Move/Resize" else "Disable Move/Resize",
                     )
                 }
+            }
+        }
+    }
+
+    @SubspaceComposable
+    @Composable
+    fun AnchorPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
+        val session = LocalSession.current ?: return
+        // This is required to use the AnchorPolicy.
+        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+
+        // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
+        // not compatible with each other.
+        SpatialPanel(
+            modifier = modifier,
+            dragPolicy = AnchorPolicy(anchorPlaneOrientations = setOf(PlaneOrientation.Any)),
+        ) {
+            Column(
+                modifier = Modifier.background(Color.LightGray).padding(24.dp).fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(text)
             }
         }
     }
@@ -352,10 +412,66 @@ class SpatialCompose : ComponentActivity() {
             }
         }
 
-        SpatialPanel(factory = { textView }, modifier = modifier)
+        SpatialAndroidViewPanel(factory = { textView }, modifier = modifier)
     }
 
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
+    @Composable
+    fun DragonEntity() {
+        val session = LocalSession.current ?: return
+        val dragonModel = remember { mutableStateOf<GltfModel?>(null) }
+        val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
+        val dragonAnimationState = remember {
+            androidx.compose.runtime.mutableStateOf(AnimationState.STOPPED)
+        }
+        var entitySize by remember { mutableStateOf(FloatSize3d(1f, 1f, 1f)) }
+
+        // Actions to run once.
+        LaunchedEffect(Unit) {
+            dragonModel.value =
+                GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
+
+            dragonEntity.value =
+                GltfModelEntity.create(
+                    session,
+                    dragonModel.value!!,
+                    Pose(Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity),
+                )
+
+            dragonEntity.value?.let {
+                it.startAnimation(false, "Fast_Flying")
+                dragonAnimationState.value = it.animationState
+            }
+        }
+
+        // Actions to run continuously.
+        LaunchedEffect(dragonEntity.value) {
+            val entity = dragonEntity.value
+            if (entity != null) {
+                while (true) {
+                    // 1. Update the animation state on every frame.
+                    dragonAnimationState.value = entity.animationState
+
+                    // 2. Only calculate the bounding box if the animation is actually playing.
+                    if (entity.animationState == AnimationState.PLAYING) {
+                        entitySize = entity.getGltfModelBoundingBox().halfExtents.times(2f)
+                    }
+
+                    delay(16L)
+                }
+            }
+        }
+
+        if (dragonEntity.value != null) {
+            SceneCoreEntity(
+                factory = { dragonEntity.value!! },
+                modifier =
+                    SubspaceModifier.width(entitySize.width.meters.toDp())
+                        .height(entitySize.height.meters.toDp())
+                        .depth(entitySize.depth.meters.toDp()),
+            )
+        }
+    }
+
     @Composable
     fun XyzArrows(modifier: SubspaceModifier = SubspaceModifier) {
         val session = LocalSession.current ?: return
@@ -390,6 +506,28 @@ class SpatialCompose : ComponentActivity() {
                 factory = { GltfModelEntity.create(session, gltfModel!!) },
                 modifier = modifier.rotate(rotation),
             )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @SubspaceComposable
+    @Composable
+    fun AspectRatioPanel() {
+        var aspectRatioValue by remember { mutableFloatStateOf(1f) }
+        SpatialPanel(
+            modifier = SubspaceModifier.fillMaxWidth().height(1000.dp).aspectRatio(aspectRatioValue)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize().background(Color.LightGray).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Change Aspect Ratio")
+                Button(onClick = { aspectRatioValue = 16f / 11f }) {
+                    Text("16:11", fontSize = 11.sp)
+                }
+                Button(onClick = { aspectRatioValue = 9f / 14f }) { Text("9:14", fontSize = 11.sp) }
+            }
         }
     }
 }

@@ -570,7 +570,7 @@ class ObjectIntTest {
         )
         assertEquals(
             "x${order[0]}=${order[0].toInt()}, ${order[1]}=${order[1].toInt()}, " +
-                "${order[2]}=${order[2].toInt()}...",
+                "${order[2]}=${order[2].toInt()}, ...y",
             map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -581,7 +581,7 @@ class ObjectIntTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             map.joinToString(limit = 3) { _, value -> names[value.toInt()] },
         )
     }

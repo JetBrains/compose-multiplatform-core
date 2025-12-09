@@ -19,7 +19,6 @@ package androidx.camera.core.imagecapture
 import android.graphics.ImageFormat.JPEG
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.ImageFormat.YUV_420_888
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Pair
 import android.util.Size
@@ -46,7 +45,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [CaptureNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureNodeTest {
 
     private val imagePropagated = mutableListOf<ImageProxy>()

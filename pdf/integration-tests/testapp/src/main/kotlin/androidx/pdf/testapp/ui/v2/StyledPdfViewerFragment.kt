@@ -17,18 +17,16 @@
 package androidx.pdf.testapp.ui.v2
 
 import android.app.AlertDialog
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
 import androidx.pdf.content.ExternalLink
-import androidx.pdf.testapp.ConfigurationProvider
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.OpCancellationHandler
 import androidx.pdf.viewer.fragment.PdfStylingOptions
@@ -43,15 +41,8 @@ class StyledPdfViewerFragment : PdfViewerFragment {
 
     private constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
-    private var configProvider: ConfigurationProvider? = null
-
-    private var hostView: FrameLayout? = null
+    private var hostView: ConstraintLayout? = null
     private var searchButton: FloatingActionButton? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is ConfigurationProvider) configProvider = context
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,7 +53,7 @@ class StyledPdfViewerFragment : PdfViewerFragment {
             super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
 
         // Inflate the custom layout for this fragment.
-        hostView = inflater.inflate(R.layout.fragment_host, container, false) as FrameLayout
+        hostView = inflater.inflate(R.layout.fragment_host, container, false) as ConstraintLayout
         searchButton = hostView?.findViewById(R.id.host_Search)
 
         // Add the default PDF viewer to the custom layout
@@ -90,7 +81,7 @@ class StyledPdfViewerFragment : PdfViewerFragment {
     }
 
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
-        return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
+        return if (PdfFeatureFlags.isCustomLinkHandlingEnabled) {
             AlertDialog.Builder(requireContext())
                 .setTitle("Custom Link Handler")
                 .setMessage("Intercepted link:\n${externalLink.uri}")

@@ -205,7 +205,7 @@ sealed class SoftwareType(
             ConfigurableSoftwareType(
                 name = "SNAPSHOT_ONLY_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS",
                 publish = Publish.SNAPSHOT_ONLY,
-                checkApi = RunApiTasks.Yes(),
+                checkApi = RunApiTasks.No("Snapshot-only library that does not run API tasks"),
                 targetsKotlinConsumersOnly = true,
             )
 

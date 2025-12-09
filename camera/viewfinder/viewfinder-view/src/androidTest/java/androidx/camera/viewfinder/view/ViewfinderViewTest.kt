@@ -20,7 +20,6 @@ import android.view.Surface
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -28,6 +27,7 @@ import com.google.common.truth.TruthJUnit.assume
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
@@ -42,7 +42,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
 
     companion object {
@@ -150,7 +149,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     fun oldSurfaceRequestCancelled_whenNewSurfaceRequestSent() =
         runViewfinderTest(viewfinderInitiallyAttached = false) {
             val mainContext: CoroutineContext = Dispatchers.Main

@@ -19,12 +19,10 @@ package androidx.camera.video.internal.config
 import android.media.AudioFormat
 import android.media.MediaRecorder
 import android.os.Build
-import android.util.Range
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.video.AudioSpec
 import androidx.camera.video.internal.audio.AudioSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume.assumeFalse
@@ -33,11 +31,10 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class AudioSettingsDefaultResolverTest {
 
     @Test
-    fun sampleRateRangeResolvesToSupportedSampleRate() {
+    fun sampleRateResolvesToSupportedSampleRate() {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
@@ -46,9 +43,9 @@ class AudioSettingsDefaultResolverTest {
         val audioSpecs =
             listOf(
                 AudioSpec.builder().build(),
-                AudioSpec.builder().setSampleRate(Range(0, 1000)).build(),
-                AudioSpec.builder().setSampleRate(Range(1000, 10000)).build(),
-                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build(),
+                AudioSpec.builder().setSampleRate(1000).build(),
+                AudioSpec.builder().setSampleRate(10000).build(),
+                AudioSpec.builder().setSampleRate(100000).build(),
             )
 
         audioSpecs.forEach {

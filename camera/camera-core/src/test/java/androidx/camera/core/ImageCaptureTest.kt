@@ -19,7 +19,7 @@ package androidx.camera.core
 import android.content.Context
 import android.graphics.ImageFormat
 import android.graphics.Rect
-import android.os.Build
+import android.hardware.camera2.CameraCharacteristics
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
@@ -78,7 +78,6 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.mocks.MockScreenFlashListener
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Collections
@@ -102,7 +101,7 @@ import org.robolectric.shadows.ShadowLooper
 /** Unit tests for [ImageCapture]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ImageCaptureTest {
     private val resolution = Size(640, 480)
 
@@ -142,7 +141,7 @@ class ImageCaptureTest {
             FakeCamera("1", null, FakeCameraInfoInternal("1", CameraSelector.LENS_FACING_FRONT))
 
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertDefaultBackCamera(camera.cameraInfoInternal.cameraId) { camera }
                 cameraFactory.insertDefaultFrontCamera(cameraFront.cameraInfoInternal.cameraId) {
@@ -410,7 +409,12 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromOriginalCameraInfo() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
@@ -424,7 +428,12 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromAdapterCameraInfo_notOverwriteOutputFormats() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
@@ -441,7 +450,12 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromAdapterCameraInfo_overwriteRawNotSupported() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
@@ -974,7 +988,6 @@ class ImageCaptureTest {
             .isSameInstanceAs(resolutionSelector)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useMaximumSize_whenNotSettingPostviewResolutioSelector() {
         val imageCapture = ImageCapture.Builder().setPostviewEnabled(true).build()
@@ -996,7 +1009,6 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun postviewResolutioSelectorCanWork() {
         val resolutionSelector =
@@ -1030,7 +1042,6 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun throwException_whenPostviewResolutionSelectorCannotSelectSize() {
         val resolutionSelector =
@@ -1074,7 +1085,6 @@ class ImageCaptureTest {
         assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.SDR)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetButImageCaptureNotBoundYet() {
         val imageCapture = ImageCapture.Builder().build()
@@ -1084,7 +1094,6 @@ class ImageCaptureTest {
         assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetAndImageCaptureBoundWithDefaults() {
         val imageCapture = ImageCapture.Builder().build()

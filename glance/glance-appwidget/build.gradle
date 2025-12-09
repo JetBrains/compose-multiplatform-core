@@ -26,7 +26,7 @@ import androidx.glance.appwidget.layoutgenerator.gradle.LayoutGeneratorTask
 
 plugins {
     id("AndroidXPlugin")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("com.android.library")
     id("AndroidXComposePlugin")
     id("com.google.protobuf")
@@ -47,7 +47,6 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("androidx.core:core-remoteviews:1.1.0")
     implementation(project(":glance:glance-appwidget-proto"))
-    implementation(libs.kotlinStdlib)
     implementation("androidx.compose.ui:ui-util:1.6.5")
     implementation("androidx.work:work-runtime-ktx:2.7.1")
 
@@ -93,10 +92,7 @@ android {
         }
     }
     namespace = "androidx.glance.appwidget"
-
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     compileSdk = 35
 }
 

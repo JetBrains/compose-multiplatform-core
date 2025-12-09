@@ -193,6 +193,22 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
+        <!--
+            Setting the activity attributes for multi-instance multi-window mode.
+            The empty task affinity launches the activity in a separate task.
+            The resizeableActivity allows the activity in a freeform window.
+            The launchMode "standard" allows multiple instances of the activity.
+        -->
+        <activity
+            android:name=".UiWindowTestActivity"
+            android:exported="true"
+            android:launchMode="standard"
+            android:resizeableActivity="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
         <activity android:name=".UntilTestActivity"
             android:exported="true">
             <intent-filter>

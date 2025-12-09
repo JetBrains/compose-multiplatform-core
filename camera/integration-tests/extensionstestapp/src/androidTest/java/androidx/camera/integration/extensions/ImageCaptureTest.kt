@@ -97,7 +97,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
     private lateinit var extensionsManager: ExtensionsManager
 
     @Before
-    fun setup() {
+    fun setup(): Unit = runBlocking {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
         assumePcsSupportedForImageCapture(context)
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
@@ -112,9 +112,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
         ProcessCameraProvider.configureInstance(config.cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeExtensionModeSupported(extensionsManager, config.cameraId, config.extensionMode)
     }
@@ -236,9 +234,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         val baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(config.cameraId)
         val cameraSelector =

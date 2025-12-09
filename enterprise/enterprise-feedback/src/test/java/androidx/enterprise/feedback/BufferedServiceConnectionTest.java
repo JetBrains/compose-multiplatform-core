@@ -55,7 +55,6 @@ import java.util.concurrent.Executor;
 /** Tests {@link BufferedServiceConnection}. */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = 21)
 public class BufferedServiceConnectionTest {
 
     private final ContextWrapper mContext = ApplicationProvider.getApplicationContext();

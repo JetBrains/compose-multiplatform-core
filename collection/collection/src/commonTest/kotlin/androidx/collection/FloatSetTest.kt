@@ -352,7 +352,7 @@ class FloatSetTest {
             set.joinToString(),
         )
         assertEquals(
-            "x${order[0].toFloat()}, ${order[1].toFloat()}, ${order[2].toFloat()}...",
+            "x${order[0].toFloat()}, ${order[1].toFloat()}, ${order[2].toFloat()}, ...y",
             set.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -362,7 +362,7 @@ class FloatSetTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             set.joinToString(limit = 3) { names[it.toInt()] },
         )
     }

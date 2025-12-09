@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal
 
-import android.os.Build
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil
 import com.google.common.truth.Truth.assertThat
@@ -46,7 +45,7 @@ private val DEFAULT_VIDEO_PROFILE by lazy {
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class VideoValidatedEncoderProfilesProxyTest {
 
     @Test

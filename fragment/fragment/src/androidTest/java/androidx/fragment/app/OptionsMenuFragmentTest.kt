@@ -632,20 +632,20 @@ class OptionsMenuFragmentTest {
             setHasOptionsMenu(true)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
             super.onCreateOptionsMenu(menu, inflater)
             onCreateOptionsMenuCountDownLatch.countDown()
             inflater.inflate(R.menu.example_menu, menu)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onPrepareOptionsMenu(menu: Menu) {
             super.onPrepareOptionsMenu(menu)
             onPrepareOptionsMenuCountDownLatch.countDown()
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onOptionsMenuClosed(menu: Menu) {
             super.onOptionsMenuClosed(menu)
             onOptionsMenuClosedCountDownLatch.countDown()
@@ -677,7 +677,7 @@ class OptionsMenuFragmentTest {
             return super.onCreateView(inflater, container, savedInstanceState)
         }
 
-        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
+        @Deprecated("Deprecated in Fragment")
         override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
             super.onCreateOptionsMenu(menu, inflater)
             inflater.inflate(R.menu.example_menu, menu)

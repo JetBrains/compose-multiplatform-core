@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.ui.client.view
 
 import androidx.privacysandbox.ui.client.GeometryMeasurer

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.core.activity
 
@@ -34,6 +35,7 @@ import android.app.sdksandbox.sdkprovider.SdkSandboxActivityHandler
  *
  * @see SdkSandboxActivityHandler
  */
+@Deprecated("This library is no longer supported.")
 public interface SdkSandboxActivityHandlerCompat {
 
     /**

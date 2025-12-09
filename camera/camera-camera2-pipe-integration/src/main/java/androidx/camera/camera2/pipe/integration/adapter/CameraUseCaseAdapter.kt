@@ -16,20 +16,18 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
+import android.app.Application
 import android.content.Context
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.CameraDevice
 import android.util.Size
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.info
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.PreviewUnderExposureQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.setupHDRnet
 import androidx.camera.camera2.pipe.integration.compat.workaround.toggleHDRPlus
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
-import androidx.camera.camera2.pipe.integration.impl.SESSION_PHYSICAL_CAMERA_ID_OPTION
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_CASE_OPTION
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
@@ -54,17 +52,17 @@ import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
  */
 @Suppress("DEPRECATION")
 public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
-    private val displayInfoManager by lazy { DisplayInfoManager(context) }
+    private val displayInfoManager by lazy { DisplayInfoManager.getInstance(context) }
 
     init {
-        if (context === context.applicationContext) {
-            info {
+        if (context is Application) {
+            Camera2Logger.info {
                 "The provided context ($context) is application scoped and will be used to infer " +
                     "the default display for computing the default preview size, orientation, " +
                     "and default aspect ratio for UseCase outputs."
             }
         }
-        debug { "Created UseCaseConfigurationMap" }
+        Camera2Logger.debug { "Created UseCaseConfigurationMap" }
     }
 
     // TODO: the getConfig() is not fully verified and porting. Please do verify.
@@ -74,7 +72,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
      */
     @ExperimentalZeroShutterLag
     override fun getConfig(captureType: CaptureType, captureMode: Int): Config {
-        debug { "Creating config for $captureType" }
+        Camera2Logger.debug { "Creating config for $captureType" }
 
         val mutableConfig = MutableOptionsBundle.create()
         val sessionBuilder = SessionConfig.Builder()
@@ -255,11 +253,14 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             val extendedConfig =
                 MutableOptionsBundle.create().apply {
                     camera2Config.getPhysicalCameraId()?.let { physicalCameraId ->
-                        insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, physicalCameraId)
+                        insertOption(
+                            Camera2ImplConfig.SESSION_PHYSICAL_CAMERA_ID_OPTION,
+                            physicalCameraId,
+                        )
                     }
 
                     camera2Config.getStreamUseCase()?.let { streamUseCase ->
-                        insertOption(STREAM_USE_CASE_OPTION, streamUseCase)
+                        insertOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, streamUseCase)
                     }
                 }
             builder.addImplementationOptions(extendedConfig)

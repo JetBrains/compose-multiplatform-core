@@ -15,9 +15,7 @@
  */
 package androidx.work
 
-import java.lang.IllegalArgumentException
 import java.lang.reflect.Array
-import java.util.HashMap
 
 /**
  * An [InputMerger] that attempts to merge the inputs, creating arrays when necessary. For each

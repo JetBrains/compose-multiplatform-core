@@ -18,7 +18,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="back_caps_action_title" msgid="6392829425035919422">"PRAPA"</string>
-    <string name="home_caps_action_title" msgid="4853167242566949502">"Faqja kryesore"</string>
+    <string name="home_caps_action_title" msgid="4853167242566949502">"EKRANI BAZË"</string>
     <string name="exit_action_title" msgid="9086586388884500731">"Dil"</string>
     <string name="refresh_action_title" msgid="3674260822403151377">"Rifresko"</string>
     <string name="close_action_title" msgid="2661907510124308560">"Mbyll"</string>
