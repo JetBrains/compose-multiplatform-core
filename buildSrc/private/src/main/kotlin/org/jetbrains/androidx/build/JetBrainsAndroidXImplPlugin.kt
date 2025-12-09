@@ -18,8 +18,6 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.AndroidXExtension
-import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.multiplatformExtension
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
