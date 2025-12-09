@@ -33,7 +33,7 @@ plugins {
 dependencies {
     api(libs.kotlinStdlib)
     implementation(project(":navigationevent:navigationevent"))
-    implementation(project(":navigationevent:navigationevent-compose"))
+    implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.0-rc02")
     implementation(project(":navigationevent:navigationevent-testing"))
     compileOnly(project(":annotation:annotation-sampled"))
 }
