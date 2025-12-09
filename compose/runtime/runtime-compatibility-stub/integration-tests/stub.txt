@@ -1,0 +1,2 @@
+To solve:
+Configuring project ... without an existing directory is not allowed
