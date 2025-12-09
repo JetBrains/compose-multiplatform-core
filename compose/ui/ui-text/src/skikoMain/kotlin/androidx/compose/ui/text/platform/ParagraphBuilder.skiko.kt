@@ -642,7 +642,7 @@ internal class ParagraphBuilder(
     }
 
     private fun makeSkTextStyle(style: ComputedStyle.Immutable): SkTextStyle {
-        return skTextStylesCache.get(style) {
+        return skTextStylesCache.getOrPut(style) {
             it.toSkTextStyle(fontFamilyResolver)
         }
     }
