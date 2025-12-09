@@ -161,7 +161,6 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
-        project.configureTargetsForComposeMultiplatform()
         val multiplatformExtension =
             project.extensions.getByType(KotlinMultiplatformExtension::class.java)
 
