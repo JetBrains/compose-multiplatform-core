@@ -85,6 +85,7 @@ import javax.accessibility.AccessibleRole
 import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleText
 import javax.accessibility.AccessibleValue
+import javax.swing.JFrame
 import javax.swing.JLayeredPane
 import javax.swing.SwingUtilities
 import kotlin.test.assertEquals
@@ -580,9 +581,10 @@ class AccessibilityTest {
         }
     }
 
-
     @Test
-    fun initiallyFocusedElementFiresFocusedPropertyEvent() = runApplicationTest {
+    fun initiallyFocusedElementNotifiesSystemOfFocus() = runApplicationTest {
+        AccessibilityController.AccessibilityUsage.notifyInUse()
+
         val deferredWindow = CompletableDeferred<ComposeWindow>()
         launchTestWindowApplication {
             val focusRequester = remember { FocusRequester() }
@@ -592,12 +594,12 @@ class AccessibilityTest {
         }
 
         val window = deferredWindow.await()
+        var textFieldAccessible: Accessible? = null
         var textFieldHasFocus = false
         window.addHierarchyListener(object : HierarchyListener {
             override fun hierarchyChanged(e: HierarchyEvent?) {
                 if (window.isDisplayable) {
-                    val textFieldAccessible = window.findAccessibleNamed("text")!!
-                    println("Registering property change listener on ${textFieldAccessible.accessibleContext}")
+                    textFieldAccessible = window.findAccessibleNamed("text")!!
                     textFieldAccessible.accessibleContext.addPropertyChangeListener { evt ->
                         if (evt.propertyName == ACCESSIBLE_STATE_PROPERTY) {
                             if (evt.newValue == AccessibleState.FOCUSED) {
@@ -613,8 +615,51 @@ class AccessibilityTest {
         })
 
         awaitIdle()
-
+        assertNotNull(textFieldAccessible)
         assertTrue(textFieldHasFocus)
+
+        // What really causes Java's accessibility to report the correct element (on Windows;
+        // possibly on macOS too) is not actually the property change event, but a trick in
+        // Skiko's NativeAccessibleFocusHelper which reports the focused Accessible following
+        // a call to requestNativeFocusOnAccessible
+        fun assertSceneAccessibleIsTextField() {
+            // Find the ComposeSceneAccessible
+            var composeSceneAccessible = textFieldAccessible
+            while (composeSceneAccessible != null) {
+                if (composeSceneAccessible is ComposeSceneAccessible) break
+                composeSceneAccessible = composeSceneAccessible.accessibleContext?.accessibleParent
+            }
+            assertNotNull(composeSceneAccessible)
+
+            // We want to check the accessibleContext of SkiaLayer.HardwareLayer or SkiaSwingLayer
+            val sceneParent = composeSceneAccessible.accessibleContext.accessibleParent
+            val childCount = sceneParent.accessibleContext.accessibleChildrenCount
+            for (i in 0 until childCount) {
+                val child = sceneParent.accessibleContext.getAccessibleChild(i)
+                if (child.accessibleContext == textFieldAccessible.accessibleContext) {
+                    return  // Found it!
+                }
+            }
+            fail("Did not find ancestor with correct accessible context")
+        }
+        assertSceneAccessibleIsTextField()
+
+        // De-focus, then re-focus the window and check that another focus gained property change
+        // event was sent
+        val anotherWindow = JFrame()
+        try {
+            anotherWindow.size = Dimension(800, 600)
+            anotherWindow.isVisible = true
+            anotherWindow.toFront()
+            awaitIdle()
+            assertFalse(textFieldHasFocus)
+            window.toFront()
+            awaitIdle()
+            assertTrue(textFieldHasFocus)
+            assertSceneAccessibleIsTextField()
+        } finally {
+            anotherWindow.dispose()
+        }
     }
 
     // This test asserts that the component corresponding to ComposeSceneAccessible when using
@@ -684,7 +729,7 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
             _accessibilityControllers[semanticsOwner] = AccessibilityController(
                 owner = semanticsOwner,
                 desktopComponent = PlatformComponent.Empty,
-                parent = composeSceneAccessible,
+                parentAccessible = composeSceneAccessible,
                 onFocusReceived = { }
             )
         }

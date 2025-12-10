@@ -259,7 +259,7 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            val parentNode = semanticsNode.parent ?: return controller.parent
+            val parentNode = semanticsNode.parent ?: return controller.parentAccessible
             return controller.accessibleByNodeId(parentNode.id)!!
         }
 

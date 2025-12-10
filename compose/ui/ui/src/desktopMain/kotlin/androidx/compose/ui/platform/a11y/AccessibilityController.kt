@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 internal class AccessibilityController(
     val owner: SemanticsOwner,
     val desktopComponent: PlatformComponent,
-    val parent: ComposeSceneAccessible,
+    val parentAccessible: ComposeSceneAccessible,
     private val onFocusReceived: (ComposeAccessible) -> Unit,
 ) {
 
@@ -74,18 +74,24 @@ internal class AccessibilityController(
      * Returns the [ComposeAccessible] associated with the given semantics node id.
      */
     fun accessibleByNodeId(nodeId: Int): ComposeAccessible? {
+        syncNodesIfInvalid()
+        return accessibleByNodeId[nodeId]
+    }
+
+    /**
+     * Syncs the accessible nodes if the current mapping is invalid.
+     */
+    private fun syncNodesIfInvalid() {
         if (!nodeMappingIsValid) {
             syncNodes()
         }
-
-        return accessibleByNodeId[nodeId]
     }
 
     /**
      * Returns the index of this [AccessibilityController]'s root node in the scene.
      */
     fun indexInScene(): Int {
-        return parent.indexOfChild(this)
+        return parentAccessible.indexOfChild(this)
     }
 
     /**
@@ -191,10 +197,7 @@ internal class AccessibilityController(
                         if (entry.value as Boolean) {
                             notifyOnFocusReceived(accessible)
                         } else {
-                            accessibleContext.firePropertyChange(
-                                ACCESSIBLE_STATE_PROPERTY,
-                                AccessibleState.FOCUSED, null
-                            )
+                            notifyOnFocusLost(accessible)
                         }
 
                     SemanticsProperties.ToggleableState -> {
@@ -235,6 +238,16 @@ internal class AccessibilityController(
             null, AccessibleState.FOCUSED
         )
         onFocusReceived(accessible)
+    }
+
+    /**
+     * Notifies the system when the given accessible loses focused.
+     */
+    private fun notifyOnFocusLost(accessible: ComposeAccessible) {
+        accessible.accessibleContext?.firePropertyChange(
+            ACCESSIBLE_STATE_PROPERTY,
+            AccessibleState.FOCUSED, null
+        )
     }
 
     /**
@@ -381,6 +394,36 @@ internal class AccessibilityController(
         // TODO: Only recompute the layout-related properties of the node
         nodeMappingIsValid = false
         scheduleNodeSyncIfNeeded()
+    }
+
+    /**
+     * Returns the [ComposeAccessible] associated with the currently focused node.
+     */
+    private fun focusedAccessible(): ComposeAccessible? {
+        syncNodesIfInvalid()
+        accessibleByNodeId.forEachValue { accessible ->
+            if (accessible.semanticsNode.config.getOrNull(SemanticsProperties.Focused) == true) {
+                return accessible
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Invoked when the AWT component of the Compose content gains focus.
+     */
+    fun onFocusGained() {
+        if (!AccessibilityUsage.recentlyUsed) return
+        focusedAccessible()?.let { notifyOnFocusReceived(it) }
+    }
+
+    /**
+     * Invoked when the AWT component of the Compose content loses focus.
+     */
+    fun onFocusLost() {
+        if (!AccessibilityUsage.recentlyUsed) return
+        focusedAccessible()?.let { notifyOnFocusLost(it) }
     }
 
     /**
