@@ -57,7 +57,7 @@ dependencies {
 
     def extensions_core_version = "androidx.window.extensions.core:core:1.0.0"
     def extensions_version = project(":window:extensions:extensions")
-    def sidecar_version = "androidx.window.sidecar:sidecar:1.0.0"
+    def sidecar_version = project(":window:sidecar:sidecar")
     // A compile only dependency on extensions.core so that other libraries do not expose it
     // transitively.
     compileOnly(extensions_core_version)
