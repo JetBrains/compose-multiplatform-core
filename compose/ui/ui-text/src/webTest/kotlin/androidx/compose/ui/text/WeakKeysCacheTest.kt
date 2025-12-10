@@ -20,7 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class WeakKeysCacheTest {
-    class MyKey(val key: Int)
+    data class MyKey(val key: Int)
     data class MyValue(val value: String)
 
     @Test
@@ -43,13 +43,22 @@ class WeakKeysCacheTest {
         assertEquals("100", value2.value, "Should use cached")
         assertEquals(1, created, "Should use cached")
 
-        val key2 = MyKey(1) // equal but different instance
+        val key2 = MyKey(1) // equal key
         val value3 = cache.getOrPut(key2) {
             created++
             MyValue("300")
         }
         // WeakMap uses identity, so k2 is a different key.
-        assertEquals("300", value3.value)
+        assertEquals("100", value3.value)
+        assertEquals(1, created)
+
+        val key3 = MyKey(2) // equal key
+        val value4 = cache.getOrPut(key3) {
+            created++
+            MyValue("200")
+        }
+
+        assertEquals("200", value4.value)
         assertEquals(2, created)
     }
 }
