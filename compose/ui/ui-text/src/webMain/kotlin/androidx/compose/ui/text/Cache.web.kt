@@ -34,8 +34,7 @@ internal actual class WeakKeysCache<K : Any, V: Any>  {
     // When K is finalized, we'll eventually receive a callback.
     // And we use it to remove the Key(WeakReference<K>) from the HashMap.
     private val registry = FinalizationRegistry { keyJsReference ->
-        @Suppress("RemoveExplicitTypeArguments") // frontend glitch for js compilation?
-        val key = keyJsReference.unsafeCast<JsReference<Key<K>>>().get<Key<K>>()
+        val key: Key<K> = keyJsReference.unsafeCast<JsReference<Key<K>>>().get()
         cache.remove(key)
     }
 

@@ -23,8 +23,9 @@ class WeakKeysCacheTest {
     data class MyKey(val key: Int)
     data class MyValue(val value: String)
 
+    // We can't call GC manually, so just testing the basic correctness
     @Test
-    fun testCachingWithIdentity() {
+    fun testCaching() {
         val cache = WeakKeysCache<MyKey, MyValue>()
         val key1 = MyKey(1)
         var created = 0
@@ -52,7 +53,7 @@ class WeakKeysCacheTest {
         assertEquals("100", value3.value)
         assertEquals(1, created)
 
-        val key3 = MyKey(2) // equal key
+        val key3 = MyKey(2) // new key
         val value4 = cache.getOrPut(key3) {
             created++
             MyValue("200")

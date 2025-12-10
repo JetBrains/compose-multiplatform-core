@@ -38,7 +38,14 @@ internal actual class WeakKeysCache<K : Any, V: Any> {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             other as Key<*>
-            return ref.value == other.ref.value
+            val a = ref.get()
+            val b = other.ref.get()
+            if (a == null || b == null) {
+                // If either side is cleared, they should not be considered equal,
+                // unless they're literally the same Key instance, which is already handled above.
+                return false
+            }
+            return a == b
         }
 
         override fun hashCode(): Int = hash
