@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package androidx.testutils.lifecycle
+package androidx.navigation.compose.internal
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
+import androidx.annotation.RestrictTo
 
-internal actual fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T =
-    runBlocking(context = dispatcher) { block() }
+@Suppress("NOTHING_TO_INLINE")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public inline fun implementedInJetBrainsFork(): Nothing =
+    throw NotImplementedError("Implemented only in JetBrains fork.")
