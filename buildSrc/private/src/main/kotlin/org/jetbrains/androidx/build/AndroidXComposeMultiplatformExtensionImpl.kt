@@ -21,6 +21,7 @@ package org.jetbrains.androidx.build
 import androidx.build.AndroidXComposeMultiplatformExtension
 import androidx.build.PlatformIdentifier
 import androidx.build.configurePinnedKotlinLibraries
+import androidx.build.validateMultiplatformPluginHasNotBeenApplied
 import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
@@ -29,6 +30,7 @@ import org.gradle.kotlin.dsl.getByName
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType
+import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
@@ -41,6 +43,11 @@ import org.tomlj.Toml
 open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     val project: Project
 ) : AndroidXComposeMultiplatformExtension() {
+    init {
+        project.validateMultiplatformPluginHasNotBeenApplied()
+        project.plugins.apply(KotlinMultiplatformPluginWrapper::class.java)
+    }
+
     private val multiplatformExtension =
         project.extensions.getByType(KotlinMultiplatformExtension::class.java)
 

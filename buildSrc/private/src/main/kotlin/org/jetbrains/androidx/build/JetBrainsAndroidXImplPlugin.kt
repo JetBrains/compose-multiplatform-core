@@ -140,6 +140,12 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
+        // TODO(buildSrc) refactor after migrating all build.gradle to the new buildSrc
+        project.extensions.create(
+            AndroidXComposeMultiplatformExtension::class.java,
+            "androidXComposeMultiplatform",
+            AndroidXComposeMultiplatformExtensionImpl::class.java
+        )
         if (isJetBrainsForkStructureEnabled(project)) {
             project.changeMavenCoordinatesToJetBrains()
             project.configureMavenArtifactUpload(componentFactory)
@@ -154,13 +160,6 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
-        // TODO(buildSrc) refactor after migrating all build.gradle to the new buildSrc
-        project.extensions.create(
-            AndroidXComposeMultiplatformExtension::class.java,
-            "androidXComposeMultiplatform",
-            AndroidXComposeMultiplatformExtensionImpl::class.java
-        )
-
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
         val multiplatformExtension =

@@ -29,4 +29,13 @@ class JetBrainsAndroidXPlugin : Plugin<Project> {
             )
         )
     }
+
+    // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+    companion object {
+        @Suppress("UNUSED_PARAMETER")
+        @JvmStatic
+        fun applyAndConfigure(
+            project: Project
+        ) {}
+    }
 }
