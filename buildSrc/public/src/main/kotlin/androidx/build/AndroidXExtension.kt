@@ -459,6 +459,11 @@ abstract class AndroidXExtension(
             playgroundProjectOrArtifact(project.rootProject, name)
         }
     }
+
+    // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+    var runApiTasks: RunApiTasks
+        get() = throw UnsupportedOperationException()
+        set(value) {}
 }
 
 class License {

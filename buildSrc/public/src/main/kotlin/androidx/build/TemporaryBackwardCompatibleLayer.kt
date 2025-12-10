@@ -21,5 +21,6 @@ package androidx.build
 class LibraryType {
     companion object {
         val INTERNAL_TEST_LIBRARY = SoftwareType.INTERNAL_TEST_LIBRARY
+        val PUBLISHED_LIBRARY = SoftwareType.PUBLISHED_LIBRARY
     }
 }

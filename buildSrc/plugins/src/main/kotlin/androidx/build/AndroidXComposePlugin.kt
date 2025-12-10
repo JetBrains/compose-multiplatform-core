@@ -28,6 +28,9 @@ class AndroidXComposePlugin : Plugin<Project> {
                 "from" to "$supportRoot/buildSrc/apply/applyAndroidXComposeImplPlugin.gradle"
             )
         )
+
+        // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+        project.extensions.create("androidxCompose", AndroidXComposeExtensionStub::class.java)
     }
 
     // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
@@ -39,4 +42,14 @@ class AndroidXComposePlugin : Plugin<Project> {
         @JvmStatic
         fun isMultiplatformEnabled(project: Project) = true
     }
+}
+
+// TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+open class AndroidXComposeExtensionStub {
+    var composeCompilerPluginEnabled: Boolean = true
+}
+
+object SupportConfigKt {
+    @JvmStatic
+    fun getExternalProjectPath(project: Project) = project.getExternalProjectPath()
 }
