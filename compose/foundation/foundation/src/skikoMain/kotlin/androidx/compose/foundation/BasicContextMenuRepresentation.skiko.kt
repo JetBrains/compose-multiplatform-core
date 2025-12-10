@@ -76,7 +76,7 @@ internal fun DefaultOpenContextMenu(
 
     Popup(
         properties = PopupProperties(focusable = true),
-        onDismissRequest = { session.close() },
+        onDismissRequest = session::close,
         popupPositionProvider = popupPositionProvider,
         onKeyEvent = {
             if (it.type == KeyEventType.KeyDown) {
