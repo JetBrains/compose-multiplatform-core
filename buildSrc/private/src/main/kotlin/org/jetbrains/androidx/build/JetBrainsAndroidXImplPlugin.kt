@@ -18,6 +18,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXComposeMultiplatformExtension
 import androidx.build.multiplatformExtension
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
@@ -153,10 +154,11 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
+        // TODO(buildSrc) refactor after migrating all build.gradle to the new buildSrc
         project.extensions.create(
-            AndroidXForkMultiplatformExtension::class.java,
-            "androidXForkMultiplatform",
-            AndroidXForkMultiplatformExtensionImpl::class.java
+            AndroidXComposeMultiplatformExtension::class.java,
+            "androidXComposeMultiplatform",
+            AndroidXComposeMultiplatformExtensionImpl::class.java
         )
 
         enableArtifactRedirectionPublishing(project)
