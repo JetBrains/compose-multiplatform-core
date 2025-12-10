@@ -23,27 +23,27 @@ import androidx.navigation.Navigator
 
 /** A simple Navigator that doesn't actually navigate anywhere, but does dispatch correctly */
 @Navigator.Name("test")
-open class TestNavigator(private val hasTransitions: Boolean = false) :
+actual open class TestNavigator actual constructor(private val hasTransitions: Boolean) :
     Navigator<TestNavigator.Destination>() {
 
-    val backStack: List<NavBackStackEntry>
+    actual val backStack: List<NavBackStackEntry>
         get() = state.backStack.value
 
-    val current: NavBackStackEntry
+    actual val current: NavBackStackEntry
         get() = backStack.lastOrNull() ?: throw IllegalStateException("Nothing on the back stack")
 
-    fun popCurrent() {
+    actual fun popCurrent() {
         state.pop(current, false)
     }
 
-    override fun createDestination(): Destination {
+    actual override fun createDestination(): Destination {
         return Destination(this)
     }
 
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         entries.forEach { entry ->
             if (hasTransitions) {
@@ -62,11 +62,11 @@ open class TestNavigator(private val hasTransitions: Boolean = false) :
         }
     }
 
-    public fun onTransitionComplete(entry: NavBackStackEntry) {
+    public actual fun onTransitionComplete(entry: NavBackStackEntry) {
         state.markTransitionComplete(entry)
     }
 
     /** A simple Test destination */
-    open class Destination constructor(navigator: Navigator<out NavDestination>) :
+    actual open class Destination actual constructor(navigator: Navigator<out NavDestination>) :
         NavDestination(navigator)
 }

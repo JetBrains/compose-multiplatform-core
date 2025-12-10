@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,25 +32,30 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
+    wasmJs()
 
     sourceSets {
         commonMain {
             dependencies {
                 api(project(":datastore:datastore-core"))
                 api(project(":datastore:datastore-core-okio"))
-                api(libs.kotlinStdlibCommon)
-                api(libs.kotlinTestCommon)
+                api(libs.kotlinTest)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinCoroutinesTest)
                 api(libs.okio)
             }
         }
-        nativeMain {
+        nonWebCommonMain {
             dependsOn(commonMain)
         }
+        nativeMain {
+            dependsOn(nonWebCommonMain)
+        }
         jvmMain {
+            dependsOn(nonWebCommonMain)
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinTest)
             }
         }
@@ -60,8 +65,14 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
             }
         }
-        jvmTest {
+        nonWebCommonTest {
             dependsOn(commonTest)
+        }
+        wasmJsTest {
+            dependsOn(commonTest)
+        }
+        jvmTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)
             }
@@ -77,5 +88,5 @@ androidXMultiplatform {
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
 }

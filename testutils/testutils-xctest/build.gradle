@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-
-import androidx.build.LibraryType
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.Architecture
 
@@ -56,6 +56,12 @@ kotlin {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
+
+        commonMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        iosMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        iosX64Main.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        iosArm64Main.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        iosSimArm64Main.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
     }
 }
 
@@ -187,7 +193,7 @@ private def configure(target, isDevice) {
 
 androidx {
     name = "Compose Instrumented Test Utils"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Internal utilities that convert kotlin.test into XCTest."
     legacyDisableKotlinStrictApiMode = true
