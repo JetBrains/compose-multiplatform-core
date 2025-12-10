@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {

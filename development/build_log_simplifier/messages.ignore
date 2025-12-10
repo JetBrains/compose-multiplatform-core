@@ -417,6 +417,7 @@ w: \[ksp\] LibraryGlideModules \[\] are included more than once, keeping only on
 w: file://\$SUPPORT/glance/glance\-wear\-tiles/integration.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
 w: file://\$SUPPORT/glance/glance\-wear\-tiles/src/.* is deprecated\. glance\-wear\-tiles is deprecated and will be removed\.
 # b/439568035
+WARNING: The option setting 'android\.builtInKotlin=false' is deprecated\.
 WARNING: The option setting 'android\.newDsl=false' is deprecated\.
 The current default is 'true'\.
 It will be removed in version 10\.0 of the Android Gradle plugin\.
