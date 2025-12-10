@@ -86,6 +86,7 @@ yarn = "1.22.17"
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
 androidAccessibilityFramework = { module = "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework", version = { strictly = "2.1" } }
+androidExperimentalBuiltInKotlinPlugin = { module = "com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin", version.ref = "androidGradlePlugin" }
 androidGradlePluginApi = { module = "com.android.tools.build:gradle-api", version.ref = "androidGradlePlugin" }
 androidGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
 androidGradleSettingsPlugin = { module = "com.android.tools.build:gradle-settings", version.ref = "androidGradlePlugin" }
