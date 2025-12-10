@@ -16,11 +16,7 @@
 
 package androidx.build
 
-/**
- * Exists only to support old build.gradle that depend on old buildSrc.
- *
- * Should be removed after migration of all build.gradle to the new buildSrc.
- */
+// TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
 
 class LibraryType {
     companion object {

@@ -29,4 +29,14 @@ class AndroidXComposePlugin : Plugin<Project> {
             )
         )
     }
+
+    // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+    @Suppress("unused")
+    companion object {
+        @JvmStatic
+        fun applyAndConfigureKotlinPlugin(project: Project) = Unit
+
+        @JvmStatic
+        fun isMultiplatformEnabled(project: Project) = true
+    }
 }
