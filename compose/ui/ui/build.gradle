@@ -315,30 +315,33 @@ androidXMultiplatform {
 
         webMain {
             dependsOn(nonJvmMain)
+            dependsOn(skikoMain)
+
+            dependencies {
+                implementation(libs.skikoCommon)
+                api(libs.kotlinXw3c)
+            }
         }
 
         jsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
         }
 
         jsTest {
-            kotlin.srcDir("src/webTest/kotlin")
+            dependsOn(webTest)
             dependsOn(skikoTest)
         }
 
         wasmJsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
             dependencies {
-                api(libs.kotlinXw3c)
                 implementation(libs.skikoWasmJs)
                 implementation(libs.skikoJsWasmRuntime)
             }
         }
 
         wasmJsTest {
-            kotlin.srcDir("src/webTest/kotlin")
+            dependsOn(webTest)
             dependsOn(skikoTest)
         }
 
