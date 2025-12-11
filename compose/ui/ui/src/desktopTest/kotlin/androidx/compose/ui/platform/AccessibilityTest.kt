@@ -96,7 +96,9 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
+import org.jetbrains.skiko.hostOs
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -642,7 +644,10 @@ class AccessibilityTest {
             }
             fail("Did not find ancestor with correct accessible context")
         }
-        assertSceneAccessibleIsTextField()
+        // On Linux, NativeAccessibleFocusHelper doesn't do its trick with focusedAccessible
+        if ((hostOs == OS.Windows) || (hostOs == OS.MacOS)) {
+            assertSceneAccessibleIsTextField()
+        }
 
         // De-focus, then re-focus the window and check that another focus gained property change
         // event was sent
