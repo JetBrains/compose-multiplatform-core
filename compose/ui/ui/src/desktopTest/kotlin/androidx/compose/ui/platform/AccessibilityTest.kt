@@ -97,6 +97,7 @@ import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.jetbrains.skiko.hostOs
@@ -599,6 +600,7 @@ class AccessibilityTest {
         val window = deferredWindow.await()
         var textFieldAccessible: Accessible? = null
         var textFieldHasFocus = false
+        val receivedFocusEvent = CompletableDeferred<Boolean>()
         window.addHierarchyListener(object : HierarchyListener {
             override fun hierarchyChanged(e: HierarchyEvent?) {
                 if (window.isDisplayable) {
@@ -613,11 +615,18 @@ class AccessibilityTest {
                         }
                     }
                     window.removeHierarchyListener(this)
+                    receivedFocusEvent.complete(true)
                 }
             }
         })
 
-        awaitIdle()
+        // If we do awaitIdle here, we'll sometimes fail the assertSceneAccessibleIsTextField
+        // check because the NativeAccessibleFocusHelper.focusedAccessible is re-set after 100ms,
+        // and awaitIdle sometimes takes longer.
+        withTimeout(1000) {
+            receivedFocusEvent.await()
+        }
+        assertTrue(window.isDisplayable)
         assertNotNull(textFieldAccessible)
         assertTrue(textFieldHasFocus)
 
