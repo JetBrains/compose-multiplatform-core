@@ -428,6 +428,7 @@ internal class ComposeAccessible(
             // Check semantics role
             val role = semanticsConfig.getOrNull(SemanticsProperties.Role)
             val accessibleRole = when (role) {
+                null -> null  // Quickly return null
                 Role.Button -> AccessibleRole.PUSH_BUTTON
                 Role.Checkbox, Role.Switch -> AccessibleRole.CHECK_BOX
                 Role.RadioButton -> AccessibleRole.RADIO_BUTTON

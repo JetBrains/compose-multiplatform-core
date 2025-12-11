@@ -32,6 +32,8 @@ import javax.accessibility.AccessibleContext
 import javax.accessibility.AccessibleRole
 import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleStateSet
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.hostOs
 
 /**
  * This is a root [Accessible] for a [ComposeScene]
@@ -152,9 +154,7 @@ internal class ComposeSceneAccessible(
 
         override fun isShowing(): Boolean = true
 
-        override fun isFocusTraversable(): Boolean {
-            return false
-        }
+        override fun isFocusTraversable() = false
 
         override fun getAccessibleComponent(): AccessibleComponent {
             return this
@@ -171,7 +171,16 @@ internal class ComposeSceneAccessible(
         }
 
         override fun getAccessibleRole(): AccessibleRole {
-            return AccessibleRole.UNKNOWN
+            // We want to return a role that makes the ComposeScene container "transparent" to
+            // accessibility, as if its contents are inside the parent directly.
+            // On macOS, PANEL is ignored by Java's a11y (see CAccessibility.ignoredRoles), but on
+            // Windows, it makes NVDA read it as "panel" when clicked.
+            // On Windows, NVDA ignores UNKNOWN, but on macOS UNKNOWN causes VoiceOver to highlight
+            // the entire component when traversing via VoiceOver shortcuts.
+            return when (hostOs) {
+                OS.MacOS -> AccessibleRole.PANEL
+                else -> AccessibleRole.UNKNOWN
+            }
         }
 
         private val _accessibleStateSet = AccessibleStateSet().apply {
