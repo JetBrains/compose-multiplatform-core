@@ -16,10 +16,21 @@
 
 package androidx.navigation
 
+import androidx.savedstate.SavedState
+
 internal actual class NoNameNavigator
 actual constructor() : Navigator<NavDestination>() {
     actual override fun createDestination(): NavDestination {
         throw IllegalStateException("createDestination is not supported")
+    }
+
+    actual override fun navigate(
+        destination: NavDestination,
+        args: SavedState?,
+        navOptions: NavOptions?,
+        navigatorExtras: Extras?
+    ): NavDestination? {
+        throw IllegalStateException("navigate is not supported")
     }
 
     actual override fun popBackStack(): Boolean {
@@ -37,6 +48,15 @@ actual constructor() : Navigator<NavDestination>(NAME) {
 
     actual override fun createDestination(): NavDestination {
         throw IllegalStateException("createDestination is not supported")
+    }
+
+    actual override fun navigate(
+        destination: NavDestination,
+        args: SavedState?,
+        navOptions: NavOptions?,
+        navigatorExtras: Extras?
+    ): NavDestination? {
+        throw IllegalStateException("navigate is not supported")
     }
 
     actual override fun popBackStack(): Boolean {

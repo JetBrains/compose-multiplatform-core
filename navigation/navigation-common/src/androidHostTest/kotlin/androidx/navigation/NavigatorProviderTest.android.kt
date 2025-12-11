@@ -16,8 +16,8 @@
 
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.kruth.assertThat
+import androidx.savedstate.SavedState
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,7 +81,7 @@ actual constructor() : Navigator<NavDestination>() {
 
     actual override fun navigate(
         destination: NavDestination,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
     ): NavDestination? {
@@ -108,7 +108,7 @@ actual constructor() : Navigator<NavDestination>() {
 
     actual override fun navigate(
         destination: NavDestination,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
     ): NavDestination? {

@@ -19,6 +19,7 @@ package androidx.navigation
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
 import androidx.navigation.testing.TestNavigatorState
+import androidx.savedstate.SavedState
 import kotlin.test.Test
 import kotlin.test.fail
 
@@ -132,7 +133,7 @@ internal expect class NoNameNavigator() : Navigator<NavDestination> {
 
     override fun navigate(
         destination: NavDestination,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?,
     ): NavDestination?
@@ -151,7 +152,7 @@ internal expect open class EmptyNavigator() : Navigator<NavDestination> {
 
     override fun navigate(
         destination: NavDestination,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?,
     ): NavDestination?
