@@ -323,6 +323,8 @@ androidXMultiplatform {
             }
         }
 
+        webTest {}
+
         jsMain {
             dependsOn(webMain)
         }
