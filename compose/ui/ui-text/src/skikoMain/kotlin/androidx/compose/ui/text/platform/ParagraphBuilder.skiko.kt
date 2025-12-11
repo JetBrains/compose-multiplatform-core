@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachReversed
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import org.jetbrains.skia.Font as SkFont
@@ -160,7 +162,7 @@ private sealed interface ComputedStyle {
             fontStyle?.let {
                 res.fontStyle = it.toSkFontStyle()
             }
-            textDecoration?.let {
+            textDecoration.takeUnless { it == TextDecoration.None }?.let {
                 res.decorationStyle =
                     it.toSkDecorationStyle(textForegroundStyle.color, textDecorationLineStyle)
             }
@@ -172,7 +174,7 @@ private sealed interface ComputedStyle {
             fontWeight?.let {
                 res.fontStyle = res.fontStyle.withWeight(it.weight)
             }
-            shadow?.let {
+            shadow.takeUnless { it == Shadow.None }?.let {
                 res.addShadow(it.toSkShadow())
             }
 
@@ -419,7 +421,7 @@ internal class ParagraphBuilder(
 
         var addText = true
 
-        for (op in ops) {
+        ops.fastForEach { op ->
             if (addText && pos < op.position) {
                 pb.addText(text.subSequence(pos, op.position).toString())
             }
@@ -433,7 +435,13 @@ internal class ParagraphBuilder(
                         op.style.fontStyle ?: FontStyle.Normal,
                         op.style.fontSynthesis ?: FontSynthesis.All
                     )
-                    pb.pushStyle(makeSkTextStyle(op.style.toImmutable()))
+
+                    // It's always mutable at this point, so we can safely cast
+                    val style = (op.style as ComputedStyle.Mutable).toImmutable()
+                    // Store immutable reference because it's used as a weak reference key
+                    op.style = style
+
+                    pb.pushStyle(makeSkTextStyle(style))
                 }
                 is Op.PutPlaceholder -> {
                     val placeholderStyle =
@@ -469,7 +477,7 @@ internal class ParagraphBuilder(
 
         data class StyleAdd(
             override val position: Int,
-            val style: ComputedStyle.Mutable
+            var style: ComputedStyle
         ) : Op()
 
         data class PutPlaceholder(
@@ -513,16 +521,15 @@ internal class ParagraphBuilder(
         placeholders: List<AnnotatedString.Range<Placeholder>>
     ): List<Op> {
         val cuts = mutableListOf<Cut>()
-        for (annotation in annotations) {
-
+        annotations.fastForEach { annotation ->
             // TODO https://youtrack.jetbrains.com/issue/CMP-7151
-            if (annotation.item !is SpanStyle) continue
+            if (annotation.item !is SpanStyle) return@fastForEach
 
             cuts.add(Cut.StyleAdd(annotation.start, annotation.item))
             cuts.add(Cut.StyleRemove(annotation.end, annotation.item))
         }
 
-        for (placeholder in placeholders) {
+        placeholders.fastForEach { placeholder ->
             cuts.add(Cut.PutPlaceholder(placeholder.start, placeholder.item))
             cuts.add(Cut.EndPlaceholder(placeholder.end))
         }
@@ -530,7 +537,7 @@ internal class ParagraphBuilder(
         val ops = mutableListOf<Op>(Op.StyleAdd(0, defaultStyle.toMutable()))
         cuts.sortBy { it.position }
         val activeStyles = mutableListOf(initialStyle)
-        for (cut in cuts) {
+        cuts.fastForEach { cut ->
             when (cut) {
                 is Cut.StyleAdd -> {
                     activeStyles.add(cut.style)
@@ -543,7 +550,9 @@ internal class ParagraphBuilder(
                             )
                         )
                     } else {
-                        prev.style.merge(density, cut.style)
+                        // It's always mutable at this point, so we can safely cast
+                        val style = prev.style as ComputedStyle.Mutable
+                        style.merge(density, cut.style)
                     }
                 }
                 is Cut.StyleRemove -> {
@@ -588,7 +597,7 @@ internal class ParagraphBuilder(
     }
 
     private fun previousStyleAddAtTheSamePosition(position: Int, ops: List<Op>): Op.StyleAdd? {
-        for (prevOp in ops.asReversed()) {
+        ops.fastForEachReversed { prevOp ->
             if (prevOp.position < position) return null
             if (prevOp is Op.StyleAdd) return prevOp
         }
@@ -641,7 +650,7 @@ internal class ParagraphBuilder(
     }
 
     private fun makeSkTextStyle(style: ComputedStyle.Immutable): SkTextStyle {
-        return skTextStylesCache.get(style) {
+        return skTextStylesCache.getOrPut(style) {
             it.toSkTextStyle(fontFamilyResolver)
         }
     }

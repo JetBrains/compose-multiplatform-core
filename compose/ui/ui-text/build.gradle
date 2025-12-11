@@ -154,10 +154,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             nativeMain.dependsOn(nonJvmMain)
 
-            iosMain {
-                kotlin.srcDir("src/uikitMain/kotlin")
-            }
-
             androidMain {
                 dependsOn(commonMain)
             }
@@ -235,8 +231,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(skikoTest)
             }
             nativeTest.dependsOn(nonJvmTest)
-            jsTest.dependsOn(nonJvmTest)
-            wasmJsTest.dependsOn(nonJvmTest)
+
+            webTest.dependsOn(nonJvmTest)
+            jsTest.dependsOn(webTest)
+            wasmJsTest.dependsOn(webTest)
 
             configureEach {
                 languageSettings.optIn("androidx.compose.ui.text.ExperimentalTextApi")

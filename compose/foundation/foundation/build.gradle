@@ -137,15 +137,13 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             nativeMain.dependsOn(nonJvmMain)
             webMain.dependsOn(nonJvmMain)
             iosMain {
-                kotlin.srcDir("src/uikitMain/kotlin")
-                resources.srcDir("src/uikitMain/resources")
+                dependsOn(nativeMain)
                 dependencies {
                     implementation(project(":compose:ui:ui-uikit"))
                 }
             }
             iosTest {
-                kotlin.srcDir("src/uikitTest/kotlin")
-                resources.srcDir("src/uikitTest/resources")
+                dependsOn(nativeTest)
             }
             jsMain {
                 dependsOn(webMain)
@@ -175,7 +173,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
                 implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
-                implementation(project(":navigationevent:navigationevent-compose"))
+                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.0-rc02")
             }
 
             androidAndroidTest.dependencies {
