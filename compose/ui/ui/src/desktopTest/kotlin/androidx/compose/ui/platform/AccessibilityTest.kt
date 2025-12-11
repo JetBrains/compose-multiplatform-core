@@ -666,6 +666,7 @@ class AccessibilityTest {
                 if (window.isFocused) break
                 delay(10)
             }
+            assertTrue(window.isFocused)
             assertTrue(textFieldHasFocus)
             assertSceneAccessibleIsTextField()
         } finally {
