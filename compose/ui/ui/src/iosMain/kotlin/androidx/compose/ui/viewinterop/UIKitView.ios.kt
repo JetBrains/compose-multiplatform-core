@@ -17,15 +17,12 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.uikit.LocalUIViewController
-import platform.UIKit.UIViewController
+import platform.UIKit.UIView
 
 /**
- * Compose a [UIViewController] of class [T] into the UI hierarchy.
+ * Compose a [UIView] of class [T] into the UI hierarchy.
  *
  * @param factory The block creating the [T] to be composed.
  *
@@ -48,7 +45,7 @@ import platform.UIKit.UIViewController
  * @see UIKitInteropProperties
  */
 @Composable
-fun <T : UIViewController> UIKitViewController(
+fun <T : UIView> UIKitView(
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOp,
@@ -57,17 +54,15 @@ fun <T : UIViewController> UIKitViewController(
     properties: UIKitInteropProperties = UIKitInteropProperties.Default,
 ) {
     val interopContainer = LocalInteropContainer.current
-    val parentViewController = LocalUIViewController.current
 
     key(properties) {
         InteropView(
             factory = { compositeKeyHash ->
-                UIKitInteropViewControllerHolder(
+                UIKitInteropViewHolder(
                     factory,
                     interopContainer,
-                    parentViewController,
                     properties,
-                    compositeKeyHash
+                    compositeKeyHash,
                 )
             },
             modifier = modifier,

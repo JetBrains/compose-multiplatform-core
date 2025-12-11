@@ -71,7 +71,6 @@ import platform.UIKit.UITextSelectionRect
 import platform.UIKit.UITextStorageDirection
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
-import platform.UIKit.UIWritingToolsResultOptions
 import platform.darwin.NSInteger
 
 private val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}

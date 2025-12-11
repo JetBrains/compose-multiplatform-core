@@ -17,7 +17,6 @@
 package androidx.compose.ui.uikit
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
 import platform.UIKit.*
 

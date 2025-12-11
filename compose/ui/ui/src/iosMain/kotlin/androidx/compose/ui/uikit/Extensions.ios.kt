@@ -18,13 +18,8 @@ package androidx.compose.ui.uikit
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.dp
 import kotlin.math.floor
 import kotlin.math.roundToLong
-import kotlinx.cinterop.CValue
-import kotlinx.cinterop.useContents
-import platform.CoreGraphics.CGRect
 import platform.Foundation.NSTimeInterval
 import platform.UIKit.UIColor
 import platform.UIKit.UIContentSizeCategoryAccessibilityExtraExtraExtraLarge
