@@ -18,23 +18,18 @@ package androidx.compose.mpp.demo.bugs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.mpp.demo.Screen
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.interop.UIKitViewController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
-import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExportObjCClass
 import platform.CoreGraphics.CGRectMake
-import platform.Foundation.NSCoder
 import platform.MapKit.MKMapView
 import platform.UIKit.UIColor
 import platform.UIKit.UIViewController
