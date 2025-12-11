@@ -18,7 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.uikit.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.utils.CMPView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize
@@ -40,7 +40,7 @@ import platform.CoreGraphics.CGSize
 @OptIn(BetaInteropApi::class)
 @ExportObjCClass
 internal class ComposeHostingView(
-    private val configuration: ComposeContainerConfiguration,
+    private val configuration: ComposeUIViewConfiguration,
     private val content: @Composable () -> Unit,
     coroutineContext: CoroutineContext = Dispatchers.Main,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate = ComposeContainerLifecycleDelegate()

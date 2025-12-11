@@ -17,10 +17,10 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.embedSubview
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,15 +36,16 @@ class ComposeViewIntegrationTest {
         appDelegate.setUpWindow(controller)
         var launchesCount = 0
 
-        val composeView = ComposeUIView(
-            configure = {
-                enforceStrictPlistSanityCheck = false
+        val composeView = ComposeHostingView(
+            configuration = ComposeUIViewConfiguration().also {
+                it.enforceStrictPlistSanityCheck = false
+            },
+            content = {
+                LaunchedEffect(Unit) {
+                    launchesCount += 1
+                }
             }
-        ) {
-            LaunchedEffect(Unit) {
-                launchesCount += 1
-            }
-        } as ComposeHostingView
+        )
 
         UIKitInstrumentedTest.waitUntil { controller.view.window != null }
 
@@ -69,13 +70,14 @@ class ComposeViewIntegrationTest {
         appDelegate.setUpWindow(controller)
         var compositionsCount = 0
 
-        val composeView = ComposeUIView(
-            configure = {
-                enforceStrictPlistSanityCheck = false
+        val composeView = ComposeHostingView(
+            configuration = ComposeUIViewConfiguration().also {
+                it.enforceStrictPlistSanityCheck = false
+            },
+            content = {
+                compositionsCount += 1
             }
-        ) {
-            compositionsCount += 1
-        } as ComposeHostingView
+        )
 
         UIKitInstrumentedTest.waitUntil { controller.view.window != null }
 

@@ -144,8 +144,6 @@ internal class UIKitInstrumentedTest(
     private val useHostingView: Boolean
 ) {
     companion object {
-//        val allRunEnvironments = listOf(RunEnvironment.ComposeHostingView, RunEnvironment.ComposeHostingViewController)
-//
         fun delay(timeoutMillis: Long) {
             val runLoop = NSRunLoop.currentRunLoop()
             runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
@@ -166,11 +164,6 @@ internal class UIKitInstrumentedTest(
             }
         }
     }
-//
-//    enum class RunEnvironment {
-//        ComposeHostingView,
-//        ComposeHostingViewController
-//    }
 
     private val screen = UIScreen.mainScreen()
     val density = Density(density = screen.scale.toFloat())
