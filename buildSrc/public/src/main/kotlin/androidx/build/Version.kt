@@ -40,7 +40,7 @@ data class Version(
         buildMetadata = checkedMatcher(versionString).group(5)?.ifEmpty { null },
     )
 
-    fun isSnapshot(): Boolean = "-SNAPSHOT" == preRelease
+    fun isSnapshot(): Boolean = "SNAPSHOT" == preRelease
 
     fun isPrereleasePrefix(prefix: String): Boolean =
         preRelease?.lowercase(Locale.getDefault())?.startsWith(prefix) ?: false
