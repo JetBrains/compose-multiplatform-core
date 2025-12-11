@@ -22,10 +22,10 @@
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
-import androidx.build.Publish
-import androidx.build.RunApiTasks
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -33,85 +33,80 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
+    androidNative()
+    mingwX64()
+    wasmJs()
+    js()
 
     defaultPlatform(PlatformIdentifier.JVM)
-}
 
-kotlin {
-    js {
-        browser()
-    }
-    wasmJs {
-        browser()
-    }
-
-    watchosArm64()
-    watchosArm32()
-    watchosX64()
-    watchosSimulatorArm64()
-    tvosArm64()
-    tvosX64()
-    tvosSimulatorArm64()
-    mingwX64()
-
+    // Source Structure
+    //            commonMain
+    //    ┌────────────────────────┐
+    //    ▼                        ▼
+    // jvmMain                nonJvmMain
+    //                    ┌────────────────┐
+    //                    ▼                ▼
+    //                nativeMain        webMain
+    //                               ┌───────────┐
+    //                               ▼           ▼
+    //                             jsMain   wasmJsMain
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
-                api(libs.kotlinTestCommon)
-            }
-        }
-
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTestAnnotationsCommon)
+                api(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.kotlinStdlib)
-                api(libs.kotlinTest)
                 implementation(libs.guavaAndroid)
                 implementation(libs.junit)
             }
         }
 
         jvmTest {
+            dependsOn(commonTest)
             dependencies {
                 api(libs.kotlinCoroutinesTest)
             }
         }
 
-        nonJvmMain.dependsOn(commonMain)
-        nonJvmTest.dependsOn(commonTest)
-        nativeMain.dependsOn(nonJvmMain)
-        nativeTest.dependsOn(nonJvmTest)
-        webMain.dependsOn(nonJvmMain)
-        webTest.dependsOn(nonJvmTest)
+        nonJvmMain {
+            dependsOn(commonMain)
+        }
 
-        jsMain {
-            dependsOn(webMain)
+        nonJvmTest {
+            dependsOn(commonTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+        webTest {
+            dependsOn(nonJvmTest)
             dependencies {
-                api(libs.kotlinTestJs)
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinCoroutinesTest)
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                api(libs.kotlinTestWasm)
-            }
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+        nativeTest {
+            dependsOn(nonJvmTest)
         }
 
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
@@ -125,12 +120,7 @@ kotlin {
 
 androidx {
     legacyDisableKotlinStrictApiMode = true // Temporarily enabled to allow API tracking
-    publish = Publish.SNAPSHOT_ONLY
-    runApiTasks = new RunApiTasks.Yes() // Used to diff against Google Truth
-    type = LibraryType.INTERNAL_TEST_LIBRARY
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    type = SoftwareType.SNAPSHOT_ONLY_TEST_LIBRARY_WITH_API_TASKS // Used to diff against Google Truth
+    doNotDocumentReason = "Not shipped externally"
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

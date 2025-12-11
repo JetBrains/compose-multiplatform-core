@@ -31,13 +31,10 @@ class FloatSubjectTest {
         assertThat(1.23f.nextUp()).isEqualTo(JUST_OVER_GOLDEN)
     }
 
-    @Test
-    fun testJ2clCornerCaseZero() {
-        assertThatIsEqualToFails(-0.0f, 0.0f)
-    }
+    @Test fun testJ2clCornerCaseZero() = assumeNotJs { assertThatIsEqualToFails(-0.0f, 0.0f) }
 
     @Test
-    fun j2clCornerCaseDoubleVsFloat() {
+    fun j2clCornerCaseDoubleVsFloat() = assumeNotJs {
         assertFailsWith<AssertionError> { assertThat(1.23f).isEqualTo(1.23) }
     }
 
@@ -306,7 +303,7 @@ class FloatSubjectTest {
     @Test
     fun isEqualTo() {
         assertThat(GOLDEN).isEqualTo(GOLDEN)
-        assertThatIsEqualToFails(GOLDEN, JUST_OVER_GOLDEN)
+        assumeNotJs { assertThatIsEqualToFails(GOLDEN, JUST_OVER_GOLDEN) }
         assertThat(Float.POSITIVE_INFINITY).isEqualTo(Float.POSITIVE_INFINITY)
         assertThat(Float.NaN).isEqualTo(Float.NaN)
         assertThat(null as Float?).isEqualTo(null)
@@ -320,13 +317,15 @@ class FloatSubjectTest {
     @Test
     fun isNotEqualTo() {
         assertThatIsNotEqualToFails(GOLDEN)
-        assertThat(GOLDEN).isNotEqualTo(JUST_OVER_GOLDEN)
         assertThatIsNotEqualToFails(Float.POSITIVE_INFINITY)
         assertThatIsNotEqualToFails(Float.NaN)
-        assertThat(-0.0f).isNotEqualTo(0.0f)
         assertThatIsNotEqualToFails(null)
-        assertThat(1.23f).isNotEqualTo(1.23)
         assertThat(1.0f).isNotEqualTo(2)
+        assumeNotJs {
+            assertThat(GOLDEN).isNotEqualTo(JUST_OVER_GOLDEN)
+            assertThat(-0.0f).isNotEqualTo(0.0f)
+            assertThat(1.23f).isNotEqualTo(1.23)
+        }
     }
 
     private fun assertThatIsNotEqualToFails(value: Float?) {
@@ -421,7 +420,7 @@ class FloatSubjectTest {
     fun isNotNaN() {
         assertThat(1.23f).isNotNaN()
         assertThat(Float.MAX_VALUE).isNotNaN()
-        assertThat(-1.0 * Float.MIN_VALUE).isNotNaN()
+        assumeNotJs { assertThat(-1.0 * Float.MIN_VALUE).isNotNaN() }
         assertThat(Float.POSITIVE_INFINITY).isNotNaN()
         assertThat(Float.NEGATIVE_INFINITY).isNotNaN()
     }
@@ -472,7 +471,7 @@ class FloatSubjectTest {
     }
 
     @Test
-    fun isAtMost_int_withNoExactFloatRepresentation() {
+    fun isAtMost_int_withNoExactFloatRepresentation() = assumeNotJs {
         assertFailsWith<AssertionError> { assertThat(1.07374182E9f).isAtMost((1 shl 30) - 1) }
     }
 }

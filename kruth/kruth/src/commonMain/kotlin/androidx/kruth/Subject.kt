@@ -40,7 +40,7 @@ open class Subject<out T>
 internal constructor(
     val actual: T?,
     metadata: FailureMetadata,
-    private val typeDescriptionOverride: String?
+    private val typeDescriptionOverride: String?,
 ) {
     /**
      * Constructor for use by subclasses. If you want to create an instance of this class itself,
@@ -131,7 +131,7 @@ internal constructor(
         if (actual is V) {
             doFail(
                 fact("expected not to be an instance of", typeOf<V>()),
-                fact("but was", actual.toString())
+                fact("but was", actual.toString()),
             )
         }
     }
@@ -180,7 +180,7 @@ internal constructor(
                 first,
                 *rest,
                 // TODO(dustinlam): Value should be .actualCustomStringRepresentation()
-                fact("but was", actual)
+                fact("but was", actual),
             )
         )
     }
@@ -203,8 +203,8 @@ internal constructor(
             "resulting method call, as well).",
         ReplaceWith(
             "failWithoutActual(simpleFact(\"Not true that the subject \$check\"))",
-            "androidx.kruth.Fact.Companion.simpleFact"
-        )
+            "androidx.kruth.Fact.Companion.simpleFact",
+        ),
     )
     internal fun failWithoutActual(check: String) {
         failWithoutActual(simpleFact("Not true that the subject $check"))
@@ -298,7 +298,7 @@ internal constructor(
         if (compareForEquality(unexpected)) {
             failWithoutActual(
                 fact("expected not to be", unexpected),
-                fact("but was; string representation of actual value", actual)
+                fact("but was; string representation of actual value", actual),
             )
         }
     }
@@ -397,7 +397,7 @@ internal constructor(
     // TODO(b/134064106): Figure out a public API for this.
     internal fun checkNoNeedToDisplayBothValues(
         format: String,
-        vararg args: Any
+        vararg args: Any,
     ): StandardSubjectBuilder {
         validatePlaceholders(format, args)
         return doCheck(SIMILAR, lenientFormat(format, args))
@@ -418,7 +418,7 @@ internal constructor(
 
     private fun doCheck(
         valuesAreSimilar: OldAndNewValuesAreSimilar,
-        message: String
+        message: String,
     ): StandardSubjectBuilder {
         return StandardSubjectBuilder(
             metadata.updateForCheckCall(valuesAreSimilar) { input: String? -> "$input.$message" }

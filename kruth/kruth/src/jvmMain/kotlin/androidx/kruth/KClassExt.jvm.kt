@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,7 @@
 
 package androidx.kruth
 
-import kotlin.math.nextDown as kotlinNextDown
-import kotlin.math.nextUp as kotlinNextUp
+import kotlin.reflect.KClass
 
-internal actual fun Float.nextUp(): Float = kotlinNextUp()
-
-internal actual fun Float.nextDown(): Float = kotlinNextDown()
-
-internal actual inline fun assumeNotJs(block: () -> Unit) {
-    block()
-}
+internal actual val KClass<*>.qName: String?
+    get() = qualifiedName

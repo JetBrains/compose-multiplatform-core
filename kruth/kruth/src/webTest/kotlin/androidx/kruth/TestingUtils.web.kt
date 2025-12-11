@@ -16,11 +16,18 @@
 
 package androidx.kruth
 
-import kotlin.math.nextDown as kotlinNextDown
-import kotlin.math.nextUp as kotlinNextUp
+// copied from kotlin js, they are not available for Float for some reason.
+// https://github.com/JetBrains/kotlin/blob/284e9b4041bd815b5b1b489070bbb1f1db6de35c/libraries/stdlib/js/src/kotlin/math.kt#L492
+internal actual fun Float.nextUp(): Float =
+    when {
+        this.isNaN() || this == Float.POSITIVE_INFINITY -> this
+        this == 0f -> Float.MIN_VALUE
+        else -> Float.fromBits(this.toRawBits() + if (this > 0) 1 else -1)
+    }
 
-// On JS/WASM, these operations are available only for Double.
-
-internal actual fun Float.nextUp(): Float = toDouble().kotlinNextUp().toFloat()
-
-internal actual fun Float.nextDown(): Float = toDouble().kotlinNextDown().toFloat()
+internal actual fun Float.nextDown(): Float =
+    when {
+        this.isNaN() || this == Float.NEGATIVE_INFINITY -> this
+        this == 0f -> -Float.MIN_VALUE
+        else -> Float.fromBits(this.toRawBits() + if (this > 0) -1 else 1)
+    }

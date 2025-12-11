@@ -26,10 +26,8 @@ import androidx.kruth.Fact.Companion.simpleFact
  *   itself, call [check(...)][Subject.check].[that(actual)][StandardSubjectBuilder.that].
  */
 class FloatSubject
-internal constructor(
-    actual: Float?,
-    metadata: FailureMetadata = FailureMetadata(),
-) : ComparableSubject<Float>(metadata, actual) {
+internal constructor(actual: Float?, metadata: FailureMetadata = FailureMetadata()) :
+    ComparableSubject<Float>(metadata, actual) {
 
     private val asDouble = DoubleSubject(actual = actual?.toDouble(), metadata = metadata)
 
@@ -57,9 +55,8 @@ internal constructor(
         object : TolerantFloatComparison() {
             override fun of(expected: Float) {
                 requireNonNull(actual) {
-                    "Actual value cannot be null, tolerance=$tolerance, expected=$expected"
+                    "actual value cannot be null, tolerance=$tolerance, expected=$expected"
                 }
-
                 checkTolerance(tolerance)
 
                 if (!equalWithinTolerance(actual, expected, tolerance)) {
@@ -96,9 +93,8 @@ internal constructor(
         object : TolerantFloatComparison() {
             override fun of(expected: Float) {
                 requireNonNull(actual) {
-                    "Actual value cannot be null, tolerance=$tolerance, expected=$expected"
+                    "actual value cannot be null, tolerance=$tolerance, expected=$expected"
                 }
-
                 checkTolerance(tolerance)
 
                 if (!notEqualWithinTolerance(actual, expected, tolerance)) {
@@ -251,8 +247,9 @@ internal constructor(
         /** @throws UnsupportedOperationException always */
         @Deprecated(
             "Not supported on TolerantDoubleComparison. " +
-                "If you meant to compare doubles, use of(Double) instead.",
+                "If you meant to compare doubles, use of(Double) instead."
         )
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun equals(other: Any?): Boolean {
             throw UnsupportedOperationException(
                 "If you meant to compare doubles, use of(Double) instead."
@@ -261,6 +258,7 @@ internal constructor(
 
         /** @throws UnsupportedOperationException always */
         @Deprecated("Not supported on TolerantFloatComparison")
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun hashCode(): Int {
             throw UnsupportedOperationException("Subject.hashCode() is not supported.")
         }
