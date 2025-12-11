@@ -21,9 +21,11 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -121,6 +123,23 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
+        macosMain {
+            dependsOn(nativeMain)
+        }
+
+        macosTest {
+            dependsOn(nativeTest)
+        }
+
+        iosMain {
+            dependsOn(nativeMain)
+        }
+
+        iosTest {
+            dependsOn(nativeTest)
+        }
+
+
         webMain {
             dependsOn(nonAndroidMain)
         }
@@ -131,8 +150,16 @@ androidXMultiplatform {
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                if (target.konanTarget.family == Family.IOS) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
+                } else if (target.konanTarget.family == Family.OSX) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                }
             } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
                 target.compilations["main"].defaultSourceSet.dependsOn(webMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(webTest)
