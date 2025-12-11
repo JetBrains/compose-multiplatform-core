@@ -318,7 +318,7 @@ androidXMultiplatform {
             dependsOn(skikoMain)
 
             dependencies {
-                implementation(libs.skikoCommon)
+                implementation(libs.skiko)
                 api(libs.kotlinXw3c)
             }
         }
