@@ -126,6 +126,7 @@ internal class AccessibilityController(
         nodeId: Int,
         action: (ComposeAccessible, SemanticsConfiguration) -> Unit
     ) = SwingUtilities.invokeLater {
+        if (disposed) return@invokeLater
         val accessible = accessibleByNodeId(nodeId) ?: return@invokeLater
         action(accessible, accessible.semanticsNode.config)
     }
@@ -283,10 +284,17 @@ internal class AccessibilityController(
     private var syncingJob: Job? = null
 
     /**
+     * Whether this [AccessibilityController] has been disposed.
+     */
+    @Volatile
+    private var disposed = false
+
+    /**
      * Disposes of this [AccessibilityController], releasing any resources associated with it.
      */
     fun dispose() {
         syncingJob?.cancel()
+        disposed = true
     }
 
     /**
