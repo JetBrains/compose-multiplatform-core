@@ -74,11 +74,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.Dimension
 import java.awt.Point
+import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.HierarchyEvent
 import java.awt.event.HierarchyListener
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import javax.accessibility.Accessible
 import javax.accessibility.AccessibleComponent
 import javax.accessibility.AccessibleContext
@@ -589,14 +588,9 @@ class AccessibilityTest {
 
     @Test
     fun printWindowManager() {
-        val process = ProcessBuilder("wmctrl", "-m")
-            .redirectErrorStream(true)
-            .start()
-
-        val reader = process.inputStream.reader().buffered()
-        val output = reader.readText()
-        process.waitFor()
-        fail(output)
+        val toolkit = Toolkit.getDefaultToolkit()
+        val wmName = toolkit.getDesktopProperty("win.wm.name") as String?
+        fail("Window manager: $wmName")
     }
 
     @Test
