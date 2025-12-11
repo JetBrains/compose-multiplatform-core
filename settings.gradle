@@ -150,7 +150,6 @@ includeProject(":compose:desktop")
 includeProject(":compose:desktop:desktop")
 includeProject(":compose:desktop:desktop:desktop-samples", "compose/desktop/desktop/samples")
 includeProject(":compose:desktop:desktop:desktop-samples-material3", "compose/desktop/desktop/samples-material3")
-includeProject(":compose:mpp")
 includeProject(":compose:mpp:demo")
 includeProject(":compose:mpp:demo-swiftui")
 
