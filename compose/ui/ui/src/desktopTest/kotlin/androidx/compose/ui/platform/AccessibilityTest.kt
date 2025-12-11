@@ -662,6 +662,7 @@ class AccessibilityTest {
             anotherWindow.dispose()
             window.toFront()
             awaitIdle()
+            window.requestFocus()
             @Suppress("unused")
             for (i in 1..10) {
                 if (window.isFocused) break
