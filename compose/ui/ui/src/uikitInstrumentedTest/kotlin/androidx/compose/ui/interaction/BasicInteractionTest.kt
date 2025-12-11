@@ -31,14 +31,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
-import androidx.compose.ui.test.delay
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.up
-import androidx.compose.ui.test.waitUntil
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -239,9 +237,9 @@ class BasicInteractionTest {
     }
 
     private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        findNodeWithTag("TextField").tap()
+        findNodeWithTag(textFieldTag).tap()
         delay(500)
-        findNodeWithTag("TextField").doubleTap()
+        findNodeWithTag(textFieldTag).doubleTap()
         waitForContextMenu()
     }
 
