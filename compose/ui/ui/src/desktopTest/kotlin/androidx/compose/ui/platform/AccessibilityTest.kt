@@ -659,6 +659,7 @@ class AccessibilityTest {
             anotherWindow.toFront()
             awaitIdle()
             assertFalse(textFieldHasFocus)
+            anotherWindow.dispose()
             window.toFront()
             awaitIdle()
             @Suppress("unused")
@@ -670,7 +671,8 @@ class AccessibilityTest {
             assertTrue(textFieldHasFocus)
             assertSceneAccessibleIsTextField()
         } finally {
-            anotherWindow.dispose()
+            if (anotherWindow.isShowing)
+                anotherWindow.dispose()
         }
     }
 
