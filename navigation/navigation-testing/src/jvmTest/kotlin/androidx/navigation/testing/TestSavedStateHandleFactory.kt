@@ -245,6 +245,9 @@ class TestSavedStateHandleBuilder {
         assertThat(route.arg).containsExactlyElementsIn(arg).inOrder()
     }
 
+    /*
+    FIXME: NavUriUtils is internal in common and currently there is no shared API for this between Android and Desktop
+
     @Test
     fun handleEncodedValues() {
         @Serializable data class TestType(val id: String)
@@ -260,7 +263,7 @@ class TestSavedStateHandleBuilder {
                 override fun get(bundle: SavedState, key: String): TestType? =
                     bundle.read { TestType(getString(key)) }
 
-                override fun serializeAsValue(value: TestType): String = Uri.encode((value.id))
+                override fun serializeAsValue(value: TestType): String = NavUriUtils.encode((value.id))
 
                 override fun parseValue(value: String): TestType = TestType(value)
             }
@@ -271,6 +274,7 @@ class TestSavedStateHandleBuilder {
         val savedStateHandle = SavedStateHandle(route, typeMap)
         assertThat(savedStateHandle.toRoute<TestClass>(typeMap).params.id).isEqualTo("%%string")
     }
+    */
 }
 
 @Serializable private data class TestType(val name: String, val id: Int)
