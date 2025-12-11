@@ -144,6 +144,7 @@ androidXMultiplatform {
                 // Keep in sync with :ui:ui module
                 implementation(project(":lifecycle:lifecycle-runtime-compose"))
                 implementation(project(":lifecycle:lifecycle-viewmodel"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
                 implementation(project(":navigationevent:navigationevent"))
             }
         }
@@ -153,6 +154,8 @@ androidXMultiplatform {
             dependencies {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
+                implementation(project(":kruth:kruth"))
             }
         }
 
@@ -190,20 +193,28 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        macosMain {
+        darwinMain {
             dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        macosMain {
+            dependsOn(darwinMain)
         }
 
         macosTest {
-            dependsOn(nativeTest)
+            dependsOn(darwinTest)
         }
 
         uikitMain {
-            dependsOn(nativeMain)
+            dependsOn(darwinMain)
         }
 
         uikitTest {
-            dependsOn(nativeTest)
+            dependsOn(darwinTest)
         }
 
         webMain {
@@ -226,6 +237,9 @@ androidXMultiplatform {
                 } else if (target.konanTarget.family == Family.OSX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
+                } else if (target.konanTarget.family.appleFamily) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
                 } else {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)

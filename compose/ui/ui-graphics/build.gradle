@@ -75,6 +75,9 @@ androidXMultiplatform {
 
         jvmTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(project(":compose:ui:ui-test-junit4"))
+            }
         }
 
         androidMain {
@@ -125,9 +128,8 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
-
-                // TODO: Why junit4 added to non JVM tests?
-                //implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:ui:ui-test"))
+                implementation(project(":kruth:kruth"))
             }
         }
 
@@ -150,6 +152,7 @@ androidXMultiplatform {
             dependsOn(skikoTest)
             dependsOn(skikoExcludingWebTest)
             dependencies {
+                implementation(libs.truth)
                 implementation(libs.skikoCurrentOs)
             }
         }

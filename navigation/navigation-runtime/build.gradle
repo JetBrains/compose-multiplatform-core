@@ -78,6 +78,12 @@ androidXMultiplatform {
 
         nonAndroidTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":kruth:kruth"))
+                implementation(project(":navigation:navigation-testing"))
+                implementation(project(":internal-testutils-navigation"))
+            }
         }
 
         jvmMain {
@@ -141,6 +147,9 @@ androidXMultiplatform {
 
         nonJvmMain {
             dependsOn(nonAndroidMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
         }
 
         nonJvmTest {
