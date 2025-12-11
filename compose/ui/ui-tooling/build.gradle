@@ -36,7 +36,7 @@ androidXMultiplatform {
         namespace = "androidx.compose.ui.tooling"
         androidResources.enable = true
     }
-    jvmStubs()
+    desktop()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -77,10 +77,8 @@ androidXMultiplatform {
             }
         }
 
-        jvmStubsMain {
+        desktopMain {
             dependsOn(jvmMain)
-            dependencies {
-            }
         }
 
         androidDeviceTest {

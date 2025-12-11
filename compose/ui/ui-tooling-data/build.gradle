@@ -35,7 +35,7 @@ androidXMultiplatform {
         namespace = "androidx.compose.ui.tooling.data"
         compileSdk = 35
     }
-    jvmStubs()
+    desktop()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -68,12 +68,6 @@ androidXMultiplatform {
             }
         }
 
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
         androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
@@ -97,6 +91,10 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.truth)
             }
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
         }
     }
 }
