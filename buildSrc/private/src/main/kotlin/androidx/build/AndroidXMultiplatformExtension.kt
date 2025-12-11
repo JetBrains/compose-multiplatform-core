@@ -758,6 +758,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             val target = createTarget {
                 block?.execute(this)
                 binaries.library()
+                project.configurePinnedKotlinLibraries(platform)
                 browser {
                     testTask {
                         // We need to set up at least one browser here due to kotlin tooling limitations
