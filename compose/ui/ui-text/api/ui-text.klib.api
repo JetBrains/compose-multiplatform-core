@@ -553,10 +553,11 @@ final class androidx.compose.ui.text.intl/Locale { // androidx.compose.ui.text.i
     final val language // androidx.compose.ui.text.intl/Locale.language|{}language[0]
         final fun <get-language>(): kotlin/String // androidx.compose.ui.text.intl/Locale.language.<get-language>|<get-language>(){}[0]
     final val platformLocale // androidx.compose.ui.text.intl/Locale.platformLocale|{}platformLocale[0]
-        final fun <get-platformLocale>(): androidx.compose.ui.text.intl/PlatformLocale // androidx.compose.ui.text.intl/Locale.platformLocale.<get-platformLocale>|<get-platformLocale>(){}[0]
-
         // Targets: [apple]
         final fun <get-platformLocale>(): platform.Foundation/NSLocale // androidx.compose.ui.text.intl/Locale.platformLocale.<get-platformLocale>|<get-platformLocale>(){}[0]
+
+        // Targets: [js, wasmJs]
+        final fun <get-platformLocale>(): androidx.compose.ui.text.intl/PlatformLocale // androidx.compose.ui.text.intl/Locale.platformLocale.<get-platformLocale>|<get-platformLocale>(){}[0]
     final val region // androidx.compose.ui.text.intl/Locale.region|{}region[0]
         final fun <get-region>(): kotlin/String // androidx.compose.ui.text.intl/Locale.region.<get-region>|<get-region>(){}[0]
     final val script // androidx.compose.ui.text.intl/Locale.script|{}script[0]
@@ -598,10 +599,6 @@ final class androidx.compose.ui.text.intl/LocaleList : kotlin.collections/Collec
         final val current // androidx.compose.ui.text.intl/LocaleList.Companion.current|{}current[0]
             final fun <get-current>(): androidx.compose.ui.text.intl/LocaleList // androidx.compose.ui.text.intl/LocaleList.Companion.current.<get-current>|<get-current>(){}[0]
     }
-}
-
-final class androidx.compose.ui.text.intl/PlatformLocale { // androidx.compose.ui.text.intl/PlatformLocale|null[0]
-    constructor <init>() // androidx.compose.ui.text.intl/PlatformLocale.<init>|<init>(){}[0]
 }
 
 final class androidx.compose.ui.text.platform/FontLoadResult { // androidx.compose.ui.text.platform/FontLoadResult|null[0]
@@ -1819,7 +1816,6 @@ final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_TextInpu
 final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_TransformedText$stableprop // androidx.compose.ui.text.input/androidx_compose_ui_text_input_TransformedText$stableprop|#static{}androidx_compose_ui_text_input_TransformedText$stableprop[0]
 final val androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_Locale$stableprop // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_Locale$stableprop|#static{}androidx_compose_ui_text_intl_Locale$stableprop[0]
 final val androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_LocaleList$stableprop // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_LocaleList$stableprop|#static{}androidx_compose_ui_text_intl_LocaleList$stableprop[0]
-final val androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop|#static{}androidx_compose_ui_text_intl_PlatformLocale$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop|#static{}androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop|#static{}androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_FontLoadResult$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_FontLoadResult$stableprop|#static{}androidx_compose_ui_text_platform_FontLoadResult$stableprop[0]
@@ -1940,7 +1936,6 @@ final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_TextInpu
 final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_TransformedText$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.input/androidx_compose_ui_text_input_TransformedText$stableprop_getter|androidx_compose_ui_text_input_TransformedText$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_Locale$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_Locale$stableprop_getter|androidx_compose_ui_text_intl_Locale$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_LocaleList$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_LocaleList$stableprop_getter|androidx_compose_ui_text_intl_LocaleList$stableprop_getter(){}[0]
-final fun androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter|androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/ByteArray, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.ByteArray;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/ByteArray, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ..., androidx.compose.ui.text.font/FontVariation.Settings = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.ByteArray;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;androidx.compose.ui.text.font.FontVariation.Settings){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/Function0<kotlin/ByteArray>, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.Function0<kotlin.ByteArray>;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]
@@ -2032,3 +2027,14 @@ final val androidx.compose.ui.text.input/androidx_compose_ui_text_input_Platform
 
 // Targets: [ios]
 final fun androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.input/androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter|androidx_compose_ui_text_input_PlatformImeOptionsConfiguration$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final class androidx.compose.ui.text.intl/PlatformLocale { // androidx.compose.ui.text.intl/PlatformLocale|null[0]
+    constructor <init>() // androidx.compose.ui.text.intl/PlatformLocale.<init>|<init>(){}[0]
+}
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop|#static{}androidx_compose_ui_text_intl_PlatformLocale$stableprop[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.intl/androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter|androidx_compose_ui_text_intl_PlatformLocale$stableprop_getter(){}[0]
