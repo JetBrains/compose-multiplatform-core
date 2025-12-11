@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.delay
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi

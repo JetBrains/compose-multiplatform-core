@@ -20,8 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.test.MockAppDelegate
-import androidx.compose.ui.test.delay
-import androidx.compose.ui.test.waitUntil
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.uikit.embedSubview
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,17 +46,17 @@ class ComposeViewIntegrationTest {
             }
         } as ComposeHostingView
 
-        waitUntil { controller.view.window != null }
+        UIKitInstrumentedTest.waitUntil { controller.view.window != null }
 
         controller.view.embedSubview(composeView)
-        waitUntil { !composeView.hasInvalidations() }
+        UIKitInstrumentedTest.waitUntil { !composeView.hasInvalidations() }
 
         assertEquals(launchesCount, 1)
 
         composeView.removeFromSuperview()
 
         assertEquals(launchesCount, 1)
-        waitUntil("Wait until compose view being disposed") {
+        UIKitInstrumentedTest.waitUntil("Wait until compose view being disposed") {
             composeView.rootRedrawer == null
         }
     }
@@ -78,10 +77,10 @@ class ComposeViewIntegrationTest {
             compositionsCount += 1
         } as ComposeHostingView
 
-        waitUntil { controller.view.window != null }
+        UIKitInstrumentedTest.waitUntil { controller.view.window != null }
 
         controller.view.embedSubview(composeView)
-        waitUntil { !composeView.hasInvalidations() }
+        UIKitInstrumentedTest.waitUntil { !composeView.hasInvalidations() }
         assertEquals(compositionsCount, 1)
 
         composeView.removeFromSuperview()
@@ -89,7 +88,7 @@ class ComposeViewIntegrationTest {
         anotherSubview.embedSubview(composeView)
 
         // Long delay to be sure that the Compose scene is not disposed
-        delay(1000)
+        UIKitInstrumentedTest.delay(1000)
 
         assertNotNull(composeView.rootRedrawer, "ComposeView should be alive")
         assertEquals(1, compositionsCount, "Compose view should not have extra recompositions")

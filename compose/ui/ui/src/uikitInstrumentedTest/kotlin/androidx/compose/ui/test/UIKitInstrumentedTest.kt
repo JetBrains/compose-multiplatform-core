@@ -144,13 +144,33 @@ internal class UIKitInstrumentedTest(
     private val useHostingView: Boolean
 ) {
     companion object {
-        val allRunEnvironments = listOf(RunEnvironment.ComposeHostingView, RunEnvironment.ComposeHostingViewController)
-    }
+//        val allRunEnvironments = listOf(RunEnvironment.ComposeHostingView, RunEnvironment.ComposeHostingViewController)
+//
+        fun delay(timeoutMillis: Long) {
+            val runLoop = NSRunLoop.currentRunLoop()
+            runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
+        }
 
-    enum class RunEnvironment {
-        ComposeHostingView,
-        ComposeHostingViewController
+        fun waitUntil(
+            conditionDescription: String? = null,
+            timeoutMillis: Long = 5_000,
+            condition: () -> Boolean
+        ) {
+            val runLoop = NSRunLoop.currentRunLoop()
+            val endTime = TimeSource.Monotonic.markNow() + timeoutMillis.milliseconds
+            while (!condition()) {
+                if (TimeSource.Monotonic.markNow() > endTime) {
+                    throw AssertionError(conditionDescription ?: "Timeout ${timeoutMillis}ms reached.")
+                }
+                runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.005))
+            }
+        }
     }
+//
+//    enum class RunEnvironment {
+//        ComposeHostingView,
+//        ComposeHostingViewController
+//    }
 
     private val screen = UIScreen.mainScreen()
     val density = Density(density = screen.scale.toFloat())
@@ -252,6 +272,14 @@ internal class UIKitInstrumentedTest(
             timeoutMillis = timeoutMillis
         ) { isIdle }
     }
+
+    fun delay(timeoutMillis: Long) = UIKitInstrumentedTest.delay(timeoutMillis)
+
+    fun waitUntil(
+        conditionDescription: String? = null,
+        timeoutMillis: Long = 5_000,
+        condition: () -> Boolean
+    ) = UIKitInstrumentedTest.waitUntil(conditionDescription, timeoutMillis, condition)
 
     // Touches:
 
@@ -466,24 +494,4 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     }.firstNotNullOfOrNull {
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
-}
-
-fun delay(timeoutMillis: Long) {
-    val runLoop = NSRunLoop.currentRunLoop()
-    runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(timeoutMillis.toDouble() / 1000.0))
-}
-
-fun waitUntil(
-    conditionDescription: String? = null,
-    timeoutMillis: Long = 5_000,
-    condition: () -> Boolean
-) {
-    val runLoop = NSRunLoop.currentRunLoop()
-    val endTime = TimeSource.Monotonic.markNow() + timeoutMillis.milliseconds
-    while (!condition()) {
-        if (TimeSource.Monotonic.markNow() > endTime) {
-            throw AssertionError(conditionDescription ?: "Timeout ${timeoutMillis}ms reached.")
-        }
-        runLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.005))
-    }
 }
