@@ -40,7 +40,7 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
             }
 
             // Never cache test results
-            it.tasks.withType<AbstractTestTask>().configureEach {
+            subproject.tasks.withType<AbstractTestTask>().configureEach {
                 it.outputs.upToDateWhen { false }
             }
 
