@@ -95,6 +95,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -660,6 +661,11 @@ class AccessibilityTest {
             assertFalse(textFieldHasFocus)
             window.toFront()
             awaitIdle()
+            @Suppress("unused")
+            for (i in 1..10) {
+                if (window.isFocused) break
+                delay(10)
+            }
             assertTrue(textFieldHasFocus)
             assertSceneAccessibleIsTextField()
         } finally {
