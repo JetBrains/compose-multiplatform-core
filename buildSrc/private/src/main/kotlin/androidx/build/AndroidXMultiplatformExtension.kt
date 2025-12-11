@@ -757,7 +757,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         return if (isEnabled) {
             val target = createTarget {
                 block?.execute(this)
-                binaries.library()
                 project.configurePinnedKotlinLibraries(platform)
                 browser {
                     testTask {
