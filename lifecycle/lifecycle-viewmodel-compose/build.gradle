@@ -61,6 +61,9 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
+                implementation(project(":compose:ui:ui-test"))
                 implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
                 implementation(project(":lifecycle:lifecycle-viewmodel-testing"))
                 implementation(project(":lifecycle:lifecycle-runtime-testing"))
@@ -73,6 +76,9 @@ androidXMultiplatform {
 
         jvmTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(project(":compose:ui:ui-test-junit4"))
+            }
         }
 
         androidMain {
@@ -89,7 +95,6 @@ androidXMultiplatform {
         androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:test-utils"))
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
