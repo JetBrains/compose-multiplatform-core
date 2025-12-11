@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import androidx.build.KotlinTarget
+
 // TODO: Correctly apply AndroidXPlugin to pass all verification checks.
 
 plugins {
@@ -42,6 +44,10 @@ kotlin {
         iosX64Main.dependsOn(iosMain)
         iosArm64Main.dependsOn(iosMain)
         iosSimulatorArm64Main.dependsOn(iosMain)
+
+        configureEach {
+            languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        }
     }
 }
 
