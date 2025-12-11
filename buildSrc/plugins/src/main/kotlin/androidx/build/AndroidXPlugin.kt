@@ -18,6 +18,8 @@ package androidx.build
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.internal.extensions.core.extra
+import org.gradle.kotlin.dsl.KotlinClosure1
 
 /**
  * A plugin which enables all of the Gradle customizations for AndroidX. This plugin reacts to other
@@ -33,6 +35,14 @@ class AndroidXPlugin : Plugin<Project> {
         project.apply(
             mapOf<String, String>(
                 "from" to "$supportRoot/buildSrc/apply/applyAndroidXImplPlugin.gradle"
+            )
+        )
+
+        // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+        project.extra.set(
+            "projectOrArtifact",
+            KotlinClosure1<String, Any>(
+                function = { "test:test:1.0" }
             )
         )
     }

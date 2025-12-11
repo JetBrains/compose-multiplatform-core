@@ -29,7 +29,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
     id("JetBrainsAndroidXPlugin")
 }
@@ -37,7 +36,9 @@ plugins {
 JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.navigation"
+    }
     desktop()
     mac()
     linux()
@@ -157,12 +158,6 @@ kotlin {
     tvosArm64()
     tvosX64()
     tvosSimulatorArm64()
-}
-
-android {
-    // Include `*.java` files into the build
-    sourceSets["main"].java.srcDir("src/androidMain/java")
-    namespace "androidx.navigation"
 }
 
 androidx {

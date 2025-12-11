@@ -28,12 +28,13 @@ import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.lifecycle.viewmodel"
+    }
     desktop()
     mac()
     linux()
@@ -66,10 +67,6 @@ kotlin {
     tvosX64()
     tvosSimulatorArm64()
     mingwX64()
-}
-
-android {
-    namespace "androidx.lifecycle.viewmodel"
 }
 
 androidx {

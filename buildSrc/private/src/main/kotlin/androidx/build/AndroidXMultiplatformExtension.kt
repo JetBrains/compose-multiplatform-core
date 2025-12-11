@@ -725,6 +725,13 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
             block = block,
         )
 
+    // TODO(buildSrc) remove after migrating all build.gradle to the new buildSrc
+    @JvmOverloads
+    fun wasm(block: Action<KotlinJsTargetDsl>? = null): KotlinWasmTargetDsl? = wasmJs(block)
+
+    @JvmOverloads
+    fun android(block: Action<KotlinMultiplatformAndroidLibraryTarget>? = null): KotlinMultiplatformAndroidLibraryTarget? = androidLibrary(block)
+
     // TODO(buildSrc) web configuration changed temporary
     private val toml = Toml.parse(
         project.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath()

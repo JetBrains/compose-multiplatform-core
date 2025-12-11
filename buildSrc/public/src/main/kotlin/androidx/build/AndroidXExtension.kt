@@ -464,6 +464,10 @@ abstract class AndroidXExtension(
     var runApiTasks: RunApiTasks
         get() = throw UnsupportedOperationException()
         set(value) {}
+
+    var publish: Publish
+        get() = throw UnsupportedOperationException()
+        set(value) {}
 }
 
 class License {

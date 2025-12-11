@@ -31,7 +31,6 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
     id("JetBrainsAndroidXPlugin")
 }
@@ -39,7 +38,13 @@ plugins {
 JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        namespace = "androidx.navigation.common"
+    }
     desktop()
     mac()
     linux()
@@ -112,8 +117,8 @@ androidXMultiplatform {
                 // CustomMessageMissingMethodException: Could not find method implementation() for arguments
                 // implementation(libs.mockitoCore, excludes.bytebuddy)
                 // implementation(libs.dexmakerMockito, excludes.bytebuddy)
-                implementation("org.mockito:mockito-core:2.25.0", excludes.bytebuddy)
-                implementation("com.linkedin.dexmaker:dexmaker-mockito:2.28.3", excludes.bytebuddy)
+                //implementation("org.mockito:mockito-core:2.25.0", excludes.bytebuddy)
+                //implementation("com.linkedin.dexmaker:dexmaker-mockito:2.28.3", excludes.bytebuddy)
             }
         }
 
@@ -166,13 +171,6 @@ kotlin {
     tvosArm64()
     tvosX64()
     tvosSimulatorArm64()
-}
-
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-    namespace "androidx.navigation.common"
 }
 
 androidx {

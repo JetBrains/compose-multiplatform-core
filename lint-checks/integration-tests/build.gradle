@@ -32,7 +32,7 @@ plugins {
 
 dependencies {
     implementation(project(":annotation:annotation"))
-    implementation(project(":core:core"))
+    //implementation(project(":core:core"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation(libs.kotlinStdlib)
 }

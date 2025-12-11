@@ -43,14 +43,12 @@ import org.tomlj.Toml
 open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     val project: Project
 ) : AndroidXComposeMultiplatformExtension() {
-    init {
+    private val multiplatformExtension by lazy {
         if (!project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
             project.plugins.apply(KotlinMultiplatformPluginWrapper::class.java)
         }
-    }
-
-    private val multiplatformExtension =
         project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+    }
 
     private val skikoVersion: String
 
