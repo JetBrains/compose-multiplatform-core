@@ -230,3 +230,7 @@ tasks.withType(KotlinCompile).configureEach {
         ]
     }
 }
+
+tasks.findByName("desktopTest").configure {
+    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
+}

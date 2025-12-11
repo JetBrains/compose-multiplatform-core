@@ -546,6 +546,10 @@ tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
     ]
 }
 
+tasks.findByName("desktopTest").configure {
+    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
+}
+
 tasks.register("desktopHeadlessTest", Test) {
     testClassesDirs = sourceSets.desktopTest.output.classesDirs
     classpath = sourceSets.desktopTest.runtimeClasspath
