@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-
-import androidx.build.LibraryType
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.Architecture
 
 plugins {
     id("AndroidXPlugin")
     id("kotlin-multiplatform")
-    id("JetBrainsAndroidXPlugin")
 }
 
 kotlin {
@@ -50,6 +49,10 @@ kotlin {
         iosX64Main.dependsOn(iosMain)
         iosArm64Main.dependsOn(iosMain)
         iosSimulatorArm64Main.dependsOn(iosMain)
+
+        // TODO(buildsrc): Correctly apply AndroidXPlugin to pass all verification checks (replace "kotlin {" by "androidXMultiplatform {")
+        commonMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        iosMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
 
         configureEach {
             languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
@@ -187,7 +190,7 @@ private def configure(target, isDevice) {
 
 androidx {
     name = "Compose Instrumented Test Utils"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Internal utilities that convert kotlin.test into XCTest."
     legacyDisableKotlinStrictApiMode = true

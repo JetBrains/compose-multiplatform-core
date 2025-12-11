@@ -1313,6 +1313,7 @@ includeProject(":internal-testutils-gradle-plugin", "testutils/testutils-gradle-
 includeProject(":internal-testutils-mockito", "testutils/testutils-mockito", [BuildType.MAIN, BuildType.MEDIA, BuildType.FLAN, BuildType.COMPOSE])
 includeProject(":internal-testutils-lifecycle", "testutils/testutils-lifecycle", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN, BuildType.KMP])
 includeProject(":internal-testutils-appfunctions", "testutils/testutils-appfunctions", [BuildType.MAIN])
+includeProject(":internal-testutils-xctest", "testutils/testutils-xctest", [BuildType.KMP, BuildType.COMPOSE])
 includeProject(":kruth:kruth", [BuildType.MAIN, BuildType.INFRAROGUE, BuildType.KMP, BuildType.COMPOSE])
 
 /////////////////////////////
