@@ -965,43 +965,6 @@ class NavHostTest {
     }
 
     @Test
-    fun testNavHostDeeplink() = runComposeUiTestOnUiThread {
-        lateinit var navController: NavHostController
-
-        composeTestRule.mainClock.autoAdvance = false
-
-        composeTestRule.setContent {
-            // Add the flags to make NavController think this is a deep link
-            val activity = LocalContext.current as? Activity
-            activity?.intent?.run {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            navController = rememberNavController()
-            NavHost(navController, startDestination = first) {
-                composable(first) { BasicText(first) }
-                composable(
-                    second,
-                    deepLinks = listOf(navDeepLink { action = Intent.ACTION_MAIN }),
-                ) {
-                    BasicText(second)
-                }
-            }
-        }
-
-        composeTestRule.waitForIdle()
-
-        val firstEntry = navController.getBackStackEntry(first)
-        val secondEntry = navController.getBackStackEntry(second)
-
-        composeTestRule.mainClock.autoAdvance = true
-
-        composeTestRule.runOnIdle {
-            assertThat(firstEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
-            assertThat(secondEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
-        }
-    }
-
-    @Test
     fun testStateSaved() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
         lateinit var text: MutableState<String>
@@ -1255,7 +1218,7 @@ class NavHostTest {
     }
 
     @Test
-    fun testLifecycleStateOnAtomicNavigateToComposableAndDialog() {
+    fun testLifecycleStateOnAtomicNavigateToComposableAndDialog() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
         lateinit var screen1Lifecycle: State<Lifecycle.State>
         lateinit var screen2Lifecycle: State<Lifecycle.State>
@@ -1298,6 +1261,7 @@ class NavHostTest {
         assertThat(screen2Lifecycle.value).isEqualTo(Lifecycle.State.RESUMED)
     }
 
+    @Composable
     private fun createNavController(): TestNavHostController {
         val navController = TestNavHostController()
         val navigator = TestNavigator()

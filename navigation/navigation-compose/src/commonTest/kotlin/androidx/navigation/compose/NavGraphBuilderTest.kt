@@ -150,31 +150,6 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        val uriString = "https://www.example.com"
-        val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUriUtils.parse(uriString)).build()
-        setContent {
-            navController = TestNavHostController()
-            navController.navigatorProvider.addNavigator(ComposeNavigator())
-
-            NavHost(navController, startDestination = firstRoute) {
-                composable(firstRoute) {}
-                composable(
-                    secondRoute,
-                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
-                ) {}
-            }
-        }
-
-        composeTestRule.runOnUiThread {
-            navController.navigate(uriString.toUri())
-            assertThat(navController.currentBackStackEntry!!.destination.hasDeepLink(deeplink))
-                .isTrue()
-        }
-    }
-
-    @Test
-    fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
-        lateinit var navController: TestNavHostController
         setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -241,36 +216,6 @@ class NavGraphBuilderTest {
             navController.navigate(secondRoute)
             assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(defaultArg)
-        }
-    }
-
-    @Test
-    fun testNestedNavigationDeepLink() = runComposeUiTestOnUiThread {
-        lateinit var navController: TestNavHostController
-        val uriString = "https://www.example.com"
-        val deeplink = NavDeepLinkRequest.Builder.fromUri(UriNavUriUtils.parse(uriString)).build()
-        setContentWithLifecycleOwner {
-            navController = TestNavHostController(LocalContext.current)
-            navController.navigatorProvider.addNavigator(ComposeNavigator())
-
-            NavHost(navController, startDestination = firstRoute) {
-                composable(firstRoute) {}
-                navigation(
-                    startDestination = thirdRoute,
-                    route = secondRoute,
-                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
-                ) {
-                    composable(thirdRoute) {}
-                }
-            }
-        }
-
-        composeTestRule.runOnUiThread {
-            navController.navigate(uriString.toUri())
-            assertThat(
-                    navController.getBackStackEntry(secondRoute).destination.hasDeepLink(deeplink)
-                )
-                .isTrue()
         }
     }
 
