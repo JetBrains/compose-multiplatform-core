@@ -24,6 +24,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -83,12 +84,42 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        jvmStubsMain {
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
             dependsOn(nonAndroidMain)
         }
 
-        linuxx64StubsMain {
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
             dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
         }
     }
 }
