@@ -107,6 +107,7 @@ class DesktopScrollableTest {
         assertThat(context.offset).isWithin(0.1f).of(-6 * scrollLineLinux(20.dp))
     }
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun `windows, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
