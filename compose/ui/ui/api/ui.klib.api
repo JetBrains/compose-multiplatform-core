@@ -4512,9 +4512,7 @@ final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx
 }
 
 // Targets: [ios]
-open class androidx.compose.ui.uikit/ComposeContainerConfiguration { // androidx.compose.ui.uikit/ComposeContainerConfiguration|null[0]
-    constructor <init>() // androidx.compose.ui.uikit/ComposeContainerConfiguration.<init>|<init>(){}[0]
-
+sealed class androidx.compose.ui.uikit/ComposeContainerConfiguration { // androidx.compose.ui.uikit/ComposeContainerConfiguration|null[0]
     final var enforceStrictPlistSanityCheck // androidx.compose.ui.uikit/ComposeContainerConfiguration.enforceStrictPlistSanityCheck|{}enforceStrictPlistSanityCheck[0]
         final fun <get-enforceStrictPlistSanityCheck>(): kotlin/Boolean // androidx.compose.ui.uikit/ComposeContainerConfiguration.enforceStrictPlistSanityCheck.<get-enforceStrictPlistSanityCheck>|<get-enforceStrictPlistSanityCheck>(){}[0]
         final fun <set-enforceStrictPlistSanityCheck>(kotlin/Boolean) // androidx.compose.ui.uikit/ComposeContainerConfiguration.enforceStrictPlistSanityCheck.<set-enforceStrictPlistSanityCheck>|<set-enforceStrictPlistSanityCheck>(kotlin.Boolean){}[0]

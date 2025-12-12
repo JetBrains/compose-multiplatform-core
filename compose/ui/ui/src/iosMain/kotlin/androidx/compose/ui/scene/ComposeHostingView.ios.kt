@@ -111,11 +111,11 @@ internal class ComposeHostingView(
     }
 
     override fun viewDidEnterWindowHierarchy() {
-        container.startComposeScene()
+        container.initializeComposeScene()
     }
 
     override fun viewDidLeaveWindowHierarchy() {
-        container.stopComposeScene()
+        container.disposeComposeScene()
     }
 
     private var isAnimating = false

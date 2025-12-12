@@ -189,7 +189,7 @@ internal class ComposeContainer(
             .asComposeSystemTheme()
     }
 
-    fun startComposeScene() {
+    fun initializeComposeScene() {
         val metalView = MetalView(
             retrieveInteropTransaction = {
                 mediator?.retrieveInteropTransaction() ?: object : UIKitInteropTransaction {
@@ -257,7 +257,7 @@ internal class ComposeContainer(
         onAccessibilityChanged()
     }
 
-    fun stopComposeScene() {
+    fun disposeComposeScene() {
         // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next Compose scene when the container re-enters
         // the window hierarchy.

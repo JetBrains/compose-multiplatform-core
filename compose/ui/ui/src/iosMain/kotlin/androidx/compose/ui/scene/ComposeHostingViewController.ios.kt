@@ -145,11 +145,11 @@ internal class ComposeHostingViewController(
     }
 
     override fun viewControllerDidEnterWindowHierarchy() {
-        container.startComposeScene()
+        container.initializeComposeScene()
     }
 
     override fun viewControllerDidLeaveWindowHierarchy() {
-        container.stopComposeScene()
+        container.disposeComposeScene()
     }
 
     /**
