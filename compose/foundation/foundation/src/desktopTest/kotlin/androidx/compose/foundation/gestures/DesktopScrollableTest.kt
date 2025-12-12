@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.sqrt
+import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -62,6 +63,7 @@ class DesktopScrollableTest {
     private fun scrollLineMacOs() = density.density * 10f
     private fun scrollPage(bounds: Dp) = bounds.value * density.density
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun `linux, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
