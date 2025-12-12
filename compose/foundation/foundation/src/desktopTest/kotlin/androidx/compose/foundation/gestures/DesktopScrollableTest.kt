@@ -250,6 +250,7 @@ class DesktopScrollableTest {
         assertThat(column.offset).isEqualTo(0f)
     }
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun multipleScrollingModifiers() = runSkikoComposeUiTest(
         size = size,
