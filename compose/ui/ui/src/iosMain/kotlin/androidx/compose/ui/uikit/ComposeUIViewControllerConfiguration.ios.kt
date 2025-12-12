@@ -21,7 +21,7 @@ import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UIViewController
 
 /**
- * Configuration of ComposeUIViewController behavior.
+ * Configuration of [androidx.compose.ui.window.ComposeUIViewController] behavior.
  */
 class ComposeUIViewControllerConfiguration: ComposeContainerConfiguration() {
     /**

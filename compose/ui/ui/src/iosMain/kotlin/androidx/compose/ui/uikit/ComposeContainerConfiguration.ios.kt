@@ -21,7 +21,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 /**
  * Base configuration of the Compose container.
  */
-open class ComposeContainerConfiguration {
+sealed class ComposeContainerConfiguration {
     /**
      * Control Compose behaviour on focus changed inside Compose.
      */
@@ -67,6 +67,9 @@ open class ComposeContainerConfiguration {
     var endEdgePanGestureBehavior: EndEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled
 }
 
+/**
+ * Specifies behaviour on focus changed inside Compose.
+ */
 sealed interface OnFocusBehavior {
     /**
      * The Compose view will stay on the current position.
@@ -81,6 +84,11 @@ sealed interface OnFocusBehavior {
     data object FocusableAboveKeyboard : OnFocusBehavior
 }
 
+/**
+ * Determines how the end edge pan gestures will be handled.
+ * In LTR layouts, the end edge is the right edge of the screen.
+ * In RTL layouts, the end edge is the left edge of the screen.
+ */
 @ExperimentalComposeUiApi
 sealed interface EndEdgePanGestureBehavior {
     /**

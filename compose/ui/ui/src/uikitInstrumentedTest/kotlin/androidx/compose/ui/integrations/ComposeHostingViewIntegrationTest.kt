@@ -28,9 +28,9 @@ import kotlin.test.assertNotNull
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
-class ComposeViewIntegrationTest {
+class ComposeHostingViewIntegrationTest {
     @Test
-    fun testComposeViewSceneStartAndStop() {
+    fun testSceneStartAndStop() {
         val appDelegate = MockAppDelegate()
         val controller = UIViewController()
         appDelegate.setUpWindow(controller)
@@ -63,7 +63,7 @@ class ComposeViewIntegrationTest {
     }
 
     @Test
-    fun testComposeViewSceneMovedToNewSubview() {
+    fun testSceneRestartWhenMoveToNewSubview() {
         val appDelegate = MockAppDelegate()
         val controller = UIViewController()
         val anotherSubview = UIView()

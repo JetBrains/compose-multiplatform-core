@@ -52,10 +52,8 @@ import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
-import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
-import kotlinx.cinterop.ExportObjCClass
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -71,8 +69,9 @@ import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
-@OptIn(BetaInteropApi::class)
-@ExportObjCClass
+/**
+ * The class represents a common part of Compose integration for all iOS containers.
+ */
 internal class ComposeContainer(
     private val configuration: ComposeContainerConfiguration,
     private val content: @Composable () -> Unit,
@@ -89,7 +88,7 @@ internal class ComposeContainer(
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layersHolder: ComposeLayersHolder? = null
-    private val layoutDirection get() = getLayoutDirection()
+    private val layoutDirection get() = getApplicationLayoutDirection()
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
     val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
@@ -395,7 +394,7 @@ private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
     }
 }
 
-private fun getLayoutDirection() =
+private fun getApplicationLayoutDirection() =
     when (UIApplication.sharedApplication().userInterfaceLayoutDirection) {
         UIUserInterfaceLayoutDirection.UIUserInterfaceLayoutDirectionRightToLeft -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr

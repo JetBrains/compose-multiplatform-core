@@ -276,7 +276,7 @@ class MemoryLeaksTest {
         }
 
     @Test
-    fun testComposeViewDisposal() = runRepeatingBlocking {
+    fun testComposeUIViewDisposal() = runRepeatingBlocking {
         val appDelegate = MockAppDelegate()
         var composeViewRef: WeakReference<UIView>? = null
         var composeLoaded = false
@@ -309,7 +309,7 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeViewSubviewsDisposal() = runRepeatingBlocking {
+    fun testComposeUIViewSubviewsDisposal() = runRepeatingBlocking {
         val appDelegate = MockAppDelegate()
         val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
@@ -350,7 +350,7 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeViewWithTextInputDisposal() = runBlocking {
+    fun testComposeUIViewWithTextInputDisposal() = runBlocking {
         val appDelegate = MockAppDelegate()
         var composeViewRef: WeakReference<UIView>? = null
 
@@ -386,7 +386,7 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeViewSubviewsWithTextInputDisposalAndNewContextMenu() =
+    fun testComposeUIViewSubviewsWithTextInputDisposalAndNewContextMenu() =
         runRepeatingBlocking(newContextMenuEnabled = true) {
             val appDelegate = MockAppDelegate()
             val subviewsReferences = mutableListOf<WeakReference<UIView>>()
