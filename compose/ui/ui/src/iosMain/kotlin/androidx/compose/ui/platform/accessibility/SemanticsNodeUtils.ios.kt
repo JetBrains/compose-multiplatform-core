@@ -301,6 +301,8 @@ internal fun SemanticsNode.sortFlattenChildren(children: List<SemanticsNode>): L
 
     // Fix the specifics of nodes sorting where a parent node may go after a child in the sorted list.
     // Swapping them if the order is not specified by other criteria as TraversalIndex.
+    // In case of other sort issues, consider copy and re-implementing the `sortByGeometryGroupings`
+    // method to match TalkBack application traversal order.
     repeat(sortedChildren.count() - 1) { index ->
         val first = sortedChildren[index]
         val second = sortedChildren[index + 1]
