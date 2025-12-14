@@ -96,7 +96,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.skiko.OS
@@ -608,7 +609,7 @@ class AccessibilityTest {
         val window = deferredWindow.await()
         var textFieldAccessible: Accessible? = null
         var textFieldHasFocus = false
-        val receivedFocusEvent = CompletableDeferred<Boolean>()
+        val receivedFocus = Channel<Unit>(CONFLATED)
         window.addHierarchyListener(object : HierarchyListener {
             override fun hierarchyChanged(e: HierarchyEvent?) {
                 if (window.isDisplayable) {
@@ -620,29 +621,38 @@ class AccessibilityTest {
                             } else if (evt.oldValue == AccessibleState.FOCUSED) {
                                 textFieldHasFocus = false
                             }
+                            receivedFocus.trySend(Unit)
                         }
                     }
                     window.removeHierarchyListener(this)
-                    receivedFocusEvent.complete(true)
                 }
             }
         })
 
-        // If we do awaitIdle here, we'll sometimes fail the assertSceneAccessibleIsTextField
-        // check because the NativeAccessibleFocusHelper.focusedAccessible is re-set after 100ms,
-        // and awaitIdle sometimes takes longer.
-        withTimeout(1000) {
-            receivedFocusEvent.await()
+        suspend fun waitForTextFieldToBecomeFocused() {
+            // If we do awaitIdle here, we'll sometimes fail the assertSceneAccessibleIsTextField
+            // check because the NativeAccessibleFocusHelper.focusedAccessible is reset to null
+            // after 100ms, and awaitIdle sometimes takes longer.
+            withTimeout(1000) {
+                while (!(window.isFocused && textFieldHasFocus)) {
+                    receivedFocus.receive()
+                }
+            }
+            assertTrue(window.isFocused, "Could not make original window focused")
+            assertTrue(textFieldHasFocus, "TextField accessible did not send focused event")
         }
-        assertTrue(window.isDisplayable)
+
+        waitForTextFieldToBecomeFocused()
         assertNotNull(textFieldAccessible)
-        assertTrue(textFieldHasFocus)
 
         // What really causes Java's accessibility to report the correct element (on Windows;
         // possibly on macOS too) is not actually the property change event, but a trick in
         // Skiko's NativeAccessibleFocusHelper which reports the focused Accessible following
         // a call to requestNativeFocusOnAccessible
         fun assertSceneAccessibleIsTextField() {
+            // On Linux, NativeAccessibleFocusHelper doesn't do its trick with focusedAccessible
+            if ((hostOs != OS.Windows) && (hostOs != OS.MacOS)) return
+
             // Find the ComposeSceneAccessible
             var composeSceneAccessible = textFieldAccessible
             while (composeSceneAccessible != null) {
@@ -662,10 +672,7 @@ class AccessibilityTest {
             }
             fail("Did not find ancestor with correct accessible context")
         }
-        // On Linux, NativeAccessibleFocusHelper doesn't do its trick with focusedAccessible
-        if ((hostOs == OS.Windows) || (hostOs == OS.MacOS)) {
-            assertSceneAccessibleIsTextField()
-        }
+        assertSceneAccessibleIsTextField()
 
         // De-focus, then re-focus the window and check that another focus gained property change
         // event was sent
@@ -675,22 +682,15 @@ class AccessibilityTest {
             anotherWindow.isVisible = true
             anotherWindow.toFront()
             awaitIdle()
+            assertFalse(window.isFocused)
             assertFalse(textFieldHasFocus)
-            anotherWindow.dispose()
             window.toFront()
-            awaitIdle()
-            window.requestFocus()
-            @Suppress("unused")
-            for (i in 1..10) {
-                if (window.isFocused) break
-                delay(10)
-            }
-            assertTrue(window.isFocused)
-            assertTrue(textFieldHasFocus)
+            waitForTextFieldToBecomeFocused()
             assertSceneAccessibleIsTextField()
         } finally {
-            if (anotherWindow.isShowing)
+            if (anotherWindow.isShowing) {
                 anotherWindow.dispose()
+            }
         }
     }
 
