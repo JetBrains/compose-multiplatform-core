@@ -74,7 +74,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.Dimension
 import java.awt.Point
-import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.HierarchyEvent
 import java.awt.event.HierarchyListener
@@ -98,8 +97,9 @@ import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.jetbrains.skiko.hostOs
@@ -588,13 +588,6 @@ class AccessibilityTest {
     }
 
     @Test
-    fun printWindowManager() {
-        val toolkit = Toolkit.getDefaultToolkit()
-        val wmName = toolkit.getDesktopProperty("win.wm.name") as String?
-        fail("Window manager: $wmName")
-    }
-
-    @Test
     fun initiallyFocusedElementNotifiesSystemOfFocus() = runApplicationTest {
         AccessibilityController.AccessibilityUsage.notifyInUse()
 
@@ -629,20 +622,21 @@ class AccessibilityTest {
             }
         })
 
-        suspend fun waitForTextFieldToBecomeFocused() {
+        suspend fun waitForTextFieldFocusedState(focused: Boolean) {
             // If we do awaitIdle here, we'll sometimes fail the assertSceneAccessibleIsTextField
             // check because the NativeAccessibleFocusHelper.focusedAccessible is reset to null
             // after 100ms, and awaitIdle sometimes takes longer.
-            withTimeout(1000) {
-                while (!(window.isFocused && textFieldHasFocus)) {
+            withTimeoutOrNull(1000) {
+                while ((window.isFocused != focused) || (textFieldHasFocus != focused)) {
                     receivedFocus.receive()
                 }
             }
-            assertTrue(window.isFocused, "Could not make original window focused")
-            assertTrue(textFieldHasFocus, "TextField accessible did not send focused event")
+            val focusStateString = if (focused) "focused" else "unfocused"
+            assertEquals(focused, window.isFocused, "Could not make original window $focusStateString")
+            assertEquals(focused, textFieldHasFocus, "TextField accessible did not send $focusStateString event")
         }
 
-        waitForTextFieldToBecomeFocused()
+        waitForTextFieldFocusedState(true)
         assertNotNull(textFieldAccessible)
 
         // What really causes Java's accessibility to report the correct element (on Windows;
@@ -681,11 +675,12 @@ class AccessibilityTest {
             anotherWindow.size = Dimension(800, 600)
             anotherWindow.isVisible = true
             anotherWindow.toFront()
-            awaitIdle()
+            waitForTextFieldFocusedState(false)
             assertFalse(window.isFocused)
             assertFalse(textFieldHasFocus)
+            delay(100)  // Helps test to be more reliable
             window.toFront()
-            waitForTextFieldToBecomeFocused()
+            waitForTextFieldFocusedState(true)
             assertSceneAccessibleIsTextField()
         } finally {
             if (anotherWindow.isShowing) {
