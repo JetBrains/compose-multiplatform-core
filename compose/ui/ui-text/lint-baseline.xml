@@ -88,7 +88,7 @@
         errorLine1="    val transitions = sortedSetOf(0, text.length)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidMain/kotlin/androidx/compose/ui/text/JvmAnnotatedString.android.kt"/>
+            file="src/jvmAndAndroidMain/kotlin/androidx/compose/ui/text/JvmAnnotatedString.jvmAndAndroid.kt"/>
     </issue>
 
     <issue
@@ -97,7 +97,7 @@
         errorLine1="private fun collectRangeTransitions(ranges: List&lt;Range&lt;*>>?, target: SortedSet&lt;Int>) {"
         errorLine2="                                                                     ~~~~~~~~~~~~~~">
         <location
-            file="src/androidMain/kotlin/androidx/compose/ui/text/JvmAnnotatedString.android.kt"/>
+            file="src/jvmAndAndroidMain/kotlin/androidx/compose/ui/text/JvmAnnotatedString.jvmAndAndroid.kt"/>
     </issue>
 
     <issue

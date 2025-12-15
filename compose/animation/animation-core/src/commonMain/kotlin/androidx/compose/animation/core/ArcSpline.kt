@@ -388,5 +388,6 @@ private const val HalfPi = (PI * 0.5).toFloat()
 
 private val OurPercentCache: FloatArray = FloatArray(91)
 
-private inline fun toRadians(value: Double): Double =
-    value * (PI / 180.0)
+internal expect inline fun toRadians(value: Double): Double
+
+internal expect inline fun binarySearch(array: FloatArray, position: Float): Int

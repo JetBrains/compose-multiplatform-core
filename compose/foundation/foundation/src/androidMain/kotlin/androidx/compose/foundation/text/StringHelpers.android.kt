@@ -58,9 +58,6 @@ internal actual fun String.findCodePointOrEmojiStartBefore(index: Int, ifNotFoun
     return emojiStart
 }
 
-internal actual fun StringBuilder.appendCodePointX(codePoint: Int): StringBuilder =
-    this.appendCodePoint(codePoint)
-
 private fun getEmojiCompatIfLoaded(): EmojiCompat? =
     if (EmojiCompat.isConfigured())
         EmojiCompat.get().takeIf { it.loadState == EmojiCompat.LOAD_STATE_SUCCEEDED }
