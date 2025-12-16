@@ -126,6 +126,7 @@ androidXMultiplatform {
         desktopTest {
             dependsOn(skikoTest)
             dependsOn(skikoExcludingWebTest)
+            resources.srcDirs += "src/desktopTest/res"
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.skikoCurrentOs)

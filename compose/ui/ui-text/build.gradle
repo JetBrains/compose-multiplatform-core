@@ -133,8 +133,6 @@ androidXMultiplatform {
 
         desktopTest {
             dependsOn(skikoTest)
-            kotlin.srcDirs("src/test/java", "src/desktopTest/kotlin")
-            resources.srcDirs("src/test/resources", "src/desktopTest/resources")
             dependencies {
                 implementation(libs.truth)
                 implementation(libs.junit)
@@ -217,4 +215,12 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-text:ui-text-samples"))
+}
+
+afterEvaluate {
+    // needed to support running tests that use AwtFontUtils
+    // (https://github.com/JetBrains/compose-multiplatform-core/pull/918)
+    tasks.withType(Test) { t ->
+        t.jvmArgs += ["--add-opens=java.desktop/sun.font=ALL-UNNAMED"]
+    }
 }
