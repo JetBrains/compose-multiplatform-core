@@ -29,10 +29,9 @@ import org.gradle.api.Project
 object JetBrainsPublication {
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
-            // STUBS
             // publish for compatibility
-            //ComposeComponent(":annotation:annotation", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
-            //ComposeComponent(":collection:collection", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
+            ComposeComponent(":annotation:annotation", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
+            ComposeComponent(":collection:collection", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
 
             ComposeComponent(":compose:animation:animation"),
             ComposeComponent(":compose:animation:animation-core"),
@@ -42,9 +41,8 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material:material"),
             ComposeComponent(":compose:material:material-navigation"),
             ComposeComponent(":compose:material:material-ripple"),
-            // STUBS
-            //ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
-            //ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:ui:ui"),
             ComposeComponent(":compose:ui:ui-geometry"),
             ComposeComponent(
@@ -97,22 +95,21 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material3:adaptive:adaptive-navigation3"),
         ),
         "LIFECYCLE" to listOf(
-            // STUBs
-//            ComposeComponent(
-//                path = ":lifecycle:lifecycle-common",
-//                // No android target here - jvm artefact will be used for android apps as well
-//                supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID
-//            ),
-//            ComposeComponent(
-//                path = ":lifecycle:lifecycle-runtime",
-//                supportedPlatforms = ComposePlatforms.ALL
-//            ),
-//            ComposeComponent(
-//                path = ":lifecycle:lifecycle-viewmodel",
-//                supportedPlatforms = ComposePlatforms.ALL
-//            ),
-//            ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
-//            ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(
+                path = ":lifecycle:lifecycle-common",
+                // No android target here - jvm artefact will be used for android apps as well
+                supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID
+            ),
+            ComposeComponent(
+                path = ":lifecycle:lifecycle-runtime",
+                supportedPlatforms = ComposePlatforms.ALL
+            ),
+            ComposeComponent(
+                path = ":lifecycle:lifecycle-viewmodel",
+                supportedPlatforms = ComposePlatforms.ALL
+            ),
+            ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":lifecycle:lifecycle-viewmodel-compose"),
             ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3"),
         ),
@@ -128,13 +125,11 @@ object JetBrainsPublication {
             ComposeComponent(":navigationevent:navigationevent-compose"),
         ),
         "SAVEDSTATE" to listOf(
-            // STUBs
-//            ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
-//            ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "WINDOW" to listOf(
-            // STUBs
-//            ComposeComponent(":window:window-core", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
+            ComposeComponent(":window:window-core", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
         ),
     )
 
