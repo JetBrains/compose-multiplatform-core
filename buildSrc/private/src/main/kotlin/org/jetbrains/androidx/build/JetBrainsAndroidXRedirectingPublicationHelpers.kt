@@ -16,6 +16,7 @@
 
 package org.jetbrains.androidx.build
 
+import com.android.utils.mapValuesNotNull
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.gradle.api.publish.PublishingExtension
@@ -33,11 +34,16 @@ import org.gradle.api.capabilities.Capability
 import org.gradle.api.component.ComponentWithCoordinates
 import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.component.SoftwareComponent
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
+import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.internal.component.UsageContext
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
+import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinTargetComponent
+import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
 
 /**
  * Usage that should be added to rootSoftwareComponent to represent target-specific variants
@@ -57,8 +63,17 @@ internal class CustomUsage(
     override fun getGlobalExcludes(): Set<ExcludeRule> = emptySet()
 }
 
+@OptIn(InternalKotlinGradlePluginApi::class, ExternalKotlinTargetApi::class)
+internal fun Project.setupRedirection(target: DecoratedExternalKotlinTarget, newRootComponent: CustomRootComponent) {
+    setupRedirection(target.kotlinComponents, newRootComponent)
+}
 @OptIn(InternalKotlinGradlePluginApi::class)
-internal fun Project.publishAndroidxReference(target: AbstractKotlinTarget, newRootComponent: CustomRootComponent) {
+internal fun Project.setupRedirection(target: AbstractKotlinTarget, newRootComponent: CustomRootComponent) {
+    setupRedirection(target.kotlinComponents, newRootComponent)
+}
+
+@OptIn(InternalKotlinGradlePluginApi::class)
+internal fun Project.setupRedirection(kotlinComponents: Set<KotlinTargetComponent>, newRootComponent: CustomRootComponent) {
     afterEvaluate {
         extensions.getByType(PublishingExtension::class.java).apply {
             val kotlinMultiplatform = publications
@@ -79,7 +94,7 @@ internal fun Project.publishAndroidxReference(target: AbstractKotlinTarget, newR
             if (it.publication.name == "kotlinMultiplatform") it.enabled = false
         }
 
-        target.kotlinComponents.forEach { component ->
+        kotlinComponents.forEach { component ->
             val componentName = component.name
 
             if (component is KotlinVariant)
@@ -185,10 +200,8 @@ internal fun Project.originalToRedirectedDependency(
      * org.jetbrains.compose.collection-internal:collection-jvm=androidx.collection:collection-jvm:1.5.0-beta01
      * ...
      */
-    /* FIXME: Restore after fixing for new buildSrc state
     val projectDefined =
-        getProjectsMap()
-            .values
+        JetBrainsPublication.projectPathToLibrary.keys
             .mapNotNull { project.findProject(it) }
             .flatMap { project ->
                 val redirecting = project.artifactRedirection() ?: return@flatMap emptyList()
@@ -206,7 +219,6 @@ internal fun Project.originalToRedirectedDependency(
                 }
             }
             .associate { it }
-    */
 
     fun mainConfiguration() =
         configurations.find { it.name == "${componentName}RuntimeClasspath" } ?:
@@ -226,7 +238,6 @@ internal fun Project.originalToRedirectedDependency(
      * https://youtrack.jetbrains.com/issue/CMP-7764/Redirection-of-artifacts-breaks-poms-for-multiplatform-libraries-that-use-them
      * After it is resolved, externalWithHeuristic shouldn't be needed.
      */
-    /* FIXME: Restore after fixing for new buildSrc state
     val externalWithHeuristic = mainConfiguration()
         .resolvedConfiguration
         .firstLevelModuleDependencies
@@ -235,6 +246,4 @@ internal fun Project.originalToRedirectedDependency(
         .mapValuesNotNull { it.value.findRedirectedDependencyHeuristically()?.module?.id }
 
     return projectDefined + externalWithHeuristic
-    */
-    return emptyMap()
 }
