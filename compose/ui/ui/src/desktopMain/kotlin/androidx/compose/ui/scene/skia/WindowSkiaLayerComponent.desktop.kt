@@ -140,16 +140,10 @@ internal class WindowSkiaLayerComponent(
         get() = contentComponent.transparency
         set(value) {
             contentComponent.transparency = value
-            if (value && !windowContext.isWindowTransparent && renderApi == GraphicsApi.METAL) {
-                /*
-                 * SkiaLayer sets background inside transparency setter, that is required for
-                 * cases like software rendering.
-                 * In case of transparent Metal canvas on opaque window, background values with
-                 * alpha == 0 will make the result color black after clearing the canvas.
-                 *
-                 * Reset it to null to keep the color default.
-                 */
-                contentComponent.background = null
+            contentComponent.background = if (value && windowContext.isWindowTransparent) {
+                 java.awt.Color(0, 0, 0, 0)
+            } else {
+                null  // This will use the parent's background
             }
         }
     override var fullscreen by contentComponent::fullscreen
