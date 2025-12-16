@@ -48,7 +48,6 @@ androidXMultiplatform {
 androidx {
     name = "Annotation"
     type = SoftwareType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.ANNOTATION
     inceptionYear = "2013"
     description = "Provides source annotations for tooling and readability."
 }

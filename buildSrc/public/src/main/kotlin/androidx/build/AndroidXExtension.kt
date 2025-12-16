@@ -16,6 +16,7 @@
 
 package androidx.build
 
+import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.HasAndroidTest
 import groovy.lang.Closure
@@ -203,6 +204,7 @@ abstract class AndroidXExtension(
     }
 
     private fun chooseProjectVersion() {
+        if (isJetBrainsFork(project)) return
         val version: Version
         val group: String? = mavenGroup?.group
         val groupVersion: Version? = mavenGroup?.atomicGroupVersion

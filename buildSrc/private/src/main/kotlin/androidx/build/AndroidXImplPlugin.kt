@@ -18,6 +18,7 @@ package androidx.build
 
 import androidx.benchmark.gradle.BenchmarkPlugin
 import androidx.build.AndroidXImplPlugin.Companion.TASK_TIMEOUT_MINUTES
+import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
 import androidx.build.checkapi.AndroidMultiplatformApiTaskConfig
@@ -1543,6 +1544,7 @@ fun Project.validateMultiplatformPluginHasNotBeenApplied() {
 
 /** Verifies that ProjectParser computes the correct values for this project */
 fun Project.validateProjectParser(androidXExtension: AndroidXExtension) {
+    if (isJetBrainsFork(project)) return
     // If configuration fails, we don't want to validate the ProjectParser
     // (otherwise it could report a confusing, unnecessary error)
     project.gradle.taskGraph.whenReady {

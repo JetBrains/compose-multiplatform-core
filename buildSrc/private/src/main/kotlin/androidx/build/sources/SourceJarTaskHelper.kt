@@ -17,6 +17,7 @@
 package androidx.build.sources
 
 import androidx.build.LazyInputsCopyTask
+import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.capitalize
 import androidx.build.dackka.DokkaAnalysisPlatform
 import androidx.build.dackka.docsPlatform
@@ -54,6 +55,7 @@ fun Project.configureSourceJarForAndroid(
     libraryVariant: LibraryVariant,
     samplesProjects: MutableCollection<Project>,
 ) {
+    if (isJetBrainsFork(project)) return
     val allSources =
         project.files(libraryVariant.sources.java?.all) +
             project.files(libraryVariant.sources.kotlin?.all)
@@ -88,14 +90,17 @@ fun Project.configureSourceJarForAndroid(
     disableUnusedSourceJarTasks(disableNames)
 }
 
-fun Project.configureMultiplatformSourcesForAndroid(samplesProjects: MutableCollection<Project>) =
+fun Project.configureMultiplatformSourcesForAndroid(samplesProjects: MutableCollection<Project>) {
+    if (isJetBrainsFork(project)) return
     registerSamplesLibraries(
         samplesProjects,
         listOf(PublishingVariant.KmpSourcesElements, PublishingVariant.AgpKmpSourcesElements),
     )
+}
 
 /** Sets up a source jar task for a Java library project. */
 fun Project.configureSourceJarForJava(samplesProjects: MutableCollection<Project>) {
+    if (isJetBrainsFork(project)) return
     val sourceJar =
         tasks.register("sourceJar", Jar::class.java) { task ->
             task.archiveClassifier.set("sources")
@@ -130,6 +135,7 @@ fun Project.configureSourceJarForJava(samplesProjects: MutableCollection<Project
 }
 
 fun Project.configureSourceJarForMultiplatform() {
+    if (isJetBrainsFork(project)) return
     val kmpExtension =
         multiplatformExtension
             ?: throw GradleException(

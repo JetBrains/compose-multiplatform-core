@@ -15,8 +15,8 @@
  */
 
 import androidx.build.KotlinTarget
-
-// TODO: Correctly apply AndroidXPlugin to pass all verification checks.
+import androidx.build.ProjectLayoutType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -158,4 +158,11 @@ private def configure(target, isDevice, architecture, testTarget) {
             freeCompilerArgs += compilerArgs
         }
     }
+}
+
+androidx {
+    name = "Compose UIKit"
+    inceptionYear = "2023"
+    description = "Internal iOS UIKit utilities including Objective-C library."
+    legacyDisableKotlinStrictApiMode = true
 }
