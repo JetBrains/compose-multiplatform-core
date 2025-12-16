@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,10 +35,13 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.the
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.androidx.build.configureForkWebTarget
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -67,6 +70,7 @@ import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnPlugin
 import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import org.jetbrains.kotlin.konan.target.LinkerOutputKind
+import org.tomlj.Toml
 
 /**
  * [AndroidXMultiplatformExtension] is an extension that wraps specific functionality of the Kotlin
@@ -667,7 +671,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun js(block: Action<KotlinJsTargetDsl>? = null): KotlinJsTargetDsl? =
-        project.configureWebTarget(
+        configureForkWebTarget(
             platform = PlatformIdentifier.JS,
             isEnabled = project.enableJs(),
             createTarget = { configure -> kotlinExtension.js(configure) },
@@ -677,7 +681,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @OptIn(ExperimentalWasmDsl::class)
     @JvmOverloads
     fun wasmJs(block: Action<KotlinJsTargetDsl>? = null): KotlinWasmTargetDsl? =
-        project.configureWebTarget(
+        configureForkWebTarget(
             platform = PlatformIdentifier.WASM_JS,
             isEnabled = project.enableWasmJs(),
             createTarget = { configure -> kotlinExtension.wasmJs(configure) },
@@ -749,6 +753,18 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     companion object {
         const val EXTENSION_NAME = "androidXMultiplatform"
     }
+
+    // FORK-only public extensions
+
+    /**
+     * Configures native compilation tasks with flags to link required frameworks
+     */
+    fun configureDarwinFlags() = org.jetbrains.androidx.build.configureDarwinFlags(project)
+
+    /**
+     * Configure instrumented tests to run on an actual iOS simulator.
+     */
+    fun iosInstrumentedTest() = org.jetbrains.androidx.build.addIosInstrumentedTestSourceset(project)
 }
 
 // TODO(https://youtrack.jetbrains.com/issue/KT-76874/):

@@ -160,15 +160,6 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
-        /*
-        FIXME: No AndroidXComposeMultiplatformExtension anymore
-        project.extensions.create(
-            AndroidXComposeMultiplatformExtension::class.java,
-            "androidXComposeMultiplatform",
-            AndroidXComposeMultiplatformExtensionImpl::class.java
-        )
-        */
-
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
         val multiplatformExtension =
