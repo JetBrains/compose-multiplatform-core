@@ -219,7 +219,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             it.configureWithAndroidXExtension(androidXExtension)
         }
         project.configureConstraintsWithinGroup(androidXExtension)
-        project.validateProjectParser(androidXExtension)
+        if (ProjectLayoutType.from(project) != ProjectLayoutType.JETBRAINS_FORK) project.validateProjectParser(androidXExtension)
         project.validateAllArchiveInputsRecognized()
         project.afterEvaluate {
             if (androidXExtension.shouldPublishSbom()) {
@@ -545,7 +545,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
             project.configureKmp()
-            project.configureSourceJarForMultiplatform()
+            if (ProjectLayoutType.from(project) != ProjectLayoutType.JETBRAINS_FORK) project.configureSourceJarForMultiplatform()
 
             // Disable any source JAR task(s) added by KotlinMultiplatformPlugin.
             // https://youtrack.jetbrains.com/issue/KT-55881
@@ -735,7 +735,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 androidXExtension,
             )
             project.configurePublicResourcesStub(variant)
-            project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
+            if (ProjectLayoutType.from(project) != ProjectLayoutType.JETBRAINS_FORK) project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -929,7 +929,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 )
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
-                project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
+                if (ProjectLayoutType.from(project) != ProjectLayoutType.JETBRAINS_FORK) project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
                 project.configurePublicResourcesStub(variant)
                 project.configureDependencyVerification(androidXExtension) { taskProvider ->
                     taskProvider.configure { task -> task.dependsOn("compileReleaseJavaWithJavac") }
@@ -986,7 +986,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 !project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java) ||
                     !project.plugins.hasPlugin(KotlinBaseApiPlugin::class.java)
             ) {
-                project.configureSourceJarForJava(androidXExtension.samplesProjects)
+                if (ProjectLayoutType.from(project) != ProjectLayoutType.JETBRAINS_FORK) project.configureSourceJarForJava(androidXExtension.samplesProjects)
             }
         }
 
