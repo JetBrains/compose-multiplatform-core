@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWasmDsl::class)
+
 import java.util.*
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -23,6 +26,18 @@ plugins {
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
     alias(libs.plugins.kotlinSerialization)
+}
+
+val resourcesDir = layout.buildDirectory.get().asFile.resolve("resources")
+val skikoWasm = configurations.findByName("skikoWasm") ?: configurations.create("skikoWasm")
+
+dependencies {
+    skikoWasm(libs.skikoJsWasmRuntime)
+}
+
+val unzipTask = tasks.register("unzipWasm", Copy::class) {
+    destinationDir = file(resourcesDir)
+    from(skikoWasm.map { zipTree(it) })
 }
 
 kotlin {
@@ -40,7 +55,7 @@ kotlin {
         outputModuleName = "mpp-demo"
         browser {
             // https://youtrack.jetbrains.com/issue/KT-68614
-            val rootDirPath = project.projectDir.path
+            val rootDirPath = project.rootDir.path
             val projectDirPath = project.projectDir.path
             commonWebpackConfig {
                 outputFileName = "demo.js"
@@ -181,8 +196,7 @@ kotlin {
         val webMain by creating {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
-            // TODO Restore unzipTask
-            // resources.srcDirs(unzipTask.map { it.destinationDir })
+            resources.srcDirs(unzipTask.map { it.destinationDir })
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
