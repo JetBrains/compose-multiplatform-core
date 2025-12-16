@@ -18,6 +18,10 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXExtension
+import androidx.build.Publish
+import androidx.build.RunApiTasks
+import androidx.build.SoftwareType.ConfigurableSoftwareType
 import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -29,15 +33,30 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
     val componentFactory: SoftwareComponentFactory
 ) : Plugin<Project> {
     override fun apply(project: Project) {
-        project.allprojects {
-            it.tasks.configureEach {
+        project.allprojects { subproject ->
+            subproject.tasks.configureEach {
                 if (it.name == "kotlinStoreYarnLock") it.enabled = false
                 if (it.name == "kotlinWasmStoreYarnLock") it.enabled = false
             }
 
             // Never cache test results
-            it.tasks.withType<AbstractTestTask>().configureEach {
+            subproject.tasks.withType<AbstractTestTask>().configureEach {
                 it.outputs.upToDateWhen { false }
+            }
+
+            // Disable Androidx publication, as the fork publication is configured
+            // by JetBrainsPublication.
+            //
+            // It disables Androidx checks for publishing libraries that are not needed or
+            // conflict with the fork publication
+            subproject.afterEvaluate {
+                val androidxExtension = subproject.extensions.findByType(AndroidXExtension::class.java)
+                androidxExtension?.type = ConfigurableSoftwareType(
+                    name = "JB Library",
+                    publish = Publish.NONE,
+                    compilationTarget = androidxExtension.type.compilationTarget,
+                    checkApi = RunApiTasks.No("JB Library"),
+                )
             }
         }
     }
