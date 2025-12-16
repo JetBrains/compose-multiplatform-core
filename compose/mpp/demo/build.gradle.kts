@@ -28,6 +28,18 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+val resourcesDir = layout.buildDirectory.get().asFile.resolve("resources")
+val skikoWasm = configurations.findByName("skikoWasm") ?: configurations.create("skikoWasm")
+
+dependencies {
+    skikoWasm(libs.skikoJsWasmRuntime)
+}
+
+val unzipTask = tasks.register("unzipWasm", Copy::class) {
+    destinationDir = file(resourcesDir)
+    from(skikoWasm.map { zipTree(it) })
+}
+
 kotlin {
     applyDefaultHierarchyTemplate()
     jvm("desktop")
@@ -44,7 +56,7 @@ kotlin {
         outputModuleName = "mpp-demo"
         browser {
             // https://youtrack.jetbrains.com/issue/KT-68614
-            val rootDirPath = project.projectDir.path
+            val rootDirPath = project.rootDir.path
             val projectDirPath = project.projectDir.path
             commonWebpackConfig {
                 outputFileName = "demo.js"
@@ -182,8 +194,7 @@ kotlin {
         val webMain by getting {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
-            // TODO Restore unzipTask
-            // resources.srcDirs(unzipTask.map { it.destinationDir })
+            resources.srcDirs(unzipTask.map { it.destinationDir })
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
