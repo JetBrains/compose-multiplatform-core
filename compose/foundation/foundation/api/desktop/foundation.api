@@ -733,7 +733,6 @@ public final class androidx/compose/foundation/gestures/TapGestureDetector_skiko
 public abstract interface class androidx/compose/foundation/gestures/TargetedFlingBehavior : androidx/compose/foundation/gestures/FlingBehavior {
 	public fun performFling (Landroidx/compose/foundation/gestures/ScrollScope;FLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun performFling (Landroidx/compose/foundation/gestures/ScrollScope;FLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun performFling$suspendImpl (Landroidx/compose/foundation/gestures/TargetedFlingBehavior;Landroidx/compose/foundation/gestures/ScrollScope;FLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class androidx/compose/foundation/gestures/TransformGestureDetectorKt {

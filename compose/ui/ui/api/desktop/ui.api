@@ -2020,10 +2020,8 @@ public final class androidx/compose/ui/input/mouse/MouseScrollUnit$Page : androi
 
 public abstract interface class androidx/compose/ui/input/nestedscroll/NestedScrollConnection {
 	public fun onPostFling-RZ2iAVY (JJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun onPostFling-RZ2iAVY$suspendImpl (Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;JJLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun onPostScroll-DzOQY0M (JJI)J
 	public fun onPreFling-QWom1Mo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun onPreFling-QWom1Mo$suspendImpl (Landroidx/compose/ui/input/nestedscroll/NestedScrollConnection;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun onPreScroll-OzD1aCk (JI)J
 }
 
@@ -2083,9 +2081,7 @@ public abstract interface class androidx/compose/ui/input/pointer/AwaitPointerEv
 	public abstract fun getSize-YbymL2g ()J
 	public abstract fun getViewConfiguration ()Landroidx/compose/ui/platform/ViewConfiguration;
 	public fun withTimeout (JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun withTimeout$suspendImpl (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun withTimeoutOrNull (JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun withTimeoutOrNull$suspendImpl (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class androidx/compose/ui/input/pointer/AwaitPointerEventScope$DefaultImpls {
