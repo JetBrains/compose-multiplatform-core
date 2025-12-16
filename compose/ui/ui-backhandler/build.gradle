@@ -38,7 +38,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinCoroutinesCore)
                 implementation("androidx.annotation:annotation:1.9.1")
                 implementation(project(":compose:runtime:runtime"))
