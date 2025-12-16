@@ -52,6 +52,8 @@ androidXMultiplatform {
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
+    configureDarwinFlags()
+
     sourceSets {
         commonMain.dependencies {
             api("androidx.collection:collection:1.5.0")
