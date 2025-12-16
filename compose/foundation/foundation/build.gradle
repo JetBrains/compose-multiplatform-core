@@ -198,6 +198,12 @@ androidXMultiplatform {
             dependsOn(darwinTest)
         }
 
+        wasmJsMain {
+            dependencies {
+                implementation(libs.kotlinXw3c)
+            }
+        }
+
         configureEach {
             languageSettings.optIn("androidx.compose.foundation.ExperimentalFoundationApi")
         }
