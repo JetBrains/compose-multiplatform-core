@@ -367,6 +367,21 @@ ext.projectDependencyGraph = createProjectDependencyGraph(
 @Field Set<String> filteredProjects = new HashSet<String>()
 filteredProjects.add(":lint-checks")
 
+// A set of stubbed projects:
+@Field Set<String> stubbedProjects = new HashSet<String>()
+stubbedProjects.add(":annotation:annotation")
+stubbedProjects.add(":collection:collection")
+stubbedProjects.add(":compose:runtime:runtime")
+stubbedProjects.add(":compose:runtime:runtime-saveable")
+stubbedProjects.add(":lifecycle:lifecycle-common")
+stubbedProjects.add(":lifecycle:lifecycle-runtime")
+stubbedProjects.add(":lifecycle:lifecycle-runtime-compose")
+stubbedProjects.add(":lifecycle:lifecycle-viewmodel")
+stubbedProjects.add(":lifecycle:lifecycle-viewmodel-savedstate")
+stubbedProjects.add(":savedstate:savedstate")
+stubbedProjects.add(":savedstate:savedstate-compose")
+stubbedProjects.add(":window:window-core")
+
 static def shouldIncludeInJetBrainsFork(String name, filePath) {
     if (filePath != null && filePath instanceof File) {
         // This overload used only for projects outside of root directory
@@ -383,6 +398,27 @@ static def shouldIncludeInJetBrainsFork(String name, filePath) {
         return false
     }
     return true
+}
+
+def fileForProject(String name, filePath) {
+    def suffix = ""
+    if (stubbedProjects.contains(name)) {
+        suffix = "-compatibility-stub"
+    }
+    def file
+    if (filePath != null) {
+        if (filePath instanceof String) {
+            if ((":" + filePath.replace("/",":")).equals(name)) {
+                throw new IllegalArgumentException("Redundant filepath for $name, please remove it")
+            }
+            file = new File(rootDir, filePath + suffix)
+        } else {
+            file = filePath + suffix
+        }
+    } else {
+        file = new File(rootDir, name.substring(1).replace(":", "/") + suffix)
+    }
+    return file
 }
 
 // Calling includeProject(name, filePath) is shorthand for:
@@ -404,19 +440,7 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
     } else if (shouldIncludeForFilter(filter)) {
         filteredProjects.add(name)
     }
-    def file
-    if (filePath != null) {
-        if (filePath instanceof String) {
-            if ((":" + filePath.replace("/",":")).equals(name)) {
-                throw new IllegalArgumentException("Redundant filepath for $name, please remove it")
-            }
-            file = new File(rootDir, filePath)
-        } else {
-            file = filePath
-        }
-    } else {
-        file = new File(rootDir, name.substring(1).replace(":", "/"))
-    }
+    def file = fileForProject(name, filePath)
     projectDependencyGraph.addToAllProjects(name, file)
 }
 
