@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
@@ -48,6 +47,7 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.navigationevent.NavigationEventDispatcher
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
+import kotlinx.coroutines.Job
 import platform.CoreGraphics.CGPoint
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
@@ -65,11 +65,12 @@ internal class UIKitComposeSceneLayer(
     onFocusBehavior: OnFocusBehavior,
     endEdgeGestureBehavior: EndEdgePanGestureBehavior,
     private var focusedViewsList: FocusedViewsList?,
-    compositionContext: CompositionContext,
+    parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val coroutineContext: CoroutineContext,
     private val interfaceOrientationState: State<InterfaceOrientation>,
 ) : ComposeSceneLayer {
+    private val layerJob = Job()
+    private val layerCoroutineContext = parentCoroutineContext + layerJob
 
     override var focusable: Boolean = focusedViewsList != null
         set(value) {
@@ -101,7 +102,7 @@ internal class UIKitComposeSceneLayer(
         focusedViewsList = focusedViewsList,
         windowContext = layersViewController.windowContext,
         architectureComponentsOwner = ownerProvider,
-        coroutineContext = compositionContext.effectCoroutineContext,
+        coroutineContext = layerCoroutineContext,
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
@@ -120,7 +121,7 @@ internal class UIKitComposeSceneLayer(
         PlatformLayersComposeScene(
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = coroutineContext,
+            coroutineContext = layerCoroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidate = invalidate,
         )
@@ -188,9 +189,9 @@ internal class UIKitComposeSceneLayer(
         navigationEventDispatcher.removeInput(navigationEventInput)
         focusedViewsList?.disposeChild()
         focusedViewsList = null
-        mediator.dispose()
         interactionView.removeFromSuperview()
         interactionView.dispose()
+        layerJob.cancel()
     }
 
     @Composable
