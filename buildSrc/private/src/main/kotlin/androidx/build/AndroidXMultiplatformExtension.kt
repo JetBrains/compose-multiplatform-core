@@ -552,7 +552,8 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         return listOfNotNull(
             watchosArm32(block),
             watchosArm64(block),
-            watchosDeviceArm64(block),
+            // TODO(https://youtrack.jetbrains.com/issue/CMP-9513) publish it
+            // watchosDeviceArm64()
             watchosSimulatorArm64(block),
         )
     }
