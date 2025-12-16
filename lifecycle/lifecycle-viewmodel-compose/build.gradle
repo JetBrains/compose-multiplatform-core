@@ -105,6 +105,9 @@ androidXMultiplatform {
 
         desktopTest {
             dependsOn(nonAndroidTest)
+            dependencies {
+                implementation(libs.skikoCurrentOs)
+            }
         }
 
         nativeMain {
