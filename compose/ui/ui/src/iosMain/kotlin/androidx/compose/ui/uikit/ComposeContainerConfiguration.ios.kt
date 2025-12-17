@@ -69,7 +69,7 @@ sealed class ComposeContainerConfiguration {
     var endEdgePanGestureBehavior: EndEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled
 
     /**
-     * Controls whether a mouse/trackpad clicks on an unfocusable element clears focus.
+     * Controls whether a mouse/trackpad clicks on an unfocusable element clear focus.
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
