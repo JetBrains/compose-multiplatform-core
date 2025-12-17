@@ -16,16 +16,15 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * Thrown when the [RegistryManager.registerCreationOptions] transaction fails with no more detailed
  * information.
  *
  * @param errorMessage the error message
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RegisterCreationOptionsUnknownException(errorMessage: CharSequence? = null) :
+public class RegisterCreationOptionsUnknownException
+@JvmOverloads
+constructor(errorMessage: CharSequence? = null) :
     RegisterCreationOptionsException(
         type = TYPE_REGISTER_CREATION_OPTIONS_UNKNOWN_EXCEPTION,
         errorMessage = errorMessage,

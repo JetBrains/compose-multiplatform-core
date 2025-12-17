@@ -777,6 +777,75 @@ class PdfViewerFragmentV2TestSuite {
         }
     }
 
+    @Test
+    fun testPdfView_firstContentLoadEvent_firstContentLoadOnlyOnce() {
+        // Load the document and assert loading view is displayed
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_SELECT,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+        var pdfView: PdfView? = null
+        scenario.onFragment { fragment -> pdfView = fragment.getPdfViewInstance() }
+
+        var onFirstContentLoadCount = 0
+        pdfView?.addOnFirstContentLoadListener { onFirstContentLoadCount += 1 }
+        assertEquals(0, onFirstContentLoadCount)
+
+        // swipe up to create more onDraw calls, check event is fired once
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
+        assertEquals(1, onFirstContentLoadCount)
+
+        // recheck event should not fire
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeDown())
+        assertEquals(1, onFirstContentLoadCount)
+    }
+
+    @Test
+    fun testPdfView_firstContentLoadEvent_checkMultipleListener() {
+        // Load the document and assert loading view is displayed
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_SELECT,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+
+        var pdfView: PdfView? = null
+        scenario.onFragment { fragment -> pdfView = fragment.getPdfViewInstance() }
+
+        var firstListenerCount = 0
+        val firstListener = PdfView.OnFirstContentLoadListener { firstListenerCount += 1 }
+
+        var secondListenerCount = 0
+        val secondListener = PdfView.OnFirstContentLoadListener { secondListenerCount += 1 }
+
+        // add multiple onFirstContent load listeners to pdfView
+        pdfView?.addOnFirstContentLoadListener(firstListener)
+        pdfView?.addOnFirstContentLoadListener(secondListener)
+
+        // swipe up to create onDraw calls
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
+
+        // check if both listeners are called
+        assertEquals(1, firstListenerCount)
+        assertEquals(1, secondListenerCount)
+
+        // remove one listener
+        pdfView?.removeOnFirstContentLoadListener(secondListener)
+
+        // reset the state of listeners
+        scenario.recreate()
+
+        // check if remaining listener is getting callback
+        assertEquals(1, firstListenerCount)
+    }
+
     private fun longPressSelection(
         device: UiDevice,
         pdfView: PdfView,

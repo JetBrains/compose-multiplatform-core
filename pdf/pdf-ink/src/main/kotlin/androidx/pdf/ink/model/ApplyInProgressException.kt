@@ -16,13 +16,11 @@
 
 package androidx.pdf.ink.model
 
-import androidx.annotation.RestrictTo
 import androidx.pdf.ink.EditablePdfViewerFragment
 
 /**
  * Exception thrown when [EditablePdfViewerFragment.applyDraftEdits] is called while an apply
  * operation is already in progress.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ApplyInProgressException :
     IllegalStateException("Another apply operation is already in progress.")

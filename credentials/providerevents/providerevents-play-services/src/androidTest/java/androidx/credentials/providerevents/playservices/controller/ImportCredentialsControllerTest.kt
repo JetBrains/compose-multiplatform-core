@@ -25,7 +25,9 @@ import androidx.credentials.providerevents.IntentHandler
 import androidx.credentials.providerevents.exception.ImportCredentialsCancellationException
 import androidx.credentials.providerevents.exception.ImportCredentialsNoExportOptionException
 import androidx.credentials.providerevents.playservices.controller.ImportCredentialsController.Companion.maybeReportErrorResultCode
+import androidx.credentials.providerevents.transfer.CredentialTypes
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
+import androidx.credentials.providerevents.transfer.KnownExtensions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -67,8 +69,12 @@ class ImportCredentialsControllerTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun convertToPlayServicesRequest_transformsCorrectly() {
-        val requestJson = "{ \"user\": \"test\" }"
-        val testRequest = ImportCredentialsRequest(requestJson)
+        val testRequest =
+            ImportCredentialsRequest(
+                setOf(CredentialTypes.CREDENTIAL_TYPE_BASIC_AUTH),
+                setOf(KnownExtensions.KNOWN_EXTENSION_SHARED),
+            )
+        val requestJson = testRequest.requestJson
 
         // Create a real Uri for the test
         val tempFile = File.createTempFile("test_uri", ".json")

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,6 +77,7 @@ public fun RemoteText(
     overflow: TextOverflow = LocalTextConfiguration.current.overflow,
     maxLines: Int = LocalTextConfiguration.current.maxLines,
     style: TextStyle = LocalTextStyle.current,
+    fontVariationSettings: FontVariation.Settings? = null,
 ) {
     androidx.compose.remote.creation.compose.layout.RemoteText(
         text = text,
@@ -89,5 +91,6 @@ public fun RemoteText(
         overflow = overflow,
         maxLines = maxLines,
         style = style,
+        fontVariationSettings = fontVariationSettings,
     )
 }

@@ -124,8 +124,9 @@ internal constructor(
                     anchorPersistence = config.anchorPersistence.mode,
                     faceTracking = config.faceTracking.mode,
                     eyeTracking = config.eyeTracking.mode,
-                    objectLabels = objectLabels.toLongArray(),
                     objectTracking = objectMode,
+                    objectLabels = objectLabels.toLongArray(),
+                    geospatial = config.geospatial.mode,
                 )
             ) {
                 -2L ->
@@ -193,6 +194,16 @@ internal constructor(
 
         if (config.eyeTracking != this.config.eyeTracking) {
             perceptionManager.eyeTrackingMode = config.eyeTracking
+        }
+
+        if (config.geospatial != this.config.geospatial) {
+            if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
+                perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.geospatial)
+            } else {
+                perceptionManager.xrResources.removeUpdatable(
+                    perceptionManager.xrResources.geospatial
+                )
+            }
         }
 
         this.config = config
@@ -266,6 +277,7 @@ internal constructor(
         eyeTracking: Int,
         objectTracking: Int,
         objectLabels: LongArray,
+        geospatial: Int,
     ): Long
 
     private external fun nativeGetFaceTrackerCalibration(): Boolean

@@ -19,7 +19,7 @@
         xmlns:tools="http://schemas.android.com/tools">
 
     <application
-            android:label="Glimmer Demos"
+            android:label="Jetpack Compose Glimmer Demos"
             android:supportsRtl="true" tools:ignore="GoogleAppIndexingWarning"
             android:allowBackup="false" android:icon="@mipmap/ic_launcher"
             android:enableOnBackInvokedCallback="true">

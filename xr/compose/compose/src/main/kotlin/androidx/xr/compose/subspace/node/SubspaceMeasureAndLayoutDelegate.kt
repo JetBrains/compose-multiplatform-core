@@ -29,13 +29,13 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
      * Set of nodes that have invalidated measurement and need to to call "remeasure()".
      * Automatically sorted by depth (parents first)
      */
-    private val nodesPendingMeasure = SubspaceDepthSortedSet(extraAssertions = true)
+    private val nodesPendingMeasure = SubspaceDepthSortedSet(extraAssertions = false)
 
     /**
      * Set of nodes that have invalidated layout and need to call "replace". Automatically sorted by
      * depth.
      */
-    private val nodesPendingLayout = SubspaceDepthSortedSet(extraAssertions = true)
+    private val nodesPendingLayout = SubspaceDepthSortedSet(extraAssertions = false)
 
     /**
      * The current state of the measure and layout scheduler. With this we determine if we should

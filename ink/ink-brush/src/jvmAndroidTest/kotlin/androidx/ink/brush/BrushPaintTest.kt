@@ -98,7 +98,7 @@ class BrushPaintTest {
         assertThat(customPaint).isEqualTo(makeTestPaint())
 
         // different values are not equal.
-        assertThat(customPaint).isNotEqualTo(null)
+        assertThat(customPaint).isNotNull()
         assertThat(customPaint).isNotEqualTo(Any())
         assertThat(customPaint).isNotEqualTo(defaultPaint)
     }
@@ -376,7 +376,7 @@ class BrushPaintTest {
             )
 
         // different values.
-        assertThat(layer).isNotEqualTo(null)
+        assertThat(layer).isNotNull()
         assertThat(layer).isNotEqualTo(Any())
         assertThat(layer).isNotEqualTo(layer.copy(clientTextureId = OTHER_TEXTURE_ID))
         assertThat(layer).isNotEqualTo(layer.copy(sizeX = 999F))

@@ -433,6 +433,41 @@ public class InProgressStroke {
         return outPosition
     }
 
+    /**
+     * Fills [outPosition] with the position of vertex [vertexIndex] from the mesh at
+     * [partitionIndex] for brush coat [coatIndex].
+     *
+     * Returns the passed-in [MutableVec] to make it easier to chain calls.
+     *
+     * @param coatIndex Must be between 0 (inclusive) and the result of [getBrushCoatCount]
+     *   (exclusive).
+     * @param partitionIndex Must be between 0 (inclusive) and the result of [getMeshPartitionCount]
+     *   (exclusive).
+     * @param vertexIndex Must be between 0 (inclusive) and the result of [getVertexCount]
+     *   (exclusive) for the same [coatIndex] and [partitionIndex].
+     * @param outPosition the pre-allocated [MutableVec] to be filled with the result.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun populatePosition(
+        @IntRange(from = 0) coatIndex: Int,
+        @IntRange(from = 0) partitionIndex: Int,
+        @IntRange(from = 0) vertexIndex: Int,
+        outPosition: MutableVec,
+    ): MutableVec {
+        val vertexCount = getVertexCount(coatIndex, partitionIndex)
+        require(vertexIndex >= 0 && vertexIndex < vertexCount) {
+            "vertexIndex=$vertexIndex must be between 0 and vertexCount=$vertexCount."
+        }
+        InProgressStrokeNative.fillPosition(
+            nativePointer,
+            coatIndex,
+            partitionIndex,
+            vertexIndex,
+            outPosition,
+        )
+        return outPosition
+    }
+
     // Internal methods for rendering the MutableMesh(es) of an InProgressStroke. These mesh data
     // accessors are made available via InProgressStroke because the underlying
     // native InProgressStroke manages the memory for its meshes.
@@ -504,15 +539,17 @@ public class InProgressStroke {
         // The resulting buffer is writeable, so first make it readonly. Then, because Java
         // ByteBuffers
         // defaults to a fixed endianness instead of using the endianness of the device, insist on
-        // ByteOrder.nativeOrder.
+        // ByteOrder.nativeOrder. Note that the order of operations seems to be important:
+        // asShortBuffer() must be called
+        // immediately after order(ByteOrder.nativeOrder()).
         return (InProgressStrokeNative.getUnsafelyMutableRawTriangleIndexData(
                 nativePointer,
                 coatIndex,
                 partitionIndex,
             ) ?: ByteBuffer.allocateDirect(0))
             .order(ByteOrder.nativeOrder())
-            .asReadOnlyBuffer()
             .asShortBuffer()
+            .asReadOnlyBuffer()
     }
 
     /**
@@ -676,6 +713,15 @@ private object InProgressStrokeNative {
         coatIndex: Int,
         outlineIndex: Int,
         outlineVertexIndex: Int,
+        outPosition: MutableVec,
+    )
+
+    @UsedByNative
+    external fun fillPosition(
+        nativePointer: Long,
+        coatIndex: Int,
+        partitionIndex: Int,
+        vertexIndex: Int,
         outPosition: MutableVec,
     )
 

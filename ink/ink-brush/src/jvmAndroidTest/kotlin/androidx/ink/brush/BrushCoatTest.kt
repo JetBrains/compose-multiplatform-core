@@ -50,7 +50,7 @@ class BrushCoatTest {
         assertThat(brushCoat).isEqualTo(BrushCoat(customTip, customPaint))
 
         // different values are not equal.
-        assertThat(brushCoat).isNotEqualTo(null)
+        assertThat(brushCoat).isNotNull()
         assertThat(brushCoat).isNotEqualTo(Any())
         assertThat(brushCoat).isNotEqualTo(BrushCoat(differentTip, customPaint))
         assertThat(brushCoat).isNotEqualTo(BrushCoat(customTip, differentPaint))

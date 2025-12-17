@@ -60,17 +60,14 @@ class OpenXrPlaneTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrPlane
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
         underTest =
-            OpenXrPlane(
-                planeId,
-                Plane.Type.HORIZONTAL_UPWARD_FACING,
-                OpenXrTimeSource(),
-                xrResources,
-            )
+            OpenXrPlane(planeId, Plane.Type.HORIZONTAL_UPWARD_FACING, timeSource, xrResources)
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -227,7 +224,6 @@ class OpenXrPlaneTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()

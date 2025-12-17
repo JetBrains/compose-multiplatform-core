@@ -261,16 +261,16 @@ package androidx.xr.compose.subspace {
     method @InaccessibleFromKotlin protected final void setTargetCurrentPose(androidx.xr.runtime.math.Pose);
     property protected final androidx.xr.runtime.math.Pose targetCurrentPose;
     field public static final androidx.xr.compose.subspace.LockingBehavior.Companion Companion;
-    field public static final int DEFAULT_LAZY_DURATION_MS = 1500; // 0x5dc
-    field public static final long MIN_LAZY_DURATION_MS = 100L; // 0x64L
+    field public static final int DEFAULT_SOFT_DURATION_MS = 1500; // 0x5dc
+    field public static final long MIN_SOFT_DURATION_MS = 100L; // 0x64L
   }
 
   @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static final class LockingBehavior.Companion {
-    method public androidx.xr.compose.subspace.LockingBehavior lazy(optional @IntRange(from=androidx.xr.compose.subspace.LockingBehavior.MIN_LAZY_DURATION_MS) int durationMs);
-    method @BytecodeOnly public static androidx.xr.compose.subspace.LockingBehavior! lazy$default(androidx.xr.compose.subspace.LockingBehavior.Companion!, int, int, Object!);
+    method public androidx.xr.compose.subspace.LockingBehavior soft(optional @IntRange(from=androidx.xr.compose.subspace.LockingBehavior.MIN_SOFT_DURATION_MS) int durationMs);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.LockingBehavior! soft$default(androidx.xr.compose.subspace.LockingBehavior.Companion!, int, int, Object!);
     method public androidx.xr.compose.subspace.LockingBehavior static();
-    property public static int DEFAULT_LAZY_DURATION_MS;
-    property public static long MIN_LAZY_DURATION_MS;
+    property public static int DEFAULT_SOFT_DURATION_MS;
+    property public static long MIN_SOFT_DURATION_MS;
   }
 
   public final class MovePolicy extends androidx.xr.compose.subspace.DragPolicy {

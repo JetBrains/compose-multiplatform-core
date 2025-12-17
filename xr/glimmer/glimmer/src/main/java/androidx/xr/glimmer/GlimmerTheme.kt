@@ -35,7 +35,8 @@ import androidx.xr.glimmer.GlimmerTheme.Companion.iconSizes
 import androidx.xr.glimmer.GlimmerTheme.Companion.shapes
 
 /**
- * Glimmer contains different theme subsystems to allow visual customization across an application.
+ * Jetpack Compose Glimmer contains different theme subsystems to allow visual customization across
+ * an application.
  *
  * Components use properties provided here when retrieving default values.
  *
@@ -66,14 +67,15 @@ public fun GlimmerTheme(
 }
 
 /**
- * Glimmer contains different theme subsystems to allow visual customization across an application.
+ * Jetpack Compose Glimmer contains different theme subsystems to allow visual customization across
+ * an application.
  *
  * Components use properties provided here when retrieving default values.
  *
- * @property colors [Colors] used by Glimmer components
- * @property typography [Typography] used by Glimmer components
- * @property shapes [Shapes] used by Glimmer components
- * @property depthLevels [DepthLevels] used by Glimmer components
+ * @property colors [Colors] used by Jetpack Compose Glimmer components
+ * @property typography [Typography] used by Jetpack Compose Glimmer components
+ * @property shapes [Shapes] used by Jetpack Compose Glimmer components
+ * @property depthLevels [DepthLevels] used by Jetpack Compose Glimmer components
  * @property iconSizes [IconSizes] used by icons
  */
 @Immutable

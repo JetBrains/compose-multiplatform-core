@@ -40,4 +40,21 @@ object TestProfiles {
         ) { creationDisplayInfo, profile, callback ->
             RemoteComposeWriterAndroid(creationDisplayInfo, null, profile, callback)
         }
+
+    val androidXWithCoreText =
+        Profile(
+            CoreDocument.DOCUMENT_API_LEVEL,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            AndroidxRcPlatformServices(),
+            {
+                Operations.getOperations(
+                        CoreDocument.DOCUMENT_API_LEVEL,
+                        RcProfiles.PROFILE_ANDROIDX,
+                    )
+                    ?.keySet()
+                    .orEmpty() + setOf(Operations.CORE_TEXT)
+            },
+        ) { creationDisplayInfo, profile, callback ->
+            RemoteComposeWriterAndroid(creationDisplayInfo, null, profile, callback)
+        }
 }

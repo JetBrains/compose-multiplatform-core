@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore.testapp.common
 
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -101,6 +102,9 @@ class SessionLifecycleHelper(
         }
         if (config.eyeTracking == Config.EyeTrackingMode.FINE_TRACKING) {
             permissions.add(EYE_TRACKING_FINE)
+        }
+        if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
+            permissions.add(ACCESS_FINE_LOCATION)
         }
         return permissions
     }

@@ -472,7 +472,7 @@ public annotation class ExperimentalUserSubspaceApi
  *   will not be tracked. For example if translationY is not listed, this means the content will not
  *   move as the user moves vertically up and down.
  * @param behavior determines how the UserSubspace follows the user. It can be made to move faster
- *   and be more responsive. The default is LockingBehavior.lazy().
+ *   and be more responsive. The default is LockingBehavior.soft().
  * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
  *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
  *   space.
@@ -487,7 +487,7 @@ public fun UserSubspace(
     modifier: SubspaceModifier = SubspaceModifier,
     lockTo: BodyPart = BodyPart.Head,
     lockDimensions: LockDimensions = LockDimensions.All,
-    behavior: LockingBehavior = LockingBehavior.lazy(),
+    behavior: LockingBehavior = LockingBehavior.soft(),
     allowUnboundedSubspace: Boolean = false,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {

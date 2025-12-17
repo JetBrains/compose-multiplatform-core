@@ -46,10 +46,6 @@
             layout="@layout/preferences_switch_template"/>
 
         <include
-            android:id="@+id/layout_strategy_switch"
-            layout="@layout/preferences_switch_template"/>
-
-        <include
             android:id="@+id/form_filling_switch"
             layout="@layout/preferences_switch_template"/>
 

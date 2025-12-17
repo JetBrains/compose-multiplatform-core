@@ -1,0 +1,231 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.xr.scenecore.impl.impress
+
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
+import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit.SECONDS
+import kotlin.test.assertFailsWith
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertThrows
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** JNI Marshaling Tests for the Impress API bindings. */
+@SdkSuppress(minSdkVersion = 29)
+@RunWith(AndroidJUnit4::class)
+class GltfJniMarshallingTest : BaseJniMarshallingTest() {
+
+    companion object {
+        private const val TEST_GLTF_PATH = "models/model.glb"
+        private const val TEST_GLTF_KEY = "model_key"
+        private const val TEST_NATIVE_TOKEN = 12345L
+
+        private const val TEST_NODE_ID = 1
+
+        private const val TEST_ANIM_NAME = "dance"
+
+        private const val TEST_MESH_NODE_NAME = "hair"
+        private const val TEST_PRIMITIVE_INDEX = 1
+
+        private const val TEST_ERROR_MESSAGE = "Test C++ Failure From Marshalling Test"
+    }
+
+    @Test
+    fun loadGltfAsset_marshalsPath_invokesCallbackOnSuccess() = runBlocking {
+        ImpressApiTestHelper.nativeSetExpectedLoadGltfPath(TEST_GLTF_PATH)
+        ImpressApiTestHelper.nativeSetLoadGltfAssetSuccess(TEST_NATIVE_TOKEN)
+
+        val actualModel = mImpressApi.loadGltfAssetTemp(TEST_GLTF_PATH)
+
+        val actualToken = actualModel.nativeHandle
+        assertThat(actualToken).isEqualTo(TEST_NATIVE_TOKEN)
+    }
+
+    @Test
+    fun loadGltfAsset_fromByteArray_invokesCallbackOnSuccess() = runBlocking {
+        val testSize = 1024
+        val testData = generateTestPattern(testSize)
+        ImpressApiTestHelper.nativeSetExpectedLoadGltfAssetTestPattern(testSize, TEST_GLTF_KEY)
+        ImpressApiTestHelper.nativeSetLoadGltfAssetSuccess(TEST_NATIVE_TOKEN)
+
+        val actualModel = mImpressApi.loadGltfAssetTemp(testData, TEST_GLTF_KEY)
+
+        val actualToken = actualModel.nativeHandle
+        assertThat(actualToken).isEqualTo(TEST_NATIVE_TOKEN)
+    }
+
+    @Test
+    fun loadGltfAsset_marshalsPath_invokesCallbackOnFailure() = runBlocking {
+        ImpressApiTestHelper.nativeSetExpectedLoadGltfPath(TEST_GLTF_PATH)
+        ImpressApiTestHelper.nativeSetLoadGltfAssetFailure(TEST_ERROR_MESSAGE)
+
+        val exception = assertFailsWith<Exception> { mImpressApi.loadGltfAssetTemp(TEST_GLTF_PATH) }
+
+        assertThat(exception).hasMessageThat().contains(TEST_ERROR_MESSAGE)
+    }
+
+    @Test
+    fun loadGltfAsset_fromByteArray_invokesCallbackOnFailure() = runBlocking {
+        val testSize = 1024
+        val testData = generateTestPattern(testSize)
+        ImpressApiTestHelper.nativeSetExpectedLoadGltfAssetTestPattern(testSize, TEST_GLTF_KEY)
+        ImpressApiTestHelper.nativeSetLoadGltfAssetFailure(TEST_ERROR_MESSAGE)
+
+        val exception =
+            assertFailsWith<Exception> { mImpressApi.loadGltfAssetTemp(testData, TEST_GLTF_KEY) }
+
+        assertThat(exception).hasMessageThat().contains(TEST_ERROR_MESSAGE)
+    }
+
+    @Test
+    fun releaseGltfAsset_marshalsToken() {
+        ImpressApiTestHelper.nativeSetExpectedReleaseGltfAsset(TEST_NATIVE_TOKEN)
+
+        mImpressApi.releaseGltfAsset(TEST_NATIVE_TOKEN)
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+
+    @Test
+    fun instanceGltfModel_marshalsParams_returnsId() {
+        val expectedCollider = true
+        ImpressApiTestHelper.nativeSetExpectedInstanceGltfModel(TEST_NATIVE_TOKEN, expectedCollider)
+        ImpressApiTestHelper.nativeSetInstanceGltfModelSuccess(TEST_NODE_ID)
+
+        val node = mImpressApi.instanceGltfModel(TEST_NATIVE_TOKEN, expectedCollider)
+
+        assertThat(node.handle).isEqualTo(TEST_NODE_ID)
+    }
+
+    @Test
+    fun setGltfModelColliderEnabled_marshalsParams() {
+        val expectedCollider = false
+        ImpressApiTestHelper.nativeSetExpectedSetGltfModelColliderEnabled(
+            TEST_NODE_ID,
+            expectedCollider,
+        )
+        val node = ImpressNode(TEST_NODE_ID)
+
+        mImpressApi.setGltfModelColliderEnabled(node, expectedCollider)
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+
+    @Test
+    fun animateGltfModel_marshalsParams_invokesOnComplete() {
+        val expectedLoop = true
+        ImpressApiTestHelper.nativeSetExpectedAnimateGltfModel(
+            TEST_NODE_ID,
+            TEST_ANIM_NAME,
+            expectedLoop,
+        )
+        ImpressApiTestHelper.nativeSetAnimateGltfModelSuccess()
+        val node = ImpressNode(TEST_NODE_ID)
+
+        val future = mImpressApi.animateGltfModel(node, TEST_ANIM_NAME, expectedLoop)
+
+        // If calling get() on the future does not throw an exception it means onComplete was
+        // called.
+        future.get(5, SECONDS)
+    }
+
+    @Test
+    fun animateGltfModel_marshalsParams_invokesOnFailure() {
+        val expectedLoop = false
+        ImpressApiTestHelper.nativeSetExpectedAnimateGltfModel(
+            TEST_NODE_ID,
+            TEST_ANIM_NAME,
+            expectedLoop,
+        )
+        ImpressApiTestHelper.nativeSetAnimateGltfModelFailure(TEST_ERROR_MESSAGE)
+        val node = ImpressNode(TEST_NODE_ID)
+
+        val future = mImpressApi.animateGltfModel(node, TEST_ANIM_NAME, expectedLoop)
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get(5, SECONDS) }
+        assertThat(exception).hasCauseThat().isInstanceOf(Exception::class.java)
+        assertThat(exception).hasMessageThat().contains(TEST_ERROR_MESSAGE)
+    }
+
+    @Test
+    fun stopGltfModelAnimation_marshalsNodeId() {
+        ImpressApiTestHelper.nativeSetExpectedStopGltfModelAnimation(TEST_NODE_ID)
+        val node = ImpressNode(TEST_NODE_ID)
+
+        mImpressApi.stopGltfModelAnimation(node)
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+
+    @Test
+    fun getGltfModelBoundingBox_marshalsNodeId_returnsBox() {
+        val expectedCenter = floatArrayOf(1.0f, 2.0f, 3.0f)
+        val expectedHalfExtents = floatArrayOf(4.0f, 5.0f, 6.0f)
+        ImpressApiTestHelper.nativeSetExpectedGetGltfModelLocalBounds(TEST_NODE_ID)
+        ImpressApiTestHelper.nativeSetGetGltfModelLocalBoundsSuccess(
+            expectedCenter,
+            expectedHalfExtents,
+        )
+        val node = ImpressNode(TEST_NODE_ID)
+
+        val box = mImpressApi.getGltfModelBoundingBox(node)
+
+        assertThat(box.center.x).isEqualTo(expectedCenter[0])
+        assertThat(box.center.y).isEqualTo(expectedCenter[1])
+        assertThat(box.center.z).isEqualTo(expectedCenter[2])
+        assertThat(box.halfExtents.width).isEqualTo(expectedHalfExtents[0])
+        assertThat(box.halfExtents.height).isEqualTo(expectedHalfExtents[1])
+        assertThat(box.halfExtents.depth).isEqualTo(expectedHalfExtents[2])
+    }
+
+    @Test
+    fun setMaterialOverride_marshalsParams() {
+        ImpressApiTestHelper.nativeSetExpectedSetMaterialOverride(
+            TEST_NODE_ID,
+            TEST_NATIVE_TOKEN,
+            TEST_MESH_NODE_NAME,
+            TEST_PRIMITIVE_INDEX,
+        )
+        val node = ImpressNode(TEST_NODE_ID)
+
+        mImpressApi.setMaterialOverride(
+            node,
+            TEST_NATIVE_TOKEN,
+            TEST_MESH_NODE_NAME,
+            TEST_PRIMITIVE_INDEX,
+        )
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+
+    @Test
+    fun clearMaterialOverride_marshalsParams() {
+        ImpressApiTestHelper.nativeSetExpectedClearMaterialOverride(
+            TEST_NODE_ID,
+            TEST_MESH_NODE_NAME,
+            TEST_PRIMITIVE_INDEX,
+        )
+        val node = ImpressNode(TEST_NODE_ID)
+
+        mImpressApi.clearMaterialOverride(node, TEST_MESH_NODE_NAME, TEST_PRIMITIVE_INDEX)
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+}

@@ -76,6 +76,7 @@ class UseCaseCameraRequestControlTest {
             cameraGraphProvider = { fakeCameraGraph },
             cameraStateAdapter = cameraStateAdapter,
             graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
             defaultSurfaceToStreamMap = surfaceToStreamMap,
         )
     private val fakeUseCaseCameraState =

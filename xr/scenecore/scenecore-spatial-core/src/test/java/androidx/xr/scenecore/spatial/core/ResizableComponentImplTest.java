@@ -571,7 +571,7 @@ public class ResizableComponentImplTest {
 
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
-        assertThat(entity.mReformEventConsumerMap).isNotEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isNotEmpty();
 
         ReformEvent moveReformEvent =
                 ShadowReformEvent.create(/* type= */ REFORM_TYPE_MOVE, /* state= */ 0, /* id= */ 0);
@@ -778,7 +778,7 @@ public class ResizableComponentImplTest {
         resizableComponent.removeResizeEventListener(mockResizeEventListener1);
         resizableComponent.removeResizeEventListener(mockResizeEventListener2);
 
-        assertThat(entity.mReformEventConsumerMap).isEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isEmpty();
     }
 
     @Test
@@ -803,7 +803,7 @@ public class ResizableComponentImplTest {
         entity.removeComponent(resizableComponent);
 
         assertThat(mNodeRepository.getReformOptions(entity.getNode())).isNull();
-        assertThat(entity.mReformEventConsumerMap).isEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isEmpty();
     }
 
     @Test
@@ -987,7 +987,7 @@ public class ResizableComponentImplTest {
 
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
-        assertThat(entity.mReformEventConsumerMap).isNotEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isNotEmpty();
 
         // Start the resize.
         ReformEvent startReformEvent =
@@ -1056,7 +1056,7 @@ public class ResizableComponentImplTest {
 
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
-        assertThat(entity.mReformEventConsumerMap).isNotEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isNotEmpty();
 
         // Start the resize.
         ReformEvent startReformEvent =
@@ -1123,7 +1123,7 @@ public class ResizableComponentImplTest {
 
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
-        assertThat(entity.mReformEventConsumerMap).isNotEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isNotEmpty();
 
         // Start the resize.
         ReformEvent startReformEvent =
@@ -1331,7 +1331,7 @@ public class ResizableComponentImplTest {
 
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
-        assertThat(entity.mReformEventConsumerMap).isNotEmpty();
+        assertThat(entity.getReformEventConsumerMap()).isNotEmpty();
 
         // Start the resize.
         ReformEvent startReformEvent =

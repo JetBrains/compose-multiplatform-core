@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,10 +26,12 @@ import android.app.Activity;
 
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.BoundingBox;
+import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
 import androidx.xr.scenecore.runtime.MaterialResource;
+import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
@@ -82,6 +85,8 @@ public class GltfEntityImplTest {
                         () -> mXrExtensions.getSpatialState(activity),
                         /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
+        mEntityManager.addSystemSpaceActivityPose(
+                new PerceptionSpaceScenePoseImpl(mActivitySpace, mActivitySpace));
 
         mGltfEntity = createGltfEntity(activity);
     }
@@ -207,5 +212,30 @@ public class GltfEntityImplTest {
         verify(mMockGltfFeature).dispose();
 
         mGltfEntity = null;
+    }
+
+    @Test
+    public void getParent_nullParent_returnsNull() {
+        mGltfEntity.setParent(null);
+        assertThat(mGltfEntity.getParent()).isEqualTo(null);
+    }
+
+    @Test
+    public void getPoseInParentSpace_nullParent_returnsIdentity() {
+        mGltfEntity.setParent(null);
+        mGltfEntity.setPose(Pose.Identity);
+        assertThat(mGltfEntity.getPose(Space.PARENT)).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void getPoseInActivitySpace_nullParent_throwsException() {
+        mGltfEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> mGltfEntity.getPose(Space.ACTIVITY));
+    }
+
+    @Test
+    public void getPoseInRealWorldSpace_nullParent_throwsException() {
+        mGltfEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> mGltfEntity.getPose(Space.REAL_WORLD));
     }
 }

@@ -154,5 +154,41 @@ constructor(
     companion object {
         private val SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP =
             mapOf("Google" to setOf("oriole", "raven", "bluejay", "panther", "cheetah", "lynx"))
+
+        private val SM8150_DEVICES =
+            mapOf("google" to setOf("pixel 4", "pixel 4 xl"), "samsung" to setOf("sm-g770f"))
+
+        /**
+         * Quirk needed on devices where not closing capture session before creating a new capture
+         * session can lead to undesirable behaviors such as: CameraDevice.close() call might stall
+         * indefinitely, or crashes in the camera HAL
+         * - Bug(s): 277675483, 282871038
+         * - Device(s): See below
+         * - API levels: See below
+         */
+        internal fun shouldCloseCaptureSessionOnDisconnect() =
+            when {
+                Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 ->
+                    // TODO: b/277675483 - Older devices (Android version <= 8.1.0) seem to have a
+                    //  higher chance of encountering an issue where not closing the capture session
+                    //  would lead to CameraDevice.close() stalling indefinitely. This version check
+                    //  might need to be further fine-turned down the line.
+                    true
+                Build.HARDWARE == "samsungexynos7870" ->
+                    // TODO: b/282871038 - On some platforms, not closing the capture session before
+                    //  switching to a new capture session may trigger camera HAL crashes. Add more
+                    //  hardware platforms here when they're identified.
+                    true
+                (Build.HARDWARE.equals("qcom", ignoreCase = true) &&
+                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) ||
+                    SM8150_DEVICES[Build.BRAND.lowercase()]?.contains(Build.MODEL.lowercase()) ==
+                        true ->
+                    // On qcom platforms from a certain era, switching capture sessions without
+                    // closing the prior session then setting the repeating request immediately,
+                    // puts the camera HAL in a bad state where it only produces a few frames before
+                    // going into an unrecoverable error. See b/316048171 for context.
+                    true
+                else -> false
+            }
     }
 }

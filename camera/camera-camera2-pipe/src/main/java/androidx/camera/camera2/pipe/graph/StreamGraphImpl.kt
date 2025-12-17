@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.graph
 
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.OutputConfiguration
 import android.os.Build
 import android.util.Size
@@ -28,6 +27,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelExternal
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLimited
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.streamConfigurationMap
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.InputStream
 import androidx.camera.camera2.pipe.InputStreamId
@@ -38,8 +38,8 @@ import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.Api24Compat
 import androidx.camera.camera2.pipe.config.CameraGraphScope
-import androidx.camera.camera2.pipe.internal.ImageSourceMap
 import androidx.camera.camera2.pipe.media.ImageSource
+import androidx.camera.camera2.pipe.media.ImageSources
 import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.atomicfu.atomic
@@ -55,14 +55,14 @@ internal class StreamGraphImpl
 constructor(
     val cameraMetadata: CameraMetadata,
     val graphConfig: CameraGraph.Config,
+    val imageSources: ImageSources,
     private val cameraControllerProvider: Provider<CameraController>,
-    private val imageSourceMapProvider: Provider<ImageSourceMap>,
-) : StreamGraph {
+) : StreamGraph, AutoCloseable {
     private val _streamMap: Map<CameraStream.Config, CameraStream>
 
     internal val outputConfigs: List<OutputConfig>
+    internal val imageSourceMap: Map<StreamId, ImageSource>
 
-    // TODO: Build InputStream(s)
     override val inputs: List<InputStream>
     override val streams: List<CameraStream>
     override val streamIds: Set<StreamId>
@@ -90,15 +90,14 @@ constructor(
                     "No output found for given outputId $outputId"
             }
         }
-        val streamConfigurationMap =
-            cameraMetadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
+        val streamConfigurationMap = cameraMetadata.streamConfigurationMap
         val stallDuration =
-            streamConfigurationMap?.getOutputStallDuration(output.format.value, output.size)
+            streamConfigurationMap?.getOutputStallDuration(output.format, output.size)
         return stallDuration?.let { StreamGraph.OutputLatency(it, 0) }
     }
 
     override fun getImageSource(streamId: StreamId): ImageSource? {
-        return imageSourceMapProvider.get().imageSources[streamId]
+        return imageSourceMap[streamId]
     }
 
     init {
@@ -205,6 +204,16 @@ constructor(
                 it.streams.minOf { stream -> streams.indexOf(stream) }
             }
         outputs = streams.flatMap { it.outputs }
+
+        imageSourceMap = buildMap {
+            for (config in graphConfig.streams) {
+                val imageSourceConfig = config.imageSourceConfig ?: continue
+
+                val cameraStream = checkNotNull(_streamMap[config])
+                val imageSource = imageSources.createImageSource(cameraStream, imageSourceConfig)
+                this[cameraStream.id] = imageSource
+            }
+        }
     }
 
     class OutputConfig(
@@ -405,6 +414,13 @@ constructor(
 
         // Return outputs in original order if no video streams found
         return unsortedOutputs
+    }
+
+    override fun close() {
+        val imageSources = imageSourceMap.values
+        for (imageSource in imageSources) {
+            imageSource.close()
+        }
     }
 
     companion object {

@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.PanelEntity;
 import androidx.xr.scenecore.runtime.ResizableComponent;
 import androidx.xr.scenecore.runtime.ResizeEvent;
 import androidx.xr.scenecore.runtime.ResizeEventListener;
@@ -89,13 +90,11 @@ class ResizableComponentImpl implements ResizableComponent {
             return false;
         }
 
-        // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
-        // Update the current size with entity size.
         Dimensions entitySize = null;
-        if (entity instanceof PanelEntityImpl) {
-            entitySize = ((PanelEntityImpl) entity).getSize();
-        } else if (entity instanceof SurfaceEntityImpl) {
-            SurfaceEntity.Shape shape = ((SurfaceEntityImpl) entity).getShape();
+        if (entity instanceof PanelEntity) {
+            entitySize = ((PanelEntity) entity).getSize();
+        } else if (entity instanceof SurfaceEntity) {
+            SurfaceEntity.Shape shape = ((SurfaceEntity) entity).getShape();
             if (shape instanceof SurfaceEntity.Shape.Quad) {
                 entitySize = shape.getDimensions();
             }

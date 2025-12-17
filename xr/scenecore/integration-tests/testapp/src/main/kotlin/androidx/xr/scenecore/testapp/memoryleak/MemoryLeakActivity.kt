@@ -28,9 +28,9 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.managers.GltfManager
 import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -47,7 +47,7 @@ class MemoryLeakActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_memory_leak)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 

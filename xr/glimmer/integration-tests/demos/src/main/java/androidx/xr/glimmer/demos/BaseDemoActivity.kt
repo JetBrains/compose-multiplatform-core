@@ -25,7 +25,7 @@ import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ComposeView
 
-/** The base activity containing all Glimmer related demos. */
+/** The base activity containing all Jetpack Compose Glimmer related demos. */
 open class BaseDemoActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -19,6 +19,7 @@ package androidx.xr.scenecore.spatial.core;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import androidx.xr.scenecore.runtime.ActivityPanelEntity;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
@@ -252,5 +254,44 @@ public class ActivityPanelEntityImplTest {
         Pose pose = activityPanelEntity.transformNormalizedCoordinatesToPose(new Vector2(-1f, 1f));
         Vector3 expected = new Vector3(-0.5f, 0.5f, 0.0f);
         assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void getParent_nullParent_returnsNull() {
+        ActivityPanelEntity activityPanelEntity =
+                mFakeRuntime.createActivityPanelEntity(
+                        new Pose(), mWindowBoundsPx, "test", mHostActivity, /* parent= */ null);
+
+        assertThat(activityPanelEntity.getParent()).isEqualTo(null);
+    }
+
+    @Test
+    public void getPoseInParentSpace_nullParent_returnsIdentity() {
+        ActivityPanelEntity activityPanelEntity =
+                mFakeRuntime.createActivityPanelEntity(
+                        new Pose(), mWindowBoundsPx, "test", mHostActivity, /* parent= */ null);
+
+        activityPanelEntity.setPose(Pose.Identity);
+        assertThat(activityPanelEntity.getPose(Space.PARENT)).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void getPoseInActivitySpace_nullParent_throwsException() {
+        ActivityPanelEntity activityPanelEntity =
+                mFakeRuntime.createActivityPanelEntity(
+                        new Pose(), mWindowBoundsPx, "test", mHostActivity, /* parent= */ null);
+
+        assertThrows(
+                IllegalStateException.class, () -> activityPanelEntity.getPose(Space.ACTIVITY));
+    }
+
+    @Test
+    public void getPoseInRealWorldSpace_nullParent_throwsException() {
+        ActivityPanelEntity activityPanelEntity =
+                mFakeRuntime.createActivityPanelEntity(
+                        new Pose(), mWindowBoundsPx, "test", mHostActivity, /* parent= */ null);
+
+        assertThrows(
+                IllegalStateException.class, () -> activityPanelEntity.getPose(Space.REAL_WORLD));
     }
 }

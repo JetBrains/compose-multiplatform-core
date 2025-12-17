@@ -96,6 +96,22 @@ public constructor(
         /**
          * Creates a new [Session].
          *
+         * It is strongly recommended to call this method from a background thread (e.g.,
+         * [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
+         * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
+         * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
+         * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
+         *
+         * **Example with Coroutines:**
+         *
+         * ```kotlin
+         * lifecycleScope.launch {
+         *   val result = withContext(Dispatchers.IO) {
+         *     Session.create(activity)
+         *   }
+         * }
+         * ```
+         *
          * @param activity the [Activity] that provides the context for the session's resources and
          *   controls the session's runtime state based on the [activity]'s lifecycle.
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
@@ -159,6 +175,22 @@ public constructor(
          * session's lifecycle. The [lifecycleOwner]'s lifecycle must still be bounded within the
          * lifecycle of the provided [activity]. The session will be automatically destroyed if the
          * [activity]'s lifecycle becomes destroyed.
+         *
+         * It is strongly recommended to call this method from a background thread (e.g.,
+         * [Dispatchers.IO][kotlinx.coroutines.Dispatchers.IO]).
+         * > **Thread Safety Warning:** This method performs significant disk I/O, including loading
+         * > native libraries. If StrictMode is enabled, calling this on the **Main Thread** (UI
+         * > Thread) will trigger a [android.os.StrictMode] `DiskReadViolation`.
+         *
+         * **Example with Coroutines:**
+         *
+         * ```kotlin
+         * lifecycleScope.launch {
+         *   val result = withContext(Dispatchers.IO) {
+         *     Session.create(activity)
+         *   }
+         * }
+         * ```
          *
          * @param activity the [Activity] that provides the context for the session's resources.
          * @param lifecycleOwner the [LifecycleOwner] whose lifecycle controls the runtime state of

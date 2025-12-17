@@ -33,6 +33,7 @@ class ImageSimulator(
     defaultStreamGraph: StreamGraph? = null,
 ) : AutoCloseable {
     private val fakeSurfaces = FakeSurfaces()
+    private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
 
     val cameraMetadata = defaultCameraMetadata ?: FakeCameraMetadata()
     val graphConfig = CameraGraph.Config(camera = cameraMetadata.camera, streams = streamConfigs)
@@ -44,10 +45,12 @@ class ImageSimulator(
             if (imageStreams != null && !imageStreams.contains(config)) continue
             val cameraStream = streamGraph[config]!!
             val fakeImageSource =
-                FakeImageSource(
-                    cameraStream.id,
+                FakeImageSource.create(
                     config.outputs.first().format,
+                    cameraStream.id,
                     cameraStream.outputs.associate { it.id to it.size },
+                    5,
+                    fakeImageReaders,
                 )
             check(this[cameraStream.id] == null)
             this[cameraStream.id] = fakeImageSource

@@ -16,16 +16,20 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberRemoteColor
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
@@ -55,7 +59,7 @@ class RemoteIconTest {
                 CreationDisplayInfo(
                     size.width,
                     size.height,
-                    context.resources.displayMetrics.density,
+                    context.resources.displayMetrics.densityDpi,
                 ),
             backgroundColor = Color.Black,
         ) {
@@ -70,15 +74,14 @@ class RemoteIconTest {
                 CreationDisplayInfo(
                     size.width,
                     size.height,
-                    context.resources.displayMetrics.density,
+                    context.resources.displayMetrics.densityDpi,
                 ),
             backgroundColor = Color.Black,
         ) {
-            val color = rememberRemoteColor("testColor") { Color.Red }
             RemoteIcon(
                 imageVector = TestImageVectors.VolumeUp,
                 contentDescription = null,
-                tint = color,
+                tint = RemoteColor(Color.Red),
             )
         }
     }
@@ -90,7 +93,7 @@ class RemoteIconTest {
                 CreationDisplayInfo(
                     size.width,
                     size.height,
-                    context.resources.displayMetrics.density,
+                    context.resources.displayMetrics.densityDpi,
                 ),
             backgroundColor = Color.Black,
         ) {
@@ -105,11 +108,41 @@ class RemoteIconTest {
     fun volumeUpRemoteIcon_scaledUp() {
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.density),
+                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
             backgroundColor = Color.Black,
         ) {
             RemoteIcon(
                 imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                modifier = RemoteModifier.size(48.rdp),
+            )
+        }
+    }
+
+    @Test
+    fun remoteIcon_fromImageVector() {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo =
+                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
+            backgroundColor = Color.Black,
+        ) {
+            RemoteIcon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = null,
+                modifier = RemoteModifier.size(48.rdp),
+            )
+        }
+    }
+
+    @Test
+    fun remoteIcon_fromRes() {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo =
+                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
+            backgroundColor = Color.Black,
+        ) {
+            RemoteIcon(
+                imageVector = ImageVector.vectorResource(id = R.drawable.test_vector),
                 contentDescription = null,
                 modifier = RemoteModifier.size(48.rdp),
             )

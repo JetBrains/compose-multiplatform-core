@@ -251,6 +251,7 @@ class CapturePipelineTest {
             },
             cameraStateAdapter = cameraStateAdapter,
             graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
             defaultSurfaceToStreamMap = mapOf(fakeDeferrableSurface to fakeStreamId),
         )
     private val fakeZslControl =

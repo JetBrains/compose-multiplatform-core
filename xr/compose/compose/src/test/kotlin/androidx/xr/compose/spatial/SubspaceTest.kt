@@ -60,8 +60,6 @@ import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestActivitySpace
-import androidx.xr.compose.testing.TestSceneRuntime
 import androidx.xr.compose.testing.assertDepthIsAtLeast
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertDepthIsNotEqualTo
@@ -74,9 +72,7 @@ import androidx.xr.compose.testing.assertPositionIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsAtLeast
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsNotEqualTo
-import androidx.xr.compose.testing.createFakeRuntime
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.toDp
@@ -97,6 +93,9 @@ import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.RenderingEntityFactory
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertIs
@@ -124,24 +123,33 @@ class SubspaceTest {
      * Don't call this inside composeTestRule in a test. If it recomposes, a new Session will be
      * created when a previous one already exists for the activity.
      */
-    private fun createAdapterWithRecommendedBox(
+    private fun configureSessionWithRecommendedBox(
         widthMeters: Float = DefaultTestRecommendedBoxSize.WIDTH_METERS,
         heightMeters: Float = DefaultTestRecommendedBoxSize.HEIGHT_METERS,
         depthMeters: Float = DefaultTestRecommendedBoxSize.DEPTH_METERS,
-    ): TestSceneRuntime {
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-
-        return TestSceneRuntime.create(fakeRuntime).apply {
-            activitySpace =
-                TestActivitySpace(
-                    fakeRuntime.activitySpace,
-                    recommendedContentBoxInFullSpace =
-                        BoundingBox.fromMinMax(
-                            min = Vector3(-widthMeters / 2, -heightMeters / 2, -depthMeters / 2),
-                            max = Vector3(widthMeters / 2, heightMeters / 2, depthMeters / 2),
-                        ),
-                )
-        }
+    ) {
+        composeTestRule.configureFakeSession(
+            sceneRuntime = { runtime ->
+                object :
+                    SceneRuntime by runtime,
+                    RenderingEntityFactory by (runtime as RenderingEntityFactory) {
+                    override val activitySpace =
+                        object : ActivitySpace by runtime.activitySpace {
+                            override val recommendedContentBoxInFullSpace =
+                                BoundingBox.fromMinMax(
+                                    min =
+                                        Vector3(
+                                            -widthMeters / 2,
+                                            -heightMeters / 2,
+                                            -depthMeters / 2,
+                                        ),
+                                    max =
+                                        Vector3(widthMeters / 2, heightMeters / 2, depthMeters / 2),
+                                )
+                        }
+                }
+            }
+        )
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -199,7 +207,7 @@ class SubspaceTest {
 
     @Test
     fun subspace_whenXrIsDisabled_doesNotCreateContent() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
@@ -261,8 +269,8 @@ class SubspaceTest {
     @Test
     fun subspace_withFillMaxSizeAndHigherDensity_respectsConstraints() {
         var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        configureSessionWithRecommendedBox()
+
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(2f)) {
                 density = LocalDensity.current
@@ -285,8 +293,7 @@ class SubspaceTest {
     @Test
     fun subspace_withFillMaxSize_respectsRecommendedBoxConstraints() {
         var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        configureSessionWithRecommendedBox()
         composeTestRule.setContent {
             density = LocalDensity.current
             Subspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
@@ -343,8 +350,7 @@ class SubspaceTest {
     @Test
     fun subspace_whenAllowUnbounded_isUnbounded() {
         var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        configureSessionWithRecommendedBox()
         composeTestRule.setContent {
             density = LocalDensity.current
             // This large width is explicitly bigger than the recommended box width.
@@ -395,8 +401,7 @@ class SubspaceTest {
     @Test
     fun subspace_withLargerThanDefaultModifier_respectsModifier() {
         val largeSize = 500000000.dp
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        configureSessionWithRecommendedBox()
         composeTestRule.setContent {
             // The user provides a modifier bigger than the recommended box.
             Subspace(modifier = SubspaceModifier.size(largeSize)) {
@@ -412,8 +417,7 @@ class SubspaceTest {
     @Test
     fun subspace_withSmallerThanDefaultModifier_respectsModifier() {
         val smallSize = 2.dp
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        configureSessionWithRecommendedBox()
         composeTestRule.setContent {
             // The user provides a modifier smaller than the recommended box.
             Subspace(modifier = SubspaceModifier.size(smallSize)) {
@@ -527,8 +531,7 @@ class SubspaceTest {
 
     @Test
     fun subspace_whenSwitchingModes_retainsState() {
-        val testSceneRuntime = createFakeRuntime(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
+        val session = composeTestRule.configureFakeSession()
 
         composeTestRule.setContent {
             Subspace {
@@ -546,11 +549,11 @@ class SubspaceTest {
 
         composeTestRule.onNodeWithTag("state").assertTextContains("3")
 
-        testSceneRuntime.requestHomeSpaceMode()
+        session.scene.requestHomeSpaceMode()
 
         composeTestRule.onNodeWithTag("state").assertTextContains("3")
 
-        testSceneRuntime.requestFullSpaceMode()
+        session.scene.requestFullSpaceMode()
         composeTestRule.onNodeWithText("Increment").performClick().performClick()
 
         composeTestRule.onNodeWithTag("state").assertTextContains("5")
@@ -558,8 +561,7 @@ class SubspaceTest {
 
     @Test
     fun subspace_whenSwitchingModesFromHomeSpace_retainsState() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             CompositionLocalProvider {
@@ -757,7 +759,7 @@ class SubspaceTest {
 
     @Test
     fun planarEmbeddedSubspace_whenXrIsDisabled_doesNotCreateContent() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
         composeTestRule.setContent {
             Subspace {
                 SpatialPanel {
@@ -916,8 +918,7 @@ class SubspaceTest {
     // ---------------------------------------------------------------------------------------------
     @Test
     fun anchoredSubspace_whenCreated_isParentedToAnchor() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        val session = assertNotNull(composeTestRule.session)
+        val session = composeTestRule.configureFakeSession()
 
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         val anchorEntity =
@@ -934,8 +935,7 @@ class SubspaceTest {
 
     @Test
     fun anchoredSubspace_withContent_positionsAtOrigin() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        val session = assertNotNull(composeTestRule.session)
+        val session = composeTestRule.configureFakeSession()
 
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         val anchorEntity =
@@ -955,8 +955,7 @@ class SubspaceTest {
 
     @Test
     fun anchoredSubspace_whenNested_positionsRelativeToAnchor() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        val session = assertNotNull(composeTestRule.session)
+        val session = composeTestRule.configureFakeSession()
 
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         val anchorEntity =

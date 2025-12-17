@@ -160,7 +160,7 @@ public interface Entity : ScenePose {
      * @param listener The input event listener to add.
      */
     @Suppress("ExecutorRegistration")
-    public fun addInputEventListener(executor: Executor, listener: InputEventListener)
+    public fun addInputEventListener(executor: Executor? = null, listener: InputEventListener)
 
     /** Removes the given listener from the set of active input listeners. */
     public fun removeInputEventListener(listener: InputEventListener)

@@ -110,11 +110,12 @@ public fun <T : Any> SavedStateHandle.saveable(
     init: () -> T,
 ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, T>> =
     PropertyDelegateProvider { thisRef, property ->
-        val value = saveable(
-            key = getSaveableKeyPrefix(thisRef) + property.name,
-            saver = saver,
-            init = init
-        )
+        val value =
+            saveable(
+                key = getSaveableKeyPrefix(thisRef) + property.name,
+                saver = saver,
+                init = init,
+            )
 
         ReadOnlyProperty { _, _ -> value }
     }
@@ -147,11 +148,12 @@ public fun <T, M : MutableState<T>> SavedStateHandle.saveable(
     init: () -> M,
 ): PropertyDelegateProvider<Any?, ReadWriteProperty<Any?, T>> =
     PropertyDelegateProvider<Any?, ReadWriteProperty<Any?, T>> { thisRef, property ->
-        val mutableState = saveable(
-            key = getSaveableKeyPrefix(thisRef) + property.name,
-            stateSaver = stateSaver,
-            init = init
-        )
+        val mutableState =
+            saveable(
+                key = getSaveableKeyPrefix(thisRef) + property.name,
+                stateSaver = stateSaver,
+                init = init,
+            )
 
         // Create a property that delegates to the mutableState
         object : ReadWriteProperty<Any?, T> {

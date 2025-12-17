@@ -52,6 +52,13 @@ class MeshTest {
     }
 
     @Test
+    fun rawTriangleIndexData_usesNativeByteOrder() {
+        val mesh = Mesh()
+
+        assertThat(mesh.rawTriangleIndexData.order()).isEqualTo(java.nio.ByteOrder.nativeOrder())
+    }
+
+    @Test
     fun rawIndexData_emptyIsReadOnly() {
         val mesh = Mesh()
 

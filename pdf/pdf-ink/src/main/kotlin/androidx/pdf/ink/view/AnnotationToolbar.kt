@@ -102,6 +102,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             viewmodel.onAction(ToolbarIntent.RedoAvailabilityChanged(value))
         }
 
+    /** Dismisses any currently visible popups (such as the color palette or brush size slider). */
+    public fun dismissPopups() {
+        viewmodel.onAction(ToolbarIntent.DismissPopups)
+    }
+
     private var annotationToolbarListener: AnnotationToolbarListener? = null
 
     /** Set the listener for [AnnotationToolbar] events. */

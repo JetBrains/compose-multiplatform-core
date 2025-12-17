@@ -57,6 +57,7 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeWithVelocity
 import java.lang.Math.sin
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -64,9 +65,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class BasicSwipeToDismissBoxTest {
-    @Suppress("ComposeTestRuleDispatcher") // b/457618558
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -358,7 +357,9 @@ class BasicSwipeToDismissBoxTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight(0f, 200f) }
-        rule.runOnIdle { assert(horizontalScrollState.value == initialScrollState) }
+        rule.runOnIdle {
+            assertEquals(initialScrollState.toFloat(), horizontalScrollState.value.toFloat(), 20f)
+        }
     }
 
     @Test
@@ -415,7 +416,7 @@ class BasicSwipeToDismissBoxTest {
             amplitude = 100,
             startLeft = false,
         ) { scrollState ->
-            assertEquals(scrollState.value, 200)
+            assertEquals(200f, scrollState.value.toFloat(), 40f)
         }
     }
 

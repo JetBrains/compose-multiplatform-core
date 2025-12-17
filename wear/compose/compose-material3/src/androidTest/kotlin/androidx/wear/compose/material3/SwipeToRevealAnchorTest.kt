@@ -83,7 +83,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
         val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
 
         rule.setContent {
-            ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+            ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                     revealState = rememberRevealState(initialValue = testParams.initialRevealValue)
                     with(LocalDensity.current) { density = this.density }

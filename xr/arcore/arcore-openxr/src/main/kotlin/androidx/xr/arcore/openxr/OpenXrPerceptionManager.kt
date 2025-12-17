@@ -92,7 +92,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         check(nativeUnpersistAnchor(uuid)) { "Failed to unpersist anchor." }
     }
 
-    internal val xrResources = XrResources()
+    internal val xrResources = XrResources(timeSource)
     override val trackables: Collection<Trackable> = xrResources.trackablesMap.values
 
     override val leftEye: Eye

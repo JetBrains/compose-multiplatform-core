@@ -38,7 +38,7 @@ import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.IntVolumeSize
@@ -224,7 +224,7 @@ class CoreEntityTest {
 
     @Test
     fun attachEntity_onExistingCoreEntity_replacesAndDisposesOldEntity() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val initialEntity = GroupEntity.create(session = session, name = "Initial")
         val coreEntity = CoreGroupEntity(initialEntity)
         val newEntity = GroupEntity.create(session = session, name = "New")
@@ -238,7 +238,7 @@ class CoreEntityTest {
 
     @Test
     fun parent_setParent_updatesEntityParent() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = assertNotNull(session), name = "Initial")
         val parentCoreEntity = CoreGroupEntity(testEntity)
         val childEntity = GroupEntity.create(session = assertNotNull(session), name = "Child")
@@ -251,7 +251,7 @@ class CoreEntityTest {
 
     @Test
     fun parent_setParentToNull_restoresOriginalParent() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = session, name = "Initial")
         val parentCoreEntity = CoreGroupEntity(testEntity)
         val childEntity = GroupEntity.create(session = session, name = "Child")
@@ -267,7 +267,7 @@ class CoreEntityTest {
 
     @Test
     fun poseInMeters_setPose_updatesEntityPose() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = assertNotNull(session), name = "Initial")
         val coreEntity = CoreGroupEntity(testEntity)
         val newPose = Pose(Vector3(5f, 5f, 5f))
@@ -279,7 +279,7 @@ class CoreEntityTest {
 
     @Test
     fun poseInMeters_setSamePose_doesNotUpdateEntity() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = session, name = "Initial")
         val coreEntity = CoreGroupEntity(testEntity)
         val initialPose = testEntity.getPose()
@@ -293,7 +293,7 @@ class CoreEntityTest {
 
     @Test
     fun enabled_setEnabled_updatesEntityEnabledState() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = assertNotNull(session), name = "Initial")
         val coreEntity = CoreGroupEntity(testEntity)
         testEntity.setEnabled(true)
@@ -305,7 +305,7 @@ class CoreEntityTest {
 
     @Test
     fun scale_setScale_updatesEntityScale() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = assertNotNull(session), name = "Initial")
         val coreEntity = CoreGroupEntity(testEntity)
         val newScale = 2.5f
@@ -317,7 +317,7 @@ class CoreEntityTest {
 
     @Test
     fun alpha_setAlpha_updatesEntityAlpha() {
-        val session = createFakeSession(composeTestRule.activity)
+        val session = composeTestRule.configureFakeSession()
         val testEntity = GroupEntity.create(session = assertNotNull(session), name = "Initial")
         val coreEntity = CoreGroupEntity(testEntity)
         val newAlpha = 0.5f

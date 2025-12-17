@@ -82,7 +82,7 @@ class ColorFunctionTest {
         assertThat(original).isEqualTo(ColorFunction.OpacityMultiplier(0.5f)) // Same value.
 
         // Not equal
-        assertThat(original).isNotEqualTo(null)
+        assertThat(original).isNotNull()
         assertThat(original).isNotEqualTo(ColorFunction.ReplaceColor.withColorIntArgb(0x336699cc))
         assertThat(original).isNotEqualTo(ColorFunction.OpacityMultiplier(0.25f))
     }
@@ -147,7 +147,7 @@ class ColorFunctionTest {
         assertThat(original).isEqualTo(ColorFunction.ReplaceColor.withColorIntArgb(0x336699cc))
 
         // Not equal
-        assertThat(original).isNotEqualTo(null)
+        assertThat(original).isNotNull()
         assertThat(original).isNotEqualTo(ColorFunction.OpacityMultiplier(0.5f))
         assertThat(original).isNotEqualTo(ColorFunction.ReplaceColor.withColorIntArgb(0x11223344))
     }

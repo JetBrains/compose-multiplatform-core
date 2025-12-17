@@ -87,6 +87,7 @@ import java.util.Set;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeWriter {
+    private int mApiLevel;
     protected @NonNull RemoteComposeBuffer mBuffer;
     protected @NonNull RemoteComposeState mState = new RemoteComposeState();
     protected @NonNull RcPlatformServices mPlatform;
@@ -207,7 +208,7 @@ public class RemoteComposeWriter {
      */
     public static @NonNull RemoteComposeWriter obtain(
             int width, int height, @NonNull String contentDescription, @NonNull Profile profile) {
-        return profile.create(new CreationDisplayInfo(width, height, 1f), null);
+        return profile.create(new CreationDisplayInfo(width, height, (int) (1f * 160)), null);
     }
 
     /**
@@ -220,7 +221,7 @@ public class RemoteComposeWriter {
      */
     public static @NonNull RemoteComposeWriter obtain(
             int width, int height, @NonNull Profile profile) {
-        return profile.create(new CreationDisplayInfo(width, height, 1f), null);
+        return profile.create(new CreationDisplayInfo(width, height, (int) (1f * 160)), null);
     }
 
     /**
@@ -278,6 +279,7 @@ public class RemoteComposeWriter {
     public RemoteComposeWriter(@NonNull RcPlatformServices platform, int apiLevel,
             HTag @NonNull ... tags) {
         this.mPlatform = platform;
+        this.mApiLevel = apiLevel;
         mBuffer = new RemoteComposeBuffer(apiLevel);
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
@@ -1957,13 +1959,6 @@ public class RemoteComposeWriter {
             @Nullable String darkName, int darkValue) {
         int lightId = mState.createNextAvailableId();
         int darkId = mState.createNextAvailableId();
-        int light_mode;
-        if (Rc.System.sLightMode == 0f) {
-            light_mode = mState.createNextAvailableId();
-            Rc.System.sLightMode = Utils.asNan(light_mode);
-        } else {
-            light_mode = Utils.idFromNan(Rc.System.sLightMode);
-        }
 
         if (lightName != null) {
             mBuffer.setNamedVariable(lightId, lightName, NamedVariable.COLOR_TYPE);
@@ -1972,11 +1967,20 @@ public class RemoteComposeWriter {
             mBuffer.setNamedVariable(darkId, darkName, NamedVariable.COLOR_TYPE);
         }
 
-        int retId = mState.createNextAvailableId();
         mBuffer.addColor(lightId, lightValue);
         mBuffer.addColor(darkId, darkValue);
-        mBuffer.addFloat(light_mode, 0);
+        return addThemedColor((short) lightId, (short) darkId);
+    }
 
+    /**
+     * This returns a color that is lightId if light theme and dark id if dark theme
+     *
+     * @param lightId the id of the light color
+     * @param darkId  the id of the dark color
+     * @return the id of the color that switches autmaticly
+     */
+    public short addThemedColor(short lightId, short darkId) {
+        int retId = mState.createNextAvailableId();
         setTheme(Rc.Theme.DARK);
         startLoop(0, 0f, 1f, 1f);
         mBuffer.addColorExpression(retId, (short) darkId, (short) lightId, 0);
@@ -1986,7 +1990,6 @@ public class RemoteComposeWriter {
         mBuffer.addColorExpression(retId, (short) darkId, (short) lightId, 1);
         endLoop();
         setTheme(Rc.Theme.UNSPECIFIED);
-
         return (short) retId;
     }
 
@@ -2561,9 +2564,9 @@ public class RemoteComposeWriter {
         int id = mState.dataGetId(placeHolder);
         if (id == -1) {
             id = mState.cacheData(placeHolder);
-            //   TextData.apply(mBuffer, id, text);
+            return mBuffer.createTextFromFloat(id, value, (short) before, (short) after, flags);
         }
-        return mBuffer.createTextFromFloat(id, value, (short) before, (short) after, flags);
+        return id;
     }
 
     /**
@@ -2921,12 +2924,16 @@ public class RemoteComposeWriter {
             m.write(this);
         }
         addContentStart();
-        mBuffer.addCanvasContentStart(-1);
+        if (mApiLevel <= 7) {
+            mBuffer.addCanvasContentStart(-1);
+        }
     }
 
     /** End a canvas */
     public void endCanvas() {
-        mBuffer.addContainerEnd();
+        if (mApiLevel <= 7) {
+            mBuffer.addContainerEnd();
+        }
         mBuffer.addContainerEnd();
         mBuffer.addContainerEnd();
     }
@@ -3311,7 +3318,7 @@ public class RemoteComposeWriter {
             int justificationMode,
             boolean underline,
             boolean strikethrough,
-            @Nullable String[] fontAxis,
+            @NonNull String @Nullable [] fontAxis,
             float @Nullable [] fontAxisValues,
             boolean autosize,
             int flags) {

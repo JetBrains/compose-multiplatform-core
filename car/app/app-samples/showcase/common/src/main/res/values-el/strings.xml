@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Επίδειξη προτύπου καρτέλας"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Καρτέλα μηνύματος"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Καρτέλα πλαισίου"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Καρτέλα στοιχείων χωρισμένων σε ενότητες"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Καρτέλα λίστας"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Καρτέλα πλέγματος με μεγάλο τίτλο καρτέλας"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Καρτέλα αναζήτησης"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Η σειρά μπορεί επίσης να επιλεγεί"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Επιλέχθηκε η δευτερεύουσα ενέργεια σειράς"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Επιλέχθηκε η κύρια ενέργεια σειράς"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Επίδειξη κενής λίστας"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Η λίστα είναι κενή"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Διάφορες επιδείξεις προτύπων"</string>

@@ -295,6 +295,7 @@ constructor(
             frameDistributor.close()
             frameCaptureQueue.close()
             surfaceGraph.close()
+            streamGraph.close()
             audioRestrictionController.removeCameraGraph(this)
             graphScope.cancel()
             Debug.traceStop()

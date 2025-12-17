@@ -27,13 +27,33 @@ import kotlin.collections.Map
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$DerivedSerializableInputFunctions_AppFunctionInventory` : AppFunctionInventory {
   override val functionIdToMetadataMap: Map<String, CompileTimeAppFunctionMetadata> = mapOf(
+    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithBothDerivedSerializableListAndListItemNullable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithBothDerivedSerializableListAndListItemNullableMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithDerivedSerializable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithDerivedSerializableMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithDerivedSerializableList" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithDerivedSerializableListMetadataObject.APP_FUNCTION_METADATA,
-    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializableList" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableListMetadataObject.APP_FUNCTION_METADATA,
-    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithDerivedSerializableListItemNullable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithDerivedSerializableListItemNullableMetadataObject.APP_FUNCTION_METADATA,
-    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithBothDerivedSerializableListAndListItemNullable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithBothDerivedSerializableListAndListItemNullableMetadataObject.APP_FUNCTION_METADATA,
+    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializable" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableMetadataObject.APP_FUNCTION_METADATA,
+    "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializableList" to ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableListMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "com.testdata.LongBaseSerializable",
+          isNullable = true,
+          description = ""
+      )
+
+  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
+      List<AppFunctionDataTypeMetadata> = listOf(
+    COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0,
+  )
+
+  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE: AppFunctionAllOfTypeMetadata =
+      AppFunctionAllOfTypeMetadata(
+          matchAll = COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
+          qualifiedName = "com.testdata.DerivedSerializable",
+          isNullable = true,
+          description = ""
+      )
 
   private val COM_TESTDATA_LONGBASESERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_STRINGTOOPEN:
       AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
@@ -100,34 +120,64 @@ public class `$DerivedSerializableInputFunctions_AppFunctionInventory` : AppFunc
           description = ""
       )
 
-  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
-      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-          referenceDataType = "com.testdata.LongBaseSerializable",
-          isNullable = true,
-          description = ""
-      )
-
-  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
-      List<AppFunctionDataTypeMetadata> = listOf(
-    COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0,
-  )
-
-  private val COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE: AppFunctionAllOfTypeMetadata =
-      AppFunctionAllOfTypeMetadata(
-          matchAll = COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
-          qualifiedName = "com.testdata.DerivedSerializable",
-          isNullable = true,
-          description = ""
-      )
-
   private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    "com.testdata.LongBaseSerializable" to COM_TESTDATA_LONGBASESERIALIZABLE_ALL_OF_DATA_TYPE,
     "com.testdata.DerivedSerializable" to COM_TESTDATA_DERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE,
+    "com.testdata.LongBaseSerializable" to COM_TESTDATA_LONGBASESERIALIZABLE_ALL_OF_DATA_TYPE,
     )
 
   override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
           dataTypes = componentsMetadataDataTypesMap
       )
+
+  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithBothDerivedSerializableListAndListItemNullableMetadataObject {
+    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
+
+    private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE:
+        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+            referenceDataType = "com.testdata.DerivedSerializable",
+            isNullable = true,
+            description = ""
+        )
+
+    private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
+        AppFunctionArrayTypeMetadata(
+            itemType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE,
+            isNullable = true,
+            description = ""
+        )
+
+    private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
+        AppFunctionParameterMetadata(
+            name = "serializable",
+            isRequired = true,
+            dataType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE,
+            description = "",
+        )
+
+    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
+      SERIALIZABLE_PARAMETER_METADATA,
+    )
+
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
+            isNullable = false,
+            description = ""
+        )
+
+    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
+        )
+
+    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
+        CompileTimeAppFunctionMetadata(
+            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithBothDerivedSerializableListAndListItemNullable",
+            isEnabledByDefault = true,
+            schema =  SCHEMA_METADATA,
+            parameters = PARAMETER_METADATA_LIST,
+            response = RESPONSE_METADATA,
+        )
+  }
 
   private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithDerivedSerializableMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
@@ -222,99 +272,6 @@ public class `$DerivedSerializableInputFunctions_AppFunctionInventory` : AppFunc
         )
   }
 
-  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableListMetadataObject {
-    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
-
-    private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "com.testdata.DerivedSerializable",
-            isNullable = false,
-            description = ""
-        )
-
-    private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
-        AppFunctionArrayTypeMetadata(
-            itemType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE,
-            isNullable = true,
-            description = ""
-        )
-
-    private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
-        AppFunctionParameterMetadata(
-            name = "serializable",
-            isRequired = true,
-            dataType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE,
-            description = "",
-        )
-
-    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
-      SERIALIZABLE_PARAMETER_METADATA,
-    )
-
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
-        AppFunctionUnitTypeMetadata(
-            isNullable = false,
-            description = ""
-        )
-
-    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
-            description = ""
-        )
-
-    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
-        CompileTimeAppFunctionMetadata(
-            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializableList",
-            isEnabledByDefault = true,
-            schema =  SCHEMA_METADATA,
-            parameters = PARAMETER_METADATA_LIST,
-            response = RESPONSE_METADATA,
-        )
-  }
-
-  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableMetadataObject {
-    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
-
-    private val PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE:
-        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-            referenceDataType = "com.testdata.DerivedSerializable",
-            isNullable = true,
-            description = ""
-        )
-
-    private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
-        AppFunctionParameterMetadata(
-            name = "serializable",
-            isRequired = true,
-            dataType = PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE,
-            description = "",
-        )
-
-    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
-      SERIALIZABLE_PARAMETER_METADATA,
-    )
-
-    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
-        AppFunctionUnitTypeMetadata(
-            isNullable = false,
-            description = ""
-        )
-
-    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
-            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
-            description = ""
-        )
-
-    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
-        CompileTimeAppFunctionMetadata(
-            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializable",
-            isEnabledByDefault = true,
-            schema =  SCHEMA_METADATA,
-            parameters = PARAMETER_METADATA_LIST,
-            response = RESPONSE_METADATA,
-        )
-  }
-
   private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithDerivedSerializableListItemNullableMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
@@ -365,13 +322,56 @@ public class `$DerivedSerializableInputFunctions_AppFunctionInventory` : AppFunc
         )
   }
 
-  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithBothDerivedSerializableListAndListItemNullableMetadataObject {
+  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableMetadataObject {
+    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
+
+    private val PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE:
+        AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+            referenceDataType = "com.testdata.DerivedSerializable",
+            isNullable = true,
+            description = ""
+        )
+
+    private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
+        AppFunctionParameterMetadata(
+            name = "serializable",
+            isRequired = true,
+            dataType = PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE,
+            description = "",
+        )
+
+    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
+      SERIALIZABLE_PARAMETER_METADATA,
+    )
+
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
+            isNullable = false,
+            description = ""
+        )
+
+    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
+        )
+
+    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
+        CompileTimeAppFunctionMetadata(
+            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializable",
+            isEnabledByDefault = true,
+            schema =  SCHEMA_METADATA,
+            parameters = PARAMETER_METADATA_LIST,
+            response = RESPONSE_METADATA,
+        )
+  }
+
+  private object ComTestdataDerivedSerializableInputFunctionsSimpleFunctionWithNullableDerivedSerializableListMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
 
     private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.DerivedSerializable",
-            isNullable = true,
+            isNullable = false,
             description = ""
         )
 
@@ -407,7 +407,7 @@ public class `$DerivedSerializableInputFunctions_AppFunctionInventory` : AppFunc
 
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
-            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithBothDerivedSerializableListAndListItemNullable",
+            id = "com.testdata.DerivedSerializableInputFunctions#simpleFunctionWithNullableDerivedSerializableList",
             isEnabledByDefault = true,
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,

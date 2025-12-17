@@ -20,7 +20,7 @@ package androidx.car.app.activity {
 
 package androidx.car.app.activity.renderer.surface {
 
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class LegacySurfacePackage {
+  @androidx.car.app.annotations.CarProtocol public final class LegacySurfacePackage {
     ctor public LegacySurfacePackage(androidx.car.app.activity.renderer.surface.SurfaceControlCallback);
   }
 
@@ -32,7 +32,7 @@ package androidx.car.app.activity.renderer.surface {
     method public void setSurfaceWrapper(androidx.car.app.activity.renderer.surface.SurfaceWrapper);
   }
 
-  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class SurfaceWrapper {
+  @androidx.car.app.annotations.CarProtocol public final class SurfaceWrapper {
     ctor public SurfaceWrapper(android.os.IBinder?, @Dimension int, @Dimension int, int, int, android.view.Surface);
     method public int getDensityDpi();
     method public int getDisplayId();

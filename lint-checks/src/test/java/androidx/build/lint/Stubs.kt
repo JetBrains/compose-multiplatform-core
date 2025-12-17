@@ -563,7 +563,7 @@ package androidx.annotation
     AnnotationTarget.FIELD
 )
 public annotation class ChecksAconfigFlag (
-    val flag: String
+    val value: String
 )
         """
                 )

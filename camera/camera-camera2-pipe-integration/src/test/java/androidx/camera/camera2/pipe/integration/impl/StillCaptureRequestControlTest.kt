@@ -439,6 +439,7 @@ class StillCaptureRequestControlTest {
                 cameraGraphProvider = { fakeCameraGraph },
                 cameraStateAdapter = cameraStateAdapter,
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
                 defaultSurfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
             )
         fakeConfigAdapter =

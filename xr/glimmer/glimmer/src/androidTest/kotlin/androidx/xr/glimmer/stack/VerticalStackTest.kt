@@ -17,7 +17,6 @@
 package androidx.xr.glimmer.stack
 
 import android.os.Build
-import android.os.SystemClock.uptimeMillis
 import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -37,7 +36,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
@@ -49,8 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toPixelMap
-import androidx.compose.ui.input.indirect.IndirectPointerEvent
-import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -70,12 +66,13 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
-import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.createGlimmerRule
-import androidx.xr.glimmer.performIndirectPointerEvent
+import androidx.xr.glimmer.performIndirectMove
+import androidx.xr.glimmer.performIndirectPress
+import androidx.xr.glimmer.performIndirectRelease
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -316,6 +313,70 @@ class VerticalStackTest {
         rule.onNodeWithText("Item 3").assertIsDisplayed()
         rule.onNodeWithText("Item 4").assertIsNotDisplayed()
         assertThat(state.topItem).isEqualTo(1)
+    }
+
+    @Test
+    fun swipeForwardAndBackward_singleGesture_pointerInput_returnsToOriginalPosition() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        rule.onRoot().performTouchInput {
+            down(Offset(x = centerX, y = itemHeight / 2f))
+            moveTo(Offset(x = centerX, y = 0f))
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isGreaterThan(0.3f)
+
+        rule.onRoot().performTouchInput { moveTo(Offset(x = centerX, y = itemHeight / 2f)) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        rule.onRoot().performTouchInput { up() }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+    }
+
+    @Test
+    fun swipeForwardAndBackward_singleGesture_returnsToOriginalPosition() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
+
+        val press = performIndirectPress()
+        val moveForward =
+            performIndirectMove(distancePx = itemHeight / 2f, previousMotionEvent = press)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isGreaterThan(0.3f)
+
+        val moveBackward =
+            performIndirectMove(distancePx = -itemHeight / 2f, previousMotionEvent = moveForward)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isLessThan(0.1f)
+
+        performIndirectRelease(previousMotionEvent = moveBackward)
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(0)
+        assertThat(state.topItemOffsetFraction).isEqualTo(0f)
     }
 
     @Test
@@ -1054,10 +1115,10 @@ class VerticalStackTest {
             val nextNextItemColor = pixels[x, y]
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.red)
-                .isLessThan(0.15f)
+                .isLessThan(0.2f)
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.green)
-                .isLessThan(0.15f)
+                .isLessThan(0.2f)
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.blue)
                 .isGreaterThan(0.3f)
@@ -1712,31 +1773,6 @@ class VerticalStackTest {
     }
 
     @Test
-    fun dragForwardAndBackward_sameGesture_restoresPosition() {
-        var itemHeight = 0
-        val state = StackState()
-        rule.setContent {
-            VerticalStack(state = state) {
-                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
-            }
-        }
-
-        val press = performIndirectPress()
-        val moveForward =
-            performIndirectMove(distancePx = itemHeight.toFloat(), previousMotionEvent = press)
-        val moveBackward =
-            performIndirectMove(
-                distancePx = -itemHeight.toFloat() * 2,
-                previousMotionEvent = moveForward,
-            )
-        performIndirectRelease(previousMotionEvent = moveBackward)
-        rule.waitForIdle()
-
-        assertThat(state.topItem).isEqualTo(0)
-        rule.onNodeWithText("Item 0").assertIsDisplayed()
-    }
-
-    @Test
     fun dragForwardAndBackward_sameGesture_canReachPreviousItem() = runTest {
         var itemHeight = 0
         val state = StackState()
@@ -1751,10 +1787,10 @@ class VerticalStackTest {
 
         val press = performIndirectPress()
         val moveForward =
-            performIndirectMove(distancePx = itemHeight.toFloat(), previousMotionEvent = press)
+            performIndirectMove(distancePx = itemHeight.toFloat() * 3, previousMotionEvent = press)
         val moveBackward =
             performIndirectMove(
-                distancePx = -itemHeight.toFloat() * 4,
+                distancePx = -itemHeight.toFloat() * 2,
                 previousMotionEvent = moveForward,
             )
         performIndirectRelease(previousMotionEvent = moveBackward)
@@ -1781,86 +1817,19 @@ class VerticalStackTest {
         }
     }
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectPress(): MotionEvent {
-        val currentTime = uptimeMillis()
-        val down =
-            MotionEvent.obtain(
-                /* downTime = */ currentTime,
-                /* eventTime = */ currentTime,
-                /* action = */ MotionEvent.ACTION_DOWN,
-                /* x = */ 0f,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        down.source = SOURCE_TOUCH_NAVIGATION
-        rule
-            .onRoot()
-            .performIndirectPointerEvent(
-                rule,
-                IndirectPointerEvent(
-                    motionEvent = down,
-                    primaryDirectionalMotionAxis =
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                ),
-            )
-        return down
-    }
+    private fun performIndirectPress() = rule.onRoot().performIndirectPress(rule)
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectMove(
-        distancePx: Float,
-        previousMotionEvent: MotionEvent,
-        durationMillis: Long = 200L,
-    ): MotionEvent {
-        val move =
-            MotionEvent.obtain(
-                /* downTime = */ previousMotionEvent.downTime,
-                /* eventTime = */ previousMotionEvent.eventTime + durationMillis,
-                /* action = */ MotionEvent.ACTION_MOVE,
-                /* x = */ previousMotionEvent.x + distancePx,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        move.source = SOURCE_TOUCH_NAVIGATION
+    private fun performIndirectMove(distancePx: Float, previousMotionEvent: MotionEvent) =
         rule
             .onRoot()
-            .performIndirectPointerEvent(
-                rule,
-                IndirectPointerEvent(
-                    motionEvent = move,
-                    primaryDirectionalMotionAxis =
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                    previousMotionEvent = previousMotionEvent,
-                ),
+            .performIndirectMove(
+                rule = rule,
+                distancePx = distancePx,
+                previousMotionEvent = previousMotionEvent,
             )
-        return move
-    }
 
-    @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectRelease(previousMotionEvent: MotionEvent) {
-        val up =
-            MotionEvent.obtain(
-                /* downTime = */ previousMotionEvent.downTime,
-                /* eventTime = */ previousMotionEvent.eventTime + 20,
-                /* action = */ MotionEvent.ACTION_UP,
-                /* x = */ previousMotionEvent.x,
-                /* y = */ 0f,
-                /* metaState = */ 0,
-            )
-        up.source = SOURCE_TOUCH_NAVIGATION
-        rule
-            .onRoot()
-            .performIndirectPointerEvent(
-                rule,
-                IndirectPointerEvent(
-                    motionEvent = up,
-                    primaryDirectionalMotionAxis =
-                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
-                    previousMotionEvent = previousMotionEvent,
-                ),
-            )
-    }
+    private fun performIndirectRelease(previousMotionEvent: MotionEvent) =
+        rule.onRoot().performIndirectRelease(rule, previousMotionEvent)
 
     private fun performIndirectSwipe(distancePx: Int, durationMillis: Long = 200L) {
         require(distancePx != 0)

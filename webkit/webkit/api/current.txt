@@ -112,8 +112,8 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDataDirectorySuffix(android.content.Context, String);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDirectoryBasePaths(android.content.Context, java.io.File, java.io.File);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setPartitionedCookiesEnabled(android.content.Context, boolean);
-    method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupMode(android.content.Context, @SuppressCompatibility int);
-    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupModeV2(android.content.Context, @SuppressCompatibility int);
+    method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupMode(android.content.Context, int);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupModeV2(android.content.Context, int);
     field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC = 3; // 0x3
     field @Deprecated @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS = 3; // 0x3
     field @Deprecated @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final int UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS = 3; // 0x3
@@ -327,6 +327,7 @@ package androidx.webkit {
     method public String? getArchitecture();
     method public int getBitness();
     method public java.util.List<androidx.webkit.UserAgentMetadata.BrandVersion!> getBrandVersionList();
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public java.util.List<java.lang.String!> getFormFactors();
     method public String? getFullVersion();
     method public String? getModel();
     method public String? getPlatform();
@@ -334,6 +335,13 @@ package androidx.webkit {
     method public boolean isMobile();
     method public boolean isWow64();
     field public static final int BITNESS_DEFAULT = 0; // 0x0
+    field public static final String FORM_FACTOR_AUTOMOTIVE = "Automotive";
+    field public static final String FORM_FACTOR_DESKTOP = "Desktop";
+    field public static final String FORM_FACTOR_EINK = "EInk";
+    field public static final String FORM_FACTOR_MOBILE = "Mobile";
+    field public static final String FORM_FACTOR_TABLET = "Tablet";
+    field public static final String FORM_FACTOR_WATCH = "Watch";
+    field public static final String FORM_FACTOR_XR = "XR";
   }
 
   public static final class UserAgentMetadata.BrandVersion {
@@ -358,6 +366,7 @@ package androidx.webkit {
     method public androidx.webkit.UserAgentMetadata.Builder setArchitecture(String?);
     method public androidx.webkit.UserAgentMetadata.Builder setBitness(int);
     method public androidx.webkit.UserAgentMetadata.Builder setBrandVersionList(java.util.List<androidx.webkit.UserAgentMetadata.BrandVersion!>);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public androidx.webkit.UserAgentMetadata.Builder setFormFactors(java.util.List<java.lang.String!>);
     method public androidx.webkit.UserAgentMetadata.Builder setFullVersion(String?);
     method public androidx.webkit.UserAgentMetadata.Builder setMobile(boolean);
     method public androidx.webkit.UserAgentMetadata.Builder setModel(String?);
@@ -467,7 +476,7 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.PAYMENT_REQUEST, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setPaymentRequestEnabled(android.webkit.WebSettings, boolean);
     method @Deprecated @RequiresFeature(name="REQUESTED_WITH_HEADER_ALLOW_LIST", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setRequestedWithHeaderOriginAllowList(android.webkit.WebSettings, java.util.Set<java.lang.String!>);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_ENABLE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setSafeBrowsingEnabled(android.webkit.WebSettings, boolean);
-    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.SPECULATIVE_LOADING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalSpeculativeLoading public static void setSpeculativeLoadingStatus(android.webkit.WebSettings, @SuppressCompatibility int);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.SPECULATIVE_LOADING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalSpeculativeLoading public static void setSpeculativeLoadingStatus(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.USER_AGENT_METADATA, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setUserAgentMetadata(android.webkit.WebSettings, androidx.webkit.UserAgentMetadata);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_AUTHENTICATION, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setWebAuthenticationSupport(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setWebViewMediaIntegrityApiStatus(android.webkit.WebSettings, androidx.webkit.WebViewMediaIntegrityApiStatusConfig);
@@ -536,7 +545,7 @@ package androidx.webkit {
   @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public final class WebViewBuilder {
     ctor public WebViewBuilder(int);
     method public androidx.webkit.WebViewBuilder addAllowlist(androidx.webkit.RestrictionAllowlist);
-    method @RequiresFeature(name="WEBVIEW_BUILDER_EXPERIMENTAL_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public android.webkit.WebView build(android.content.Context);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public android.webkit.WebView build(android.content.Context);
     method public androidx.webkit.WebViewBuilder restrictJavaScriptInterfaces();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public androidx.webkit.WebViewBuilder setProfile(String);
     field public static final int PRESET_LEGACY = 0; // 0x0
@@ -638,6 +647,7 @@ package androidx.webkit {
     field public static final String MULTI_PROFILE = "MULTI_PROFILE";
     field public static final String MUTE_AUDIO = "MUTE_AUDIO";
     field public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
+    field @SuppressCompatibility @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static final String NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS = "NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS";
     field @SuppressCompatibility @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED = "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
     field @SuppressCompatibility @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
     field public static final String OFF_SCREEN_PRERASTER = "OFF_SCREEN_PRERASTER";
@@ -678,8 +688,10 @@ package androidx.webkit {
     field public static final String START_SAFE_BROWSING = "START_SAFE_BROWSING";
     field public static final String TRACING_CONTROLLER_BASIC_USAGE = "TRACING_CONTROLLER_BASIC_USAGE";
     field public static final String USER_AGENT_METADATA = "USER_AGENT_METADATA";
+    field public static final String USER_AGENT_METADATA_FORM_FACTORS = "USER_AGENT_METADATA_FORM_FACTORS";
     field public static final String VISUAL_STATE_CALLBACK = "VISUAL_STATE_CALLBACK";
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalWarmUpRendererProcess public static final String WARM_UP_RENDERER_PROCESS = "WARM_UP_RENDERER_PROCESS";
+    field @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
     field public static final String WEBVIEW_MEDIA_INTEGRITY_API_STATUS = "WEBVIEW_MEDIA_INTEGRITY_API_STATUS";
     field public static final String WEB_AUTHENTICATION = "WEB_AUTHENTICATION";
     field public static final String WEB_MESSAGE_ARRAY_BUFFER = "WEB_MESSAGE_ARRAY_BUFFER";

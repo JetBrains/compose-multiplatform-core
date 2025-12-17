@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -33,11 +34,10 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSceneRuntime
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.session
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -93,8 +93,9 @@ class MovePolicyTest {
 
     @Test
     fun movable_scaleWithDistance_setTrue() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
         composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
@@ -104,14 +105,14 @@ class MovePolicyTest {
             }
         }
 
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isTrue()
+        assertThat(scalesInZ.single()).isTrue()
     }
 
     @Test
     fun movable_scaleWithDistance_setFalse() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
         composeTestRule.setContent {
             Subspace {
                 SpatialPanel(
@@ -120,14 +121,15 @@ class MovePolicyTest {
                 ) {}
             }
         }
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isFalse()
+
+        assertThat(scalesInZ.single()).isFalse()
     }
 
     @Test
     fun movable_scaleWithDistance_scaleFlip() {
-        val runtime = TestSceneRuntime.create(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        val scalesInZ = mutableListOf<Boolean>()
+        composeTestRule.configureFakeSessionWithWatch { _, scaleInZ, _ -> scalesInZ.add(scaleInZ) }
+
         composeTestRule.setContent {
             Subspace {
                 var scaleWithDistance by remember { mutableStateOf(false) }
@@ -145,15 +147,15 @@ class MovePolicyTest {
                 }
             }
         }
-        assertThat(runtime.scalesInZ.size).isEqualTo(1)
-        assertThat(runtime.scalesInZ[0]).isFalse()
+
+        assertThat(scalesInZ.single()).isFalse()
 
         composeTestRule.onNodeWithTag("button").performClick()
         composeTestRule.waitForIdle()
 
-        assertThat(runtime.scalesInZ.size).isEqualTo(2)
-        assertThat(runtime.scalesInZ[0]).isFalse()
-        assertThat(runtime.scalesInZ[1]).isTrue()
+        assertThat(scalesInZ.size).isEqualTo(2)
+        assertThat(scalesInZ[0]).isFalse()
+        assertThat(scalesInZ[1]).isTrue()
     }
 
     @Test
@@ -424,5 +426,32 @@ class MovePolicyTest {
             composeTestRule.onSubspaceNodeWithTag(testTag).fetchSemanticsNode().components
         assertNotNull(components)
         assertEquals(0, components.size)
+    }
+
+    private fun AndroidComposeTestRule<*, *>.configureFakeSessionWithWatch(
+        createMovableComponent:
+            ((systemMovable: Boolean, scaleInZ: Boolean, userAnchorable: Boolean) -> Unit)? =
+            null
+    ) {
+        configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override fun createMovableComponent(
+                        systemMovable: Boolean,
+                        scaleInZ: Boolean,
+                        userAnchorable: Boolean,
+                    ): androidx.xr.scenecore.runtime.MovableComponent =
+                        runtime
+                            .createMovableComponent(systemMovable, scaleInZ, userAnchorable)
+                            .also {
+                                createMovableComponent?.invoke(
+                                    systemMovable,
+                                    scaleInZ,
+                                    userAnchorable,
+                                )
+                            }
+                }
+            }
+        )
     }
 }

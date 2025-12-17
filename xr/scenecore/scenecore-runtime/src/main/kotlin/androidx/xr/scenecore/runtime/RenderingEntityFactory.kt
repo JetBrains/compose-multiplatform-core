@@ -36,7 +36,7 @@ public interface RenderingEntityFactory {
      * A factory function to create a SceneCore GltfEntity. The parent may be the activity space or
      * GltfEntity in the scene.
      */
-    public fun createGltfEntity(feature: GltfFeature, pose: Pose, parentEntity: Entity): GltfEntity
+    public fun createGltfEntity(feature: GltfFeature, pose: Pose, parentEntity: Entity?): GltfEntity
 
     /**
      * Factory method for SurfaceEntity.
@@ -49,6 +49,6 @@ public interface RenderingEntityFactory {
     public fun createSurfaceEntity(
         feature: SurfaceFeature,
         pose: Pose,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity
 }

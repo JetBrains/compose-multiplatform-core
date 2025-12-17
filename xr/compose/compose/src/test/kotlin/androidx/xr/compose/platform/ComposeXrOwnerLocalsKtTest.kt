@@ -22,8 +22,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.session
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
 import org.junit.Ignore
@@ -49,8 +47,6 @@ class ComposeXrOwnerLocalsKtTest {
 
     @Test
     fun composeXrOwnerLocals_activityContext_returnsNonNull() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-
         composeTestRule.setContent { assertThat(LocalComposeXrOwners.current).isNotNull() }
     }
 

@@ -19,6 +19,7 @@ package androidx.pdf.view
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -46,6 +47,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -95,6 +97,10 @@ class PdfViewFormFillingTest {
 
     @Test
     fun testInteractionWithClickTypeFormWidget() = runTest {
+        assumeFalse(
+            "Test fails on cuttlefish b/466080956",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val fakePdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(DEFAULT_WIDTH, DEFAULT_HEIGHT) },

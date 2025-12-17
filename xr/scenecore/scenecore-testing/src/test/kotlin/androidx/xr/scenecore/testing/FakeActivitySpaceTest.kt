@@ -23,6 +23,7 @@ import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,10 +102,14 @@ class FakeActivitySpaceTest {
         val hitTestFilter = ScenePose.HitTestFilter.SELF_SCENE
 
         underTest.activitySpaceHitTestResult = extensionsHitTestResult
-        val hitTestResult =
-            underTest
-                .hitTestRelativeToActivityPose(Vector3.One, Vector3.One, hitTestFilter, underTest)
-                .get()
+        val hitTestResult = runBlocking {
+            underTest.hitTestRelativeToActivityPose(
+                Vector3.One,
+                Vector3.One,
+                hitTestFilter,
+                underTest,
+            )
+        }
 
         assertThat(hitTestResult.distance).isEqualTo(distance)
         assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)

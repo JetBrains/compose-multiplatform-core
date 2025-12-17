@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import static java.util.stream.Collectors.toCollection;
 
+import androidx.annotation.RestrictTo;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.ScenePose;
 
@@ -37,7 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * SpatialSceneRuntime}.
  */
 @SuppressWarnings("BanConcurrentHashMap")
-final class EntityManager {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+// TODO(b/452961674): Review RestrictTo annotations in SceneCore.
+public final class EntityManager {
     private final Map<Node, Entity> mNodeEntityMap = new ConcurrentHashMap<>();
     private final List<ScenePose> mSystemSpaces = new ArrayList<>();
 

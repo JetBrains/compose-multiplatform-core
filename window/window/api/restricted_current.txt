@@ -825,8 +825,10 @@ package androidx.window.layout {
   public interface WindowMetricsCalculator {
     method public androidx.window.layout.WindowMetrics computeCurrentWindowMetrics(android.app.Activity activity);
     method public default androidx.window.layout.WindowMetrics computeCurrentWindowMetrics(@UiContext android.content.Context context);
+    method public default androidx.window.layout.WindowMetrics? computeCurrentWindowMetricsOrNull(@UiContext android.content.Context context);
     method public androidx.window.layout.WindowMetrics computeMaximumWindowMetrics(android.app.Activity activity);
     method public default androidx.window.layout.WindowMetrics computeMaximumWindowMetrics(@UiContext android.content.Context context);
+    method public default androidx.window.layout.WindowMetrics? computeMaximumWindowMetricsOrNull(@UiContext android.content.Context context);
     method public static androidx.window.layout.WindowMetricsCalculator getOrCreate();
     field public static final androidx.window.layout.WindowMetricsCalculator.Companion Companion;
   }

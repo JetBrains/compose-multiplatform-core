@@ -104,7 +104,7 @@ public class InteractableComponentImplTest {
 
         assertThat(entity.addComponent(interactableComponent)).isTrue();
 
-        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
+        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).mNode);
 
         assertThat(node.getInputListener()).isNotNull();
         assertThat(node.getInputExecutor()).isEqualTo(mFakeExecutor);
@@ -115,7 +115,8 @@ public class InteractableComponentImplTest {
         sendInputEvent(node, inputEvent);
         mFakeExecutor.runAll();
 
-        assertThat(((AndroidXrEntity) entity).mInputEventListenerMap).isNotEmpty();
+        assertThat(((AndroidXrEntity) entity).getInputEventListenerMap$scenecore_spatial_core())
+                .isNotEmpty();
         verify(inputEventListener).onInputEvent(any());
     }
 
@@ -129,7 +130,7 @@ public class InteractableComponentImplTest {
 
         assertThat(entity.addComponent(interactableComponent)).isTrue();
 
-        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
+        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).mNode);
 
         assertThat(node.getInputListener()).isNotNull();
         assertThat(node.getInputExecutor()).isEqualTo(mFakeExecutor);
@@ -140,7 +141,8 @@ public class InteractableComponentImplTest {
         sendInputEvent(node, inputEvent);
         mFakeExecutor.runAll();
 
-        assertThat(((AndroidXrEntity) entity).mInputEventListenerMap).isNotEmpty();
+        assertThat(((AndroidXrEntity) entity).getInputEventListenerMap$scenecore_spatial_core())
+                .isNotEmpty();
         verify(inputEventListener).onInputEvent(any());
 
         entity.removeComponent(interactableComponent);

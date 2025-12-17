@@ -1916,7 +1916,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      *
      * @param <T> the type of VideoOutput
      */
-    @SuppressWarnings("ObjectToString")
+    @SuppressWarnings({"ObjectToString", "HiddenSuperclass"})
     public static final class Builder<T extends VideoOutput> implements
             UseCaseConfig.Builder<VideoCapture<T>, VideoCaptureConfig<T>, Builder<T>>,
             ImageOutputConfig.Builder<Builder<T>>, ImageInputConfig.Builder<Builder<T>>,

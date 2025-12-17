@@ -67,6 +67,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -255,6 +256,10 @@ class GLRendererTest {
 
     @Test
     fun testDetachExecutesMultiplePendingRequests() {
+        assumeFalse(
+            "Test fails on cuttlefish b/463747727",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val numRenders = 4
         val latch = CountDownLatch(numRenders)
         val renderCount = AtomicInteger(0)

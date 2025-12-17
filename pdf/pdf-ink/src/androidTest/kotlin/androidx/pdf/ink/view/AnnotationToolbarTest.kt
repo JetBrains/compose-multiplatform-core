@@ -17,6 +17,7 @@
 package androidx.pdf.ink.view
 
 import android.content.Context
+import android.os.Build
 import android.view.ViewGroup.LayoutParams
 import androidx.pdf.PdfTestActivity
 import androidx.pdf.ink.R
@@ -44,6 +45,7 @@ import kotlin.test.assertNotNull
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -201,6 +203,10 @@ class AnnotationToolbarTest {
 
     @Test
     fun testToggleAnnotationVisibility_disablesOtherTools() {
+        assumeFalse(
+            "Test fails on cuttlefish b/463749205",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         var toggleButton: AnnotationToolView? = null
         setupAnnotationToolbar {
             toggleButton = it.findViewById(R.id.toggle_annotation_button)

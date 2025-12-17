@@ -64,6 +64,12 @@ import org.xmlpull.v1.XmlPullParserException
  * </wearwidget-provider>
  * ```
  *
+ * For container types, see [ContainerInfo.ContainerType]. In XML metadata for your widgets, these
+ * should be referenced by using the public integer resources
+ * `@integer/glance_wear_container_type_large` and `@integer/glance_wear_container_type_small`.
+ * These correspond to the integer constants [ContainerInfo.CONTAINER_TYPE_LARGE] and
+ * [ContainerInfo.CONTAINER_TYPE_SMALL].
+ *
  * @property providerService The [ComponentName] of this widget provider.
  * @property label The label of this widget.
  * @property description The description of this widget.

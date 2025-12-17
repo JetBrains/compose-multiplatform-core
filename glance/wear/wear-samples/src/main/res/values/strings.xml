@@ -16,6 +16,7 @@
 
 <resources>
     <string name="app_name">Widget AX samples</string>
-    <string name="widget_label">AX Hello widget</string>
+    <string name="hello_widget_label">AX Hello widget</string>
+    <string name="hello_widget_description">AX Hello widget sample</string>
     <string name="hello">Hello Wear Widget!</string>
 </resources>

@@ -41,7 +41,7 @@ import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
@@ -79,7 +79,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         setContentView(R.layout.activity_head_locked_ui)
 
         // Create session
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(
             Config(

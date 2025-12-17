@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 @RemoteComposable
-public fun AvatarImage(
+public fun RemoteAvatarImage(
     avatar: RemoteBitmap,
     contentDescription: RemoteString?,
     modifier: RemoteModifier = RemoteModifier,
@@ -86,7 +86,7 @@ public fun AvatarImage(
  */
 @Composable
 @RemoteComposable
-public fun BackgroundImage(
+public fun RemoteBackgroundImage(
     background: RemoteBitmap,
     contentDescription: RemoteString?,
     modifier: RemoteModifier = RemoteModifier,

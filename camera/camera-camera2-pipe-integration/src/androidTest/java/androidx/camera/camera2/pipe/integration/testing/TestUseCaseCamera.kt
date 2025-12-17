@@ -19,10 +19,7 @@ package androidx.camera.camera2.pipe.integration.testing
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
-import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -36,6 +33,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpInactiveSu
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseCameraConfig
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
@@ -104,28 +102,23 @@ class TestUseCaseCamera(
                 cameraMetadata = cameraMetadata,
             )
 
-        val creationResult =
-            configProvider.create(
-                operatingMode =
-                    sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
-                        when (sessionConfig.sessionType) {
-                            SESSION_REGULAR -> OperatingMode.NORMAL
-                            SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
-                            else -> OperatingMode.custom(sessionConfig.sessionType)
-                        }
-                    } ?: OperatingMode.NORMAL,
-                sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull(),
-                surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
-                surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
-            )
         val cameraStateAdapter = CameraStateAdapter()
         val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
-
+        val useCaseCameraConfig =
+            UseCaseCameraConfig.create(
+                useCases = useCases,
+                cameraGraphConfigProvider = configProvider,
+                cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
+                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                sessionConfigAdapter = sessionConfigAdapter,
+                isExtensions = false,
+                sessionProcessor = null,
+            )
         useCaseGraphContext =
             UseCaseGraphContext(
-                cameraGraphProvider = { cameraPipe.createCameraGraph(creationResult.config) },
+                cameraGraphProvider = { useCaseCameraConfig.provideCameraGraph() },
                 cameraStateAdapter = cameraStateAdapter,
-                streamConfigMap = creationResult.streamConfigMap,
+                streamConfigMapProvider = { useCaseCameraConfig.provideStreamConfigMap() },
                 graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
             )
 

@@ -53,6 +53,8 @@ import kotlin.random.Random
  * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
  *   appearance
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
+ * @param onFirstContentLoad a callback that is invoked when the document's content is first loaded
+ *   It resets and trigger again if a new document is loaded or if the underlying view is recreated.
  * @param appendContextMenuComponents a callback that can be used to add context menu items.
  * @param filterContextMenuComponents a callback that can be used to filter context menu items. This
  *   will be executed on the complete list of menu items after [appendContextMenuComponents] is
@@ -63,8 +65,8 @@ public fun PdfViewer(
     pdfDocument: PdfDocument?,
     state: PdfViewerState,
     modifier: Modifier = Modifier,
-    minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
-    maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
+    minZoom: Float = PdfView.MIN_PERMISSIBLE_ZOOM,
+    maxZoom: Float = PdfView.MAX_PERMISSIBLE_ZOOM,
     verticalAlignment: Int = PdfView.VERTICAL_ALIGNMENT_CENTER,
     pagesPerRow: Int = PdfView.SINGLE_PAGE,
     horizontalPageSpacing: Dp = 8.dp,
@@ -73,6 +75,7 @@ public fun PdfViewer(
         FastScrollConfiguration.withDrawableAndDimensionIds(),
     appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
     filterContextMenuComponents: ((ContextMenuComponent) -> Boolean)? = null,
+    onFirstContentLoad: (() -> Unit)? = null,
     onUrlLinkClicked: ((Uri) -> Boolean)? = null,
 ) {
     // Create and remember an ID for PdfView so that it retains state across compositions and
@@ -103,6 +106,9 @@ public fun PdfViewer(
                 this.id = pdfViewId
                 state.pdfView = this
                 setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
+                addOnFirstContentLoadListener(
+                    PdfViewerOnFirstContentLoadListener(onFirstContentLoad)
+                )
                 addSelectionMenuItemPreparer(
                     PdfViewerSelectionMenuPreparer(
                         appendContextMenuComponents,
@@ -249,6 +255,17 @@ private class PdfViewerLinkClickListener(private val behavior: ((Uri) -> Boolean
     PdfView.LinkClickListener {
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
         return behavior?.invoke(externalLink.uri) ?: false
+    }
+}
+
+/**
+ * Bridge between the lambda-based [PdfViewer] API for custom "first content load" callback and the
+ * listener interface [PdfView] API for the same.
+ */
+private class PdfViewerOnFirstContentLoadListener(private val behavior: (() -> Unit)?) :
+    PdfView.OnFirstContentLoadListener {
+    override fun onFirstContentLoad() {
+        behavior?.invoke()
     }
 }
 

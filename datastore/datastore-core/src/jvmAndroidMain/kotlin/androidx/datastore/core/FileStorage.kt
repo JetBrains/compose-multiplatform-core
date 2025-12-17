@@ -110,19 +110,18 @@ internal class FileStorageConnection<T>(
             val scratchFile = File(file.absolutePath + ".tmp")
             try {
                 FileWriteScope(scratchFile, serializer).use { block(it) }
-                if (scratchFile.exists() && !scratchFile.atomicMoveTo(file)) {
-                    throw IOException(
-                        "Unable to rename $scratchFile to $file. " +
-                            "This likely means that there are multiple instances of DataStore " +
-                            "for this file. Ensure that you are only creating a single instance of " +
-                            "datastore for this file."
-                    )
-                }
-            } catch (ex: IOException) {
+                if (scratchFile.exists()) scratchFile.atomicMoveTo(file)
+            } catch (cause: IOException) {
                 if (scratchFile.exists()) {
                     scratchFile.delete() // Swallow failure to delete
                 }
-                throw ex
+                throw IOException(
+                    "Unable to rename $scratchFile to $file. " +
+                        "This likely means that there are multiple instances of DataStore " +
+                        "for this file. Ensure that you are only creating a single instance of " +
+                        "datastore for this file.",
+                    cause,
+                )
             }
         }
     }

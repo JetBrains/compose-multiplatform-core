@@ -41,6 +41,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.IntRange
 import androidx.annotation.MainThread
@@ -89,6 +90,7 @@ import java.util.Queue
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -177,8 +179,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             pageLayoutManager?.let {
                 val lastVisiblePage = fullyVisiblePages.lower
                 updateLayoutStrategy()
-                // Restore scroll position after layout change.
-                scrollToPage(lastVisiblePage)
+                // Restore scroll position, prioritizing active selection.
+                val firstSelectedBound = currentSelection?.bounds?.firstOrNull()
+                if (firstSelectedBound != null) {
+                    scrollToPage(firstSelectedBound.pageNum)
+                    updateSelectionActionModeVisibility()
+                } else {
+                    scrollToPage(lastVisiblePage)
+                }
             }
         }
 
@@ -267,11 +275,43 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     public var isFormFillingTooltipEnabled: Boolean = false
 
-    /** The maximum scaling factor that can be applied to this View using the [zoom] property */
-    public var maxZoom: Float = DEFAULT_MAX_ZOOM
+    /**
+     * The maximum scaling factor that can be applied to this View using the [zoom] property. This
+     * value is a multiplier relative to the content's natural size, where '1.0' represents 100%
+     * (1x) zoom (similarly '2.5' represents 250% (2.5x) zoom).
+     *
+     * The value is automatically clamped to stay within the defined range.
+     */
+    @get:FloatRange(from = MIN_PERMISSIBLE_ZOOM.toDouble(), to = MAX_PERMISSIBLE_ZOOM.toDouble())
+    public var maxZoom: Float = MAX_PERMISSIBLE_ZOOM
+        set(
+            @FloatRange(
+                from = MIN_PERMISSIBLE_ZOOM.toDouble(),
+                to = MAX_PERMISSIBLE_ZOOM.toDouble(),
+            )
+            value
+        ) {
+            field = min(value, MAX_PERMISSIBLE_ZOOM)
+        }
 
-    /** The minimum scaling factor that can be applied to this View using the [zoom] property */
-    public var minZoom: Float = DEFAULT_MIN_ZOOM
+    /**
+     * The minimum scaling factor that can be applied to this View using the [zoom] property. This
+     * value is a multiplier relative to the content's natural size, where '1.0' represents 100%
+     * (1x) zoom (similarly '0.5' represents 50% (0.5x) zoom).
+     *
+     * The value is automatically clamped to stay within the defined range.
+     */
+    @get:FloatRange(from = MIN_PERMISSIBLE_ZOOM.toDouble(), to = MAX_PERMISSIBLE_ZOOM.toDouble())
+    public var minZoom: Float = MIN_PERMISSIBLE_ZOOM
+        set(
+            @FloatRange(
+                from = MIN_PERMISSIBLE_ZOOM.toDouble(),
+                to = MAX_PERMISSIBLE_ZOOM.toDouble(),
+            )
+            value
+        ) {
+            field = max(value, MIN_PERMISSIBLE_ZOOM)
+        }
 
     // After the pagination model has loaded and the first set of pages are made visible (or if
     // the view is not attached to a window, we fetch all the dimensions to optimize subsequent
@@ -410,7 +450,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * touch. [newState] will be one of [GESTURE_STATE_IDLE], [GESTURE_STATE_INTERACTING], or
          * [GESTURE_STATE_SETTLING]
          */
-        public fun onGestureStateChanged(@GestureState newState: Int)
+        @MainThread public fun onGestureStateChanged(@GestureState newState: Int)
     }
 
     private val onGestureStateChangedListeners = mutableListOf<OnGestureStateChangedListener>()
@@ -431,6 +471,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          *   wish to make use of beyond the scope of this method.
          * @param zoomLevel the current zoom level
          */
+        @MainThread
         public fun onViewportChanged(
             firstVisiblePage: Int,
             visiblePagesCount: Int,
@@ -487,7 +528,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * @param externalLink The ExternalLink associated with the link.
          * @return True if the link click was handled, false to use the default behavior.
          */
-        public fun onLinkClicked(externalLink: ExternalLink): Boolean
+        @MainThread public fun onLinkClicked(externalLink: ExternalLink): Boolean
     }
 
     /** The listener that is notified when a link in the PDF is clicked. */
@@ -502,6 +543,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * Customize the text selection menu, by adding items to or removing items from
          * [components].
          */
+        @MainThread
         public fun onPrepareSelectionMenuItems(components: MutableList<ContextMenuComponent>)
     }
 
@@ -550,7 +592,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** Listener interface to receive updates when the [currentSelection] changes */
     public interface OnSelectionChangedListener {
         /** Called when the [Selection] has changed */
-        public fun onSelectionChanged(newSelection: Selection?)
+        @MainThread public fun onSelectionChanged(newSelection: Selection?)
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -559,6 +601,25 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     private var onSelectionChangedListeners = mutableListOf<OnSelectionChangedListener>()
+
+    /**
+     * Listener interface to receive a callback on the UI thread when the content of the PDF
+     * document has been loaded for the first time.
+     *
+     * <p>
+     * This callback is invoked on successful document load on current view instance and The state
+     * for this listener resets when view recreates (eg. due to configuration changes) or when a new
+     * document is set via the [pdfDocument] property. This callback indicates that the document is
+     * ready for user interaction and can be used for hiding loading indicators (like progress bars)
+     * or for logging initial page load metrics. If a fatal error prevents the content of the PDF
+     * from loading (e.g., file corruption), this listener will not be called.
+     */
+    public fun interface OnFirstContentLoadListener {
+        /** Called when the content of the document has been loaded for the first time. */
+        @MainThread public fun onFirstContentLoad()
+    }
+
+    private val onFirstContentLoadListeners = mutableListOf<OnFirstContentLoadListener>()
 
     /**
      * The [CoroutineScope] used to make suspending calls to [PdfDocument]. The size of the fixed
@@ -683,6 +744,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private var isAutoScrolling = false
     private var prevDragEvent: MotionEvent? = null
+
+    @VisibleForTesting internal var notifyFirstContentLoad: Boolean = true
+
+    @VisibleForTesting internal var isAnyBitmapAvailable: Boolean = false
 
     /**
      * Returns true if neither zoom nor scroll are actively changing. Does not account for
@@ -863,6 +928,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     public fun removeOnSelectionChangedListener(listener: OnSelectionChangedListener) {
         onSelectionChangedListeners.remove(listener)
+    }
+
+    /**
+     * Adds the specified listener to the list of listeners that will be notified on first content
+     * load.
+     *
+     * @param listener The listener to add.
+     */
+    public fun addOnFirstContentLoadListener(listener: OnFirstContentLoadListener) {
+        onFirstContentLoadListeners.add(listener)
+    }
+
+    /**
+     * Removes the specified listener from the list of listeners that will be notified on first
+     * content load.
+     *
+     * @param listener The listener to remove.
+     */
+    public fun removeOnFirstContentLoadListener(listener: OnFirstContentLoadListener) {
+        onFirstContentLoadListeners.remove(listener)
     }
 
     /**
@@ -1055,6 +1140,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     pageLoc,
                     zoom,
                 )
+            }
+
+            if (isAnyBitmapAvailable && notifyFirstContentLoad) {
+                post { onFirstContentLoadListeners.forEach { it.onFirstContentLoad() } }
+                notifyFirstContentLoad = false
+                isFirstPageRendered = true
             }
         }
         canvas.restore()
@@ -1608,12 +1699,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 mainScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     // Prevent 2 copies from running concurrently
                     pageSignalsToJoin?.join()
-                    launch {
-                        manager.invalidationSignalFlow.collect {
-                            isFirstPageRendered = true
-                            invalidate()
-                        }
-                    }
+                    launch { manager.invalidationSignalFlow.collect { invalidate() } }
+
+                    launch { manager.bitmapReadyFlow.collect { isAnyBitmapAvailable = true } }
+
                     launch {
                         manager.pageTextReadyFlow.collect { pageNum ->
                             pdfViewAccessibilityManager?.onPageTextReady(pageNum)
@@ -1930,7 +2019,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * hidden.
      */
     private fun updateSelectionActionModeVisibility() {
-        if (selectionIsVisible() && gestureState == GESTURE_STATE_IDLE) {
+        if (isSelectionVisible() && gestureState == GESTURE_STATE_IDLE) {
             selectionActionModeCallback?.actionMode?.invalidateContentRect()
             selectionStateManager?.maybeShowActionMode()
         } else {
@@ -1938,42 +2027,34 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
     }
 
-    private fun selectionIsVisible(): Boolean {
+    private fun isSelectionVisible(): Boolean {
         // If we don't have a selection or any way to understand the layout of our pages, the
         // selection is not visible
         val localSelection = currentSelection ?: return false
         val localPageLayoutManager = pageLayoutManager ?: return false
 
+        // Get the area of the screen currently visible in content coordinates
         val viewport = getVisibleAreaInContentCoords()
-        val firstPage = localSelection.bounds.minOf { it.pageNum }
-        val lastPage = localSelection.bounds.maxOf { it.pageNum }
-        // Top and bottom edge must be on the first and last page, respectively
-        // If we can't locate any edge of the selection, we consider it invisible
-        val topEdge =
-            localSelection.bounds
-                .filter { it.pageNum == firstPage }
-                .minByOrNull { it.top }
-                ?.let { localPageLayoutManager.getViewRect(it, viewport) }
-                ?.top ?: return false
-        val bottomEdge =
-            localSelection.bounds
-                .filter { it.pageNum == lastPage }
-                .maxByOrNull { it.bottom }
-                ?.let { localPageLayoutManager.getViewRect(it, viewport) }
-                ?.bottom ?: return false
-        // The left or right edge may be on any page
-        val leftEdge =
-            localSelection.bounds
-                .minByOrNull { it.left }
-                ?.let { localPageLayoutManager.getViewRect(it, viewport) }
-                ?.left ?: return false
-        val rightEdge =
-            localSelection.bounds
-                .maxByOrNull { it.right }
-                ?.let { localPageLayoutManager.getViewRect(it, viewport) }
-                ?.right ?: return false
 
-        return RectF(viewport).intersects(leftEdge, topEdge, rightEdge, bottomEdge)
+        // Iterate over all bounding boxes that make up the selection
+        for (contentRect in localSelection.bounds) {
+            // Convert content coordinates (contentRect) to content view coordinates.
+            val contentViewRect =
+                localPageLayoutManager.getContentViewRect(contentRect, viewport) ?: continue
+
+            // Check for intersection between the selection's bound and the viewport
+            if (
+                viewport.intersects(
+                    contentViewRect.left,
+                    contentViewRect.top,
+                    contentViewRect.right,
+                    contentViewRect.bottom,
+                )
+            ) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun reset() {
@@ -1987,6 +2068,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         backgroundScope.coroutineContext.cancelChildren()
         pdfDocument?.removeOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
         stopCollectingData()
+        isFirstPageRendered = false
+        notifyFirstContentLoad = true
+        isAnyBitmapAvailable = false
 
         // Reset zoom and scroll after clearing pageMetadata loader, otherwise they can trigger
         // onViewportChanged callback with outdated information.
@@ -2581,8 +2665,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         public const val VERTICAL_ALIGNMENT_CENTER: Int = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_INIT_ZOOM: Float = 1.0f
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_MAX_ZOOM: Float = 25.0f
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_MIN_ZOOM: Float = 0.5f
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val MAX_PERMISSIBLE_ZOOM: Float = 25.0f
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val MIN_PERMISSIBLE_ZOOM: Float = 0.5f
 
         /** The ratio of vertical to horizontal scroll that is assumed to be vertical only */
         private const val SCROLL_CORRECTION_RATIO = 1.5f

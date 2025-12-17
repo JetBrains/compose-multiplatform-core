@@ -232,7 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"消息放在此处。\n更多文本放在第二行。"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"短信模板演示"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"分节项目模板演示"</string>
-    <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"已启用 AlphaJump 的分节项目演示"</string>
+    <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"启用 AlphaJump 的分节项目模板演示"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"单选按钮部分"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"切换按钮部分"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"多行部分"</string>
@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"标签页模板演示"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"信息标签页"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"窗格标签页"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"分节项目标签页"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"列表标签页"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"包含长标签页标题的网格标签页"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"搜索标签页"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"也可以选择行"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"次要操作处于选中状态"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"行主要操作处于选中状态"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"空列表演示"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"列表为空"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"其他模板演示"</string>

@@ -35,7 +35,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
 import androidx.xr.projected.ProjectedDeviceController.Capability.Companion.CAPABILITY_VISUAL_UI
-import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
 import com.google.common.truth.Truth.assertThat
@@ -133,6 +132,7 @@ class ProjectedDeviceControllerTest {
     }
 
     companion object {
+        private const val ACTION_BIND = "androidx.xr.projected.ACTION_BIND"
         private const val SYSTEM_PACKAGE_NAME = "com.system.service"
         private const val SYSTEM_CLASS_NAME = "com.system.service.ProjectedService"
         private val COMPONENT_NAME = ComponentName(SYSTEM_PACKAGE_NAME, SYSTEM_CLASS_NAME)

@@ -147,10 +147,10 @@ public class RowTest {
         CarIcon endImage = ALERT;
         Row row = new Row.Builder()
                 .setTitle("Title")
-                .setEndImage(endImage, Row.IMAGE_TYPE_ICON)
+                .setEndImage(endImage, Row.IMAGE_TYPE_MEDIUM)
                 .build();
         assertThat(row.getEndImage()).isEqualTo(endImage);
-        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_ICON);
+        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_MEDIUM);
     }
 
     @Test

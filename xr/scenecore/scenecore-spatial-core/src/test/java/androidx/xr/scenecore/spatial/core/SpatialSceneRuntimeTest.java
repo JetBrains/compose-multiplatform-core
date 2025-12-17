@@ -1071,8 +1071,7 @@ public class SpatialSceneRuntimeTest {
 
     @Test
     public void createMovableComponent_returnsComponent() {
-        MovableComponent movableComponent =
-                mRuntime.createMovableComponent(true, true, false);
+        MovableComponent movableComponent = mRuntime.createMovableComponent(true, true, false);
 
         assertThat(movableComponent).isNotNull();
     }
@@ -1654,8 +1653,7 @@ public class SpatialSceneRuntimeTest {
 
     @Test
     public void transformPoseTo_sameDestAndSourceEntity_returnsUnchangedPose() throws Exception {
-        Pose pose =
-                new Pose(new Vector3(1f, 2f, 3f), new Quaternion(1f, 2f, 3f, 4f));
+        Pose pose = new Pose(new Vector3(1f, 2f, 3f), new Quaternion(1f, 2f, 3f, 4f));
         Pose identity = new Pose();
 
         PanelEntity panelEntity = createPanelEntity(pose);
@@ -2161,10 +2159,10 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void passingNullExecutorWhenAddingConsumer_usesInternalExecutor() {
+    public void passingNoExecutorWhenAddingConsumer_usesInternalExecutor() {
         InputEventListener mockConsumer = mock(InputEventListener.class);
         PanelEntity panelEntity = createPanelEntity();
-        panelEntity.addInputEventListener(/* executor= */ null, mockConsumer);
+        panelEntity.addInputEventListener(null, mockConsumer);
         ShadowNode shadowNode = ShadowNode.extract(getNode(panelEntity));
 
         assertThat(shadowNode.getInputListener()).isNotNull();
@@ -2261,7 +2259,7 @@ public class SpatialSceneRuntimeTest {
         panelEntity.removeInputEventListener(mockConsumer1);
         panelEntity.removeInputEventListener(mockConsumer2);
 
-        assertThat(((PanelEntityImpl) panelEntity).mInputEventListenerMap).isEmpty();
+        assertThat(((PanelEntityImpl) panelEntity).getReformEventConsumerMap()).isEmpty();
         assertThat(shadowNode.getInputListener()).isNull();
         assertThat(shadowNode.getInputExecutor()).isNull();
     }
@@ -2287,7 +2285,7 @@ public class SpatialSceneRuntimeTest {
 
         panelEntity.dispose();
 
-        assertThat(((PanelEntityImpl) panelEntity).mInputEventListenerMap).isEmpty();
+        assertThat(((PanelEntityImpl) panelEntity).getReformEventConsumerMap()).isEmpty();
         assertThat(shadowNode.getInputListener()).isNull();
         assertThat(shadowNode.getInputExecutor()).isNull();
     }

@@ -18,6 +18,7 @@
 
 package androidx.work
 
+import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.CallbackToFutureAdapter.getFuture
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
@@ -30,7 +31,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-internal fun <T> launchFuture(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun <T> launchFuture(
     context: CoroutineContext = EmptyCoroutineContext,
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> T,

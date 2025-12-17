@@ -17,7 +17,6 @@
 package androidx.credentials.registry.provider
 
 import android.os.CancellationSignal
-import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 
@@ -52,7 +51,6 @@ public interface RegistryManagerProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun onRegisterCreationOptions(
         request: RegisterCreationOptionsRequest,
         cancellationSignal: CancellationSignal?,
@@ -71,7 +69,6 @@ public interface RegistryManagerProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun onClearCredentialRegistry(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
@@ -89,7 +86,6 @@ public interface RegistryManagerProvider {
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public fun onClearCreationOptions(
         request: ClearCreationOptionsRequest,
         executor: Executor,

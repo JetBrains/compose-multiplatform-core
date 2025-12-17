@@ -40,6 +40,48 @@
             <dataTypeMetadata>
                 <id>unused</id>
                 <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.Attachment</objectQualifiedName>
+                <description>An attachment for a note entity. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>uri</name>
+                </properties>
+                <required>uri</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.Attachment</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.SetField&lt;kotlin.Int&gt;</objectQualifiedName>
+                <description>An example generic AppFunctionSerializable. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>7</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>value</name>
+                </properties>
+                <required>value</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.SetField&lt;kotlin.Int&gt;</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
                 <objectQualifiedName>com.testdata.SetField&lt;kotlin.String&gt;</objectQualifiedName>
                 <description>An example generic AppFunctionSerializable. </description>
                 <properties>
@@ -77,27 +119,6 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.SetField&lt;kotlin.String?&gt;</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.Attachment</objectQualifiedName>
-                <description>An attachment for a note entity. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>8</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>uri</name>
-                </properties>
-                <required>uri</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.Attachment</name>
         </dataTypes>
         <dataTypes>
             <dataTypeMetadata>
@@ -203,27 +224,6 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.UpdateNoteParams</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.SetField&lt;kotlin.Int&gt;</objectQualifiedName>
-                <description>An example generic AppFunctionSerializable. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>7</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>value</name>
-                </properties>
-                <required>value</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.SetField&lt;kotlin.Int&gt;</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

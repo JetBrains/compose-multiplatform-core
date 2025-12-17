@@ -65,6 +65,24 @@ package androidx.xr.projected.platform {
     method public boolean onTransact(int, android.os.Parcel!, android.os.Parcel!, int) throws android.os.RemoteException;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface IProjectedDeviceStateListener extends android.os.IInterface {
+    method public void onProjectedDeviceStateChanged(int, android.os.Bundle!) throws android.os.RemoteException;
+    field public static final String DESCRIPTOR;
+  }
+
+  public static class IProjectedDeviceStateListener.Default implements androidx.xr.projected.platform.IProjectedDeviceStateListener {
+    ctor public IProjectedDeviceStateListener.Default();
+    method public android.os.IBinder! asBinder();
+    method public void onProjectedDeviceStateChanged(int, android.os.Bundle!) throws android.os.RemoteException;
+  }
+
+  public abstract static class IProjectedDeviceStateListener.Stub extends android.os.Binder implements androidx.xr.projected.platform.IProjectedDeviceStateListener {
+    ctor public IProjectedDeviceStateListener.Stub();
+    method public android.os.IBinder! asBinder();
+    method public static androidx.xr.projected.platform.IProjectedDeviceStateListener! asInterface(android.os.IBinder!);
+    method public boolean onTransact(int, android.os.Parcel!, android.os.Parcel!, int) throws android.os.RemoteException;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface IProjectedInputEventListener extends android.os.IInterface {
     method public void onProjectedInputEvent(androidx.xr.projected.platform.ProjectedInputEvent!) throws android.os.RemoteException;
     field public static final String DESCRIPTOR;
@@ -87,7 +105,9 @@ package androidx.xr.projected.platform {
     method public void addWindowFlags(int) throws android.os.RemoteException;
     method public void clearWindowFlags(int) throws android.os.RemoteException;
     method public boolean isDisplayCapable() throws android.os.RemoteException;
+    method public void registerProjectedDeviceStateListener(androidx.xr.projected.platform.IProjectedDeviceStateListener!) throws android.os.RemoteException;
     method public void registerProjectedInputEventListener(androidx.xr.projected.platform.IProjectedInputEventListener!) throws android.os.RemoteException;
+    method public void unregisterProjectedDeviceStateListener(androidx.xr.projected.platform.IProjectedDeviceStateListener!) throws android.os.RemoteException;
     method public void unregisterProjectedInputEventListener(androidx.xr.projected.platform.IProjectedInputEventListener!) throws android.os.RemoteException;
     field public static final String DESCRIPTOR;
   }
@@ -98,7 +118,9 @@ package androidx.xr.projected.platform {
     method public android.os.IBinder! asBinder();
     method public void clearWindowFlags(int) throws android.os.RemoteException;
     method public boolean isDisplayCapable() throws android.os.RemoteException;
+    method public void registerProjectedDeviceStateListener(androidx.xr.projected.platform.IProjectedDeviceStateListener!) throws android.os.RemoteException;
     method public void registerProjectedInputEventListener(androidx.xr.projected.platform.IProjectedInputEventListener!) throws android.os.RemoteException;
+    method public void unregisterProjectedDeviceStateListener(androidx.xr.projected.platform.IProjectedDeviceStateListener!) throws android.os.RemoteException;
     method public void unregisterProjectedInputEventListener(androidx.xr.projected.platform.IProjectedInputEventListener!) throws android.os.RemoteException;
   }
 
@@ -107,6 +129,11 @@ package androidx.xr.projected.platform {
     method public android.os.IBinder! asBinder();
     method public static androidx.xr.projected.platform.IProjectedService! asInterface(android.os.IBinder!);
     method public boolean onTransact(int, android.os.Parcel!, android.os.Parcel!, int) throws android.os.RemoteException;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ProjectedDeviceState {
+    field public static final int ACTIVE = 1; // 0x1
+    field public static final int INACTIVE = 0; // 0x0
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ProjectedInputAction {

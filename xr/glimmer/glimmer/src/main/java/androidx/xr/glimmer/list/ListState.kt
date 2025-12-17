@@ -210,7 +210,7 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
      * * It's called during the measurement pass once the dispatched [scrollToBeConsumed] has been
      *   handled and the new item positions are known.
      *
-     * @param result glimmer lazy list measuring results.
+     * @param result lazy list measuring results.
      * @param consumedScroll defines how much scroll was consumed during the measure pass.
      * @param accumulatedScroll tracks the amount of scrolling that the internal logic has reported
      *   as consumed, but wants to save for later measurement. Also if the list consumes more scroll

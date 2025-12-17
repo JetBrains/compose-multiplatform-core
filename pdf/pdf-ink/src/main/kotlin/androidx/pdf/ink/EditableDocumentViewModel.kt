@@ -112,6 +112,12 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
     internal val isAnnotationInteractionEnabled: StateFlow<Boolean> =
         _isAnnotationInteractionEnabled.asStateFlow()
 
+    internal var isPdfViewGestureActive: Boolean = false
+        set(value) {
+            field = value
+            updateAnnotationInteractionState()
+        }
+
     @VisibleForTesting
     public override fun resetState() {
         super.resetState()
@@ -324,7 +330,8 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         _isAnnotationInteractionEnabled.value =
             isEditModeEnabled &&
                 areAnnotationsVisible &&
-                _applyEditsStatus.value != ApplyEditsState.InProgress
+                _applyEditsStatus.value != ApplyEditsState.InProgress &&
+                !isPdfViewGestureActive
     }
 
     @Suppress("UNCHECKED_CAST")

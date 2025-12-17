@@ -39,4 +39,6 @@ interface IProjectedService {
   void addWindowFlags(in int flags);
   void clearWindowFlags(in int flags);
   boolean isDisplayCapable();
+  void registerProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
+  void unregisterProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
 }

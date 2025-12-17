@@ -179,6 +179,146 @@ class EntityTest {
     }
 
     @Test
+    fun allEntity_disposeAndCreateWithNullParent_callsRuntimeEntityImplSetParent() {
+        activityPanelEntity.dispose()
+        gltfModelEntity.dispose()
+        groupEntity.dispose()
+        panelEntity.dispose()
+        surfaceEntity.dispose()
+
+        activityPanelEntity =
+            ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
+        gltfModelEntity =
+            GltfModelEntity.create(
+                fakeSceneRuntime,
+                fakeRenderingRuntime,
+                entityManager,
+                gltfModel,
+                parent = null,
+            )
+        groupEntity = GroupEntity.create(session, "test", parent = null)
+        panelEntity =
+            PanelEntity.create(
+                session,
+                view = TextView(activity),
+                pixelDimensions = IntSize2d(720, 480),
+                name = "test",
+                parent = null,
+            )
+        surfaceEntity =
+            SurfaceEntity.create(
+                session,
+                Pose.Identity,
+                SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
+                SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                parent = null,
+            )
+
+        assertThat((activityPanelEntity.rtEntity as FakeEntity).parent).isNull()
+        assertThat((gltfModelEntity.rtEntity as FakeEntity).parent).isNull()
+        assertThat(((groupEntity as? BaseEntity<*>)?.rtEntity as FakeEntity).parent).isNull()
+        assertThat((panelEntity.rtEntity as FakeEntity).parent).isNull()
+        assertThat((surfaceEntity.rtEntity as FakeEntity).parent).isNull()
+
+        panelEntity.dispose()
+        panelEntity =
+            PanelEntity.create(
+                session,
+                view = TextView(activity),
+                dimensions = FloatSize2d(1f, 1f),
+                name = "test",
+                parent = null,
+            )
+        assertThat((panelEntity.rtEntity as FakeEntity).parent).isNull()
+    }
+
+    @Test
+    fun allEntity_disposeAndCreateWithNullParent_getPoseInParentSpace() {
+        activityPanelEntity.dispose()
+        gltfModelEntity.dispose()
+        groupEntity.dispose()
+        panelEntity.dispose()
+        surfaceEntity.dispose()
+
+        activityPanelEntity =
+            ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
+        gltfModelEntity =
+            GltfModelEntity.create(
+                fakeSceneRuntime,
+                fakeRenderingRuntime,
+                entityManager,
+                gltfModel,
+                parent = null,
+            )
+        groupEntity = GroupEntity.create(session, "test", parent = null)
+        panelEntity =
+            PanelEntity.create(
+                session,
+                view = TextView(activity),
+                pixelDimensions = IntSize2d(720, 480),
+                name = "test",
+                parent = null,
+            )
+        surfaceEntity =
+            SurfaceEntity.create(
+                session,
+                Pose.Identity,
+                SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
+                SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                parent = null,
+            )
+
+        activityPanelEntity.getPose(Space.PARENT)
+        gltfModelEntity.getPose(Space.PARENT)
+        groupEntity.getPose(Space.PARENT)
+        panelEntity.getPose(Space.PARENT)
+        surfaceEntity.getPose(Space.PARENT)
+    }
+
+    @Test
+    fun allEntity_disposeAndCreateWithNullParent_getPoseInActivitySpace() {
+        activityPanelEntity.dispose()
+        gltfModelEntity.dispose()
+        groupEntity.dispose()
+        panelEntity.dispose()
+        surfaceEntity.dispose()
+
+        activityPanelEntity =
+            ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
+        gltfModelEntity =
+            GltfModelEntity.create(
+                fakeSceneRuntime,
+                fakeRenderingRuntime,
+                entityManager,
+                gltfModel,
+                parent = null,
+            )
+        groupEntity = GroupEntity.create(session, "test", parent = null)
+        panelEntity =
+            PanelEntity.create(
+                session,
+                view = TextView(activity),
+                pixelDimensions = IntSize2d(720, 480),
+                name = "test",
+                parent = null,
+            )
+        surfaceEntity =
+            SurfaceEntity.create(
+                session,
+                Pose.Identity,
+                SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
+                SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                parent = null,
+            )
+
+        assertFailsWith<IllegalStateException> { activityPanelEntity.getPose(Space.ACTIVITY) }
+        assertFailsWith<IllegalStateException> { gltfModelEntity.getPose(Space.ACTIVITY) }
+        assertFailsWith<IllegalStateException> { groupEntity.getPose(Space.ACTIVITY) }
+        assertFailsWith<IllegalStateException> { panelEntity.getPose(Space.ACTIVITY) }
+        assertFailsWith<IllegalStateException> { surfaceEntity.getPose(Space.ACTIVITY) }
+    }
+
+    @Test
     fun anchorEntityCreateWithNullTimeout_passesNullToImpl() {
         anchorEntity =
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)

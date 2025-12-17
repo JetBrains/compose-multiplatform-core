@@ -15,7 +15,6 @@
  */
 
 import org.gradle.api.attributes.java.TargetJvmEnvironment
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -23,7 +22,7 @@ plugins {
     id("com.android.library")
     id("com.android.experimental.built-in-kotlin")
     id("com.google.protobuf")
-    id ("kotlin-parcelize")
+    id("kotlin-parcelize")
 }
 
 configurations {

@@ -237,7 +237,8 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
          * - Device(s): Depends on the situation and the use case.
          * - API levels: All
          */
-        val closeCaptureSessionOnDisconnect: Boolean = false,
+        val closeCaptureSessionOnDisconnect: Boolean =
+            Camera2Quirks.shouldCloseCaptureSessionOnDisconnect(),
 
         /**
          * Flag to close the camera device when the CameraGraph is closed. This is needed on devices

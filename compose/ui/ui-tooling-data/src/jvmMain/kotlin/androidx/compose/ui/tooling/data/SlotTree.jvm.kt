@@ -634,14 +634,6 @@ private fun extractFromLegacyFields(
     val defaults = blockClass.accessibleField(defaultFieldName)?.get(block) as? Int ?: 0
     val changed = blockClass.accessibleField(changedFieldName)?.get(block) as? Int ?: 0
 
-    val hasParameterNames = metadata.isEmpty() || metadata.any { it.name != null }
-    val sorted =
-        if (hasParameterNames) {
-            metadata.sortedBy { it.name }
-        } else {
-            metadata
-        }
-
     fun Field.extractedName(): String? {
         val extractedGroups = legacyLambdaRegex.find(name)?.groups
         // The legacyLambdaRegex captures two variants of the name.
@@ -650,12 +642,14 @@ private fun extractFromLegacyFields(
     }
 
     val sortedFields = fields.sortedBy { it.extractedName() }
-    return sortedFields.mapIndexedNotNull { index, _ ->
-        var paramMeta = sorted.getOrNull(index) ?: ParameterSourceInformation(index)
+    return fields.mapIndexedNotNull { index, _ ->
+        var paramMeta = metadata.getOrNull(index) ?: ParameterSourceInformation(index)
         val sortedIndex = paramMeta.sortedIndex
         if (sortedIndex >= fields.size) return@mapIndexedNotNull null
 
-        val field = sortedFields[sortedIndex]
+        val field =
+            (if (paramMeta.name != null) fields.firstOrNull { paramMeta.name == it.extractedName() }
+            else null) ?: sortedFields[sortedIndex]
         if (paramMeta.name == null) {
             paramMeta =
                 ParameterSourceInformation(

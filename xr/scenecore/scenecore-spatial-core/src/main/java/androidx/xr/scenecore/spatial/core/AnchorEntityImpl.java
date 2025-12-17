@@ -126,7 +126,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 // Attach to the root CPM node. This will enable the anchored content to be visible.
                 // Note that the parent of the Entity is null, but the CPM Node is still attached.
                 transaction
-                        .setParent(mNode, mActivitySpace.getNode())
+                        .setParent(mNode, mActivitySpace.mNode)
                         .setAnchorId(mNode, exportableAnchor.getAnchorToken())
                         .apply();
             }

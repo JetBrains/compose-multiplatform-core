@@ -60,7 +60,7 @@ class RegisterExportRequestTest {
 
         // 2. Execution
         // Instantiate RegisterExportRequest to trigger the credentialBytes serialization.
-        val request = RegisterExportRequest(entries)
+        val request = RegisterExportRequest(entries, exportMatcher = ByteArray(0))
         val credentialBytes = request.credentialBytes
 
         // 3. Deserialization and Verification

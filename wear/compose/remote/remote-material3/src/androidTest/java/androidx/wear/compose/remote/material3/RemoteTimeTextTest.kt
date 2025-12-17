@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
+
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.compose.capture.captureRemoteDocument
+import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -55,7 +58,7 @@ class RemoteTimeTextTest {
     @Test
     fun timeOnly() = runTest {
         runDocumentTest {
-            RemoteTimeText(modifier = RemoteModifier.fillMaxSize(), time = RemoteString("10:09"))
+            RemoteTimeText(modifier = RemoteModifier.fillMaxSize(), time = "10:09".rs)
         }
     }
 
@@ -64,9 +67,9 @@ class RemoteTimeTextTest {
         runDocumentTest {
             RemoteTimeText(
                 modifier = RemoteModifier.fillMaxSize(),
-                time = RemoteString("10:09"),
-                leadingText = RemoteString("paused"),
-                trailingText = RemoteString("eta 13 min"),
+                time = "10:09".rs,
+                leadingText = "paused".rs,
+                trailingText = "eta 13 min".rs,
             )
         }
     }
@@ -76,7 +79,7 @@ class RemoteTimeTextTest {
         runDocumentTest {
             RemoteTimeText(
                 modifier = RemoteModifier.fillMaxSize(),
-                time = RemoteString("10:09"),
+                time = "10:09".rs,
                 fontSize = 15.sp,
                 fontFamily = FontFamily.SansSerif,
             )
@@ -86,7 +89,7 @@ class RemoteTimeTextTest {
     suspend fun runDocumentTest(content: @Composable @RemoteComposable () -> Unit) {
         val bytes =
             withContext(Dispatchers.Main) {
-                captureRemoteDocument(context, profile = TestProfiles.androidNativeProfile) {
+                captureSingleRemoteDocument(context, profile = TestProfiles.androidNativeProfile) {
                     content()
                 }
             }

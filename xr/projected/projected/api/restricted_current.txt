@@ -89,11 +89,6 @@ package androidx.xr.projected {
     property public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction TOGGLE_APP_CAMERA;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedServiceBinding {
-    method public static boolean bind(android.content.Context context, android.content.ServiceConnection serviceConnection);
-    field public static final androidx.xr.projected.ProjectedServiceBinding INSTANCE;
-  }
-
 }
 
 package @SuppressCompatibility androidx.xr.projected.experimental {

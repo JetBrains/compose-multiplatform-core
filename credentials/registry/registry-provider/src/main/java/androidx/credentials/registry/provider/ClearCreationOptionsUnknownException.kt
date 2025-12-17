@@ -16,16 +16,15 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * Thrown when the [RegistryManager.clearCreationOptions] transaction fails with no more detailed
  * information.
  *
  * @param errorMessage the error message
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ClearCreationOptionsUnknownException(errorMessage: CharSequence? = null) :
+public class ClearCreationOptionsUnknownException
+@JvmOverloads
+constructor(errorMessage: CharSequence? = null) :
     ClearCreationOptionsException(
         type = TYPE_CLEAR_CREATION_OPTIONS_UNKNOWN_EXCEPTION,
         errorMessage = errorMessage,

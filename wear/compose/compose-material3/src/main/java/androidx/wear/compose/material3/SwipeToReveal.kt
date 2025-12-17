@@ -913,7 +913,11 @@ internal fun ActionButton(
             }
         },
         colors = buttonColors(containerColor = containerColor, contentColor = contentColor),
-        contentPadding = PaddingValues(ACTION_BUTTON_CONTENT_PADDING),
+        contentPadding =
+            when (revealActionType) {
+                RevealActionType.UndoAction -> PaddingValues(UNDO_ACTION_BUTTON_CONTENT_PADDING)
+                else -> PaddingValues(ACTION_BUTTON_CONTENT_PADDING)
+            },
         shape = CircleShape,
     ) {
         Row(
@@ -1541,6 +1545,8 @@ private val STANDARD_IN_OUT = CubicBezierEasing(0.20f, 0.0f, 0.0f, 1.00f)
 private val ICON_AND_TEXT_PADDING = 4.dp
 
 private val ACTION_BUTTON_CONTENT_PADDING = 4.dp
+
+private val UNDO_ACTION_BUTTON_CONTENT_PADDING = 14.dp
 
 // Swipe required to start displaying the action buttons.
 private const val BUTTON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.06f

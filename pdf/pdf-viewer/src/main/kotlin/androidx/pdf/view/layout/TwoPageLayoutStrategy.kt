@@ -50,12 +50,12 @@ internal class TwoPageLayoutStrategy(
         get() = computeTotalHeight()
 
     /** The index of the last page for which dimensions have been successfully set. */
-    var lastKnownPage: Int = 0
+    var lastKnownPage: Int = -1
         private set
 
     /** The index of the last page row for which dimensions have been set. */
     val lastKnownPageRow: Int
-        get() = lastKnownPage / pagesPerRow
+        get() = maxOf(0, lastKnownPage / pagesPerRow)
 
     /** The maximum width of an **even page** (left page) to ensure consistent alignment. */
     private var maxEvenPageWidth: Float = 0f
@@ -105,23 +105,20 @@ internal class TwoPageLayoutStrategy(
      * @param pageDimension The dimension of [pageNum].
      */
     override fun setPagePositions(pageNum: Int, pageDimension: Dimension) {
-        lastKnownPage = pageNum
-
+        require(pageNum in 0 until pageCount) { "Page out of range" }
+        require(pageDimension.y >= 0 && pageDimension.x >= 0) { "Negative size page" }
         if (pageNum.isEven()) {
-            // Even page (Left side)
             maxEvenPageWidth = maxOf(maxEvenPageWidth, pageDimension.x.toFloat())
         } else {
-            // Odd page (Right side)
             maxOddPageWidth = maxOf(maxOddPageWidth, pageDimension.x.toFloat())
         }
 
-        // Row height is determined by the taller page.
-        pageRowBottoms[lastKnownPageRow] =
-            maxOf(pageRowBottoms[lastKnownPageRow], pageRowTops[lastKnownPageRow] + pageDimension.y)
-        // Set the top position for the next page row.
-        if (lastKnownPageRow + 1 < rowCount) {
-            pageRowTops[lastKnownPageRow + 1] =
-                pageRowBottoms[lastKnownPageRow] + verticalPageSpacingPx
+        when {
+            pageNum < lastKnownPage -> correctLayoutForOutOfOrderPage(pageNum, pageDimension.y)
+
+            pageNum > lastKnownPage + 1 -> approximateLayoutForGap(pageNum, pageDimension.y)
+
+            else -> layoutRowSequentially(pageNum, pageDimension.y)
         }
     }
 
@@ -214,6 +211,16 @@ internal class TwoPageLayoutStrategy(
         parcel.writeFloatArray(pageRowTops)
     }
 
+    /** Approximates the layout for any missing pages, then lays out the current page's row. */
+    private fun approximateLayoutForGap(pageNum: Int, pageHeight: Int) {
+        for (pageIndex in (lastKnownPage + 1) until pageNum) {
+            // Approximate positions for missing page rows using current page's height
+            layoutRowSequentially(pageIndex, pageHeight)
+        }
+        // After filling the gap, handle the current page sequentially.
+        layoutRowSequentially(pageNum, pageHeight)
+    }
+
     /**
      * Computes the total height of the document, estimating remaining height if pages are still
      * loading.
@@ -233,6 +240,43 @@ internal class TwoPageLayoutStrategy(
                         (rowCount - lastKnownPageRow - 1)
                 totalKnownHeight + estimatedRemainingHeight
             }
+        }
+    }
+
+    /** Corrects the layout when a page is loaded out of order. */
+    private fun correctLayoutForOutOfOrderPage(pageNum: Int, pageHeight: Int) {
+        val pageRowNum = pageNum / pagesPerRow
+        val oldRowBottom = pageRowBottoms[pageRowNum]
+        val newRowBottom = maxOf(pageRowBottoms[pageRowNum], pageRowTops[pageRowNum] + pageHeight)
+        pageRowBottoms[pageRowNum] = newRowBottom
+
+        val delta = newRowBottom - oldRowBottom
+        // Only propagate if the row height actually changed.
+        if (delta != 0f) {
+            shiftSubsequentPageRows(pageRowNum + 1, delta)
+        }
+    }
+
+    private fun layoutRowSequentially(pageNum: Int, pageHeight: Int) {
+        val pageRowNum = pageNum / pagesPerRow
+        // Row height is determined by the taller page.
+        pageRowBottoms[pageRowNum] =
+            maxOf(pageRowBottoms[pageRowNum], pageRowTops[pageRowNum] + pageHeight)
+        // Set the top position for the next page row.
+        if (pageRowNum + 1 < rowCount) {
+            pageRowTops[pageRowNum + 1] = pageRowBottoms[pageRowNum] + verticalPageSpacingPx
+        }
+        lastKnownPage = pageNum
+    }
+
+    /** Helper to handle the "Ripple Effect" of when pages are loaded async. */
+    private fun shiftSubsequentPageRows(fromPageRowIndex: Int, delta: Float) {
+        for (pageRowIndex in fromPageRowIndex..lastKnownPageRow) {
+            pageRowTops[pageRowIndex] += delta
+            pageRowBottoms[pageRowIndex] += delta
+        }
+        if (lastKnownPageRow + 1 < rowCount) {
+            pageRowTops[lastKnownPageRow + 1] += delta
         }
     }
 

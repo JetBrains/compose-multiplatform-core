@@ -42,7 +42,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.concurrent.Executors
-import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -242,7 +241,7 @@ class EditableDocumentViewModelTest {
 
         annotationsViewModel.applyDraftEdits()
         // Assert annotation interactions is disabled while applying edits
-        assertFalse(annotationsViewModel.isAnnotationInteractionEnabled.value)
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.value).isFalse()
         collectJob.join()
 
         assertThat(applyStates).isNotEmpty()
@@ -271,7 +270,7 @@ class EditableDocumentViewModelTest {
 
         annotationsViewModel.applyDraftEdits()
         // Assert annotation interactions is disabled while applying edits
-        assertFalse(annotationsViewModel.isAnnotationInteractionEnabled.value)
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.value).isFalse()
         collectJob.join()
 
         // Verify the sequence of states
@@ -350,6 +349,24 @@ class EditableDocumentViewModelTest {
         annotationsViewModel.isEditModeEnabled = true
 
         assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isTrue()
+    }
+
+    @Test
+    fun isPdfViewGestureActive_updatesIsAnnotationInteractionEnabled() = runTest {
+        // Enable edit mode and mark annotations visible to allow interaction
+        annotationsViewModel.isEditModeEnabled = true
+        annotationsViewModel.areAnnotationsVisible = true
+
+        assertThat(annotationsViewModel.isPdfViewGestureActive).isFalse()
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.value).isTrue()
+
+        // Disable interaction by activating gesture
+        annotationsViewModel.isPdfViewGestureActive = true
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.value).isFalse()
+
+        // Re-enable interaction by deactivating gesture
+        annotationsViewModel.isPdfViewGestureActive = false
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.value).isTrue()
     }
 
     fun createAnnotation(

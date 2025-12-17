@@ -22,6 +22,7 @@ import androidx.annotation.FloatRange
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.FloatSize2d
@@ -456,6 +457,9 @@ private constructor(
          * @param contentColorMetadata The [ContentColorMetadata] of the content (nullable).
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
          * @return a SurfaceEntity instance
          */
         internal fun create(
@@ -469,6 +473,7 @@ private constructor(
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
             contentColorMetadata: ContentColorMetadata? = null,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): SurfaceEntity {
             val rtShape =
                 when (shape) {
@@ -486,7 +491,15 @@ private constructor(
                         rtShape,
                         getRtSurfaceProtection(surfaceProtection),
                         getRtSuperSampling(superSampling),
-                        sceneRuntime.activitySpace,
+                        if (parent != null && parent !is BaseEntity<*>) {
+                            Log.warn(
+                                "The provided parent is not a BaseEntity. The SurfaceEntity will " +
+                                    "be created without a parent."
+                            )
+                            null
+                        } else {
+                            parent?.rtEntity
+                        },
                     ),
                     entityManager,
                     shape,
@@ -530,6 +543,51 @@ private constructor(
                 surfaceProtection,
                 null,
                 superSampling,
+            )
+
+        /**
+         * Public factory function for a SurfaceEntity.
+         *
+         * @param session Session to create the SurfaceEntity in.
+         * @param pose Pose of this entity relative to its parent, default value is Identity.
+         * @param shape The [Shape] which describes the spatialized shape of the canvas. The default
+         *   value is [Shape.Quad] with a width and height of 1 meter.
+         * @param stereoMode Stereo mode for the surface. The default value is [StereoMode.MONO].
+         * @param superSampling The [SuperSampling] which describes whether super sampling is
+         *   enabled for the surface. The default value is [SuperSampling.PENTAGON].
+         * @param surfaceProtection The [SurfaceProtection] which describes whether the hosted
+         *   surface should support Widevine DRM. The default value is [SurfaceProtection.NONE].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         * @return a SurfaceEntity instance
+         */
+        @MainThread
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            pose: Pose = Pose.Identity,
+            shape: Shape = Shape.Quad(FloatSize2d(1.0f, 1.0f)),
+            stereoMode: StereoMode = StereoMode.MONO,
+            superSampling: SuperSampling = SuperSampling.PENTAGON,
+            surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
+            parent: Entity? = session.scene.activitySpace,
+        ): SurfaceEntity =
+            SurfaceEntity.create(
+                session.perceptionRuntime.lifecycleManager,
+                session.sceneRuntime,
+                session.renderingRuntime,
+                session.scene.entityManager,
+                stereoMode,
+                pose,
+                shape,
+                surfaceProtection,
+                null,
+                superSampling,
+                parent,
             )
     }
 

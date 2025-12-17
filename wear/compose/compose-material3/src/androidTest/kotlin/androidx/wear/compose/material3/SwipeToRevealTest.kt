@@ -862,7 +862,7 @@ class SwipeToRevealTest {
         var density = 0f
         rule.setContent {
             with(LocalDensity.current) { density = this.density }
-            ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+            ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                 revealState = rememberRevealState(Covered)
                 SwipeToRevealWithDefaults(
                     modifier = Modifier.testTag(TEST_TAG),
@@ -1215,7 +1215,7 @@ class SwipeToRevealTest {
                 @Composable {
                     with(LocalDensity.current) { density = this.density }
 
-                    ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+                    ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                         SwipeToRevealWithDefaults(
                             modifier = Modifier.testTag(TEST_TAG),
                             onSwipePrimaryAction = { onFullSwipeTriggerCounter++ },
@@ -1275,7 +1275,7 @@ class SwipeToRevealTest {
             with(LocalDensity.current) { density = this.density }
             revealStateOne = rememberRevealState()
             revealStateTwo = rememberRevealState()
-            ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+            ScreenConfiguration(desiredScreenSizeDp = LARGE_SCREEN_WIDTH_DP) {
                 CustomTouchSlopProvider(newTouchSlop = 0f) {
                     Column {
                         SwipeToRevealWithDefaults(

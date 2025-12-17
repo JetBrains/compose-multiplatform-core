@@ -53,11 +53,13 @@ class OpenXrAugmentedObjectTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrAugmentedObject
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
-        underTest = OpenXrAugmentedObject(objectId, OpenXrTimeSource(), xrResources)
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
+        underTest = OpenXrAugmentedObject(objectId, timeSource, xrResources)
         xrResources.addTrackable(objectId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -142,7 +144,6 @@ class OpenXrAugmentedObjectTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()

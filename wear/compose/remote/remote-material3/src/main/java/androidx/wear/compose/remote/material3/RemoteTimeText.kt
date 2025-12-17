@@ -38,6 +38,7 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -78,8 +79,8 @@ public fun RemoteTimeText(
     val text =
         buildTimeTextString(
             time = time,
-            leadingText = leadingText ?: RemoteString(""),
-            trailingText = trailingText ?: RemoteString(""),
+            leadingText = leadingText ?: "".rs,
+            trailingText = trailingText ?: "".rs,
             separator = separator,
         )
     val fontSize = with(LocalDensity.current) { fontSize.toPx() }.rf
@@ -102,10 +103,8 @@ private fun buildTimeTextString(
     trailingText: RemoteString,
     separator: RemoteString,
 ): RemoteString {
-    val leadingWithSeparator =
-        leadingText.isNotEmpty.select(leadingText + separator, RemoteString(""))
-    val trailingWithSeparator =
-        trailingText.isNotEmpty.select(separator + trailingText, RemoteString(""))
+    val leadingWithSeparator = leadingText.isNotEmpty.select(leadingText + separator, "".rs)
+    val trailingWithSeparator = trailingText.isNotEmpty.select(separator + trailingText, "".rs)
     return leadingWithSeparator + time + trailingWithSeparator
 }
 
@@ -173,11 +172,10 @@ public object RemoteTimeTextDefaults {
         val hour12: RemoteFloat =
             ((currentHour % 12f).eq(0.rf)).select(RemoteFloat(12f), currentHour % 12f)
         val hours12String: RemoteString = hour12.toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
-        val amPm: RemoteString =
-            (currentHour.lt(12.rf)).select(RemoteString(" AM"), RemoteString(" PM"))
+        val amPm: RemoteString = (currentHour.lt(12.rf)).select(" AM".rs, " PM".rs)
 
-        val time24 = hours24String + RemoteString(":") + mins
-        val time12 = hours12String + RemoteString(":") + mins + amPm
+        val time24 = hours24String + ":" + mins
+        val time12 = hours12String + ":" + mins + amPm
         return is24HourFormat.select(time24, time12)
     }
 }

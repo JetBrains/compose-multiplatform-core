@@ -47,8 +47,8 @@ import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.format
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.concurrent.Executors
@@ -283,7 +283,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_input_move_resize)
 
         // Create session
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) {
             this.finish()
         } else {

@@ -100,6 +100,12 @@ public open class FakeEntity() : FakeScenePose(), Entity {
             return pose
         }
 
+        if (relativeTo == Space.ACTIVITY && parent == null) {
+            throw IllegalStateException(
+                "Cannot get pose in Activity Space for an entity with a null parent."
+            )
+        }
+
         var parentPose = this.parent?.getPose(relativeTo)
         return parentPose?.compose(pose) ?: pose
     }
@@ -110,6 +116,12 @@ public open class FakeEntity() : FakeScenePose(), Entity {
 
     /** Updates the pose (position and rotation) of the Entity relative to the given space. */
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
+        if (relativeTo == Space.ACTIVITY && parent == null) {
+            throw IllegalStateException(
+                "Cannot set pose in Activity Space for an entity with a null parent."
+            )
+        }
+
         this.pose = pose
     }
 
@@ -200,8 +212,10 @@ public open class FakeEntity() : FakeScenePose(), Entity {
      * @param listener The input event listener to add.
      */
     @Suppress("ExecutorRegistration")
-    override fun addInputEventListener(executor: Executor, listener: InputEventListener) {
-        inputEventListenerMap.put(listener, executor)
+    override fun addInputEventListener(executor: Executor?, listener: InputEventListener) {
+        if (executor != null) {
+            inputEventListenerMap[listener] = executor
+        }
     }
 
     /** Removes the given listener from the set of active input listeners. */

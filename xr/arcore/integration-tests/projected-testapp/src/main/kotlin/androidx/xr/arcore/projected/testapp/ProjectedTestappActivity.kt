@@ -86,11 +86,6 @@ class ProjectedTestAppActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.info { "onCreate" }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.info { "onResume" }
         textView = TextView(this)
         textView.text = "\n\n\n\nWaiting for Geospatial Pose..."
         setContentView(textView)

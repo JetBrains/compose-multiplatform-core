@@ -23,6 +23,7 @@ deleteOldOutDir
 
 function deleteStaleCache() {
    rm -rf "$OUT_DIR/androidx/room3/integration-tests/room-testapp-kotlin/build/generated/ksp/"
+   rm -rf "$OUT_DIR/androidx/appfunctions/"
 }
 
 deleteStaleCache

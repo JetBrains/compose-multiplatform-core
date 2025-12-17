@@ -623,4 +623,70 @@ class SubspaceMeasureAndLayoutDelegateTest {
         // With the current implementation, this will fail as descendantMeasureCount will be 3.
         assertThat(descendantMeasureCount).isEqualTo(2)
     }
+
+    @Test
+    fun measureAndLayout_reparentingPendingLayoutNode_doesNotCrash() {
+        val owner = AndroidComposeSpatialElement()
+        val root = owner.root
+        val delegate = SubspaceMeasureAndLayoutDelegate(root)
+        val intermediate = SubspaceLayoutNode()
+        val child = SubspaceLayoutNode()
+
+        // Set up the initial hierarchy: Root -> Child
+        root.insertAt(0, child)
+
+        child.measurePolicy = SubspaceMeasurePolicy { _, _ -> layout(1, 1, 1) {} }
+        intermediate.measurePolicy = SubspaceMeasurePolicy { _, _ -> layout(1, 1, 1) {} }
+
+        // Flag to control the execution of the side-effect
+        var shouldReparent = false
+        var hasReparented = false
+
+        // Configure the Root measure policy to simulate a side-effect that alters the hierarchy
+        // during layout.
+        root.measurePolicy = SubspaceMeasurePolicy { measurables, constraints ->
+            val placeables = measurables.map { it.measure(constraints) }
+            layout(100, 100, 100) {
+                // Perform reparenting only when explicitly triggered.
+                if (shouldReparent && !hasReparented) {
+                    hasReparented = true
+
+                    // Reparent the child: Root -> Intermediate -> Child.
+                    // This increases the child's depth from 1 to 2.
+                    root.removeAt(0, 1)
+                    root.insertAt(0, intermediate)
+                    intermediate.insertAt(0, child)
+                }
+                placeables.forEach { it.place(Pose.Identity) }
+            }
+        }
+
+        // Initialize the layout state. The side-effect is disabled, ensuring the child remains at
+        // Depth 1.
+        delegate.requestMeasure(root)
+        delegate.measureAndLayout()
+
+        // --- Reproduction of the Crash Scenario ---
+
+        // Enable the side-effect for the subsequent layout pass.
+        shouldReparent = true
+
+        // Invalidate the layout for both Root and Child.
+        // This adds them to the processing queue with their current depths (Child at Depth 1).
+        delegate.requestLayout(root)
+        delegate.requestLayout(child)
+
+        // Execute the measure and layout pass.
+        // The Root is processed first, triggering the hierarchy change (Child -> Depth 2) while the
+        // Child is still pending in the queue.
+        // We explicitly capture the result to assert that no exception is thrown.
+        val result = delegate.measureAndLayout()
+
+        // Explicitly assert that the operation succeeded without throwing "invalid node depth".
+        assertThat(result).isNotEqualTo("invalid node depth")
+
+        // Verify that the hierarchy was updated correctly.
+        assertThat(child.parent).isEqualTo(intermediate)
+        assertThat(child.depth).isEqualTo(2)
+    }
 }

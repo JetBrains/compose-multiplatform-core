@@ -70,6 +70,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -241,6 +242,10 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
     fun viewfinderInPagerWithDefaultOffscreenPageCount_afterMoveOffThenOnScreen_validSurfaceIsAvailable():
         Unit =
         runTest(testDispatcher) {
+            assumeFalse(
+                "Test fails on cuttlefish b/467137284",
+                Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+            )
             testPageableWithSession(beyondViewportPageCount = 0) {
                 val firstSurfaceSession = awaitSurfaceSession()
                 assertThat(firstSurfaceSession.surface.isValid).isTrue()

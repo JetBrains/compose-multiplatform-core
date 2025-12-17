@@ -20,12 +20,12 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 
 /**
- * In the Glimmer list, we use adaptive scrolling to make focus movement predictable. However, this
- * can result in non-linear content scrolling. In a regular list, if you scroll 100 pixels, the
- * content will also scroll 100 pixels. In the Glimmer list, however, the passed scroll value is
- * shared between content scrolling (Sc) and focus line scrolling (Sf). This method allows you to
- * specify a desired value for the content scroll, but internally a larger value will be applied to
- * account for the focus line movement.
+ * In the Jetpack Compose Glimmer list, we use adaptive scrolling to make focus movement
+ * predictable. However, this can result in non-linear content scrolling. In a regular list, if you
+ * scroll 100 pixels, the content will also scroll 100 pixels. In the Jetpack Compose Glimmer list,
+ * however, the passed scroll value is shared between content scrolling (Sc) and focus line
+ * scrolling (Sf). This method allows you to specify a desired value for the content scroll, but
+ * internally a larger value will be applied to account for the focus line movement.
  *
  * In mathematical terms, it converts `Sc -> Su` and applies `Su` to the state.
  */

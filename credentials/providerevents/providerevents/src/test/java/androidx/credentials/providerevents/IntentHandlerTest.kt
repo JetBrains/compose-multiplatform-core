@@ -37,7 +37,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class IntentHandlerTest {
-    private val testRequestJson = "{\"credentials\":[\"data\"]}"
+    private val testRequestJson =
+        "{\"credentialTypes\":[\"basic-auth\"],\"knownExtensions\":[\"shared\"]}"
     private val testPackageName = "com.example.test.app"
 
     @Test

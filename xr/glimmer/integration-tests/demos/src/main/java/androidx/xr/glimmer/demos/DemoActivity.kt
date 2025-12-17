@@ -27,7 +27,7 @@ import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import kotlinx.coroutines.launch
 
 /**
- * The main activity containing all Glimmer related demos.
+ * The main activity containing all Jetpack Compose Glimmer related demos.
  *
  * If there is a connected device, when this activity is created the first time, it will attempt to
  * automatically launch [ProjectedDemoActivity] on the connected device.

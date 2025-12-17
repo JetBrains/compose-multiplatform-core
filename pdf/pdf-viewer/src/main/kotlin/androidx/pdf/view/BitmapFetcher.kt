@@ -70,7 +70,7 @@ internal class BitmapFetcher(
      * threshold, we will start to use tiled rendering.
      */
     private val maxBitmapSizePx: Point,
-    private val onPageUpdate: () -> Unit,
+    private val onBitmapReady: (Int) -> Unit,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
 ) : AutoCloseable {
@@ -269,7 +269,7 @@ internal class BitmapFetcher(
         val job =
             fetchFullPageBitmap(limitBitmapSize(scale, maxBitmapSizePx)) {
                 pageBitmaps = FullPageBitmap(it, scale)
-                onPageUpdate()
+                onBitmapReady(pageNum)
             }
         return SingleBitmapRequestHandle(job)
     }
@@ -358,7 +358,7 @@ internal class BitmapFetcher(
                         )
                     ensureActive()
                     tile.bitmap = bitmap
-                    onPageUpdate()
+                    onBitmapReady(pageNum)
                 } catch (e: DeadObjectException) {
                     // Service was disconnected.
                     val exception =

@@ -1451,7 +1451,8 @@ public class NotificationCompat {
         }
 
         /**
-         * If {@code true}, silences this instance of the notification, regardless of the sounds or
+         * If {@code true}, silences this instance of the notification and prevents the
+         * notification from peeking on screen, regardless of the importance, sounds, or
          * vibrations set on the notification or notification channel. If {@code false}, then the
          * normal sound and vibration logic applies. Defaults to {@code false}.
          */

@@ -37,8 +37,8 @@ import kotlinx.coroutines.CoroutineScope
 private val DEBUG_TLC_LAYOUT = false
 
 internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
-    contentPadding: PaddingValues,
-    density: Density,
+    private val contentPadding: PaddingValues,
+    private val density: Density,
     layoutDirection: LayoutDirection,
     private val graphicsContext: GraphicsContext,
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>,
@@ -460,23 +460,25 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             }
     }
 
-    private val beforeContentPadding: Int =
-        with(density) {
-            if (!reverseLayout) {
-                contentPadding.calculateTopPadding().roundToPx()
-            } else {
-                contentPadding.calculateBottomPadding().roundToPx()
+    private val beforeContentPadding: Int
+        get() =
+            with(density) {
+                if (!reverseLayout) {
+                    contentPadding.calculateTopPadding().roundToPx()
+                } else {
+                    contentPadding.calculateBottomPadding().roundToPx()
+                }
             }
-        }
 
-    private val afterContentPadding: Int =
-        with(density) {
-            if (!reverseLayout) {
-                contentPadding.calculateBottomPadding().roundToPx()
-            } else {
-                contentPadding.calculateTopPadding().roundToPx()
+    private val afterContentPadding: Int
+        get() =
+            with(density) {
+                if (!reverseLayout) {
+                    contentPadding.calculateBottomPadding().roundToPx()
+                } else {
+                    contentPadding.calculateTopPadding().roundToPx()
+                }
             }
-        }
 
     private companion object {
         const val GRADIENT_DESCENT_REPETITIONS = 4

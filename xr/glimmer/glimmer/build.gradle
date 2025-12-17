@@ -31,9 +31,9 @@ plugins {
 }
 
 dependencies {
-    api("androidx.compose.runtime:runtime:1.10.0-beta02")
-    api("androidx.compose.ui:ui:1.10.0-beta02")
-    api("androidx.compose.foundation:foundation:1.10.0-beta02")
+    api("androidx.compose.runtime:runtime:1.10.0")
+    api("androidx.compose.ui:ui:1.10.0")
+    api("androidx.compose.foundation:foundation:1.10.0")
     api("androidx.annotation:annotation:1.9.1")
 
     androidTestImplementation(project(":compose:ui:ui-test"))
@@ -56,10 +56,10 @@ android {
 }
 
 androidx {
-    name = "Glimmer"
+    name = "Compose Glimmer"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
-    description = "Glimmer, the UI library for augmented Android XR experiences"
+    description = "Jetpack Compose Glimmer, the UI library for augmented Android XR experiences"
     addGoldenImageAssets()
     samples(project(":xr:glimmer:glimmer:glimmer-samples"))
 }

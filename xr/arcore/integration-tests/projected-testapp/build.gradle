@@ -34,25 +34,33 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":xr:projected:projected"))
     implementation(project(":xr:arcore:arcore"))
     implementation(project(":xr:assets"))
     implementation(project(":xr:arcore:arcore-projected"))
     implementation(project(":xr:glimmer:glimmer"))
 
-    implementation("androidx.activity:activity:1.9.3")
+    implementation(project(":activity:activity"))
+    implementation(project(":activity:activity-compose"))
+    implementation(project(":appcompat:appcompat"))
+    implementation(project(":compose:foundation:foundation-layout"))
+    implementation(project(":compose:material3:material3"))
+    implementation(project(":compose:runtime:runtime"))
+    implementation(project(":compose:ui:ui"))
+    implementation(project(":compose:ui:ui-unit"))
+
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
 
     compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.xr.arcore.projected.testapp"
 
     defaultConfig {
-        minSdk = 35
+        minSdk = 36
     }
 
     buildTypes {

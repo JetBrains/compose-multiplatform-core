@@ -291,6 +291,10 @@ constructor(
                             setContentDescription(
                                 input.contentDescription?.asWearSdkComplicationText()
                             )
+                            input.colorRamp?.let {
+                                setColorRamp(it.colors)
+                                setColorRampInterpolated(it.interpolated)
+                            }
                             setTapAction(input.tapAction)
                         }
                 is MonochromaticImageComplicationData ->
@@ -359,6 +363,10 @@ constructor(
                             setContentDescription(
                                 input.contentDescription?.asWearSdkComplicationText()
                             )
+                            input.colorRamp?.let {
+                                setColorRamp(it.colors)
+                                setColorRampInterpolated(it.interpolated)
+                            }
                             setTapAction(input.tapAction)
                         }
                 is WeightedElementsComplicationData ->

@@ -28,6 +28,7 @@ import androidx.ink.geometry.ImmutableVec
 import androidx.ink.geometry.MutableVec
 import androidx.ink.strokes.testing.buildStrokeInputBatchFromPoints
 import com.google.common.truth.Truth.assertThat
+import java.nio.ByteOrder
 import java.nio.ReadOnlyBufferException
 import kotlin.math.PI
 import kotlin.math.cos
@@ -630,6 +631,13 @@ class InProgressStrokeTest {
     }
 
     @Test
+    fun getRawTriangleIndexBuffer_isNativeOrder() {
+        val stroke = makeStartAndExtendStroke()
+        val triangleIndexBuffer = stroke.getRawTriangleIndexBuffer(0, 0)
+        assertThat(triangleIndexBuffer.order()).isEqualTo(java.nio.ByteOrder.nativeOrder())
+    }
+
+    @Test
     fun getRawTriangleIndexBuffer_withEmptyStroke_returnsEmptyBuffer() {
         val stroke = InProgressStroke()
         stroke.start(makeBrush())
@@ -782,6 +790,49 @@ class InProgressStrokeTest {
         assertFailsWith<IllegalArgumentException> { (stroke.populateOutlinePosition(0, 0, -1, p)) }
         assertFailsWith<IllegalArgumentException> {
             (stroke.populateOutlinePosition(0, 0, stroke.getOutlineVertexCount(0, 0) + 1, p))
+        }
+    }
+
+    @Test
+    fun populatePosition_shouldBeWithinBounds() {
+        val stroke = makeStartAndExtendStroke()
+
+        assertThat(stroke.getBrushCoatCount()).isGreaterThan(0)
+        val bounds = BoxAccumulator()
+        stroke.populateMeshBounds(0, bounds)
+
+        val p = MutableVec()
+        for (coatIndex in 0 until stroke.getBrushCoatCount()) {
+            for (partitionIndex in 0 until stroke.getMeshPartitionCount(coatIndex)) {
+                for (vertexIndex in 0 until stroke.getVertexCount(coatIndex, partitionIndex)) {
+                    assertThat(stroke.populatePosition(coatIndex, partitionIndex, vertexIndex, p))
+                        .isSameInstanceAs(p)
+                    assertThat(p.x).isAtLeast(bounds.box!!.xMin)
+                    assertThat(p.y).isAtLeast(bounds.box!!.yMin)
+                    assertThat(p.x).isAtMost(bounds.box!!.xMax)
+                    assertThat(p.y).isAtMost(bounds.box!!.yMax)
+                }
+            }
+        }
+    }
+
+    @Test
+    @Suppress("Range")
+    fun populatePosition_whenBadIndex_shouldThrow() {
+        val stroke = makeStartAndExtendStroke()
+
+        val p = MutableVec()
+        assertFailsWith<IllegalArgumentException> { (stroke.populatePosition(-1, 0, 0, p)) }
+        assertFailsWith<IllegalArgumentException> {
+            (stroke.populatePosition(stroke.getBrushCoatCount() + 1, 0, 0, p))
+        }
+        assertFailsWith<IllegalArgumentException> { (stroke.populatePosition(0, -1, 0, p)) }
+        assertFailsWith<IllegalArgumentException> {
+            (stroke.populatePosition(0, stroke.getMeshPartitionCount(0) + 1, 0, p))
+        }
+        assertFailsWith<IllegalArgumentException> { (stroke.populatePosition(0, 0, -1, p)) }
+        assertFailsWith<IllegalArgumentException> {
+            (stroke.populatePosition(0, 0, stroke.getVertexCount(0, 0) + 1, p))
         }
     }
 

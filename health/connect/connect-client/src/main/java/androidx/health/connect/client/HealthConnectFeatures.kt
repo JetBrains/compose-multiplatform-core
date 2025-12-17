@@ -145,7 +145,10 @@ interface HealthConnectFeatures {
                 FEATURE_PERSONAL_HEALTH_RECORD to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
                 FEATURE_ACTIVITY_INTENSITY to
-                    HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
+                    HealthConnectVersionInfo(
+                        apkVersionCode = 220725,
+                        platformVersion = SDK_EXT_16_PLATFORM_VERSION,
+                    ),
                 FEATURE_EXTENDED_DEVICE_TYPES to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_19_PLATFORM_VERSION),
             )

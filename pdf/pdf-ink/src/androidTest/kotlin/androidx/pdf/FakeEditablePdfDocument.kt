@@ -349,7 +349,7 @@ internal open class FakeEditablePdfDocument(
 
     override fun createWriteHandle(): PdfWriteHandle {
         return object : PdfWriteHandle {
-            override suspend fun write(destination: ParcelFileDescriptor) {}
+            override suspend fun writeTo(destination: ParcelFileDescriptor) {}
 
             override fun close() {}
         }

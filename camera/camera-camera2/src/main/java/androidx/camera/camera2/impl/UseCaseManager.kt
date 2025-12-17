@@ -18,8 +18,6 @@ package androidx.camera.camera2.impl
 
 import android.content.Context
 import android.graphics.ImageFormat
-import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
-import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import android.media.MediaCodec
 import android.os.Build
 import androidx.annotation.GuardedBy
@@ -38,12 +36,8 @@ import androidx.camera.camera2.internal.DynamicRangeResolver
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.CameraStream
-import androidx.camera.camera2.pipe.OutputStream
-import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
@@ -158,6 +152,9 @@ constructor(
         )
 
     private val dynamicRangeResolver = DynamicRangeResolver(cameraProperties.metadata)
+    private val defaultCameraGraphFactory: (CameraGraph.Config) -> CameraGraph = { config ->
+        cameraPipe.createCameraGraph(config)
+    }
 
     @Volatile private var _activeComponent: UseCaseCameraComponent? = null
     public val camera: UseCaseCamera?
@@ -169,23 +166,6 @@ constructor(
     private val closingCameraJobs = mutableListOf<Job>()
 
     private val allControls = controls.toMutableSet().apply { add(camera2CameraControl) }
-
-    init {
-        val outputStream =
-            OutputStream.Config.create(
-                size = getProperPreviewSize(cameraProperties, displayInfoManager),
-                format = StreamFormat.PRIVATE,
-            )
-        val cameraStream = CameraStream.Config.create(outputStream)
-        val noOpCameraGraph =
-            cameraPipe.createCameraGraph(
-                CameraGraph.Config(
-                    camera = cameraProperties.cameraId,
-                    streams = listOf(cameraStream),
-                )
-            )
-        noOpCameraGraph.close()
-    }
 
     internal fun setCameraGraphCreationMode(createImmediately: Boolean) =
         synchronized(lock) {
@@ -349,6 +329,13 @@ constructor(
 
     @GuardedBy("lock")
     private fun refreshRunningUseCases() {
+        // If there are no attached UseCases, the camera is either closed or being closed
+        // by refreshAttachedUseCases(). There is no need to update the running state or
+        // repeating request.
+        if (attachedUseCases.isEmpty()) {
+            return
+        }
+
         val runningUseCases = getRunningUseCases()
         when {
             shouldAddRepeatingUseCase(runningUseCases) -> addRepeatingUseCase()
@@ -401,22 +388,31 @@ constructor(
             Camera2Logger.debug { "Setting up UseCaseManager with OperatingMode.EXTENSION" }
             sessionProcessor!!.initSession(cameraInfoInternal.get(), null)
         }
-        val creationResult =
-            createCameraGraphConfig(
-                sessionConfigAdapter,
-                graphStateToCameraStateAdapter,
+        tryResumeUseCaseManager(
+            createUseCaseCameraConfig(
+                newUseCases = useCases,
+                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                sessionConfigAdapter = sessionConfigAdapter,
                 isExtensions = useCamera2Extension,
             )
-        tryResumeUseCaseManager(
-            UseCaseCameraConfig(
-                useCases = useCases,
-                sessionConfigAdapter = sessionConfigAdapter,
-                streamConfigMap = creationResult.streamConfigMap,
-                cameraGraphConfig = creationResult.config,
-                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-                cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
-                sessionProcessor = sessionProcessor,
-            )
+        )
+    }
+
+    @VisibleForTesting
+    internal fun createUseCaseCameraConfig(
+        newUseCases: List<UseCase>,
+        sessionConfigAdapter: SessionConfigAdapter,
+        graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+        isExtensions: Boolean = false,
+    ): UseCaseCameraConfig {
+        return UseCaseCameraConfig.create(
+            useCases = newUseCases,
+            cameraGraphConfigProvider = cameraGraphConfigProvider,
+            sessionConfigAdapter = sessionConfigAdapter,
+            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+            cameraGraphFactory = defaultCameraGraphFactory,
+            sessionProcessor = sessionProcessor,
+            isExtensions = isExtensions,
         )
     }
 
@@ -583,41 +579,6 @@ constructor(
         deactivate(meteringRepeating)
         detach(listOf(meteringRepeating))
         meteringRepeating.unbindFromCamera(cameraInternal.get())
-    }
-
-    @VisibleForTesting
-    internal fun createCameraGraphConfig(
-        sessionConfigAdapter: SessionConfigAdapter,
-        graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
-        isExtensions: Boolean = false,
-    ): CameraGraphConfigProvider.CameraGraphCreationResult {
-        val sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull()
-        val operatingMode =
-            if (isExtensions) OperatingMode.EXTENSION
-            else
-                sessionConfig?.let {
-                    when (it.sessionType) {
-                        SESSION_REGULAR -> OperatingMode.NORMAL
-                        SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
-                        else -> OperatingMode.custom(it.sessionType)
-                    }
-                } ?: OperatingMode.NORMAL
-        val camera2ExtensionMode =
-            if (isExtensions) {
-                sessionProcessor?.implementationType?.second
-            } else {
-                null
-            }
-
-        return cameraGraphConfigProvider.create(
-            operatingMode = operatingMode,
-            sessionConfig = sessionConfig,
-            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-            camera2ExtensionMode = camera2ExtensionMode,
-            surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
-            surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
-            cameraXConfig = cameraXConfig,
-        )
     }
 
     private fun Collection<UseCase>.isMeteringCombinationSupported(): Boolean {

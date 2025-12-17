@@ -29,11 +29,11 @@ import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
-import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -42,6 +42,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.Material3ImageTest.Companion.createImage
+import androidx.wear.compose.remote.material3.previews.RemoteButtonEnabled
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBorder
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIcon
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIconAndSecondaryLabel
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithSecondaryLabel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -63,7 +68,7 @@ class RemoteButtonTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.density)
+        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun button_enabled() {
@@ -71,13 +76,7 @@ class RemoteButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    enabled = RemoteBoolean(true),
-                    content = { RemoteText(RemoteString("button_enabled")) },
-                )
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteButtonEnabled() }
         }
     }
 
@@ -88,11 +87,8 @@ class RemoteButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    enabled = RemoteBoolean(false),
-                ) {
-                    RemoteText(RemoteString("button_disabled"))
+                RemoteButton(modifier = RemoteModifier.buttonSizeModifier(), enabled = false.rb) {
+                    RemoteText("button_disabled".rs)
                 }
             }
         }
@@ -116,12 +112,8 @@ class RemoteButtonTest {
                     disabledIconColor = RemoteColor(Color.Black),
                 )
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    contentPadding = RemotePaddingValues(40.rdp),
-                    colors = colors,
-                ) {
-                    RemoteText(RemoteString("button_overrides_colors"))
+                RemoteButton(modifier = RemoteModifier.buttonSizeModifier(), colors = colors) {
+                    RemoteText("button_overrides_colors".rs)
                 }
             }
         }
@@ -136,9 +128,9 @@ class RemoteButtonTest {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteButton(
                     modifier = RemoteModifier.buttonSizeModifier(),
-                    contentPadding = RemotePaddingValues(150.rdp),
+                    contentPadding = RemotePaddingValues(50.rdp),
                 ) {
-                    RemoteText(RemoteString("button_overrides_padding"))
+                    RemoteText("button_overrides_padding".rs)
                 }
             }
         }
@@ -155,7 +147,7 @@ class RemoteButtonTest {
                     modifier = RemoteModifier.size(180.rdp, 100.rdp),
                     contentPadding = RemotePaddingValues(0.rdp),
                 ) {
-                    RemoteText(RemoteString("button_overrides_size"))
+                    RemoteText("button_overrides_size".rs)
                 }
             }
         }
@@ -173,7 +165,7 @@ class RemoteButtonTest {
                     contentPadding = RemotePaddingValues(0.rdp),
                 ) {
                     RemoteText(
-                        RemoteString("button_overrides_textStyle"),
+                        "button_overrides_textStyle".rs,
                         color = null,
                         style =
                             RemoteMaterialTheme.typography.typography.labelSmall.copy(Color.Cyan),
@@ -189,15 +181,7 @@ class RemoteButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    border = 8.rdp,
-                    borderColor = RemoteColor(Color.Green),
-                ) {
-                    RemoteText(RemoteString("button_with_border"))
-                }
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteButtonWithBorder() }
         }
     }
 
@@ -214,7 +198,7 @@ class RemoteButtonTest {
                     borderColor = RemoteColor(Color.Green),
                     shape = RemoteCircleShape,
                 ) {
-                    RemoteText(RemoteString("button_with_circle_shape"))
+                    RemoteText("button_with_circle_shape".rs)
                 }
             }
         }
@@ -235,7 +219,7 @@ class RemoteButtonTest {
                     modifier = RemoteModifier.buttonSizeModifier(),
                     containerPainter = containerPainter,
                 ) {
-                    RemoteText(RemoteString("image_background"))
+                    RemoteText("image_background".rs)
                 }
             }
         }
@@ -252,7 +236,7 @@ class RemoteButtonTest {
                     createImage(200, 200)
                 }
             Center(RemoteModifier.fillMaxSize()) {
-                val enabled = RemoteBoolean(false)
+                val enabled = false.rb
                 val containerPainter =
                     RemoteButtonDefaults.containerPainter(painterRemoteBitmap(backgroundImage))
                 RemoteButton(
@@ -260,7 +244,7 @@ class RemoteButtonTest {
                     enabled = enabled,
                     containerPainter = containerPainter,
                 ) {
-                    RemoteText(RemoteString("disable_image_background"))
+                    RemoteText("disable_image_background".rs)
                 }
             }
         }
@@ -272,20 +256,7 @@ class RemoteButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    icon = {
-                        RemoteIcon(
-                            imageVector = TestImageVectors.VolumeUp,
-                            contentDescription = null,
-                            tint = RemoteButtonDefaults.buttonColors().iconColor,
-                        )
-                    },
-                    secondaryLabel = { RemoteText(RemoteString("secondaryLabel")) },
-                    label = { RemoteText(RemoteString("label")) },
-                )
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteButtonWithIconAndSecondaryLabel() }
         }
     }
 
@@ -295,19 +266,7 @@ class RemoteButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    icon = {
-                        RemoteIcon(
-                            imageVector = TestImageVectors.VolumeUp,
-                            contentDescription = null,
-                            tint = RemoteButtonDefaults.buttonColors().iconColor,
-                        )
-                    },
-                    label = { RemoteText(RemoteString("label")) },
-                )
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteButtonWithIcon() }
         }
     }
 
@@ -317,13 +276,7 @@ class RemoteButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(
-                    modifier = RemoteModifier.buttonSizeModifier(),
-                    secondaryLabel = { RemoteText(RemoteString("secondaryLabel")) },
-                    label = { RemoteText(RemoteString("label")) },
-                )
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteButtonWithSecondaryLabel() }
         }
     }
 
@@ -333,14 +286,14 @@ class RemoteButtonTest {
             """
 DATA_TEXT<42> = "button_enabled"
 ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 28.0, 12.0] VISIBLE
+  ROW [-3:-1] = [0.0, 0.0, 73.5, 31.5] VISIBLE
     MODIFIERS
       HEIGHT_IN = [52.0, 3.4028235E38]
       WIDTH_IN = [12.0, 3.4028235E38]
       DRAW_CONTENT
       CLICK_MODIFIER
       SEMANTICS = SEMANTICS BUTTON
-      PADDING = [14.0, 6.0, 14.0, 6.0]
+      PADDING = [36.75, 15.75, 36.75, 15.75]
     TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
       MODIFIERS"""
                 .trimIndent()
@@ -349,9 +302,9 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 remoteComposeTestRule.captureDocument(context = context) {
                     RemoteButton(
                         modifier = RemoteModifier.buttonSizeModifier(),
-                        enabled = RemoteBoolean(true),
+                        enabled = true.rb,
                     ) {
-                        RemoteText(RemoteString("button_enabled"))
+                        RemoteText("button_enabled".rs)
                     }
                 }
             val actualContent = document.displayHierarchy()
@@ -366,13 +319,13 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
             """
 DATA_TEXT<42> = "button_disabled"
 ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 28.0, 12.0] VISIBLE
+  ROW [-3:-1] = [0.0, 0.0, 73.5, 31.5] VISIBLE
     MODIFIERS
       HEIGHT_IN = [52.0, 3.4028235E38]
       WIDTH_IN = [12.0, 3.4028235E38]
       DRAW_CONTENT
       SEMANTICS = SEMANTICS BUTTON disabled
-      PADDING = [14.0, 6.0, 14.0, 6.0]
+      PADDING = [36.75, 15.75, 36.75, 15.75]
     TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
       MODIFIERS"""
                 .trimIndent()
@@ -382,9 +335,9 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 remoteComposeTestRule.captureDocument(context = context) {
                     RemoteButton(
                         modifier = RemoteModifier.buttonSizeModifier(),
-                        enabled = RemoteBoolean(false),
+                        enabled = false.rb,
                     ) {
-                        RemoteText(RemoteString("button_disabled"))
+                        RemoteText("button_disabled".rs)
                     }
                 }
             val actualContent = document.displayHierarchy()

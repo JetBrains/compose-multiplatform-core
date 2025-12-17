@@ -18,4 +18,4 @@ package androidx.datastore.core
 
 import java.io.File
 
-internal expect fun File.atomicMoveTo(toFile: File): Boolean
+internal expect fun File.atomicMoveTo(toFile: File)

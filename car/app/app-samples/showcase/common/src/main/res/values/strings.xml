@@ -433,6 +433,9 @@
   <string name="secondary_action_toast">Secondary Action is selected</string>
   <string name="row_primary_action_toast">Row primary action is selected</string>
 
+    <!--RowEndImageAndActionsDemoScreen -->
+    <string name="row_end_image_and_actions_demo_title">Row End Image And Actions Demo</string>
+
   <!-- EmptyListDemoScreen -->
   <string name="empty_list_demo_title">Empty List Demo</string>
   <string name="empty_list_message">The list is empty</string>

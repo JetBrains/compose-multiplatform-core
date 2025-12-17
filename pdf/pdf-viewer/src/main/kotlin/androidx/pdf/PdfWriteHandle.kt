@@ -17,17 +17,16 @@
 package androidx.pdf
 
 import android.os.ParcelFileDescriptor
-import androidx.annotation.RestrictTo
+import java.io.Closeable
 import java.io.IOException
 
 /** Represents a handle for writing the contents of a PDF to a destination. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface PdfWriteHandle : AutoCloseable {
+public interface PdfWriteHandle : Closeable {
     /**
      * Writes the contents of the PDF to [destination].
      *
      * @param destination The [ParcelFileDescriptor] to write to. The caller is responsible for
      *   closing [destination].
      */
-    @Throws(IOException::class) public suspend fun write(destination: ParcelFileDescriptor)
+    @Throws(IOException::class) public suspend fun writeTo(destination: ParcelFileDescriptor)
 }

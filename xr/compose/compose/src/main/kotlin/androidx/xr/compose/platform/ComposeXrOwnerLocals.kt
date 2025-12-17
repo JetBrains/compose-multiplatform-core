@@ -88,6 +88,9 @@ private fun View.getXrOwnerLocals(): ComposeXrOwnerLocals? =
     getTag(R.id.compose_xr_owner_locals) as? ComposeXrOwnerLocals
 
 private fun View.createXrOwnerLocals(activity: Activity): ComposeXrOwnerLocals? {
+    // Don't try to create a session for non-XR configurations.
+    if (!SpatialConfiguration.hasXrSpatialFeature(activity)) return null
+
     val session = getOrCreateSession(activity) ?: return null
 
     // When the owning lifecycle is destroyed, clear the cached  `ComposeXrOwnerLocals` from the

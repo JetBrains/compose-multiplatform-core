@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Demo Template Tab"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Tab Pesan"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Tab Panel"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Tab Item dengan Bagian"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Tab Daftar"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Tab Petak dengan Judul Tab Panjang"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Tab Penelusuran"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Baris juga dapat dipilih"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Tindakan Sekunder dipilih"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Tindakan utama baris dipilih"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Demo Daftar Kosong"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Daftar ini kosong"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Demo Template Lain-Lain"</string>

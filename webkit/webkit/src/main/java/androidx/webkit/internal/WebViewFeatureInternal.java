@@ -940,6 +940,16 @@ public class WebViewFeatureInternal {
                     WebViewFeature.NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED,
                     Features.ON_NAVIGATION_COMPLETED_NON_COMMITTED);
 
+    /**
+     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
+     * See {@link WebViewFeature#NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS}.
+     */
+    public static final ApiFeature.NoFramework
+            NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATION =
+            new ApiFeature.NoFramework(
+                    WebViewFeature.NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS,
+                    Features.COMMITTED_NAVIGATION_GET_PAGE_NON_NULL);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

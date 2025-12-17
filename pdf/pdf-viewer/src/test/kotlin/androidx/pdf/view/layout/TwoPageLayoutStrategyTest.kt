@@ -89,6 +89,47 @@ class TwoPageLayoutStrategyTest {
     }
 
     @Test
+    fun testSetPagePositions_jumpForward_approximatesLayout() {
+        // Load the first page.
+        twoPageLayoutStrategy.setPagePositions(0, Dimension(100, 200))
+
+        // Jump forward to page 5, creating a gap for pages 1-4.
+        val dimension5 = Dimension(100, 220)
+        twoPageLayoutStrategy.setPagePositions(5, dimension5)
+
+        // Verify the layout for the intermediate rows is approximated.
+        // The approximation should use the height of the newly loaded page (page 5).
+        val viewport = RectF(0f, 0f, 100f, 600f)
+        val expectedPage0Location = RectF(0f, 5f, 100f, 205f)
+        assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 0, Dimension(100, 200)))
+            .isEqualTo(expectedPage0Location)
+
+        val expectedPage5Location = RectF(105f, 465f, 205f, 685f)
+        assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 5, Dimension(100, 220)))
+            .isEqualTo(expectedPage5Location)
+    }
+
+    @Test
+    fun testSetPagePositions_lateLoadForPreviousPage_correctsLayout() {
+        // Create an approximated layout by loading page 5 first.
+        twoPageLayoutStrategy.setPagePositions(5, Dimension(110, 220))
+
+        // Load page 2 (in row 1) out of order with a taller dimension.
+        twoPageLayoutStrategy.setPagePositions(2, Dimension(110, 300))
+
+        // Verify the layout of page 0 is the same.
+        val viewport = RectF(0f, 0f, 110f, 600f)
+        val expectedPage0Location = RectF(0f, 5f, 110f, 225f)
+        assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 0, Dimension(110, 220)))
+            .isEqualTo(expectedPage0Location)
+
+        // Verify the layout of page 5 is corrected.
+        val expectedPage5Location = RectF(115f, 545f, 225f, 765f)
+        assertThat(twoPageLayoutStrategy.getPageLocation(viewport, 5, Dimension(110, 220)))
+            .isEqualTo(expectedPage5Location)
+    }
+
+    @Test
     fun testGetVisiblePages_includePartial() {
         setupPageDimensions()
         val viewport = RectF(0f, 200f, 100f, 500f)

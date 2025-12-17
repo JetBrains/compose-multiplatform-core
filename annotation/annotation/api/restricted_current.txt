@@ -35,9 +35,9 @@ package androidx.annotation {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.FIELD}) public @interface ChecksAconfigFlag {
-    ctor @KotlinOnly public ChecksAconfigFlag(String flag);
-    method @InaccessibleFromKotlin public abstract String flag();
-    property public abstract String flag;
+    ctor @KotlinOnly public ChecksAconfigFlag(String value);
+    method @InaccessibleFromKotlin public abstract String value();
+    property public abstract String value;
   }
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.FIELD}) public @interface ChecksSdkIntAtLeast {

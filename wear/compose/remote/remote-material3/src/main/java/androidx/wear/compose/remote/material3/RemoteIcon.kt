@@ -20,7 +20,7 @@ package androidx.wear.compose.remote.material3
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
-import androidx.compose.remote.creation.compose.capture.painter.painterRemoteVector
+import androidx.compose.remote.creation.compose.capture.vector.painterRemoteVector
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -33,6 +33,32 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+
+/**
+ * Composable function that displays an icon using an [RemoteImageVector].
+ *
+ * This function provides a way to display icons consistently across both local and remote Compose
+ * environments.
+ *
+ * @param imageVector The [ImageVector] representing the icon to display.
+ * @param modifier The [RemoteModifier] to apply to the icon.
+ * @param tint The color to apply to the icon. Defaults to the current content color provided by
+ *   [DefaultTint].
+ */
+@RemoteComposable
+@Composable
+public fun RemoteIcon(
+    imageVector: ImageVector,
+    contentDescription: RemoteString?,
+    modifier: RemoteModifier = RemoteModifier.size(DefaultIconDimension),
+    tint: RemoteColor = LocalRemoteContentColor.current,
+) {
+    RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
+        val painter = painterRemoteVector(imageVector, tint)
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { with(painter) { onDraw() } }
+    }
+}
 
 /**
  * Composable function that displays an icon using an [RemoteImageVector].
@@ -51,7 +77,7 @@ public fun RemoteIcon(
     imageVector: RemoteImageVector,
     contentDescription: RemoteString?,
     modifier: RemoteModifier = RemoteModifier.size(DefaultIconDimension),
-    tint: RemoteColor = LocalRemoteContentColor.current,
+    tint: RemoteColor = RemoteColor(DefaultTint),
 ) {
     RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
         val painter = painterRemoteVector(imageVector, tint)

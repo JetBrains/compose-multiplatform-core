@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity() {
     /** Enables new feature for test app. */
     private fun enableFeatureFlags() {
         PdfFeatureFlags.isExternalHardwareInteractionEnabled = true
-        PdfFeatureFlags.isLayoutStrategyEnabled = true
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)

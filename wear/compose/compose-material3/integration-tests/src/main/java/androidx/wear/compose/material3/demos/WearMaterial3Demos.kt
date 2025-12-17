@@ -37,6 +37,7 @@ import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.NonClickableImageCardSample
 import androidx.wear.compose.material3.samples.NonClickableTitleCardWithImageWithTimeAndTitleSample
+import androidx.wear.compose.material3.samples.SimpleResponsiveTransformingLazyColumnSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
@@ -271,6 +272,17 @@ val WearMaterial3Demos =
                         },
                         ComposableDemo("Reduced Motion") {
                             TransformingLazyColumnReducedMotionSample()
+                        },
+                    ),
+                ),
+                Material3DemoCategory(
+                    title = "ResponsiveTLC",
+                    listOf(
+                        ComposableDemo("Basic Sample") {
+                            SimpleResponsiveTransformingLazyColumnSample()
+                        },
+                        ComposableDemo("Responsive padding Demo") {
+                            ResponsiveTransformingLazyColumnDemo()
                         },
                     ),
                 ),

@@ -164,48 +164,6 @@
     <AppFunctionComponentMetadataDocument>
         <dataTypes>
             <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.NotDescribedByKdoc</objectQualifiedName>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>7</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>param</name>
-                </properties>
-                <required>param</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.NotDescribedByKdoc</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.InputToFakeFreeFormFunction</objectQualifiedName>
-                <description>A test input class to the free-form function. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <description>A string param. </description>
-                        <type>8</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>data</name>
-                </properties>
-                <required>data</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.InputToFakeFreeFormFunction</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
                 <allOf>
                     <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
                     <id>unused</id>
@@ -243,91 +201,23 @@
             <dataTypeMetadata>
                 <id>unused</id>
                 <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.Optional&lt;kotlin.Int&gt;</objectQualifiedName>
-                <description>A generic serializable class. </description>
+                <objectQualifiedName>com.testdata.InputToFakeFreeFormFunction</objectQualifiedName>
+                <description>A test input class to the free-form function. </description>
                 <properties>
                     <dataTypeMetadata>
                         <id>unused</id>
                         <isNullable>false</isNullable>
-                        <description>The value. </description>
-                        <type>7</type>
+                        <description>A string param. </description>
+                        <type>8</type>
                     </dataTypeMetadata>
                     <id>unused</id>
-                    <name>value</name>
+                    <name>data</name>
                 </properties>
-                <required>value</required>
+                <required>data</required>
                 <type>3</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <name>com.testdata.Optional&lt;kotlin.Int&gt;</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.Optional&lt;kotlin.Int?&gt;</objectQualifiedName>
-                <description>A generic serializable class. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>true</isNullable>
-                        <description>The value. </description>
-                        <type>7</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>value</name>
-                </properties>
-                <required>value</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.Optional&lt;kotlin.Int?&gt;</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction&gt;</objectQualifiedName>
-                <description>A generic serializable class. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <description>The value. </description>
-                        <type>11</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>value</name>
-                </properties>
-                <required>value</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction&gt;</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction?&gt;</objectQualifiedName>
-                <description>A generic serializable class. </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
-                        <id>unused</id>
-                        <isNullable>true</isNullable>
-                        <description>The value. </description>
-                        <type>11</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>value</name>
-                </properties>
-                <required>value</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction?&gt;</name>
+            <name>com.testdata.InputToFakeFreeFormFunction</name>
         </dataTypes>
         <dataTypes>
             <dataTypeMetadata>
@@ -447,6 +337,116 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.InputWithRepeatedTypes</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.NotDescribedByKdoc</objectQualifiedName>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>7</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>param</name>
+                </properties>
+                <required>param</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.NotDescribedByKdoc</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction&gt;</objectQualifiedName>
+                <description>A generic serializable class. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <description>The value. </description>
+                        <type>11</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>value</name>
+                </properties>
+                <required>value</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction&gt;</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction?&gt;</objectQualifiedName>
+                <description>A generic serializable class. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <dataTypeReference>com.testdata.InputToFakeFreeFormFunction</dataTypeReference>
+                        <id>unused</id>
+                        <isNullable>true</isNullable>
+                        <description>The value. </description>
+                        <type>11</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>value</name>
+                </properties>
+                <required>value</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.Optional&lt;com.testdata.InputToFakeFreeFormFunction?&gt;</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.Optional&lt;kotlin.Int&gt;</objectQualifiedName>
+                <description>A generic serializable class. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <description>The value. </description>
+                        <type>7</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>value</name>
+                </properties>
+                <required>value</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.Optional&lt;kotlin.Int&gt;</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.Optional&lt;kotlin.Int?&gt;</objectQualifiedName>
+                <description>A generic serializable class. </description>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>true</isNullable>
+                        <description>The value. </description>
+                        <type>7</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>value</name>
+                </properties>
+                <required>value</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.Optional&lt;kotlin.Int?&gt;</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

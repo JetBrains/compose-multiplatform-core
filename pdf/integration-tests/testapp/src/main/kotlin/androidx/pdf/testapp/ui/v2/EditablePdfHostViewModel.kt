@@ -39,7 +39,7 @@ class EditablePdfHostViewModel : ViewModel() {
         viewModelScope.launch {
             _saveState.value = SaveState.Saving
             try {
-                handle.write(pfd)
+                handle.writeTo(pfd)
                 handle.close()
                 _saveState.value = SaveState.Success
             } catch (e: Exception) {

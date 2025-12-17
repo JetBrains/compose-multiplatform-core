@@ -53,49 +53,42 @@ public final class UserAgentMetadata {
      * Form factor option: {@code Desktop}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_DESKTOP = "Desktop";
 
     /**
      * Form factor option: {@code Automotive}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_AUTOMOTIVE = "Automotive";
 
     /**
      * Form factor option: {@code Mobile}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_MOBILE = "Mobile";
 
     /**
      * Form factor option: {@code Tablet}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_TABLET = "Tablet";
 
     /**
      * Form factor option: {@code XR}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_XR = "XR";
 
     /**
      * Form factor option: {@code EInk}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_EINK = "EInk";
 
     /**
      * Form factor option: {@code Watch}, to be used with {@link Builder#setFormFactors}
      * and {@link Builder#getFormFactors}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String FORM_FACTOR_WATCH = "Watch";
 
     /**
@@ -269,7 +262,6 @@ public final class UserAgentMetadata {
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull @FormFactors List<String> getFormFactors() {
         return mFormFactors;
     }
@@ -690,7 +682,6 @@ public final class UserAgentMetadata {
          */
         @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public @NonNull Builder setFormFactors(@NonNull @FormFactors List<String> formFactors) {
             ApiFeature.NoFramework feature =
                     WebViewFeatureInternal.USER_AGENT_METADATA_FORM_FACTORS;

@@ -20,7 +20,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import com.google.common.util.concurrent.ListenableFuture
 
 /** Interface for an XR Runtime ScenePose. */
 // TODO: b/420684433 This interface name no longer matches the public SceneCore interface name.
@@ -81,14 +80,13 @@ public interface ScenePose {
      * @param origin The translation of the origin of the hit test relative to this ScenePose.
      * @param direction The direction for the hit test ray from the ScenePose.
      * @param hitTestFilter The scenes that will be in range for the hit test.
-     * @return a {@code ListenableFuture<HitResult>}. The HitResult describes if it hit something
-     *   and where relative to this [ScenePose]. Listeners will be called on the main thread if
-     *   Runnable::run is supplied.
+     * @return a {@code HitResult}. The HitResult describes if it hit something and where relative
+     *   to this [ScenePose]. Listeners will be called on the main thread if Runnable::run is
+     *   supplied.
      */
-    @Suppress("AsyncSuffixFuture")
-    public fun hitTest(
+    public suspend fun hitTest(
         origin: Vector3,
         direction: Vector3,
         @HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult>
+    ): HitTestResult
 }

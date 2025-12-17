@@ -16,8 +16,6 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * During the [RegistryManager.registerCreationOptions] transaction, this is thrown when
  * configurations are mismatched for the RegistryManager service, typically indicating the service
@@ -29,8 +27,9 @@ import androidx.annotation.RestrictTo
  *
  * @param errorMessage the error message
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RegisterCreationOptionsConfigurationException(errorMessage: CharSequence? = null) :
+public class RegisterCreationOptionsConfigurationException
+@JvmOverloads
+constructor(errorMessage: CharSequence? = null) :
     RegisterCreationOptionsException(
         type = TYPE_REGISTER_CREATION_OPTIONS_CONFIGURATION_EXCEPTION,
         errorMessage = errorMessage,

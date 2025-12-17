@@ -100,8 +100,8 @@ class UserSubspaceActivity : ComponentActivity() {
                 TodoItem("Review PRs", false),
             )
         }
-        // State for the lazy lock duration slider
-        var lazyLockDuration by remember { mutableIntStateOf(1000) }
+        // State for the soft lock duration slider
+        var softLockDuration by remember { mutableIntStateOf(1000) }
 
         UserSubspace(
             behavior = LockingBehavior.static(),
@@ -141,7 +141,7 @@ class UserSubspaceActivity : ComponentActivity() {
                     isRotationYTracked = true,
                     isRotationZTracked = false,
                 ),
-            behavior = LockingBehavior.lazy(durationMs = lazyLockDuration),
+            behavior = LockingBehavior.soft(durationMs = softLockDuration),
         ) {
             SpatialPanel(SubspaceModifier.height(200.dp).width(450.dp).offset(y = (-50).dp)) {
                 Box(Modifier.fillMaxSize().background(Color.Cyan)) {
@@ -158,9 +158,9 @@ class UserSubspaceActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                     ) {
                         PanelHeader("CONTROL PANEL - HEAD LOCKED")
-                        LazyLockSlider(
-                            duration = lazyLockDuration,
-                            onDurationChange = { lazyLockDuration = it.toInt() },
+                        SoftLockSlider(
+                            duration = softLockDuration,
+                            onDurationChange = { softLockDuration = it.toInt() },
                         )
                     }
                 }
@@ -173,7 +173,7 @@ class UserSubspaceActivity : ComponentActivity() {
                     isTranslationYTracked = true,
                     isTranslationZTracked = true,
                 ),
-            behavior = LockingBehavior.lazy(durationMs = lazyLockDuration),
+            behavior = LockingBehavior.soft(durationMs = softLockDuration),
         ) {
             SpatialCurvedRow(SubspaceModifier.width(1000.dp).height(300.dp), curveRadius = 500.dp) {
                 // To-Do List Card
@@ -196,7 +196,7 @@ class UserSubspaceActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun LazyLockSlider(duration: Int, onDurationChange: (Float) -> Unit) {
+    private fun SoftLockSlider(duration: Int, onDurationChange: (Float) -> Unit) {
         Column(
             modifier = Modifier.width(400.dp).padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

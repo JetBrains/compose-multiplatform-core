@@ -18,6 +18,7 @@ package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,7 +33,7 @@ import androidx.xr.glimmer.stack.VerticalStack
 @Sampled
 @Composable
 fun VerticalStackSample() {
-    VerticalStack(modifier = Modifier.height(300.dp)) {
+    VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
         item(key = 0) {
             Card(modifier = Modifier.fillMaxSize().itemDecoration(CardDefaults.shape)) {
                 Text("Item-0")

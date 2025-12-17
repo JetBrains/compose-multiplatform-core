@@ -69,7 +69,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":compose:remote:remote-core"))
                 api(project(":compose:remote:remote-creation-core"))
-                implementation(project(":graphics:graphics-path"))
+                implementation("androidx.graphics:graphics-path:1.1.0-alpha01")
             }
         }
 

@@ -23,10 +23,10 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface RenderingRuntimeFactory : Service {
     /**
-     * Creates a [RenderingRuntime].
+     * Creates a RenderingRuntime.
      *
-     * @param sceneRuntime The [SceneRuntime] for the session. This instance must also implement the
-     *   [androidx.xr.scenecore.runtime.RenderingEntityFactory] interface.
+     * @param runtimes The runtimes for the session which must include an instance that implements
+     *   both SceneRuntime and RenderingEntityFactory.
      * @param activity The host [Activity] for the session.
      */
     public fun create(runtimes: List<JxrRuntime>, activity: Activity): JxrRuntime

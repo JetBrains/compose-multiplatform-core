@@ -66,7 +66,7 @@ import kotlin.jvm.JvmStatic
 public class BrushBehavior
 private constructor(
     /** A handle to the underlying native [BrushBehavior] object. */
-    internal val nativePointer: Long,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val nativePointer: Long,
     // The [terminalNodes] val below is a defensive copy of this parameter.
     terminalNodes: List<TerminalNode>,
 ) {

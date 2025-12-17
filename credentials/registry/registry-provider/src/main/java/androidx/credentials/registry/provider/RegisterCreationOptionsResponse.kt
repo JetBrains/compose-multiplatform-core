@@ -16,13 +16,10 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * The result of calling [RegistryManager.registerCreationOptions].
  *
  * @property type the type of the credentials that were registered, matching the
  *   [RegisterCreationOptionsRequest.type]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RegisterCreationOptionsResponse(public val type: String)

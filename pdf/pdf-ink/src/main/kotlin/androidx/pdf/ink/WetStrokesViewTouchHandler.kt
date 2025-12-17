@@ -17,7 +17,9 @@
 package androidx.pdf.ink
 
 import android.graphics.Matrix
+import android.graphics.RectF
 import android.os.Build
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RequiresExtension
@@ -47,6 +49,12 @@ internal class WetStrokesViewTouchHandler(
     private val motionEventPredictor = MotionEventPredictor.newInstance(wetStrokesView)
     private var currentPageInfo: PageInfoProvider.PageInfo? = null
     private var lastValidEvent: MotionEvent? = null
+    private val touchTolerancePx =
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            TOUCH_TOLERANCE_IN_DP,
+            wetStrokesView.resources.displayMetrics,
+        )
 
     /** The brush needs to be used for any new Strokes on [InProgressStrokesView]. */
     var brushForInking: Brush = InkDefaults.PEN_BRUSH
@@ -125,9 +133,9 @@ internal class WetStrokesViewTouchHandler(
 
         val currentEventX = event.getX(pointerIndex)
         val currentEventY = event.getY(pointerIndex)
-        val pageBounds = currentPageInfo?.bounds
 
-        if (pageBounds != null && pageBounds.contains(currentEventX, currentEventY)) {
+        val insetPageBounds = getInsetPageBounds()
+        if (insetPageBounds != null && insetPageBounds.contains(currentEventX, currentEventY)) {
             // Pointer is within the current page bounds, add to the stroke.
             wetStrokesView.addToStroke(event, currentPointerId, activeStrokeId, predictedEvent)
             lastValidEvent?.recycle()
@@ -170,6 +178,17 @@ internal class WetStrokesViewTouchHandler(
         lastValidEvent = null
     }
 
+    private fun getInsetPageBounds(): RectF? {
+        val pageInfo = currentPageInfo ?: return null
+
+        val brushRadius = brushForInking.size / 2
+        // Calculate the total inset (brush radius + tolerance), scaled by the current zoom level.
+        val totalInset = (brushRadius + touchTolerancePx) * pageInfo.zoom
+
+        // Duplicate page bounds to avoid mutating the original, then apply the inset.
+        return RectF(pageInfo.bounds).apply { inset(totalInset, totalInset) }
+    }
+
     /** Callback invoked when a new ink stroke is started on a page. */
     internal fun interface OnStrokeStartedListener {
         /**
@@ -179,5 +198,9 @@ internal class WetStrokesViewTouchHandler(
          * @param pageNum The page number (0-indexed) on which the stroke was started.
          */
         fun onStrokeStarted(strokeId: InProgressStrokeId, pageNum: Int)
+    }
+
+    private companion object {
+        const val TOUCH_TOLERANCE_IN_DP = 2f
     }
 }

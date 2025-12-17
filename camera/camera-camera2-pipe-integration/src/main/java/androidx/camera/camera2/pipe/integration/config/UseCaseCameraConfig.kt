@@ -16,7 +16,10 @@
 
 package androidx.camera.camera2.pipe.integration.config
 
+import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
+import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
@@ -24,7 +27,7 @@ import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateA
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
 import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
-import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
+import androidx.camera.camera2.pipe.integration.impl.CameraGraphConfigProvider
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCamera
@@ -68,17 +71,26 @@ public abstract class UseCaseCameraModule {
 @Module
 public data class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
-    private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
     private val cameraGraphFactory: (CameraGraph.Config) -> CameraGraph,
-    public val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
-    public val sessionConfigAdapter: SessionConfigAdapter,
-    public val cameraGraphConfig: CameraGraph.Config,
-    private val sessionProcessor: SessionProcessor? = null,
+    private val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+    private val sessionConfigAdapter: SessionConfigAdapter,
+    private val isExtensions: Boolean,
+    private val sessionProcessor: SessionProcessor?,
+    private val lazyCreationResult: Lazy<CameraGraphConfigProvider.CameraGraphCreationResult>,
 ) {
+    public val cameraGraphConfig: CameraGraph.Config
+        get() = lazyCreationResult.value.config
+
     @UseCaseCameraScope
     @Provides
     public fun provideCameraGraph(): CameraGraph {
         return cameraGraphFactory(cameraGraphConfig)
+    }
+
+    @UseCaseCameraScope
+    @Provides
+    public fun provideStreamConfigMap(): Map<CameraStream.Config, DeferrableSurface> {
+        return lazyCreationResult.value.streamConfigMap
     }
 
     @UseCaseCameraScope
@@ -107,20 +119,108 @@ public data class UseCaseCameraConfig(
     @Provides
     public fun provideUseCaseGraphContext(
         cameraStateAdapter: CameraStateAdapter,
-        cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository,
+        streamConfigMapProvider: Provider<Map<CameraStream.Config, DeferrableSurface>>,
         cameraGraphProvider: Provider<CameraGraph>,
     ): UseCaseGraphContext {
-        sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
-            cameraInteropStateCallbackRepository.updateCallbacks(sessionConfig)
-        }
-
         Camera2Logger.debug { "Prepared UseCaseGraphContext (Deferred)" }
         return UseCaseGraphContext(
             cameraGraphProvider = cameraGraphProvider,
             cameraStateAdapter = cameraStateAdapter,
-            streamConfigMap = streamConfigMap,
+            streamConfigMapProvider = streamConfigMapProvider,
             graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
         )
+    }
+
+    /**
+     * Manually implemented equals() to ignore [lazyCreationResult] and [cameraGraphFactory].
+     *
+     * The [lazyCreationResult] is an object instance that uses reference equality. If we use the
+     * default data class equals, two configs with identical inputs will never be equal because the
+     * lazy instances are different objects.
+     */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UseCaseCameraConfig
+
+        if (useCases != other.useCases) return false
+        if (sessionConfigAdapter != other.sessionConfigAdapter) return false
+        if (graphStateToCameraStateAdapter != other.graphStateToCameraStateAdapter) return false
+        if (isExtensions != other.isExtensions) return false
+        if (sessionProcessor != other.sessionProcessor) return false
+
+        // Intentionally exclude:
+        // 1. lazyCreationResult: It is a stateful wrapper, not a configuration input.
+        // 2. cameraGraphFactory: Lambdas generally do not support value equality.
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = useCases.hashCode()
+        result = 31 * result + sessionConfigAdapter.hashCode()
+        result = 31 * result + graphStateToCameraStateAdapter.hashCode()
+        result = 31 * result + isExtensions.hashCode()
+        result = 31 * result + (sessionProcessor?.hashCode() ?: 0)
+        // Intentionally exclude lazyCreationResult and cameraGraphFactory from hash
+        return result
+    }
+
+    public companion object {
+        public fun create(
+            useCases: List<UseCase>,
+            sessionConfigAdapter: SessionConfigAdapter,
+            cameraGraphConfigProvider: CameraGraphConfigProvider,
+            cameraGraphFactory: (CameraGraph.Config) -> CameraGraph,
+            graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+            sessionProcessor: SessionProcessor?,
+            isExtensions: Boolean,
+        ): UseCaseCameraConfig {
+            // We use a lazy value here to defer the heavy creation of CameraGraph.Config.
+            // Importantly, we pass this lazy instance into the constructor.
+            // This ensures that if this data class is copied (via .copy()), the *same*
+            // lazy instance (and its cached result) is carried over to the new object,
+            // preserving the identity of the StreamIds within the GraphConfig.
+            val lazyResult = lazy {
+                val sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull()
+
+                val operatingMode =
+                    when {
+                        isExtensions -> OperatingMode.EXTENSION
+                        sessionConfig == null -> OperatingMode.NORMAL
+                        sessionConfig.sessionType == SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
+                        sessionConfig.sessionType == SESSION_REGULAR -> OperatingMode.NORMAL
+                        else -> OperatingMode.custom(sessionConfig.sessionType)
+                    }
+
+                val camera2ExtensionMode =
+                    if (isExtensions) {
+                        sessionProcessor?.implementationType?.second
+                    } else {
+                        null
+                    }
+
+                cameraGraphConfigProvider.create(
+                    operatingMode = operatingMode,
+                    sessionConfig = sessionConfig,
+                    setOutputType = false,
+                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                    camera2ExtensionMode = camera2ExtensionMode,
+                    surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
+                    surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
+                )
+            }
+
+            return UseCaseCameraConfig(
+                useCases = useCases,
+                sessionConfigAdapter = sessionConfigAdapter,
+                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                cameraGraphFactory = cameraGraphFactory,
+                sessionProcessor = sessionProcessor,
+                isExtensions = isExtensions,
+                lazyCreationResult = lazyResult,
+            )
+        }
     }
 }
 
@@ -128,7 +228,7 @@ public class UseCaseGraphContext(
     private val cameraGraphProvider: Provider<CameraGraph>,
     private val cameraStateAdapter: CameraStateAdapter,
     private val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
-    private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface> = emptyMap(),
+    private val streamConfigMapProvider: Provider<Map<CameraStream.Config, DeferrableSurface>>,
     defaultSurfaceToStreamMap: Map<DeferrableSurface, StreamId>? = null,
 ) {
     private val _graph = lazy { cameraGraphProvider.get() }
@@ -139,7 +239,7 @@ public class UseCaseGraphContext(
         defaultSurfaceToStreamMap
             ?: run {
                 val map = mutableMapOf<DeferrableSurface, StreamId>()
-                streamConfigMap.forEach { (streamConfig, deferrableSurface) ->
+                streamConfigMapProvider.get().forEach { (streamConfig, deferrableSurface) ->
                     graph.streams[streamConfig]?.let { map[deferrableSurface] = it.id }
                 }
                 map.toMap()

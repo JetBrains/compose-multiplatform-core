@@ -19,6 +19,9 @@ package androidx.xr.projected
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.xr.projected.ProjectedDeviceController.Companion.create
+import androidx.xr.projected.binding.ProjectedServiceConnection
+import androidx.xr.projected.binding.ProjectedServiceConnection.ProjectedIntentAction.Companion.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 
 /**
@@ -74,7 +77,7 @@ public class ProjectedDeviceController private constructor(capabilitiesParam: Se
         @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         @JvmStatic
         public suspend fun create(context: Context): ProjectedDeviceController {
-            val serviceConnection = ProjectedServiceConnection(context)
+            val serviceConnection = ProjectedServiceConnection(context, ACTION_BIND)
             val projectedService = serviceConnection.connect()
             val capabilities =
                 if (projectedService.isDisplayCapable()) setOf(Capability.CAPABILITY_VISUAL_UI)

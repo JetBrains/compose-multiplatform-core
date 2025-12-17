@@ -28,6 +28,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public androidx.work.RunnableScheduler getRunnableScheduler();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<java.lang.Throwable>? getSchedulingExceptionHandler();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getTaskExecutor();
+    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.WorkExecutionEventListener? getWorkExecutionEventListener();
     method @InaccessibleFromKotlin public kotlin.coroutines.CoroutineContext getWorkerCoroutineContext();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<androidx.work.WorkerExceptionInfo>? getWorkerExecutionExceptionHandler();
     method @InaccessibleFromKotlin public androidx.work.WorkerFactory getWorkerFactory();
@@ -70,6 +71,8 @@ package androidx.work {
     method public androidx.work.Configuration.Builder setRunnableScheduler(androidx.work.RunnableScheduler runnableScheduler);
     method public androidx.work.Configuration.Builder setSchedulingExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> schedulingExceptionHandler);
     method public androidx.work.Configuration.Builder setTaskExecutor(java.util.concurrent.Executor taskExecutor);
+    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.Configuration.Builder setWorkExecutionEventListener(androidx.work.WorkExecutionEventListener? listener);
+    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.Configuration.Builder setWorkExecutionEventListener(androidx.work.WorkExecutionEventListener? listener, java.util.concurrent.Executor? executor);
     method public androidx.work.Configuration.Builder setWorkerCoroutineContext(kotlin.coroutines.CoroutineContext context);
     method public androidx.work.Configuration.Builder setWorkerExecutionExceptionHandler(androidx.core.util.Consumer<androidx.work.WorkerExceptionInfo> workerExceptionHandler);
     method public androidx.work.Configuration.Builder setWorkerFactory(androidx.work.WorkerFactory workerFactory);
@@ -398,6 +401,13 @@ package androidx.work {
     method public abstract androidx.lifecycle.LiveData<java.util.List<androidx.work.WorkInfo!>!> getWorkInfosLiveData();
     method public final androidx.work.WorkContinuation then(androidx.work.OneTimeWorkRequest);
     method public abstract androidx.work.WorkContinuation then(java.util.List<androidx.work.OneTimeWorkRequest!>);
+  }
+
+  @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public interface WorkExecutionEventListener {
+    method public suspend Object? onEnd(androidx.work.ListenableWorker.Result result, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onException(Throwable throwable, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStart(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStop(int stopReason, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
   public final class WorkInfo {

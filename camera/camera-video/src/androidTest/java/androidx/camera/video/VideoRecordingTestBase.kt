@@ -21,6 +21,7 @@ import android.content.Context
 import android.graphics.Rect
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.util.Rational
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
@@ -192,6 +193,11 @@ abstract class VideoRecordingTestBase(
 
     @Before
     fun setUp() {
+        assumeFalse(
+            "Test fails on cuttlefish b/467136521",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
+
         assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
 
         cameraExecutor = CameraTaskTrackingExecutor()

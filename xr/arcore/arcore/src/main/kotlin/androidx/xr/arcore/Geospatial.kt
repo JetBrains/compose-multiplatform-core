@@ -121,6 +121,18 @@ internal constructor(
              */
             @JvmField public val PAUSED: State = State(2)
         }
+
+        override fun toString(): String {
+            return when (this) {
+                RUNNING -> "RUNNING"
+                NOT_RUNNING -> "NOT_RUNNING"
+                ERROR_INTERNAL -> "ERROR_INTERNAL"
+                ERROR_NOT_AUTHORIZED -> "ERROR_NOT_AUTHORIZED"
+                ERROR_RESOURCE_EXHAUSTED -> "ERROR_RESOURCE_EXHAUSTED"
+                PAUSED -> "PAUSED"
+                else -> "Unknown"
+            }
+        }
     }
 
     private val _state = MutableStateFlow(State.NOT_RUNNING)

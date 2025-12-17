@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Bản demo mẫu thẻ"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Thẻ dạng thông báo"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Thẻ dạng ngăn"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Thẻ mục theo phần"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Thẻ dạng danh sách"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Thẻ dạng lưới có tiêu đề thẻ dài"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Thẻ tìm kiếm"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Bạn cũng có thể chọn hàng"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Đã chọn hành động phụ"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Đã chọn hành động chính cho hàng"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Bản minh hoạ danh sách trống"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Danh sách này đang trống"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Bản demo biểu mẫu Misc"</string>

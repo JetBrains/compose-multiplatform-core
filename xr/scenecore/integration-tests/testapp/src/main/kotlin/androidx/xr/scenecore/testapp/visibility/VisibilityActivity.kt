@@ -43,7 +43,7 @@ import androidx.xr.scenecore.SpatialPointerIcon
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.SpatialMode
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Path
@@ -78,7 +78,7 @@ class VisibilityActivity : AppCompatActivity() {
         }
 
         // Create rendering session
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
 
         // Toolbar action

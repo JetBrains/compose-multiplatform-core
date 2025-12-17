@@ -2,15 +2,6 @@
 <issues format="6" by="lint 9.0.0-alpha13" type="baseline" client="gradle" dependencies="true" name="AGP (9.0.0-alpha13)" variant="all" version="9.0.0-alpha13">
 
     <issue
-        id="MetadataTagInsideApplicationTag"
-        message="Detected &lt;application>-level meta-data tag."
-        errorLine1="        &lt;meta-data"
-        errorLine2="        ^">
-        <location
-            file="src/main/AndroidManifest.xml"/>
-    </issue>
-
-    <issue
         id="RestrictedApiAndroidX"
         message="RemoteColorPainterKt.painterRemoteColor-8_81llA can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
         errorLine1="        WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Red)) {"

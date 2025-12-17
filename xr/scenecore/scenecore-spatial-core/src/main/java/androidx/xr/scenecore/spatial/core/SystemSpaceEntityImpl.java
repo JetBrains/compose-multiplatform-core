@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
+import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
@@ -39,12 +40,14 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <p>It is expected to be the soft root of its own parent-child entity hierarchy.
  */
-abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSpaceEntity {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+// TODO(b/452961674): Review RestrictTo annotations in SceneCore.
+public abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSpaceEntity {
 
     // Transform for this space's origin in OpenXR reference space.
     protected final AtomicReference<Matrix4> mOpenXrReferenceSpaceTransform =
             new AtomicReference<>(null);
-    protected Vector3 mWorldSpaceScale = new Vector3(1f, 1f, 1f);
+    @NonNull protected Vector3 mWorldSpaceScale = new Vector3(1f, 1f, 1f);
     // Visible for testing.
     Closeable mNodeTransformCloseable;
     private Runnable mSpaceUpdatedListener;
@@ -85,6 +88,7 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      * <p>The OpenXR reference space is the space returned by {@link
      * XrExtensions#getOpenXrWorldReferenceSpaceType()}
      */
+    @Nullable
     public Pose getPoseInOpenXrReferenceSpace() {
         if (mOpenXrReferenceSpaceTransform.get() == null) {
             return null;
@@ -100,7 +104,8 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      *     reference space. The OpenXR reference space is of the type defined by the {@link
      *     XrExtensions#getOpenXrWorldReferenceSpaceType()} method.
      */
-    protected void setOpenXrReferenceSpaceTransform(Matrix4 openXrReferenceSpaceTransform) {
+    protected void setOpenXrReferenceSpaceTransform(
+            @NonNull Matrix4 openXrReferenceSpaceTransform) {
         if (openXrReferenceSpaceTransform.equals(Matrix4.Zero)) {
             return;
         }

@@ -224,7 +224,7 @@ internal class ItemDecorationNode(
             else -> null
         }
 
-    private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthLevels.level2
+    private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthLevels.level1
 }
 
 /** Returns whether the index is of the top of the stack item. */

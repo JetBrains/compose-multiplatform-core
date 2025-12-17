@@ -67,6 +67,9 @@ internal sealed interface ToolbarIntent {
 
     /** The availability of the redo action has changed externally. */
     data class RedoAvailabilityChanged(val canRedo: Boolean) : ToolbarIntent
+
+    /** Intent to dismiss any popups(brush slider, color palette) shown. */
+    object DismissPopups : ToolbarIntent
 }
 
 /**

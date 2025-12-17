@@ -42,7 +42,6 @@ import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
-import androidx.camera.camera2.pipe.internal.ImageSourceMap
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -161,23 +160,22 @@ internal abstract class SharedCameraGraphModules {
             streamGraphImpl: StreamGraphImpl,
             cameraController: Provider<CameraController>,
             cameraSurfaceManager: CameraSurfaceManager,
-            imageSourceMap: ImageSourceMap,
         ): SurfaceGraph {
             return SurfaceGraph(
                 streamGraphImpl,
                 cameraController,
                 cameraSurfaceManager,
-                imageSourceMap.imageSources,
+                streamGraphImpl.imageSourceMap,
             )
         }
 
         @CameraGraphScope
         @Provides
         fun provideFrameDistributor(
-            imageSourceMap: ImageSourceMap,
+            streamGraphImpl: StreamGraphImpl,
             frameCaptureQueue: FrameCaptureQueue,
         ): FrameDistributor {
-            return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
+            return FrameDistributor(streamGraphImpl.imageSourceMap, frameCaptureQueue)
         }
     }
 }

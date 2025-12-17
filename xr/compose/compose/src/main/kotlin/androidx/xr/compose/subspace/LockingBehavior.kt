@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 /**
  * A LockingBehavior controls the motion of content as it is following (or "locked" to) another
  * entity, such as a user's head. Currently the options include "static", which does not
- * continuously follow the target, and "lazy", which gradually catches up to the target.
+ * continuously follow the target, and "soft", which gradually catches up to the target.
  */
 @ExperimentalUserSubspaceApi
 public abstract class LockingBehavior internal constructor() {
@@ -50,8 +50,8 @@ public abstract class LockingBehavior internal constructor() {
     )
 
     public companion object {
-        public const val DEFAULT_LAZY_DURATION_MS: Int = 1500
-        public const val MIN_LAZY_DURATION_MS: Long = 100
+        public const val DEFAULT_SOFT_DURATION_MS: Int = 1500
+        public const val MIN_SOFT_DURATION_MS: Long = 100
 
         /**
          * The content is placed once based on the user's initial pose and does not follow
@@ -61,35 +61,35 @@ public abstract class LockingBehavior internal constructor() {
 
         /**
          * Creates a behavior where the content smoothly animates to follow the user's movements,
-         * creating a comfortable "lazy follow" effect. This is implemented with the Hermite easing
+         * creating a comfortable "soft follow" effect. This is implemented with the Hermite easing
          * algorithm, which accelerates the content then slows it down towards the end of the
          * motion, giving it a sense of real world physics. The use of the Hermite algorithm is not
          * optional but the total duration of the motion can be modified.
          *
          * @param durationMs Amount of milliseconds it takes for the content to catch up to the
-         *   user. Default is `DEFAULT_LAZY_DURATION_MS` milliseconds. A value less than
-         *   `MIN_LAZY_DURATION_MS` will be rounded up to `MIN_LAZY_DURATION_MS` to allow enough
+         *   user. Default is `DEFAULT_SOFT_DURATION_MS` milliseconds. A value less than
+         *   `MIN_SOFT_DURATION_MS` will be rounded up to `MIN_SOFT_DURATION_MS` to allow enough
          *   time to complete the content movement.
-         * @return A [LockingBehavior] instance configured for lazy locking.
+         * @return A [LockingBehavior] instance configured for soft locking.
          */
-        public fun lazy(
-            @IntRange(from = MIN_LAZY_DURATION_MS) durationMs: Int = DEFAULT_LAZY_DURATION_MS
-        ): LockingBehavior = LazyLockingBehavior(durationMs)
+        public fun soft(
+            @IntRange(from = MIN_SOFT_DURATION_MS) durationMs: Int = DEFAULT_SOFT_DURATION_MS
+        ): LockingBehavior = SoftLockingBehavior(durationMs)
     }
 }
 
 /**
  * Creates a behavior where the content smoothly animates to follow the user's movements, creating a
- * comfortable "lazy follow" effect. This is the implementation for LazyLocking which is accessible
- * through the public interface as LockingBehavior.lazy()
+ * comfortable "soft follow" effect. This is the implementation for SoftLocking which is accessible
+ * through the public interface as LockingBehavior.soft()
  *
  * @param durationMs Amount of milliseconds it takes for the content to catch up to the user.
- *   Default is [DEFAULT_LAZY_DURATION_MS] milliseconds. A value less than [MIN_LAZY_DURATION_MS]
- *   will be rounded up to [MIN_LAZY_DURATION_MS] to allow enough time to complete the content
+ *   Default is [DEFAULT_SOFT_DURATION_MS] milliseconds. A value less than [MIN_SOFT_DURATION_MS]
+ *   will be rounded up to [MIN_SOFT_DURATION_MS] to allow enough time to complete the content
  *   movement.
  */
 @OptIn(ExperimentalUserSubspaceApi::class)
-internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DURATION_MS) :
+internal class SoftLockingBehavior(private val durationMs: Int = DEFAULT_SOFT_DURATION_MS) :
     LockingBehavior() {
 
     private var currentAnimationJob: Job? = null
@@ -107,7 +107,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DU
         lockTo: BodyPart,
         lockDimensions: LockDimensions,
     ) = coroutineScope {
-        this@LazyLockingBehavior.trailingEntity = trailingEntity
+        this@SoftLockingBehavior.trailingEntity = trailingEntity
         if (lockTo != BodyPart.Head) return@coroutineScope
 
         // TODO(b/448689233): Initial head pose data is not reliable.

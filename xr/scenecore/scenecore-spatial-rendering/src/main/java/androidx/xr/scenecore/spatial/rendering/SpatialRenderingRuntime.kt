@@ -930,7 +930,7 @@ private constructor(
     override fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity {
         // TODO(b/458779328): Fix incorrect use of !! on a nullable return value.
         val feature =
@@ -944,7 +944,7 @@ private constructor(
         shape: SurfaceEntity.Shape,
         @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
         @SurfaceEntity.SuperSampling superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity {
         check(Looper.getMainLooper().isCurrentThread) {
             "This method must be called on the main thread."

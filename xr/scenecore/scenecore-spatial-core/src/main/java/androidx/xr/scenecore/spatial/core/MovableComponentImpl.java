@@ -50,21 +50,18 @@ class MovableComponentImpl implements MovableComponent {
             new ConcurrentHashMap<>();
     // Visible for testing.
     Consumer<ReformEvent> mReformEventConsumer;
-    private Entity mEntity;
+    private volatile Entity mEntity;
     private Entity mInitialParent;
     private Pose mLastPose = new Pose();
     private Vector3 mLastScale = new Vector3(1f, 1f, 1f);
     private Dimensions mCurrentSize;
     private boolean mUserAnchorable = false;
     private boolean mIsMoving = false;
-    @ScaleWithDistanceMode private int mScaleWithDistanceMode = ScaleWithDistanceMode.DEFAULT;
+    @ScaleWithDistanceMode
+    private int mScaleWithDistanceMode = ScaleWithDistanceMode.DEFAULT;
 
-    MovableComponentImpl(
-            boolean systemMovable,
-            boolean scaleInZ,
-            boolean userAnchorable,
-            ActivitySpaceImpl activitySpaceImpl,
-            PanelShadowRenderer panelShadowRenderer,
+    MovableComponentImpl(boolean systemMovable, boolean scaleInZ, boolean userAnchorable,
+            ActivitySpaceImpl activitySpaceImpl, PanelShadowRenderer panelShadowRenderer,
             ScheduledExecutorService runtimeExecutor) {
         mSystemMovable = systemMovable;
         mScaleInZ = scaleInZ;
@@ -77,45 +74,41 @@ class MovableComponentImpl implements MovableComponent {
                 return;
             }
             if (reformEvent.getState() == ReformEvent.REFORM_STATE_START) {
-                mInitialParent = mEntity.getParent() != null ? mEntity.getParent()
-                        : mActivitySpaceImpl;
+                final Entity entity = mEntity;
+                mInitialParent =
+                        (entity != null && entity.getParent() != null) ? mEntity.getParent()
+                                : mActivitySpaceImpl;
                 mIsMoving = true;
             } else if (reformEvent.getState() == ReformEvent.REFORM_STATE_END) {
                 mIsMoving = false;
                 mPanelShadowRenderer.destroy();
             }
 
-            Pose newPose =
-                    RuntimeUtils.getPose(
-                            reformEvent.getProposedPosition(),
-                            reformEvent.getProposedOrientation());
-            Vector3 newScale =
-                    mScaleInZ ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
-                            : mLastScale;
+            Pose newPose = RuntimeUtils.getPose(reformEvent.getProposedPosition(),
+                    reformEvent.getProposedOrientation());
+            Vector3 newScale = mScaleInZ ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
+                    : mLastScale;
 
-            mMoveEventListenersMap.forEach(
-                    (listener, listenerExecutor) ->
-                            listenerExecutor.execute(() -> listener.onMoveEvent(new MoveEvent(
-                                    reformEvent.getState(),
-                                    new Ray(
-                                            RuntimeUtils.getVector3(
-                                                    reformEvent.getInitialRayOrigin()),
-                                            RuntimeUtils.getVector3(
-                                                    reformEvent.getInitialRayDirection())),
-                                    new Ray(RuntimeUtils.getVector3(
-                                            reformEvent.getCurrentRayOrigin()),
-                                            RuntimeUtils.getVector3(
-                                                    reformEvent.getCurrentRayDirection())),
-                                    mLastPose,
-                                    newPose,
-                                    mLastScale,
-                                    newScale,
-                                    mInitialParent,
-                                    null,
-                                    null))));
+            mMoveEventListenersMap.forEach((listener, listenerExecutor) -> listenerExecutor.execute(
+                    () -> listener.onMoveEvent(new MoveEvent(reformEvent.getState(),
+                            new Ray(RuntimeUtils.getVector3(reformEvent.getInitialRayOrigin()),
+                                    RuntimeUtils.getVector3(reformEvent.getInitialRayDirection())),
+                            new Ray(RuntimeUtils.getVector3(reformEvent.getCurrentRayOrigin()),
+                                    RuntimeUtils.getVector3(reformEvent.getCurrentRayDirection())),
+                            mLastPose, newPose, mLastScale, newScale, mInitialParent, null,
+                            null))));
             mLastPose = newPose;
             mLastScale = newScale;
         };
+    }
+
+    private static int translateScaleWithDistanceMode(@ScaleWithDistanceMode int scale) {
+        switch (scale) {
+            case ScaleWithDistanceMode.DMM:
+                return ReformOptions.SCALE_WITH_DISTANCE_MODE_DMM;
+            default:
+                return ReformOptions.SCALE_WITH_DISTANCE_MODE_DEFAULT;
+        }
     }
 
     @Override
@@ -126,28 +119,22 @@ class MovableComponentImpl implements MovableComponent {
         mEntity = entity;
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
         int reformFlags = ReformOptions.FLAG_POSE_RELATIVE_TO_PARENT;
-        reformFlags =
-                (mSystemMovable && !mUserAnchorable)
-                        ? reformFlags | ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT
-                        : reformFlags;
+        reformFlags = (mSystemMovable && !mUserAnchorable) ? reformFlags
+                | ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT : reformFlags;
         reformFlags =
                 mScaleInZ ? reformFlags | ReformOptions.FLAG_SCALE_WITH_DISTANCE : reformFlags;
         ReformOptions unused = reformOptions.setFlags(reformFlags);
-        unused =
-                reformOptions
-                        .setEnabledReform(
-                                reformOptions.getEnabledReform() | ReformOptions.ALLOW_MOVE)
-                        .setScaleWithDistanceMode(
-                                translateScaleWithDistanceMode(mScaleWithDistanceMode));
+        unused = reformOptions.setEnabledReform(reformOptions.getEnabledReform()
+                | ReformOptions.ALLOW_MOVE).setScaleWithDistanceMode(
+                translateScaleWithDistanceMode(mScaleWithDistanceMode));
 
         // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
         if (entity instanceof PanelEntityImpl && mCurrentSize == null) {
             mCurrentSize = ((PanelEntityImpl) entity).getSize();
         }
         if (mCurrentSize != null) {
-            unused =
-                    reformOptions.setCurrentSize(
-                            new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
+            unused = reformOptions.setCurrentSize(
+                    new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
         }
         mLastPose = entity.getPose(Space.PARENT);
         mLastScale = entity.getScale(Space.PARENT);
@@ -159,15 +146,12 @@ class MovableComponentImpl implements MovableComponent {
     @Override
     public void onDetach(@NonNull Entity entity) {
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setEnabledReform(
-                        reformOptions.getEnabledReform() & ~ReformOptions.ALLOW_MOVE);
+        ReformOptions unused = reformOptions.setEnabledReform(
+                reformOptions.getEnabledReform() & ~ReformOptions.ALLOW_MOVE);
         // Clear any flags that were set by this component.
         int reformFlags = reformOptions.getFlags();
-        reformFlags =
-                mSystemMovable
-                        ? reformFlags & ~ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT
-                        : reformFlags;
+        reformFlags = mSystemMovable ? reformFlags & ~ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT
+                : reformFlags;
         reformFlags =
                 mScaleInZ ? reformFlags & ~ReformOptions.FLAG_SCALE_WITH_DISTANCE : reformFlags;
         unused = reformOptions.setFlags(reformFlags);
@@ -177,21 +161,20 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
+    public @NonNull Dimensions getSize() {
+        return mCurrentSize;
+    }
+
+    @Override
     public void setSize(@NonNull Dimensions dimensions) {
         mCurrentSize = dimensions;
         if (mEntity == null) {
             return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setCurrentSize(
-                        new Vec3(dimensions.width, dimensions.height, dimensions.depth));
+        ReformOptions unused = reformOptions.setCurrentSize(
+                new Vec3(dimensions.width, dimensions.height, dimensions.depth));
         ((AndroidXrEntity) mEntity).updateReformOptions();
-    }
-
-    @Override
-    public @NonNull Dimensions getSize() {
-        return mCurrentSize;
     }
 
     @Override
@@ -207,15 +190,14 @@ class MovableComponentImpl implements MovableComponent {
             return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setScaleWithDistanceMode(
-                        translateScaleWithDistanceMode(scaleWithDistanceMode));
+        ReformOptions unused = reformOptions.setScaleWithDistanceMode(
+                translateScaleWithDistanceMode(scaleWithDistanceMode));
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
     @Override
-    public void addMoveEventListener(
-            @NonNull Executor executor, @NonNull MoveEventListener moveEventListener) {
+    public void addMoveEventListener(@NonNull Executor executor,
+            @NonNull MoveEventListener moveEventListener) {
         mMoveEventListenersMap.put(moveEventListener, executor);
     }
 
@@ -233,15 +215,6 @@ class MovableComponentImpl implements MovableComponent {
 
     private boolean shouldRenderPlaneShadow() {
         return mEntity instanceof BasePanelEntity && mUserAnchorable && mIsMoving;
-    }
-
-    private static int translateScaleWithDistanceMode(@ScaleWithDistanceMode int scale) {
-        switch (scale) {
-            case ScaleWithDistanceMode.DMM:
-                return ReformOptions.SCALE_WITH_DISTANCE_MODE_DMM;
-            default:
-                return ReformOptions.SCALE_WITH_DISTANCE_MODE_DEFAULT;
-        }
     }
 
     @Override

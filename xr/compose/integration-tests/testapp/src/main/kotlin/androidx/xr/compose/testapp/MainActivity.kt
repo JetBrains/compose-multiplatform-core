@@ -74,6 +74,7 @@ import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
 import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
+import androidx.xr.compose.testapp.fragments.FragmentCompatibilityActivity
 import androidx.xr.compose.testapp.gravityaligned.GravityAlignedActivity
 import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
 import androidx.xr.compose.testapp.lifecycle.OpenCloseActivity
@@ -314,6 +315,9 @@ class MainActivity : ComponentActivity() {
                         startTest<LookAtUserActivity>()
                     }
                     TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
+                    TestCaseColumnRowItem(getString(R.string.fragment_compatibility_test)) {
+                        startTest<FragmentCompatibilityActivity>()
+                    }
                     TestCaseColumnRowItem(
                         getString(R.string.depthstacking_modifier_order_test_case)
                     ) {

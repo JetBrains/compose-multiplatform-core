@@ -38,7 +38,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
 import androidx.xr.projected.ProjectedDisplayController.PresentationMode
 import androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags
-import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IEngagementModeCallback
 import androidx.xr.projected.platform.IEngagementModeService
@@ -351,6 +350,7 @@ class ProjectedDisplayControllerTest {
     }
 
     companion object {
+        private const val ACTION_BIND = "androidx.xr.projected.ACTION_BIND"
         private const val SYSTEM_PACKAGE_NAME = "com.system.service"
         private const val SYSTEM_CLASS_NAME = "com.system.service.ProjectedService"
         private const val ENGAGEMENT_MODE_SYSTEM_CLASS_NAME =

@@ -73,7 +73,7 @@ class EasingFunctionTest {
     fun predefinedEquals_checksEqualityOfValues() {
         assertThat(EasingFunction.Predefined.LINEAR).isEqualTo(EasingFunction.Predefined.LINEAR)
         assertThat(EasingFunction.Predefined.LINEAR).isNotEqualTo(EasingFunction.Predefined.EASE)
-        assertThat(EasingFunction.Predefined.LINEAR).isNotEqualTo(null)
+        assertThat(EasingFunction.Predefined.LINEAR).isNotNull()
     }
 
     @Test
@@ -139,7 +139,7 @@ class EasingFunctionTest {
         assertThat(original).isEqualTo(EasingFunction.CubicBezier(1f, 2f, 0.3f, 4f)) // Same values.
 
         // Not equal
-        assertThat(original).isNotEqualTo(null)
+        assertThat(original).isNotNull()
         assertThat(original).isNotEqualTo(EasingFunction.Predefined.LINEAR) // Different type.
         assertThat(original)
             .isNotEqualTo(EasingFunction.CubicBezier(0.9f, 0.8f, 0.7f, 0.6f)) // Values.
@@ -203,7 +203,7 @@ class EasingFunctionTest {
             ) // Same values.
 
         // Not equal
-        assertThat(original).isNotEqualTo(null)
+        assertThat(original).isNotNull()
         assertThat(original).isNotEqualTo(EasingFunction.Predefined.LINEAR) // Different type.
         assertThat(original)
             .isNotEqualTo(
@@ -321,7 +321,7 @@ class EasingFunctionTest {
             ) // Same values.
 
         // Not equal
-        assertThat(original).isNotEqualTo(null)
+        assertThat(original).isNotNull()
         // Different type.
         assertThat(original).isNotEqualTo(EasingFunction.Predefined.LINEAR)
         // Different count.

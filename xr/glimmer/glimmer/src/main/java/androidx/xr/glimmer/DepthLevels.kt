@@ -22,10 +22,10 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.dp
 
 /**
- * Glimmer components can use [Depth] to establish a sense of hierarchy. DepthLevels contains
- * different levels of [Depth] to express this hierarchy. Higher levels contain larger shadows, and
- * represent components with a higher z-order than lower levels. In their baseline state (not
- * focused) most components should have no (`null`) [Depth].
+ * Jetpack Compose Glimmer components can use [Depth] to establish a sense of hierarchy. DepthLevels
+ * contains different levels of [Depth] to express this hierarchy. Higher levels contain larger
+ * shadows, and represent components with a higher z-order than lower levels. In their baseline
+ * state (not focused) most components should have no (`null`) [Depth].
  *
  * @property level1 the lowest level of [Depth]. This level will have the smallest shadows.
  * @property level2 a level of [Depth] higher than [level1] and lower than [level3].

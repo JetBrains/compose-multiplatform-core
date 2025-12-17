@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
@@ -40,7 +41,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Implementation of a subset of core Entity functionality. */
-abstract class BaseEntity extends BaseScenePose implements Entity {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+// TODO(b/452961674): Review RestrictTo annotations in SceneCore.
+public abstract class BaseEntity extends BaseScenePose implements Entity {
     private final List<Entity> mChildren = new ArrayList<>();
     private final List<Component> mComponentList = new ArrayList<>();
     private BaseEntity mParent;
@@ -102,10 +105,12 @@ abstract class BaseEntity extends BaseScenePose implements Entity {
         }
     }
 
+    @Nullable
     protected Context getContext() {
         return mContext;
     }
 
+    @Nullable
     protected Activity getActivity() {
         if (mContext instanceof Activity) {
             return (Activity) mContext;

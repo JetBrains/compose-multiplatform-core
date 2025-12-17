@@ -36,6 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.remote.material3.previews.RemoteIconButtonEnabled
+import androidx.wear.compose.remote.material3.previews.RemoteIconButtonOutlined
+import androidx.wear.compose.remote.material3.previews.RemoteIconButtonTonal
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +57,7 @@ class RemoteIconButtonTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.density)
+        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun remote_icon_button_enabled() {
@@ -62,11 +65,7 @@ class RemoteIconButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteIconButton(enabled = RemoteBoolean(true)) {
-                    RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
-                }
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonEnabled() }
         }
     }
 
@@ -90,15 +89,7 @@ class RemoteIconButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteIconButton(enabled = RemoteBoolean(true), colors = FILLED_TONAL_COLOR) {
-                    RemoteIcon(
-                        modifier = RemoteModifier.size(RemoteIconButtonDefaults.SmallIconSize),
-                        imageVector = TestImageVectors.VolumeUp,
-                        contentDescription = null,
-                    )
-                }
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonTonal() }
         }
     }
 
@@ -126,20 +117,7 @@ class RemoteIconButtonTest {
             backgroundColor = Color.Black,
             creationDisplayInfo = creationDisplayInfo,
         ) {
-            Center(RemoteModifier.fillMaxSize()) {
-                RemoteIconButton(
-                    border = 1.rdp,
-                    borderColor = RemoteMaterialTheme.colorScheme.outline,
-                    enabled = RemoteBoolean(true),
-                    colors = OUTLINE_COLOR,
-                ) {
-                    RemoteIcon(
-                        modifier = RemoteModifier.size(RemoteIconButtonDefaults.SmallIconSize),
-                        imageVector = TestImageVectors.VolumeUp,
-                        contentDescription = null,
-                    )
-                }
-            }
+            Center(RemoteModifier.fillMaxSize()) { RemoteIconButtonOutlined() }
         }
     }
 

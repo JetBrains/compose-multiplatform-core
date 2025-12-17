@@ -39,7 +39,7 @@ import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialCapability
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.function.Consumer
 
@@ -58,7 +58,7 @@ class ActivityPanelActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
 
         // Set toolbar

@@ -46,7 +46,7 @@ internal class SinglePageLayoutStrategy(
         get() = computeTotalHeight()
 
     /** The index of the last page for which dimensions have been successfully set. */
-    var lastKnownPage: Int = 0
+    var lastKnownPage: Int = -1
         private set
 
     /** The maximum width of a page row out of all pages whose dimensions are known. */
@@ -82,14 +82,16 @@ internal class SinglePageLayoutStrategy(
      * @param pageDimension of the [pageNum].
      */
     override fun setPagePositions(pageNum: Int, pageDimension: Dimension) {
-        lastKnownPage = pageNum
-        _maxWidth = Math.max(_maxWidth, pageDimension.x.toFloat())
+        require(pageNum in 0 until pageCount) { "Page out of range" }
+        require(pageDimension.y >= 0 && pageDimension.x >= 0) { "Negative size page" }
+        _maxWidth = maxOf(_maxWidth, pageDimension.x.toFloat())
 
-        // Set the bottom position of current page.
-        pageBottoms[lastKnownPage] = pageTops[lastKnownPage] + pageDimension.y
-        // Set the top position for the next page.
-        if (lastKnownPage + 1 < pageCount) {
-            pageTops[lastKnownPage + 1] = pageBottoms[lastKnownPage] + verticalPageSpacingPx
+        when {
+            pageNum < lastKnownPage -> correctLayoutForOutOfOrderPage(pageNum, pageDimension.y)
+
+            pageNum > lastKnownPage + 1 -> approximateLayoutForGap(pageNum, pageDimension.y)
+
+            else -> layoutPageSequentially(pageNum, pageDimension.y)
         }
     }
 
@@ -183,6 +185,16 @@ internal class SinglePageLayoutStrategy(
         parcel.writeFloatArray(pageTops)
     }
 
+    /** Approximates the layout for any missing pages, then lays out the current page. */
+    private fun approximateLayoutForGap(pageNum: Int, pageHeight: Int) {
+        // Approximate the layout for the gap.
+        for (pageIndex in lastKnownPage + 1 until pageNum) {
+            layoutPageSequentially(pageIndex, pageHeight)
+        }
+        // After filling the gap, handle the current page sequentially.
+        layoutPageSequentially(pageNum, pageHeight)
+    }
+
     private fun computeTotalHeight(): Float {
         return if (lastKnownPage < 0) {
             0f
@@ -195,6 +207,40 @@ internal class SinglePageLayoutStrategy(
             val estimatedRemainingHeight =
                 (lastKnownPageHeight + verticalPageSpacingPx) * (pageCount - lastKnownPage - 1)
             totalKnownHeight + estimatedRemainingHeight
+        }
+    }
+
+    /** Corrects the layout when a page is loaded out of order. */
+    private fun correctLayoutForOutOfOrderPage(pageNum: Int, pageHeight: Int) {
+        val oldBottom = pageBottoms[pageNum]
+        val newBottom = pageTops[pageNum] + pageHeight
+        pageBottoms[pageNum] = newBottom
+
+        val delta = newBottom - oldBottom
+        // Only propagate if the height actually changed.
+        if (delta != 0f) {
+            shiftSubsequentPages(pageNum + 1, delta)
+        }
+    }
+
+    private fun layoutPageSequentially(pageNum: Int, pageHeight: Int) {
+        // Set the bottom position of current page.
+        pageBottoms[pageNum] = pageTops[pageNum] + pageHeight
+        // Set the top position for the next page.
+        if (pageNum + 1 < pageCount) {
+            pageTops[pageNum + 1] = pageBottoms[pageNum] + verticalPageSpacingPx
+        }
+        lastKnownPage = pageNum
+    }
+
+    /** Helper to handle the "Ripple Effect" of when pages are loaded async. */
+    private fun shiftSubsequentPages(fromPageIndex: Int, delta: Float) {
+        for (pageIndex in fromPageIndex..lastKnownPage) {
+            pageTops[pageIndex] += delta
+            pageBottoms[pageIndex] += delta
+        }
+        if (lastKnownPage + 1 < pageCount) {
+            pageTops[lastKnownPage + 1] += delta
         }
     }
 

@@ -20,6 +20,7 @@ import android.content.ClipboardManager
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -40,6 +41,7 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -997,6 +999,10 @@ class PdfViewExternalInputTest {
 
     @Test
     fun mouseDrag_selectsContentInReverse_differentPages() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465537830",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         var start: PointF? = null
         var end: PointF? = null
 

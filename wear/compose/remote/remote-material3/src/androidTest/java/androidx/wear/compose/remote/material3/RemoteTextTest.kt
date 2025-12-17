@@ -20,18 +20,29 @@ import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rememberRemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontVariation.Setting
+import androidx.compose.ui.text.font.FontVariation.Settings
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.LocalTextStyle
+import java.text.DecimalFormat
+import kotlin.test.Ignore
 import kotlin.test.Test
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -46,6 +57,7 @@ class RemoteTextTest {
         RemoteComposeScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
             targetPlayer = TargetPlayer.View,
+            profile = TestProfiles.androidXWithCoreText,
         )
 
     @Test
@@ -142,12 +154,131 @@ class RemoteTextTest {
     }
 
     @Test
+    @Ignore("No flex font in CI")
+    fun text_withWeight() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                VariantText(FontVariation.weight(100))
+                VariantText(FontVariation.weight(500))
+                VariantText(FontVariation.weight(900))
+            }
+        }
+    }
+
+    @Test
+    @Ignore("No flex font in CI")
+    fun text_withWidth() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                VariantText(FontVariation.width(10f))
+                VariantText(FontVariation.width(50f))
+                VariantText(FontVariation.width(90f))
+            }
+        }
+    }
+
+    @Test
+    @Ignore("No flex font in CI")
+    fun text_withTnum() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                RemoteText(
+                    text = RemoteString("WWWiii 012345679"),
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                    fontVariationSettings = Settings(Setting("tnum", 1f)),
+                )
+                RemoteText(
+                    text = RemoteString("WWWiii 012345679"),
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                )
+            }
+        }
+    }
+
+    @Test
+    @Ignore("No flex font in CI")
+    fun text_withRoundness() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                VariantText(Setting("ROND", 0f))
+                VariantText(Setting("ROND", 50f))
+                VariantText(Setting("ROND", 100f))
+            }
+        }
+    }
+
+    @Test
+    fun text_withDecoration() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                RemoteText(
+                    text = "None".rs,
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                )
+                RemoteText(
+                    text = "Underline".rs,
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                    style = LocalTextStyle.current.copy(textDecoration = TextDecoration.Underline),
+                )
+                RemoteText(
+                    text = "LineThrough".rs,
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                    style = LocalTextStyle.current.copy(textDecoration = TextDecoration.LineThrough),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun text_withSpacing() {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
+            RemoteColumn(RemoteModifier.fillMaxSize()) {
+                RemoteText(
+                    text = RemoteString("Standard\nParagraph"),
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                )
+                RemoteText(
+                    text = RemoteString("Double Line Height\nParagraph\nAnd one more"),
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                    style = LocalTextStyle.current.copy(lineHeight = 64.sp),
+                )
+                RemoteText(
+                    text = RemoteString("Letter Spacing\nParagraph"),
+                    modifier = RemoteModifier.fillMaxWidth(),
+                    fontSize = 32.sp,
+                    style = LocalTextStyle.current.copy(letterSpacing = 64.sp),
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun VariantText(setting: Setting) {
+        RemoteText(
+            text =
+                RemoteString(setting.axisName) +
+                    RemoteString(" = ") +
+                    setting.toVariationValue(null).rf.toRemoteString(DecimalFormat("0")),
+            modifier = RemoteModifier.fillMaxWidth(),
+            fontSize = 32.sp,
+            fontVariationSettings = Settings(setting),
+        )
+    }
+
+    @Test
     fun longText_overflow() {
         remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.Black) {
             val text = rememberRemoteString {
                 "a piece of writing in which the expression of feelings and ideas is given intensity by particular attention to diction (sometimes involving rhyme), rhythm, and imagery."
             }
-            val color = rememberRemoteColor("longtext") { Color.Green }
+            val color = RemoteColor(Color.Green)
 
             RemoteColumn(RemoteModifier.fillMaxSize()) {
                 // Default

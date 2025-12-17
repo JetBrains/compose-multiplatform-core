@@ -37,8 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
@@ -76,7 +75,7 @@ class SpatialElevationTest {
 
     @Test
     fun spatialElevation_xrNotSupported_doesNotThrowError() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent { SpatialElevation { Popup { Text("Popup") } } }
 
@@ -85,8 +84,7 @@ class SpatialElevationTest {
 
     @Test
     fun spatialElevation_homeSpaceMode_doesNotElevate() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) { SpatialElevation { Text("Main Content") } }

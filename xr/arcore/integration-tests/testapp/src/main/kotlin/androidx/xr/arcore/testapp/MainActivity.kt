@@ -63,6 +63,7 @@ import androidx.xr.arcore.testapp.common.TestCaseButton
 import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
 import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
 import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
+import androidx.xr.arcore.testapp.geospatial.GeospatialActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
 import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
@@ -195,6 +196,7 @@ class MainActivity : ComponentActivity() {
                 }
                 TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
                 TestCaseColumnRowItem(R.string.blend_mode) { startTest<HelloArPlaneActivity>(it) }
+                TestCaseColumnRowItem(R.string.geospatial) { startTest<GeospatialActivity>(it) }
             }
         }
     }

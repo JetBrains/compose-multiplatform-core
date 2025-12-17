@@ -25,11 +25,17 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface Service {
 
-    /** The set of features that this service requires. */
+    /**
+     * The set of features that this service requires in order to be loaded by the
+     * [androidx.xr.runtime.Session].
+     */
     public val requirements: Set<Feature>
 }
 
-/** The set of features that a service may require. */
+/**
+ * Describes a set of system capabilities (usually derived from the APK's metadata) that a service
+ * may require.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Feature private constructor(private val value: Int) {
     public companion object {

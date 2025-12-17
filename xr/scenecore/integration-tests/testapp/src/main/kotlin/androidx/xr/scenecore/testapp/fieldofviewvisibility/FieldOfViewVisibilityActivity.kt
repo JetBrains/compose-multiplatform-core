@@ -32,9 +32,9 @@ import androidx.xr.scenecore.SpatialVisibility
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.managers.GltfManager
 import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -74,7 +74,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_field_of_view_visibility)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 

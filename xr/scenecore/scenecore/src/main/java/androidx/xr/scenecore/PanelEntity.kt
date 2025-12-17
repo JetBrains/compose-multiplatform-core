@@ -18,7 +18,9 @@ package androidx.xr.scenecore
 
 import android.content.Context
 import android.view.View
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.FloatSize2d
@@ -182,6 +184,7 @@ internal constructor(
             dimensions: FloatSize2d,
             name: String,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
@@ -191,7 +194,15 @@ internal constructor(
                     view,
                     dimensions.toRtDimensions(),
                     name,
-                    sceneRuntime.activitySpace,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        Log.warn(
+                            "The provided parent is not a BaseEntity. The PanelEntity will be " +
+                                "created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
                 ),
                 entityManager,
             )
@@ -205,6 +216,7 @@ internal constructor(
             pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
@@ -214,7 +226,15 @@ internal constructor(
                     view,
                     pixelDimensions.toRtPixelDimensions(),
                     name,
-                    sceneRuntime.activitySpace,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        Log.warn(
+                            "The provided parent is not a BaseEntity. The PanelEntity will be " +
+                                "created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
                 ),
                 entityManager,
             )
@@ -279,6 +299,82 @@ internal constructor(
                 pixelDimensions,
                 name,
                 pose,
+            )
+
+        /**
+         * Factory method for a spatialized PanelEntity.
+         *
+         * @param session XR [Session] in which to create the PanelEntity.
+         * @param view [View] to embed in this panel entity.
+         * @param dimensions Spatialized dimensions for the underlying surface for the given view,
+         *   in meters.
+         * @param name Name of this PanelEntity.
+         * @param pose [Pose] of this entity relative to its parent, default value is Identity.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         * @return a PanelEntity instance.
+         */
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            view: View,
+            dimensions: FloatSize2d,
+            name: String,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): PanelEntity =
+            PanelEntity.create(
+                session.perceptionRuntime.lifecycleManager,
+                session.activity,
+                session.sceneRuntime,
+                session.scene.entityManager,
+                view,
+                dimensions,
+                name,
+                pose,
+                parent,
+            )
+
+        /**
+         * Factory method for a spatialized PanelEntity.
+         *
+         * @param session XR [Session] in which to create the PanelEntity.
+         * @param view [View] to embed in this panel entity.
+         * @param pixelDimensions Dimensions for the underlying surface for the given view, in
+         *   pixels.
+         * @param name Name of the panel.
+         * @param pose [Pose] of this PanelEntity relative to its parent, default value is Identity.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         * @return a PanelEntity instance.
+         */
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            view: View,
+            pixelDimensions: IntSize2d,
+            name: String,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): PanelEntity =
+            PanelEntity.create(
+                session.perceptionRuntime.lifecycleManager,
+                session.activity,
+                session.sceneRuntime,
+                session.scene.entityManager,
+                view,
+                pixelDimensions,
+                name,
+                pose,
+                parent,
             )
 
         /** Returns the PanelEntity backed by the main window for the Activity. */

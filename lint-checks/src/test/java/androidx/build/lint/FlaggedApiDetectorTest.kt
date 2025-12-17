@@ -963,4 +963,82 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         """
             )
     }
+
+    fun testAnnotationCorrectness_javaWithConstant_isError() {
+        lint()
+            .files(
+                java(
+                        """
+          package test.pkg;
+
+          import androidx.annotation.ChecksAconfigFlag;
+          import androidx.annotation.RequiresAconfigFlag;
+
+          public class FlagsCompat {
+              @ChecksAconfigFlag(MY_FLAG)
+              public boolean myFlag() { return true; }
+
+              @RequiresAconfigFlag(MY_FLAG)
+              public void requiresMyFlag() { }
+
+              private static String MY_FLAG = "test.pkg.myFlag";
+          }
+          """
+                    )
+                    .indented(),
+                Stubs.ChecksAconfigFlag,
+                Stubs.RequiresAconfigFlag,
+            )
+            .run()
+            .expect(
+                """
+        src/test/pkg/FlagsCompat.java:7: Error: Failed to obtain string value for aconfig flag. The value argument must be an inline string. [AndroidXFlaggedApi]
+            @ChecksAconfigFlag(MY_FLAG)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/FlagsCompat.java:10: Error: Failed to obtain string value for aconfig flag. The value argument must be an inline string. [AndroidXFlaggedApi]
+            @RequiresAconfigFlag(MY_FLAG)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+            )
+    }
+
+    fun testAnnotationCorrectness_kotlinWithConstant_isError() {
+        lint()
+            .files(
+                kotlin(
+                        """
+          package test.pkg
+
+          import androidx.annotation.ChecksAconfigFlag
+          import androidx.annotation.RequiresAconfigFlag
+
+          object FlagsCompat {
+              @ChecksAconfigFlag(myFlag)
+              fun myFlag() { return true; }
+
+              @RequiresAconfigFlag(myFlag)
+              fun requiresMyFlag() { }
+          }
+
+          val myFlag = "test.pkg.myFlag"
+          """
+                    )
+                    .indented(),
+                Stubs.ChecksAconfigFlag,
+                Stubs.RequiresAconfigFlag,
+            )
+            .run()
+            .expect(
+                """
+        src/test/pkg/FlagsCompat.kt:7: Error: Failed to obtain string value for aconfig flag. The value argument must be an inline string. [AndroidXFlaggedApi]
+            @ChecksAconfigFlag(myFlag)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/FlagsCompat.kt:10: Error: Failed to obtain string value for aconfig flag. The value argument must be an inline string. [AndroidXFlaggedApi]
+            @RequiresAconfigFlag(myFlag)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+            )
+    }
 }

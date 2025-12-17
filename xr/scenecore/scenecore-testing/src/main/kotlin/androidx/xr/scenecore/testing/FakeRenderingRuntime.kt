@@ -563,7 +563,7 @@ public class FakeRenderingRuntime(
     override fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity {
         return entityFactory.createGltfEntity(FakeGltfFeature(createNode()), pose, parentEntity)
     }
@@ -574,7 +574,7 @@ public class FakeRenderingRuntime(
         shape: SurfaceEntity.Shape,
         surfaceProtection: Int,
         superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity {
         val surfaceFeature = FakeSurfaceFeature(createNode())
         surfaceFeature.stereoMode = stereoMode

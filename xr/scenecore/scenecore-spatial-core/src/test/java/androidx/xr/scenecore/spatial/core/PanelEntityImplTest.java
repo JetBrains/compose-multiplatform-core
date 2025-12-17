@@ -19,6 +19,7 @@ package androidx.xr.scenecore.spatial.core;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,6 +42,7 @@ import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
 import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
@@ -385,5 +387,34 @@ public class PanelEntityImplTest {
         Pose pose = panelEntity.transformNormalizedCoordinatesToPose(new Vector2(1f, -1f));
         Vector3 expected = new Vector3(width / 2, -height / 2, 0.0f);
         assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void getParent_nullParent_returnsNull() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        panelEntity.setParent(null);
+        assertThat(panelEntity.getParent()).isEqualTo(null);
+    }
+
+    @Test
+    public void getPoseInParentSpace_nullParent_returnsIdentity() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        panelEntity.setParent(null);
+        panelEntity.setPose(Pose.Identity);
+        assertThat(panelEntity.getPose(Space.PARENT)).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void getPoseInActivitySpace_nullParent_throwsException() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        panelEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> panelEntity.getPose(Space.ACTIVITY));
+    }
+
+    @Test
+    public void getPoseInRealWorldSpace_nullParent_throwsException() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        panelEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> panelEntity.getPose(Space.REAL_WORLD));
     }
 }

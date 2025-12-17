@@ -1070,11 +1070,11 @@ package androidx.wear.protolayout {
 
   @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental public static final class ModifiersBuilders.DefaultContentTransitions {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.EnterTransition fadeIn();
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.EnterTransition fadeInSlideIn(@SuppressCompatibility int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.EnterTransition fadeInSlideIn(int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.ExitTransition fadeOut();
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.ExitTransition fadeOutSlideOut(@SuppressCompatibility int);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.EnterTransition slideIn(@SuppressCompatibility int);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.ExitTransition slideOut(@SuppressCompatibility int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.ExitTransition fadeOutSlideOut(int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.EnterTransition slideIn(int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.ModifiersBuilders.ExitTransition slideOut(int);
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class ModifiersBuilders.ElementMetadata {
@@ -1217,7 +1217,7 @@ package androidx.wear.protolayout {
 
   @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static final class ModifiersBuilders.SlideInTransition {
     method public androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec? getAnimationSpec();
-    method @SuppressCompatibility public int getDirection();
+    method public int getDirection();
     method public androidx.wear.protolayout.ModifiersBuilders.SlideBound? getInitialSlideBound();
   }
 
@@ -1225,13 +1225,13 @@ package androidx.wear.protolayout {
     ctor public ModifiersBuilders.SlideInTransition.Builder();
     method public androidx.wear.protolayout.ModifiersBuilders.SlideInTransition build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideInTransition.Builder setAnimationSpec(androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideInTransition.Builder setDirection(@SuppressCompatibility int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideInTransition.Builder setDirection(int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideInTransition.Builder setInitialSlideBound(androidx.wear.protolayout.ModifiersBuilders.SlideBound);
   }
 
   @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static final class ModifiersBuilders.SlideOutTransition {
     method public androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec? getAnimationSpec();
-    method @SuppressCompatibility public int getDirection();
+    method public int getDirection();
     method public androidx.wear.protolayout.ModifiersBuilders.SlideBound? getTargetSlideBound();
   }
 
@@ -1239,18 +1239,18 @@ package androidx.wear.protolayout {
     ctor public ModifiersBuilders.SlideOutTransition.Builder();
     method public androidx.wear.protolayout.ModifiersBuilders.SlideOutTransition build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideOutTransition.Builder setAnimationSpec(androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideOutTransition.Builder setDirection(@SuppressCompatibility int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideOutTransition.Builder setDirection(int);
     method public androidx.wear.protolayout.ModifiersBuilders.SlideOutTransition.Builder setTargetSlideBound(androidx.wear.protolayout.ModifiersBuilders.SlideBound);
   }
 
   @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static final class ModifiersBuilders.SlideParentBound implements androidx.wear.protolayout.ModifiersBuilders.SlideBound {
-    method @SuppressCompatibility public int getSnapTo();
+    method public int getSnapTo();
   }
 
   @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental public static final class ModifiersBuilders.SlideParentBound.Builder {
     ctor public ModifiersBuilders.SlideParentBound.Builder();
     method public androidx.wear.protolayout.ModifiersBuilders.SlideParentBound build();
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideParentBound.Builder setSnapTo(@SuppressCompatibility int);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.SlideParentBound.Builder setSnapTo(int);
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class ModifiersBuilders.SpanModifiers {

@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"टॅब टेंप्लेट डेमो"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"मेसेज टॅब"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"पेन टॅब"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"सेक्शन्ड आयटम टॅब"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"सूची टॅब"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"लांब टॅब शीर्षक असलेला ग्रिड टॅब"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"शोध टॅब"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"पंक्तीदेखील निवडली जाऊ शकते"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"दुय्यम कृती निवडली आहे"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"पंक्तीशी संबंधित प्राथमिक कृती निवडली आहे"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"रिकामा सूची डेमो"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"ही सूची रिकामी आहे"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"इतर टेंप्लेटचे डेमो"</string>

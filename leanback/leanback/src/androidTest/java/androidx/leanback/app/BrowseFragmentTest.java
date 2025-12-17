@@ -22,11 +22,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import android.app.Fragment;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
@@ -126,6 +128,7 @@ public class BrowseFragmentTest {
 
     @Test
     public void testTouchMode() throws Throwable {
+        assumeFalse("Test fails on cuttlefish b/460508283", Build.MODEL.contains("Cuttlefish"));
         Intent intent = new Intent();
         intent.putExtra(BrowseFragmentTestActivity.EXTRA_ADD_TO_BACKSTACK , true);
         intent.putExtra(BrowseFragmentTestActivity.EXTRA_LOAD_DATA_DELAY , 0L);

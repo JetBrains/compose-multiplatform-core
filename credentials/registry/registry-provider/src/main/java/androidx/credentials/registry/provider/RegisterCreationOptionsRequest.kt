@@ -16,8 +16,6 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * A request to register creation options with Credential Manager.
  *
@@ -40,7 +38,6 @@ import androidx.annotation.RestrictTo
  * @constructor
  * @throws IllegalArgumentException if [id] or [intentAction] length is greater than 64 characters
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RegisterCreationOptionsRequest
 @JvmOverloads
 constructor(

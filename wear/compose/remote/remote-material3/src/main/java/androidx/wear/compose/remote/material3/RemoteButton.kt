@@ -56,12 +56,14 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,6 +84,7 @@ import androidx.wear.compose.material3.TextConfiguration
  *
  * Button can be enabled or disabled. A disabled button will not respond to click events.
  *
+ * @sample androidx.wear.compose.remote.material3.samples.RemoteButtonSimpleSample
  * @param onClick Will be called when the user clicks the button
  * @param modifier Modifier to be applied to the button
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
@@ -105,7 +108,7 @@ import androidx.wear.compose.material3.TextConfiguration
 public fun RemoteButton(
     vararg onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
-    enabled: RemoteBoolean = RemoteBoolean(true),
+    enabled: RemoteBoolean = true.rb,
     colors: RemoteButtonColors = RemoteButtonDefaults.buttonColors(),
     shape: RemoteShape = RemoteButtonDefaults.shape,
     contentPadding: RemotePaddingValues = RemoteButtonDefaults.ContentPadding,
@@ -162,7 +165,7 @@ public fun RemoteButton(
 public fun RemoteButton(
     vararg onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
-    enabled: RemoteBoolean = RemoteBoolean(true),
+    enabled: RemoteBoolean = true.rb,
     containerPainter: RemotePainter,
     disabledContainerPainter: RemotePainter =
         RemoteButtonDefaults.disabledContainerPainter(containerPainter),
@@ -255,7 +258,7 @@ public fun RemoteButton(
     modifier: RemoteModifier = RemoteModifier,
     secondaryLabel: @Composable @RemoteComposable (RemoteRowScope.() -> Unit)? = null,
     icon: (@Composable () -> Unit)? = null,
-    enabled: RemoteBoolean = RemoteBoolean(true),
+    enabled: RemoteBoolean = true.rb,
     containerPainter: RemotePainter? = null,
     disabledContainerPainter: RemotePainter? = null,
     colors: RemoteButtonColors =
@@ -329,14 +332,19 @@ private fun RemoteButtonImpl(
     content: @Composable @RemoteComposable RemoteRowScope.() -> Unit,
 ) {
     val state = LocalRemoteComposeCreationState.current
+    // TODO(b/466078229): uses padding modifiers that takes RemoteDp
+    val contentPadding: RemoteModifier =
+        with(LocalDensity.current) {
+            RemoteModifier.padding(
+                left = contentPadding.leftPadding.value * density,
+                top = contentPadding.topPadding.value * density,
+                right = contentPadding.rightPadding.value * density,
+                bottom = contentPadding.bottomPadding.value * density,
+            )
+        }
     val containerModifier =
         RemoteModifier.clickable(*onClick, enabled = enabled.constantValue ?: false)
-            .padding(
-                left = contentPadding.leftPadding.value,
-                top = contentPadding.topPadding.value,
-                right = contentPadding.rightPadding.value,
-                bottom = contentPadding.bottomPadding.value,
-            )
+            .then(contentPadding)
 
     RemoteRow(
         verticalAlignment = RemoteAlignment.CenterVertically,
@@ -473,10 +481,10 @@ public object RemoteButtonDefaults {
     public val LargeIconSize: RemoteDp = 32.rdp
 
     /** The recommended horizontal padding used by [RemoteButton] by default */
-    public val ButtonHorizontalPadding: RemoteDp = RemoteDp(14f.rf)
+    public val ButtonHorizontalPadding: RemoteDp = 14.rdp
 
     /** The recommended vertical padding used by [RemoteButton] by default */
-    public val ButtonVerticalPadding: RemoteDp = RemoteDp(6f.rf)
+    public val ButtonVerticalPadding: RemoteDp = 6.rdp
 
     /** The default content padding used by [RemoteButton] */
     public val ContentPadding: RemotePaddingValues =
@@ -600,17 +608,17 @@ public class RemoteButtonColors(
     public val disabledIconColor: RemoteColor,
 ) {
     @Stable
-    internal fun contentColor(enabled: RemoteBoolean = RemoteBoolean(true)): RemoteColor {
+    internal fun contentColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = contentColor, ifFalse = disabledContentColor)
     }
 
     @Stable
-    internal fun containerColor(enabled: RemoteBoolean = RemoteBoolean(true)): RemoteColor {
+    internal fun containerColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = containerColor, ifFalse = disabledContainerColor)
     }
 
     @Stable
-    internal fun secondaryContentColor(enabled: RemoteBoolean = RemoteBoolean(true)): RemoteColor {
+    internal fun secondaryContentColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(
             ifTrue = secondaryContentColor,
             ifFalse = disabledSecondaryContentColor,

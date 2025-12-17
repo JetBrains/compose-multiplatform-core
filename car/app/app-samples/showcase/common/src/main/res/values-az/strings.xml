@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Tab Şablonu Demosu"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Mesaj Tabı"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Panel Tabı"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Bölməli element tabı"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Siyahı Tabı"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Uzun Tab Başlığı ilə Torlu Tab"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Axtarış Tabı"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Sıra da seçilə bilər"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"İkinci Dərəcəli Əməliyyat seçilib"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Sıra üzrə əsas əməliyyat seçilib"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Boş siyahı demosu"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Siyahı boşdur"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Digər Şablon Demoları"</string>

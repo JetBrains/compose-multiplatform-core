@@ -24,6 +24,7 @@
     <string name="video_spatial_180_360_test">Stereo Video in 180/360SpatialExternalSurface Test Case</string>
     <string name="cuj_gltf_entity_input_test_case">GLTF entity input Test Case</string>
     <string name="cuj_gltf_animation_test_case">GLTF Animation Test Case</string>
+    <string name="fragment_compatibility_test">Fragment Compatibility Test Case</string>
     <string name="depthstacking_modifier_order_test_case">DepthStacking and ModifierOrder Layout Test Case</string>
     <string name="panel_embedded_subspace_test_case">Panel Embedded Subspace Layout Test Case</string>
     <string name="user_subspace_test_case">User Subspace Layout Test Case</string>

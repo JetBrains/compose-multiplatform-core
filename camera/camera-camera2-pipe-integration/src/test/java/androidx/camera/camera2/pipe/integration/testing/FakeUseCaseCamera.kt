@@ -20,25 +20,32 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
+import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
+import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
+import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
+import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
+import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsQuirkOverride
+import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraComponent
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraConfig
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
+import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
+import androidx.camera.camera2.pipe.integration.impl.CameraGraphConfigProvider
+import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCamera
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.impl.toMap
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
-import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.testing.impl.FakeCameraCapturePipeline
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.NANOSECONDS
@@ -49,23 +56,46 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
     var buildInvocationCount = 0
     private var sessionConfigAdapter = SessionConfigAdapter(emptyList())
     private var cameraGraph = FakeCameraGraph()
-    private var streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
     private val cameraStateAdapter = CameraStateAdapter()
     private val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
+    private val cameraMetadata = FakeCameraMetadata()
+    private val cameraQuirks =
+        CameraQuirks(
+            cameraMetadata,
+            StreamConfigurationMapCompat(
+                StreamConfigurationMapBuilder.newBuilder().build(),
+                OutputSizesCorrector(
+                    cameraMetadata,
+                    StreamConfigurationMapBuilder.newBuilder().build(),
+                ),
+            ),
+        )
+    val configProvider =
+        CameraGraphConfigProvider(
+            callbackMap = CameraCallbackMap(),
+            requestListener = ComboRequestListener(),
+            cameraConfig = CameraConfig(cameraMetadata.camera),
+            cameraQuirks = cameraQuirks,
+            zslControl = ZslControlNoOpImpl(),
+            templateParamsOverride = TemplateParamsQuirkOverride(cameraQuirks.quirks),
+            cameraMetadata = cameraMetadata,
+        )
 
     private var config: UseCaseCameraConfig =
-        UseCaseCameraConfig(
+        UseCaseCameraConfig.create(
             useCases = emptyList(),
-            streamConfigMap = streamConfigMap,
-            sessionConfigAdapter = sessionConfigAdapter,
+            cameraGraphConfigProvider = configProvider,
             cameraGraphFactory = { _ -> cameraGraph },
             graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-            cameraGraphConfig = CameraGraph.Config(camera = CameraId("0"), streams = emptyList()),
+            sessionConfigAdapter = sessionConfigAdapter,
+            isExtensions = false,
+            sessionProcessor = null,
         )
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {
@@ -88,6 +118,7 @@ class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
             cameraGraphProvider = { cameraGraph },
             cameraStateAdapter = cameraStateAdapter,
             graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
             defaultSurfaceToStreamMap = emptyMap(),
         )
 

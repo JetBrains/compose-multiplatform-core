@@ -94,8 +94,10 @@ public class IntentHandler {
             }
             val uri = intent.data ?: return null
             val callingAppInfo = extractCallingAppInfo(intent, extras) ?: return null
+            val importCredentialsRequest =
+                ImportCredentialsRequest.createFrom(reqJson) ?: return null
             return ProviderImportCredentialsRequest(
-                ImportCredentialsRequest(reqJson),
+                importCredentialsRequest,
                 callingAppInfo,
                 uri,
                 credId,

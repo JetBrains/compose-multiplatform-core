@@ -681,7 +681,7 @@ public interface RenderingRuntime : JxrRuntime {
     public fun createGltfEntity(
         pose: Pose,
         loadedGltf: GltfModelResource,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): GltfEntity
 
     /**
@@ -703,6 +703,6 @@ public interface RenderingRuntime : JxrRuntime {
         shape: SurfaceEntity.Shape,
         @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
         superSampling: Int,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity
 }

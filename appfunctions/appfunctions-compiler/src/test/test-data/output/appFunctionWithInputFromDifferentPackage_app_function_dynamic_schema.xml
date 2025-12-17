@@ -48,26 +48,6 @@
             <dataTypeMetadata>
                 <id>unused</id>
                 <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.differentPackage.DiffPackageSerializable</objectQualifiedName>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>6</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>longParam</name>
-                </properties>
-                <required>longParam</required>
-                <type>3</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.differentPackage.DiffPackageSerializable</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
                 <objectQualifiedName>com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable</objectQualifiedName>
                 <properties>
                     <dataTypeMetadata>
@@ -83,6 +63,26 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.differentPackage.DiffPackageSerializable</objectQualifiedName>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>6</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>longParam</name>
+                </properties>
+                <required>longParam</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.differentPackage.DiffPackageSerializable</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

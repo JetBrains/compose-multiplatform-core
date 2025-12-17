@@ -38,7 +38,7 @@ import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -52,7 +52,7 @@ class AnchorEntityActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
 
         // View
@@ -103,10 +103,17 @@ class AnchorEntityActivity : AppCompatActivity() {
                     PlaneSemanticType.ANY,
                 )
             val xyzModelEntity =
-                GltfModelEntity.create(session!!, xyzModel, Pose.Identity).also {
-                    it.setScale(1f)
-                    anchorEntity.addChild(it)
-                }
+                GltfModelEntity.create(
+                        session = session!!,
+                        model = xyzModel,
+                        pose = Pose.Identity,
+                        parent = null,
+                    )
+                    .also {
+                        it.setScale(1f)
+                        anchorEntity.addChild(it)
+                        it.setEnabled(true)
+                    }
 
             val gltfEntityDebugPanel =
                 DebugTextPanel(

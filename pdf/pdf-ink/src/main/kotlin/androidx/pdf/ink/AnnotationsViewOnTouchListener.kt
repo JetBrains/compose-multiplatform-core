@@ -26,6 +26,7 @@ internal class AnnotationsViewOnTouchListener(
     context: Context,
     private val wetStrokesViewDispatcher: TouchEventDispatcher,
     private val pdfViewDispatcher: TouchEventDispatcher,
+    private val onStartContentTouch: () -> Unit = {},
 ) : View.OnTouchListener {
 
     private var currentDispatcher: TouchEventDispatcher? = null
@@ -54,6 +55,7 @@ internal class AnnotationsViewOnTouchListener(
         downX = event.x
         downY = event.y
         currentDispatcher?.dispatchTouchEvent(event)
+        onStartContentTouch()
     }
 
     private fun handlePointerDown(event: MotionEvent) {

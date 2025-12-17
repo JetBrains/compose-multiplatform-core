@@ -49,14 +49,12 @@ import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSceneRuntime
-import androidx.xr.compose.testing.createFakeRuntime
-import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.testing.disableXr
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.toDp
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
@@ -88,7 +86,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_nonXr_contentIsInline() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -101,8 +99,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_homeSpaceMode_contentIsInline() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -115,8 +112,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_nonSpatial_doesNotRenderContent() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box {
@@ -143,8 +139,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_afterSwitchToFullSpaceMode_isSpatial() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(Modifier.testTag(parentTestTag)) {
@@ -169,7 +164,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_settingChange_contentIsInline() {
-        composeTestRule.disableXr()
+        composeTestRule.activity.disableXr()
 
         var shouldRenderInNonSpatial by mutableStateOf(false)
         composeTestRule.setContent {
@@ -187,8 +182,7 @@ class OrbiterTest {
 
     @Test
     fun orbiter_orbiterRendered() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box {
@@ -204,9 +198,7 @@ class OrbiterTest {
     @Test
     fun orbiter_orbiterCanBeRemoved() {
         var showOrbiter by mutableStateOf(true)
-
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-        composeTestRule.session?.scene?.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
 
         composeTestRule.setContent {
             Box(modifier = Modifier.size(100.dp)) {
@@ -279,10 +271,13 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_spatialPanelParent_usesSpatialPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testSceneRuntime =
-            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
+        composeTestRule.configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override var mainPanelEntity: RtPanelEntity = testMainPanelEntity
+                }
+            }
+        )
 
         composeTestRule.setContent {
             Subspace {
@@ -345,10 +340,14 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_mainPanelParent_usesMainPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testSceneRuntime =
-            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
+
+        composeTestRule.configureFakeSession(
+            sceneRuntime = { runtime ->
+                object : SceneRuntime by runtime {
+                    override val mainPanelEntity = testMainPanelEntity
+                }
+            }
+        )
 
         composeTestRule.setContent {
             Subspace {

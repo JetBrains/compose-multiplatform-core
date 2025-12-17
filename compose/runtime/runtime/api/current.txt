@@ -137,10 +137,8 @@ package androidx.compose.runtime {
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public final class ComposeRuntimeFlags {
-    property public boolean isMovableContentUsageTrackingEnabled;
     property public boolean isMovingNestedMovableContentEnabled;
     field public static final androidx.compose.runtime.ComposeRuntimeFlags INSTANCE;
-    field public static boolean isMovableContentUsageTrackingEnabled;
     field public static boolean isMovingNestedMovableContentEnabled;
   }
 

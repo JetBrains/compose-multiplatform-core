@@ -18,7 +18,6 @@ package androidx.credentials.registry.provider
 
 import android.content.Context
 import android.os.CancellationSignal
-import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 
@@ -46,7 +45,6 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         provider.onRegisterCredentials(request, cancellationSignal, executor, callback)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun registerCreationOptionsAsync(
         request: RegisterCreationOptionsRequest,
         cancellationSignal: CancellationSignal?,
@@ -98,7 +96,6 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         provider.onClearCredentialRegistry(request, executor, callback)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun clearCreationOptionsAsync(
         request: ClearCreationOptionsRequest,
         executor: Executor,

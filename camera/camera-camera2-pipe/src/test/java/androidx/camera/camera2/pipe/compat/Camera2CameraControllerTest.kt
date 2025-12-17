@@ -70,7 +70,15 @@ class Camera2CameraControllerTest {
     private val streamConfig1 =
         CameraStream.Config.create(size = Size(1280, 720), format = StreamFormat.YUV_420_888)
     private val streamId1 = StreamId(1)
-    private val fakeGraphConfig = CameraGraph.Config(cameraId, listOf(streamConfig1))
+    private val fakeGraphConfig =
+        CameraGraph.Config(
+            cameraId,
+            listOf(streamConfig1),
+            // Closing the capture session requires setting up and faking the session configuration
+            // pipeline end-to-end, which is largely out-of-scope for this test. For now, set it to
+            // false for the default behavior.
+            flags = CameraGraph.Flags(closeCaptureSessionOnDisconnect = false),
+        )
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceTracker: SurfaceTracker = mock()
 

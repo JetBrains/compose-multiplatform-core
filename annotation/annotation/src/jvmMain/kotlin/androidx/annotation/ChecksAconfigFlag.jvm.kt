@@ -29,5 +29,5 @@ public annotation class ChecksAconfigFlag(
      * The string value for the aconfig flag checked by the annotated API, for example
      * `"android.os.flags.my_feature"`.
      */
-    val flag: String
+    val value: String
 )

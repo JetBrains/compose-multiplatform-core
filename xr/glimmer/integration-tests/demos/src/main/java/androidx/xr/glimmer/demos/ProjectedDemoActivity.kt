@@ -16,5 +16,8 @@
 
 package androidx.xr.glimmer.demos
 
-/** The projected activity containing all Glimmer related demos to run on connected devices. */
+/**
+ * The projected activity containing all Jetpack Compose Glimmer related demos to run on connected
+ * devices.
+ */
 class ProjectedDemoActivity : BaseDemoActivity()

@@ -16,6 +16,7 @@
 
 package androidx.xr.projected.platform;
 
+import androidx.xr.projected.platform.IProjectedDeviceStateListener;
 import androidx.xr.projected.platform.IProjectedInputEventListener;
 
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX)")
@@ -25,4 +26,6 @@ interface IProjectedService {
   void addWindowFlags(in int flags);
   void clearWindowFlags(in int flags);
   boolean isDisplayCapable();
+  void registerProjectedDeviceStateListener(in IProjectedDeviceStateListener listener);
+  void unregisterProjectedDeviceStateListener(in IProjectedDeviceStateListener listener);
 }

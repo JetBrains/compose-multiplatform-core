@@ -16,16 +16,13 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * Represents an error thrown during a [RegistryManager.clearCreationOptions] transaction.
  *
  * @property type the type of the error
  * @property errorMessage the error message
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class ClearCreationOptionsException(
-    public val type: String,
-    public val errorMessage: CharSequence? = null,
-) : Exception(errorMessage?.toString())
+public abstract class ClearCreationOptionsException
+@JvmOverloads
+constructor(public val type: String, public val errorMessage: CharSequence? = null) :
+    Exception(errorMessage?.toString())

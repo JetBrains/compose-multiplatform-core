@@ -558,6 +558,20 @@ class SwipeToRevealScreenshotTest {
     }
 
     @Test
+    fun swipeToReveal_actionIcon_isFadingIn_atFullSize(@TestParameter screenSize: ScreenSize) {
+        val swipeScreenPercent = 0.33f
+
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
+    }
+
+    @Test
+    fun swipeToReveal_actionIcon_isFullyOpaque_atFullSize(@TestParameter screenSize: ScreenSize) {
+        val swipeScreenPercent = 0.37f
+
+        verifyScreenshotAfterSwipe(screenSize, swipeScreenPercent)
+    }
+
+    @Test
     fun swipeToReveal_showsPrimaryActionWithLabel(@TestParameter screenSize: ScreenSize) {
         val swipeScreenPercent = 0.85f
 

@@ -168,6 +168,22 @@
         <dataTypes>
             <dataTypeMetadata>
                 <allOf>
+                    <dataTypeReference>com.testdata.LongBaseSerializable</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <type>11</type>
+                </allOf>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.DerivedSerializable</objectQualifiedName>
+                <type>12</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.DerivedSerializable</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <allOf>
                     <id>unused</id>
                     <isNullable>true</isNullable>
                     <objectQualifiedName>com.testdata.AppFunctionOpenable</objectQualifiedName>
@@ -206,22 +222,6 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.LongBaseSerializable</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <allOf>
-                    <dataTypeReference>com.testdata.LongBaseSerializable</dataTypeReference>
-                    <id>unused</id>
-                    <isNullable>true</isNullable>
-                    <type>11</type>
-                </allOf>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.DerivedSerializable</objectQualifiedName>
-                <type>12</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.DerivedSerializable</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

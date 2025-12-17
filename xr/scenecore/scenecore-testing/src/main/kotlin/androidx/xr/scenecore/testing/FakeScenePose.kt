@@ -21,8 +21,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
-import com.google.common.util.concurrent.Futures.immediateFuture
-import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * A test double for [androidx.xr.scenecore.runtime.ScenePose], designed for use in unit or
@@ -105,10 +103,9 @@ public open class FakeScenePose : ScenePose {
             0f,
         )
 
-    @Suppress("AsyncSuffixFuture")
-    override fun hitTest(
+    override suspend fun hitTest(
         origin: Vector3,
         direction: Vector3,
         @ScenePose.HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult> = immediateFuture(hitTestResult)
+    ): HitTestResult = hitTestResult
 }

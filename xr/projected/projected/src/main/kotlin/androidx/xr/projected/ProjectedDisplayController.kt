@@ -21,6 +21,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
+import androidx.xr.projected.ProjectedDisplayController.Companion.create
+import androidx.xr.projected.ProjectedDisplayController.PresentationMode.Companion.VISUALS_ON
+import androidx.xr.projected.binding.ProjectedServiceConnection
+import androidx.xr.projected.binding.ProjectedServiceConnection.ProjectedIntentAction.Companion.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
 import java.util.Collections
@@ -229,7 +233,7 @@ private constructor(
                 ProjectedContext.isProjectedDeviceContext(activity),
                 { "Provided Activity is not running on a Projected device." },
             )
-            val serviceConnection = ProjectedServiceConnection(activity)
+            val serviceConnection = ProjectedServiceConnection(activity, ACTION_BIND)
 
             return ProjectedDisplayController(
                 serviceConnection,

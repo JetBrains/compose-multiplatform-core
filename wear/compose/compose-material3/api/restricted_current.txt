@@ -2274,6 +2274,33 @@ package androidx.wear.compose.material3 {
 
 package androidx.wear.compose.material3.lazy {
 
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class ResponsiveItemType {
+    method @BytecodeOnly public static androidx.wear.compose.material3.lazy.ResponsiveItemType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.wear.compose.material3.lazy.ResponsiveItemType.Companion Companion;
+  }
+
+  public static final class ResponsiveItemType.Companion {
+    method @BytecodeOnly public int getButton-maknOfc();
+    method @BytecodeOnly public int getButtonGroup-maknOfc();
+    method @BytecodeOnly public int getCard-maknOfc();
+    method @BytecodeOnly public int getCompactButton-maknOfc();
+    method @BytecodeOnly public int getDefault-maknOfc();
+    method @BytecodeOnly public int getIconButton-maknOfc();
+    method @BytecodeOnly public int getListHeader-maknOfc();
+    method @BytecodeOnly public int getText-maknOfc();
+    method @BytecodeOnly public int getTextButton-maknOfc();
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType Button;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType ButtonGroup;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType Card;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType CompactButton;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType Default;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType IconButton;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType ListHeader;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType Text;
+    property public androidx.wear.compose.material3.lazy.ResponsiveItemType TextButton;
+  }
+
   public sealed nonexhaustive interface ResponsiveTransformationSpec extends androidx.wear.compose.material3.lazy.TransformationSpec {
     field public static final androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec.Companion Companion;
   }
@@ -2300,6 +2327,29 @@ package androidx.wear.compose.material3.lazy {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.material3.lazy.TransformationSpec rememberTransformationSpec(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.material3.lazy.TransformationSpec rememberTransformationSpec(androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec... specs);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.material3.lazy.TransformationSpec rememberTransformationSpec(androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec![], androidx.compose.runtime.Composer?, int);
+  }
+
+  public final class ResponsiveTransformingLazyColumnDslKt {
+    method public static inline <T> void items(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,androidx.wear.compose.material3.lazy.ResponsiveItemType> itemType, kotlin.jvm.functions.Function2<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super T,kotlin.Unit> itemContent);
+    method @BytecodeOnly public static <T> void items(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,androidx.wear.compose.material3.lazy.ResponsiveItemType!>, kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static void items$default(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function4!, int, Object!);
+    method public static inline <T> void itemsIndexed(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,androidx.wear.compose.material3.lazy.ResponsiveItemType> itemType, kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,androidx.wear.compose.material3.lazy.ResponsiveItemType!>, kotlin.jvm.functions.Function5<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static void itemsIndexed$default(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
+  }
+
+  public final class ResponsiveTransformingLazyColumnKt {
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void ResponsiveTransformingLazyColumn(androidx.compose.ui.Modifier?, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState?, androidx.compose.foundation.layout.PaddingValues?, boolean, androidx.compose.foundation.layout.Arrangement.Vertical?, androidx.compose.ui.Alignment.Horizontal?, androidx.compose.foundation.gestures.FlingBehavior?, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior?, androidx.compose.foundation.OverscrollEffect?, kotlin.jvm.functions.Function1<? super androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void ResponsiveTransformingLazyColumn(optional androidx.compose.ui.Modifier modifier, optional androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional boolean reverseLayout, optional androidx.compose.foundation.layout.Arrangement.Vertical verticalArrangement, optional androidx.compose.ui.Alignment.Horizontal horizontalAlignment, optional androidx.compose.foundation.gestures.FlingBehavior flingBehavior, optional boolean userScrollEnabled, optional androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior? rotaryScrollableBehavior, optional androidx.compose.foundation.OverscrollEffect? overscrollEffect, kotlin.jvm.functions.Function1<androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope,kotlin.Unit> content);
+  }
+
+  public sealed nonexhaustive interface ResponsiveTransformingLazyColumnScope {
+    method @KotlinOnly public void item(optional Object? key, optional Object? contentType, optional androidx.wear.compose.material3.lazy.ResponsiveItemType itemType, kotlin.jvm.functions.Function1<androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,kotlin.Unit> content);
+    method @BytecodeOnly public void item-NyuT0_4(Object?, Object?, int, kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static void item-NyuT0_4$default(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope!, Object!, Object!, int, kotlin.jvm.functions.Function3!, int, Object!);
+    method public void items(int count, optional kotlin.jvm.functions.Function1<? super java.lang.Integer,?>? key, optional kotlin.jvm.functions.Function1<? super java.lang.Integer,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function1<? super java.lang.Integer,androidx.wear.compose.material3.lazy.ResponsiveItemType> itemType, kotlin.jvm.functions.Function2<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super java.lang.Integer,kotlin.Unit> content);
+    method @BytecodeOnly public void items(int, kotlin.jvm.functions.Function1<? super java.lang.Integer!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super java.lang.Integer!,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super java.lang.Integer!,androidx.wear.compose.material3.lazy.ResponsiveItemType!>, kotlin.jvm.functions.Function4<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope!,? super java.lang.Integer!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static void items$default(androidx.wear.compose.material3.lazy.ResponsiveTransformingLazyColumnScope!, int, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
   }
 
   public interface TransformationSpec {

@@ -18,6 +18,8 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.content.Intent
+import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
@@ -71,6 +73,7 @@ private constructor(
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): ActivityPanelEntity =
             ActivityPanelEntity(
                 lifecycleManager,
@@ -79,9 +82,52 @@ private constructor(
                     pixelDimensions.toRtPixelDimensions(),
                     name,
                     hostActivity,
-                    sceneRuntime.activitySpace,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        Log.warn(
+                            "The provided parent is not a BaseEntity. The ActivityPanelEntity " +
+                                "will be created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
                 ),
                 entityManager,
+            )
+
+        /**
+         * Public factory function for a spatial ActivityPanelEntity.
+         *
+         * @param session XR [Session] to create the ActivityPanelEntity.
+         * @param pixelDimensions Bounds for the panel surface in pixels.
+         * @param name Name of the panel.
+         * @param pose [Pose] of this entity relative to its parent, the default value is
+         *   [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         * @return an ActivityPanelEntity instance.
+         */
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            pixelDimensions: IntSize2d,
+            name: String,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): ActivityPanelEntity =
+            ActivityPanelEntity.create(
+                session.perceptionRuntime.lifecycleManager,
+                session.sceneRuntime,
+                session.scene.entityManager,
+                pixelDimensions,
+                name,
+                session.activity,
+                pose,
+                parent,
             )
 
         /**

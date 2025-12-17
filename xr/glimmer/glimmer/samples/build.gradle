@@ -40,10 +40,10 @@ dependencies {
 }
 
 androidx {
-    name = "Glimmer Samples"
+    name = "Compose Glimmer Samples"
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
-    description = "Contains the sample code for Glimmer"
+    description = "Contains the sample code for Jetpack Compose Glimmer"
 }
 
 android {

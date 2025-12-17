@@ -23,7 +23,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ServiceInfo
 import androidx.test.core.app.ApplicationProvider
-import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedInputEventListener
 import androidx.xr.projected.platform.IProjectedService
@@ -183,6 +182,7 @@ class ProjectedActivityCompatTest {
     }
 
     companion object {
+        private const val ACTION_BIND = "androidx.xr.projected.ACTION_BIND"
         private const val SYSTEM_PACKAGE_NAME = "com.system.service"
         private const val SYSTEM_CLASS_NAME = "com.system.service.ProjectedService"
         private val COMPONENT_NAME = ComponentName(SYSTEM_PACKAGE_NAME, SYSTEM_CLASS_NAME)

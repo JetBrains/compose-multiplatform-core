@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 /**
- * Glimmer surfaces can use different shapes. Shapes contains different levels of roundedness for
- * different components.
+ * Jetpack Compose Glimmer surfaces can use different shapes. Shapes contains different levels of
+ * roundedness for different components.
  *
  * @property small a shape with 4 same-sized corners whose size are smaller than [medium]. This
  *   shape is used for components such as cards.

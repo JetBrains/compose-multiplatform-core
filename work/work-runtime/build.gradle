@@ -109,6 +109,12 @@ ksp {
     arg("room.schemaLocation","$projectDir/src/schemas".toString())
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.work.ExperimentalConfigurationApi")
+    }
+}
+
 androidx {
     name = "WorkManager Runtime"
     type = SoftwareType.PUBLISHED_LIBRARY

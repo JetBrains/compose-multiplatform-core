@@ -20,7 +20,6 @@ import android.content.pm.ActivityInfo
 import android.graphics.Point
 import android.graphics.RectF
 import android.view.ViewGroup
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.layout.SinglePageLayoutStrategy
 import androidx.pdf.view.layout.TwoPageLayoutStrategy
 import androidx.test.core.app.ActivityScenario
@@ -36,10 +35,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class PdfViewTwoPageLayoutTest {
-    @Before
-    fun setUp() {
-        PdfFeatureFlags.isLayoutStrategyEnabled = true
-    }
+    @Before fun setUp() {}
 
     @After
     fun tearDown() {

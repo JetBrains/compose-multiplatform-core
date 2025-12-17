@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Session
@@ -35,7 +36,7 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.accessibilitytest.AccessibilityTestActivity
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
 import androidx.xr.scenecore.testapp.anchorentity.AnchorEntityActivity
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.environment.EnvironmentActivity
 import androidx.xr.scenecore.testapp.fieldofviewvisibility.FieldOfViewVisibilityActivity
 import androidx.xr.scenecore.testapp.fsmhsmtransition.FsmHsmTransitionActivity
@@ -61,10 +62,15 @@ import androidx.xr.scenecore.testapp.transformation.TransformationActivity
 import androidx.xr.scenecore.testapp.ui.BuildInfoRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.ui.TestCasesRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.visibility.VisibilityActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
     private var session: Session? = null
+
+    private val sessionManager = SessionManager(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,9 +82,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
-        if (session == null) this.finish()
-        setUpMainPanelMovable()
+        createSessionAndSetupUi()
 
         // Top bar
         createTopToolBarView()
@@ -88,6 +92,19 @@ class MainActivity : AppCompatActivity() {
 
         // Test cases & bottom bar
         createTestCasesRecyclerView()
+    }
+
+    private fun createSessionAndSetupUi() {
+        // Create the session in a separate thread to avoid StrictMode DiskRead Violations
+        lifecycleScope.launch {
+            val createdSession = withContext(Dispatchers.IO) { sessionManager.createSession() }
+            if (createdSession == null) {
+                finish()
+            } else {
+                session = createdSession
+                setUpMainPanelMovable()
+            }
+        }
     }
 
     private fun setUpMainPanelMovable() {

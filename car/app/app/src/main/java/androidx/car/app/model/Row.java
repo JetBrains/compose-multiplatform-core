@@ -64,7 +64,8 @@ public final class Row implements Item {
      * The type of images supported within rows.
      */
     @RestrictTo(LIBRARY)
-    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE, IMAGE_TYPE_EXTRA_SMALL})
+    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
+            IMAGE_TYPE_EXTRA_SMALL})
     @Retention(RetentionPolicy.SOURCE)
     @OptIn(markerClass = ExperimentalCarApi.class)
     public @interface RowImageType {
@@ -109,6 +110,16 @@ public final class Row implements Item {
      */
     @ExperimentalCarApi
     public static final int IMAGE_TYPE_EXTRA_SMALL = (1 << 3);
+
+    /**
+     * Represents a medium image to be displayed in the row.
+     *
+     * <p>To minimize scaling artifacts across a wide range of car screens, apps should provide
+     * images targeting a 128 x 128 dp bounding box. If necessary, the image will be scaled down
+     * while preserving its aspect ratio.
+     */
+    @RequiresCarApi(8)
+    public static final int IMAGE_TYPE_MEDIUM = (1 << 4);
 
     private final boolean mIsEnabled;
     private final @Nullable CarText mTitle;
@@ -549,8 +560,9 @@ public final class Row implements Item {
          * that work with different car screen pixel densities.
          *
          * @param image     the {@link CarIcon} to display or {@code null} to not display one
-         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL} or {@link
-         *                  #IMAGE_TYPE_LARGE}
+         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL},
+         *                  {@link #IMAGE_TYPE_EXTRA_SMALL}, {@link #IMAGE_TYPE_MEDIUM} or
+         *                  {@link #IMAGE_TYPE_LARGE}
          * @throws NullPointerException if {@code image} is {@code null}
          */
         public @NonNull Builder setImage(@NonNull CarIcon image, @RowImageType int imageType) {
@@ -587,8 +599,9 @@ public final class Row implements Item {
          *
          * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
          * not display one.
-         * @param rowEndImageType one of {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
-         *                        IMAGE_TYPE_EXTRA_SMALL}
+         * @param rowEndImageType one of {@link #IMAGE_TYPE_SMALL}, {@link #IMAGE_TYPE_ICON},
+         *                        {@link #IMAGE_TYPE_LARGE}, {@link #IMAGE_TYPE_EXTRA_SMALL},
+         *                        {@link #IMAGE_TYPE_MEDIUM}
          * @throws NullPointerException if {@code endImage} is {@code null}
          */
         @RequiresCarApi(8)

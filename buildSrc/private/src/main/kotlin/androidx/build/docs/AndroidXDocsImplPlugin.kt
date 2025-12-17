@@ -729,6 +729,7 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
 
     @TaskAction
     fun execute() {
+        listOf(sourceOutput, samplesOutput).map { it.get().asFile.deleteRecursively() }
         val (sources, samples) =
             inputJars
                 .get()
@@ -745,7 +746,7 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
             it.exclude("META-INF/*")
             // TODO(b/418945918): Remove when the files below are deduped:
             // benchmark/benchmark-traceprocessor/src/androidMain/kotlin/perfetto/protos/package-info.java
-            // tracing/tracing-driver-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
+            // tracing/tracing-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
             var seenPath = false
             it.eachFile { file ->
                 val relPath = file.relativePath.pathString

@@ -24,6 +24,7 @@
     <string name="annotation_pen_button_content_desc" msgid="2505660264801773100">"પેન"</string>
     <string name="annotation_highlighter_button_content_desc" msgid="1162019976938296458">"હાઇલાઇટર"</string>
     <string name="annotation_eraser_button_content_desc" msgid="7325793170289162803">"ઇરેઝર"</string>
+    <string name="annotation_color_palette_button_content_desc" msgid="539501218178172386">"વિવિધ રંગ"</string>
     <string name="annotation_undo_button_content_desc" msgid="479267370046825819">"છેલ્લો ફેરફાર રદ કરો"</string>
     <string name="annotation_redo_button_content_desc" msgid="3758120724922767367">"ફરી કરો"</string>
     <string name="annotation_toggle_annotation_button_content_desc" msgid="7425032497404166935">"ટીકાટિપ્પણી ટૉગલ કરો"</string>

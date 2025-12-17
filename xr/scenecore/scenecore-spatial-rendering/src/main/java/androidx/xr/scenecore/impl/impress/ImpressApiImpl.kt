@@ -543,7 +543,7 @@ public class ImpressApiImpl : ImpressApi {
         nAnimateGltfModel(
             getViewNativeHandle(view),
             impressNode.handle,
-            animationName!!,
+            animationName,
             looping,
             object : AssetAnimator {
                 // Hold a reference to the completer to ensure it isn't garbage
@@ -605,7 +605,7 @@ public class ImpressApiImpl : ImpressApi {
             nAnimateGltfModel(
                 getViewNativeHandle(view),
                 impressNode.handle,
-                animationName!!,
+                animationName,
                 looping,
                 object : AssetAnimator {
                     // Hold a reference to the completer to ensure it isn't garbage
@@ -1841,7 +1841,7 @@ public class ImpressApiImpl : ImpressApi {
     private external fun nAnimateGltfModel(
         view: Long,
         impressNode: Int,
-        animationName: String,
+        animationName: String?,
         loop: Boolean,
         assetAnimator: AssetAnimator,
     )

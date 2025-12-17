@@ -21,8 +21,11 @@ import android.content.Context
 import android.os.CancellationSignal
 import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.provider.CallingAppInfo
+import androidx.credentials.providerevents.exception.ClearExportException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.RegisterExportException
+import androidx.credentials.providerevents.transfer.ClearExportRequest
+import androidx.credentials.providerevents.transfer.ClearExportResponse
 import androidx.credentials.providerevents.transfer.ExportEntry
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ImportCredentialsResponse
@@ -194,7 +197,6 @@ public interface ProviderEventsManager {
 
             registerExportAsync(
                 request,
-                canceller,
                 // Use a direct executor to avoid extra dispatch. Resuming the continuation will
                 // handle getting to the right thread or pool via the ContinuationInterceptor.
                 Runnable::run,
@@ -229,14 +231,68 @@ public interface ProviderEventsManager {
      * [IntentHandler.setImportCredentialsException].
      *
      * @param request the request containing the provider data to register
-     * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
      * @param callback the callback invoked when the request succeeds or fails
      */
     public fun registerExportAsync(
         request: RegisterExportRequest,
-        cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback: CredentialManagerCallback<RegisterExportResponse, RegisterExportException>,
+    )
+
+    /**
+     * Clears all previously registered [ExportEntry] registered through the [registerExport] API.
+     * This API should be used to clear all [ExportEntry] from the device. If trying to override the
+     * existing [ExportEntry] with new ones, there is no need to clear the old ones.
+     * [registerExport] can be used to directly override [ExportEntry].
+     *
+     * @param request the request to clear all the [ExportEntry]
+     * @return a [ClearExportResponse] on successful clear.
+     * @throws ClearExportException if the registration fails.
+     */
+    public suspend fun clearExport(request: ClearExportRequest): ClearExportResponse =
+        suspendCancellableCoroutine { continuation ->
+            // Any Android API that supports cancellation should be configured to propagate
+            // coroutine cancellation as follows:
+            val canceller = CancellationSignal()
+            continuation.invokeOnCancellation { canceller.cancel() }
+
+            val callback =
+                object : CredentialManagerCallback<ClearExportResponse, ClearExportException> {
+                    override fun onResult(result: ClearExportResponse) {
+                        if (continuation.isActive) {
+                            continuation.resume(result)
+                        }
+                    }
+
+                    override fun onError(e: ClearExportException) {
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(e)
+                        }
+                    }
+                }
+
+            clearExportAsync(
+                request,
+                // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+                // handle getting to the right thread or pool via the ContinuationInterceptor.
+                Runnable::run,
+                callback,
+            )
+        }
+
+    /**
+     * Clears all previously registered [ExportEntry]. All [ExportEntry] will be cleared from the
+     * device. In order to override the previously registered [ExportEntry] with different ones,
+     * [registerExport] can be used to override the entries.
+     *
+     * @param request the request to clear all the [ExportEntry]
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    public fun clearExportAsync(
+        request: ClearExportRequest,
+        executor: Executor,
+        callback: CredentialManagerCallback<ClearExportResponse, ClearExportException>,
     )
 }

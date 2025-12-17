@@ -28,7 +28,6 @@ import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
 import androidx.pdf.view.PdfFormFillingState
 import kotlinx.coroutines.CoroutineScope
@@ -53,8 +52,7 @@ internal class PageLayoutManager(
     pagesPerRow: Int = SINGLE_PAGE,
     horizontalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     verticalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
-    internal val paginationModel: PaginationModel =
-        PaginationModel(verticalPageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+    internal val paginationModel: PaginationModel = PaginationModel(pdfDocument.pageCount),
     internal var layoutStrategy: LayoutStrategy =
         createLayoutStrategy(
             pdfDocument.pageCount,
@@ -117,21 +115,11 @@ internal class PageLayoutManager(
 
     /** The maximum width of the PDF content. */
     val maxContentWidth: Float
-        get() =
-            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-                layoutStrategy.maxWidth
-            } else {
-                paginationModel.maxWidth
-            }
+        get() = layoutStrategy.maxWidth
 
     /** The total height of the PDF content. */
     val contentHeight: Float
-        get() =
-            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-                layoutStrategy.totalHeight
-            } else {
-                paginationModel.totalEstimatedHeight
-            }
+        get() = layoutStrategy.totalHeight
 
     /**
      * The current [Job] that is handling dimensions loading work
@@ -183,11 +171,11 @@ internal class PageLayoutManager(
 
     /** Calculates the content coordinate location for a 0-indexed [pageNum] */
     private fun calculatePageLocation(pageNum: Int, viewport: RectF): RectF {
-        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-            layoutStrategy.getPageLocation(viewport, pageNum, paginationModel.getPageSize(pageNum))
-        } else {
-            paginationModel.getPageLocation(pageNum, viewport)
-        }
+        return layoutStrategy.getPageLocation(
+            viewport,
+            pageNum,
+            paginationModel.getPageSize(pageNum),
+        )
     }
 
     /** Returns the current content coordinate location of a 0-indexed [pageNum] */
@@ -197,11 +185,7 @@ internal class PageLayoutManager(
 
     /** Returns the pages currently visible within the given [viewport]. */
     fun getVisiblePages(viewport: RectF, includePartial: Boolean = true): PagesInViewport {
-        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
-            layoutStrategy.getVisiblePages(viewport, includePartial)
-        } else {
-            paginationModel.getPagesInViewport(viewport.top, viewport.bottom, includePartial)
-        }
+        return layoutStrategy.getVisiblePages(viewport, includePartial)
     }
 
     /** Returns the size of the page at [pageNum], or null if we don't know that page's size yet */
@@ -288,7 +272,7 @@ internal class PageLayoutManager(
      * Returns a View-relative [RectF] corresponding to a page-relative [PdfRect], or null if the
      * page hasn't been laid out
      */
-    fun getViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
+    fun getContentViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
         if (pdfRect.pageNum > paginationModel.reach) return null
         val pageBounds = getPageLocation(pdfRect.pageNum, viewport)
         val out = RectF(pdfRect.left, pdfRect.top, pdfRect.right, pdfRect.bottom)

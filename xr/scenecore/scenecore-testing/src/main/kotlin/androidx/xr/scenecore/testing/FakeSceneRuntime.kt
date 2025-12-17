@@ -156,7 +156,7 @@ public class FakeSceneRuntime(
         view: View,
         dimensions: Dimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity =
         FakePanelEntity(view).apply {
             dpPerMeter = deviceDpPerMeter
@@ -171,7 +171,7 @@ public class FakeSceneRuntime(
         view: View,
         pixelDimensions: PixelDimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity =
         FakePanelEntity(view).apply {
             dpPerMeter = deviceDpPerMeter
@@ -185,7 +185,7 @@ public class FakeSceneRuntime(
         windowBoundsPx: PixelDimensions,
         name: String,
         hostActivity: Activity,
-        parent: Entity,
+        parent: Entity?,
     ): ActivityPanelEntity =
         FakeActivityPanelEntity().apply {
             dpPerMeter = deviceDpPerMeter
@@ -202,7 +202,7 @@ public class FakeSceneRuntime(
     override fun createGltfEntity(
         feature: GltfFeature,
         pose: Pose,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): FakeGltfEntity {
         if (executor == null) throw NullPointerException("Set executor before test")
 
@@ -216,7 +216,7 @@ public class FakeSceneRuntime(
     override fun createSurfaceEntity(
         feature: SurfaceFeature,
         pose: Pose,
-        parentEntity: Entity,
+        parentEntity: Entity?,
     ): SurfaceEntity {
         val surfaceEntity = FakeSurfaceEntity()
         surfaceEntity.setPose(pose)
@@ -225,7 +225,7 @@ public class FakeSceneRuntime(
         return surfaceEntity
     }
 
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity {
+    override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
         val entity = FakeEntity()
         entity.setPose(pose)
         entity.parent = parent

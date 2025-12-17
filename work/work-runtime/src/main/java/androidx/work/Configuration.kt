@@ -164,6 +164,18 @@ public class Configuration internal constructor(builder: Builder) {
         return isMarkingJobsAsImportantWhileForeground
     }
 
+    @property:ExperimentalConfigurationApi
+    private val workExecutionEventListener: WorkExecutionEventListener?
+
+    /** The [WorkExecutionEventListener] that listens to work execution events for all workers. */
+    @ExperimentalConfigurationApi
+    public fun getWorkExecutionEventListener(): WorkExecutionEventListener? {
+        return workExecutionEventListener
+    }
+
+    /** The [Executor] that runs the [workExecutionEventListener] callbacks */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val workExecutionEventExecutor: Executor
+
     /**
      * @return The [Tracer] instance that can be used by [WorkManager] to record trace spans when
      *   executing [WorkRequest]s.
@@ -214,6 +226,8 @@ public class Configuration internal constructor(builder: Builder) {
         remoteSessionTimeoutMillis = builder.remoteSessionTimeoutMillis
         contentUriTriggerWorkersLimit = builder.contentUriTriggerWorkersLimit
         isMarkingJobsAsImportantWhileForeground = builder.markJobsAsImportantWhileForeground
+        workExecutionEventListener = builder.workExecutionEventListener
+        workExecutionEventExecutor = builder.workExecutionEventExecutor ?: executor
         tracer = builder.tracer ?: createDefaultTracer()
     }
 
@@ -238,6 +252,8 @@ public class Configuration internal constructor(builder: Builder) {
         internal var maxSchedulerLimit: Int = MIN_SCHEDULER_LIMIT
         internal var contentUriTriggerWorkersLimit: Int = DEFAULT_CONTENT_URI_TRIGGERS_WORKERS_LIMIT
         internal var markJobsAsImportantWhileForeground: Boolean = true
+        internal var workExecutionEventListener: WorkExecutionEventListener? = null
+        internal var workExecutionEventExecutor: Executor? = null
         internal var tracer: Tracer? = null
 
         /** Creates a new [Configuration.Builder]. */
@@ -272,6 +288,7 @@ public class Configuration internal constructor(builder: Builder) {
             contentUriTriggerWorkersLimit = configuration.contentUriTriggerWorkersLimit
             markJobsAsImportantWhileForeground =
                 configuration.isMarkingJobsAsImportantWhileForeground
+            workExecutionEventListener = configuration.workExecutionEventListener
             tracer = configuration.tracer
         }
 
@@ -568,6 +585,39 @@ public class Configuration internal constructor(builder: Builder) {
         @ExperimentalConfigurationApi
         public fun setMarkingJobsAsImportantWhileForeground(markAsImportant: Boolean): Builder {
             this.markJobsAsImportantWhileForeground = markAsImportant
+            return this
+        }
+
+        /**
+         * Set a [WorkExecutionEventListener] to run whenever work execution events occur for any
+         * worker.
+         *
+         * By default, these callbacks will be invoked on a thread bound to
+         * [Configuration.executor].
+         *
+         * @param listener [WorkExecutionEventListener] to set
+         * @return This [Builder] instance
+         */
+        @ExperimentalConfigurationApi
+        public fun setWorkExecutionEventListener(listener: WorkExecutionEventListener?): Builder {
+            return setWorkExecutionEventListener(listener, /* executor= */ null)
+        }
+
+        /**
+         * Set a [WorkExecutionEventListener] to run whenever work execution events occur for any
+         * worker.
+         *
+         * @param listener [WorkExecutionEventListener] to set
+         * @param executor [Executor] to handle events
+         * @return This [Builder] instance
+         */
+        @ExperimentalConfigurationApi
+        public fun setWorkExecutionEventListener(
+            listener: WorkExecutionEventListener?,
+            executor: Executor?,
+        ): Builder {
+            this.workExecutionEventListener = listener
+            this.workExecutionEventExecutor = executor
             return this
         }
 

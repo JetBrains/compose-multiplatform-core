@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
@@ -85,6 +86,9 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
          * @param renderingRuntime RenderingRuntime.
          * @param model [GltfModel] which this entity will display.
          * @param pose Pose for this [GltfModelEntity], relative to its parent.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
          */
         internal fun create(
             sceneRuntime: SceneRuntime,
@@ -92,9 +96,22 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             entityManager: EntityManager,
             model: GltfModel,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GltfModelEntity =
             GltfModelEntity(
-                renderingRuntime.createGltfEntity(pose, model.model, sceneRuntime.activitySpace),
+                renderingRuntime.createGltfEntity(
+                    pose,
+                    model.model,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        Log.warn(
+                            "The provided parent is not a BaseEntity. The GltfModelEntity will " +
+                                "be created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
+                ),
                 entityManager,
             )
 
@@ -122,6 +139,39 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
                 session.scene.entityManager,
                 model,
                 pose,
+            )
+
+        /**
+         * Public factory function for a [GltfModelEntity].
+         *
+         * This method must be called from the main thread.
+         * https://developer.android.com/guide/components/processes-and-threads
+         *
+         * @param session [Session] to create the [GltfModel] in.
+         * @param model The [GltfModel] this [Entity] is referencing.
+         * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         */
+        @MainThread
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            model: GltfModel,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): GltfModelEntity =
+            create(
+                session.sceneRuntime,
+                session.renderingRuntime,
+                session.scene.entityManager,
+                model,
+                pose,
+                parent,
             )
     }
 

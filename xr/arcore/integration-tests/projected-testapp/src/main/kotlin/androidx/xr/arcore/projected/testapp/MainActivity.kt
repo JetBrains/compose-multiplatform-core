@@ -16,23 +16,32 @@
 
 package androidx.xr.arcore.projected.testapp
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.projected.testapp.tiltgesture.TiltGestureTrackingActivity
-import androidx.xr.glimmer.Button
-import androidx.xr.glimmer.GlimmerTheme
-import androidx.xr.glimmer.Text
+import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.runtime.Log
 
+@OptIn(ExperimentalProjectedApi::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,27 +49,57 @@ class MainActivity : ComponentActivity() {
         Log.enabled = true
         Log.level = Log.Level.VERBOSE
 
-        ComposeView(this)
-            .also { setContentView(it) }
-            .setContent {
-                GlimmerTheme {
-                    Column(
-                        modifier = Modifier.fillMaxSize().background(GlimmerTheme.colors.surface),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-                    ) {
-                        Button(onClick = { startTest<TiltGestureTrackingActivity>() }) {
-                            Text("TiltGesture test")
-                        }
-                        Button(onClick = { startTest<ProjectedTestAppActivity>() }) {
-                            Text("Geospatial/Tracking test")
-                        }
-                    }
+        setContent {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth(0.8f)) {
+                    HorizontalDivider(color = Color.Gray)
+                    TestActivityRow(
+                        "TiltGesture test",
+                        TiltGestureTrackingActivity::class.java,
+                        this@MainActivity,
+                    )
+                    TestActivityRow(
+                        "Geospatial/Tracking test",
+                        ProjectedTestAppActivity::class.java,
+                        this@MainActivity,
+                    )
                 }
             }
+        }
     }
 
-    private inline fun <reified T> startTest() {
-        startActivity(Intent(this@MainActivity, T::class.java))
+    @Composable
+    private fun TestActivityRow(name: String, activityClass: Class<*>, context: Context) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, fontSize = 18.sp)
+            Button(onClick = { launchProjectedActivity(activityClass, context) }) {
+                Text("Run Test", fontSize = 18.sp)
+            }
+        }
+        HorizontalDivider(color = Color.Gray)
+    }
+
+    private fun launchProjectedActivity(activityClass: Class<*>, context: Context) {
+        val projectedContext =
+            try {
+                ProjectedContext.createProjectedDeviceContext(context)
+            } catch (e: IllegalStateException) {
+                Log.warn(e) { "Error creating projected device" }
+                return
+            }
+        val intent = Intent(context, activityClass)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        startActivity(
+            intent,
+            ProjectedContext.createProjectedActivityOptions(projectedContext).toBundle(),
+        )
     }
 }

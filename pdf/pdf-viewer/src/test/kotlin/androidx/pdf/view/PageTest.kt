@@ -68,7 +68,7 @@ class PageTest {
     private val canvasSpy = spy(Canvas())
 
     private var invalidationCounter = 0
-    private val invalidationTracker: () -> Unit = { invalidationCounter++ }
+    private val invalidationTracker: (Int) -> Unit = { invalidationCounter++ }
 
     private var pageTextReadyCounter = 0
     private val onPageTextReady: ((Int) -> Unit) = { _ -> pageTextReadyCounter++ }
@@ -84,7 +84,8 @@ class PageTest {
             pdfDocument = pdfDocument,
             backgroundScope = testScope,
             maxBitmapSizePx = MAX_BITMAP_SIZE,
-            onPageUpdate = invalidationTracker,
+            onBitmapReady = invalidationTracker,
+            onFormWidgetReady = invalidationTracker,
             onPageTextReady = onPageTextReady,
             errorFlow = errorFlow,
             isAccessibilityEnabled = true,

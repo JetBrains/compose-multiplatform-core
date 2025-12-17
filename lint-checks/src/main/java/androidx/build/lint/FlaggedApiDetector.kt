@@ -39,7 +39,6 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
-import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiStatement
@@ -72,6 +71,7 @@ import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.evaluateString
+import org.jetbrains.uast.isInjectionHost
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
@@ -126,12 +126,15 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         private const val CHECKS_ACONFIG_FLAG_ANNOTATION = "androidx.annotation.ChecksAconfigFlag"
         private const val REQUIRES_ACONFIG_FLAG_ANNOTATION =
             "androidx.annotation.RequiresAconfigFlag"
-        private const val ATTR_FLAG = "flag"
         private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
     }
 
     override fun applicableAnnotations(): List<String> {
-        return listOf(FLAGGED_API_ANNOTATION, REQUIRES_ACONFIG_FLAG_ANNOTATION)
+        return listOf(
+            FLAGGED_API_ANNOTATION,
+            REQUIRES_ACONFIG_FLAG_ANNOTATION,
+            CHECKS_ACONFIG_FLAG_ANNOTATION,
+        )
     }
 
     override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
@@ -157,16 +160,37 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         annotationInfo: AnnotationInfo,
         usageInfo: AnnotationUsageInfo,
     ) {
-        val flagString = getFlaggedApiString(context, annotationInfo.annotation)
+        // Validate usage of the annotation itself.
+        val flagString =
+            if (annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION) {
+                annotationInfo.annotation.findAttributeAsResolvedString(context, ATTR_VALUE)
+            } else {
+                annotationInfo.annotation.findAttributeAsInlineString(ATTR_VALUE)
+            }
         if (flagString == null) {
+            val message =
+                if (annotationInfo.qualifiedName == FLAGGED_API_ANNOTATION) {
+                    // This should never happen! All occurrences of `@FlaggedApi` should be coming
+                    // from
+                    // the SDK stubs and therefore use inline strings despite being defined in the
+                    // SDK
+                    // sources using constants.
+                    "Failed to obtain flag string from FlaggedApi annotation."
+                } else {
+                    "Failed to obtain string value for aconfig flag. The `value` argument must be an " +
+                        "inline string."
+                }
             context.report(
                 ISSUE,
-                element,
-                context.getLocation(element),
-                "Failed to obtain flag string",
+                annotationInfo.annotation,
+                context.getLocation(annotationInfo.annotation),
+                message,
             )
             return
         }
+
+        // Avoid checking any usages of `@ChecksAconfigFlag`.
+        if (annotationInfo.qualifiedName == CHECKS_ACONFIG_FLAG_ANNOTATION) return
 
         // Avoid checking usage of the `@FlaggedApi` or `@RequiresAconfigFlag` annotations
         // themselves.
@@ -264,11 +288,23 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 it.findAnnotation("kotlin.Deprecated") != null
         } == true
 
-    private fun getFlaggedApiString(context: JavaContext, annotation: UAnnotation): String? =
+    private fun UAnnotation.findAttributeAsResolvedString(
+        context: JavaContext,
+        name: String,
+    ): String? =
         // Sometimes we get an UnknownJavaExpression from UAST and need to drop to PSI.
-        annotation.findAttributeValue(ATTR_VALUE)?.sourcePsi?.let { value ->
+        findAttributeValue(name)?.sourcePsi?.let { value ->
             ConstantEvaluator.evaluate(context, value)
         } as? String
+
+    private fun UAnnotation.findAttributeAsInlineString(name: String): String? =
+        // Work around a bug where sometimes the attribute name is missing.
+        (findAttributeValue(name) ?: findAttributeValue(null))?.let {
+            // Work around a bug in UAST where `evaluate()` will resolve a constant even though it's
+            // only supposed to resolve inline strings. Interestingly, this only happens in Kotlin
+            // sources and only when the constant is not fully-qualified.
+            if (it.isInjectionHost()) it.evaluateString() else null
+        }
 
     /**
      * Is the given [element] within a code block already annotated with the same flagged api as
@@ -285,7 +321,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                 //noinspection AndroidLintExternalAnnotations
                 for (annotation in current.uAnnotations) {
                     if (!applicableAnnotations().contains(annotation.qualifiedName)) continue
-                    val flag = getFlaggedApiString(context, annotation) ?: continue
+                    val flag =
+                        annotation.findAttributeAsResolvedString(context, ATTR_VALUE) ?: continue
                     if (flag == flagString) return true
                 }
             }
@@ -302,7 +339,9 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                             UastFacade.convertElement(psiAnnotation, null) as? UAnnotation
                                 ?: continue
                         if (!applicableAnnotations().contains(annotation.qualifiedName)) continue
-                        val flag = getFlaggedApiString(context, annotation) ?: continue
+                        val flag =
+                            annotation.findAttributeAsResolvedString(context, ATTR_VALUE)
+                                ?: continue
                         if (flag == flagString) return true
                     }
                 }
@@ -416,14 +455,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
                     (resolved.toUElement() as UAnnotated)
                         .uAnnotations
                         .filter { it.qualifiedName == CHECKS_ACONFIG_FLAG_ANNOTATION }
-                        .mapNotNull {
-                            val attr =
-                                it.findAttributeValue(ATTR_FLAG)
-                                    ?: it.findAttributeValue(null)
-                                    ?: return@mapNotNull null
-                            attr.evaluateString()
-                                ?: (attr.javaPsi as? PsiLiteralValue)?.value as? String
-                        }
+                        .mapNotNull { it.findAttributeAsInlineString(ATTR_VALUE) }
                         .contains(flagString)
                 ) {
                     return true

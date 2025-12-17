@@ -24,7 +24,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.CameraViewScenePose as RtCameraViewScenePose
 import androidx.xr.scenecore.runtime.HeadScenePose as RtHeadScenePose
-import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose as RtPerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -117,10 +116,9 @@ protected constructor(internal val rtScenePose: RtScenePoseType) : ScenePose {
         direction: Vector3,
         @ScenePose.HitTestFilterValue hitTestFilter: Int,
     ): HitTestResult? {
-        val hitTestRtFuture =
+        val hitTestRt =
             this.rtScenePose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
-        val deferredHitTestResult: RtHitTestResult = hitTestRtFuture.awaitSuspending()
-        return deferredHitTestResult.toHitTestResult()
+        return hitTestRt.toHitTestResult()
     }
 
     override suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult? {

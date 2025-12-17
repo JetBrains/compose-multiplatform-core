@@ -16,32 +16,25 @@
 
 package androidx.xr.glimmer.demos
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.Card
 import androidx.xr.glimmer.CardDefaults
-import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.samples.VerticalStackSample
-import androidx.xr.glimmer.samples.placeholderImagePainter
 import androidx.xr.glimmer.stack.VerticalStack
 
 internal val StackDemos =
@@ -53,16 +46,16 @@ internal val StackDemos =
 
 @Composable
 internal fun VerticalStackFixedItemSizeDemo() {
-    Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         VerticalStackSample()
     }
 }
 
 @Composable
 internal fun VerticalStackVaryingItemSizeDemo() {
-    Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         // Vertical stack with items of different sizes.
-        VerticalStack(modifier = Modifier.height(200.dp)) {
+        VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
             items(10) { index ->
                 Card(
                     modifier =
@@ -78,8 +71,8 @@ internal fun VerticalStackVaryingItemSizeDemo() {
 
 @Composable
 internal fun VerticalStackVariousContentDemo() {
-    Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        VerticalStack(modifier = Modifier.size(width = 300.dp, height = 200.dp)) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
             item {
                 Card(modifier = Modifier.itemDecoration(CardDefaults.shape)) {
                     Text("This is a card")
@@ -100,16 +93,6 @@ internal fun VerticalStackVariousContentDemo() {
                     modifier = Modifier.itemDecoration(CardDefaults.shape),
                 ) {
                     Text("This is a card with a title and leading icon")
-                }
-            }
-            item {
-                Box(modifier = Modifier.itemDecoration(GlimmerTheme.shapes.large)) {
-                    Image(
-                        SampleImage,
-                        "Localized description",
-                        contentScale = ContentScale.FillWidth,
-                        modifier = Modifier.clip(GlimmerTheme.shapes.large),
-                    )
                 }
             }
             item {
@@ -158,9 +141,3 @@ private val FavoriteIcon: ImageVector =
             }
         }
         .build()
-
-/**
- * Placeholder image with a large intrinsic size, to simulate a real life use case of loading a
- * bitmap
- */
-private val SampleImage = placeholderImagePainter(Size(1000f, 1000f))

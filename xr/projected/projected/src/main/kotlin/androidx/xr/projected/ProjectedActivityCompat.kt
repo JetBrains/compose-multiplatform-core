@@ -17,6 +17,8 @@
 package androidx.xr.projected
 
 import android.content.Context
+import androidx.xr.projected.binding.ProjectedServiceConnection
+import androidx.xr.projected.binding.ProjectedServiceConnection.ProjectedIntentAction.Companion.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedInputEventListener
 import androidx.xr.projected.platform.IProjectedService
@@ -55,7 +57,7 @@ private constructor(
                 }
 
             val job = launch {
-                connection.serviceConnected.collect { isConnected ->
+                connection.isServiceConnected.collect { isConnected ->
                     if (!isConnected) {
                         channel.close()
                     }
@@ -86,7 +88,7 @@ private constructor(
          */
         @JvmStatic
         public suspend fun create(context: Context): ProjectedActivityCompat {
-            val serviceConnection = ProjectedServiceConnection(context)
+            val serviceConnection = ProjectedServiceConnection(context, ACTION_BIND)
             return ProjectedActivityCompat(
                 serviceConnection,
                 projectedService = serviceConnection.connect(),

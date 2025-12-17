@@ -60,7 +60,7 @@ class BrushFamilyTest {
             )
 
         // different values are not equal.
-        assertThat(brushFamily).isNotEqualTo(null)
+        assertThat(brushFamily).isNotNull()
         assertThat(brushFamily).isNotEqualTo(Any())
         assertThat(brushFamily).isNotEqualTo(brushFamily.copy(coat = differentCoat))
         assertThat(brushFamily).isNotEqualTo(brushFamily.copy(clientBrushFamilyId = differentId))

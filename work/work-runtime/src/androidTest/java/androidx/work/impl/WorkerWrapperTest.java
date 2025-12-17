@@ -37,8 +37,15 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.isOneOf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -68,6 +75,7 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.ProgressUpdater;
 import androidx.work.Tracer;
+import androidx.work.WorkExecutionEventListener;
 import androidx.work.WorkInfo;
 import androidx.work.WorkRequest;
 import androidx.work.Worker;
@@ -109,6 +117,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -137,11 +146,13 @@ public class WorkerWrapperTest extends DatabaseTest {
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private TestWorkerExceptionHandler mWorkerExceptionHandler;
     private Tracer mTracer;
+    private WorkExecutionEventListener mWorkExecutionListener;
 
     @Before
     public void setUp() {
         mContext = ApplicationProvider.getApplicationContext();
         mTracer = mock(Tracer.class);
+        mWorkExecutionListener = mock(WorkExecutionEventListener.class);
         // Turn on tracing so we can ensure trace sections are correctly emitted.
         when(mTracer.isEnabled()).thenReturn(true);
         mWorkerExceptionHandler = new TestWorkerExceptionHandler();
@@ -152,6 +163,7 @@ public class WorkerWrapperTest extends DatabaseTest {
                 .setWorkerInitializationExceptionHandler(mWorkerExceptionHandler)
                 .setWorkerExecutionExceptionHandler(mWorkerExceptionHandler)
                 .setTracer(mTracer)
+                .setWorkExecutionEventListener(mWorkExecutionListener)
                 .build();
         mWorkTaskExecutor = new InstantWorkTaskExecutor();
         mWorkSpecDao = mDatabase.workSpecDao();
@@ -185,6 +197,27 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(SUCCEEDED));
         assertBeginEndTraceSpans(work.getWorkSpec());
+    }
+
+    @Test
+    @SmallTest
+    public void testSuccess_emitsStartAndEndEvents() {
+        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(TestWorker.class).build();
+        insertWork(work);
+        createBuilder(work.getStringId()).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+                eq(ListenableWorker.Result.success()), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(work.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(endSnapshot.getId(), is(work.getId()));
+        assertThat(endSnapshot.getState(), is(SUCCEEDED));
     }
 
     @Test
@@ -223,6 +256,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -254,6 +288,7 @@ public class WorkerWrapperTest extends DatabaseTest {
                 .build();
         workerWrapper.launch();
         assertBeginEndTraceSpans(work.getWorkSpec());
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -266,6 +301,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         WorkerWrapper workerWrapper = createBuilder(work.getStringId()).build();
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(true));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -280,6 +316,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(CANCELLED));
         assertBeginEndTraceSpans(work.getWorkSpec());
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -292,6 +329,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -305,6 +343,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -316,6 +355,27 @@ public class WorkerWrapperTest extends DatabaseTest {
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+    }
+
+    @Test
+    @SmallTest
+    public void testFailed_emitsStartAndEndEvents() {
+        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(FailureWorker.class).build();
+        insertWork(work);
+        createBuilder(work.getStringId()).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+                eq(ListenableWorker.Result.failure()), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(work.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(endSnapshot.getId(), is(work.getId()));
+        assertThat(endSnapshot.getState(), is(FAILED));
     }
 
     @Test
@@ -335,6 +395,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.setFailed(new ListenableWorker.Result.Failure());
         assertThat(mWorkSpecDao.getState(firstWorkId), is(FAILED));
         assertThat(mWorkSpecDao.getState(previousId), is(FAILED));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -348,6 +409,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         FutureListener listener = createAndAddFutureListener(workerWrapper);
         assertThat(listener.mResult, is(true));
         assertBeginEndTraceSpans(work.getWorkSpec());
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -569,6 +631,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         // The run attempt count should remain the same
         assertThat(workSpec.runAttemptCount, is(1));
         assertBeginEndTraceSpans(workSpec);
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -636,6 +699,33 @@ public class WorkerWrapperTest extends DatabaseTest {
 
     @Test
     @SmallTest
+    public void testPeriodicWork_success_emitsStartAndEndEvents() {
+        PeriodicWorkRequest periodicWork = new PeriodicWorkRequest.Builder(
+                TestWorker.class,
+                PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS,
+                TimeUnit.MILLISECONDS)
+                .build();
+
+        final String periodicWorkId = periodicWork.getStringId();
+        insertWork(periodicWork);
+        createBuilder(periodicWorkId).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+                eq(ListenableWorker.Result.success()), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(endSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(endSnapshot.getState(), is(ENQUEUED));
+    }
+
+    @Test
+    @SmallTest
     public void testPeriodicWork_fail() {
         PeriodicWorkRequest periodicWork = new PeriodicWorkRequest.Builder(
                 FailureWorker.class,
@@ -653,6 +743,33 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(periodicWorkSpecAfterFirstRun.runAttemptCount, is(0));
         assertThat(periodicWorkSpecAfterFirstRun.state, is(ENQUEUED));
         assertBeginEndTraceSpans(periodicWork.getWorkSpec());
+    }
+
+    @Test
+    @SmallTest
+    public void testPeriodicWork_fail_emitsStartAndEndEvents() {
+        PeriodicWorkRequest periodicWork = new PeriodicWorkRequest.Builder(
+                FailureWorker.class,
+                PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS,
+                TimeUnit.MILLISECONDS)
+                .build();
+
+        final String periodicWorkId = periodicWork.getStringId();
+        insertWork(periodicWork);
+        createBuilder(periodicWorkId).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+                eq(ListenableWorker.Result.failure()), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(endSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(endSnapshot.getState(), is(ENQUEUED));
     }
 
     @Test
@@ -676,6 +793,33 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertBeginEndTraceSpans(periodicWork.getWorkSpec());
     }
 
+    @Test
+    @SmallTest
+    public void testPeriodicWork_retry_emitsStartAndEndEvents() {
+        PeriodicWorkRequest periodicWork = new PeriodicWorkRequest.Builder(
+                RetryWorker.class,
+                PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS,
+                TimeUnit.MILLISECONDS)
+                .build();
+
+        final String periodicWorkId = periodicWork.getStringId();
+        insertWork(periodicWork);
+        createBuilder(periodicWorkId).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+                eq(ListenableWorker.Result.retry()), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(endSnapshot.getId(), is(periodicWork.getId()));
+        assertThat(endSnapshot.getState(), is(ENQUEUED));
+    }
+
 
     @Test
     @SmallTest
@@ -697,6 +841,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         // Should get rescheduled
         assertThat(listener.mResult, is(true));
         assertBeginEndTraceSpans(periodicWork.getWorkSpec());
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -719,6 +864,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         // Should get rescheduled because flex should be respected.
         assertThat(listener.mResult, is(true));
         assertBeginEndTraceSpans(periodicWork.getWorkSpec());
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -1192,6 +1338,53 @@ public class WorkerWrapperTest extends DatabaseTest {
 
     @Test
     @SmallTest
+    public void testInterruption_emitsStartAndStopEvents() throws InterruptedException {
+        OneTimeWorkRequest work =
+                new OneTimeWorkRequest.Builder(InterruptionAwareWorker.class).build();
+        insertWork(work);
+
+        InterruptionAwareWorker worker = (InterruptionAwareWorker)
+                mConfiguration.getWorkerFactory().createWorkerWithDefaultFallback(
+                        mContext.getApplicationContext(),
+                        InterruptionAwareWorker.class.getName(),
+                        new WorkerParameters(
+                                work.getId(),
+                                Data.EMPTY,
+                                Collections.<String>emptyList(),
+                                new WorkerParameters.RuntimeExtras(),
+                                1,
+                                0,
+                                mExecutorService,
+                                Dispatchers.getDefault(),
+                                mWorkTaskExecutor,
+                                mConfiguration.getWorkerFactory(),
+                                mMockProgressUpdater,
+                                mMockForegroundUpdater));
+        assertThat(worker, is(notNullValue()));
+        assertThat(worker.isStopped(), is(false));
+
+        WorkerWrapper workerWrapper =
+                createBuilder(work.getStringId()).withWorker(worker).build();
+        workerWrapper.launch();
+        worker.doWorkLatch.await();
+        workerWrapper.interrupt(STOP_REASON_CONSTRAINT_CHARGING);
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStop(
+                eq(STOP_REASON_CONSTRAINT_CHARGING), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo stopSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(work.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(stopSnapshot.getId(), is(work.getId()));
+        assertThat(stopSnapshot.getState(), is(ENQUEUED));
+    }
+
+    @Test
+    @SmallTest
     public void testException_isTreatedAsFailure() {
         OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(ExceptionWorker.class).build();
         insertWork(work);
@@ -1199,6 +1392,30 @@ public class WorkerWrapperTest extends DatabaseTest {
         createBuilder(work.getStringId()).build().launch();
 
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+    }
+
+    @Test
+    @SmallTest
+    public void testException_emitsStartAndExceptionEvents() {
+        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(ExceptionWorker.class).build();
+        insertWork(work);
+
+        createBuilder(work.getStringId()).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        ArgumentCaptor<Throwable> throwableCaptor = ArgumentCaptor.forClass(Throwable.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onException(
+                throwableCaptor.capture(), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo exceptionSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(work.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(exceptionSnapshot.getId(), is(work.getId()));
+        assertThat(exceptionSnapshot.getState(), is(FAILED));
+        assertThat(throwableCaptor.getValue(), instanceOf(IllegalStateException.class));
     }
 
     @Test
@@ -1212,6 +1429,30 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.launch();
         assertThat(listener.mResult, is(false));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+    }
+
+    @Test
+    @SmallTest
+    public void testWorkerThatReturnsNullResult_emitsStartAndEndEvents() {
+        OneTimeWorkRequest work =
+                new OneTimeWorkRequest.Builder(ReturnNullResultWorker.class).build();
+        insertWork(work);
+        createBuilder(work.getStringId()).build().launch();
+
+        InOrder inOrder = inOrder(mWorkExecutionListener);
+        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
+        ArgumentCaptor<Throwable> throwableCaptor = ArgumentCaptor.forClass(Throwable.class);
+        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+                null);
+        inOrder.verify(mWorkExecutionListener, times(1)).onException(
+                throwableCaptor.capture(), workSnapshotCaptor.capture(), null);
+        WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
+        WorkInfo exceptionSnapshot = workSnapshotCaptor.getAllValues().get(1);
+        assertThat(startSnapshot.getId(), is(work.getId()));
+        assertThat(startSnapshot.getState(), is(RUNNING));
+        assertThat(exceptionSnapshot.getId(), is(work.getId()));
+        assertThat(exceptionSnapshot.getState(), is(FAILED));
+        assertThat(throwableCaptor.getValue(), instanceOf(NullPointerException.class));
     }
 
     @Test
@@ -1254,6 +1495,7 @@ public class WorkerWrapperTest extends DatabaseTest {
                 .getTargetException();
         assertThat(e, instanceOf(IllegalStateException.class));
         assertThat(e.getMessage(), is("Thrown in constructor Exception"));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test
@@ -1309,6 +1551,7 @@ public class WorkerWrapperTest extends DatabaseTest {
                 is(instanceOf(IllegalStateException.class)));
         assertThat(mWorkerExceptionHandler.mThrowable.getMessage(),
                 is("Thrown in WorkerFactory Exception"));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @SuppressLint("NewApi")
@@ -1342,6 +1585,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.interrupt(0);
         ListenableWorker worker = factory.awaitWorker(UUID.fromString(id));
         assertThat(worker.getStopReason(), is(WorkInfo.STOP_REASON_NOT_STOPPED));
+        verify(mWorkExecutionListener, never()).onStop(anyInt(), any(), null);
     }
 
     @Test
@@ -1369,6 +1613,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.launch();
         WorkSpec workSpec = mWorkSpecDao.getWorkSpec(work.getStringId());
         assertThat(workSpec.scheduleRequestedAt, is(-1L));
+        verify(mWorkExecutionListener, never()).onStop(anyInt(), any(), null);
     }
 
     @Test
@@ -1381,6 +1626,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         WorkerWrapper workerWrapper = createBuilder(work.getStringId()).build();
         workerWrapper.launch();
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
+        verifyZeroInteractions(mWorkExecutionListener);
     }
 
     @Test

@@ -95,6 +95,7 @@ class UseCaseCameraStateTest {
             cameraGraphProvider = { fakeCameraGraph },
             cameraStateAdapter = cameraStateAdapter,
             graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            streamConfigMapProvider = { emptyMap() },
             defaultSurfaceToStreamMap = surfaceToStreamMap,
         )
 
@@ -251,6 +252,7 @@ class UseCaseCameraStateTest {
                 cameraGraphProvider = { fakeGraph },
                 cameraStateAdapter = cameraStateAdapter,
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
                 defaultSurfaceToStreamMap = surfaceToStreamMap,
             )
         val useCaseCameraState = UseCaseCameraState(useCaseGraphContext, NoOpTemplateParamsOverride)
@@ -295,6 +297,7 @@ class UseCaseCameraStateTest {
                 cameraGraphProvider = { fakeGraph },
                 cameraStateAdapter = cameraStateAdapter,
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                streamConfigMapProvider = { emptyMap() },
                 defaultSurfaceToStreamMap = surfaceToStreamMap,
             )
         val useCaseCameraState = UseCaseCameraState(useCaseGraphContext, NoOpTemplateParamsOverride)

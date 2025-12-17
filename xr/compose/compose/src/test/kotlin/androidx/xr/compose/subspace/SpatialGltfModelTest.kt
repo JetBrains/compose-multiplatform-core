@@ -250,7 +250,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -321,7 +321,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -392,7 +392,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -449,7 +449,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -501,7 +501,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -556,7 +556,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -604,7 +604,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
@@ -652,7 +652,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
@@ -715,7 +715,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
@@ -774,7 +774,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
@@ -835,7 +835,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         return object :
                             GltfEntity by it.createGltfEntity(pose, loadedGltf, parentEntity) {
@@ -981,7 +981,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         return it.createGltfEntity(pose, loadedGltf, parentEntity).also { entity ->
                             testEntity = entity
@@ -1081,7 +1081,7 @@ class SpatialGltfModelTest {
                     override fun createGltfEntity(
                         pose: Pose,
                         loadedGltf: GltfModelResource,
-                        parentEntity: Entity,
+                        parentEntity: Entity?,
                     ): GltfEntity {
                         return it.createGltfEntity(pose, loadedGltf, parentEntity).apply {
                             fakeGltfEntity = this as FakeGltfEntity

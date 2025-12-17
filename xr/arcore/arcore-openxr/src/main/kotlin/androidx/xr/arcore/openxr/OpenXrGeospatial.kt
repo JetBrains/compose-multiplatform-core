@@ -18,16 +18,23 @@ package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Geospatial
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
-/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on OpenXR. */
+/** Implementation of [androidx.xr.arcore.runtime.Geospatial] on OpenXR. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrGeospatial internal constructor(private val xrResources: XrResources) :
-    Geospatial, Updatable {
+public class OpenXrGeospatial
+internal constructor(
+    private val xrResources: XrResources,
+    private val timeSource: OpenXrTimeSource,
+) : Geospatial, Updatable {
 
     public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         private set
@@ -37,7 +44,10 @@ public class OpenXrGeospatial internal constructor(private val xrResources: XrRe
     }
 
     override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
-        throw NotImplementedError("Not implemented yet.")
+        val xrTime = timeSource.getXrTime(timeSource.markNow())
+        val result = nativeCreateGeospatialPoseFromPose(xrTime, pose)
+        // The native implementation returns null when not tracking.
+        return result ?: throw GeospatialPoseNotTrackingException()
     }
 
     override public fun createAnchor(
@@ -46,7 +56,13 @@ public class OpenXrGeospatial internal constructor(private val xrResources: XrRe
         altitude: Double,
         eastUpSouthQuaternion: Quaternion,
     ): Anchor {
-        throw NotImplementedError("Not implemented yet.")
+        val xrTime = timeSource.getXrTime(timeSource.markNow())
+        val anchorNativePointer =
+            nativeCreateAnchor(latitude, longitude, altitude, eastUpSouthQuaternion, xrTime)
+        checkNativeAnchorIsValid(anchorNativePointer)
+        val anchor = OpenXrAnchor(anchorNativePointer, xrResources)
+        xrResources.addUpdatable(anchor)
+        return anchor
     }
 
     override public suspend fun createAnchorOnSurface(
@@ -63,8 +79,42 @@ public class OpenXrGeospatial internal constructor(private val xrResources: XrRe
         latitude: Double,
         longitude: Double,
     ): VpsAvailabilityResult {
-        throw NotImplementedError("Not implemented on OpenXR runtime.")
+        return suspendCancellableCoroutine { continuation ->
+            nativeCheckVpsAvailabilityAsync(latitude, longitude) { result ->
+                continuation.resume(result)
+            }
+        }
     }
 
-    override fun update(xrTime: Long) {}
+    override fun update(xrTime: Long) {
+        state = nativeGetGeospatialState(xrTime) ?: Geospatial.State.NOT_RUNNING
+    }
+
+    private fun checkNativeAnchorIsValid(nativeAnchor: Long) {
+        when (nativeAnchor) {
+            -2L -> throw IllegalStateException("Failed to create anchor.") // kErrorRuntimeFailure
+            -10L -> throw AnchorResourcesExhaustedException() // kErrorLimitReached
+        }
+    }
+
+    private external fun nativeGetGeospatialState(monotonicTimeNs: Long): Geospatial.State?
+
+    private external fun nativeCreateGeospatialPoseFromPose(
+        monotonicTimeNs: Long,
+        pose: Pose,
+    ): Geospatial.GeospatialPoseResult?
+
+    private external fun nativeCreateAnchor(
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        eastUpSouthQuaternion: Quaternion,
+        monotonicTimeNs: Long,
+    ): Long
+
+    private external fun nativeCheckVpsAvailabilityAsync(
+        latitude: Double,
+        longitude: Double,
+        callback: (VpsAvailabilityResult) -> Unit,
+    )
 }

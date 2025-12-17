@@ -450,7 +450,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull View view,
             @NonNull Dimensions dimensions,
             @NonNull String name,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         Node node = mExtensions.createNode();
         PanelEntity panelEntity =
@@ -475,7 +475,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull View view,
             @NonNull PixelDimensions pixelDimensions,
             @NonNull String name,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         Node node = mExtensions.createNode();
         PanelEntity panelEntity =
@@ -507,7 +507,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull PixelDimensions windowBoundsPx,
             @NonNull String name,
             @NonNull Activity hostActivity,
-            @NonNull Entity parent) {
+            @Nullable Entity parent) {
 
         // TODO(b/352630140): Move this into a static factory method of ActivityPanelEntityImpl.
         Rect windowBoundsRect = new Rect(0, 0, windowBoundsPx.width, windowBoundsPx.height);
@@ -576,7 +576,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
 
     @Override
     public @NonNull Entity createGroupEntity(
-            @NonNull Pose pose, @NonNull String name, @NonNull Entity parent) {
+            @NonNull Pose pose, @NonNull String name, @Nullable Entity parent) {
         Node node = mExtensions.createNode();
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
             transaction.setName(node, name).apply();
@@ -804,9 +804,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
 
     @Override
     public @NonNull MovableComponent createMovableComponent(
-            boolean systemMovable,
-            boolean scaleInZ,
-            boolean userAnchorable) {
+            boolean systemMovable, boolean scaleInZ, boolean userAnchorable) {
         return new MovableComponentImpl(
                 systemMovable,
                 scaleInZ,

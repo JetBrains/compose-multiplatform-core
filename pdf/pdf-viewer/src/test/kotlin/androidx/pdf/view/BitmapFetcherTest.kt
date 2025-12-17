@@ -48,7 +48,7 @@ class BitmapFetcherTest {
         }
 
     private var invalidationCounter = 0
-    private val invalidationTracker: () -> Unit = { invalidationCounter++ }
+    private val invalidationTracker: (Int) -> Unit = { invalidationCounter++ }
 
     private val maxBitmapSizePx = Point(2048, 2048)
     private val pageSize = Point(512, 512)

@@ -436,11 +436,12 @@ class UseCaseManagerTest {
         // Act
         val graphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.sessionMode).isEqualTo(HIGH_SPEED)
@@ -474,11 +475,12 @@ class UseCaseManagerTest {
         // Act
         val graphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -513,11 +515,12 @@ class UseCaseManagerTest {
         // Act
         val graphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -569,11 +572,12 @@ class UseCaseManagerTest {
         // Act
         val graphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -602,11 +606,12 @@ class UseCaseManagerTest {
         // Act
         val graphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(graphConfig.sessionTemplate).isEqualTo(RequestTemplate(TEMPLATE_PREVIEW))
@@ -640,11 +645,12 @@ class UseCaseManagerTest {
         // Act.
         val cameraGraphConfig =
             useCaseManager
-                .createCameraGraphConfig(
+                .createUseCaseCameraConfig(
+                    listOf(fakeUseCase),
                     sessionConfigAdapter,
                     GraphStateToCameraStateAdapter(CameraStateAdapter()),
                 )
-                .config
+                .cameraGraphConfig
 
         // Assert
         assertThat(cameraGraphConfig.sessionParameters[CONTROL_CAPTURE_INTENT])
@@ -714,10 +720,13 @@ class UseCaseManagerTest {
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
 
         // Act.
-        useCaseManager.createCameraGraphConfig(
-            sessionConfigAdapter,
-            GraphStateToCameraStateAdapter(CameraStateAdapter()),
-        )
+        useCaseManager
+            .createUseCaseCameraConfig(
+                listOf(fakeUseCase),
+                sessionConfigAdapter,
+                GraphStateToCameraStateAdapter(CameraStateAdapter()),
+            )
+            .cameraGraphConfig
 
         // Assert.
         assertThat(resultFpsRange).isEqualTo(fpsRange)
@@ -770,6 +779,7 @@ class UseCaseManagerTest {
                 zslControl = ZslControlNoOpImpl(),
                 templateParamsOverride = templateParamsOverride,
                 cameraMetadata = fakeCameraMetadata,
+                cameraXConfig = cameraXConfig,
             )
         return UseCaseManager(
                 cameraPipe = cameraPipe,

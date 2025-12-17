@@ -103,7 +103,6 @@ wire {
     prune 'perfetto.protos.AndroidNetworkMetric'
     prune 'perfetto.protos.AndroidPackageList'
     prune 'perfetto.protos.AndroidPowerRails'
-    prune 'perfetto.protos.AndroidProcessMetadata'
     prune 'perfetto.protos.AndroidRtRuntimeMetric'
     prune 'perfetto.protos.AndroidSimpleperfMetric'
     prune 'perfetto.protos.AndroidSurfaceflingerMetric'

@@ -16,12 +16,11 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * A response to a call to [RegistryManager.clearCreationOptions].
  *
- * This class is intentionally empty.
+ * @param isDeleted if true, the clear operation deleted some registries, otherwise indicates there
+ *   was no data to delete; unexpected failures will be thrown as exceptions
+ * @constructor
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ClearCreationOptionsResponse(public val isDeleted: Boolean)

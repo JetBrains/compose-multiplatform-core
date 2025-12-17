@@ -25,6 +25,7 @@ import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.Space
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,23 +73,29 @@ class FakeEntityTest {
         assertThat(underTest.children).containsExactly(child)
         assertThat(child.parent).isEqualTo(underTest)
 
-        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
-        underTest.setPose(poseActivity, Space.ACTIVITY)
-        assertPose(poseActivity, underTest.getPose(Space.ACTIVITY))
-
         val poseWorld = Pose(Vector3.Right, Quaternion.Identity)
         underTest.setPose(poseWorld, Space.REAL_WORLD)
         assertPose(poseWorld, underTest.getPose(Space.REAL_WORLD))
 
-        var poseChild = child.getPose(Space.ACTIVITY)
-        assertPose(poseChild, underTest.getPose(Space.ACTIVITY))
-
-        poseChild = child.getPose(Space.REAL_WORLD)
+        val poseChild = child.getPose(Space.REAL_WORLD)
         assertPose(poseChild, underTest.getPose(Space.REAL_WORLD))
 
         child.parent = null
         assertThat(underTest.children).isEmpty()
         assertThat(child.parent).isNull()
+    }
+
+    @Test
+    fun setPoseInActivitySpace_throwsException() {
+        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
+        Assert.assertThrows(IllegalStateException::class.java) {
+            underTest.setPose(poseActivity, Space.ACTIVITY)
+        }
+    }
+
+    @Test
+    fun getPoseInActivitySpace_throwsException() {
+        Assert.assertThrows(IllegalStateException::class.java) { underTest.getPose(Space.ACTIVITY) }
     }
 
     @Test
@@ -127,16 +134,11 @@ class FakeEntityTest {
     @Test
     fun setPose_withDifferentSpaces() {
         check(underTest.getPose(Space.PARENT) == Pose.Identity)
-        check(underTest.getPose(Space.ACTIVITY) == Pose.Identity)
         check(underTest.getPose(Space.REAL_WORLD) == Pose.Identity)
 
         val poseParent = Pose(Vector3.One, Quaternion.Identity)
         underTest.setPose(poseParent, Space.PARENT)
         assertPose(poseParent, underTest.getPose(Space.PARENT))
-
-        val poseActivity = Pose(Vector3.Left, Quaternion.Identity)
-        underTest.setPose(poseActivity, Space.ACTIVITY)
-        assertPose(poseActivity, underTest.getPose(Space.ACTIVITY))
 
         val poseWorld = Pose(Vector3.Right, Quaternion.Identity)
         underTest.setPose(poseWorld, Space.REAL_WORLD)

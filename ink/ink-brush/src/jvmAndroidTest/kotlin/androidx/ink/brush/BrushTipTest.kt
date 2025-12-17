@@ -249,7 +249,7 @@ class BrushTipTest {
         assertThat(brushTip).isEqualTo(BrushTip())
 
         // different values.
-        assertThat(brushTip).isNotEqualTo(null)
+        assertThat(brushTip).isNotNull()
         assertThat(brushTip).isNotEqualTo(Any())
         assertThat(brushTip).isNotEqualTo(BrushTip(scaleX = 2f))
         assertThat(brushTip).isNotEqualTo(BrushTip(scaleY = 2f))

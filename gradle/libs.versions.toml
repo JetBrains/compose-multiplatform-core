@@ -69,7 +69,7 @@ ktfmt = "0.54"
 ktfmtIdeaPlugin = "1.2.0.54"
 leakcanary = "2.13"
 media3 = "1.4.1"
-metalava = "1.0.0-alpha13"
+metalava = "1.0.0-alpha14"
 mockito = "2.25.0"
 moshi = "1.13.0"
 node = "22.0.0"
@@ -276,6 +276,7 @@ protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protob
 protobufCompiler = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
 protobufGradlePlugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version = "0.9.4" }
 protobufLite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
+protobufKotlinLite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 reactiveStreams = { module = "org.reactivestreams:reactive-streams", version = "1.0.0" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofitConverterWire = { module = "com.squareup.retrofit2:converter-wire", version.ref = "retrofit" }

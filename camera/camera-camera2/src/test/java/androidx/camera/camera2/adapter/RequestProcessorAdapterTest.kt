@@ -145,6 +145,7 @@ class RequestProcessorAdapterTest {
                 cameraGraphProvider = { simulator },
                 defaultSurfaceToStreamMap = surfaceToStreamMap,
                 cameraStateAdapter = cameraStateAdapter,
+                streamConfigMapProvider = { emptyMap() },
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
             )
 

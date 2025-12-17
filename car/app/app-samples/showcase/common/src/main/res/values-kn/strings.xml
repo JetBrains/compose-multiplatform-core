@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"ಟ್ಯಾಬ್ ಟೆಂಪ್ಲೇಟ್‌‌ ಡೆಮೋ"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"ಸಂದೇಶದ ಟ್ಯಾಬ್"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"ಪೇನ್ ಟ್ಯಾಬ್"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"ವಿಭಾಗೀಯ ಐಟಂ ಟ್ಯಾಬ್"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"ಪಟ್ಟಿ ಟ್ಯಾಬ್"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"ಲಾಂಗ್ ಟ್ಯಾಬ್ ಶೀರ್ಷಿಕೆಯೊಂದಿಗೆ ಗ್ರಿಡ್ ಟ್ಯಾಬ್"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"ಹುಡುಕಾಟ ಟ್ಯಾಬ್"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"ಸಾಲನ್ನು ಸಹ ಆಯ್ಕೆ ಮಾಡಬಹುದು"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"ದ್ವಿತೀಯಕ ಕ್ರಿಯೆಯನ್ನು ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"ಸಾಲಿನ ಪ್ರಾಥಮಿಕ ಕ್ರಿಯೆಯನ್ನು ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"ಖಾಲಿ ಪಟ್ಟಿಯ ಡೆಮೊ"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"ಪಟ್ಟಿ ಖಾಲಿಯಾಗಿದೆ"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"ಇತರ ಟೆಂಪ್ಲೇಟ್‌ಗಳ ಡೆಮೋಗಳು"</string>

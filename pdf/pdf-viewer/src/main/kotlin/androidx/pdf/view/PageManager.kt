@@ -73,6 +73,12 @@ internal class PageManager(
     val pageTextReadyFlow: SharedFlow<Int>
         get() = _pageTextReadyFlow
 
+    private val _bitmapReadyFlow = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+
+    /** This [SharedFlow] signals [PdfView] that new bitmaps are ready for the page. */
+    val bitmapReadyFlow: SharedFlow<Int>
+        get() = _bitmapReadyFlow
+
     internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
         set(value) {
             field = value
@@ -185,7 +191,11 @@ internal class PageManager(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
-                    onPageUpdate = { _invalidationSignalFlow.tryEmit(Unit) },
+                    onBitmapReady = {
+                        _bitmapReadyFlow.tryEmit(pageNum)
+                        _invalidationSignalFlow.tryEmit(Unit)
+                    },
+                    onFormWidgetReady = { _invalidationSignalFlow.tryEmit(Unit) },
                     onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
                     errorFlow = errorFlow,
                     isAccessibilityEnabled = isAccessibilityEnabled,

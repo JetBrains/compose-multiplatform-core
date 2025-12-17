@@ -1893,6 +1893,9 @@ object SearchBarDefaults {
         val shouldClearFocusOnCollapse = !searchBarState.isExpanded && focused && isInTouchMode
         LaunchedEffect(searchBarState.isExpanded) {
             if (shouldClearFocusOnCollapse) {
+                // Not strictly needed according to the motion spec, but since the animation
+                // already has a delay, this works around b/261632544.
+                delay(AnimationDelayMillis.toLong())
                 focusManager.clearFocus()
             }
         }

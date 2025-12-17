@@ -92,6 +92,7 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
             is ToolbarIntent.ClearToolSelection -> onToolTrayCleared()
             is ToolbarIntent.BrushSizeChanged -> onBrushSizeChanged(intent)
             is ToolbarIntent.ColorSelected -> onColorSelected(intent)
+            is ToolbarIntent.DismissPopups -> hideAnyPopup()
         }
     }
 
@@ -249,6 +250,11 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
             }
 
         if (toolUpdatedEffect != null) _effects.trySend(toolUpdatedEffect)
+    }
+
+    private fun hideAnyPopup() {
+        _state.value =
+            _state.value.copy(isColorPaletteVisible = false, isBrushSizeSliderVisible = false)
     }
 
     private fun dispatchAnnotationVisibility(state: AnnotationToolbarState) {

@@ -63,7 +63,7 @@ class RemoteImageTest {
         val size = 48
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.density),
+                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
         ) {
             val avatarImage =
@@ -81,7 +81,7 @@ class RemoteImageTest {
         val size = 227
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.density),
+                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
         ) {
             val backgroundImage =
@@ -100,7 +100,7 @@ class RemoteImageTest {
         val size = 48
         remoteComposeTestRule.runScreenshotTest(
             creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.density)
+                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             // Without PlayerState API, will be blank
             val dummyImage =

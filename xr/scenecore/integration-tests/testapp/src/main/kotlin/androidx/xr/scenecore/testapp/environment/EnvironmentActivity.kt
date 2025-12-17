@@ -46,9 +46,9 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.EventType
 import androidx.xr.scenecore.testapp.common.SpatialEventLog
 import androidx.xr.scenecore.testapp.common.SpatialMode
-import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.currentTimestamp
 import androidx.xr.scenecore.testapp.common.logCapabilities
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
@@ -87,7 +87,7 @@ class EnvironmentActivity : AppCompatActivity() {
             insets
         }
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
 

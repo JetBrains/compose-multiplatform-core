@@ -19,7 +19,7 @@ import android.app.Activity
 import androidx.annotation.RestrictTo
 import kotlin.coroutines.CoroutineContext
 
-/** Factory for creating instances of Runtime. */
+/** Factory for creating instances of a PerceptionRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface PerceptionRuntimeFactory : Service {
     /**

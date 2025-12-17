@@ -52,10 +52,12 @@ class OpenXrAnchorTest {
     private lateinit var openXrManager: OpenXrManager
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrAnchor
+    private lateinit var timeSource: OpenXrTimeSource
 
     @Before
     fun setUp() {
-        xrResources = XrResources()
+        timeSource = OpenXrTimeSource()
+        xrResources = XrResources(timeSource)
         underTest = OpenXrAnchor(nativePointer = 1, xrResources = xrResources)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -151,7 +153,6 @@ class OpenXrAnchorTest {
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            val timeSource = OpenXrTimeSource()
             val perceptionManager = OpenXrPerceptionManager(timeSource)
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()

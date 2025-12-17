@@ -82,6 +82,8 @@ internal object BrushSerializationNative {
 
     @UsedByNative external fun serializeBrushCoat(nativeBrushCoatPointer: Long): ByteArray
 
+    @UsedByNative external fun serializeBrushBehavior(nativeBrushBehaviorPointer: Long): ByteArray
+
     @UsedByNative external fun serializeBrushTip(nativeBrushTipPointer: Long): ByteArray
 
     @UsedByNative external fun serializeBrushPaint(nativeBrushPaintPointer: Long): ByteArray
@@ -120,6 +122,18 @@ internal object BrushSerializationNative {
     external fun newBrushCoatFromProto(
         brushCoatDirectByteBuffer: ByteBuffer?,
         brushCoatByteArray: ByteArray?,
+        offset: Int,
+        length: Int,
+    ): Long
+
+    /**
+     * Constructs an unowned heap-allocated native `BrushBehavior` from a serialized proto, which
+     * can be passed in as either a direct [ByteBuffer] or a [ByteArray].
+     */
+    @UsedByNative
+    external fun newBrushBehaviorFromProto(
+        brushBehaviorDirectByteBuffer: ByteBuffer?,
+        brushBehaviorByteArray: ByteArray?,
         offset: Int,
         length: Int,
     ): Long

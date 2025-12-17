@@ -41,8 +41,5 @@ public object PdfFeatureFlags {
     // Toggles availability of vertical thumbnail preview panel in the PDF viewer.
     public var isThumbnailPreviewEnabled: Boolean = false
 
-    // Toggle usage of layout strategy for layout in PdfViewer library.
-    public var isLayoutStrategyEnabled: Boolean = false
-
     public var isFormFillingEnabled: Boolean = false
 }

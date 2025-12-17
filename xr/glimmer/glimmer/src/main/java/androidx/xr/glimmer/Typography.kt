@@ -24,8 +24,8 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 
 /**
- * The Glimmer type scale includes a range of contrasting styles that support the needs of your
- * product and its content.
+ * The Jetpack Compose Glimmer type scale includes a range of contrasting styles that support the
+ * needs of your product and its content.
  *
  * @property titleLarge titleLarge is the largest title, and is typically reserved for emphasized
  *   text that is shorter in length.
@@ -52,7 +52,7 @@ private constructor(
 ) {
 
     /**
-     * Creates a Glimmer type scale.
+     * Creates a Jetpack Compose Glimmer type scale.
      *
      * @param defaultFontFamily the default [FontFamily] to be used for [TextStyle]s provided in
      *   this constructor. This default will be used if the [FontFamily] on the [TextStyle] is

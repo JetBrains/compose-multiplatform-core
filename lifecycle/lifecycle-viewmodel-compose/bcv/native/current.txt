@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.lifecycle:lifecycle-viewmodel-compose>
+open annotation class androidx.lifecycle.viewmodel.compose/SavedStateHandleSaveableApi : kotlin/Annotation { // androidx.lifecycle.viewmodel.compose/SavedStateHandleSaveableApi|null[0]
+    constructor <init>() // androidx.lifecycle.viewmodel.compose/SavedStateHandleSaveableApi.<init>|<init>(){}[0]
+}
+
 final object androidx.lifecycle.viewmodel.compose/LocalViewModelStoreOwner { // androidx.lifecycle.viewmodel.compose/LocalViewModelStoreOwner|null[0]
     final val current // androidx.lifecycle.viewmodel.compose/LocalViewModelStoreOwner.current|{}current[0]
         final fun <get-current>(androidx.compose.runtime/Composer?, kotlin/Int): androidx.lifecycle/ViewModelStoreOwner? // androidx.lifecycle.viewmodel.compose/LocalViewModelStoreOwner.current.<get-current>|<get-current>(androidx.compose.runtime.Composer?;kotlin.Int){}[0]

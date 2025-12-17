@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.0.0-alpha13" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha13)" variant="all" version="9.0.0-alpha13">
+<issues format="6" by="lint 9.0.0-beta02" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-beta02)" variant="all" version="9.0.0-beta02">
 
     <issue
         id="RestrictedApiAndroidX"
@@ -30,7 +30,7 @@
 
     <issue
         id="PrivateResource"
-        message="The resource `@color/glance_colorErrorContainer` is marked as private in androidx.glance:glance:1.2.0-rc01"
+        message="The resource `@color/glance_colorErrorContainer` is marked as private in androidx.glance:glance:1.3.0-alpha01"
         errorLine1="    android:background=&quot;@color/glance_colorErrorContainer&quot;"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

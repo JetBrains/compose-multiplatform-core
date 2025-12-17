@@ -94,6 +94,10 @@ package androidx.pdf {
     property public float top;
   }
 
+  public interface PdfWriteHandle extends java.io.Closeable {
+    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? writeTo(android.os.ParcelFileDescriptor destination, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws java.io.IOException;
+  }
+
 }
 
 package androidx.pdf.content {
@@ -285,6 +289,7 @@ package androidx.pdf.view {
     ctor public PdfView(android.content.Context context, optional android.util.AttributeSet? attrs);
     ctor public PdfView(android.content.Context context, optional android.util.AttributeSet? attrs, optional int defStyle);
     ctor @BytecodeOnly public PdfView(android.content.Context!, android.util.AttributeSet!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public final void addOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
     method public final void addOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void addOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void addOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
@@ -298,8 +303,8 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final int getFirstVisiblePage();
     method @InaccessibleFromKotlin public final int getGestureState();
     method @InaccessibleFromKotlin public final int getHorizontalPageSpacing();
-    method @InaccessibleFromKotlin public final float getMaxZoom();
-    method @InaccessibleFromKotlin public final float getMinZoom();
+    method @InaccessibleFromKotlin @FloatRange(from=0.5, to=25.0) public final float getMaxZoom();
+    method @InaccessibleFromKotlin @FloatRange(from=0.5, to=25.0) public final float getMinZoom();
     method @InaccessibleFromKotlin public final int getPagesPerRow();
     method @InaccessibleFromKotlin public final androidx.pdf.PdfDocument? getPdfDocument();
     method @InaccessibleFromKotlin public final int getVerticalAlignment();
@@ -307,6 +312,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final int getVisiblePagesCount();
     method @InaccessibleFromKotlin public final float getZoom();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
+    method public final void removeOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
     method public final void removeOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void removeOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void removeOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
@@ -320,8 +326,8 @@ package androidx.pdf.view {
     method public final void setHighlights(java.util.List<androidx.pdf.view.Highlight> highlights);
     method @InaccessibleFromKotlin public final void setHorizontalPageSpacing(int);
     method public final void setLinkClickListener(androidx.pdf.view.PdfView.LinkClickListener? listener);
-    method @InaccessibleFromKotlin public final void setMaxZoom(float);
-    method @InaccessibleFromKotlin public final void setMinZoom(float);
+    method @InaccessibleFromKotlin public final void setMaxZoom(@FloatRange(from=0.5, to=25.0) float);
+    method @InaccessibleFromKotlin public final void setMinZoom(@FloatRange(from=0.5, to=25.0) float);
     method @InaccessibleFromKotlin public final void setPagesPerRow(int);
     method @InaccessibleFromKotlin public final void setPdfDocument(androidx.pdf.PdfDocument?);
     method @InaccessibleFromKotlin public final void setVerticalAlignment(int);
@@ -337,8 +343,8 @@ package androidx.pdf.view {
     property public final int firstVisiblePage;
     property public final int gestureState;
     property public final int horizontalPageSpacing;
-    property public final float maxZoom;
-    property public final float minZoom;
+    property @FloatRange(from=0.5, to=25.0) public final float maxZoom;
+    property @FloatRange(from=0.5, to=25.0) public final float minZoom;
     property public final int pagesPerRow;
     property public final androidx.pdf.PdfDocument? pdfDocument;
     property public final int verticalAlignment;
@@ -362,23 +368,27 @@ package androidx.pdf.view {
   }
 
   public static interface PdfView.LinkClickListener {
-    method public boolean onLinkClicked(androidx.pdf.content.ExternalLink externalLink);
+    method @MainThread public boolean onLinkClicked(androidx.pdf.content.ExternalLink externalLink);
+  }
+
+  public static fun interface PdfView.OnFirstContentLoadListener {
+    method @MainThread public void onFirstContentLoad();
   }
 
   public static interface PdfView.OnGestureStateChangedListener {
-    method public void onGestureStateChanged(int newState);
+    method @MainThread public void onGestureStateChanged(int newState);
   }
 
   public static interface PdfView.OnSelectionChangedListener {
-    method public void onSelectionChanged(androidx.pdf.selection.Selection? newSelection);
+    method @MainThread public void onSelectionChanged(androidx.pdf.selection.Selection? newSelection);
   }
 
   public static interface PdfView.OnViewportChangedListener {
-    method public void onViewportChanged(int firstVisiblePage, int visiblePagesCount, android.util.SparseArray<android.graphics.RectF> pageLocations, float zoomLevel);
+    method @MainThread public void onViewportChanged(int firstVisiblePage, int visiblePagesCount, android.util.SparseArray<android.graphics.RectF> pageLocations, float zoomLevel);
   }
 
   public static interface PdfView.SelectionMenuItemPreparer {
-    method public void onPrepareSelectionMenuItems(java.util.List<androidx.pdf.selection.ContextMenuComponent> components);
+    method @MainThread public void onPrepareSelectionMenuItems(java.util.List<androidx.pdf.selection.ContextMenuComponent> components);
   }
 
 }

@@ -323,7 +323,7 @@ class TypographyScreenshotTest {
         style: TextStyle,
         variationSettings: FontVariation.Settings,
     ) {
-        ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+        ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
             Box(
                 modifier = Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG),
                 contentAlignment = Alignment.Center,
@@ -340,7 +340,7 @@ class TypographyScreenshotTest {
         style: CurvedTextStyle,
         variationSettings: FontVariation.Settings,
     ) {
-        ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
+        ScreenConfiguration(desiredScreenSizeDp = SCREEN_SIZE_LARGE) {
             CurvedLayout(Modifier.size(SCREEN_SIZE_LARGE.dp).testTag(TEST_TAG)) {
                 curvedRow {
                     curvedText(

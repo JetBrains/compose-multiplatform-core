@@ -23,8 +23,13 @@ import androidx.appsearch.app.DocumentClassFactory;
 import androidx.appsearch.app.DocumentClassFactoryRegistry;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.builtintypes.Account;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 public class AppSearchAccountTest {
     private static final String NAMESPACE = "namespace";
@@ -33,7 +38,11 @@ public class AppSearchAccountTest {
     private static final String TEST_ACCOUNT_NAME = "test.user@example.com";
     private static final String TEST_ACCOUNT_ID = "123456789";
 
+    @Rule
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
+
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
     public void testBuilderAndGetters() {
         // Use the Builder to construct the AppSearchAccount
         AppSearchAccount account = new AppSearchAccount.Builder(NAMESPACE, ID)
@@ -52,6 +61,7 @@ public class AppSearchAccountTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
     public void testConstructorFromGenericDocument() {
         // Build a GenericDocument manually with the expected properties
         GenericDocument genericDocument = new GenericDocument.Builder<>(
@@ -74,6 +84,7 @@ public class AppSearchAccountTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
     public void testGettersReturnNullForMissingProperties() {
         // Construct an AppSearchAccount without setting any optional account fields
         AppSearchAccount account = new AppSearchAccount.Builder(NAMESPACE, ID)

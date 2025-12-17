@@ -30,7 +30,7 @@ import androidx.xr.glimmer.samples.TypographySample
 
 val Demos =
     DemoCategory(
-        "Glimmer Demos",
+        "Jetpack Compose Glimmer Demos",
         listOf(
             ComposableDemo("Colors") { ColorsSample() },
             ComposableDemo("Typography") { TypographySample() },

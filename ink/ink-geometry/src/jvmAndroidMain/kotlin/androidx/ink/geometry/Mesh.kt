@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.ShortBuffer
 import java.util.Collections
 
@@ -81,8 +82,7 @@ private constructor(
      * primarily for efficient rendering - most non-rendering data access should go through other
      * methods on this class.
      *
-     * The data type of each triangle index is **unsigned**, either a 16-bit [UShort] or a 32-bit
-     * [UInt]. Check [triangleIndexStride] to determine which.
+     * The data type of each triangle index is **unsigned** 16-bit [UShort].
      *
      * DO NOT hold a reference to this object independently of this [Mesh] object - if the [Mesh]
      * becomes unused and garbage collected, then the native data referred to by this buffer may
@@ -90,8 +90,12 @@ private constructor(
      */
     public val rawTriangleIndexData: ShortBuffer =
         (MeshNative.createRawTriangleIndexBuffer(nativePointer) ?: ByteBuffer.allocate(0))
-            .asReadOnlyBuffer()
+            // Note that the order of operations seems to be important: asShortBuffer() must be
+            // called
+            // immediately after order(ByteOrder.nativeOrder()).
+            .order(ByteOrder.nativeOrder())
             .asShortBuffer()
+            .asReadOnlyBuffer()
 
     /**
      * The number of triangles represented in [rawTriangleIndexData]. The number of triangle indices

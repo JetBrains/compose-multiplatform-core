@@ -83,6 +83,8 @@ constructor(
     private val zslControl: ZslControl,
     private val templateParamsOverride: TemplateParamsOverride,
     private val cameraMetadata: CameraMetadata?,
+    private val cameraXConfig: CameraXConfig? = null,
+    private val cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository? = null,
 ) {
     private val closeCameraOnCameraGraphClose = CloseCameraOnCameraGraphClose()
     private val supportedDynamicRangeProfiles =
@@ -102,12 +104,11 @@ constructor(
     public fun create(
         operatingMode: OperatingMode,
         sessionConfig: SessionConfig?,
+        setOutputType: Boolean,
         graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter? = null,
         camera2ExtensionMode: Int? = null,
-        setOutputType: Boolean = false,
         surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> = emptyMap(),
         surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> = emptyMap(),
-        cameraXConfig: CameraXConfig? = null,
     ): CameraGraphCreationResult {
         val isExtensions = operatingMode == OperatingMode.EXTENSION
         val enableStreamUseCase = !isExtensions // Enable StreamUseCase if not in Extension mode
@@ -118,6 +119,8 @@ constructor(
         val sessionParameters: MutableMap<Any, Any> = mutableMapOf()
         val streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface> = mutableMapOf()
         sessionConfig?.let { sessionConfig ->
+            cameraInteropStateCallbackRepository?.updateCallbacks(sessionConfig)
+
             if (sessionConfig.templateType != CaptureConfig.TEMPLATE_TYPE_NONE) {
                 sessionTemplate = RequestTemplate(sessionConfig.templateType)
             }

@@ -272,8 +272,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"ટૅબના નમૂનાનો ડેમો"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"મેસેજ ટૅબ"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"વિભાગ ટૅબ"</string>
-    <!-- no translation found for tab_title_sectioned_item (7299509321019990398) -->
-    <skip />
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"વિભાગમાં ઉપલબ્ધ આઇટમનું ટૅબ"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"સૂચિ ટૅબ"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"ટૅબનું લાંબું શીર્ષક ધરાવતું ગ્રીડ ટૅબ"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"શોધ ટૅબ"</string>
@@ -338,6 +337,8 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"પંક્તિ પણ પસંદ કરી શકાય છે"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"ગૌણ ઍક્શન પસંદ કરી"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"પ્રાથમિક ઍક્શન પંક્તિ પસંદ કરી"</string>
+    <!-- no translation found for row_end_image_and_actions_demo_title (4581677315854620705) -->
+    <skip />
     <string name="empty_list_demo_title" msgid="5989013634820902455">"ખાલી સૂચિનો ડેમો"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"સૂચિ ખાલી છે"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"વિવિધ નમૂનાઓના ડેમો"</string>

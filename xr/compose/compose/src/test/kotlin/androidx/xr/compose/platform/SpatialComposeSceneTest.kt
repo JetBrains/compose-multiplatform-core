@@ -16,15 +16,12 @@
 
 package androidx.xr.compose.platform
 
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeRuntime
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -49,14 +46,15 @@ class SpatialComposeSceneTest {
 
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithDefaultValues() {
-        lateinit var scene: SpatialComposeScene
-        lateinit var session: Session
+        val session = composeTestRule.configureFakeSession()
         var currentSession: Session? = null
+
+        lateinit var scene: SpatialComposeScene
         lateinit var owner: AndroidComposeSpatialElement
 
         composeTestRule.setContent {
-            session = remember { createFakeSession(composeTestRule.activity) }
             val context = rememberCompositionContext()
+
             scene =
                 SpatialComposeScene(
                     lifecycleOwner = composeTestRule.activity,
@@ -80,20 +78,17 @@ class SpatialComposeSceneTest {
 
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithCustomValues() {
-        lateinit var scene: SpatialComposeScene
-        lateinit var session: Session
+        val session = composeTestRule.configureFakeSession()
+
         var currentSession: Session? = null
+        val entity = GroupEntity.create(session, "test")
+        val coreEntity = CoreGroupEntity(entity)
+
+        lateinit var scene: SpatialComposeScene
         lateinit var composition: androidx.compose.runtime.CompositionContext
-        lateinit var coreEntity: CoreEntity
         lateinit var owner: AndroidComposeSpatialElement
 
         composeTestRule.setContent {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            session = remember { createFakeSession(composeTestRule.activity, fakeRuntime) }
-
-            val entity = GroupEntity.create(session, "test")
-            coreEntity = CoreGroupEntity(entity)
-
             composition = rememberCompositionContext()
 
             scene =

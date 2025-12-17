@@ -198,7 +198,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
             }
 
-            Subspace { VideoOptionsContent(session) }
+            Subspace(allowUnboundedSubspace = true) { VideoOptionsContent(session) }
         }
     }
 

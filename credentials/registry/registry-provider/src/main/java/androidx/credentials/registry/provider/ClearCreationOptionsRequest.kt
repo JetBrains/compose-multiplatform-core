@@ -16,8 +16,6 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * A request to clear the creation options stored for your app, which were registered using the
  * [RegistryManager.registerCreationOptions] API.
@@ -28,7 +26,6 @@ import androidx.annotation.RestrictTo
  *   [RegistryManager.registerCreationOptions] call
  * @constructor
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ClearCreationOptionsRequest
 private constructor(
     public val isDeleteAll: Boolean,

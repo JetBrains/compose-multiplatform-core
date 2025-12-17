@@ -269,8 +269,9 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         }
 
         if (!isLibrary) {
-            // This lint check is specifically for libraries.
+            // These lint checks are specifically for libraries.
             disable.add("MissingServiceExportedEqualsTrue")
+            disable.add("MetadataTagInsideApplicationTag")
         }
 
         fatal.add("CheckResult")

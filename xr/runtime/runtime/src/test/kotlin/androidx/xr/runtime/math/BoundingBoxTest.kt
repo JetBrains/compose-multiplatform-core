@@ -17,12 +17,106 @@
 package androidx.xr.runtime.math
 
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class BoundingBoxTest {
+
+    @Test
+    fun boxCreation_fromNanMin_causesIllegalArgumentException() {
+        val minVecNanX = Vector3(Float.NaN, 2.0f, 3.0f)
+        val minVecNanY = Vector3(1.0f, Float.NaN, 3.0f)
+        val minVecNanZ = Vector3(1.0f, 2.0f, Float.NaN)
+        val maxVec = Vector3(4.0f, 5.0f, 6.0f)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVecNanX, maxVec) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min [x=NaN, y=2.0, z=3.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVecNanY, maxVec) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min [x=1.0, y=NaN, z=3.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVecNanZ, maxVec) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min [x=1.0, y=2.0, z=NaN] must not contain NaN")
+    }
+
+    @Test
+    fun boxCreation_fromNanMax_causesIllegalArgumentException() {
+        val minVec = Vector3(1.0f, 2.0f, 3.0f)
+        val maxVecNanX = Vector3(Float.NaN, 5.0f, 6.0f)
+        val maxVecNanY = Vector3(4.0f, Float.NaN, 6.0f)
+        val maxVecNanZ = Vector3(4.0f, 5.0f, Float.NaN)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVec, maxVecNanX) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("max [x=NaN, y=5.0, z=6.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVec, maxVecNanY) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("max [x=4.0, y=NaN, z=6.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> { BoundingBox.fromMinMax(minVec, maxVecNanZ) }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("max [x=4.0, y=5.0, z=NaN] must not contain NaN")
+    }
+
+    @Test
+    fun boxCreation_fromMaxLessThanMin_causesIllegalArgumentException() {
+        val minVec = Vector3(1.0f, 2.0f, 3.0f)
+        val maxVecLessX = Vector3(0f, 5.0f, 6.0f)
+        val maxVecLessY = Vector3(4.0f, 0f, 6.0f)
+        val maxVecLessZ = Vector3(4.0f, 5.0f, 0f)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromMinMax(minVec, maxVecLessX)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min.x (1.0) must be less than or equal to max.x (0.0)")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromMinMax(minVec, maxVecLessY)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min.y (2.0) must be less than or equal to max.y (0.0)")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromMinMax(minVec, maxVecLessZ)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("min.z (3.0) must be less than or equal to max.z (0.0)")
+    }
 
     @Test
     fun boxCreation_fromMinMax_propertiesAreSetCorrectly() {
@@ -36,6 +130,111 @@ class BoundingBoxTest {
         assertThat(box.max).isEqualTo(maxVec)
         assertThat(box.center).isEqualTo(center)
         assertThat(box.halfExtents).isEqualTo(halfExtents)
+    }
+
+    @Test
+    fun boxCreation_fromNanCenter_causesIllegalArgumentException() {
+        val centerNanX = Vector3(Float.NaN, 2.0f, 3.0f)
+        val centerNanY = Vector3(1.0f, Float.NaN, 3.0f)
+        val centerNanZ = Vector3(1.0f, 2.0f, Float.NaN)
+        val halfExtents = FloatSize3d(1.0f, 1.0f, 1.0f)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(centerNanX, halfExtents)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("center [x=NaN, y=2.0, z=3.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(centerNanY, halfExtents)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("center [x=1.0, y=NaN, z=3.0] must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(centerNanZ, halfExtents)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("center [x=1.0, y=2.0, z=NaN] must not contain NaN")
+    }
+
+    @Test
+    fun boxCreation_fromNanHalfExtents_causesIllegalArgumentException() {
+        val center = Vector3(1.0f, 2.0f, 3.0f)
+        val halfExtentsNanWidth = FloatSize3d(Float.NaN, 1.0f, 1.0f)
+        val halfExtentsNanHeight = FloatSize3d(1.0f, Float.NaN, 1.0f)
+        val halfExtentsNanDepth = FloatSize3d(1.0f, 1.0f, Float.NaN)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNanWidth)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("w NaN x h 1.0 x d 1.0 must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNanHeight)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("w 1.0 x h NaN x d 1.0 must not contain NaN")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNanDepth)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("w 1.0 x h 1.0 x d NaN must not contain NaN")
+    }
+
+    @Test
+    fun boxCreation_fromHalfExtentsLessThanZero_causesIllegalArgumentException() {
+        val center = Vector3(1.0f, 2.0f, 3.0f)
+        val halfExtentsNegativeWidth = FloatSize3d(-1.0f, 1.0f, 1.0f)
+        val halfExtentsNegativeHeight = FloatSize3d(1.0f, -1.0f, 1.0f)
+        val halfExtentsNegativeDepth = FloatSize3d(1.0f, 1.0f, -1.0f)
+
+        var exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNegativeWidth)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("halfExtents.width (-1.0) must be greater than or equal to 0")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNegativeHeight)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("halfExtents.height (-1.0) must be greater than or equal to 0")
+
+        exception =
+            assertFailsWith<IllegalArgumentException> {
+                BoundingBox.fromCenterAndHalfExtents(center, halfExtentsNegativeDepth)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("halfExtents.depth (-1.0) must be greater than or equal to 0")
     }
 
     @Test

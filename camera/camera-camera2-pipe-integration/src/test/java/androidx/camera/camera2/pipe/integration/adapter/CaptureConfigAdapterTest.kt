@@ -350,6 +350,7 @@ class CaptureConfigAdapterTest {
                     cameraStateAdapter = cameraStateAdapter,
                     graphStateToCameraStateAdapter =
                         GraphStateToCameraStateAdapter(cameraStateAdapter),
+                    streamConfigMapProvider = { emptyMap() },
                     defaultSurfaceToStreamMap = mapOf(surface to StreamId(0)),
                 ),
             cameraProperties = fakeCameraProperties,

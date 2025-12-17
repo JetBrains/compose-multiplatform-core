@@ -24,7 +24,6 @@
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <application android:label="ARCore Whitebox" android:taskAffinity="">
-    <!--suppress MetadataTagInsideApplicationTag-->
     <meta-data android:name="com.google.ar.core" android:value="required" />
     <activity
         android:name=".MainActivity"

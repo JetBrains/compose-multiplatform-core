@@ -183,19 +183,6 @@ class SpatialCompose : ComponentActivity() {
                     Button(
                         onClick = {
                             val intent =
-                                Intent(
-                                    this@SpatialCompose,
-                                    FragmentBasedVideoPlayerActivity::class.java,
-                                )
-                            startActivity(intent)
-                        }
-                    ) {
-                        Text("Launch Video Player Fragment")
-                    }
-
-                    Button(
-                        onClick = {
-                            val intent =
                                 Intent(this@SpatialCompose, SpatialComposeWindowManager::class.java)
                             startActivity(intent)
                         }

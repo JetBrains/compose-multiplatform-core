@@ -586,7 +586,6 @@ public class WebViewFeature {
      * {@link UserAgentMetadata.Builder#setFormFactors(List)}, and
      * {@link UserAgentMetadata#getFormFactors()}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String USER_AGENT_METADATA_FORM_FACTORS =
             "USER_AGENT_METADATA_FORM_FACTORS";
 
@@ -751,7 +750,6 @@ public class WebViewFeature {
      * This feature covers:
      * {@link WebViewBuilder#build(Context)}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @WebViewBuilder.Experimental
     public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
 
@@ -855,6 +853,16 @@ public class WebViewFeature {
     @WebNavigationClient.ExperimentalNavigationCallback
     public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
             "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
+
+    /**
+     * When this feature is enabled, {@link Navigation#getPage()} will return non-null for committed
+     * navigations that are same document. Previously {@code null} was returned.
+     * <p>
+     * This will become the default behavior of {@link NavigationListener}.
+     */
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static final String NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS =
+            "NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS";
 
     /**
      * This is an internal only feature that indicate whether it is safe to cache WebView Provider

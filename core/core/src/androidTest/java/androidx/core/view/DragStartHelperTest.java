@@ -16,6 +16,7 @@
 
 package androidx.core.view;
 
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.Instrumentation;
 import android.graphics.Point;
+import android.os.Build;
 import android.os.SystemClock;
 import android.view.InputDevice;
 import android.view.MotionEvent;
@@ -232,6 +234,7 @@ public class DragStartHelperTest {
     @SmallTest
     @Test
     public void mouseDragUsingTouchListener() {
+        assumeFalse("Test fails on cuttlefish b/460513161", Build.MODEL.contains("Cuttlefish"));
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
 
@@ -254,6 +257,7 @@ public class DragStartHelperTest {
     @SmallTest
     @Test
     public void mouseDragWhenListenerReturnsFalse() {
+        assumeFalse("Test fails on cuttlefish b/460513161", Build.MODEL.contains("Cuttlefish"));
         final DragStartListener listener = createListener(false);
         final DragStartHelper helper = createDragStartHelper(listener);
         mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());
@@ -357,6 +361,7 @@ public class DragStartHelperTest {
     @LargeTest
     @Test
     public void mouseDragThenLongPress() {
+        assumeFalse("Test fails on cuttlefish b/460513161", Build.MODEL.contains("Cuttlefish"));
         final DragStartListener listener = createListener(true);
         final DragStartHelper helper = createDragStartHelper(listener);
         mActivityRule.getScenario().onActivity((DragStartHelperTestActivity) -> helper.attach());

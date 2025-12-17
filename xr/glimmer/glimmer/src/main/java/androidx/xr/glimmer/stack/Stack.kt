@@ -16,6 +16,9 @@
 
 package androidx.xr.glimmer.stack
 
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults.SnapAnimationSpec
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
@@ -101,6 +104,7 @@ public fun VerticalStack(
             PagerDefaults.flingBehavior(
                 state = state.pagerState,
                 pagerSnapDistance = PagerSnapDistance.atMost(1),
+                snapAnimationSpec = SnapAnimationSpec,
             ),
     ) { page ->
         val stackItemHolder = stackItemHolderState.value
@@ -429,3 +433,11 @@ private const val NextItemMinScale = 0.94f
 
 /** The scale factor that's between 1.0 and [NextItemMinScale], which is used in positioning. */
 private const val NextItemPositioningScale = 0.97f // (1f + NextItemMinScale) / 2f
+
+/** The animation spec used for snapping stack items. */
+private val SnapAnimationSpec =
+    spring(
+        dampingRatio = 0.56f,
+        stiffness = 118f,
+        visibilityThreshold = Int.VisibilityThreshold.toFloat(),
+    )

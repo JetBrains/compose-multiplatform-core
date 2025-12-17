@@ -30,86 +30,6 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
     "com.testdata.FunctionWithSerializableProxyInput#simpleFunctionWithSerializableWithProxy" to ComTestdataFunctionWithSerializableProxyInputSimpleFunctionWithSerializableWithProxyMetadataObject.APP_FUNCTION_METADATA,
   )
 
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_YEAR:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MONTH:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_DAYOFMONTH:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_HOUR:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MINUTE:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_SECOND:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_NANOOFSECOND:
-      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-          isNullable = false,
-          description = "",
-          enumValues = null,
-      )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-      Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    "year" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_YEAR,
-    "month" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MONTH,
-    "dayOfMonth" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_DAYOFMONTH,
-    "hour" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_HOUR,
-    "minute" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MINUTE,
-    "second" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_SECOND,
-    "nanoOfSecond" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_NANOOFSECOND,
-  )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> =
-      listOf(
-    "year",
-    "month",
-    "dayOfMonth",
-    "hour",
-    "minute",
-    "second",
-    "nanoOfSecond",
-  )
-
-  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
-      AppFunctionObjectTypeMetadata(
-          properties = JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-          required = JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-          qualifiedName = "java.time.LocalDateTime",
-          isNullable = true,
-          description = ""
-      )
-
   private val ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP_URISTRING:
       AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
           isNullable = false,
@@ -131,34 +51,6 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
           properties = ANDROID_NET_URI_OBJECT_DATA_TYPE_PROPERTIES_MAP,
           required = ANDROID_NET_URI_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
           qualifiedName = "android.net.Uri",
-          isNullable = true,
-          description = ""
-      )
-
-  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME:
-      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-          referenceDataType = "java.time.LocalDateTime",
-          isNullable = false,
-          description = ""
-      )
-
-  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE:
-      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-          referenceDataType = "java.time.LocalDateTime",
-          isNullable = false,
-          description = ""
-      )
-
-  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST:
-      AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
-          itemType = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE,
-          isNullable = false,
-          description = ""
-      )
-
-  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMENULLABLE:
-      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
-          referenceDataType = "java.time.LocalDateTime",
           isNullable = true,
           description = ""
       )
@@ -191,13 +83,41 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
           description = ""
       )
 
+  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "java.time.LocalDateTime",
+          isNullable = false,
+          description = ""
+      )
+
+  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "java.time.LocalDateTime",
+          isNullable = false,
+          description = ""
+      )
+
+  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST:
+      AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
+          itemType = COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST_REFERENCE_ITEM_TYPE,
+          isNullable = false,
+          description = ""
+      )
+
+  private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMENULLABLE:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "java.time.LocalDateTime",
+          isNullable = true,
+          description = ""
+      )
+
   private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
       Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "androidUriList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST,
+    "androidUriNullable" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE,
     "localDateTime" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIME,
     "localDateTimeList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMELIST,
     "localDateTimeNullable" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_LOCALDATETIMENULLABLE,
-    "androidUriList" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURILIST,
-    "androidUriNullable" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_PROPERTIES_MAP_ANDROIDURINULLABLE,
   )
 
   private val COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
@@ -218,10 +138,90 @@ public class `$FunctionWithSerializableProxyInput_AppFunctionInventory` : AppFun
           description = ""
       )
 
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_DAYOFMONTH:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_HOUR:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MINUTE:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MONTH:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_NANOOFSECOND:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_SECOND:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_YEAR:
+      AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "dayOfMonth" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_DAYOFMONTH,
+    "hour" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_HOUR,
+    "minute" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MINUTE,
+    "month" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_MONTH,
+    "nanoOfSecond" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_NANOOFSECOND,
+    "second" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_SECOND,
+    "year" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP_YEAR,
+  )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> =
+      listOf(
+    "year",
+    "month",
+    "dayOfMonth",
+    "hour",
+    "minute",
+    "second",
+    "nanoOfSecond",
+  )
+
+  private val JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
+      AppFunctionObjectTypeMetadata(
+          properties = JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_PROPERTIES_MAP,
+          required = JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "java.time.LocalDateTime",
+          isNullable = true,
+          description = ""
+      )
+
   private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    "java.time.LocalDateTime" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE,
     "android.net.Uri" to ANDROID_NET_URI_OBJECT_DATA_TYPE,
     "com.testdata.SerializableWithProxyType" to COM_TESTDATA_SERIALIZABLEWITHPROXYTYPE_OBJECT_DATA_TYPE,
+    "java.time.LocalDateTime" to JAVA_TIME_LOCALDATETIME_OBJECT_DATA_TYPE,
     )
 
   override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(

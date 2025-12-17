@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
@@ -73,7 +74,7 @@ public fun RemoteTextButton(
     vararg onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     colors: RemoteTextButtonColors = RemoteTextButtonDefaults.textButtonColors(),
-    enabled: RemoteBoolean = RemoteBoolean(true),
+    enabled: RemoteBoolean = true.rb,
     border: RemoteDp? = null,
     borderColor: RemoteColor? = null,
     shape: RemoteShape = RemoteTextButtonDefaults.shape,
@@ -191,12 +192,12 @@ public class RemoteTextButtonColors(
     public val disabledContentColor: RemoteColor,
 ) {
     @Stable
-    internal fun contentColor(enabled: RemoteBoolean = RemoteBoolean(true)): RemoteColor {
+    internal fun contentColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = contentColor, ifFalse = disabledContentColor)
     }
 
     @Stable
-    internal fun containerColor(enabled: RemoteBoolean = RemoteBoolean(true)): RemoteColor {
+    internal fun containerColor(enabled: RemoteBoolean = true.rb): RemoteColor {
         return enabled.select(ifTrue = containerColor, ifFalse = disabledContainerColor)
     }
 

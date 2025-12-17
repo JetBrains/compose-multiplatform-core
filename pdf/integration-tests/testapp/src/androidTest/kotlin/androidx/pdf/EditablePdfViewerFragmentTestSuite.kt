@@ -57,6 +57,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.lessThan
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -243,6 +244,10 @@ class EditablePdfViewerFragmentTestSuite {
 
     @Test
     fun testEditablePdfViewerFragment_enterAndExitEditMode_togglesState() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         if (!isRequiredSdkExtensionAvailable()) return
 
         loadDocumentAndSetupFragment()
@@ -351,6 +356,10 @@ class EditablePdfViewerFragmentTestSuite {
 
     @Test
     fun testEditablePdfViewerFragment_testUndoRedo() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         if (!isRequiredSdkExtensionAvailable()) return
 
         loadDocumentAndSetupFragment()
@@ -384,6 +393,10 @@ class EditablePdfViewerFragmentTestSuite {
 
     @Test
     fun testEditablePdfViewerFragment_annotationDisabled() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         if (!isRequiredSdkExtensionAvailable()) return
 
         loadDocumentAndSetupFragment()
@@ -417,6 +430,53 @@ class EditablePdfViewerFragmentTestSuite {
         // assert double tapping again doesn't fit to screen as touch is consumed by wet stroke's
         // view
         assertNotEquals(fitToScreenZoom, pdfView?.zoom)
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_toolbarPopupDismissed_OnContentTouch() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+
+        // Click again to show brush slider
+        onView(withId(PdfInkR.id.pen_button)).perform(click())
+
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(isDisplayed()))
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert brush size selector is not displayed
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(not(isDisplayed())))
+
+        onView(withId(PdfInkR.id.color_palette_button)).perform(click())
+        onView(withId(PdfInkR.id.color_palette)).check(matches(isDisplayed()))
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert color palette is not displayed
+        onView(withId(PdfInkR.id.color_palette)).check(matches(not(isDisplayed())))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_toolbarPopupDismissed_OnBackPress() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+
+        // Click again to show brush slider
+        onView(withId(PdfInkR.id.pen_button)).perform(click())
+
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(isDisplayed()))
+        // Press back to show discard dialog
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        // Assert brush size selector is not displayed
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(not(isDisplayed())))
     }
 
     private fun enterEditMode() {

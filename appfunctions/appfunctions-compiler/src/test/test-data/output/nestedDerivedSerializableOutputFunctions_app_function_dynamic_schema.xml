@@ -68,6 +68,22 @@
         <dataTypes>
             <dataTypeMetadata>
                 <allOf>
+                    <dataTypeReference>com.testdata.NonNestedChildSerializable</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <type>11</type>
+                </allOf>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.NestedDerivedSerializable</objectQualifiedName>
+                <type>12</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.NestedDerivedSerializable</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <allOf>
                     <dataTypeReference>com.testdata.NestedBaseSerializable</dataTypeReference>
                     <id>unused</id>
                     <isNullable>true</isNullable>
@@ -107,22 +123,6 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.NonNestedChildSerializable</name>
-        </dataTypes>
-        <dataTypes>
-            <dataTypeMetadata>
-                <allOf>
-                    <dataTypeReference>com.testdata.NonNestedChildSerializable</dataTypeReference>
-                    <id>unused</id>
-                    <isNullable>true</isNullable>
-                    <type>11</type>
-                </allOf>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <objectQualifiedName>com.testdata.NestedDerivedSerializable</objectQualifiedName>
-                <type>12</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <name>com.testdata.NestedDerivedSerializable</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

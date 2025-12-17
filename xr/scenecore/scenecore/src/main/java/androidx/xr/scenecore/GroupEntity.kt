@@ -16,6 +16,8 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.Entity as RtEntity
@@ -34,9 +36,22 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
             entityManager: EntityManager,
             name: String,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityManager.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GroupEntity =
             GroupEntity(
-                sceneRuntime.createGroupEntity(pose, name, sceneRuntime.activitySpace),
+                sceneRuntime.createGroupEntity(
+                    pose,
+                    name,
+                    if (parent != null && parent !is BaseEntity<*>) {
+                        Log.warn(
+                            "The provided parent is not a BaseEntity. The GroupEntity will " +
+                                "be created without a parent."
+                        )
+                        null
+                    } else {
+                        parent?.rtEntity
+                    },
+                ),
                 entityManager,
             )
 
@@ -51,5 +66,27 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
         @JvmStatic
         public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
             create(session.sceneRuntime, session.scene.entityManager, name, pose)
+
+        /**
+         * Public factory method for creating a [GroupEntity].
+         *
+         * @param session Session to create the GroupEntity in.
+         * @param name Name of the entity.
+         * @param pose Initial pose of the entity. The default value is [Pose.Identity].
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
+         */
+        @JvmStatic
+        // TODO: b/462865943 - Replace @RestrictTo with @JvmOverloads and remove the other overload
+        //  once the API proposal is approved.
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public fun create(
+            session: Session,
+            name: String,
+            pose: Pose = Pose.Identity,
+            parent: Entity? = session.scene.activitySpace,
+        ): GroupEntity =
+            create(session.sceneRuntime, session.scene.entityManager, name, pose, parent)
     }
 }

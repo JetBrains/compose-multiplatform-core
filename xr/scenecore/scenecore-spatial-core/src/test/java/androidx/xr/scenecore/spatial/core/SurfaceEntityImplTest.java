@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,7 +31,6 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.CameraViewScenePose;
-import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.Space;
@@ -101,7 +101,7 @@ public final class SurfaceEntityImplTest {
         mEntityManager = new EntityManager();
         FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
         Supplier<SpatialState> spatialStateProvider = ShadowSpatialState::create;
-        Entity parentEntity =
+        ActivitySpaceImpl parentEntity =
                 new ActivitySpaceImpl(
                         xrExtensions.createNode(),
                         mActivity,
@@ -110,6 +110,8 @@ public final class SurfaceEntityImplTest {
                         spatialStateProvider,
                         false,
                         executor);
+        mEntityManager.addSystemSpaceActivityPose(
+                new PerceptionSpaceScenePoseImpl(parentEntity, parentEntity));
 
         int stereoMode = SurfaceEntity.StereoMode.MONO;
         Pose pose = Pose.Identity;
@@ -333,5 +335,38 @@ public final class SurfaceEntityImplTest {
         // always place the largest dimension as the width, and the second as height.
         Truth.assertThat(successResult.getPerceivedResolution().width).isEqualTo(750);
         Truth.assertThat(successResult.getPerceivedResolution().height).isEqualTo(500);
+    }
+
+    @Test
+    public void getParent_nullParent_returnsNull() {
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
+        mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
+        mSurfaceEntity.setParent(null);
+        assertThat(mSurfaceEntity.getParent()).isEqualTo(null);
+    }
+
+    @Test
+    public void getPoseInParentSpace_nullParent_returnsIdentity() {
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
+        mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
+        mSurfaceEntity.setParent(null);
+        mSurfaceEntity.setPose(Pose.Identity);
+        assertThat(mSurfaceEntity.getPose(Space.PARENT)).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void getPoseInActivitySpace_nullParent_throwsException() {
+        Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
+        mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
+        mSurfaceEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> mSurfaceEntity.getPose(Space.ACTIVITY));
+    }
+
+    @Test
+    public void getPoseInRealWorldSpace_nullParent_throwsException() {
+        Shape.Sphere sphereShape = new Shape.Sphere(1.0f); // radius 1m
+        mSurfaceEntity = createDefaultSurfaceEntity(sphereShape);
+        mSurfaceEntity.setParent(null);
+        assertThrows(IllegalStateException.class, () -> mSurfaceEntity.getPose(Space.REAL_WORLD));
     }
 }

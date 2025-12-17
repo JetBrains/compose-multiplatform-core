@@ -16,15 +16,12 @@
 
 package androidx.xr.compose.platform
 
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.createFakeRuntime
-import androidx.xr.compose.testing.createFakeSession
+import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
@@ -48,10 +45,10 @@ class SpatialComposeElementTest {
 
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithDefaultValues() {
+        val session = composeTestRule.configureFakeSession()
         lateinit var scene: SpatialComposeScene
 
         composeTestRule.setContent {
-            val session = remember { createFakeSession(composeTestRule.activity) }
             val context = rememberCompositionContext()
             scene =
                 SpatialComposeScene(
@@ -68,17 +65,13 @@ class SpatialComposeElementTest {
 
     @Test
     fun spatialComposeElement_constructor_initializesPropertiesWithCustomValues() {
+        val session = composeTestRule.configureFakeSession()
+        val entity = GroupEntity.create(session, "test")
+        val coreEntity = CoreGroupEntity(entity)
         lateinit var scene: SpatialComposeScene
         lateinit var composition: androidx.compose.runtime.CompositionContext
-        lateinit var coreEntity: CoreEntity
 
         composeTestRule.setContent {
-            val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-            val session = remember { createFakeSession(composeTestRule.activity, fakeRuntime) }
-
-            val entity = GroupEntity.create(session, "test")
-            coreEntity = CoreGroupEntity(entity)
-
             composition = rememberCompositionContext()
 
             scene =

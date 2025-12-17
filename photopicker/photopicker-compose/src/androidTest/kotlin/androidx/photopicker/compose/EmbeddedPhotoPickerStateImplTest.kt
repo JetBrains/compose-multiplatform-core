@@ -31,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +47,10 @@ class EmbeddedPhotoPickerStateImplTest {
     @Test
     @ExperimentalPhotoPickerComposeApi
     fun testEmbeddedPhotoPickerStateImplThrowsSessionError() = runTest {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511933",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val testProvider = TestEmbeddedPhotoPickerProvider.get()
         val deferredError = CompletableDeferred<Throwable>()
 
@@ -72,6 +77,10 @@ class EmbeddedPhotoPickerStateImplTest {
     @Test
     @ExperimentalPhotoPickerComposeApi
     fun testEmbeddedPhotoPickerStateImplEmitsSelections() = runTest {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511933",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val testProvider = TestEmbeddedPhotoPickerProvider.get()
         val grantedUris = mutableListOf<Uri>()
 
@@ -105,6 +114,10 @@ class EmbeddedPhotoPickerStateImplTest {
     @Test
     @ExperimentalPhotoPickerComposeApi
     fun testEmbeddedPhotoPickerStateImplEmitsDeSelections() = runTest {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511933",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val testProvider = TestEmbeddedPhotoPickerProvider.get()
 
         val deselectedUris = mutableListOf<Uri>()
@@ -132,6 +145,10 @@ class EmbeddedPhotoPickerStateImplTest {
     @Test
     @ExperimentalPhotoPickerComposeApi
     fun testEmbeddedPhotoPickerStateImplEmitsSelectionComplete() = runTest {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511933",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         val testProvider = TestEmbeddedPhotoPickerProvider.get()
         val deferredSelectionComplete = CompletableDeferred<Boolean>()
 

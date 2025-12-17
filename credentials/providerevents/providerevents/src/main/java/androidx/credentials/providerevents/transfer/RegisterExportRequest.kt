@@ -17,7 +17,6 @@
 package androidx.credentials.providerevents.transfer
 
 import android.graphics.Bitmap
-import androidx.credentials.providerevents.internal.MatcherUtil
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -34,7 +33,7 @@ import org.json.JSONObject
  */
 public class RegisterExportRequest(
     public val entries: List<ExportEntry>,
-    public val exportMatcher: ByteArray = MatcherUtil.CREDENTIAL_TRANSFER_DEFAULT_MATCHER,
+    public val exportMatcher: ByteArray,
 ) {
     public val credentialBytes: ByteArray = this.toCredentialBytes()
 

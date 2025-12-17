@@ -138,7 +138,7 @@ package androidx.browser.customtabs {
 
   @SuppressCompatibility @androidx.browser.customtabs.ExperimentalCustomContentAction public final class ContentActionSelectedData {
     method public static androidx.browser.customtabs.ContentActionSelectedData? fromIntent(android.content.Intent?);
-    method @SuppressCompatibility public int getClickedContentTargetType();
+    method public int getClickedContentTargetType();
     method public String? getImageAltText();
     method public android.net.Uri? getImageDataUri();
     method public String? getImageUrl();
@@ -154,11 +154,11 @@ package androidx.browser.customtabs {
     method public int getId();
     method public String getLabel();
     method public android.app.PendingIntent getPendingIntent();
-    method @SuppressCompatibility public int getTargetType();
+    method public int getTargetType();
   }
 
   @SuppressCompatibility @androidx.browser.customtabs.ExperimentalCustomContentAction public static final class CustomContentAction.Builder {
-    ctor public CustomContentAction.Builder(@IntRange(from=0) int, String, android.app.PendingIntent, @SuppressCompatibility int);
+    ctor public CustomContentAction.Builder(@IntRange(from=0) int, String, android.app.PendingIntent, int);
     method public androidx.browser.customtabs.CustomContentAction build();
   }
 
@@ -381,7 +381,7 @@ package androidx.browser.customtabs {
     method @Deprecated public androidx.browser.customtabs.CustomTabsIntent.Builder setNavigationBarColor(@ColorInt int);
     method @Deprecated public androidx.browser.customtabs.CustomTabsIntent.Builder setNavigationBarDividerColor(@ColorInt int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setNetwork(android.net.Network);
-    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalOpenInBrowser public androidx.browser.customtabs.CustomTabsIntent.Builder setOpenInBrowserButtonState(@SuppressCompatibility int);
+    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalOpenInBrowser public androidx.browser.customtabs.CustomTabsIntent.Builder setOpenInBrowserButtonState(int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setPendingSession(androidx.browser.customtabs.CustomTabsSession.PendingSession);
     method @Deprecated public androidx.browser.customtabs.CustomTabsIntent.Builder setSecondaryToolbarColor(@ColorInt int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setSecondaryToolbarSwipeUpGesture(android.app.PendingIntent?);

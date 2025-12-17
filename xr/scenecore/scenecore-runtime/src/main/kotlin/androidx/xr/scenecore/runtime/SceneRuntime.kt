@@ -107,7 +107,7 @@ public interface SceneRuntime : JxrRuntime {
         view: View,
         dimensions: Dimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity
 
     /**
@@ -126,7 +126,7 @@ public interface SceneRuntime : JxrRuntime {
         view: View,
         pixelDimensions: PixelDimensions,
         name: String,
-        parent: Entity,
+        parent: Entity?,
     ): PanelEntity
 
     /**
@@ -143,7 +143,7 @@ public interface SceneRuntime : JxrRuntime {
         windowBoundsPx: PixelDimensions,
         name: String,
         hostActivity: Activity,
-        parent: Entity,
+        parent: Entity?,
     ): ActivityPanelEntity
 
     /** A factory function to create an Anchor entity. */
@@ -157,7 +157,7 @@ public interface SceneRuntime : JxrRuntime {
      * @param name Name of the entity.
      * @param parent Parent entity.
      */
-    public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
+    public fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity

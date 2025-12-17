@@ -58,8 +58,10 @@ internal class Page(
      * threshold for tiled rendering
      */
     private val maxBitmapSizePx: Point,
-    /** A function to call when the [PdfView] hosting this [Page] ought to invalidate itself */
-    private val onPageUpdate: () -> Unit,
+    /** A function to call when the bitmap of the page is ready (invoked with page number). */
+    private val onBitmapReady: (Int) -> Unit,
+    /** A function to call when form widgets are ready (invoked with page number). */
+    private val onFormWidgetReady: (Int) -> Unit,
     /** A function to call when page text is ready (invoked with page number). */
     private val onPageTextReady: ((Int) -> Unit),
     /** Error flow for propagating error occurred while processing to [PdfView]. */
@@ -144,7 +146,7 @@ internal class Page(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
-                    onPageUpdate,
+                    onBitmapReady,
                     errorFlow,
                 )
         }
@@ -228,7 +230,7 @@ internal class Page(
                 previousJob?.cancelAndJoin()
                 ensureActive()
                 formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
-                onPageUpdate()
+                onFormWidgetReady(pageNum)
             }
     }
 

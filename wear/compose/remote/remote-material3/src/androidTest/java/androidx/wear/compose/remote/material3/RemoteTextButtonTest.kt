@@ -24,11 +24,11 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -54,7 +54,7 @@ class RemoteTextButtonTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.density)
+        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
 
     @Test
     fun remote_text_button_enabled() {
@@ -63,7 +63,7 @@ class RemoteTextButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteTextButton(enabled = RemoteBoolean(true)) { RemoteText(RemoteString("ABC")) }
+                RemoteTextButton(enabled = true.rb) { RemoteText("ABC".rs) }
             }
         }
     }
@@ -75,7 +75,7 @@ class RemoteTextButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteTextButton(enabled = RemoteBoolean(false)) { RemoteText(RemoteString("ABC")) }
+                RemoteTextButton(enabled = false.rb) { RemoteText("ABC".rs) }
             }
         }
     }
@@ -87,8 +87,8 @@ class RemoteTextButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteTextButton(enabled = RemoteBoolean(true), colors = FILLED_TONAL_COLOR) {
-                    RemoteText(RemoteString("ABC"))
+                RemoteTextButton(enabled = true.rb, colors = FILLED_TONAL_COLOR) {
+                    RemoteText("ABC".rs)
                 }
             }
         }
@@ -101,8 +101,8 @@ class RemoteTextButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteTextButton(enabled = RemoteBoolean(false), colors = FILLED_TONAL_COLOR) {
-                    RemoteText(RemoteString("ABC"))
+                RemoteTextButton(enabled = false.rb, colors = FILLED_TONAL_COLOR) {
+                    RemoteText("ABC".rs)
                 }
             }
         }
@@ -118,10 +118,10 @@ class RemoteTextButtonTest {
                 RemoteTextButton(
                     border = 1.rdp,
                     borderColor = RemoteMaterialTheme.colorScheme.outline,
-                    enabled = RemoteBoolean(true),
+                    enabled = true.rb,
                     colors = OUTLINE_COLOR,
                 ) {
-                    RemoteText(RemoteString("ABC"))
+                    RemoteText("ABC".rs)
                 }
             }
         }
@@ -137,10 +137,10 @@ class RemoteTextButtonTest {
                 RemoteTextButton(
                     border = 1.rdp,
                     borderColor = RemoteMaterialTheme.colorScheme.outline,
-                    enabled = RemoteBoolean(false),
+                    enabled = false.rb,
                     colors = OUTLINE_COLOR,
                 ) {
-                    RemoteText(RemoteString("ABC"))
+                    RemoteText("ABC".rs)
                 }
             }
         }

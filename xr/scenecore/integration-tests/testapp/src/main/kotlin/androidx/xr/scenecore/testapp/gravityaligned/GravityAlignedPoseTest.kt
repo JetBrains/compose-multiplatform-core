@@ -38,7 +38,7 @@ import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
-import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class GravityAlignedPoseTest : AppCompatActivity() {
@@ -81,7 +81,7 @@ class GravityAlignedPoseTest : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gravity_aligned_pose_test)
 
-        session = createSession(this)
+        session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 
