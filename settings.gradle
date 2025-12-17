@@ -392,6 +392,7 @@ static def shouldIncludeInJetBrainsFork(String name, filePath) {
         name.startsWith(":lifecycle:lifecycle-runtime-compose:integration-tests:lifecycle-runtime-compose-demos") ||
         name.startsWith(":compose:runtime:runtime-retain") ||
         name.startsWith(":compose:runtime:runtime:benchmark") ||
+        name.startsWith(":compose:runtime:runtime-annotation") ||
         name.startsWith(":docs-tip-of-tree") ||
         name.startsWith(":docs-public") ||
         name.startsWith(":emoji2") ||
