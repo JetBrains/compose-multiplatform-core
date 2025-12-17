@@ -25,7 +25,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        namespace = "androidx.lifecycle.viewmodel.savedstate"
+        namespace = "org.jetbrains.lifecycle.viewmodel.savedstate"
     }
     desktop()
     mac()

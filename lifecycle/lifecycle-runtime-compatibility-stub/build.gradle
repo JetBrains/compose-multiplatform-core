@@ -24,7 +24,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        namespace = "androidx.lifecycle.runtime"
+        namespace = "org.jetbrains.lifecycle.runtime"
     }
     desktop()
     mac()
