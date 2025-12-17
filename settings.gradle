@@ -390,6 +390,10 @@ static def shouldIncludeInJetBrainsFork(String name, filePath) {
         name.startsWith(":navigation:navigation-safe-args-") ||
         name.startsWith(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples") ||
         name.startsWith(":lifecycle:lifecycle-runtime-compose:integration-tests:lifecycle-runtime-compose-demos") ||
+        name.startsWith(":compose:runtime:runtime-retain") ||
+        name.startsWith(":compose:runtime:runtime:benchmark") ||
+        name.startsWith(":docs-tip-of-tree") ||
+        name.startsWith(":docs-public") ||
         name.startsWith(":emoji2") ||
         name.startsWith(":hilt") ||
         name.startsWith(":room") ||
