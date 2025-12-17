@@ -31,7 +31,10 @@ androidXMultiplatform {
     mingwX64()
     tvos()
     wasmJs()
-    watchos()
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
