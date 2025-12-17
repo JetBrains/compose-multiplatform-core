@@ -1059,8 +1059,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = VERSION_1_8
-            targetCompatibility = VERSION_1_8
+            // All fork Android libraries should target Java 11
+            sourceCompatibility = VERSION_11
+            targetCompatibility = VERSION_11
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
@@ -1455,19 +1456,14 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 }
 
+@Suppress("unused")
 internal fun getDefaultTargetJavaVersion(
     softwareType: SoftwareType,
     projectName: String? = null,
     targetName: String? = null,
 ): JavaVersion {
-    return when {
-        // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
-        projectName != null && projectName.contains("room3-compiler-processing") -> VERSION_11
-        projectName != null && projectName.contains("desktop") -> VERSION_11
-        targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
-        softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
-        else -> VERSION_1_8
-    }
+    // All fork libraries (Android and Desktop) should target Java 11
+    return VERSION_11
 }
 
 /** Must be called from a `project.afterEvaluate` block. */
