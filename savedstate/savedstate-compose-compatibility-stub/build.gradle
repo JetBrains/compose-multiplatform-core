@@ -23,7 +23,7 @@ plugins {
 }
 androidXMultiplatform {
     androidLibrary {
-        namespace = "androidx.savedstate.compose"
+        namespace = "org.jetbrains.savedstate.compose"
     }
     desktop()
     mingwX64()

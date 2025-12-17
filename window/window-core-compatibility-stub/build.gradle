@@ -22,12 +22,10 @@ plugins {
     id("JetBrainsAndroidXPlugin")
 }
 
-JetBrainsAndroidXPlugin.applyAndConfigure(project)
-
 androidXMultiplatform {
-    jvm()
+    desktop()
     androidLibrary {
-        namespace = "androidx.window.core"
+        namespace = "org.jetbrains.window.core"
     }
     mac()
     linux()
@@ -38,7 +36,7 @@ androidXMultiplatform {
     js()
     wasmJs()
 
-    defaultPlatform(PlatformIdentifier.JVM)
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
