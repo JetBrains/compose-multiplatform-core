@@ -120,6 +120,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -433,7 +434,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
         val defaultJavaTargetVersion =
             project.provider {
-                getDefaultTargetJavaVersion(androidXExtension.type, project.name).toString()
+                jetBrainsGetDefaultTargetJavaVersion(androidXExtension.type, project).toString()
             }
         val defaultJvmTarget = defaultJavaTargetVersion.map { JvmTarget.fromTarget(it) }
         if (plugin is KotlinMultiplatformPluginWrapper) {
@@ -452,9 +453,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 targets.withType(KotlinJvmTarget::class.java).configureEach { target ->
                     val defaultTargetVersionForNonAndroidTargets =
                         project.provider {
-                            getDefaultTargetJavaVersion(
+                            jetBrainsGetDefaultTargetJavaVersion(
                                     softwareType = androidXExtension.type,
-                                    projectName = project.name,
+                                    project = project,
                                     targetName = target.name,
                                 )
                                 .toString()
@@ -977,7 +978,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.afterEvaluate {
             javaExtension.apply {
                 val defaultTargetJavaVersion =
-                    getDefaultTargetJavaVersion(androidXExtension.type, project.name)
+                    jetBrainsGetDefaultTargetJavaVersion(androidXExtension.type, project)
                 sourceCompatibility = defaultTargetJavaVersion
                 targetCompatibility = defaultTargetJavaVersion
             }
@@ -1455,7 +1456,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 }
 
-internal fun getDefaultTargetJavaVersion(
+internal fun aospGetDefaultTargetJavaVersion(
     softwareType: SoftwareType,
     projectName: String? = null,
     targetName: String? = null,
