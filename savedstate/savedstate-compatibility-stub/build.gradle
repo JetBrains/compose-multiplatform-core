@@ -16,7 +16,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        namespace = "androidx.savedstate"
+        namespace = "org.jetbrains.savedstate"
         optimization {
             it.consumerKeepRules.publish = true
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
@@ -27,7 +27,10 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
-    watchos()
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
     tvos()
     mingwX64()
     js()

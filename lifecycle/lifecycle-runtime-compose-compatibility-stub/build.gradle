@@ -25,7 +25,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        namespace = "androidx.lifecycle.runtime.compose"
+        namespace = "org.jetbrains.lifecycle.runtime.compose"
     }
     desktop()
     mingwX64()
@@ -33,7 +33,10 @@ androidXMultiplatform {
     mac()
     ios()
     tvos()
-    watchos()
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
     js()
     wasmJs()
 
