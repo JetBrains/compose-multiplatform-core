@@ -255,7 +255,7 @@ package androidx.annotation {
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.LOCAL_VARIABLE}) public @interface RawRes {
   }
 
-  @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface ReplaceWith {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface ReplaceWith {
     ctor @KotlinOnly public ReplaceWith(String expression, optional java.lang.String... imports);
     method @InaccessibleFromKotlin public abstract String expression();
     method @InaccessibleFromKotlin public abstract String[] imports();
@@ -303,13 +303,13 @@ package androidx.annotation {
     property public abstract String value;
   }
 
-  @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public static @interface RequiresPermission.Read {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public static @interface RequiresPermission.Read {
     ctor @KotlinOnly public RequiresPermission.Read(optional androidx.annotation.RequiresPermission value);
     method @InaccessibleFromKotlin public abstract androidx.annotation.RequiresPermission value() default androidx.annotation.RequiresPermission();
     property public abstract androidx.annotation.RequiresPermission value;
   }
 
-  @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public static @interface RequiresPermission.Write {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public static @interface RequiresPermission.Write {
     ctor @KotlinOnly public RequiresPermission.Write(optional androidx.annotation.RequiresPermission value);
     method @InaccessibleFromKotlin public abstract androidx.annotation.RequiresPermission value() default androidx.annotation.RequiresPermission();
     property public abstract androidx.annotation.RequiresPermission value;

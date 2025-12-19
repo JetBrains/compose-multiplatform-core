@@ -48,39 +48,18 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":lifecycle:lifecycle-runtime"))
-                api("androidx.annotation:annotation:1.9.1")
+        commonMain.dependencies {
+            api(project(":lifecycle:lifecycle-runtime"))
+            api("androidx.annotation:annotation:1.9.1")
 
-                api(libs.kotlinCoroutinesCore)
-                api(libs.kotlinCoroutinesTest)
-            }
+            api(libs.kotlinCoroutinesCore)
+            api(libs.kotlinCoroutinesTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-        }
-
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api(libs.testRules)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-            }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-        }
-
-        webMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            api(libs.testRules)
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
         }
 
         targets.configureEach { target ->
@@ -92,6 +71,7 @@ androidXMultiplatform {
         }
     }
 }
+
 
 androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY

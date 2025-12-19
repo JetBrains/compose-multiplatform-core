@@ -16,6 +16,7 @@
 
 package androidx.compose.remote.creation.compose.layout
 
+import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.capture.shaders.solidColor
@@ -25,6 +26,9 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.invoke
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
@@ -53,7 +57,7 @@ class RemoteCanvasTest {
         RemoteComposeScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
             targetPlayer = targetPlayer,
-            matcher = MSSIMMatcher(threshold = 0.999),
+            matcher = MSSIMMatcher(threshold = 0.9995),
         )
     }
 
@@ -61,6 +65,7 @@ class RemoteCanvasTest {
         listOf<@Composable () -> Unit>(
             ::TestDrawAnchoredText_colorAndTextSize,
             ::TestDrawAnchoredText_brushAndTextSize,
+            ::TestDrawAnchoredText_colorExpression,
             ::TestClipRect_intersect,
             ::TestClipRect_difference,
         )
@@ -133,6 +138,29 @@ class RemoteCanvasTest {
                 brush = RemoteBrush.solidColor(Color.Blue),
                 anchor = RemoteOffset(w / 2f, 120f),
                 textSize = LARGE_FONT_SIZE.rf,
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    fun TestDrawAnchoredText_colorExpression() {
+        val color =
+            RemoteColor.fromARGB(
+                0.5f.rf,
+                0.8f.rf,
+                RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC),
+                0.9f.rf,
+            )
+        val text = RemoteString("Invisible Hello")
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
+            val w = remote.component.width
+            // Transparent text is expected since color is not constant.
+            drawAnchoredText(
+                text = text,
+                brush = RemoteBrush.solidColor(color),
+                anchor = RemoteOffset(w / 2f, 40f),
+                textSize = SMALL_FONT_SIZE.rf,
             )
         }
     }

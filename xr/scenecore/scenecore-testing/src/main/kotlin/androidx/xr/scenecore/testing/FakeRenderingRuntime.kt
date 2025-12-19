@@ -91,12 +91,18 @@ public class FakeRenderingRuntime(
 
     override fun destroyGltfModel(gltfModel: GltfModelResource) {}
 
-    override suspend fun loadExrImageByAssetNameAsync(assetName: String): ExrImageResource =
-        FakeExrImageResource(0)
+    override suspend fun loadExrImageByAssetNameAsync(assetName: String): ExrImageResource {
+        val exrImageResource = FakeExrImageResource(0)
+        exrImageResource.assetName = assetName
+        return exrImageResource
+    }
 
     @Suppress("AsyncSuffixFuture")
-    override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
-        immediateFuture(FakeExrImageResource(0))
+    override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> {
+        val exrImageResource = FakeExrImageResource(0)
+        exrImageResource.assetName = assetName
+        return immediateFuture(exrImageResource)
+    }
 
     override suspend fun loadExrImageByByteArrayAsync(
         assetData: ByteArray,

@@ -30,6 +30,7 @@ import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.annotation.EditablePdfDocument
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.EditsResult
@@ -141,6 +142,10 @@ internal open class FakeEditablePdfDocument(
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        TODO("Not yet implemented")
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)

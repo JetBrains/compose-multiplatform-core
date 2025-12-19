@@ -47,10 +47,8 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":navigationevent:navigationevent"))
-            }
+        commonMain.dependencies {
+            api(project(":navigationevent:navigationevent"))
         }
     }
 }

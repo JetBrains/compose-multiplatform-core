@@ -32,49 +32,34 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":tracing:tracing"))
-                api(libs.kotlinCoroutinesCore)
-                api(libs.androidx.annotation)
-                implementation(libs.wireRuntime)
-                implementation(libs.okio)
-            }
+        commonMain.dependencies {
+            api(project(":tracing:tracing"))
+            api(libs.kotlinCoroutinesCore)
+            api(libs.androidx.annotation)
+            implementation(libs.wireRuntime)
+            implementation(libs.okio)
         }
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesCore)
-                implementation(libs.kotlinCoroutinesTest)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinCoroutinesTest)
         }
-        desktopTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinTestJunit)
-                implementation(libs.truth)
-                implementation(libs.kotlinBenchmarkRuntime)
-            }
+        desktopTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.truth)
+            implementation(libs.kotlinBenchmarkRuntime)
         }
-        desktopMain {
-            dependsOn(commonMain)
-        }
-        androidMain {
-            dependsOn(commonMain)
-        }
-        androidDeviceTest {
-            // Declaring this source set even though we don't really have any instrumentation tests.
-            // This is because commonTest is implicitly treated as something that can be used for
-            // instrumentation tests. Therefore we need to include the test runner; otherwise the
-            // harness fails with an Exception. b/394958372.
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
-            }
+
+        // Declaring this source set even though we don't really have any instrumentation tests.
+        // This is because commonTest is implicitly treated as something that can be used for
+        // instrumentation tests. Therefore we need to include the test runner; otherwise the
+        // harness fails with an Exception. b/394958372.
+        androidDeviceTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.testRules)
         }
     }
 }

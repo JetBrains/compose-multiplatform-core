@@ -20,7 +20,7 @@ package androidx.tracing {
     method public abstract void setValue(long value);
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="Marks declarations in the Tracing API that are delicate.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface DelicateTracingApi {
+  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.RequiresOptIn(message="Marks declarations in the Tracing API that are delicate.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface DelicateTracingApi {
   }
 
   @kotlin.PublishedApi internal final class EmptyCloseable implements java.lang.AutoCloseable {

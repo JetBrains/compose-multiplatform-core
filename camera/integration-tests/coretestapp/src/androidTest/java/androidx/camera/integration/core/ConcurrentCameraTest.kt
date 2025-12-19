@@ -811,6 +811,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
             assertThat(finalize!!.outputResults.outputUri).isEqualTo(uri)
 
             // Cleanup.
+            activeRecording?.close()
             recordingFile!!.delete()
         }
 

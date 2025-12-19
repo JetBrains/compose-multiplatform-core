@@ -36,23 +36,16 @@ androidXMultiplatform {
 
   defaultPlatform(PlatformIdentifier.JVM)
 
-  sourceSets {
-    commonMain {
-      dependencies {
 
-        implementation("androidx.annotation:annotation:1.8.0")
-      }
+  sourceSets {
+    commonMain.dependencies {
+      implementation("androidx.annotation:annotation:1.8.0")
     }
 
     jvmMain {
-      dependsOn(commonMain)
       resources.srcDir(new File(
           AndroidXConfig.getPrebuiltsRoot(project),
           "androidx/ink/jvm"))
-    }
-
-    androidMain {
-      dependsOn(commonMain)
     }
   }
 }

@@ -58,7 +58,7 @@ fun activitySample() {
 
                     // Handle intermediate authentication failure, this is optional and
                     // not needed in most cases
-                    override fun onAuthFailure() {
+                    override fun onAuthAttemptFailed() {
                         Log.i(TAG, "onAuthenticationFailed, try again")
                     }
                 }

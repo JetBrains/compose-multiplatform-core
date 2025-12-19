@@ -46,57 +46,33 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":compose:foundation:foundation"))
-                api(project(":compose:runtime:runtime"))
+        commonMain.dependencies {
+            api(project(":compose:foundation:foundation"))
+            api(project(":compose:runtime:runtime"))
 
-                implementation("androidx.collection:collection:1.5.0")
-                implementation(project(":compose:animation:animation"))
-                implementation(project(":compose:ui:ui-util"))
-            }
+            implementation("androidx.collection:collection:1.5.0")
+            implementation(project(":compose:animation:animation"))
+            implementation(project(":compose:ui:ui-util"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:test-utils"))
+            implementation(project(":compose:foundation:foundation"))
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-        }
-
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
-        androidDeviceTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:test-utils"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
-        }
-
-        androidHostTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
+        androidHostTest.dependencies {
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
         nonAndroidMain {
@@ -108,12 +84,12 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependsOn(nonAndroidTest)
         }
 

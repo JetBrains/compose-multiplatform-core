@@ -24,6 +24,7 @@ import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -144,6 +145,17 @@ public interface PdfDocument : Closeable {
      * @return A [PdfPageLinks] object representing the page's links.
      */
     public suspend fun getPageLinks(pageNumber: Int): PdfPageLinks
+
+    /**
+     * Retrieves a list of all annotations for the specified page.
+     *
+     * @param pageNum The page number (0-indexed) from which to retrieve edits.
+     * @return A list of [KeyedPdfAnnotation] objects on the page. Returns an empty list if there
+     *   are no edits on the page.
+     * @throws IllegalArgumentException if the page number is invalid.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation>
 
     /**
      * Gets a [BitmapSource] for retrieving bitmap representations of the specified page.

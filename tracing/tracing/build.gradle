@@ -30,48 +30,32 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinCoroutinesCore)
-                api(libs.androidx.annotation)
-                implementation("androidx.collection:collection:1.4.5")
-            }
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api(libs.androidx.annotation)
+            implementation("androidx.collection:collection:1.4.5")
         }
 
-        commonTest {
-            dependencies {
+        commonTest.dependencies {
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinCoroutinesTest)
-            }
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation("androidx.annotation:annotation:1.8.1")
-            }
+        androidMain.dependencies {
+            implementation("androidx.annotation:annotation:1.8.1")
         }
 
-        desktopMain {
-            dependsOn(commonMain)
+        desktopTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.truth)
         }
 
-        desktopTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinTestJunit)
-                implementation(libs.truth)
-            }
-        }
-
-        androidDeviceTest {
-            dependencies {
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-            }
+        androidDeviceTest.dependencies {
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
         }
     }
 }

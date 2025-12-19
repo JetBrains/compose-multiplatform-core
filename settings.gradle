@@ -1359,7 +1359,7 @@ includeProject(":placeholder-tests")
 includeBuild("placeholder")
 
 // JetBrains' Fork publishing scripts
-includeProject(":mpp")
+//includeProject(":mpp")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----

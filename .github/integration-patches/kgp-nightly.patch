@@ -1,36 +1,8 @@
-diff --git a/benchmark/benchmark-darwin-samples/build.gradle b/benchmark/benchmark-darwin-samples/build.gradle
-index 926aac6c970..a458eca42ae 100644
---- a/benchmark/benchmark-darwin-samples/build.gradle
-+++ b/benchmark/benchmark-darwin-samples/build.gradle
-@@ -39,9 +39,6 @@ androidXMultiplatform {
-         iosSimulatorArm64Main {
-             dependsOn(iosMain)
-         }
--        iosX64Main {
--            dependsOn(iosMain)
--        }
-     }
- 
-     targets.configureEach { target ->
-diff --git a/benchmark/benchmark-darwin/build.gradle b/benchmark/benchmark-darwin/build.gradle
-index 197f1ad80c2..0eec578f9d5 100644
---- a/benchmark/benchmark-darwin/build.gradle
-+++ b/benchmark/benchmark-darwin/build.gradle
-@@ -51,9 +51,6 @@ androidXMultiplatform {
-         iosSimulatorArm64Main {
-             dependsOn(iosMain)
-         }
--        iosX64Main {
--            dependsOn(iosMain)
--        }
-         targets.configureEach { target ->
-             if (target.platformType == KotlinPlatformType.native) {
-                 target.compilations["main"].defaultSourceSet {
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-index 36fb2dca9e2..db1e02439ba 100644
+index 971a8f6c3f2..8299f14edf1 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-@@ -505,17 +505,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -507,17 +507,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      /** Configures all mac targets supported by AndroidX. */
      @JvmOverloads
      fun mac(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
@@ -49,7 +21,7 @@ index 36fb2dca9e2..db1e02439ba 100644
      }
  
      @JvmOverloads
-@@ -531,7 +521,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -533,7 +523,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      /** Configures all ios targets supported by AndroidX. */
      @JvmOverloads
      fun ios(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
@@ -58,7 +30,7 @@ index 36fb2dca9e2..db1e02439ba 100644
      }
  
      @JvmOverloads
-@@ -544,16 +534,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -546,16 +536,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
          }
      }
  
@@ -75,7 +47,7 @@ index 36fb2dca9e2..db1e02439ba 100644
      @JvmOverloads
      fun iosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
          supportedPlatforms.add(PlatformIdentifier.IOS_SIMULATOR_ARM_64)
-@@ -568,7 +548,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -570,7 +550,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      @JvmOverloads
      fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
          return listOfNotNull(
@@ -83,7 +55,7 @@ index 36fb2dca9e2..db1e02439ba 100644
              watchosArm32(block),
              watchosArm64(block),
              watchosDeviceArm64(block),
-@@ -606,16 +585,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -608,16 +587,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
          }
      }
  
@@ -100,7 +72,7 @@ index 36fb2dca9e2..db1e02439ba 100644
      @JvmOverloads
      fun watchosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
          supportedPlatforms.add(PlatformIdentifier.WATCHOS_SIMULATOR_ARM_64)
-@@ -629,7 +598,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -631,7 +600,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      /** Configures all tvos targets supported by AndroidX. */
      @JvmOverloads
      fun tvos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
@@ -109,7 +81,7 @@ index 36fb2dca9e2..db1e02439ba 100644
      }
  
      @JvmOverloads
-@@ -642,16 +611,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
+@@ -644,16 +613,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
          }
      }
  
@@ -180,7 +152,7 @@ index 81211bc8665..e11c8cc95af 100644
      DESKTOP("desktop", PlatformGroup.JVM);
  
 diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
-index b27c1ab28af..add98e68e37 100644
+index 6e87c6dd9b4..5b18e697fd2 100644
 --- a/buildSrc/shared.gradle
 +++ b/buildSrc/shared.gradle
 @@ -48,7 +48,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
@@ -194,7 +166,7 @@ index b27c1ab28af..add98e68e37 100644
      }
  }
 diff --git a/collection/collection/bcv/native/current.txt b/collection/collection/bcv/native/current.txt
-index 334dcc159d1..3289f1f5928 100644
+index 948fa197aa8..84a46736da6 100644
 --- a/collection/collection/bcv/native/current.txt
 +++ b/collection/collection/bcv/native/current.txt
 @@ -1,5 +1,5 @@

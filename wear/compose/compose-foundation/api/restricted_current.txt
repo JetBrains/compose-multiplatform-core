@@ -694,7 +694,7 @@ package androidx.wear.compose.foundation.lazy {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.ScalingLazyListState rememberScalingLazyListState(int, int, androidx.compose.runtime.Composer?, int, int);
   }
 
-  @kotlin.DslMarker public @interface ScalingLazyScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface ScalingLazyScopeMarker {
   }
 
   @androidx.compose.runtime.Stable public interface ScalingParams {
@@ -786,7 +786,7 @@ package androidx.wear.compose.foundation.lazy {
     method @BytecodeOnly public static void items$default(androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope!, int, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface TransformingLazyColumnScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface TransformingLazyColumnScopeMarker {
   }
 
   @androidx.compose.runtime.Stable public final class TransformingLazyColumnState implements androidx.compose.foundation.gestures.ScrollableState {

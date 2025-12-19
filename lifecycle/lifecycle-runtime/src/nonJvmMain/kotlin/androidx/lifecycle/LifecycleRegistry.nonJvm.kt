@@ -351,5 +351,3 @@ private constructor(provider: LifecycleOwner, private val enforceMainThread: Boo
         }
     }
 }
-
-internal expect fun isMainThread(): Boolean

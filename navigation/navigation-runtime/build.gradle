@@ -54,108 +54,61 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinCoroutinesCore)
-                api(project(":navigation:navigation-common"))
-                api(project(":lifecycle:lifecycle-common"))
-                api(project(":lifecycle:lifecycle-runtime"))
-                api(project(":lifecycle:lifecycle-viewmodel"))
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api(project(":navigation:navigation-common"))
+            api(project(":lifecycle:lifecycle-common"))
+            api(project(":lifecycle:lifecycle-runtime"))
+            api(project(":lifecycle:lifecycle-viewmodel"))
 
-                implementation(libs.kotlinSerializationCore)
-                implementation("androidx.collection:collection:1.5.0")
-            }
+            implementation(libs.kotlinSerializationCore)
+            implementation("androidx.collection:collection:1.5.0")
         }
-
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
         }
+        nonAndroidMain.dependsOn(commonMain)
+        nonAndroidTest.dependsOn(commonTest)
 
-        nonAndroidMain {
-            dependsOn(commonMain)
+        jvmStubsMain.dependsOn(nonAndroidMain)
+        jvmStubsTest.dependsOn(nonAndroidTest)
+
+        androidMain.dependencies {
+            api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+            api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+            api("androidx.activity:activity-ktx:1.7.1")
+            api("androidx.core:core-ktx:1.8.0")
+            api("androidx.annotation:annotation-experimental:1.4.1")
         }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":kruth:kruth"))
-                implementation(project(":navigation:navigation-testing"))
-                implementation(project(":internal-testutils-navigation"))
-            }
+        androidDeviceTest.dependencies {
+            implementation("androidx.annotation:annotation:1.8.0")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7")
+            implementation("androidx.lifecycle:lifecycle-common:2.8.7")
+            implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
+            implementation("androidx.lifecycle:lifecycle-runtime-testing:2.8.7")
+            implementation(project(":internal-testutils-navigation"))
+            implementation(project(":internal-testutils-runtime"))
+            implementation(libs.hamcrestCore)
+            implementation(libs.junit)
+            implementation(libs.kotlinTest)
+            implementation(libs.testCore)
+            implementation(libs.testExtJunit)
+            implementation(libs.testExtTruth)
+            implementation(libs.testMonitor)
+            implementation(libs.testRunner)
+            implementation(libs.testRules)
+            implementation(libs.espressoIntents)
+            implementation(libs.truth)
+            implementation(libs.dexmakerMockito)
+            implementation(libs.mockitoCore)
         }
-
-        jvmMain {
-            dependsOn(commonMain)
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(nonAndroidTest)
-        }
-
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-                api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
-                api("androidx.activity:activity-ktx:1.7.1")
-                api("androidx.core:core-ktx:1.8.0")
-                api("androidx.annotation:annotation-experimental:1.4.1")
-            }
-        }
-
-        androidHostTest {
-            dependsOn(commonTest)
-        }
-
-        androidDeviceTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation("androidx.annotation:annotation:1.8.0")
-                implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7")
-                implementation("androidx.lifecycle:lifecycle-common:2.8.7")
-                implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
-                implementation("androidx.lifecycle:lifecycle-runtime-testing:2.8.7")
-                implementation(project(":internal-testutils-navigation"))
-                implementation(project(":internal-testutils-runtime"))
-                implementation(libs.hamcrestCore)
-                implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(libs.testCore)
-                implementation(libs.testExtJunit)
-                implementation(libs.testExtTruth)
-                implementation(libs.testMonitor)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
-                implementation(libs.espressoIntents)
-                implementation(libs.truth)
-                implementation(libs.dexmakerMockito)
-                implementation(libs.mockitoCore)
-            }
-        }
-
         nonJvmMain {
             dependsOn(nonAndroidMain)
             dependencies {
                 implementation(libs.atomicFu)
             }
         }
-
-        nonJvmTest {
-            dependsOn(nonAndroidTest)
-        }
+        nonJvmTest.dependsOn(nonAndroidTest)
 
         nativeMain {
             dependsOn(nonJvmMain)

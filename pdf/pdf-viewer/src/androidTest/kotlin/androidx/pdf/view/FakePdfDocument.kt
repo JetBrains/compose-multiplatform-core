@@ -29,6 +29,7 @@ import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -76,6 +77,7 @@ internal open class FakePdfDocument(
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
     private val textContents: List<PdfPageTextContent> = emptyList(),
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
+    private val annotationsPerPage: Map<Int, List<KeyedPdfAnnotation>> = mapOf(),
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -131,6 +133,10 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        return annotationsPerPage.getOrDefault(pageNum, emptyList())
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)

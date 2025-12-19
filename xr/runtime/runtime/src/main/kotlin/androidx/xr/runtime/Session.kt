@@ -437,11 +437,11 @@ public constructor(
      * Calling this method on an inactive session is a no-op.
      */
     private fun pause() {
+        updateJob?.cancel()
+        updateJob = null
         for (runtime in runtimes) {
             runtime.pause()
         }
-        updateJob?.cancel()
-        updateJob = null
     }
 
     /**

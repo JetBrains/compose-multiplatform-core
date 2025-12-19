@@ -146,6 +146,10 @@ class EditablePdfViewerFragmentTestSuite {
 
     @Test
     fun testEditablePdfViewerFragment_editMode_singleFingerAnnotation() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         if (!isRequiredSdkExtensionAvailable()) return
 
         loadDocumentAndSetupFragment()

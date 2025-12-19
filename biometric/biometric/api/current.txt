@@ -142,7 +142,7 @@ package androidx.biometric {
   }
 
   public fun interface AuthenticationResultCallback {
-    method public default void onAuthFailure();
+    method public default void onAuthAttemptFailed();
     method public void onAuthResult(androidx.biometric.AuthenticationResult result);
   }
 

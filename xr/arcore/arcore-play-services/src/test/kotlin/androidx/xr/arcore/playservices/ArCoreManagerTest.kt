@@ -291,7 +291,6 @@ class ArCoreManagerTest {
 
         underTest.resume()
 
-        assertThat(underTest.running).isTrue()
         verify(mockSession).resume()
     }
 
@@ -387,7 +386,6 @@ class ArCoreManagerTest {
         underTest.resume()
         underTest.pause()
 
-        assertThat(underTest.running).isFalse()
         verify(mockSession).pause()
     }
 

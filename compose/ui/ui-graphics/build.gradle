@@ -53,69 +53,45 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.androidx.annotation)
+        commonMain.dependencies {
+            api(libs.androidx.annotation)
 
-                api(project(":compose:ui:ui-unit"))
-                implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.5.0")
-            }
+            api(project(":compose:ui:ui-unit"))
+            implementation(project(":compose:runtime:runtime"))
+            implementation(project(":compose:ui:ui-util"))
+            implementation("androidx.collection:collection:1.5.0")
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            // This has stub APIs for access to legacy Android APIs, so we don't want
+            // any dependency on this module.
+            compileOnly(project(":compose:ui:ui-android-stubs"))
+            implementation("androidx.graphics:graphics-path:1.0.1")
+            implementation libs.androidx.core
+            api("androidx.annotation:annotation-experimental:1.4.1")
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
-            }
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
+            implementation(project(":compose:ui:ui-test-junit4"))
+            implementation(project(":compose:test-utils"))
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.espressoCore)
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                // This has stub APIs for access to legacy Android APIs, so we don't want
-                // any dependency on this module.
-                compileOnly(project(":compose:ui:ui-android-stubs"))
-                implementation("androidx.graphics:graphics-path:1.0.1")
-                implementation libs.androidx.core
-                api("androidx.annotation:annotation-experimental:1.4.1")
-            }
-        }
-
-        androidDeviceTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(project(":compose:test-utils"))
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.espressoCore)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
-        }
-
-        androidHostTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(project(":compose:test-utils"))
-            }
+        androidHostTest.dependencies {
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(project(":compose:test-utils"))
         }
 
         // TODO: Align naming: nonAndroidMain
@@ -143,13 +119,13 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependsOn(skikoMain)
             dependsOn(skikoExcludingWebMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependsOn(skikoTest)
             dependsOn(skikoExcludingWebTest)
             dependencies {

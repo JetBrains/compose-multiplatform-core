@@ -325,7 +325,7 @@ package androidx.xr.glimmer.list {
     method @BytecodeOnly public static void items$default(androidx.xr.glimmer.list.ListScope!, int, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface ListScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface ListScopeMarker {
   }
 
   public final class ListScopesKt {

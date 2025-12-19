@@ -51,7 +51,7 @@ package androidx.core.app {
   }
 
   public static interface ActivityCompat.PermissionCompatDelegate {
-    method public boolean onActivityResult(android.app.Activity, @IntRange(from=0) int, int, android.content.Intent?);
+    method @Deprecated public boolean onActivityResult(android.app.Activity, @IntRange(from=0) int, int, android.content.Intent?);
     method public boolean requestPermissions(android.app.Activity, String![], @IntRange(from=0) int);
   }
 
@@ -1035,6 +1035,11 @@ package androidx.core.app {
     method public androidx.core.app.PictureInPictureParamsCompat.Builder setSourceRectHint(android.graphics.Rect? sourceRectHint);
     method public androidx.core.app.PictureInPictureParamsCompat.Builder setSubTitle(CharSequence? subTitle);
     method public androidx.core.app.PictureInPictureParamsCompat.Builder setTitle(CharSequence? title);
+  }
+
+  public interface PictureInPictureProvider extends androidx.core.app.OnPictureInPictureModeChangedProvider androidx.core.app.OnPictureInPictureUiStateChangedProvider {
+    method public void enterPictureInPictureMode(androidx.core.app.PictureInPictureParamsCompat params);
+    method public void setPictureInPictureParams(androidx.core.app.PictureInPictureParamsCompat params);
   }
 
   public final class PictureInPictureUiStateCompat {

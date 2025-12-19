@@ -61,10 +61,10 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.app.OnMultiWindowModeChangedProvider
 import androidx.core.app.OnNewIntentProvider
-import androidx.core.app.OnPictureInPictureModeChangedProvider
-import androidx.core.app.OnPictureInPictureUiStateChangedProvider
 import androidx.core.app.OnUserLeaveHintProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
+import androidx.core.app.PictureInPictureParamsCompat
+import androidx.core.app.PictureInPictureProvider
 import androidx.core.app.PictureInPictureUiStateCompat
 import androidx.core.content.OnConfigurationChangedProvider
 import androidx.core.content.OnTrimMemoryProvider
@@ -126,8 +126,7 @@ open class ComponentActivity() :
     OnTrimMemoryProvider,
     OnNewIntentProvider,
     OnMultiWindowModeChangedProvider,
-    OnPictureInPictureModeChangedProvider,
-    OnPictureInPictureUiStateChangedProvider,
+    PictureInPictureProvider,
     OnUserLeaveHintProvider,
     MenuHost,
     FullyDrawnReporterOwner {
@@ -1027,6 +1026,22 @@ open class ComponentActivity() :
         listener: Consumer<PictureInPictureUiStateCompat>
     ) {
         onPictureInPictureUiStateChangedListeners.remove(listener)
+    }
+
+    final override fun enterPictureInPictureMode(params: PictureInPictureParamsCompat) {
+        if (params.isEnabled) {
+            if (Build.VERSION.SDK_INT >= 26) {
+                enterPictureInPictureMode(params.toPictureInPictureParams())
+            } else if (Build.VERSION.SDK_INT >= 24) {
+                @Suppress("deprecation") enterPictureInPictureMode()
+            }
+        }
+    }
+
+    final override fun setPictureInPictureParams(params: PictureInPictureParamsCompat) {
+        if (Build.VERSION.SDK_INT >= 26) {
+            setPictureInPictureParams(params.toPictureInPictureParams())
+        }
     }
 
     /**

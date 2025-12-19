@@ -304,21 +304,21 @@ public class FakeSceneRuntime(
      * [removePerceivedResolutionChangedListener]. Tests can inspect its contents to verify that the
      * correct listeners are registered or that they have been successfully removed.
      */
-    public val perceivedResolutionChangedMap: Map<Executor, Consumer<PixelDimensions>>
+    public val perceivedResolutionChangedMap: Map<Consumer<PixelDimensions>, Executor>
         get() = _perceivedResolutionChangedMap
 
-    private val _perceivedResolutionChangedMap: MutableMap<Executor, Consumer<PixelDimensions>> =
+    private val _perceivedResolutionChangedMap: MutableMap<Consumer<PixelDimensions>, Executor> =
         mutableMapOf()
 
     override fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<PixelDimensions>,
     ) {
-        _perceivedResolutionChangedMap[callbackExecutor] = listener
+        _perceivedResolutionChangedMap[listener] = callbackExecutor
     }
 
     override fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>) {
-        _perceivedResolutionChangedMap.values.remove(listener)
+        _perceivedResolutionChangedMap.remove(listener)
     }
 
     /**
@@ -368,7 +368,11 @@ public class FakeSceneRuntime(
     override fun createInteractableComponent(
         executor: Executor,
         listener: InputEventListener,
-    ): InteractableComponent = FakeInteractableComponent()
+    ): InteractableComponent {
+        val interactableComponent = FakeInteractableComponent()
+        interactableComponent.inputEventListenersMap[listener] = executor
+        return interactableComponent
+    }
 
     override fun createAnchorPlacementForPlanes(
         planeTypeFilter: Set<@JvmSuppressWildcards PlaneType>,
@@ -379,7 +383,13 @@ public class FakeSceneRuntime(
         systemMovable: Boolean,
         scaleInZ: Boolean,
         userAnchorable: Boolean,
-    ): FakeMovableComponent = FakeMovableComponent()
+    ): FakeMovableComponent {
+        val movableComponent = FakeMovableComponent()
+        movableComponent.systemMovable = systemMovable
+        movableComponent.scaleInZ = scaleInZ
+        movableComponent.userAnchorable = userAnchorable
+        return movableComponent
+    }
 
     override fun createResizableComponent(
         minimumSize: Dimensions,

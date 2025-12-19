@@ -35,6 +35,7 @@ import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.annotation.EditablePdfDocument
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.manager.InMemoryAnnotationsManager
 import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
@@ -106,7 +107,7 @@ public class SandboxedPdfDocument(
     private val refCount = AtomicInteger(1)
 
     private val annotationsManager =
-        InMemoryAnnotationsManager(::getAnnotationsForPage, annotationsProcessor)
+        InMemoryAnnotationsManager(::getAnnotations, annotationsProcessor)
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
@@ -477,7 +478,12 @@ public class SandboxedPdfDocument(
 
     override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
 
-    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        // TODO: Implement this method after cleaning up getEditsForPage method
+        return listOf()
+    }
+
+    private suspend fun getAnnotations(pageNum: Int): List<PdfAnnotation> {
         val firstBatch = withDocument { it.getAllPageAnnotations(pageNum) } ?: return emptyList()
         if (firstBatch.totalBatchCount <= 1) {
             return firstBatch.annotations.map { it.annotation }

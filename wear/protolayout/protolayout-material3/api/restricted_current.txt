@@ -311,7 +311,7 @@ package androidx.wear.protolayout.material3 {
     method @BytecodeOnly public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement! materialScopeWithResources$default(android.content.Context!, androidx.wear.protolayout.ProtoLayoutScope!, androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters!, boolean, androidx.wear.protolayout.material3.ColorScheme!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface MaterialScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface MaterialScopeMarker {
   }
 
   public final class PrimaryLayoutKt {

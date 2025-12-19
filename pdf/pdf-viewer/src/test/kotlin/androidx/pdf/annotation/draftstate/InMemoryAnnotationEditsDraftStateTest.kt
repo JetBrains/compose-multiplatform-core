@@ -222,6 +222,142 @@ class InMemoryAnnotationEditsDraftStateTest {
         assertThat(draftState.getEdits(1)).isEmpty()
     }
 
+    @Test
+    fun addDraftAnnotation_returnsUniqueHandleId() {
+        val pageNum = 0
+        val annotation = getSampleStampAnnotation(pageNum)
+
+        val handleId1 = draftState.addDraftAnnotation(annotation)
+        val handleId2 = draftState.addDraftAnnotation(annotation)
+
+        assertThat(handleId1).isNotEmpty()
+        assertThat(handleId2).isNotEmpty()
+        assertThat(handleId1).isNotEqualTo(handleId2)
+    }
+
+    @Test
+    fun getDraftAnnotation_validHandle_returnsCorrectAnnotation() {
+        val pageNum = 1
+        val expectedAnnotation = getSampleStampAnnotation(pageNum)
+        val handleId = draftState.addDraftAnnotation(expectedAnnotation)
+
+        val retrieved = draftState.getDraftAnnotation(pageNum, handleId)
+
+        assertThat(retrieved).isNotNull()
+        assertStampAnnotationEquals(expectedAnnotation, retrieved as StampAnnotation)
+    }
+
+    @Test
+    fun getDraftAnnotation_invalidHandle_returnsNull() {
+        // Page exists but handle does not
+        val pageNum = 0
+        draftState.addDraftAnnotation(getSampleStampAnnotation(pageNum))
+
+        val retrieved = draftState.getDraftAnnotation(pageNum, "non_existent_handle")
+        assertThat(retrieved).isNull()
+    }
+
+    @Test
+    fun getDraftAnnotation_nonExistentPage_returnsNull() {
+        val retrieved = draftState.getDraftAnnotation(99, "any_handle")
+        assertThat(retrieved).isNull()
+    }
+
+    @Test
+    fun getDraftAnnotations_returnsKeyedAnnotationsInInsertionOrder() {
+        val pageNum = 0
+        val bounds1 = RectF(0f, 0f, 10f, 10f)
+        val bounds2 = RectF(20f, 20f, 30f, 30f)
+        val annot1 = getSampleStampAnnotation(pageNum, bounds1)
+        val annot2 = getSampleStampAnnotation(pageNum, bounds2)
+
+        val handle1 = draftState.addDraftAnnotation(annot1)
+        val handle2 = draftState.addDraftAnnotation(annot2)
+
+        val results = draftState.getDraftAnnotations(pageNum)
+
+        assertThat(results).hasSize(2)
+
+        // Verify Order
+        assertThat(results[0].key).isEqualTo(handle1)
+        assertStampAnnotationEquals(annot1, results[0].annotation as StampAnnotation)
+
+        assertThat(results[1].key).isEqualTo(handle2)
+        assertStampAnnotationEquals(annot2, results[1].annotation as StampAnnotation)
+    }
+
+    @Test
+    fun getDraftAnnotations_emptyPage_returnsEmptyList() {
+        assertThat(draftState.getDraftAnnotations(99)).isEmpty()
+    }
+
+    @Test
+    fun updateDraftAnnotation_updatesAndReturnsOldAnnotation() {
+        val pageNum = 0
+        val originalBounds = RectF(0f, 0f, 10f, 10f)
+        val original = getSampleStampAnnotation(pageNum, originalBounds)
+        val handle = draftState.addDraftAnnotation(original)
+
+        val updatedBounds = RectF(50f, 50f, 60f, 60f)
+        val updated = getSampleStampAnnotation(pageNum, updatedBounds)
+
+        // Act
+        val returnedOld = draftState.updateDraftAnnotation(pageNum, handle, updated)
+
+        // Assert return value is the old one
+        assertStampAnnotationEquals(original, returnedOld as StampAnnotation)
+
+        // Assert state is updated
+        val storedNew = draftState.getDraftAnnotation(pageNum, handle)
+        assertStampAnnotationEquals(updated, storedNew as StampAnnotation)
+    }
+
+    @Test(expected = NoSuchElementException::class)
+    fun updateDraftAnnotation_invalidHandle_throwsException() {
+        val pageNum = 0
+        // Ensure page map exists
+        draftState.addDraftAnnotation(getSampleStampAnnotation(pageNum))
+
+        val updatePayload = getSampleStampAnnotation(pageNum)
+        draftState.updateDraftAnnotation(pageNum, "fake_id", updatePayload)
+    }
+
+    @Test(expected = NoSuchElementException::class)
+    fun updateDraftAnnotation_nonExistentPage_throwsException() {
+        draftState.updateDraftAnnotation(5, "any_id", getSampleStampAnnotation(5))
+    }
+
+    @Test
+    fun removeAnnotation_removesAndReturnsAnnotation() {
+        val pageNum = 0
+        val annot = getSampleStampAnnotation(pageNum)
+        val handle = draftState.addDraftAnnotation(annot)
+
+        // Ensure it exists
+        assertThat(draftState.getDraftAnnotations(pageNum)).hasSize(1)
+
+        // Act
+        val removed = draftState.removeAnnotation(pageNum, handle)
+
+        // Assert
+        assertStampAnnotationEquals(annot, removed as StampAnnotation)
+        assertThat(draftState.getDraftAnnotation(pageNum, handle)).isNull()
+        assertThat(draftState.getDraftAnnotations(pageNum)).isEmpty()
+    }
+
+    @Test(expected = NoSuchElementException::class)
+    fun removeAnnotation_invalidHandle_throwsException() {
+        val pageNum = 0
+        draftState.addDraftAnnotation(getSampleStampAnnotation(pageNum))
+
+        draftState.removeAnnotation(pageNum, "non_existent_handle")
+    }
+
+    @Test(expected = NoSuchElementException::class)
+    fun removeAnnotation_nonExistentPage_throwsException() {
+        draftState.removeAnnotation(99, "any_id")
+    }
+
     private fun assertStampAnnotationEquals(
         expectedAnnotation: StampAnnotation,
         actualAnnotation: StampAnnotation,

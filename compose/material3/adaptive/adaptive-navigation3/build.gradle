@@ -47,38 +47,25 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(project(":compose:material3:adaptive:adaptive-navigation"))
-                api(project(":navigation3:navigation3-ui"))
-                implementation("androidx.collection:collection:1.5.0")
-                implementation(project(":navigationevent:navigationevent-compose"))
-            }
+        commonMain.dependencies {
+            api(project(":compose:material3:adaptive:adaptive-navigation"))
+            api(project(":navigation3:navigation3-ui"))
+            implementation("androidx.collection:collection:1.5.0")
+            implementation(project(":navigationevent:navigationevent-compose"))
         }
 
-        commonTest {
-            dependencies {
-            }
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation("androidx.activity:activity-compose:1.10.1")
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                implementation("androidx.activity:activity-compose:1.10.1")
-            }
-        }
-
-        androidDeviceTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:material3:material3"))
-                implementation(project(":compose:test-utils"))
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:material3:material3"))
+            implementation(project(":compose:test-utils"))
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
         }
 
         nonAndroidMain {

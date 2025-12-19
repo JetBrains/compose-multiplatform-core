@@ -179,7 +179,7 @@ package androidx.lifecycle.viewmodel {
     method public operator <T> void set(androidx.lifecycle.viewmodel.CreationExtras.Key<T> key, T t);
   }
 
-  @kotlin.DslMarker public @interface ViewModelFactoryDsl {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface ViewModelFactoryDsl {
   }
 
   public final class ViewModelInitializer<T extends androidx.lifecycle.ViewModel> {

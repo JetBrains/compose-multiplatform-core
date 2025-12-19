@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposePath
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope.Companion.DefaultBlendMode
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope.Companion.DefaultFilterQuality
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.capture.shaders.RemoteSolidColor
 import androidx.compose.remote.creation.compose.capture.withTransform
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
@@ -650,7 +651,23 @@ internal fun toPaint(
             }
         if (this.shader != shader) this.shader = shader
         this.alpha = alpha
-        this.color = Color.Red
+        when (brush) {
+            is RemoteSolidColor -> {
+                val constantValue = brush.color.constantValue
+                color =
+                    if (constantValue != null) {
+                        Color(constantValue.toArgb())
+                    } else {
+                        // If the remote color isn't a constant value then we don't have a way of
+                        // accurately setting it via setColor, so set it to a known value.
+                        Color.Transparent
+                    }
+            }
+            else -> {
+                // if brush is gradient
+            }
+        }
+
         if (this.colorFilter != colorFilter) this.colorFilter = colorFilter
         if (this.blendMode != blendMode) this.blendMode = blendMode
         if (this.filterQuality != filterQuality) this.filterQuality = filterQuality

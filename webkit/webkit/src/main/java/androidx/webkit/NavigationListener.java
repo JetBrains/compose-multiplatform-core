@@ -67,7 +67,8 @@ public interface NavigationListener {
     /**
      * Called when a navigation completes.
      * <p>
-     * The navigation might not have actually committed (e.g., results in 204/download/cancelled).
+     * The navigation might not have actually committed (e.g., results in 204/download/cancelled),
+     * but those that do they will have committed by this point.
      *
      * @param navigation The Navigation object representing the completed navigation.
      */

@@ -217,12 +217,13 @@ internal object MetalavaTasks {
     ) {
         task.sourcePaths = inputs.sourcePaths
         task.compiledSources = generateApiDependencies
-        task.dependencyClasspath = inputs.dependencyClasspath
         task.bootClasspath = inputs.bootClasspath
         androidManifest?.let { task.manifestPath.set(it) }
         if (inputs is MultiplatformCompilationInputs) {
+            task.dependencyClasspath = inputs.allSourceSetsDependencyClasspath
             task.sourceSets.set(inputs.sourceSets)
         } else {
+            task.dependencyClasspath = inputs.dependencyClasspath
             // Represent a non-multiplatform project as one source set.
             task.sourceSets.set(
                 listOf(

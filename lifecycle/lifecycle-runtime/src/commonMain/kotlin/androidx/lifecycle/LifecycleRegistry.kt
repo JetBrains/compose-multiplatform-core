@@ -96,3 +96,5 @@ internal fun checkLifecycleStateTransition(owner: LifecycleOwner?, current: Stat
         error("State is '${State.DESTROYED}' and cannot be moved to `$next` in component $owner")
     }
 }
+
+internal expect fun isMainThread(): Boolean

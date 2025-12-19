@@ -29,6 +29,7 @@ import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -97,6 +98,10 @@ internal open class FakePdfDocument(
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        TODO("Not yet implemented")
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)

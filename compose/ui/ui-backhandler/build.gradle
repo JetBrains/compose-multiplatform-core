@@ -61,7 +61,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependencies {
                 api("androidx.activity:activity-compose:1.8.0")
             }
@@ -80,12 +80,12 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependsOn(jbMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependsOn(jbTest)
         }
 

@@ -23,7 +23,6 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtensi
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
 import org.gradle.api.Project
-import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
@@ -94,7 +93,7 @@ internal sealed interface CompilationInputs {
 
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
-                compilationProvider = jvmCompilation,
+                mainCompilationProvider = jvmCompilation,
                 bootClasspath = project.getAndroidJar(),
             )
         }
@@ -128,7 +127,7 @@ internal sealed interface CompilationInputs {
                 )
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
-                compilationProvider = compilation,
+                mainCompilationProvider = compilation,
                 bootClasspath = bootClasspath,
             )
         }
@@ -220,12 +219,17 @@ internal class MultiplatformCompilationInputs(
      * relationships between source sets will be loaded at configuration time.
      */
     val sourceSets: Provider<List<SourceSetInputs>>,
+    // Classpath for the android or jvm compilation.
+    override val dependencyClasspath: FileCollection,
     override val bootClasspath: FileCollection,
+    // Source paths for all files involved in the android or jvm compilation.
+    override val sourcePaths: ConfigurableFileCollection,
 ) : CompilationInputs {
-    // Aggregate sources and classpath from all source sets
-    override val sourcePaths: ConfigurableFileCollection =
-        project.files(sourceSets.map { it.map { sourceSet -> sourceSet.sourcePaths } })
-    override val dependencyClasspath: ConfigurableFileCollection =
+    /**
+     * Dependencies aggregated from all compilations (the [dependencyClasspath] only includes the
+     * main jvm or android compilation).
+     */
+    val allSourceSetsDependencyClasspath =
         project.files(sourceSets.map { it.map { sourceSet -> sourceSet.dependencyClasspath } })
 
     /** Source files from the KMP common module of this project */
@@ -241,44 +245,21 @@ internal class MultiplatformCompilationInputs(
         /** Creates inputs based on one compilation of a multiplatform project. */
         fun fromCompilation(
             project: Project,
-            compilationProvider: Provider<KotlinCompilation<*>>,
+            mainCompilationProvider: Provider<KotlinCompilation<*>>,
             bootClasspath: FileCollection,
         ): MultiplatformCompilationInputs {
-            val compileDependencies =
-                compilationProvider.map { compilation ->
-                    // Sometimes an Android source set has the jvm platform type instead of
-                    // androidJvm
-                    val platformType =
-                        if (compilation.defaultSourceSet.name == "androidMain") {
-                            KotlinPlatformType.androidJvm
-                        } else {
-                            compilation.platformType
+            val compileDependencies = mainCompilationProvider.map { it.compileDependencyFiles }
+            val sourcePaths =
+                project.files(
+                    mainCompilationProvider.map { compilation ->
+                        compilation.allKotlinSourceSets.map { sourceSet ->
+                            sourceSet.kotlin.sourceDirectories
                         }
+                    }
+                )
 
-                    project.configurations
-                        .named(compilation.compileDependencyConfigurationName)
-                        .map { config ->
-                            // AGP adds files from many configurations to the
-                            // compileDependencyFiles,
-                            // so it needs to be filtered to avoid variant resolution errors.
-                            config.incoming
-                                .artifactView {
-                                    val artifactType =
-                                        if (platformType == KotlinPlatformType.androidJvm) {
-                                            "android-classes"
-                                        } else {
-                                            "jar"
-                                        }
-                                    it.attributes.attribute(
-                                        Attribute.of("artifactType", String::class.java),
-                                        artifactType,
-                                    )
-                                }
-                                .files
-                        }
-                }
             val sourceSets =
-                compilationProvider.map { compilation ->
+                mainCompilationProvider.map { compilation ->
                     compilation.allKotlinSourceSets.map { sourceSet ->
                         SourceSetInputs(
                             sourceSet.name,
@@ -288,7 +269,13 @@ internal class MultiplatformCompilationInputs(
                         )
                     }
                 }
-            return MultiplatformCompilationInputs(project, sourceSets, bootClasspath)
+            return MultiplatformCompilationInputs(
+                project,
+                sourceSets,
+                project.files(compileDependencies),
+                bootClasspath,
+                sourcePaths,
+            )
         }
     }
 }

@@ -38,129 +38,57 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api("androidx.annotation:annotation:1.9.1")
-                implementation(project(":lifecycle:lifecycle-common"))
-                implementation("androidx.collection:collection:1.5.0")
-                api(libs.kotlinCoroutinesCore)
-                api(libs.kotlinSerializationCore)
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+            implementation(project(":lifecycle:lifecycle-common"))
+            implementation("androidx.collection:collection:1.5.0")
+            api(libs.kotlinCoroutinesCore)
+            api(libs.kotlinSerializationCore)
         }
 
-        commonTest {
-            dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesTest)
-            }
+        commonTest.dependencies {
+            implementation(project(":lifecycle:lifecycle-runtime"))
+            implementation(project(":kruth:kruth"))
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation("androidx.core:core-ktx:1.13.1")
+            implementation("androidx.core:core-viewtree:1.0.0")
         }
 
-        jvmTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.testRules)
+            implementation(libs.truth)
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation("androidx.core:core-ktx:1.13.1")
-                implementation("androidx.core:core-viewtree:1.0.0")
+        nonAndroidMain.dependsOn(commonMain)
+        nonAndroidTest.dependsOn(commonTest)
 
-            }
-        }
+        nonJvmMain.dependsOn(nonAndroidMain)
+        nonJvmTest.dependsOn(nonAndroidTest)
 
-        androidHostTest {
-            dependsOn(jvmTest)
-            dependencies {
-            }
-        }
+        desktopMain.dependsOn(nonAndroidMain)
+        desktopTest.dependsOn(nonAndroidTest)
 
-        androidDeviceTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
-                implementation(libs.truth)
-            }
-        }
+        unixMain.dependsOn(nativeMain)
+        unixTest.dependsOn(nativeTest)
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
+        appleMain.dependsOn(unixMain)
+        appleTest.dependsOn(unixTest)
 
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
+        linuxMain.dependsOn(unixMain)
+        linuxTest.dependsOn(unixTest)
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(commonTest)
-            dependsOn(nonAndroidTest)
-        }
-
-        unixMain {
-            dependsOn(nativeMain)
-        }
-
-        unixTest {
-            dependsOn(nativeTest)
-        }
-
-        darwinMain {
-            dependsOn(unixMain)
-        }
-
-        darwinTest {
-            dependsOn(unixTest)
-        }
-
-        linuxMain {
-            dependsOn(unixMain)
-        }
-
-        linuxTest {
-            dependsOn(unixTest)
-        }
-
-        mingwMain {
-            dependsOn(nativeMain)
-        }
-
-        mingwTest {
-            dependsOn(nativeTest)
-        }
-
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            }
+        webTest.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
 
         targets.configureEach { target ->

@@ -55,48 +55,37 @@ androidXMultiplatform {
             }
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
-        }
-
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
         }
 
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
-
-
-        androidDeviceTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:test-utils"))
-                implementation(project(":window:window-testing"))
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.truth)
-            }
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            api("androidx.annotation:annotation-experimental:1.4.1")
         }
 
-        androidHostTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.espressoCore)
-                implementation(libs.truth)
-                implementation(project(":compose:ui:ui"))
-                implementation(project(":window:window-core"))
-            }
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:test-utils"))
+            implementation(project(":window:window-testing"))
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.truth)
+        }
+
+        androidHostTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.espressoCore)
+            implementation(libs.truth)
+            implementation(project(":compose:ui:ui"))
+            implementation(project(":window:window-core"))
         }
 
         // TODO: Align naming: nonAndroidMain

@@ -408,7 +408,7 @@ package androidx.xr.scenecore.runtime {
     property public abstract androidx.xr.scenecore.runtime.Dimensions size;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static @interface MovableComponent.ScaleWithDistanceMode {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface MovableComponent.ScaleWithDistanceMode {
     field public static final androidx.xr.scenecore.runtime.MovableComponent.ScaleWithDistanceMode.Companion Companion;
     field public static final int DEFAULT = 3; // 0x3
     field public static final int DMM = 2; // 0x2
@@ -525,7 +525,7 @@ package androidx.xr.scenecore.runtime {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface PointerCaptureComponent extends androidx.xr.scenecore.runtime.Component {
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static @interface PointerCaptureComponent.PointerCaptureState {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface PointerCaptureComponent.PointerCaptureState {
     field public static final androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState.Companion Companion;
     field public static final int POINTER_CAPTURE_STATE_ACTIVE = 1; // 0x1
     field public static final int POINTER_CAPTURE_STATE_PAUSED = 0; // 0x0

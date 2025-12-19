@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.compose.remote.creation.compose.capture
 

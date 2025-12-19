@@ -62,7 +62,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
             }
@@ -75,7 +75,7 @@ androidXMultiplatform {
         }
 
         androidDeviceTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)

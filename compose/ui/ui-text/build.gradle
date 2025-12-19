@@ -53,82 +53,62 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinCoroutinesCore)
+        commonMain.dependencies {
+            implementation(libs.kotlinCoroutinesCore)
 
-                api(project(":compose:ui:ui-graphics"))
-                api(project(":compose:ui:ui-unit"))
+            api(project(":compose:ui:ui-graphics"))
+            api(project(":compose:ui:ui-unit"))
 
-                // when updating the runtime version please also update the runtime-saveable version
-                implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:runtime:runtime-saveable"))
+            // when updating the runtime version please also update the runtime-saveable version
+            implementation(project(":compose:runtime:runtime"))
+            implementation(project(":compose:runtime:runtime-saveable"))
 
-                implementation(project(":compose:ui:ui-util"))
+            implementation(project(":compose:ui:ui-util"))
 
-                api("androidx.annotation:annotation:1.9.1")
-                implementation("androidx.collection:collection:1.5.0")
-            }
+            // TODO: Pin androidx.collection when SieveCache is available
+            api("androidx.annotation:annotation:1.9.1")
+            implementation("androidx.collection:collection:1.5.0")
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            api("androidx.annotation:annotation-experimental:1.4.1")
+            implementation("androidx.core:core:1.7.0")
+            implementation("androidx.emoji2:emoji2:1.4.0")
         }
 
-        jvmTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation("androidx.emoji2:emoji2-bundled:1.4.0")
+            implementation(project(":compose:ui:ui-test-junit4"))
+            implementation(project(":internal-testutils-fonts"))
+            implementation(project(":compose:foundation:foundation"))
+            implementation(project(":compose:test-utils"))
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.espressoCore)
+            implementation(libs.junit)
+            implementation(libs.dexmakerMockito)
+            implementation(libs.mockitoCore)
+            implementation(libs.truth)
+            implementation(libs.mockitoKotlin)
+            implementation(libs.kotlinReflect)
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation-experimental:1.4.1")
-                implementation("androidx.core:core:1.7.0")
-                implementation("androidx.emoji2:emoji2:1.4.0")
-            }
-        }
-
-        androidDeviceTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation("androidx.emoji2:emoji2-bundled:1.4.0")
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(project(":internal-testutils-fonts"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":compose:test-utils"))
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.espressoCore)
-                implementation(libs.junit)
-                implementation(libs.dexmakerMockito)
-                implementation(libs.mockitoCore)
-                implementation(libs.truth)
-                implementation(libs.mockitoKotlin)
-                implementation(libs.kotlinReflect)
-            }
-        }
-
-        androidHostTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":internal-testutils-fonts"))
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(libs.kotlinReflect)
-                implementation(libs.kotlinTest)
-                implementation(libs.mockitoCore4)
-                implementation(libs.mockitoKotlin4)
-                implementation(libs.byteBuddy)
-            }
+        androidHostTest.dependencies {
+            implementation(project(":internal-testutils-fonts"))
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.kotlinReflect)
+            implementation(libs.kotlinTest)
+            implementation(libs.mockitoCore4)
+            implementation(libs.mockitoKotlin4)
+            implementation(libs.byteBuddy)
         }
 
         // TODO: Align naming: nonAndroidMain
@@ -148,12 +128,12 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependsOn(skikoMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependsOn(skikoTest)
             kotlin.srcDirs("src/test/java", "src/desktopTest/kotlin")
             resources.srcDirs("src/test/resources", "src/desktopTest/resources")

@@ -161,58 +161,62 @@ class OnBackPressedDispatcher(
         val lifecycle = owner.lifecycle
 
         if (lifecycle.currentState === State.DESTROYED) {
-            return // Do not add the callback if the lifecycle is already destroyed.
+            return
         }
 
         val info = OnBackPressedCallbackInfo(onBackPressedCallback, owner)
         val eventHandler = onBackPressedCallback.createNavigationEventHandler(info)
 
+        // We need to maintain the exact order of callbacks in the dispatch queue.
+        // If the flag is set, we add the handler once and toggle its active state.
+        // Otherwise, we rely on the legacy behavior of removing  and re-adding,
+        // which pushes this callback to the top of the stack ON_START.
         if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
-            // Start disabled; will be enabled by lifecycle events.
-            eventHandler.isBackEnabled = false
-
+            eventHandler.isLifecycleActive = false
             // Add handler immediately to fix its position in the dispatch queue.
             eventDispatcher.addHandler(eventHandler)
         }
 
         // This observer manages the callback's lifecycle-aware registration.
-        val lifecycleObserver =
-            object : LifecycleEventObserver, AutoCloseable {
+        val observer =
+            object : LifecycleEventObserver {
                 override fun onStateChanged(source: LifecycleOwner, event: Event) {
                     // Sync enabled state with the lifecycle.
-                    if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
-                        eventHandler.isBackEnabled =
-                            event.targetState.isAtLeast(State.STARTED) &&
-                                onBackPressedCallback.isEnabled
-                    } else {
-                        if (event == Event.ON_START) {
-                            // Register the INNER callback only when the lifecycle enters STARTED.
-                            // NOTE: This ADDS the callback to the top of the dispatching stack.
-                            eventDispatcher.addHandler(eventHandler)
-                        } else if (event == Event.ON_STOP) {
+                    when (event) {
+                        Event.ON_START -> {
+                            if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
+                                eventHandler.isLifecycleActive = true
+                            } else {
+                                // Legacy behavior: Re-adding moves this callback to the
+                                // top of the dispatch stack, prioritizing it over others.
+                                eventDispatcher.addHandler(eventHandler)
+                            }
+                        }
+                        Event.ON_STOP -> {
+                            if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
+                                eventHandler.isLifecycleActive = false
+                            } else {
+                                eventHandler.remove()
+                            }
+                        }
+                        Event.ON_DESTROY -> {
                             // Removes the callback from the dispatching stack.
                             eventHandler.remove()
+                            // Stop lifecycle tracking if destroyed.
+                            lifecycle.removeObserver(observer = this)
+                        }
+                        else -> {
+                            /* no-op */
                         }
                     }
-
-                    if (event == Event.ON_DESTROY) {
-                        // Removes the callback from the dispatching stack.
-                        eventHandler.remove()
-                        // Stop lifecycle tracking if destroyed.
-                        lifecycle.removeObserver(observer = this)
-                    }
-                }
-
-                override fun close() {
-                    // Stop lifecycle tracking when the callback is removed manually.
-                    lifecycle.removeObserver(observer = this)
                 }
             }
 
-        // Ensures `LifecycleOwner` events are tracked by this observer.
-        lifecycle.addObserver(observer = lifecycleObserver)
-        // Ensures `OnBackPressedCallback.remove()` will stop lifecycle tracking.
-        onBackPressedCallback.addCloseable(closeable = lifecycleObserver)
+        lifecycle.addObserver(observer)
+        onBackPressedCallback.addCloseable {
+            // Stop lifecycle tracking when the callback is removed manually.
+            lifecycle.removeObserver(observer)
+        }
     }
 
     /**

@@ -41,63 +41,19 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                implementation(project(":compose:material3:material3-xr"))
-                implementation("androidx.compose.material3:material3:1.5.0-alpha08")
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation(project(":compose:material3:material3-xr"))
+            implementation("androidx.compose.material3:material3:1.5.0-alpha08")
         }
 
-        commonTest {
-            dependencies {
-            }
+        androidMain.dependencies {
+            implementation("androidx.xr.compose:compose:1.0.0-alpha08")
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
-        }
-
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation("androidx.xr.compose:compose:1.0.0-alpha08")
-            }
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
-        }
-
-        androidDeviceTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
-        }
+        commonStubsMain.dependsOn(commonMain)
+        jvmStubsMain.dependsOn(commonStubsMain)
+        linuxx64StubsMain.dependsOn(commonStubsMain)
     }
 }
 

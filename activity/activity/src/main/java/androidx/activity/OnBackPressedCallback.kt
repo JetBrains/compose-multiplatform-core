@@ -48,15 +48,15 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
      *
      * @see [OnBackPressedDispatcher.eventDispatcher]
      */
-    private val eventHandlers: MutableList<NavigationEventHandler<*>> = mutableListOf()
+    private val eventHandlers: MutableList<OnBackPressedEventHandler> = mutableListOf()
 
     /**
      * The enabled state of the callback. Only when this callback is enabled will it receive
      * callbacks to [handleOnBackPressed].
      *
-     * Note that the enabled state is an additional layer on top of the
-     * [androidx.lifecycle.LifecycleOwner] passed to [OnBackPressedDispatcher.addCallback] which
-     * controls when the callback is added and removed to the dispatcher.
+     * When registered with a [androidx.lifecycle.LifecycleOwner], the callback is only active when
+     * **both** this property is `true` and the [androidx.lifecycle.Lifecycle] is at least
+     * [androidx.lifecycle.Lifecycle.State.STARTED].
      */
     @get:MainThread
     @set:MainThread
@@ -64,7 +64,9 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
         set(value) {
             field = value
             for (callback in eventHandlers) {
-                callback.isBackEnabled = value
+                // Only enable if the Lifecycle is active. isLifecycleActive is always
+                // true unless this callback was registered with a LifecycleOwner.
+                callback.isBackEnabled = callback.isLifecycleActive && value
             }
         }
 
@@ -126,13 +128,13 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
 
     internal fun createNavigationEventHandler(
         info: NavigationEventInfo
-    ): NavigationEventHandler<*> {
+    ): OnBackPressedEventHandler {
         val newHandler = OnBackPressedEventHandler(onBackPressedCallback = this, info)
         eventHandlers += newHandler
         return newHandler
     }
 
-    private class OnBackPressedEventHandler(
+    internal class OnBackPressedEventHandler(
         private val onBackPressedCallback: OnBackPressedCallback,
         info: NavigationEventInfo,
     ) :
@@ -140,6 +142,23 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
             initialInfo = info,
             isBackEnabled = onBackPressedCallback.isEnabled,
         ) {
+
+        /**
+         * Controls whether the associated `Lifecycle` is in an active state (at least
+         * `Lifecycle.State.STARTED`).
+         *
+         * When this value changes, it automatically updates [isBackEnabled] to ensure the
+         * underlying dispatcher is only enabled when **both** the lifecycle is active and the
+         * [OnBackPressedCallback.isEnabled] is explicitly set to `true`.
+         *
+         * Defaults to `true` for use cases where no `LifecycleOwner` is associated.
+         */
+        var isLifecycleActive: Boolean = true
+            set(value) {
+                field = value
+                // Automatically sync the effective state whenever the lifecycle state changes.
+                isBackEnabled = value && onBackPressedCallback.isEnabled
+            }
 
         override fun onBackStarted(event: NavigationEvent) {
             onBackPressedCallback.handleOnBackStarted(BackEventCompat(event))

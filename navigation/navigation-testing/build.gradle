@@ -35,7 +35,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.navigation.testing"
-        androidResources.enable = true
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
     }
     desktop()
     linux()
@@ -51,75 +51,55 @@ androidXMultiplatform {
             languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
         }
 
-        commonMain {
-            dependencies {
-                api(project(":navigation:navigation-runtime"))
-                api(project(":lifecycle:lifecycle-runtime-testing"))
+        commonMain.dependencies {
+            api(project(":navigation:navigation-runtime"))
+            api(project(":lifecycle:lifecycle-runtime-testing"))
 
-                implementation(libs.kotlinCoroutinesCore)
-                implementation(libs.kotlinSerializationCore)
-                implementation(project(":navigation:navigation-common"))
-                implementation(project(":lifecycle:lifecycle-common"))
-                implementation(project(":lifecycle:lifecycle-viewmodel"))
-                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
-            }
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinSerializationCore)
+            implementation(project(":navigation:navigation-common"))
+            implementation(project(":lifecycle:lifecycle-common"))
+            implementation(project(":lifecycle:lifecycle-viewmodel"))
+            implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":kruth:kruth"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(project(":kruth:kruth"))
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        jvmAndAndroidTest.dependencies {
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                runtimeOnly(libs.kotlinTestJunit)
-                implementation(libs.junit)
-            }
+        androidMain.dependencies {
+            api(project(":lifecycle:lifecycle-runtime"))
+            api(project(":lifecycle:lifecycle-viewmodel"))
+            api(project(":savedstate:savedstate-ktx"))
+            implementation("androidx.core:core-ktx:1.1.0")
+            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api(project(":lifecycle:lifecycle-runtime"))
-                api(project(":lifecycle:lifecycle-viewmodel"))
-                api(project(":savedstate:savedstate-ktx"))
-                implementation("androidx.core:core-ktx:1.1.0")
-                implementation("androidx.profileinstaller:profileinstaller:1.4.0")
-            }
+        androidHostTest.dependencies {
+            runtimeOnly(libs.testCore)
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
+            implementation(libs.testRunner)
         }
 
-        androidHostTest {
-            dependsOn(jvmTest)
-            dependencies {
-                runtimeOnly(libs.testCore)
-                runtimeOnly(libs.kotlinTestJunit)
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-            }
-        }
+        androidDeviceTest.dependencies {
+            implementation(project(":internal-testutils-navigation"))
+            implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
+            implementation(libs.testExtJunit)
+            implementation(libs.testExtTruth)
+            implementation(libs.testRules)
 
-        androidDeviceTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":internal-testutils-navigation"))
-                implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
-                implementation(libs.testExtJunit)
-                implementation(libs.testExtTruth)
-                implementation(libs.testRules)
-
-                runtimeOnly(libs.testCore)
-                runtimeOnly(libs.kotlinTestJunit)
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-            }
+            runtimeOnly(libs.testCore)
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
+            implementation(libs.testRunner)
         }
 
         nonAndroidMain {
@@ -131,12 +111,12 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmAndAndroidTest)
             dependsOn(nonAndroidTest)
         }
 

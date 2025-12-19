@@ -17,6 +17,7 @@
 package androidx.pdf.annotation.draftstate
 
 import androidx.annotation.RestrictTo
+import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
@@ -26,12 +27,30 @@ import androidx.pdf.annotation.models.PdfEdits
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface AnnotationEditsDraftState {
     /**
+     * Retrieves the draft annotation by id for a specific page.
+     *
+     * @param pageNum The page number (0-indexed).
+     * @param handleId The id associated with the annotation on the page.
+     * @return [PdfAnnotation] object or null if the object is not found.
+     */
+    public fun getDraftAnnotation(pageNum: Int, handleId: String): PdfAnnotation?
+
+    /**
+     * Retrieves the draft annotations for a specific page.
+     *
+     * @param pageNum The page number (0-indexed).
+     * @return A list of [KeyedPdfAnnotation] objects.
+     */
+    public fun getDraftAnnotations(pageNum: Int): List<KeyedPdfAnnotation>
+
+    /**
      * Retrieves all annotation edits for a specific page.
      *
      * @param pageNum The page number (0-indexed) for which to retrieve edits.
      * @return A list of [PdfAnnotationData] objects representing the id and the persisted
      *   annotation.
      */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun getEdits(pageNum: Int): List<PdfAnnotationData>
 
     /**
@@ -40,7 +59,16 @@ public interface AnnotationEditsDraftState {
      * @param id The [EditId] used to identify the annotation.
      * @param annotation The [PdfAnnotation] to add.
      */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun addEditById(id: EditId, annotation: PdfAnnotation)
+
+    /**
+     * Adds a new annotation edit to the draft state.
+     *
+     * @param annotation The [PdfAnnotation] to add.
+     * @return The id assigned to the newly added annotation.
+     */
+    public fun addDraftAnnotation(annotation: PdfAnnotation): String
 
     /**
      * Adds a new annotation edit to the draft state.
@@ -48,7 +76,17 @@ public interface AnnotationEditsDraftState {
      * @param annotation The [PdfAnnotation] to add.
      * @return The [EditId] assigned to the newly added annotation.
      */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun addEdit(annotation: PdfAnnotation): EditId
+
+    /**
+     * Removes an existing annotation from the draft state.
+     *
+     * @param pageNum The specified page number.
+     * @param handleId The id of the annotation to remove.
+     * @return The [PdfAnnotation] that was removed.
+     */
+    public fun removeAnnotation(pageNum: Int, handleId: String): PdfAnnotation
 
     /**
      * Removes an existing annotation edit from the draft state.
@@ -56,7 +94,23 @@ public interface AnnotationEditsDraftState {
      * @param editId The [EditId] of the annotation to remove.
      * @return The [PdfAnnotation] that was removed.
      */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun removeEdit(editId: EditId): PdfAnnotation
+
+    /**
+     * Updates an existing annotation edit in the draft state.
+     *
+     * @param pageNum The specified page number.
+     * @param handleId The id of the annotation to update.
+     * @param newAnnotation The new [PdfAnnotation] to replace the existing annotation.
+     * @return The previous [PdfAnnotation].
+     */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
+    public fun updateDraftAnnotation(
+        pageNum: Int,
+        handleId: String,
+        newAnnotation: PdfAnnotation,
+    ): PdfAnnotation
 
     /**
      * Updates an existing annotation edit in the draft state.
@@ -65,9 +119,11 @@ public interface AnnotationEditsDraftState {
      * @param annotation The new [PdfAnnotation] to replace the existing annotation.
      * @return The updated [PdfAnnotation].
      */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun updateEdit(editId: EditId, annotation: PdfAnnotation): PdfAnnotation
 
     /** Returns the state of the draft as a [PdfEdits] object. */
+    // TODO(b/462602307): Clean up after moving the draft state to view model
     public fun toPdfEdits(): PdfEdits
 
     /** Clears all annotation edits from the draft state. */

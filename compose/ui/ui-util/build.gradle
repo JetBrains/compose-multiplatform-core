@@ -50,50 +50,26 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation("androidx.collection:collection:1.5.0")
-                implementation(project(":compose:runtime:runtime"))
-            }
+        commonMain.dependencies {
+            implementation("androidx.collection:collection:1.5.0")
+            implementation(project(":compose:runtime:runtime"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(project(":kruth:kruth"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(project(":kruth:kruth"))
         }
 
-        jvmMain {
-            dependsOn(commonMain)
+        androidMain.dependencies {
+            api("androidx.annotation:annotation-experimental:1.4.1")
         }
 
-        jvmTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation-experimental:1.4.1")
-            }
-        }
-
-
-        androidHostTest {
-            dependsOn(commonTest)
-        }
-
-        androidDeviceTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
+        androidHostTest.dependencies {
+            implementation(libs.truth)
         }
 
         nonJvmMain {
@@ -140,7 +116,6 @@ androidXMultiplatform {
         }
 
         targets.configureEach { target ->
-
             // TODO: Ignore stubs. Remove together with stubs target
             if (target.name.endsWith("Stubs")) return
 
