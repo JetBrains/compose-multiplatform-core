@@ -27,6 +27,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.tasks.testing.AbstractTestTask
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.withType
 
 class JetBrainsAndroidXRootImplPlugin @Inject constructor(
@@ -58,6 +59,11 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
                     checkApi = RunApiTasks.No("JB Library"),
                 )
             }
+
+            // register stub task to:
+            // - be sure that it is not registered before by AndroidXPlugin
+            // - to not crash code "tasks.named("multiplatformSourceJar").configure"
+            subproject.tasks.register("multiplatformSourceJar")
         }
     }
 }

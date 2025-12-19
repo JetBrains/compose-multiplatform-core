@@ -544,7 +544,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
             project.configureKmp()
-            project.configureSourceJarForMultiplatform()
+            @Suppress("ConstantConditionIf") if (false) project.configureSourceJarForMultiplatform() // the fork has different logic
 
             // Disable any source JAR task(s) added by KotlinMultiplatformPlugin.
             // https://youtrack.jetbrains.com/issue/KT-55881
@@ -734,7 +734,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 androidXExtension,
             )
             project.configurePublicResourcesStub(variant)
-            project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
+            @Suppress("ConstantConditionIf") if (false) project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects) // the fork has different logic
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -928,7 +928,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 )
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
-                project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
+                @Suppress("ConstantConditionIf") if (false) project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects) // the fork has different logic
                 project.configurePublicResourcesStub(variant)
                 project.configureDependencyVerification(androidXExtension) { taskProvider ->
                     taskProvider.configure { task -> task.dependsOn("compileReleaseJavaWithJavac") }
@@ -985,7 +985,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 !project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java) ||
                     !project.plugins.hasPlugin(KotlinBaseApiPlugin::class.java)
             ) {
-                project.configureSourceJarForJava(androidXExtension.samplesProjects)
+                @Suppress("ConstantConditionIf") if (false) project.configureSourceJarForJava(androidXExtension.samplesProjects) // the fork has different logic
             }
         }
 
