@@ -70,8 +70,8 @@ androidXMultiplatform {
         nonAndroidMain.dependsOn(commonMain)
         nonAndroidTest.dependsOn(commonTest)
 
-        jvmStubsMain.dependsOn(nonAndroidMain)
-        jvmStubsTest.dependsOn(nonAndroidTest)
+        desktopMain.dependsOn(nonAndroidMain)
+        desktopTest.dependsOn(nonAndroidTest)
 
         androidMain.dependencies {
             api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")

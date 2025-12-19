@@ -38,7 +38,6 @@ androidXMultiplatform {
         }
 
         jvmMain.dependencies {
-            implementation(libs.kotlinStdlib)
             implementation(libs.kotlinCoroutinesCore)
         }
 
