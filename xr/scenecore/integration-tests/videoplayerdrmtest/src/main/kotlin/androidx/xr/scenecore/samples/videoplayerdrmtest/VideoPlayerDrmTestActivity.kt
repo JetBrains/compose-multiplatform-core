@@ -65,7 +65,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
@@ -111,7 +111,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         Log.i(TAG, "onCreate")
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         if (movableComponentMp == null) {

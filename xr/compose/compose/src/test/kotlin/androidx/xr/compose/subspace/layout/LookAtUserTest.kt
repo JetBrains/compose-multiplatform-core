@@ -67,7 +67,7 @@ class LookAtUserTest {
             val result = Session.create(composeTestRule.activity, testDispatcher)
             val session = (result as SessionCreateSuccess).session
             session.configure(
-                config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN)
+                config = session.config.copy(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
             )
             composeTestRule.session = session
 
@@ -117,7 +117,7 @@ class LookAtUserTest {
             val result = Session.create(composeTestRule.activity, testDispatcher)
             val session = (result as SessionCreateSuccess).session
             session.configure(
-                config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN)
+                config = session.config.copy(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
             )
             composeTestRule.session = session
 

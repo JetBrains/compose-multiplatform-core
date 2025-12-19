@@ -435,6 +435,10 @@ fun ElevatedAssistChip(
  * Example of a FilterChip with both a leading icon and a trailing icon:
  *
  * @sample androidx.compose.material3.samples.FilterChipWithTrailingIconSample
+ *
+ * Example of a FilterChip with custom horizontal spacing:
+ *
+ * @sample androidx.compose.material3.samples.FilterChipWithCustomSpacingSample
  * @param selected whether this chip is selected or not
  * @param onClick called when this chip is clicked
  * @param label text label for this chip

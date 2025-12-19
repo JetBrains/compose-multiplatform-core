@@ -141,7 +141,7 @@ internal class LookAtUserNode(var enabled: Boolean, var up: Vector3) :
         if (
             enabled &&
                 headPoseJob?.isActive != true &&
-                session.config.headTracking != Config.HeadTrackingMode.DISABLED
+                session.config.deviceTracking != Config.DeviceTrackingMode.DISABLED
         ) {
             headPoseJob =
                 coroutineScope.launch {

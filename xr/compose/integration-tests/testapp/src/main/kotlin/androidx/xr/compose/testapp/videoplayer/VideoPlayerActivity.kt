@@ -129,7 +129,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
         session = (Session.create(this) as SessionCreateSuccess).session
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
         arDevice = ArDevice.getInstance(session)
 
         checkExternalStoragePermission()

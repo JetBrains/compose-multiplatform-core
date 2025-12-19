@@ -83,9 +83,9 @@ import androidx.xr.compose.subspace.SpatialExternalSurface
 import androidx.xr.compose.subspace.SpatialExternalSurface180Hemisphere
 import androidx.xr.compose.subspace.SpatialExternalSurface360Sphere
 import androidx.xr.compose.subspace.SpatialExternalSurfaceDefaults
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.SpatialSpacer
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SurfaceProtection
 import androidx.xr.compose.subspace.layout.InteractionPolicy
@@ -168,7 +168,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         val file = File(defaultVideoUri)
@@ -669,7 +669,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     }
                 }
 
-                SpatialLayoutSpacer(SubspaceModifier.height(20.dp))
+                SpatialSpacer(SubspaceModifier.height(20.dp))
 
                 if (videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_PANEL) {
                     VideoInSpatialPanel(isAudioSpatialized = isAudioSpatialized)
@@ -683,7 +683,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         useMainPanelOverlay,
                     )
                 } else {
-                    SpatialLayoutSpacer(SubspaceModifier.height(600.dp))
+                    SpatialSpacer(SubspaceModifier.height(600.dp))
                 }
             }
         }

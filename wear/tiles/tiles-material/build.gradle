@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.experimental.built-in-kotlin")
     id("com.android.library")
-    id("com.google.protobuf")
 }
 
 dependencies {

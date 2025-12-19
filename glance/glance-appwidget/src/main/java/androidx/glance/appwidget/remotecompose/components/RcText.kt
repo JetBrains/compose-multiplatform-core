@@ -103,9 +103,7 @@ internal class RcText(
                 colorProvider = colorProvider,
                 fontSizePx = fontSizePx,
                 fontStyle = style?.fontStyle?.style ?: defaultFontStyle, // fontStyle
-                fontWeight =
-                    style?.fontWeight?.value?.toFloat()
-                        ?: defaultFontWeight.toFloat(), // fontWeight
+                fontWeight = style?.fontWeight?.value?.toFloat() ?: defaultFontWeight, // fontWeight
                 fontFamily = style?.fontFamily?.family, // fontFamily TODO, don't hardcode
                 maxLines = emittable.maxLines,
             )

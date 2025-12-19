@@ -277,7 +277,7 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         }
 
         return RemoteFloatExpression(constantValue = null) { creationState ->
-            floatArrayOf(*arrayForCreationState(creationState), -1f, AnimatedFloatExpression.MUL)
+            combineToFloatArray(creationState, arrayOf(this), -1f, AnimatedFloatExpression.MUL)
         }
     }
 

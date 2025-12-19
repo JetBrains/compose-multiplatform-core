@@ -18,6 +18,7 @@ package androidx.compose.remote.integration.view.demos;
 
 import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerActivity.getp;
 import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerActivity.getpc;
+import static androidx.compose.remote.integration.view.demos.examples.RcTickerKt.RcTicker;
 
 import android.app.Activity;
 
@@ -38,6 +39,7 @@ import androidx.compose.remote.integration.view.demos.examples.ExampleNumbersKt;
 import androidx.compose.remote.integration.view.demos.examples.ExampleTimerKt;
 import androidx.compose.remote.integration.view.demos.examples.FontCheckKt;
 import androidx.compose.remote.integration.view.demos.examples.HostileActor;
+import androidx.compose.remote.integration.view.demos.examples.MClockKt;
 import androidx.compose.remote.integration.view.demos.examples.PlotWaveKt;
 import androidx.compose.remote.integration.view.demos.examples.ServerSideKt;
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendarKt;
@@ -60,9 +62,14 @@ public abstract class DemosCreation {
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
                 getp("2/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
                 getp("1/Example/color", DemoColorKt::colorButtons),
-                getp("1/Color/colorList", ColorCheckKt::colorList),
+                getp("0/Color/colorTable", ColorCheckKt::colorTable),
+                getp("0/alt/clock", MClockKt::MClock),
+                getpc("0/Alt/stock", () -> {
+                    return RcTicker(activity.getApplicationContext());
+                }),
 
                 getp("0/font/base", FontCheckKt::fontList),
+                getp("1/font/colorTable", ColorCheckKt::colorTable),
                 getp("1/font/colorList", ColorCheckKt::colorList),
 
                 getp("1/Example/spreadSheet", ExampleNumbersKt::spreadSheet),

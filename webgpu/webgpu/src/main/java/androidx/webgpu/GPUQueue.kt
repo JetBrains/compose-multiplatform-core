@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,10 +94,10 @@ public class GPUQueue private constructor(public val handle: Long) : AutoCloseab
     @JvmName("writeTexture")
     @JvmOverloads
     public external fun writeTexture(
-        destination: TexelCopyTextureInfo,
+        destination: GPUTexelCopyTextureInfo,
         data: java.nio.ByteBuffer,
-        writeSize: Extent3D,
-        dataLayout: TexelCopyBufferLayout = TexelCopyBufferLayout(),
+        writeSize: GPUExtent3D,
+        dataLayout: GPUTexelCopyBufferLayout = GPUTexelCopyBufferLayout(),
     ): Unit
 
     external override fun close()

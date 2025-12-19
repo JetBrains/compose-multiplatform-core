@@ -42,7 +42,6 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
@@ -1011,7 +1010,6 @@ class TransformingLazyColumnTest {
         return state
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun testTransformingLazyColumnRotary(
         userScrollEnabled: Boolean,
         scrollTarget: Int,

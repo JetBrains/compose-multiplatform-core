@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class GPUShaderModule private constructor(public val handle: Long) : Auto
 
     /** Asynchronously requests detailed information about the shader module's compilation. */
     @Throws(WebGpuException::class)
-    public suspend fun getCompilationInfo(): CompilationInfo = suspendCancellableCoroutine {
+    public suspend fun getCompilationInfo(): GPUCompilationInfo = suspendCancellableCoroutine {
         getCompilationInfo(
             Executor(Runnable::run),
             { status, compilationInfo ->

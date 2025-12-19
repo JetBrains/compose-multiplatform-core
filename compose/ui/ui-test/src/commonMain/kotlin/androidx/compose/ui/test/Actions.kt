@@ -18,7 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.AccessibilityAction
@@ -522,12 +521,12 @@ fun SemanticsNodeInteraction.performTrackpadInput(
  * prevents the injection of events into a moving target since all events are enqueued before any of
  * them has taken effect.
  *
+ * @sample androidx.compose.ui.test.samples.keyInputClick
  * @param block A lambda with [KeyInjectionScope] as receiver that describes the gesture by sending
  *   all key press events.
  * @return The [SemanticsNodeInteraction] that is the receiver of this method
  * @see KeyInjectionScope
  */
-@ExperimentalTestApi
 fun SemanticsNodeInteraction.performKeyInput(
     block: KeyInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {
@@ -671,11 +670,25 @@ fun SemanticsNodeInteraction.performSemanticsAction(
 }
 
 /**
- * Send the specified [RotaryScrollEvent] to the focused component.
+ * Executes the rotary input specified in the given [block].
  *
- * @return true if the event was consumed. False otherwise.
+ * The [block] receives a [RotaryInjectionScope] which provides access to rotary input injection
+ * functions, such as [RotaryInjectionScope.rotateToScrollVertically] or
+ * [RotaryInjectionScope.rotateToScrollHorizontally].
+ *
+ * All events that are injected from the [block] are batched together and sent after [block] is
+ * complete. This method blocks while the events are injected. If an error occurs during execution
+ * of [block] or injection of the events, all (subsequent) events are dropped and the error is
+ * thrown here.
+ *
+ * Example of performing a scroll with three events:
+ *
+ * @sample androidx.compose.ui.test.samples.rotaryInputScroll
+ * @param block A lambda with [RotaryInjectionScope] as receiver that describes the gesture by
+ *   sending all rotary scroll events.
+ * @return The [SemanticsNodeInteraction] that is the receiver of this method
+ * @see RotaryInjectionScope
  */
-@ExperimentalTestApi
 fun SemanticsNodeInteraction.performRotaryScrollInput(
     block: RotaryInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {

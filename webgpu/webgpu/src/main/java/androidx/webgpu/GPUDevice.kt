@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
      */
     @FastNative
     @JvmName("createBindGroup")
-    public external fun createBindGroup(descriptor: BindGroupDescriptor): GPUBindGroup
+    public external fun createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup
 
     /**
      * Creates a new bind group layout.
@@ -44,18 +44,18 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @JvmName("createBindGroupLayout")
     @JvmOverloads
     public external fun createBindGroupLayout(
-        descriptor: BindGroupLayoutDescriptor = BindGroupLayoutDescriptor()
+        descriptor: GPUBindGroupLayoutDescriptor = GPUBindGroupLayoutDescriptor()
     ): GPUBindGroupLayout
 
     /**
      * Creates a new GPU buffer.
      *
      * @param descriptor The descriptor for the buffer.
-     * @return The newly created buffer.
+     * @return The newly created buffer, or {@code null} on failure.
      */
     @FastNative
     @JvmName("createBuffer")
-    public external fun createBuffer(descriptor: BufferDescriptor): GPUBuffer
+    public external fun createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer
 
     /**
      * Creates a new command encoder to record command buffers.
@@ -67,7 +67,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @JvmName("createCommandEncoder")
     @JvmOverloads
     public external fun createCommandEncoder(
-        descriptor: CommandEncoderDescriptor? = null
+        descriptor: GPUCommandEncoderDescriptor? = null
     ): GPUCommandEncoder
 
     /**
@@ -79,14 +79,14 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("createComputePipeline")
     public external fun createComputePipeline(
-        descriptor: ComputePipelineDescriptor
+        descriptor: GPUComputePipelineDescriptor
     ): GPUComputePipeline
 
     /** Creates a new compute pipeline asynchronously. */
     @FastNative
     @JvmName("createComputePipelineAsync")
     public external fun createComputePipelineAsync(
-        descriptor: ComputePipelineDescriptor,
+        descriptor: GPUComputePipelineDescriptor,
         callbackExecutor: java.util.concurrent.Executor,
         callback: CreateComputePipelineAsyncCallback,
     ): Unit
@@ -98,7 +98,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
      */
     @Throws(WebGpuException::class)
     public suspend fun createComputePipelineAndAwait(
-        descriptor: ComputePipelineDescriptor
+        descriptor: GPUComputePipelineDescriptor
     ): GPUComputePipeline = suspendCancellableCoroutine {
         createComputePipelineAsync(
             descriptor,
@@ -128,7 +128,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("createPipelineLayout")
     public external fun createPipelineLayout(
-        descriptor: PipelineLayoutDescriptor
+        descriptor: GPUPipelineLayoutDescriptor
     ): GPUPipelineLayout
 
     /**
@@ -139,7 +139,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
      */
     @FastNative
     @JvmName("createQuerySet")
-    public external fun createQuerySet(descriptor: QuerySetDescriptor): GPUQuerySet
+    public external fun createQuerySet(descriptor: GPUQuerySetDescriptor): GPUQuerySet
 
     /**
      * Creates a new render bundle encoder to record render bundles.
@@ -150,7 +150,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("createRenderBundleEncoder")
     public external fun createRenderBundleEncoder(
-        descriptor: RenderBundleEncoderDescriptor
+        descriptor: GPURenderBundleEncoderDescriptor
     ): GPURenderBundleEncoder
 
     /**
@@ -162,14 +162,14 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("createRenderPipeline")
     public external fun createRenderPipeline(
-        descriptor: RenderPipelineDescriptor
+        descriptor: GPURenderPipelineDescriptor
     ): GPURenderPipeline
 
     /** Creates a new render pipeline asynchronously. */
     @FastNative
     @JvmName("createRenderPipelineAsync")
     public external fun createRenderPipelineAsync(
-        descriptor: RenderPipelineDescriptor,
+        descriptor: GPURenderPipelineDescriptor,
         callbackExecutor: java.util.concurrent.Executor,
         callback: CreateRenderPipelineAsyncCallback,
     ): Unit
@@ -181,7 +181,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
      */
     @Throws(WebGpuException::class)
     public suspend fun createRenderPipelineAndAwait(
-        descriptor: RenderPipelineDescriptor
+        descriptor: GPURenderPipelineDescriptor
     ): GPURenderPipeline = suspendCancellableCoroutine {
         createRenderPipelineAsync(
             descriptor,
@@ -211,7 +211,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("createSampler")
     @JvmOverloads
-    public external fun createSampler(descriptor: SamplerDescriptor? = null): GPUSampler
+    public external fun createSampler(descriptor: GPUSamplerDescriptor? = null): GPUSampler
 
     /**
      * Creates a new shader module.
@@ -223,7 +223,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @JvmName("createShaderModule")
     @JvmOverloads
     public external fun createShaderModule(
-        descriptor: ShaderModuleDescriptor = ShaderModuleDescriptor()
+        descriptor: GPUShaderModuleDescriptor = GPUShaderModuleDescriptor()
     ): GPUShaderModule
 
     /**
@@ -234,7 +234,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
      */
     @FastNative
     @JvmName("createTexture")
-    public external fun createTexture(descriptor: TextureDescriptor): GPUTexture
+    public external fun createTexture(descriptor: GPUTextureDescriptor): GPUTexture
 
     /** Destroys the device and frees its resources. The device becomes lost. */
     @FastNative @JvmName("destroy") public external fun destroy(): Unit
@@ -247,10 +247,10 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("getAdapterInfo")
     @Throws(WebGpuException::class)
-    public external fun getAdapterInfo(): AdapterInfo
+    public external fun getAdapterInfo(): GPUAdapterInfo
 
     /** Gets the set of features supported by the device. */
-    @FastNative @JvmName("getFeatures") public external fun getFeatures(): SupportedFeatures
+    @FastNative @JvmName("getFeatures") public external fun getFeatures(): GPUSupportedFeatures
 
     /**
      * Gets the limits supported by the device.
@@ -260,7 +260,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
     @FastNative
     @JvmName("getLimits")
     @Throws(WebGpuException::class)
-    public external fun getLimits(): Limits
+    public external fun getLimits(): GPULimits
 
     /**
      * Gets the queue object for submitting commands to the GPU.
@@ -302,7 +302,7 @@ public class GPUDevice private constructor(public val handle: Long) : AutoClosea
                 } else if (status != Status.Success) {
                     it.resumeWithException(WebGpuException(status = status, reason = message))
                 } else if (type != ErrorType.NoError) {
-                    it.resumeWithException(getException(type, message))
+                    it.resumeWithException(WebGpuRuntimeException.create(type, message))
                 } else {
                     it.resume(type)
                 }

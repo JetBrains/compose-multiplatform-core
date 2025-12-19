@@ -174,24 +174,45 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         }
     }
 
-    // TODO:: b/364316364 should assert on a per call basis
     internal class CachedLocalSilence(scope: CallExtensionScope) {
-        val emissionFlow = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 5)
+        private val isLocallySilenced =
+            MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 5)
+        private val canUserUpdateSilence =
+            MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 5)
 
         val extension =
-            scope.addLocalCallSilenceExtension(onIsLocallySilencedUpdated = emissionFlow::emit)
+            scope.addLocalCallSilenceExtension(
+                onIsLocallySilencedUpdated = isLocallySilenced::emit,
+                onCanUserUpdateSilence = canUserUpdateSilence::emit,
+            )
 
         suspend fun waitForLocalCallSilenceState(expected: Boolean) {
             val result =
                 withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
                     Log.d("waitForLocalCallSilenceState", ": WAITING FOR[$expected]")
-                    emissionFlow.first {
+                    isLocallySilenced.first {
                         Log.d("waitForLocalCallSilenceState", ": COLLECTED[$it]")
                         it == expected
                     }
                 }
             assertEquals(
                 "Never received local call silence state update for [$expected]",
+                expected,
+                result,
+            )
+        }
+
+        suspend fun waitForCanUserUpdateSilence(expected: Boolean) {
+            val result =
+                withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
+                    Log.d("waitForCanUserUpdateSilence", ": WAITING FOR[$expected]")
+                    canUserUpdateSilence.first {
+                        Log.d("waitForCanUserUpdateSilence", ": COLLECTED[$it]")
+                        it == expected
+                    }
+                }
+            assertEquals(
+                "Never received 'can user update silence' update for [$expected]",
                 expected,
                 result,
             )
@@ -610,6 +631,106 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
     }
 
     /**
+     * Verifies the end-to-end flow where the user starts with the ability to toggle silence
+     * (default state), and the VoIP app subsequently revokes and then restores this permission.
+     * * This simulates a scenario where a user joins a meeting normally, is silenced by a moderator
+     *   (Host Mute), and is then allowed to speak again.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testCanUserUpdateSilence_StartEnabled(): Unit = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+
+            // 1. Create the call with Local Silence capabilities
+            createAndVerifyVoipCall(
+                voipAppControl,
+                callback,
+                listOf(getLocalSilenceCapability(setOf())),
+                parameters.direction,
+                initIsLocallySilenced = true,
+                initCanUserUpdateSilence = true,
+            )
+
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            var hasConnected = false
+
+            with(ics) {
+                connectExtensions(call) {
+                    val localSilenceExtension = CachedLocalSilence(this)
+                    onConnected {
+                        hasConnected = true
+                        localSilenceExtension.waitForCanUserUpdateSilence(true)
+
+                        // 2. Test: Disable the user's ability to mute (e.g. Server Mute applied)
+                        voipAppControl.updateCanUserToggleSilence(false)
+                        localSilenceExtension.waitForCanUserUpdateSilence(false)
+
+                        // 3. Test: Re-enable the user's ability to toggle the microphone
+                        voipAppControl.updateCanUserToggleSilence(true)
+                        localSilenceExtension.waitForCanUserUpdateSilence(true)
+
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never received", hasConnected)
+        }
+    }
+
+    /**
+     * Verifies the end-to-end flow where the user starts restricted (unable to toggle silence), and
+     * the VoIP app subsequently grants and then revokes this permission.
+     * * This simulates a scenario where a user joins as a "Passive Viewer" or in "Companion Mode",
+     *   and is later promoted to an active speaker.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testCanUserUpdateSilence_StartDisabled(): Unit = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+
+            // 1. Create the call with Local Silence capabilities
+            createAndVerifyVoipCall(
+                voipAppControl,
+                callback,
+                listOf(getLocalSilenceCapability(setOf())),
+                parameters.direction,
+                initIsLocallySilenced = true,
+                initCanUserUpdateSilence = false,
+            )
+
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            var hasConnected = false
+
+            with(ics) {
+                connectExtensions(call) {
+                    val localSilenceExtension = CachedLocalSilence(this)
+                    onConnected {
+                        hasConnected = true
+                        localSilenceExtension.waitForCanUserUpdateSilence(false)
+
+                        // 2. Test: Enable the user's ability to mute (e.g. Server Mute applied)
+                        voipAppControl.updateCanUserToggleSilence(true)
+                        localSilenceExtension.waitForCanUserUpdateSilence(true)
+
+                        // 3. Test: Re-disable the user's ability to toggle the microphone
+                        voipAppControl.updateCanUserToggleSilence(false)
+                        localSilenceExtension.waitForCanUserUpdateSilence(false)
+
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never received", hasConnected)
+        }
+    }
+
+    /**
      * Tests the LocalCallSilence extension behavior when a call is initiated in a "locally
      * silenced" (muted) state and verifies the InCallService (ICS) extension correctly receives the
      * initial `true` (silenced) state immediately upon connection.
@@ -722,14 +843,16 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         requestId: Int,
         capabilities: List<Capability>,
         direction: Int,
-        initLcsValue: Boolean = false,
+        isLocallySilenced: Boolean = false,
+        canUserUpdateSilence: Boolean = true,
     ) {
         // add a call to verify capability exchange IS made with ICS
         voipAppControl.addCall(
             requestId,
             capabilities,
             direction == CallAttributesCompat.DIRECTION_OUTGOING,
-            initLcsValue,
+            isLocallySilenced,
+            canUserUpdateSilence,
         )
     }
 
@@ -742,10 +865,18 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         callback: TestCallCallbackListener,
         capabilities: List<Capability>,
         direction: Int,
-        initLcsValue: Boolean = false,
+        initIsLocallySilenced: Boolean = false,
+        initCanUserUpdateSilence: Boolean = true,
     ): String {
         val requestId = mRequestIdGenerator.getAndIncrement()
-        createVoipCallAsync(voipAppControl, requestId, capabilities, direction, initLcsValue)
+        createVoipCallAsync(
+            voipAppControl,
+            requestId,
+            capabilities,
+            direction,
+            initIsLocallySilenced,
+            initCanUserUpdateSilence,
+        )
         val callId = callback.waitForCallAdded(requestId)
         assertTrue("call could not be created", !callId.isNullOrEmpty())
         return callId!!

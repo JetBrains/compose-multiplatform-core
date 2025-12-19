@@ -58,7 +58,7 @@ class MainPanelEntityTest {
                 runtimes =
                     listOf(fakePerceptionRuntimeFactory.createRuntime(activity), fakeSceneRuntime),
             )
-        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
     }
 
     @Test

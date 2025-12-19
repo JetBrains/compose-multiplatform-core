@@ -110,7 +110,7 @@ class GeospatialActivity : ComponentActivity() {
             SessionLifecycleHelper(
                 this,
                 Config(
-                    headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
                     planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                 ),
                 onSessionAvailable = { session ->

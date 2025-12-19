@@ -143,7 +143,7 @@ class EntityTest {
         session.configure(
             Config(
                 planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
             )
         )
         entityManager = session.scene.entityManager

@@ -22,7 +22,7 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
@@ -83,7 +83,7 @@ class GravityAlignedPoseTest : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session!!.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
 
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {

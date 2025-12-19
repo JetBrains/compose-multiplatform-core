@@ -67,7 +67,7 @@ import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.AnchorPersistenceMode
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
@@ -108,7 +108,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 this,
                 Config(
                     anchorPersistence = AnchorPersistenceMode.LOCAL,
-                    headTracking = HeadTrackingMode.LAST_KNOWN,
+                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
                 ),
                 onSessionAvailable = { session ->
                     this.session = session

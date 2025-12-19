@@ -43,7 +43,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -1012,7 +1011,6 @@ public class ScalingLazyColumnTest {
         testScalingLazyColumnRotary(false, 1)
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun testScalingLazyColumnRotary(
         userScrollEnabled: Boolean,
         scrollTarget: Int,

@@ -211,6 +211,26 @@ class RemoteFloatTest {
     }
 
     @Test
+    fun unaryMinus_complexExpression() {
+        // Create a complex float expression
+        var complexFloat = RemoteFloat(0f)
+        for (i in 1..50) {
+            complexFloat += RemoteFloat(i.toFloat())
+        }
+
+        val result = -complexFloat
+
+        // Assertions
+        val finalArray = result.arrayForCreationState(creationState)
+        assertThat(finalArray.size < 20).isTrue()
+
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+        val expected = -((50 * 51) / 2f)
+        assertThat(context.getFloat(resultId)).isEqualTo(expected)
+    }
+
+    @Test
     fun ceil() {
         val a = RemoteFloat(10.4f)
         val a2 = ceil(a)

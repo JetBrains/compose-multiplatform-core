@@ -62,6 +62,8 @@ EXIT_VALUE=0
 if ! impl/check_translations.sh; then
   echo check_translations failed
   EXIT_VALUE=1
+elif ! impl/verify-gradle-signature.sh; then
+  EXIT_VALUE=1
 else
     # Run Gradle
     if impl/build.sh $DIAGNOSE_ARG buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms generateJavaKzip generateKotlinKzip \

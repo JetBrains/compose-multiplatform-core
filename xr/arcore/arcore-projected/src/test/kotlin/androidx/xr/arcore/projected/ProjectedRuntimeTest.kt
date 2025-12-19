@@ -63,7 +63,6 @@ class ProjectedRuntimeTest {
                 Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                 Config.HandTrackingMode.BOTH,
                 Config.DeviceTrackingMode.LAST_KNOWN,
-                Config.HeadTrackingMode.LAST_KNOWN,
                 Config.DepthEstimationMode.RAW_ONLY,
                 Config.DepthEstimationMode.SMOOTH_ONLY,
                 Config.DepthEstimationMode.SMOOTH_AND_RAW,

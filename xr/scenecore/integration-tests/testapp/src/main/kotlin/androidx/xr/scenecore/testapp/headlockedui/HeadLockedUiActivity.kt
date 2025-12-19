@@ -84,7 +84,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
         session!!.configure(
             Config(
                 planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
             )
         )
         device = ArDevice.getInstance(session!!)

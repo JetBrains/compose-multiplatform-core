@@ -28,6 +28,8 @@ import androidx.annotation.RestrictTo
  *   planes. See [Config.PlaneTrackingMode].
  * @property handTracking Feature that allows tracking of the user's hands and hand joints. See
  *   [Config.HandTrackingMode].
+ * @property deviceTracking Feature that allows tracking of the AR device. See
+ *   [Config.DeviceTrackingMode].
  * @property depthEstimation Feature that allows more accurate information about scene depth and
  *   meshes. See [Config.DepthEstimationMode].
  * @property anchorPersistence Feature that allows anchors to be persisted through sessions. See
@@ -42,7 +44,6 @@ constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
     public val handTracking: HandTrackingMode = HandTrackingMode.DISABLED,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val deviceTracking: DeviceTrackingMode = DeviceTrackingMode.DISABLED,
     public val depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
     public val anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
@@ -65,8 +66,8 @@ constructor(
      *   planes. See [Config.PlaneTrackingMode].
      * @param handTracking Feature that allows tracking of the user's hands and hand joints. See
      *   [Config.HandTrackingMode].
-     * @param headTracking Feature that allows tracking of the user's head position. See
-     *   [Config.HeadTrackingMode].
+     * @param deviceTracking Feature that allows tracking of the AR device. See
+     *   [Config.DeviceTrackingMode].
      * @param depthEstimation Feature that allows more accurate information about scene depth and
      *   meshes. See [Config.DepthEstimationMode].
      * @param anchorPersistence Feature that allows anchors to be persisted through sessions. See
@@ -80,7 +81,7 @@ constructor(
     public constructor(
         planeTracking: PlaneTrackingMode = PlaneTrackingMode.DISABLED,
         handTracking: HandTrackingMode = HandTrackingMode.DISABLED,
-        headTracking: HeadTrackingMode = HeadTrackingMode.DISABLED,
+        deviceTracking: DeviceTrackingMode = DeviceTrackingMode.DISABLED,
         depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
         anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
         faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
@@ -89,16 +90,13 @@ constructor(
         planeTracking,
         /* augmentedObjectCategories= */ listOf(),
         handTracking,
-        headTracking.toDeviceTrackingMode(),
+        deviceTracking,
         depthEstimation,
         anchorPersistence,
         faceTracking,
         geospatial,
         eyeTracking = EyeTrackingMode.DISABLED,
     )
-
-    /** Feature that allows tracking of the user's head position. See [Config.HeadTrackingMode]. */
-    public val headTracking: HeadTrackingMode = deviceTracking.toHeadTrackingMode()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -136,7 +134,7 @@ constructor(
     public fun copy(
         planeTracking: PlaneTrackingMode = this.planeTracking,
         handTracking: HandTrackingMode = this.handTracking,
-        headTracking: HeadTrackingMode = this.headTracking,
+        deviceTracking: DeviceTrackingMode = this.deviceTracking,
         depthEstimation: DepthEstimationMode = this.depthEstimation,
         anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
     ): Config {
@@ -144,7 +142,7 @@ constructor(
             planeTracking = planeTracking,
             augmentedObjectCategories = this.augmentedObjectCategories,
             handTracking = handTracking,
-            deviceTracking = headTracking.toDeviceTrackingMode(),
+            deviceTracking = deviceTracking,
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
             faceTracking = this.faceTracking,
@@ -274,45 +272,8 @@ constructor(
             @JvmField public val LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(1)
         }
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        public fun toHeadTrackingMode(): HeadTrackingMode {
-            return if (mode == 0) HeadTrackingMode.DISABLED else HeadTrackingMode.LAST_KNOWN
-        }
-
         override fun toString(): String {
             return "DeviceTracking_" + if (mode == 0) "DISABLED" else "LAST_KNOWN"
-        }
-    }
-
-    /**
-     * Feature that allows tracking of the user's head pose.
-     *
-     * Setting this feature to [HeadTrackingMode.LAST_KNOWN] requires that the `HEAD_TRACKING`
-     * Android permission is granted by the calling application.
-     */
-    @SuppressWarnings("HiddenSuperclass")
-    public class HeadTrackingMode
-    private constructor(
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) : ConfigMode {
-        public companion object {
-            /** The head pose is not updated. It remains at the origin (an identity pose). */
-            @JvmField public val DISABLED: HeadTrackingMode = HeadTrackingMode(0)
-            /**
-             * Head pose will be tracked and the last known pose from the system at the time of
-             * runtime update will be provided. Note that there is generally a delay between the
-             * actual head pose and the pose provided by the system by the time of the update.
-             */
-            @JvmField public val LAST_KNOWN: HeadTrackingMode = HeadTrackingMode(1)
-        }
-
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        public fun toDeviceTrackingMode(): DeviceTrackingMode {
-            return if (mode == 0) DeviceTrackingMode.DISABLED else DeviceTrackingMode.LAST_KNOWN
-        }
-
-        override fun toString(): String {
-            return "HeadTracking_" + if (mode == 0) "DISABLED" else "LAST_KNOWN"
         }
     }
 

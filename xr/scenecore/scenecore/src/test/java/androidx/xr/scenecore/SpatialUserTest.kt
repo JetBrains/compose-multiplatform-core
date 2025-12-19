@@ -19,7 +19,7 @@ package androidx.xr.scenecore
 import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -64,7 +64,7 @@ class SpatialUserTest {
                 runtimes =
                     listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
-        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
         spatialUser =
             SpatialUser.create(session.perceptionRuntime.lifecycleManager, mockSceneRuntime)
     }

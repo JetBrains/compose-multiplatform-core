@@ -160,7 +160,7 @@ package androidx.core.telecom.extensions {
 
   @SuppressCompatibility @androidx.core.telecom.util.ExperimentalAppActions public interface CallExtensionScope {
     method public androidx.core.telecom.extensions.CallIconExtensionRemote addCallIconSupport(kotlin.jvm.functions.Function2<? super android.net.Uri,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onCallIconChanged);
-    method public androidx.core.telecom.extensions.LocalCallSilenceExtensionRemote addLocalCallSilenceExtension(kotlin.jvm.functions.Function2<? super java.lang.Boolean,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onIsLocallySilencedUpdated);
+    method public androidx.core.telecom.extensions.LocalCallSilenceExtensionRemote addLocalCallSilenceExtension(kotlin.jvm.functions.Function2<? super java.lang.Boolean,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onIsLocallySilencedUpdated, kotlin.jvm.functions.Function2<? super java.lang.Boolean,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onCanUserUpdateSilence);
     method public androidx.core.telecom.extensions.MeetingSummaryRemote addMeetingSummaryExtension(kotlin.jvm.functions.Function2<? super java.lang.CharSequence?,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onCurrentSpeakerChanged, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onParticipantCountChanged);
     method public androidx.core.telecom.extensions.ParticipantExtensionRemote addParticipantExtension(kotlin.jvm.functions.Function2<? super androidx.core.telecom.extensions.Participant?,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onActiveParticipantChanged, kotlin.jvm.functions.Function2<? super java.util.Set<? extends androidx.core.telecom.extensions.Participant>,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onParticipantsUpdated);
     method public void onConnected(kotlin.jvm.functions.Function2<? super android.telecom.Call,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
@@ -185,7 +185,8 @@ package androidx.core.telecom.extensions {
 
   @SuppressCompatibility @androidx.core.telecom.util.ExperimentalAppActions public interface ExtensionInitializationScope {
     method public androidx.core.telecom.extensions.CallIconExtension addCallIconExtension(android.net.Uri initialCallIconUri);
-    method public androidx.core.telecom.extensions.LocalCallSilenceExtension addLocalCallSilenceExtension(boolean initialCallSilenceState, kotlin.jvm.functions.Function2<? super java.lang.Boolean,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onLocalSilenceUpdate);
+    method public androidx.core.telecom.extensions.LocalCallSilenceExtension addLocalCallSilenceExtension(boolean initialCallSilenceState, optional boolean initialCanUserUpdateSilenceState, kotlin.jvm.functions.Function2<? super java.lang.Boolean,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onLocalSilenceUpdate);
+    method @BytecodeOnly public static androidx.core.telecom.extensions.LocalCallSilenceExtension! addLocalCallSilenceExtension$default(androidx.core.telecom.extensions.ExtensionInitializationScope!, boolean, boolean, kotlin.jvm.functions.Function2!, int, Object!);
     method public androidx.core.telecom.extensions.ParticipantExtension addParticipantExtension(optional java.util.List<androidx.core.telecom.extensions.Participant> initialParticipants, optional androidx.core.telecom.extensions.Participant? initialActiveParticipant);
     method @BytecodeOnly public static androidx.core.telecom.extensions.ParticipantExtension! addParticipantExtension$default(androidx.core.telecom.extensions.ExtensionInitializationScope!, java.util.List!, androidx.core.telecom.extensions.Participant!, int, Object!);
     method public void onCall(kotlin.jvm.functions.Function2<? super androidx.core.telecom.CallControlScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onCall);
@@ -199,6 +200,7 @@ package androidx.core.telecom.extensions {
   }
 
   @SuppressCompatibility @androidx.core.telecom.util.ExperimentalAppActions public interface LocalCallSilenceExtension {
+    method public suspend Object? updateCanUserUpdateSilence(boolean canUserUpdateSilence, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? updateIsLocallySilenced(boolean isSilenced, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 

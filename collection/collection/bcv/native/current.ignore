@@ -1,0 +1,65 @@
+// Baseline format: 1.0
+[iosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[iosArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[iosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosSimulatorArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[iosSimulatorArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[iosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[iosX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[iosX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[linuxArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[linuxArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[linuxArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[linuxArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[linuxX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[linuxX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[linuxX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[linuxX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[macosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[macosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[macosArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[macosArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[macosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[macosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[macosX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[macosX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[mingwX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[mingwX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[mingwX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[mingwX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosSimulatorArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosSimulatorArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[tvosX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[tvosX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosArm32]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosArm32]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosArm32]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosArm32]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosDeviceArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosDeviceArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosDeviceArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosDeviceArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosSimulatorArm64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosSimulatorArm64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosSimulatorArm64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(androidx.collection/ScatterMap<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosX64]: Added declaration <A : kotlin/Any?, B : kotlin/Any?>(kotlin.collections/Map<#A, #B>).androidx.collection/toScatterMap() to androidx.collection:collection
+[watchosX64]: Added declaration <A : kotlin/Any?>(androidx.collection/ScatterSet<#A>).androidx.collection/toScatterSet() to androidx.collection:collection
+[watchosX64]: Added declaration <A : kotlin/Any?>(kotlin.collections/Collection<#A>).androidx.collection/toScatterSet() to androidx.collection:collection

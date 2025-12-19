@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,13 @@ public class GPUInstance private constructor(public val handle: Long) : AutoClos
     @JvmName("createSurface")
     @JvmOverloads
     public external fun createSurface(
-        descriptor: SurfaceDescriptor = SurfaceDescriptor()
+        descriptor: GPUSurfaceDescriptor = GPUSurfaceDescriptor()
     ): GPUSurface
 
     /** Gets the set of WGSL language features supported by the instance. */
     @FastNative
     @JvmName("getWGSLLanguageFeatures")
-    public external fun getWGSLLanguageFeatures(): SupportedWGSLLanguageFeatures
+    public external fun getWGSLLanguageFeatures(): GPUSupportedWGSLLanguageFeatures
 
     /**
      * Checks if a specific WGSL language feature is supported.
@@ -61,7 +61,7 @@ public class GPUInstance private constructor(public val handle: Long) : AutoClos
     @JvmOverloads
     public external fun requestAdapter(
         callbackExecutor: java.util.concurrent.Executor,
-        options: RequestAdapterOptions? = null,
+        options: GPURequestAdapterOptions? = null,
         callback: RequestAdapterCallback,
     ): Unit
 
@@ -71,7 +71,7 @@ public class GPUInstance private constructor(public val handle: Long) : AutoClos
      * @param options Options for selecting the adapter.
      */
     @Throws(WebGpuException::class)
-    public suspend fun requestAdapter(options: RequestAdapterOptions? = null): GPUAdapter =
+    public suspend fun requestAdapter(options: GPURequestAdapterOptions? = null): GPUAdapter =
         suspendCancellableCoroutine {
             requestAdapter(
                 Executor(Runnable::run),

@@ -82,8 +82,6 @@ internal constructor(
                 Config.HandTrackingMode.BOTH,
                 Config.DeviceTrackingMode.DISABLED,
                 Config.DeviceTrackingMode.LAST_KNOWN,
-                Config.HeadTrackingMode.DISABLED,
-                Config.HeadTrackingMode.LAST_KNOWN,
                 Config.DepthEstimationMode.DISABLED,
                 Config.DepthEstimationMode.RAW_ONLY,
                 Config.DepthEstimationMode.SMOOTH_ONLY,

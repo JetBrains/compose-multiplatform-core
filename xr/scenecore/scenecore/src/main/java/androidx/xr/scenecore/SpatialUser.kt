@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.scenecore.runtime.SceneRuntime
 
@@ -57,12 +57,12 @@ internal constructor(
      * Returns the Head for the SpatialUser, or null if it is not yet available.
      *
      * @throws [IllegalStateException] if [androidx.xr.runtime.Session.config] is set to
-     *   [HeadTrackingMode.DISABLED].
+     *   [DeviceTrackingMode.DISABLED].
      */
     public var head: Head? = null
         get() {
-            check(lifecycleManager.config.headTracking != HeadTrackingMode.DISABLED) {
-                "Config.HeadTrackingMode is set to Disabled."
+            check(lifecycleManager.config.deviceTracking != DeviceTrackingMode.DISABLED) {
+                "Config.DeviceTrackingMode is set to Disabled."
             }
             if (field == null) {
                 field = Head.create(sceneRuntime)
@@ -77,12 +77,12 @@ internal constructor(
      * available.
      *
      * @throws [IllegalStateException] if [androidx.xr.runtime.Session.config] is set to
-     *   [HeadTrackingMode.DISABLED].
+     *   [DeviceTrackingMode.DISABLED].
      */
     public var cameraViews: Map<CameraView.CameraType, CameraView> = emptyMap()
         get() {
-            check(lifecycleManager.config.headTracking != HeadTrackingMode.DISABLED) {
-                "Config.HeadTrackingMode is set to Disabled."
+            check(lifecycleManager.config.deviceTracking != DeviceTrackingMode.DISABLED) {
+                "Config.DeviceTrackingMode is set to Disabled."
             }
             if (field.isEmpty()) {
                 if (leftCamera != null && rightCamera != null) {

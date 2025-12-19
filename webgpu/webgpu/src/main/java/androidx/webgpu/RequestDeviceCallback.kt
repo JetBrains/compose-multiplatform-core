@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ public fun interface RequestDeviceCallback {
      * A callback function invoked upon the completion of requesting a GPU device from an adapter.
      *
      * @param status The status of the device request.
-     * @param device The created device object on success.
+     * @param device The created device object on success, otherwise {@code null}.
      * @param message A human-readable message providing context on the status.
      */
     @Suppress("INAPPLICABLE_JVM_NAME")

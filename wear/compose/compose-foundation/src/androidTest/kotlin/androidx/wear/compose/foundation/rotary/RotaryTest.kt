@@ -47,7 +47,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.RotaryInjectionScope
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -71,7 +70,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
 
 // TODO(b/278705775): Add more tests to check Rotary Snap behavior
-@OptIn(ExperimentalTestApi::class)
 class RotaryScrollTest {
     @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 

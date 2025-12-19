@@ -163,7 +163,7 @@ class OpenXrManagerTest {
         underTest.configure(
             Config(
                 planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.DISABLED,
+                deviceTracking = Config.DeviceTrackingMode.DISABLED,
                 depthEstimation = Config.DepthEstimationMode.DISABLED,
                 anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
             )
@@ -185,7 +185,7 @@ class OpenXrManagerTest {
                 Config(
                     Config.PlaneTrackingMode.DISABLED,
                     Config.HandTrackingMode.DISABLED,
-                    Config.HeadTrackingMode.DISABLED,
+                    Config.DeviceTrackingMode.DISABLED,
                     Config.DepthEstimationMode.SMOOTH_AND_RAW,
                     Config.AnchorPersistenceMode.DISABLED,
                 )
@@ -202,7 +202,7 @@ class OpenXrManagerTest {
                 Config(
                     Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                     Config.HandTrackingMode.DISABLED,
-                    Config.HeadTrackingMode.DISABLED,
+                    Config.DeviceTrackingMode.DISABLED,
                     Config.DepthEstimationMode.DISABLED,
                     Config.AnchorPersistenceMode.DISABLED,
                 )

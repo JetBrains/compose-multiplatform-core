@@ -26,7 +26,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -56,7 +56,7 @@ class HitTestActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        session!!.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
         device = ArDevice.getInstance(session!!)
 
         // toolbar

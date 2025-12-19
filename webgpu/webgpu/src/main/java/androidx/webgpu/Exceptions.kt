@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:JvmName("ExceptionsKt")
+@file:JvmName("Exceptions")
 
 package androidx.webgpu
 
@@ -40,7 +39,25 @@ public class DeviceLostException(
 ) : Exception(message)
 
 /** Base class for exceptions that can happen at runtime. */
-public open class WebGpuRuntimeException(message: String) : Exception(message)
+public open class WebGpuRuntimeException(message: String) : Exception(message) {
+    public companion object {
+        /**
+         * Create the exception for the appropriate error type.
+         *
+         * @param type The [ErrorType].
+         * @param message A human-readable message describing the error.
+         */
+        @JvmStatic
+        public fun create(@ErrorType type: Int, message: String): WebGpuRuntimeException =
+            when (type) {
+                ErrorType.Validation -> ValidationException(message)
+                ErrorType.OutOfMemory -> OutOfMemoryException(message)
+                ErrorType.Internal -> InternalException(message)
+                ErrorType.Unknown -> UnknownException(message)
+                else -> UnknownException(message)
+            }
+    }
+}
 
 /**
  * Exception for Validation type errors.
@@ -69,21 +86,6 @@ public class InternalException(message: String) : WebGpuRuntimeException(message
  * @param message A message explaining the error.
  */
 public class UnknownException(message: String) : WebGpuRuntimeException(message)
-
-/**
- * Create the exception for the appropriate error type.
- *
- * @param type The [ErrorType].
- * @param message A human-readable message describing the device loss.
- */
-public fun getException(@ErrorType type: Int, message: String): WebGpuRuntimeException =
-    when (type) {
-        ErrorType.Validation -> ValidationException(message)
-        ErrorType.OutOfMemory -> OutOfMemoryException(message)
-        ErrorType.Internal -> InternalException(message)
-        ErrorType.Unknown -> UnknownException(message)
-        else -> UnknownException(message)
-    }
 
 public class CompilationInfoRequestException(
     public val reason: String = "",

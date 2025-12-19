@@ -215,7 +215,7 @@ public class Painter {
             float endY,
             int @NonNull [] colors,
             int mask,
-            float @NonNull [] positions,
+            float @Nullable [] positions,
             Shader.@NonNull TileMode tile) {
         mPaint.setLinearGradient(
                 colors, mask, positions, startX, startY, endX, endY, tile.ordinal());

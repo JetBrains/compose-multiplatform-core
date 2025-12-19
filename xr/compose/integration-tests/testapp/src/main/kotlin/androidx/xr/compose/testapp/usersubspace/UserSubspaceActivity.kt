@@ -90,7 +90,7 @@ class UserSubspaceActivity : ComponentActivity() {
     private fun MainContent() {
         val session = checkNotNull(LocalSession.current) { "session must be initialized" }
         session.configure(
-            config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN)
+            config = session.config.copy(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
         )
 
         val todoItems = remember {

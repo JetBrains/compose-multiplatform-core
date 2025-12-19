@@ -141,7 +141,7 @@ private constructor(
                     targetHeight = targetDecodeHeight,
                 )
             if (bitmap != null) {
-                bitmapId = this.addBitmap(bitmap as Object)
+                bitmapId = this.addBitmap(bitmap)
             } else {
                 bitmapId = null
             }

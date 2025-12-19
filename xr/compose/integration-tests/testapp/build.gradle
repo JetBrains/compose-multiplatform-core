@@ -70,7 +70,7 @@ dependencies {
     implementation(libs.kotlinSerializationJson)
     implementation(libs.kotlinCoroutinesGuava)
 
-    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
+    compileOnly(libs.androidExtensionsXr)
 }
 
 // Making this APK available via Android Build so the QA team can

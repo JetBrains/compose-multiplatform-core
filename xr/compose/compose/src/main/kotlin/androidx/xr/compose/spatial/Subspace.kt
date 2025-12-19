@@ -495,7 +495,7 @@ public fun UserSubspace(
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
 
-    if (session.config.headTracking == Config.HeadTrackingMode.DISABLED) {
+    if (session.config.deviceTracking == Config.DeviceTrackingMode.DISABLED) {
         return
     }
 

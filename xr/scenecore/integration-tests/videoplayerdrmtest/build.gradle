@@ -83,7 +83,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.0")
     implementation("androidx.savedstate:savedstate:1.2.1")
 
-    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
+    compileOnly(libs.androidExtensionsXr)
 }
 
 // Making this APK available via Android Build so the QA team can

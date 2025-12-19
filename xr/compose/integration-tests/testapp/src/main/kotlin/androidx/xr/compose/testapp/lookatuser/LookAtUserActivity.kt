@@ -88,7 +88,7 @@ class LookAtUserActivity : ComponentActivity() {
         val session = checkNotNull(LocalSession.current) { "session must be initialized" }
         // Ensure head tracking is enabled
         session.configure(
-            config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN)
+            config = session.config.copy(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
         )
 
         // Global state for billboard toggling

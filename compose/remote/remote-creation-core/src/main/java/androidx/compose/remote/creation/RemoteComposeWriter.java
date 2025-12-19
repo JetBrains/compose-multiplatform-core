@@ -1170,6 +1170,19 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Draw the text, with origin at (x,y) along the specified path.
+     *
+     * @param textId  The text to be drawn
+     * @param pathId    The path the text should follow for its baseline
+     * @param hOffset The distance along the path to add to the text's starting position
+     * @param vOffset The distance above(-) or below(+) the path to position the text
+     */
+    public void drawTextOnPath(int textId, int pathId, float hOffset, float vOffset) {
+        mBuffer.addDrawTextOnPath(textId, pathId, hOffset, vOffset);
+    }
+
+
+    /**
      * Draw the curved text, along the specified circle with origin at (x,y).
      *
      * @param textId the id of the text variable
