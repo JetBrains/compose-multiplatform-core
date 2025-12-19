@@ -47,11 +47,12 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
+        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         commonMain {
             dependencies {
-                api(project(":navigationevent:navigationevent"))
+                api("androidx.navigationevent:navigationevent:$navigationEventVersion")
+                api(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui"))
-                implementation(project(":compose:runtime:runtime"))
                 implementation(libs.kotlinCoroutinesCore)
             }
         }
@@ -59,7 +60,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
-                implementation(project(":navigationevent:navigationevent-testing"))
+                api("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
                 implementation(project(":kruth:kruth"))
             }
         }
