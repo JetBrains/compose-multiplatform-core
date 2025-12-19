@@ -61,7 +61,9 @@ androidXMultiplatform {
             api(project(":compose:ui:ui-unit"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.5.0")
+            implementation(project(":compose:ui:ui-geometry"))
+            implementation(project(":annotation:annotation"))
+            implementation(project(":collection:collection"))
         }
 
         commonTest.dependencies {
@@ -94,6 +96,10 @@ androidXMultiplatform {
             implementation(libs.junit)
             implementation(libs.truth)
             implementation(project(":compose:test-utils"))
+        }
+
+        jvmAndAndroidTest.dependencies {
+            implementation(project(":compose:ui:ui-test-junit4"))
         }
 
         // TODO: Align naming: nonAndroidMain

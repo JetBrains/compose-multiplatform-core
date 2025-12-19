@@ -41,11 +41,13 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain.dependencies {
-            api(project(":compose:ui:ui-test"))
-            implementation("androidx.annotation:annotation:1.9.1")
-            implementation(libs.kotlinCoroutinesCore)
-            implementation(libs.kotlinCoroutinesTest)
+        commonMain {
+            dependencies {
+                api(project(":compose:ui:ui-test"))
+                implementation(project(":annotation:annotation"))
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinCoroutinesTest)
+            }
         }
 
         commonTest.dependencies {

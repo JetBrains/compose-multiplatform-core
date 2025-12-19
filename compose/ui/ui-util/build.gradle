@@ -50,9 +50,11 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain.dependencies {
-            implementation("androidx.collection:collection:1.5.0")
-            implementation(project(":compose:runtime:runtime"))
+        commonMain {
+            dependencies {
+                implementation(project(":collection:collection"))
+                implementation(project(":compose:runtime:runtime"))
+            }
         }
 
         commonTest.dependencies {

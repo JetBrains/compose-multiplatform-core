@@ -51,14 +51,16 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(project(":compose:runtime:runtime"))
-            implementation(project(":compose:ui:ui"))
-            implementation(project(":compose:ui:ui-unit"))
-            implementation(project(":compose:ui:ui-graphics"))
-            implementation(project(":compose:ui:ui-util"))
-            implementation("androidx.collection:collection:1.5.0")
-            api(libs.kotlinCoroutinesCore)
+        commonMain {
+            dependencies {
+                implementation(project(":annotation:annotation"))
+                implementation(project(":collection:collection"))
+                implementation(project(":compose:runtime:runtime"))
+                implementation(project(":compose:ui:ui"))
+                implementation(project(":compose:ui:ui-unit"))
+                implementation(project(":compose:ui:ui-util"))
+                api(libs.kotlinCoroutinesCore)
+            }
         }
 
         commonTest.dependencies {

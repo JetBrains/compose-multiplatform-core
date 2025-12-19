@@ -49,12 +49,14 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain.dependencies {
-            api("androidx.annotation:annotation:1.9.1")
-            api(project(":compose:ui:ui-geometry"))
-            implementation("androidx.collection:collection:1.5.0")
-            implementation(project(":compose:runtime:runtime"))
-            implementation(project(":compose:ui:ui-util"))
+        commonMain {
+            dependencies {
+                api(project(":compose:ui:ui-geometry"))
+
+                implementation(project(":annotation:annotation"))
+                implementation(project(":compose:runtime:runtime"))
+                implementation(project(":compose:ui:ui-util"))
+            }
         }
 
         commonTest.dependencies {
