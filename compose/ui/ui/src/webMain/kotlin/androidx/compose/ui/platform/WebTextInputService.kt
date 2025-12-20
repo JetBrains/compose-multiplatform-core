@@ -63,6 +63,13 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
      */
     abstract val backingDomInputContainer: HTMLElement
 
+    /**
+     * The element to focus when the backing input is disposed.
+     * This ensures keyboard events are still received when focus moves
+     * from a TextField to a non-TextField focusable element.
+     */
+    abstract val focusFallbackElement: HTMLElement
+
     override fun startInput(
         value: TextFieldValue,
         imeOptions: ImeOptions,
@@ -101,6 +108,10 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
     override fun stopInput() {
         backingDomInput?.dispose()
         backingDomInput = null
+        // Focus the canvas so that keyboard events continue to work when focus moves
+        // from a TextField to a non-TextField focusable element (or read-only TextField).
+        // See https://youtrack.jetbrains.com/issue/CMP-9388
+        focusFallbackElement.focus()
     }
 
     override fun showSoftwareKeyboard() {

@@ -266,6 +266,9 @@ internal class ComposeWindow(
                 override val backingDomInputContainer: HTMLElement
                     get() = interopContainerElement
 
+                override val focusFallbackElement: HTMLElement
+                    get() = canvas
+
                 override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
                     val dpRect = rect.toDpRect(density)
                     val left = dpRect.left.value

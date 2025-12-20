@@ -132,4 +132,113 @@ class TextFieldFocusTest : OnCanvasTests {
         assertTrue((lastKeydownEventOnRoot as KeyboardEvent).shiftKey)
         assertTrue(lastKeydownEventOnRoot!!.defaultPrevented)
     }
+
+    /**
+     * Regression test for https://youtrack.jetbrains.com/issue/CMP-9388
+     * Tests that Tab navigation works correctly with read-only TextFields.
+     *
+     * Read-only TextFields don't create a backing HTML input element, so when focus
+     * moves TO a read-only TextField, subsequent Tab presses must come from the canvas.
+     *
+     * Note: The actual bug (focus not working after leaving a TextField) is caused by
+     * the browser not knowing where to send key events when no element has DOM focus.
+     * This can't be fully simulated in tests since programmatic dispatchEvent() bypasses
+     * browser focus routing. The fix ensures focusFallbackElement.focus() is called in
+     * stopInput() to give the canvas DOM focus.
+     */
+    @Test
+    fun canTabThroughReadOnlyTextField() = runApplicationTest {
+        val focusRequester = FocusRequester()
+
+        suspend fun waitForSingleLineHtmlInput(): HTMLInputElement {
+            while (true) {
+                val element = getShadowRoot().querySelector("input")
+                if (element is HTMLInputElement) {
+                    return element
+                }
+                yield()
+            }
+        }
+
+        var field1FocusState: FocusState? = null
+        var field2FocusState: FocusState? = null
+        var field3FocusState: FocusState? = null  // read-only
+        var field4FocusState: FocusState? = null
+
+        createComposeWindow {
+            Column {
+                TextField(
+                    state = rememberTextFieldState(initialText = "Field 1"),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { field1FocusState = it },
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+
+                TextField(
+                    state = rememberTextFieldState(initialText = "Field 2"),
+                    modifier = Modifier.onFocusChanged { field2FocusState = it },
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+
+                TextField(
+                    state = rememberTextFieldState(initialText = "Field 3 (read-only)"),
+                    modifier = Modifier.onFocusChanged { field3FocusState = it },
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                    readOnly = true
+                )
+
+                TextField(
+                    state = rememberTextFieldState(initialText = "Field 4"),
+                    modifier = Modifier.onFocusChanged { field4FocusState = it },
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+            }
+        }
+
+        focusRequester.requestFocus()
+        awaitAnimationFrame()
+
+        // Verify initial focus on Field 1
+        assertNotNull(field1FocusState)
+        assertEquals(true, field1FocusState!!.isFocused)
+
+        val tabKeyDown = keyEvent(
+            key = "Tab",
+            type = "keydown",
+            keyCode = Key.Tab.keyCode.toInt(),
+            code = "Tab"
+        )
+
+        // Tab from Field 1 to Field 2
+        var htmlInput = waitForSingleLineHtmlInput()
+        htmlInput.dispatchEvent(tabKeyDown)
+        awaitAnimationFrame()
+
+        assertEquals(false, field1FocusState!!.isFocused)
+        assertEquals(true, field2FocusState!!.isFocused)
+
+        // Tab from Field 2 to Field 3 (read-only)
+        // This removes the backing HTML input because read-only fields don't create one
+        htmlInput = waitForSingleLineHtmlInput()
+        htmlInput.dispatchEvent(tabKeyDown)
+        awaitAnimationFrame()
+
+        assertEquals(false, field2FocusState!!.isFocused)
+        assertEquals(true, field3FocusState!!.isFocused, "Read-only Field 3 should be focused")
+
+        // Verify no backing input exists (read-only TextField doesn't create one)
+        val inputAfterReadOnlyFocus = getShadowRoot().querySelector("input")
+        assertEquals(null, inputAfterReadOnlyFocus, "Read-only TextField should not have backing input")
+
+        // Tab from read-only Field 3 to Field 4
+        // Since there's no backing input, we dispatch Tab to the canvas
+        // This is where the bug manifests without the fix - the canvas wouldn't have DOM focus
+        val canvas = getCanvas()
+        canvas.dispatchEvent(tabKeyDown)
+        awaitAnimationFrame()
+
+        assertEquals(false, field3FocusState!!.isFocused, "Read-only Field 3 should lose focus")
+        assertEquals(true, field4FocusState!!.isFocused, "Field 4 should be focused (not back to Field 1)")
+    }
 }
