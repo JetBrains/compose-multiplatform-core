@@ -128,9 +128,38 @@ class NativeInputEventsProcessorTest {
         processor.registerEvent(keyEvent("ArrowLeft", type = "keyup"))
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
 
-        assertEquals(1, communicator.keyboardEvents.size)
-        val composeKeyEvent = communicator.keyboardEvents[0].nativeKeyEvent as InternalKeyEvent
-        assertEquals("ArrowLeft", (composeKeyEvent.nativeEvent as KeyboardEvent).key)
+        // Both keydown and keyup should be sent for non-character keys like arrows
+        // This is needed for clickable elements to respond to Enter/Space keyup events
+        // See https://youtrack.jetbrains.com/issue/CMP-9386
+        assertEquals(2, communicator.keyboardEvents.size)
+        val keydownEvent = communicator.keyboardEvents[0].nativeKeyEvent as InternalKeyEvent
+        assertEquals("ArrowLeft", (keydownEvent.nativeEvent as KeyboardEvent).key)
+        val keyupEvent = communicator.keyboardEvents[1].nativeKeyEvent as InternalKeyEvent
+        assertEquals("ArrowLeft", (keyupEvent.nativeEvent as KeyboardEvent).key)
+    }
+
+    /**
+     * Regression test for https://youtrack.jetbrains.com/issue/CMP-9386
+     * Verifies that Enter keyup events are sent to Compose, which is required
+     * for clickable elements to trigger onClick when Enter is released.
+     */
+    @Test
+    fun testEnterKeyEventProcessing() {
+        val communicator = MockComposeCommandCommunicator()
+        val processor = TestNativeInputEventsProcessor(communicator)
+
+        processor.registerEvent(keyEvent("Enter", code = "Enter"))
+        processor.registerEvent(keyEvent("Enter", code = "Enter", type = "keyup"))
+        processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
+
+        // Both keydown and keyup should be sent for Enter key
+        assertEquals(2, communicator.keyboardEvents.size)
+
+        val keydownEvent = communicator.keyboardEvents[0].nativeKeyEvent as InternalKeyEvent
+        assertEquals("Enter", (keydownEvent.nativeEvent as KeyboardEvent).key)
+
+        val keyupEvent = communicator.keyboardEvents[1].nativeKeyEvent as InternalKeyEvent
+        assertEquals("Enter", (keyupEvent.nativeEvent as KeyboardEvent).key)
     }
 
     @Test
