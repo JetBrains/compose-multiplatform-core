@@ -247,6 +247,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:material3:material3"))
+                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
 
