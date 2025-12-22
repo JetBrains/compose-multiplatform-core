@@ -57,13 +57,13 @@ androidXMultiplatform {
         }
 
         commonMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            api("androidx.lifecycle:lifecycle-common:2.9.1")
-            api("androidx.lifecycle:lifecycle-runtime:2.9.1")
-            api("androidx.lifecycle:lifecycle-viewmodel:2.9.1")
-            api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.1")
-            api("androidx.savedstate:savedstate:1.3.0")
-            implementation("androidx.collection:collection:1.4.2")
+            api("androidx.annotation:annotation:1.9.1")
+            api("androidx.lifecycle:lifecycle-common:2.9.2")
+            api("androidx.lifecycle:lifecycle-runtime:2.9.2")
+            api("androidx.lifecycle:lifecycle-viewmodel:2.9.2")
+            api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2")
+            api("org.jetbrains.androidx.savedstate:savedstate:1.3.0")
+            implementation("androidx.collection:collection:1.5.0")
             implementation(libs.kotlinSerializationCore)
         }
         commonTest.dependencies {
