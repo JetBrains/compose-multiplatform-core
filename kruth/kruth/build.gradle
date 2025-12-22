@@ -60,18 +60,6 @@ androidXMultiplatform {
             api(libs.kotlinCoroutinesTest)
         }
 
-        nonJvmMain {
-            dependsOn(commonMain)
-        }
-
-        nonJvmTest {
-            dependsOn(commonTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
         webTest.dependencies {
             implementation(libs.kotlinTest)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")

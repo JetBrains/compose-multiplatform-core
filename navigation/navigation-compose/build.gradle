@@ -64,6 +64,7 @@ androidXMultiplatform {
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
+            implementation(project(":compose:ui:ui-test"))
         }
         nonAndroidMain {
             dependsOn(commonMain)
@@ -75,9 +76,6 @@ androidXMultiplatform {
         nonAndroidTest {
             dependsOn(commonTest)
         }
-
-        jvmStubsMain.dependsOn(nonAndroidMain)
-        jvmStubsTest.dependsOn(nonAndroidTest)
 
         androidMain.dependencies {
             api("androidx.activity:activity-compose:1.8.0")
@@ -122,12 +120,10 @@ androidXMultiplatform {
         nonJvmTest.dependsOn(nonAndroidTest)
 
         desktopMain {
-            dependsOn(jvmAndAndroidMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmAndAndroidTest)
             dependsOn(nonAndroidTest)
             dependencies {
                 implementation(libs.skikoCurrentOs)
@@ -141,67 +137,6 @@ androidXMultiplatform {
 
         nonJvmTest {
             dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        macosMain {
-            dependsOn(darwinMain)
-        }
-
-        macosTest {
-            dependsOn(darwinTest)
-        }
-
-        iosMain {
-            dependsOn(darwinMain)
-        }
-
-        iosTest {
-            dependsOn(darwinTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-                } else if (target.konanTarget.family == Family.OSX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
-                } else if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
         }
     }
 }

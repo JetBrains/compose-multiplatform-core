@@ -68,10 +68,6 @@ androidXMultiplatform {
         androidHostTest.dependencies {
             implementation(libs.truth)
         }
-
-        desktopMain {
-            dependsOn(jvmAndAndroidMain)
-        }
     }
 }
 

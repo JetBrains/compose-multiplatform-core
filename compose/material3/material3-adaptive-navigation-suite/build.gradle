@@ -60,7 +60,6 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmAndAndroidMain)
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
@@ -122,16 +121,6 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(skikoTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
         }
     }
 }

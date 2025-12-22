@@ -54,14 +54,7 @@ androidXMultiplatform {
             }
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidDeviceTest {
-            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
                 implementation("androidx.navigation:navigation-testing:2.7.7")
@@ -106,16 +99,6 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(nonAndroidTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
         }
     }
 }

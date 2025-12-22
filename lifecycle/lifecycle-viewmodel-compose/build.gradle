@@ -100,12 +100,10 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmAndAndroidMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmAndAndroidTest)
             dependsOn(nonAndroidTest)
         }
 
@@ -123,16 +121,6 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(nonAndroidTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
         }
     }
 }

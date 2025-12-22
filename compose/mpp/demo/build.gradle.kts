@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWasmDsl::class)
+
 import java.util.*
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -26,6 +29,7 @@ plugins {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
     jvm("desktop")
     js {
         outputModuleName = "mpp-demo"
@@ -50,11 +54,8 @@ kotlin {
                             "name" to "google-chrome",
                         )
                     )
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
+                    static(rootDirPath)
+                    static(projectDirPath)
                 }
             }
         }
@@ -179,7 +180,7 @@ kotlin {
             }
         }
 
-        val webMain by creating {
+        val webMain by getting {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             // TODO Restore unzipTask
@@ -190,28 +191,16 @@ kotlin {
             }
         }
 
-        val jsMain by getting {
-            dependsOn(webMain)
-        }
-
         val wasmJsMain by getting {
-            dependsOn(webMain)
             dependencies {
                 api(libs.kotlinXw3c)
             }
         }
 
-        val nativeMain by creating { dependsOn(skikoMain) }
+        val nativeMain by getting { dependsOn(skikoMain) }
         val darwinMain by creating { dependsOn(nativeMain) }
-        val macosMain by creating { dependsOn(darwinMain) }
-        val macosX64Main by getting { dependsOn(macosMain) }
-        val macosArm64Main by getting { dependsOn(macosMain) }
-        val iosMain by creating {
-            dependsOn(darwinMain)
-        }
-        val iosX64Main by getting { dependsOn(iosMain) }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimArm64Main by getting { dependsOn(iosMain) }
+        val macosMain by getting { dependsOn(darwinMain) }
+        val iosMain by getting { dependsOn(darwinMain) }
     }
 }
 
@@ -253,13 +242,15 @@ if (System.getProperty("os.name") == "Mac OS X") {
     val packForXCode = if (sdkName == null || targetBuildDir == null || executablePath == null) {
         // The build is launched not by Xcode ->
         // We cannot create a copy task and just show a meaningful error message.
-        tasks.create("packForXCode").doLast {
-            group = xcodeIntegrationGroup
-            throw IllegalStateException("Please run the task from Xcode")
+        tasks.register("packForXCode") {
+            doLast {
+                group = xcodeIntegrationGroup
+                throw IllegalStateException("Please run the task from Xcode")
+            }
         }
     } else {
         // Otherwise copy the executable into the Xcode output directory.
-        tasks.create("packForXCode", Copy::class.java) {
+        tasks.register("packForXCode", Copy::class.java) {
             dependsOn(kotlinBinary.linkTaskProvider)
 
             group = xcodeIntegrationGroup
@@ -282,7 +273,7 @@ if (System.getProperty("os.name") == "Mac OS X") {
     }
 }
 
-tasks.create("runDesktop", JavaExec::class.java) {
+tasks.register("runDesktop", JavaExec::class.java) {
     dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass.set("androidx.compose.mpp.demo.Main_desktopKt")
     args = listOfNotNull(project.findProperty("args")?.toString())

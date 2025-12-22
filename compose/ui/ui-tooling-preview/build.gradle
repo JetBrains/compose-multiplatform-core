@@ -62,22 +62,18 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmAndAndroidMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmAndAndroidTest)
             dependsOn(nonAndroidTest)
         }
 
         nonJvmMain {
-            dependsOn(commonMain)
             dependsOn(nonAndroidMain)
         }
 
         nonJvmTest {
-            dependsOn(commonTest)
             dependsOn(nonAndroidTest)
         }
 
@@ -87,28 +83,6 @@ androidXMultiplatform {
 
         nativeTest {
             dependsOn(nonJvmTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        targets.configureEach { target ->
-
-            // TODO: Ignore stubs. Remove together with stubs target
-            if (target.name.endsWith("Stubs")) return
-
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
         }
     }
 }

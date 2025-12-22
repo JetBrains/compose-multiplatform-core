@@ -228,12 +228,10 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmAndAndroidMain)
             dependsOn(skikoMain)
         }
 
         desktopTest {
-            dependsOn(jvmAndAndroidTest)
             dependsOn(skikoTest)
             dependencies {
                 // TODO: Move to jvmTest?
@@ -267,23 +265,10 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        macosMain {
-            dependsOn(nativeMain)
-        }
-
-        macosTest {
-            dependsOn(nativeTest)
-        }
-
         iosMain {
-            dependsOn(nativeMain)
             dependencies {
                 implementation(project(":compose:ui:ui-uikit"))
             }
-        }
-
-        iosTest {
-            dependsOn(nativeTest)
         }
 
         uikitInstrumentedTest {
@@ -293,56 +278,13 @@ androidXMultiplatform {
             }
         }
 
-        webMain {
-            dependsOn(nonJvmMain)
+        webMain.dependencies {
+            api(libs.kotlinXw3c)
         }
 
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        jsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(webMain)
-        }
-
-        jsTest {
-            kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(webTest)
-        }
-
-        wasmJsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(webMain)
-            dependencies {
-                api(libs.kotlinXw3c)
-                implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
-            }
-        }
-
-        wasmJsTest {
-            kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(webTest)
-        }
-
-        targets.configureEach { target ->
-
-            // TODO: Ignore stubs. Remove together with stubs target
-            if (target.name.endsWith("Stubs")) return
-
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-                } else if (target.konanTarget.family == Family.OSX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                }
-            }
+        wasmJsMain.dependencies {
+            implementation(libs.skikoWasmJs)
+            implementation(libs.skikoJsWasmRuntime)
         }
 
         // TODO: Align it with AOSP or make explicit

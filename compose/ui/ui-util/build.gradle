@@ -72,14 +72,6 @@ androidXMultiplatform {
             implementation(libs.truth)
         }
 
-        nonJvmMain {
-            dependsOn(commonMain)
-        }
-
-        nonJvmTest {
-            dependsOn(commonTest)
-        }
-
         nativeMain {
             dependsOn(nonJvmMain)
         }
@@ -88,51 +80,9 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        macosMain {
-            dependsOn(nativeMain)
-        }
-
-        macosTest {
-            dependsOn(nativeTest)
-        }
-
         iosMain {
-            dependsOn(nativeMain)
             dependencies {
                 implementation(project(":compose:ui:ui-uikit"))
-            }
-        }
-
-        iosTest {
-            dependsOn(nativeTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        targets.configureEach { target ->
-            // TODO: Ignore stubs. Remove together with stubs target
-            if (target.name.endsWith("Stubs")) return
-
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-                } else if (target.konanTarget.family == Family.OSX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

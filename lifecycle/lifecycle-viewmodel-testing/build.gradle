@@ -81,17 +81,6 @@ androidXMultiplatform {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
-
-        targets.configureEach { target ->
-            if (target.platformType !in [
-                    KotlinPlatformType.androidJvm,
-                    KotlinPlatformType.jvm,
-                    KotlinPlatformType.common
-            ]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
-            }
-        }
     }
 }
 

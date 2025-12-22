@@ -113,33 +113,6 @@ androidXMultiplatform {
 
         nativeMain { dependsOn(nonAndroidMain) }
         nativeTest { dependsOn(nonAndroidTest) }
-
-        linuxMain { dependsOn(nativeMain) }
-        linuxTest { dependsOn(nativeTest) }
-
-        darwinMain { dependsOn(nativeMain) }
-        darwinTest { dependsOn(nativeTest) }
-
-        webMain { dependsOn(nonAndroidMain) }
-        webTest { dependsOn(nonAndroidTest) }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == Family.LINUX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
-        }
     }
 }
 
