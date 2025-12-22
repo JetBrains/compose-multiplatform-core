@@ -42,6 +42,7 @@ import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.assertColorsWithinTolerance
 import androidx.compose.ui.background
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -895,6 +896,31 @@ class ComposePanelTest {
             assertThat(textFieldIsFocused).isEqualTo(!enabled)
         } finally {
             window.dispose()
+        }
+    }
+
+    @Test
+    fun `ComposePanel draws background correctly`() = runApplicationTest {
+        val composePanel = ComposePanel().apply {
+            size = Dimension(300, 300)
+            background = java.awt.Color.RED
+        }
+        composePanel.setContent { }
+
+        val frame = JFrame().apply {
+            contentPane = composePanel
+            size = Dimension(300, 300)
+        }
+
+        try {
+            frame.isVisible = true
+            awaitIdle()
+            val robot = java.awt.Robot()
+            val frameBounds = frame.bounds
+            val centerPixel = robot.getPixelColor(frameBounds.centerX.toInt(), frameBounds.centerY.toInt())
+            assertColorsWithinTolerance(expected = java.awt.Color.RED, actual = centerPixel)
+        } finally {
+            frame.dispose()
         }
     }
 }
