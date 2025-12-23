@@ -23,11 +23,13 @@ import androidx.compose.runtime.Composable
 
 // TODO: https://youtrack.jetbrains.com/issue/CMP-1265
 
-@Composable
-@ExperimentalFoundationApi
-internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
-    return object : PrefetchScheduler {
-        override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
-        }
-    }
-}
+// FIXME: We've only implemented the corresponding prefetchScheduler for UIKitMain, but the configuration for other variants is too complex and requires a simpler solution. Currently, comments can only be added through the UIKitMain build.
+
+// @Composable
+// @ExperimentalFoundationApi
+// internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
+//     return object : PrefetchScheduler {
+//         override fun schedulePrefetch(prefetchRequest: PrefetchRequest) {
+//         }
+//     }
+// }

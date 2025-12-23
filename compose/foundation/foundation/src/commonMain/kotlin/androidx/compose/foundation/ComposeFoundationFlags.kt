@@ -117,4 +117,12 @@ object ComposeFoundationFlags {
      * from the dataset, the cache window won't know it until it tries to prefetch them.
      */
     @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = false
+    @Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = false
+
+    /**
+     * With this flag on, LazyList on UIKit platforms (iOS/tvOS/watchOS) will enable prefetching
+     * using CADisplayLink-based scheduler. This prefetches items during frame idle time to
+     * improve scroll performance. If disabled, no prefetching will occur on UIKit platforms.
+     */
+    @Suppress("MutableBareField") @JvmField var isUikitLazyListPrefetchEnabled = true
 }
