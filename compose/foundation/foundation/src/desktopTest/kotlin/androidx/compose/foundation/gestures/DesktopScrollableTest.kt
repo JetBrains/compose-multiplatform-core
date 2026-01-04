@@ -46,9 +46,7 @@ import kotlin.math.sqrt
 import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.processNextEventInCurrentThread
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -65,123 +63,92 @@ class DesktopScrollableTest {
     private fun scrollLineMacOs() = density.density * 10f
     private fun scrollPage(bounds: Dp) = bounds.value * density.density
 
-//    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
-    @Test(timeout = 5*60*1000L)
-    fun `linux, scroll vertical`() = repeat(1000) {
-        println("linux, scroll vertical; Iteration: $it")
-        runSkikoComposeUiTest(
-            size = size,
-            density = density
-        ) {
-            val context = TestColumn()
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Test
+    fun `linux, scroll vertical`() = runSkikoComposeUiTest(
+        size = size,
+        density = density
+    ) {
+        val context = TestColumn()
 
-            setContent {
-                CompositionLocalProvider(
-                    LocalScrollConfig provides LinuxGnomeConfig
-                ) {
-                    Box(
-                        Modifier
-                            .scrollable(
-                                orientation = Orientation.Vertical,
-                                state = context.controller
-                            )
-                            .size(10.dp, 20.dp)
-                    )
-                }
+        setContent {
+            CompositionLocalProvider(
+                LocalScrollConfig provides LinuxGnomeConfig
+            ) {
+                Box(
+                    Modifier
+                        .scrollable(
+                            orientation = Orientation.Vertical,
+                            state = context.controller
+                        )
+                        .size(10.dp, 20.dp)
+                )
             }
-
-            suspend fun assertScrollOffsetWithRetry(coef: Int) {
-                try {
-                    assertThat(context.offset).isWithin(0.1f).of(coef * scrollLineLinux(20.dp))
-                } catch (e: AssertionError) {
-                    println("Failed to assert offset, retrying...")
-                    repeat(10) {
-                        waitForIdle()
-                        delay(1000)
-                    }
-                    assertThat(context.offset).isWithin(0.1f).of(coef * scrollLineLinux(20.dp))
-                }
-            }
-
-            scene.sendPointerEvent(
-                eventType = PointerEventType.Scroll,
-                position = Offset.Zero,
-                scrollDelta = Offset(0f, 3f),
-                nativeEvent = awtWheelEvent(),
-            )
-
-            waitForIdle()
-            println("Offset: ${context.offset}")
-            assertScrollOffsetWithRetry(-3)
-
-            scene.sendPointerEvent(
-                eventType = PointerEventType.Scroll,
-                position = Offset.Zero,
-                scrollDelta = Offset(0f, 3f),
-                nativeEvent = awtWheelEvent(),
-            )
-
-            waitForIdle()
-            println("Offset: ${context.offset}")
-            assertScrollOffsetWithRetry(-6)
-
-            scene.sendPointerEvent(
-                eventType = PointerEventType.Scroll,
-                position = Offset.Zero,
-                scrollDelta = Offset(0f, 3f),
-                nativeEvent = awtWheelEvent(),
-            )
-
-            waitForIdle()
-            println("Offset: ${context.offset}")
-            assertScrollOffsetWithRetry(-9)
         }
+
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Scroll,
+            position = Offset.Zero,
+            scrollDelta = Offset(0f, 3f),
+            nativeEvent = awtWheelEvent(),
+        )
+
+        waitForIdle()
+        assertThat(context.offset).isWithin(0.1f).of(-3 * scrollLineLinux(20.dp))
+
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Scroll,
+            position = Offset.Zero,
+            scrollDelta = Offset(0f, 3f),
+            nativeEvent = awtWheelEvent(),
+        )
+
+        waitForIdle()
+        assertThat(context.offset).isWithin(0.1f).of(-6 * scrollLineLinux(20.dp))
     }
 
-//    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
-    @Test(timeout = 5*60*1000L)
-    fun `windows, scroll vertical`() = repeat(1000) {
-        runSkikoComposeUiTest(
-            size = size,
-            density = density
-        ) {
-            val context = TestColumn()
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Test
+    fun `windows, scroll vertical`() = runSkikoComposeUiTest(
+        size = size,
+        density = density
+    ) {
+        val context = TestColumn()
 
-            setContent {
-                CompositionLocalProvider(
-                    LocalScrollConfig provides WindowsWinUIConfig
-                ) {
-                    Box(
-                        Modifier
-                            .scrollable(
-                                orientation = Orientation.Vertical,
-                                state = context.controller
-                            )
-                            .size(10.dp, 20.dp)
-                    )
-                }
+        setContent {
+            CompositionLocalProvider(
+                LocalScrollConfig provides WindowsWinUIConfig
+            ) {
+                Box(
+                    Modifier
+                        .scrollable(
+                            orientation = Orientation.Vertical,
+                            state = context.controller
+                        )
+                        .size(10.dp, 20.dp)
+                )
             }
-
-            scene.sendPointerEvent(
-                eventType = PointerEventType.Scroll,
-                position = Offset.Zero,
-                scrollDelta = Offset(0f, -2f),
-                nativeEvent = awtWheelEvent(),
-            )
-
-            waitForIdle()
-            assertThat(context.offset).isWithin(0.1f).of(2 * scrollLineWindows(20.dp))
-
-            scene.sendPointerEvent(
-                eventType = PointerEventType.Scroll,
-                position = Offset.Zero,
-                scrollDelta = Offset(0f, 4f),
-                nativeEvent = awtWheelEvent(),
-            )
-
-            waitForIdle()
-            assertThat(context.offset).isWithin(0.1f).of(-2 * scrollLineWindows(20.dp))
         }
+
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Scroll,
+            position = Offset.Zero,
+            scrollDelta = Offset(0f, -2f),
+            nativeEvent = awtWheelEvent(),
+        )
+
+        waitForIdle()
+        assertThat(context.offset).isWithin(0.1f).of(2 * scrollLineWindows(20.dp))
+
+        scene.sendPointerEvent(
+            eventType = PointerEventType.Scroll,
+            position = Offset.Zero,
+            scrollDelta = Offset(0f, 4f),
+            nativeEvent = awtWheelEvent(),
+        )
+
+        waitForIdle()
+        assertThat(context.offset).isWithin(0.1f).of(-2 * scrollLineWindows(20.dp))
     }
 
     @Test
@@ -283,56 +250,54 @@ class DesktopScrollableTest {
         assertThat(column.offset).isEqualTo(0f)
     }
 
-//    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
-    fun multipleScrollingModifiers() = repeat(1000) {
-        runSkikoComposeUiTest(
-            size = size,
-            density = density
-        ) {
-            val verticalContext = TestColumn()
-            val horizontalContext = TestColumn()
-            lateinit var scope: CoroutineScope
-            setContent {
-                scope = rememberCoroutineScope()
-                CompositionLocalProvider(
-                    LocalScrollConfig provides LinuxGnomeConfig
-                ) {
-                    Box(
-                        Modifier
-                            .scrollable(
-                                orientation = Orientation.Vertical,
-                                state = verticalContext.controller
-                            )
-                            .scrollable(
-                                orientation = Orientation.Horizontal,
-                                state = horizontalContext.controller
-                            )
-                            .size(10.dp, 20.dp)
-                    )
-                }
-            }
-            scope.launch {
-                scene.sendPointerEvent(
-                    eventType = PointerEventType.Scroll,
-                    position = Offset.Zero,
-                    scrollDelta = Offset(0f, -5f),
-                    nativeEvent = awtWheelEvent(),
+    fun multipleScrollingModifiers() = runSkikoComposeUiTest(
+        size = size,
+        density = density
+    ) {
+        val verticalContext = TestColumn()
+        val horizontalContext = TestColumn()
+        lateinit var scope: CoroutineScope
+        setContent {
+            scope = rememberCoroutineScope()
+            CompositionLocalProvider(
+                LocalScrollConfig provides LinuxGnomeConfig
+            ) {
+                Box(
+                    Modifier
+                        .scrollable(
+                            orientation = Orientation.Vertical,
+                            state = verticalContext.controller
+                        )
+                        .scrollable(
+                            orientation = Orientation.Horizontal,
+                            state = horizontalContext.controller
+                        )
+                        .size(10.dp, 20.dp)
                 )
             }
-            waitForIdle()
-            scope.launch {
-                scene.sendPointerEvent(
-                    eventType = PointerEventType.Scroll,
-                    position = Offset.Zero,
-                    scrollDelta = Offset(-5f, 0f),
-                    nativeEvent = awtWheelEvent(),
-                )
-            }
-            waitForIdle()
-            assertThat(verticalContext.offset).isWithin(0.1f).of(5f * scrollLineLinux(20.dp))
-            assertThat(horizontalContext.offset).isWithin(0.1f).of(5f * scrollLineLinux(10.dp))
         }
+        scope.launch {
+            scene.sendPointerEvent(
+                eventType = PointerEventType.Scroll,
+                position = Offset.Zero,
+                scrollDelta = Offset(0f, -5f),
+                nativeEvent = awtWheelEvent(),
+            )
+        }
+        waitForIdle()
+        scope.launch {
+            scene.sendPointerEvent(
+                eventType = PointerEventType.Scroll,
+                position = Offset.Zero,
+                scrollDelta = Offset(-5f, 0f),
+                nativeEvent = awtWheelEvent(),
+            )
+        }
+        waitForIdle()
+        assertThat(verticalContext.offset).isWithin(0.1f).of(5f * scrollLineLinux(20.dp))
+        assertThat(horizontalContext.offset).isWithin(0.1f).of(5f * scrollLineLinux(10.dp))
     }
 
     @Test
@@ -428,7 +393,6 @@ class DesktopScrollableTest {
         val controller = ScrollableState(::consumeScrollDelta)
 
         private fun consumeScrollDelta(delta: Float): Float {
-            println("Scrolled by $delta")
             offset += delta
             return delta
         }
