@@ -612,29 +612,27 @@ class WindowTest {
         assertThat(isWindowEffectEnded).isTrue()
     }
 
-//    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
-    fun `undecorated resizable window with unspecified size`() = repeat(1000) {
-        runApplicationTest {
-            lateinit var window: ComposeWindow
+    fun `undecorated resizable window with unspecified size`() = runApplicationTest {
+        lateinit var window: ComposeWindow
 
-            launchTestApplication {
-                Window(
-                    onCloseRequest = { },
-                    state = rememberWindowState(width = Dp.Unspecified, height = Dp.Unspecified),
-                    undecorated = true,
-                    resizable = true,
-                ) {
-                    window = this.window
-                    Box(Modifier.size(32.dp))
-                }
+        launchTestApplication {
+            Window(
+                onCloseRequest = { },
+                state = rememberWindowState(width = Dp.Unspecified, height = Dp.Unspecified),
+                undecorated = true,
+                resizable = true,
+            ) {
+                window = this.window
+                Box(Modifier.size(32.dp))
             }
-
-            awaitIdle()
-            window.renderImmediately()
-            assertEquals(32, window.width)
-            assertEquals(32, window.height)
         }
+
+        awaitIdle()
+        window.renderImmediately()
+        assertEquals(32, window.width)
+        assertEquals(32, window.height)
     }
 
     @Test

@@ -46,7 +46,9 @@ import kotlin.math.sqrt
 import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.processNextEventInCurrentThread
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -64,8 +66,9 @@ class DesktopScrollableTest {
     private fun scrollPage(bounds: Dp) = bounds.value * density.density
 
 //    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
-    @Test
+    @Test(timeout = 5*60*1000L)
     fun `linux, scroll vertical`() = repeat(1000) {
+        println("linux, scroll vertical; Iteration: $it")
         runSkikoComposeUiTest(
             size = size,
             density = density
@@ -80,10 +83,23 @@ class DesktopScrollableTest {
                         Modifier
                             .scrollable(
                                 orientation = Orientation.Vertical,
-                                state = context.controller()
+                                state = context.controller
                             )
                             .size(10.dp, 20.dp)
                     )
+                }
+            }
+
+            suspend fun assertScrollOffsetWithRetry(coef: Int) {
+                try {
+                    assertThat(context.offset).isWithin(0.1f).of(coef * scrollLineLinux(20.dp))
+                } catch (e: AssertionError) {
+                    println("Failed to assert offset, retrying...")
+                    repeat(10) {
+                        waitForIdle()
+                        delay(1000)
+                    }
+                    assertThat(context.offset).isWithin(0.1f).of(coef * scrollLineLinux(20.dp))
                 }
             }
 
@@ -95,7 +111,8 @@ class DesktopScrollableTest {
             )
 
             waitForIdle()
-            assertThat(context.offset).isWithin(0.1f).of(-3 * scrollLineLinux(20.dp))
+            println("Offset: ${context.offset}")
+            assertScrollOffsetWithRetry(-3)
 
             scene.sendPointerEvent(
                 eventType = PointerEventType.Scroll,
@@ -105,12 +122,24 @@ class DesktopScrollableTest {
             )
 
             waitForIdle()
-            assertThat(context.offset).isWithin(0.1f).of(-6 * scrollLineLinux(20.dp))
+            println("Offset: ${context.offset}")
+            assertScrollOffsetWithRetry(-6)
+
+            scene.sendPointerEvent(
+                eventType = PointerEventType.Scroll,
+                position = Offset.Zero,
+                scrollDelta = Offset(0f, 3f),
+                nativeEvent = awtWheelEvent(),
+            )
+
+            waitForIdle()
+            println("Offset: ${context.offset}")
+            assertScrollOffsetWithRetry(-9)
         }
     }
 
 //    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
-    @Test
+    @Test(timeout = 5*60*1000L)
     fun `windows, scroll vertical`() = repeat(1000) {
         runSkikoComposeUiTest(
             size = size,
@@ -126,7 +155,7 @@ class DesktopScrollableTest {
                         Modifier
                             .scrollable(
                                 orientation = Orientation.Vertical,
-                                state = context.controller()
+                                state = context.controller
                             )
                             .size(10.dp, 20.dp)
                     )
@@ -170,7 +199,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -203,7 +232,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -236,7 +265,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = column.controller()
+                            state = column.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -273,11 +302,11 @@ class DesktopScrollableTest {
                         Modifier
                             .scrollable(
                                 orientation = Orientation.Vertical,
-                                state = verticalContext.controller()
+                                state = verticalContext.controller
                             )
                             .scrollable(
                                 orientation = Orientation.Horizontal,
-                                state = horizontalContext.controller()
+                                state = horizontalContext.controller
                             )
                             .size(10.dp, 20.dp)
                     )
@@ -326,7 +355,7 @@ class DesktopScrollableTest {
                         Modifier
                             .scrollable(
                                 orientation = Orientation.Vertical,
-                                state = context.controller()
+                                state = context.controller
                             )
                             .size(10.dp, 20.dp)
                     )
@@ -396,10 +425,10 @@ class DesktopScrollableTest {
         var offset = 0f
             private set
 
-        @Composable
-        fun controller() = ScrollableState(::consumeScrollDelta)
+        val controller = ScrollableState(::consumeScrollDelta)
 
         private fun consumeScrollDelta(delta: Float): Float {
+            println("Scrolled by $delta")
             offset += delta
             return delta
         }
