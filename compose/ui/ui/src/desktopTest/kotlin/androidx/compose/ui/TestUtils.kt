@@ -249,11 +249,7 @@ fun Component.performClick() {
  * New scheduled tasks in these tasks also will be performed.
  */
 suspend fun Robot.awaitEDT() {
-    if (EventQueue.isDispatchThread()) {
-        withContext(Dispatchers.Default) {
-            waitForIdle()
-        }
-    } else {
+    withContext(Dispatchers.IO) {
         waitForIdle()
     }
 }
