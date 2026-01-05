@@ -3901,6 +3901,59 @@ class SubcomposeLayoutTest {
         }
     }
 
+    @Test
+    fun lookaheadWithPausable_reuseInApproach() {
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var hasContent by mutableStateOf(true)
+        var shouldRetainContentInApproach by mutableStateOf(false)
+
+        val content = @Composable { Box(Modifier.size(10.dp)) }
+
+        rule.setContent {
+            LookaheadScope {
+                SubcomposeLayout(
+                    state,
+                    modifier =
+                        Modifier.approachLayout(
+                            isMeasurementApproachInProgress = { shouldRetainContentInApproach }
+                        ) { m, c ->
+                            val p = m.measure(c)
+                            layout(p.width, p.height) { p.place(IntOffset.Zero) }
+                        },
+                ) { c ->
+                    val hasContent =
+                        (!isLookingAhead && shouldRetainContentInApproach) || hasContent
+                    val p =
+                        if (hasContent) {
+                            subcompose(Unit, content).map { it.measure(c) }
+                        } else {
+                            emptyList()
+                        }
+                    layout(10, 10) { p.forEach { it.place(0, 0) } }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            // Dispose old content
+            hasContent = false
+        }
+
+        rule.runOnIdle {
+            // start prefetching new content
+            state.createPausedPrecomposition(Unit, content)
+            // force approach to use the content
+            shouldRetainContentInApproach = true
+        }
+
+        rule.runOnIdle {
+            // finish approach pass
+            shouldRetainContentInApproach = false
+            // compose new content
+            hasContent = true
+        }
+    }
+
     private fun alternateLookaheadPlacement(shouldPlaceItem: BooleanArray) {
         var lookaheadPos: Offset? = null
         var approachPos: Offset? = null
