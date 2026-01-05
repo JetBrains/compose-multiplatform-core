@@ -156,6 +156,13 @@ androidXMultiplatform {
             dependsOn(darwinTest)
         }
 
+        macosMain {
+            dependsOn(darwinMain)
+        }
+        macosTest {
+            dependsOn(darwinTest)
+        }
+
         // TODO: Align it with AOSP or make explicit
         configureEach {
             languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3Api")
