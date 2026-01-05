@@ -103,6 +103,9 @@ internal actual value class Strings(val value: Int) {
         actual val TooltipPaneDescription = Strings(72)
         actual val WideNavigationRailPaneTitle = Strings(73)
         actual val ButtonGroupMoreOptions = Strings(74)
+        actual val TimePickerMinuteError = Strings(75)
+        actual val TimePickerHourError = Strings(76)
+        actual val TimePicker24HourError = Strings(77)
         // When adding values here, make sure to also add them in material3/build.gradle,
         // updateTranslations task (stringByResourceName parameter), and re-run the task
     }
