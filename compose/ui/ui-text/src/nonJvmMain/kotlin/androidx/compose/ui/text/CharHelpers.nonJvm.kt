@@ -16,7 +16,19 @@
 package androidx.compose.ui.text
 
 import org.jetbrains.skia.icu.CharDirection
+import org.jetbrains.skia.BreakIterator
 
+internal actual fun String.findPrecedingBreak(index: Int): Int {
+    val it = BreakIterator.makeCharacterInstance()
+    it.setText(this)
+    return it.preceding(index)
+}
+
+internal actual fun String.findFollowingBreak(index: Int): Int {
+    val it = BreakIterator.makeCharacterInstance()
+    it.setText(this)
+    return it.following(index)
+}
 
 /**
  * Get strong (R, L or AL) direction type.
