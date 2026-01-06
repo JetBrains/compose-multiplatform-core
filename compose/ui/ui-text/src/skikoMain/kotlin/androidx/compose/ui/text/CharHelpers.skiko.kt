@@ -18,6 +18,19 @@ package androidx.compose.ui.text
 
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.jvm.JvmInline
+import org.jetbrains.skia.BreakIterator
+
+internal actual fun String.findPrecedingBreak(index: Int): Int {
+    val it = BreakIterator.makeCharacterInstance()
+    it.setText(this)
+    return it.preceding(index)
+}
+
+internal actual fun String.findFollowingBreak(index: Int): Int {
+    val it = BreakIterator.makeCharacterInstance()
+    it.setText(this)
+    return it.following(index)
+}
 
 /**
  * See https://www.unicode.org/reports/tr9/
