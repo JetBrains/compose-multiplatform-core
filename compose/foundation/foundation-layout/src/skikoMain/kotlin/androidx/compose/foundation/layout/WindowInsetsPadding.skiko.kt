@@ -23,7 +23,10 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.node.traverseAncestors
+import androidx.compose.ui.node.traverseDescendants
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
@@ -155,9 +158,10 @@ private val mandatorySystemGesturesPaddingLambda: PlatformWindowInsets.() -> Win
 @Stable
 private fun Modifier.windowInsetsPadding(
     inspectorInfo: InspectorInfo.() -> Unit,
-    insetsCalculation: PlatformWindowInsets.() -> WindowInsets
-): Modifier =
-    this then PlatformWindowInsetsPaddingModifierElement(inspectorInfo, insetsCalculation)
+    insetsCalculation: PlatformWindowInsets.() -> WindowInsets,
+): Modifier = this then
+    PlatformInsetsPaddingModifierElement(inspectorInfo) then
+    PlatformWindowInsetsPaddingModifierElement(inspectorInfo, insetsCalculation)
 
 private class PlatformWindowInsetsPaddingModifierElement(
     private val inspectorInfo: InspectorInfo.() -> Unit,
@@ -178,9 +182,7 @@ private class PlatformWindowInsetsPaddingModifierNode(
     private var insetsGetter: PlatformWindowInsets.() -> WindowInsets,
 ): PlatformWindowInsetsProviderNode(), ObserverModifierNode {
 
-    private val insetsPaddingNode = delegate(
-        InsetsPaddingModifierNode(WindowInsets())
-    )
+    private var insetsPaddingNode: PlatformInsetsPaddingModifierNode? = null
 
     fun update(insetsGetter: (PlatformWindowInsets) -> WindowInsets) {
         if (this.insetsGetter !== insetsGetter) {
@@ -194,7 +196,24 @@ private class PlatformWindowInsetsPaddingModifierNode(
     override fun onAttach() {
         super.onAttach()
 
+        traverseAncestors(InsetsConsumingModifierNodeKey) { node ->
+            if (node is PlatformInsetsPaddingModifierNode) {
+                insetsPaddingNode = node
+                false
+            } else true
+        }
+
         onObservedReadsChanged()
+    }
+
+    override fun onReset() {
+        insetsPaddingNode = null
+        super.onReset()
+    }
+
+    override fun onDetach() {
+        insetsPaddingNode = null
+        super.onDetach()
     }
 
     override fun windowInsetsInvalidated() {
@@ -205,7 +224,19 @@ private class PlatformWindowInsetsPaddingModifierNode(
 
     override fun onObservedReadsChanged() {
         observeReads {
-            insetsPaddingNode.update(windowInsets.insetsGetter())
+            insetsPaddingNode?.update(windowInsets.insetsGetter())
         }
     }
 }
+
+private class PlatformInsetsPaddingModifierElement(
+    private val inspectorInfo: InspectorInfo.() -> Unit,
+): ModifierNodeElement<PlatformInsetsPaddingModifierNode>() {
+    override fun create(): PlatformInsetsPaddingModifierNode = PlatformInsetsPaddingModifierNode()
+    override fun update(node: PlatformInsetsPaddingModifierNode) {}
+    override fun hashCode(): Int = 0
+    override fun equals(other: Any?): Boolean = this === other
+    override fun InspectorInfo.inspectableProperties() = inspectorInfo()
+}
+
+private class PlatformInsetsPaddingModifierNode: InsetsPaddingModifierNode(WindowInsets())
