@@ -427,6 +427,33 @@ class SkikoParagraphTest {
     }
 
 
+    @Test
+    fun bullet_withEmUnits_shouldNotCrash() {
+        // Regression test for bug where Bullet with Em units caused crash:
+        // "Only Sp can convert to Px" when textIndent used Em units
+        val annotatedString = buildAnnotatedString {
+            withBulletList {
+                withBulletListItem {
+                    append("First item")
+                }
+            }
+        }
+
+        // This should not crash
+        val paragraph = Paragraph(
+            text = annotatedString.text,
+            spanStyles = annotatedString.spanStyles,
+            paragraphStyles = annotatedString.paragraphStyles,
+            style = TextStyle(),
+            constraints = Constraints(maxWidth = maxWidthConstraint),
+            density = defaultDensity,
+            fontFamilyResolver = fontFamilyResolver
+        )
+
+        // Verify paragraph was created successfully
+        assertEquals("First item", paragraph.text)
+    }
+
     private fun simpleParagraph(text: String, textStyle: TextStyle = TextStyle()) = Paragraph(
         text = text,
         style = textStyle,
