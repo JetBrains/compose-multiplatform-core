@@ -34,13 +34,13 @@ import android.graphics.drawable.GradientDrawable
 internal class BackgroundDrawable : GradientDrawable() {
     private val customPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var isStrokeUsed = false
-    private var cornerRadiiUsed = false
+    private var isAsymmetricalCornerUsed = false
     private var fillColor: Int? = null
 
     var linearGradientHelper: LinearGradientHelper? = null
 
     override fun setCornerRadii(radii: FloatArray?) {
-        cornerRadiiUsed = true
+        isAsymmetricalCornerUsed = true
         super.setCornerRadii(radii)
     }
 
@@ -58,14 +58,15 @@ internal class BackgroundDrawable : GradientDrawable() {
         val width = bounds.width()
         val height = bounds.height()
 
-        val isCircle = width == height && cornerRadius >= width * 0.5f && !cornerRadiiUsed
-        if (linearGradientHelper == null && (isStrokeUsed || !isCircle)) {
+        if (linearGradientHelper == null && (isStrokeUsed || isAsymmetricalCornerUsed)) {
             // If the shape is not a circle or stroke is used, then use the default implementation
             // of draw();
             super.draw(canvas)
             return
         }
 
+        // Shape of the drawable will be clipped by using outline on the caller site to prevent
+        // aliasing. See b/357061501.
         if (fillColor != null || linearGradientHelper != null) {
             customPaint.apply {
                 reset()

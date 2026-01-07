@@ -83,8 +83,8 @@ class WithTypeWithoutConfigureEachUsageDetector : Detector(), Detector.UastScann
                 implementation =
                     Implementation(
                         WithTypeWithoutConfigureEachUsageDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
-                    )
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
             )
     }
 }

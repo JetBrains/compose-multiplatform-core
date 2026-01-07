@@ -1,6 +1,6 @@
 package com.testdata
 
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.service.AppFunction
 import androidx.appfunctions.AppFunctionContext
 
 class FakeAllPrimitiveParamsImpl : FakeAllPrimitiveParams {
@@ -25,8 +25,6 @@ class FakeAllPrimitiveParamsImpl : FakeAllPrimitiveParams {
         arg5: List<String>,
         arg6: BooleanArray,
         arg7: ByteArray,
-        arg8: List<ByteArray>,
-        arg9: List<String?>,
-        arg10: List<ByteArray?>,
+        arg8: List<String?>,
     ) {}
 }

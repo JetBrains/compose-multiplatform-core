@@ -18,7 +18,10 @@ package androidx.compose.material3.benchmark
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
@@ -28,6 +31,7 @@ import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
+import androidx.compose.testutils.benchmark.benchmarkToFirstPixel
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkComposeMeasureLayout
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -38,10 +42,29 @@ class NavigationSuiteScaffoldBenchmarkTest {
     @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val testCaseFactory = { NavigationSuiteScaffoldTestCase() }
+    private val testCaseFactoryExpressive = { NavigationSuiteScaffoldExpressiveTestCase() }
+
+    @Test
+    fun expressive_firstPixel() {
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactoryExpressive)
+    }
+
+    @Test
+    fun expressive_firstCompose() {
+        benchmarkRule.benchmarkFirstCompose(testCaseFactoryExpressive)
+    }
+
+    @Test
+    fun expressive_changeSelection() {
+        benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
+            testCaseFactoryExpressive,
+            assertOneRecomposition = false,
+        )
+    }
 
     @Test
     fun firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
     }
 
     @Test
@@ -58,6 +81,43 @@ class NavigationSuiteScaffoldBenchmarkTest {
     }
 }
 
+internal class NavigationSuiteScaffoldExpressiveTestCase :
+    LayeredComposeTestCase(), ToggleableTestCase {
+    private lateinit var selectedIndexState: MutableIntState
+
+    @Composable
+    override fun MeasuredContent() {
+        selectedIndexState = remember { mutableIntStateOf(0) }
+
+        NavigationSuiteScaffold(
+            navigationItems = {
+                NavigationSuiteItem(
+                    selected = selectedIndexState.value == 0,
+                    onClick = {},
+                    icon = { Spacer(Modifier.size(24.dp)) },
+                    label = null,
+                )
+                NavigationSuiteItem(
+                    selected = selectedIndexState.value == 1,
+                    onClick = {},
+                    icon = { Spacer(Modifier.size(24.dp)) },
+                    label = null,
+                )
+            }
+        ) {}
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Composable
+    override fun ContentWrappers(content: @Composable () -> Unit) {
+        MaterialExpressiveTheme { content() }
+    }
+
+    override fun toggleState() {
+        selectedIndexState.value = if (selectedIndexState.value == 0) 1 else 0
+    }
+}
+
 internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var selectedIndexState: MutableIntState
 
@@ -70,12 +130,12 @@ internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), Toggl
                 item(
                     selected = selectedIndexState.value == 0,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
                 item(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
             }
         )

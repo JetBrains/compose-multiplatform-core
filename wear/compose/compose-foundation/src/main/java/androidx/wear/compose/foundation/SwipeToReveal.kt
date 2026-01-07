@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWearFoundationApi::class)
+@file:Suppress("DEPRECATION")
+
 package androidx.wear.compose.foundation
 
+import androidx.annotation.FloatRange
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.AnimationSpec
@@ -41,6 +45,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -78,21 +83,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** Short animation in milliseconds. */
-internal const val SHORT_ANIMATION = 50
-
-/** Flash animation length in milliseconds. */
-internal const val FLASH_ANIMATION = 100
-
-/** Rapid animation length in milliseconds. */
-internal const val RAPID_ANIMATION = 200
-
-/** Quick animation length in milliseconds. */
-internal const val QUICK_ANIMATION = 250
-
-/** Standard easing for Swipe To Reveal. */
-internal val STANDARD_IN_OUT = CubicBezierEasing(0.20f, 0.0f, 0.0f, 1.00f)
-
 /**
  * Different values that determine the state of the [SwipeToReveal] composable, reflected in
  * [RevealState.currentValue]. [RevealValue.Covered] is considered the default state where none of
@@ -106,6 +96,12 @@ internal val STANDARD_IN_OUT = CubicBezierEasing(0.20f, 0.0f, 0.0f, 1.00f)
  *
  * @see [RevealDirection]
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealValue", "androidx.wear.compose.material3.RevealValue"),
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealValue private constructor(public val value: Int) {
     public companion object {
@@ -159,6 +155,12 @@ public value class RevealValue private constructor(public val value: Int) {
  * prevent conflict with the system-wide swipe to dismiss gesture in an activity, so it's strongly
  * advised to respect the default value to avoid conflicting gestures.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealDirection", "androidx.wear.compose.material3.RevealDirection"),
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealDirection private constructor(public val value: Int) {
     public companion object {
@@ -185,6 +187,11 @@ public value class RevealDirection private constructor(public val value: Int) {
  * not set by themselves and need to be set appropriately with [RevealState.snapTo] and
  * [RevealState.animateTo].
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library."
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealActionType private constructor(public val value: Int) {
     public companion object {
@@ -225,12 +232,16 @@ public value class RevealActionType private constructor(public val value: Int) {
  *   keep the default [RevealDirection.RightToLeft] in order to preserve compatibility with the
  *   system wide swipe to dismiss gesture.
  */
+@Deprecated(
+    "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library."
+)
+@ExperimentalWearFoundationApi
 @SuppressWarnings("PrimitiveInCollection")
 public fun createRevealAnchors(
     coveredAnchor: Float = 0f,
     revealingAnchor: Float = SwipeToRevealDefaults.RevealingRatio,
     revealedAnchor: Float = 1f,
-    revealDirection: RevealDirection = RevealDirection.RightToLeft
+    revealDirection: RevealDirection = RevealDirection.RightToLeft,
 ): Map<RevealValue, Float> {
     if (revealDirection == RevealDirection.Both) {
         return mapOf(
@@ -238,13 +249,13 @@ public fun createRevealAnchors(
             RevealValue.LeftRevealing to -revealingAnchor,
             RevealValue.Covered to coveredAnchor,
             RevealValue.RightRevealing to revealingAnchor,
-            RevealValue.RightRevealed to revealedAnchor
+            RevealValue.RightRevealed to revealedAnchor,
         )
     }
     return mapOf(
         RevealValue.Covered to coveredAnchor,
         RevealValue.RightRevealing to revealingAnchor,
-        RevealValue.RightRevealed to revealedAnchor
+        RevealValue.RightRevealed to revealedAnchor,
     )
 }
 
@@ -254,6 +265,12 @@ public fun createRevealAnchors(
  *
  * @constructor Create a [RevealState].
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealState", "androidx.wear.compose.material3.RevealState"),
+)
+@ExperimentalWearFoundationApi
 public class RevealState
 internal constructor(
     initialValue: RevealValue,
@@ -356,8 +373,15 @@ internal constructor(
      * Animates to the [targetValue] with the animation spec provided.
      *
      * @param targetValue The target [RevealValue] where the [currentValue] will animate to.
+     * @throws IllegalStateException if the target [RevealValue] is not valid for current
+     *   [RevealState] instance.
      */
     public suspend fun animateTo(targetValue: RevealValue) {
+        checkNotNull(anchors[targetValue]) {
+            "The RevealValue you're targeting isn't supported by current RevealState instance. " +
+                "Ensure the RevealState was created with an anchor map that contains " +
+                "the target RevealValue."
+        }
         // Cover the previously open component if revealing a different one
         if (targetValue != RevealValue.Covered) {
             resetLastState(this)
@@ -423,6 +447,13 @@ internal constructor(
  * @param anchors A map of [RevealValue] to the fraction where the content can be revealed to reach
  *   that value. Each anchor should be between [0..1] which will be adjusted based on total width.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith =
+        ReplaceWith("rememberRevealState", "androidx.wear.compose.material3.rememberRevealState"),
+)
+@ExperimentalWearFoundationApi
 @Composable
 public fun rememberRevealState(
     initialValue: RevealValue = RevealValue.Covered,
@@ -486,11 +517,19 @@ public fun rememberRevealState(
  *   [RevealState.currentValue] becomes [RevealValue.RightRevealed].
  * @param gestureInclusion Provides fine-grained control so that touch gestures can be excluded when
  *   they start in a certain region. An instance of [GestureInclusion] can be passed in here which
- *   will determine via [GestureInclusion.allowGesture] whether the gesture should proceed or not.
- *   By default, [gestureInclusion] allows gestures everywhere except a zone on the left edge, which
- *   is used for swipe-to-dismiss (see [SwipeToRevealDefaults.ignoreLeftEdge]).
+ *   will determine via [GestureInclusion.ignoreGestureStart] whether the gesture should proceed or
+ *   not. By default, [gestureInclusion] allows gestures everywhere except a zone on the left edge,
+ *   which is used for swipe-to-dismiss (see [SwipeToRevealDefaults.gestureInclusion]).
  * @param content The content that will be initially displayed over the other actions provided.
+ *   Custom accessibility actions should always be added to the content using [Modifier.semantics] -
+ *   examples are shown in the code samples.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("SwipeToReveal", "androidx.wear.compose.material3.SwipeToReveal"),
+)
+@ExperimentalWearFoundationApi
 @Composable
 public fun SwipeToReveal(
     primaryAction: @Composable () -> Unit,
@@ -499,8 +538,8 @@ public fun SwipeToReveal(
     state: RevealState = rememberRevealState(),
     secondaryAction: (@Composable () -> Unit)? = null,
     undoAction: (@Composable () -> Unit)? = null,
-    gestureInclusion: GestureInclusion = SwipeToRevealDefaults.ignoreLeftEdge(),
-    content: @Composable () -> Unit
+    gestureInclusion: GestureInclusion = SwipeToRevealDefaults.gestureInclusion(state = state),
+    content: @Composable () -> Unit,
 ) {
     // A no-op NestedScrollConnection which does not consume scroll/fling events
     val noOpNestedScrollConnection = remember { object : NestedScrollConnection {} }
@@ -523,7 +562,8 @@ public fun SwipeToReveal(
                             allowSwipe = true
                             val firstDown = awaitFirstDown(false, PointerEventPass.Initial)
                             globalPosition?.let {
-                                allowSwipe = gestureInclusion.allowGesture(firstDown.position, it)
+                                allowSwipe =
+                                    !gestureInclusion.ignoreGestureStart(firstDown.position, it)
                             }
                         }
                     }
@@ -537,7 +577,7 @@ public fun SwipeToReveal(
                     )
                     .swipeAnchors(
                         state = state.swipeableState,
-                        possibleValues = state.swipeAnchors.keys
+                        possibleValues = state.swipeAnchors.keys,
                     ) { value, layoutSize ->
                         val swipeableWidth = layoutSize.width.toFloat()
                         // Update the total width which will be used to calculate the anchors
@@ -585,7 +625,7 @@ public fun SwipeToReveal(
                     modifier = Modifier.matchParentSize(),
                     contentAlignment =
                         if (swipingRight) AbsoluteAlignment.CenterLeft
-                        else AbsoluteAlignment.CenterRight
+                        else AbsoluteAlignment.CenterRight,
                 ) {
                     AnimatedContent(
                         targetState = swipeCompleted && undoAction != null,
@@ -596,7 +636,7 @@ public fun SwipeToReveal(
                                 fadeOutUndo()
                             }
                         },
-                        label = "AnimatedContentS2R"
+                        label = "AnimatedContentS2R",
                     ) { displayUndo ->
                         if (displayUndo && undoAction != null) {
                             val undoActionAlpha =
@@ -608,13 +648,13 @@ public fun SwipeToReveal(
                                             delayMillis = FLASH_ANIMATION,
                                             easing = STANDARD_IN_OUT,
                                         ),
-                                    label = "UndoActionAlpha"
+                                    label = "UndoActionAlpha",
                                 )
                             Row(
                                 modifier =
                                     Modifier.graphicsLayer { alpha = undoActionAlpha.value }
                                         .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
+                                horizontalArrangement = Arrangement.Center,
                             ) {
                                 ActionSlot(content = undoAction)
                             }
@@ -624,7 +664,7 @@ public fun SwipeToReveal(
                                 animateFloatAsState(
                                     targetValue = if (showSecondaryAction) 1f else 0f,
                                     animationSpec = tween(durationMillis = QUICK_ANIMATION),
-                                    label = "SecondaryActionAnimationSpec"
+                                    label = "SecondaryActionAnimationSpec",
                                 )
                             val secondaryActionAlpha =
                                 animateFloatAsState(
@@ -633,16 +673,16 @@ public fun SwipeToReveal(
                                     animationSpec =
                                         tween(
                                             durationMillis = QUICK_ANIMATION,
-                                            easing = LinearEasing
+                                            easing = LinearEasing,
                                         ),
-                                    label = "SecondaryActionAlpha"
+                                    label = "SecondaryActionAlpha",
                                 )
                             val primaryActionAlpha =
                                 animateFloatAsState(
                                     targetValue = if (hideActions) 0f else 1f,
                                     animationSpec =
                                         tween(durationMillis = 100, easing = LinearEasing),
-                                    label = "PrimaryActionAlpha"
+                                    label = "PrimaryActionAlpha",
                                 )
                             val revealedContentAlpha =
                                 animateFloatAsState(
@@ -650,9 +690,9 @@ public fun SwipeToReveal(
                                     animationSpec =
                                         tween(
                                             durationMillis = FLASH_ANIMATION,
-                                            easing = LinearEasing
+                                            easing = LinearEasing,
                                         ),
-                                    label = "RevealedContentAlpha"
+                                    label = "RevealedContentAlpha",
                                 )
                             var revealedContentHeight by remember { mutableIntStateOf(0) }
                             Row(
@@ -677,12 +717,12 @@ public fun SwipeToReveal(
                                                     0,
                                                     calculateVerticalOffsetBasedOnScreenPosition(
                                                         revealedContentHeight,
-                                                        globalPosition
-                                                    )
+                                                        globalPosition,
+                                                    ),
                                                 )
                                             }
                                         },
-                                horizontalArrangement = Arrangement.Absolute.Right
+                                horizontalArrangement = Arrangement.Absolute.Right,
                             ) {
                                 if (!swipingRight) {
                                     // weight cannot be 0 so remove the composable when weight
@@ -700,12 +740,12 @@ public fun SwipeToReveal(
                                     Spacer(Modifier.size(SwipeToRevealDefaults.Padding))
                                     ActionSlot(
                                         content = primaryAction,
-                                        opacity = primaryActionAlpha
+                                        opacity = primaryActionAlpha,
                                     )
                                 } else {
                                     ActionSlot(
                                         content = primaryAction,
-                                        opacity = primaryActionAlpha
+                                        opacity = primaryActionAlpha,
                                     )
                                     Spacer(Modifier.size(SwipeToRevealDefaults.Padding))
                                     // weight cannot be 0 so remove the composable when weight
@@ -732,7 +772,7 @@ public fun SwipeToReveal(
                         val xOffset = state.requireOffset().roundToInt()
                         IntOffset(
                             x = if (canSwipeRight) xOffset else xOffset.coerceAtMost(0),
-                            y = 0
+                            y = 0,
                         )
                     }
             ) {
@@ -752,13 +792,23 @@ public fun SwipeToReveal(
 }
 
 /** An internal object containing some defaults used across the Swipe to reveal component. */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith =
+        ReplaceWith(
+            "SwipeToRevealDefaults",
+            "androidx.wear.compose.material3.SwipeToRevealDefaults",
+        ),
+)
+@ExperimentalWearFoundationApi
 public object SwipeToRevealDefaults {
     /** Default animation spec used when moving between states. */
     internal val AnimationSpec: AnimationSpec<Float> =
         tween(durationMillis = RAPID_ANIMATION, easing = FastOutSlowInEasing)
 
     /** Default padding space between action slots. */
-    internal val Padding = 2.dp
+    internal val Padding = 4.dp
 
     /**
      * Default ratio of the content displayed when in [RevealValue.RightRevealing] state, i.e. all
@@ -787,37 +837,74 @@ public object SwipeToRevealDefaults {
     public val LeftEdgeZoneFraction: Float = 0.15f
 
     /**
-     * The default behaviour for when [SwipeToReveal] should consume gestures. In this
-     * implementation of [GestureInclusion], swipe events that originate in the left edge of the
-     * screen (as determined by [LeftEdgeZoneFraction]) will be ignored. This allows
-     * swipe-to-dismiss handlers (if present) to handle the gesture in this region.
+     * The default behaviour for when [SwipeToReveal] should handle gestures. In this implementation
+     * of [GestureInclusion], swipe events that originate in the left edge of the screen (as
+     * determined by [LeftEdgeZoneFraction]) will be ignored, if the [RevealState] is
+     * [RevealValue.Covered]. This allows swipe-to-dismiss handlers (if present) to handle the
+     * gesture in this region.
      *
+     * @param state [RevealState] of the [SwipeToReveal].
      * @param edgeZoneFraction The fraction of the screen width from the left edge where gestures
      *   should be ignored. Defaults to [LeftEdgeZoneFraction].
      */
-    public fun ignoreLeftEdge(edgeZoneFraction: Float = LeftEdgeZoneFraction): GestureInclusion =
-        object : GestureInclusion {
-            override fun allowGesture(
-                offset: Offset,
-                layoutCoordinates: LayoutCoordinates
-            ): Boolean {
-                val screenOffset = layoutCoordinates.localToScreen(offset)
-                val screenWidth = layoutCoordinates.findRootCoordinates().size.width
-                return screenOffset.x > screenWidth * edgeZoneFraction
-            }
-        }
+    public fun gestureInclusion(
+        state: RevealState,
+        @FloatRange(from = 0.0, to = 1.0) edgeZoneFraction: Float = LeftEdgeZoneFraction,
+    ): GestureInclusion = DefaultGestureInclusion(state, edgeZoneFraction)
 
     /**
-     * A behaviour for [SwipeToReveal] to consume all gestures. In this implementation of
-     * [GestureInclusion], no swipe events will be ignored.
+     * A behaviour for [SwipeToReveal] to handle all gestures, intended for rare cases where
+     * bidirectional anchors are used and no swipe events are ignored
      */
-    public fun allowAllGestures(): GestureInclusion =
-        object : GestureInclusion {
-            override fun allowGesture(
-                offset: Offset,
-                layoutCoordinates: LayoutCoordinates
-            ): Boolean = true
-        }
+    public val bidirectionalGestureInclusion: GestureInclusion
+        get() = BidirectionalGestureInclusion
+}
+
+@Stable
+private class DefaultGestureInclusion(
+    private val revealState: RevealState,
+    private val edgeZoneFraction: Float,
+) : GestureInclusion {
+    override fun ignoreGestureStart(offset: Offset, layoutCoordinates: LayoutCoordinates): Boolean {
+        val screenOffset = layoutCoordinates.localToScreen(offset)
+        val screenWidth = layoutCoordinates.findRootCoordinates().size.width
+        return revealState.currentValue == RevealValue.Covered &&
+            screenOffset.x <= screenWidth * edgeZoneFraction
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DefaultGestureInclusion
+
+        if (edgeZoneFraction != other.edgeZoneFraction) return false
+        if (revealState != other.revealState) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = edgeZoneFraction.hashCode()
+        result = 31 * result + revealState.hashCode()
+        return result
+    }
+}
+
+@Stable
+private object BidirectionalGestureInclusion : GestureInclusion {
+    override fun ignoreGestureStart(offset: Offset, layoutCoordinates: LayoutCoordinates): Boolean =
+        false
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
 }
 
 @Composable
@@ -825,11 +912,11 @@ private fun RowScope.ActionSlot(
     modifier: Modifier = Modifier,
     weight: Float = 1f,
     opacity: State<Float> = mutableFloatStateOf(1f),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier = modifier.weight(weight).graphicsLayer { alpha = opacity.value },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         content()
     }
@@ -853,12 +940,12 @@ private fun fadeInUndo(): ContentTransform =
                         tween(
                             durationMillis = RAPID_ANIMATION,
                             delayMillis = FLASH_ANIMATION,
-                            easing = STANDARD_IN_OUT
-                        )
+                            easing = STANDARD_IN_OUT,
+                        ),
                 ),
         // animation spec for the fading out content and actions (fadeOut)
         initialContentExit =
-            fadeOut(animationSpec = tween(durationMillis = FLASH_ANIMATION, easing = LinearEasing))
+            fadeOut(animationSpec = tween(durationMillis = FLASH_ANIMATION, easing = LinearEasing)),
     )
 
 private fun fadeOutUndo(): ContentTransform =
@@ -869,12 +956,12 @@ private fun fadeOutUndo(): ContentTransform =
 
         // animation spec for the fading out undo action (fadeOut + scaleOut)
         initialContentExit =
-            fadeOut(animationSpec = tween(durationMillis = SHORT_ANIMATION, easing = LinearEasing))
+            fadeOut(animationSpec = tween(durationMillis = SHORT_ANIMATION, easing = LinearEasing)),
     )
 
 private fun calculateVerticalOffsetBasedOnScreenPosition(
     childHeight: Int,
-    globalPosition: LayoutCoordinates?
+    globalPosition: LayoutCoordinates?,
 ): Int {
     if (globalPosition == null || !globalPosition.positionOnScreen().isSpecified) {
         return 0
@@ -898,3 +985,18 @@ private fun calculateVerticalOffsetBasedOnScreenPosition(
 }
 
 internal const val CustomTouchSlopMultiplier = 1.20f
+
+/** Short animation in milliseconds. */
+private const val SHORT_ANIMATION = 50
+
+/** Flash animation length in milliseconds. */
+private const val FLASH_ANIMATION = 100
+
+/** Rapid animation length in milliseconds. */
+private const val RAPID_ANIMATION = 200
+
+/** Quick animation length in milliseconds. */
+private const val QUICK_ANIMATION = 250
+
+/** Standard easing for Swipe To Reveal. */
+private val STANDARD_IN_OUT = CubicBezierEasing(0.20f, 0.0f, 0.0f, 1.00f)

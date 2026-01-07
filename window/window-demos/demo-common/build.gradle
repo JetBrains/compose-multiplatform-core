@@ -18,15 +18,10 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 android {
     compileSdk = 35
-    defaultConfig {
-        minSdk = 23
-        targetSdkVersion 35
-    }
     buildFeatures {
         viewBinding = true
     }

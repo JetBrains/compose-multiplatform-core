@@ -26,12 +26,10 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
     api("androidx.fragment:fragment:1.2.0")
-    api(libs.kotlinStdlib)
 }
 
 android {

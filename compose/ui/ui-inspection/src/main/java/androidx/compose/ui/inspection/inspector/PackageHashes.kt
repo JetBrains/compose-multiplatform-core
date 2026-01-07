@@ -2,11 +2,9 @@
 //    frameworks/support/compose/ui/ui-inspection/generate-packages/generate_compose_packages.py -r
 package androidx.compose.ui.inspection.inspector
 
-import androidx.annotation.VisibleForTesting
 import androidx.collection.intSetOf
 import kotlin.math.absoluteValue
 
-@VisibleForTesting
 fun packageNameHash(packageName: String) =
     packageName.fold(0) { hash, char -> hash * 31 + char.code }.absoluteValue
 
@@ -28,6 +26,8 @@ val systemPackages =
         packageNameHash("androidx.compose.foundation.lazy.staggeredgrid"),
         packageNameHash("androidx.compose.foundation.pager"),
         packageNameHash("androidx.compose.foundation.text"),
+        packageNameHash("androidx.compose.foundation.text.contextmenu.internal"),
+        packageNameHash("androidx.compose.foundation.text.contextmenu.provider"),
         packageNameHash("androidx.compose.foundation.text.input"),
         packageNameHash("androidx.compose.foundation.text.selection"),
         packageNameHash("androidx.compose.material"),
@@ -38,21 +38,35 @@ val systemPackages =
         packageNameHash("androidx.compose.material3"),
         packageNameHash("androidx.compose.material3.adaptive"),
         packageNameHash("androidx.compose.material3.adaptive.layout"),
+        packageNameHash("androidx.compose.material3.adaptive.layout.internal"),
         packageNameHash("androidx.compose.material3.adaptive.navigation"),
+        packageNameHash("androidx.compose.material3.adaptive.navigation3"),
         packageNameHash("androidx.compose.material3.adaptive.navigationsuite"),
         packageNameHash("androidx.compose.material3.carousel"),
-        packageNameHash("androidx.compose.material3.common"),
         packageNameHash("androidx.compose.material3.internal"),
         packageNameHash("androidx.compose.material3.pulltorefresh"),
         packageNameHash("androidx.compose.material3.windowsizeclass"),
+        packageNameHash("androidx.compose.material3.xr"),
+        packageNameHash("androidx.compose.material3.xr.adaptive"),
+        packageNameHash("androidx.compose.material3.xr.stub"),
+        packageNameHash("androidx.compose.remote.creation.compose.action"),
+        packageNameHash("androidx.compose.remote.creation.compose.capture"),
+        packageNameHash("androidx.compose.remote.creation.compose.layout"),
+        packageNameHash("androidx.compose.remote.creation.compose.modifier"),
+        packageNameHash("androidx.compose.remote.creation.compose.state"),
+        packageNameHash("androidx.compose.remote.player.compose"),
+        packageNameHash("androidx.compose.remote.player.compose.impl"),
+        packageNameHash("androidx.compose.remote.tooling.preview"),
         packageNameHash("androidx.compose.runtime"),
         packageNameHash("androidx.compose.runtime.internal"),
         packageNameHash("androidx.compose.runtime.livedata"),
         packageNameHash("androidx.compose.runtime.mock"),
         packageNameHash("androidx.compose.runtime.reflect"),
+        packageNameHash("androidx.compose.runtime.retain"),
         packageNameHash("androidx.compose.runtime.rxjava2"),
         packageNameHash("androidx.compose.runtime.rxjava3"),
         packageNameHash("androidx.compose.runtime.saveable"),
+        packageNameHash("androidx.compose.runtime.tooling"),
         packageNameHash("androidx.compose.ui"),
         packageNameHash("androidx.compose.ui.graphics"),
         packageNameHash("androidx.compose.ui.graphics.benchmark"),
@@ -65,6 +79,10 @@ val systemPackages =
         packageNameHash("androidx.compose.ui.window"),
         packageNameHash("androidx.lifecycle.compose"),
         packageNameHash("androidx.navigation.compose"),
+        packageNameHash("androidx.navigation.compose.internal"),
+        packageNameHash("androidx.navigation3.runtime"),
+        packageNameHash("androidx.navigation3.scene"),
+        packageNameHash("androidx.navigation3.ui"),
         packageNameHash("androidx.wear.compose.foundation"),
         packageNameHash("androidx.wear.compose.foundation.lazy"),
         packageNameHash("androidx.wear.compose.foundation.pager"),
@@ -74,14 +92,15 @@ val systemPackages =
         packageNameHash("androidx.wear.compose.material3"),
         packageNameHash("androidx.wear.compose.material3.internal"),
         packageNameHash("androidx.wear.compose.material3.lazy"),
+        packageNameHash("androidx.wear.compose.material3.macrobenchmark.common"),
         packageNameHash("androidx.wear.compose.material3.macrobenchmark.common.baselineprofile"),
         packageNameHash("androidx.wear.compose.materialcore"),
         packageNameHash("androidx.wear.compose.navigation"),
-        // TODO(b/375593578): Remove hardcoded packages
-        1538710489, // "a.x.c.s"
-        2001804959, // "a.x.c.u"
-        48603481, // "a.x.c.u.l"
-        1228925967, // "a.x.c.u.n"
-        1665712414, // "a.x.c.u.p"
-        1306660555, // "a.x.c.u.s"
+        packageNameHash("androidx.wear.compose.remote.material3"),
+        packageNameHash("androidx.xr.compose.material3"),
+        packageNameHash("androidx.xr.compose.platform"),
+        packageNameHash("androidx.xr.compose.spatial"),
+        packageNameHash("androidx.xr.compose.subspace"),
+        packageNameHash("androidx.xr.compose.subspace.animation"),
+        packageNameHash("androidx.xr.compose.subspace.layout"),
     )

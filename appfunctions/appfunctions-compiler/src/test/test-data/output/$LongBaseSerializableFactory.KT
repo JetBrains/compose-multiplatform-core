@@ -1,24 +1,31 @@
 package com.testdata
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$LongBaseSerializableFactory` : AppFunctionSerializableFactory<LongBaseSerializable> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): LongBaseSerializable {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.LongBaseSerializable")
 
-    val age = appFunctionData.getLong("age")
-    val name = appFunctionData.getString("name")
+    val age = checkNotNull(appFunctionDataWithSpec.getLongOrNull("age"))
+    val stringToOpen = checkNotNull(appFunctionDataWithSpec.getStringOrNull("stringToOpen"))
 
-    return LongBaseSerializable(age, name)
+    val resultLongBaseSerializable = LongBaseSerializable(age, stringToOpen)
+    return resultLongBaseSerializable
   }
 
-  override fun toAppFunctionData(longBaseSerializable: LongBaseSerializable): AppFunctionData {
+  override fun toAppFunctionData(appFunctionSerializable: LongBaseSerializable): AppFunctionData {
+    val longBaseSerializable_appFunctionSerializable = appFunctionSerializable
 
-    val builder = AppFunctionData.Builder("com.testdata.LongBaseSerializable")
-    builder.setLong("age", longBaseSerializable.age)
-    builder.setString("name", longBaseSerializable.name)
+    val builder = getAppFunctionDataBuilder("com.testdata.LongBaseSerializable")
+    val age = longBaseSerializable_appFunctionSerializable.age
+    builder.setLong("age", age)
+    val stringToOpen = longBaseSerializable_appFunctionSerializable.stringToOpen
+    builder.setString("stringToOpen", stringToOpen)
 
     return builder.build()
   }

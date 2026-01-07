@@ -25,17 +25,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
 class DialogTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -55,7 +56,7 @@ class DialogTest {
             Dialog(
                 visible = visible,
                 modifier = Modifier.testTag(TEST_TAG),
-                onDismissRequest = {}
+                onDismissRequest = {},
             ) {
                 recomposeCounter++
             }
@@ -86,7 +87,7 @@ class DialogTest {
                 onDismissRequest = {
                     visible = false
                     dismissCounter++
-                }
+                },
             ) {}
         }
 
@@ -104,7 +105,7 @@ class DialogTest {
             Dialog(
                 modifier = Modifier.testTag(TEST_TAG),
                 onDismissRequest = { dismissCounter++ },
-                visible = visible.value
+                visible = visible.value,
             ) {}
         }
         rule.waitForIdle()
@@ -123,21 +124,19 @@ class DialogTest {
 
     @Test
     fun shrink_background_when_dialog_is_shown() {
-        var scaffoldState = ScaffoldState(appScaffoldPresent = false)
+        var scaffoldState = ScaffoldState()
         rule.setContentWithTheme {
-            CompositionLocalProvider(
-                LocalScaffoldState provides scaffoldState,
-            ) {
+            CompositionLocalProvider(LocalScaffoldState provides scaffoldState) {
                 var visible by remember { mutableStateOf(false) }
                 Button(
                     modifier = Modifier.testTag(SHOW_BUTTON_TAG),
-                    onClick = { visible = true }
+                    onClick = { visible = true },
                 ) {}
 
                 Dialog(
                     visible = visible,
                     modifier = Modifier.testTag(TEST_TAG),
-                    onDismissRequest = {}
+                    onDismissRequest = {},
                 ) {}
             }
         }
@@ -148,21 +147,19 @@ class DialogTest {
 
     @Test
     fun expand_background_when_dialog_is_hidden() {
-        var scaffoldState = ScaffoldState(appScaffoldPresent = false)
+        var scaffoldState = ScaffoldState()
         rule.setContentWithTheme {
-            CompositionLocalProvider(
-                LocalScaffoldState provides scaffoldState,
-            ) {
+            CompositionLocalProvider(LocalScaffoldState provides scaffoldState) {
                 var visible by remember { mutableStateOf(true) }
                 Button(
                     modifier = Modifier.testTag(SHOW_BUTTON_TAG),
-                    onClick = { visible = false }
+                    onClick = { visible = false },
                 ) {}
 
                 Dialog(
                     visible = visible,
                     modifier = Modifier.testTag(TEST_TAG),
-                    onDismissRequest = {}
+                    onDismissRequest = {},
                 ) {}
             }
         }
@@ -173,22 +170,20 @@ class DialogTest {
 
     @Test
     fun expand_background_when_dialog_is_removed() {
-        var scaffoldState = ScaffoldState(appScaffoldPresent = false)
+        var scaffoldState = ScaffoldState()
         rule.setContentWithTheme {
-            CompositionLocalProvider(
-                LocalScaffoldState provides scaffoldState,
-            ) {
+            CompositionLocalProvider(LocalScaffoldState provides scaffoldState) {
                 var visible by remember { mutableStateOf(true) }
                 Button(
                     modifier = Modifier.testTag(SHOW_BUTTON_TAG),
-                    onClick = { visible = false }
+                    onClick = { visible = false },
                 ) {}
 
                 if (visible) {
                     Dialog(
                         visible = visible,
                         modifier = Modifier.testTag(TEST_TAG),
-                        onDismissRequest = {}
+                        onDismissRequest = {},
                     ) {}
                 }
             }

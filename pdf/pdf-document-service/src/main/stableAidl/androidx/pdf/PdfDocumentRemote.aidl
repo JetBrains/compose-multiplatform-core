@@ -23,10 +23,17 @@ import android.graphics.pdf.content.PdfPageImageContent;
 import android.graphics.pdf.content.PdfPageLinkContent;
 import android.graphics.pdf.content.PdfPageTextContent;
 import android.graphics.pdf.models.PageMatchBounds;
+import android.graphics.pdf.models.FormEditRecord;
+import android.graphics.pdf.models.FormWidgetInfo;
 import android.graphics.pdf.models.selection.PageSelection;
 import android.graphics.pdf.models.selection.SelectionBoundary;
 import android.os.ParcelFileDescriptor;
+import androidx.pdf.DraftEditOperation;
+import androidx.pdf.DraftEditResult;
 import androidx.pdf.models.Dimensions;
+import androidx.pdf.annotation.models.PdfAnnotation;
+import androidx.pdf.annotation.models.PaginatedAnnotations;
+import androidx.pdf.RenderParams;
 
 /** Remote interface for interacting with a PDF document */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
@@ -62,9 +69,10 @@ interface PdfDocumentRemote {
      * @param pageNum The zero-based page number to render.
      * @param width The desired width of the resulting Bitmap.
      * @param height The desired height of the resulting Bitmap.
+     * @param renderParams The set of parameters used for rendering a page bitmap.
      * @return A Bitmap representation of the specified page, or null if an error occurs.
      */
-    Bitmap getPageBitmap(int pageNum, int width, int height);
+    Bitmap getPageBitmap(int pageNum, int width, int height, in RenderParams renderParams);
 
     /**
      * Renders a tile of the specified page into a Bitmap.
@@ -79,9 +87,10 @@ interface PdfDocumentRemote {
      * @param pageHeight The height of the whole PDF page.
      * @param offsetX The horizontal offset of the tile within the page.
      * @param offsetY The vertical offset of the tile within the page.
+     * @param renderParams The set of parameters used for rendering a tile bitmap.
      * @return A Bitmap representation of the specified tile, or null if an error occurs.
      */
-    Bitmap getTileBitmap(int pageNum, int tilewidth, int tileHeight, int pageWidth, int pageHeight, int offsetX, int offsetY);
+    Bitmap getTileBitmap(int pageNum, int tilewidth, int tileHeight, int pageWidth, int pageHeight, int offsetX, int offsetY, in RenderParams renderParams);
 
     /**
      * Gets the text content of the specified page.
@@ -162,4 +171,63 @@ interface PdfDocumentRemote {
      * PDF document to ensure proper cleanup.</p>
      */
     void closePdfDocument();
+
+    /**
+     * Gets the form widgets data of the specified page.
+     *
+     * @param pageNum The page number (0-based).
+     * @return A list of {@link FormWidgetInfo} on the page.
+     */
+    List<FormWidgetInfo> getFormWidgetInfos(int pageNum);
+
+    /**
+     * Gets the form widgets data of the specified page and widget types.
+     *
+     * @param pageNum The page number (0-based).
+     * @param types The widget types to retrieve.
+     * @return A list of {@link FormWidgetInfo} on the page.
+     */
+    List<FormWidgetInfo> getFormWidgetInfosOfType(int pageNum, in int[] types);
+
+    /**
+    * Applies a form widget edit to the PDF on the given page.
+    *
+    * @param pageNum The page number (0-based).
+    * @param editRecord The edit to apply.
+    * @return Rectangular areas of the page bitmap that have been invalidated by this action.
+    */
+    List<Rect> applyEdit(int pageNum, in FormEditRecord editRecord);
+
+    /**
+    * Writes the contents of the PdfDocument to the destination and closes the ParcelFileDescriptor.
+    *
+    * @param destination The ParcelFileDescriptor to write to.
+    * @param removePasswordProtection Whether to remove password protection from the document.
+    */
+    void write(in ParcelFileDescriptor destination, boolean removePasswordProtection);
+
+    /**
+    * Retrieves the annotations present on the specified page in the paginated format.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getPageAnnotations(int pageNum);
+
+    /**
+    * Retrieves the annotations present on the specified page for the specific batch.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
+
+    /**
+    * Applies a list of draft edit operations (insert, update, remove) to the PDF document.
+    *
+    * @param operations The list of [DraftEditOperation] objects to apply.
+    * @return A [DraftEditResult] indicating the outcome of the batch operation.
+    */
+    DraftEditResult applyDraftEdits(in List<DraftEditOperation> operations);
+
 }

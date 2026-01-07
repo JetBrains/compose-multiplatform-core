@@ -33,7 +33,7 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
  * @param compileTask The task that compiles the sources and build .o file for each source file.
  * @param archiveTask The task that will archive the output of the [compileTask] into a single .a
  *   file.
- * @param sharedLibTask The task that will created a shared library from the output of [compileTask]
+ * @param linkerTask The task that will created a shared library from the output of [compileTask]
  *   that also optionally links with [linkedObjects]
  * @param sources List of source files for the compilation.
  * @param includes List of include directories containing .h files for the compilation.
@@ -48,14 +48,14 @@ internal constructor(
     val konanTarget: KonanTarget,
     internal val compileTask: TaskProvider<ClangCompileTask>,
     internal val archiveTask: TaskProvider<ClangArchiveTask>,
-    internal val sharedLibTask: TaskProvider<ClangSharedLibraryTask>,
+    internal val linkerTask: TaskProvider<ClangLinkerTask>,
     val sources: ConfigurableFileCollection,
     val includes: ConfigurableFileCollection,
     val linkedObjects: ConfigurableFileCollection,
     @Suppress("unused") // used via build.gradle
     val linkerArgs: ListProperty<String>,
     @Suppress("unused") // used via build.gradle
-    val freeArgs: ListProperty<String>
+    val freeArgs: ListProperty<String>,
 ) : Named {
     override fun getName(): String = konanTarget.name
 
@@ -108,15 +108,12 @@ internal constructor(
                     listOf("windows-x86/include", "windows-x86/include/win32")
                 }
                 Family.OSX -> {
-                    // it is OK that we are using x86 here, they are the same files (openjdk only
+                    // it is OK that we are using arm64 here, they are the same files (openjdk only
                     // distinguishes between unix and windows).
-                    listOf("darwin-x86/include", "darwin-x86/include/darwin")
+                    listOf("darwin-arm64/include", "darwin-arm64/include/darwin")
                 }
                 Family.LINUX -> {
-                    listOf(
-                        "linux-x86/include",
-                        "linux-x86/include/linux",
-                    )
+                    listOf("linux-x86/include", "linux-x86/include/linux")
                 }
                 else -> error("unsupported family ($konanTarget) for JNI compilation")
             }

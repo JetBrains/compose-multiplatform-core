@@ -61,21 +61,23 @@ import org.junit.runner.RunWith
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 internal class SearchInteractionTest {
 
-    private lateinit var scenario: FragmentScenario<TestPdfViewerFragmentV2>
+    private lateinit var scenario: FragmentScenario<TestPdfViewerFragment>
 
     @Before
     fun setup() {
         scenario =
-            launchFragmentInContainer<TestPdfViewerFragmentV2>(
+            launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             )
 
         scenario.onFragment { fragment ->
             // Register idling resource
             IdlingRegistry.getInstance()
                 .register(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance()
+                .register(fragment.pdfSearchFocusIdlingResource.countingIdlingResource)
 
             scenarioLoadDocument(
                 scenario = scenario,
@@ -91,18 +93,19 @@ internal class SearchInteractionTest {
             // Un-register idling resource
             IdlingRegistry.getInstance()
                 .unregister(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance()
+                .unregister(fragment.pdfSearchFocusIdlingResource.countingIdlingResource)
         }
         scenario.close()
     }
 
     @Test
     fun test_searchClosed_upon_textSelection() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
 
         var pdfView: PdfView? = null
         scenario.onFragment { fragment ->
-            pdfView =
-                fragment.view?.findViewById<PdfView>(androidx.pdf.viewer.fragment.R.id.pdfView)
+            pdfView = fragment.view?.findViewById<PdfView>(R.id.pdfView)
             fragment.isTextSearchActive = true
         }
 
@@ -124,12 +127,11 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_selection_cleared_upon_search() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
 
         var pdfView: PdfView? = null
         scenario.onFragment { fragment ->
-            pdfView =
-                fragment.view?.findViewById<PdfView>(androidx.pdf.viewer.fragment.R.id.pdfView)
+            pdfView = fragment.view?.findViewById<PdfView>(R.id.pdfView)
         }
 
         // Start selection on PdfView
@@ -152,7 +154,8 @@ internal class SearchInteractionTest {
 
     @Test
     fun test_pdfViewerFragment_searchFocusCleared_onSingleTap() {
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfContentLayout))
+            .check(matches(isDisplayed()))
         var pdfSearchView: PdfSearchView? = null
 
         scenario.onFragment { fragment ->
@@ -170,10 +173,55 @@ internal class SearchInteractionTest {
             // Single tap on PdfView(anywhere on the content)
             onView(isRoot()).perform(click())
 
+            scenario.onFragment { it.pdfSearchFocusIdlingResource.increment() }
+            // Espresso will wait on the idling resource on the next action performed hence adding a
+            // click which is essentially a no-op
+            onView(isRoot()).perform(click())
+
             // search focus on search is cleared
             assertFalse(it.hasFocus())
             // assert soft input mode is also hidden
             assertFalse(it.rootWindowInsets.isVisible(WindowInsets.Type.ime()))
+        }
+    }
+
+    @Test
+    fun test_pdfViewerFragment_searchFocused_onResume() {
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfContentLayout))
+            .check(matches(isDisplayed()))
+        var pdfSearchView: PdfSearchView? = null
+
+        scenario.onFragment { fragment ->
+            pdfSearchView =
+                fragment.view?.findViewById<PdfSearchView>(
+                    androidx.pdf.viewer.fragment.R.id.pdfSearchView
+                )
+            fragment.isTextSearchActive = true
+        }
+
+        pdfSearchView?.let {
+            // Assert that the search view is focused when the user initiates a search.
+            assertTrue(it.hasFocus())
+
+            // Single tap on PdfView(anywhere on the content)
+            onView(isRoot()).perform(click())
+
+            scenario.onFragment { it.pdfSearchFocusIdlingResource.increment() }
+            // Espresso will wait on the idling resource on the next action performed hence adding a
+            // click which is essentially a no-op
+            onView(isRoot()).perform(click())
+
+            // search focus on search is cleared
+            assertFalse(it.hasFocus())
+            // assert soft input mode is also hidden
+            assertFalse(it.rootWindowInsets.isVisible(WindowInsets.Type.ime()))
+
+            // Simulate the user switching away and then returning back.
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+
+            // Assert that the search view gains focus when the user returns to the PDF view.
+            assertTrue(it.hasFocus())
         }
     }
 
@@ -189,7 +237,7 @@ internal class SearchInteractionTest {
                     },
                     Press.THUMB,
                     InputDevice.SOURCE_UNKNOWN,
-                    MotionEvent.BUTTON_PRIMARY
+                    MotionEvent.BUTTON_PRIMARY,
                 )
             )
     }

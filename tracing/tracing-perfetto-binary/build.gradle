@@ -27,7 +27,6 @@ import androidx.build.AndroidXConfig
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 /**
@@ -82,7 +81,6 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(project(":benchmark:benchmark-common")) // for supported ABI checks

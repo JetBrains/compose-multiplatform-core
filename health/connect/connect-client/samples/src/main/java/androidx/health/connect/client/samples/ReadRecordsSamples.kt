@@ -41,7 +41,7 @@ import java.time.Instant
 suspend fun ReadSkinTemperatureRecord(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     if (
         healthConnectClient.features.getFeatureStatus(
@@ -74,7 +74,7 @@ suspend fun ReadSkinTemperatureRecord(
 suspend fun ReadStepsRange(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -91,7 +91,7 @@ suspend fun ReadStepsRange(
 suspend fun ReadExerciseSessions(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -109,7 +109,7 @@ suspend fun ReadExerciseSessions(
                         timeRangeFilter =
                             TimeRangeFilter.between(
                                 exerciseRecord.startTime,
-                                exerciseRecord.endTime
+                                exerciseRecord.endTime,
                             )
                     )
                 )
@@ -122,7 +122,7 @@ suspend fun ReadExerciseRoute(
     activityResultCaller: ActivityResultCaller,
     healthConnectClient: HealthConnectClient,
     displayExerciseRoute: (ExerciseRoute) -> Unit,
-    recordId: String
+    recordId: String,
 ) {
     // See https://developer.android.com/training/basics/intents/result#launch for appropriately
     // handling ActivityResultContract.
@@ -152,7 +152,7 @@ suspend fun ReadExerciseRoute(
 suspend fun ReadSleepSessions(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -181,7 +181,7 @@ suspend fun ReadRecordsInBackground(
     val response =
         healthConnectClient.readRecords(
             ReadRecordsRequest<StepsRecord>(
-                timeRangeFilter = TimeRangeFilter.between(startTime, endTime),
+                timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
             )
         )
 

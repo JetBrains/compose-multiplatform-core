@@ -17,6 +17,7 @@
 package androidx.camera.video.internal;
 
 import static androidx.camera.core.internal.utils.SizeUtil.findNearestHigherFor;
+import static androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR;
 import static androidx.camera.video.internal.utils.DynamicRangeUtil.isHdrSettingsMatched;
 import static androidx.camera.video.internal.utils.EncoderProfilesUtil.deriveVideoProfile;
 import static androidx.core.util.Preconditions.checkArgument;
@@ -130,7 +131,8 @@ public class QualityExploredEncoderProfilesProvider implements EncoderProfilesPr
             Quality.@NonNull ConstantQuality quality) {
         checkArgument(mTargetQualities.contains(quality));
         EncoderProfilesProxy qualityMappedProfiles =
-                mBaseEncoderProfilesProvider.getAll(quality.getValue());
+                mBaseEncoderProfilesProvider.getAll(
+                        quality.getQualityValue(QUALITY_SOURCE_REGULAR));
         for (Size size : quality.getTypicalSizes()) {
             if (!mCameraSupportedResolutions.contains(size)) {
                 continue;
@@ -158,8 +160,7 @@ public class QualityExploredEncoderProfilesProvider implements EncoderProfilesPr
                     continue;
                 }
                 // Add the encoderProfiles to the candidates of base EncoderProfiles.
-                areaSortedSizeToEncoderProfilesMap.put(
-                        new Size(baseVideoProfile.getWidth(), baseVideoProfile.getHeight()),
+                areaSortedSizeToEncoderProfilesMap.put(baseVideoProfile.getResolution(),
                         encoderProfiles);
                 // Generate VideoProfile from base VideoProfile and new size.
                 generatedVideoProfiles.add(
@@ -183,7 +184,7 @@ public class QualityExploredEncoderProfilesProvider implements EncoderProfilesPr
     private Quality.@Nullable ConstantQuality findQualityInTargetQualities(int qualityValue) {
         for (Quality quality : mTargetQualities) {
             Quality.ConstantQuality constantQuality = (Quality.ConstantQuality) quality;
-            if (constantQuality.getValue() == qualityValue) {
+            if (constantQuality.getQualityValue(QUALITY_SOURCE_REGULAR) == qualityValue) {
                 return constantQuality;
             }
         }
@@ -198,7 +199,8 @@ public class QualityExploredEncoderProfilesProvider implements EncoderProfilesPr
         EncoderProfilesProvider constrainedProvider =
                 new DynamicRangeMatchedEncoderProfilesProvider(mBaseEncoderProfilesProvider,
                         dynamicRange);
-        CapabilitiesByQuality capabilities = new CapabilitiesByQuality(constrainedProvider);
+        CapabilitiesByQuality capabilities = new CapabilitiesByQuality(
+                constrainedProvider, QUALITY_SOURCE_REGULAR);
         mDynamicRangeToCapabilitiesMap.put(dynamicRange, capabilities);
         return capabilities;
     }

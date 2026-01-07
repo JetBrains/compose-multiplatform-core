@@ -31,7 +31,6 @@ def isIdeBuild() {
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 android {

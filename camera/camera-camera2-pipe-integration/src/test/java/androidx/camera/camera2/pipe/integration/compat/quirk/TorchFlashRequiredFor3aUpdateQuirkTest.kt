@@ -35,12 +35,12 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class TorchFlashRequiredFor3aUpdateQuirkTest(
     private val model: String,
     private val lensFacing: Int,
     private val externalFlashAeModeSupported: Boolean,
-    private val enabled: Boolean
+    private val enabled: Boolean,
 ) {
     companion object {
         @JvmStatic
@@ -49,21 +49,18 @@ class TorchFlashRequiredFor3aUpdateQuirkTest(
         )
         fun data() =
             listOf(
-                arrayOf("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false, false),
-                arrayOf("Pixel 4", CameraCharacteristics.LENS_FACING_FRONT, true, false),
-                arrayOf("Pixel 6", CameraCharacteristics.LENS_FACING_FRONT, false, false),
-                arrayOf("Pixel 6A", CameraCharacteristics.LENS_FACING_BACK, false, false),
-                arrayOf("Pixel 6A", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("Pixel 7 pro", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("Pixel 8", CameraCharacteristics.LENS_FACING_FRONT, false, true),
-                arrayOf("SM-A320FL", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 4", CameraCharacteristics.LENS_FACING_FRONT, true, false),
+                arrayOf<Any>("Pixel 6", CameraCharacteristics.LENS_FACING_FRONT, false, false),
+                arrayOf<Any>("Pixel 6A", CameraCharacteristics.LENS_FACING_BACK, false, false),
+                arrayOf<Any>("Pixel 6A", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("Pixel 7 pro", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("Pixel 8", CameraCharacteristics.LENS_FACING_FRONT, false, true),
+                arrayOf<Any>("SM-A320FL", CameraCharacteristics.LENS_FACING_FRONT, false, false),
             )
     }
 
-    private fun getCameraQuirks(
-        lensFacing: Int,
-        externalFlashAeModeSupported: Boolean,
-    ): Quirks {
+    private fun getCameraQuirks(lensFacing: Int, externalFlashAeModeSupported: Boolean): Quirks {
         val characteristicsMap =
             mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
                 .apply {
@@ -89,8 +86,8 @@ class TorchFlashRequiredFor3aUpdateQuirkTest(
                     StreamConfigurationMapBuilder.newBuilder().build(),
                     OutputSizesCorrector(
                         cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build()
-                    )
+                        StreamConfigurationMapBuilder.newBuilder().build(),
+                    ),
                 ),
             )
             .quirks

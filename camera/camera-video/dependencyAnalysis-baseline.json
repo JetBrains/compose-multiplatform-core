@@ -15,7 +15,7 @@
         "identifier": "androidx.arch.core:core-common",
         "resolvedVersion": "2.1.0"
       },
-      "toConfiguration": "api"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

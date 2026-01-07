@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.changelist
 
-import androidx.compose.runtime.Anchor
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.ComposeNodeLifecycleCallback
 import androidx.compose.runtime.Composition
@@ -28,8 +27,6 @@ import androidx.compose.runtime.MovableContentStateReference
 import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberManager
 import androidx.compose.runtime.RememberObserverHolder
-import androidx.compose.runtime.SlotTable
-import androidx.compose.runtime.SlotWriter
 import androidx.compose.runtime.changelist.Operation.AdvanceSlotsBy
 import androidx.compose.runtime.changelist.Operation.AppendValue
 import androidx.compose.runtime.changelist.Operation.ApplyChangeList
@@ -64,6 +61,9 @@ import androidx.compose.runtime.changelist.Operation.UpdateNode
 import androidx.compose.runtime.changelist.Operation.UpdateValue
 import androidx.compose.runtime.changelist.Operation.Ups
 import androidx.compose.runtime.changelist.Operation.UseCurrentNode
+import androidx.compose.runtime.composer.gapbuffer.Anchor
+import androidx.compose.runtime.composer.gapbuffer.SlotTable
+import androidx.compose.runtime.composer.gapbuffer.SlotWriter
 import androidx.compose.runtime.internal.IntRef
 
 internal class ChangeList : OperationsDebugStringFormattable() {
@@ -85,13 +85,13 @@ internal class ChangeList : OperationsDebugStringFormattable() {
         applier: Applier<*>,
         slots: SlotWriter,
         rememberManager: RememberManager,
-        errorContext: OperationErrorContext?
+        errorContext: OperationErrorContext?,
     ) =
         operations.executeAndFlushAllPendingOperations(
             applier,
             slots,
             rememberManager,
-            errorContext
+            errorContext,
         )
 
     fun pushRemember(value: RememberObserverHolder) {
@@ -180,7 +180,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                 InsertSlotsWithFixups.FromSlotTable,
                 from,
                 InsertSlotsWithFixups.Fixups,
-                fixups
+                fixups,
             )
         }
     }
@@ -195,7 +195,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                 EndCompositionScope.Action,
                 action,
                 EndCompositionScope.Composition,
-                composition
+                composition,
             )
         }
     }
@@ -249,7 +249,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                 DetermineMovableContentNodeIndex.EffectiveNodeIndexOut,
                 effectiveNodeIndexOut,
                 DetermineMovableContentNodeIndex.Anchor,
-                anchor
+                anchor,
             )
         }
     }
@@ -261,7 +261,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                     CopyNodesToNewAnchorLocation.Nodes,
                     nodes,
                     CopyNodesToNewAnchorLocation.EffectiveNodeIndex,
-                    effectiveNodeIndex
+                    effectiveNodeIndex,
                 )
             }
         }
@@ -283,7 +283,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                 CopySlotTableToAnchorLocation.To,
                 to,
                 CopySlotTableToAnchorLocation.From,
-                from
+                from,
             )
         }
     }
@@ -292,7 +292,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
     fun pushReleaseMovableGroupAtCurrent(
         composition: ControlledComposition,
         parentContext: CompositionContext,
-        reference: MovableContentStateReference
+        reference: MovableContentStateReference,
     ) {
         operations.push(ReleaseMovableGroupAtCurrent) {
             setObjects(
@@ -301,7 +301,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                 ReleaseMovableGroupAtCurrent.ParentCompositionContext,
                 parentContext,
                 ReleaseMovableGroupAtCurrent.Reference,
-                reference
+                reference,
             )
         }
     }
@@ -317,7 +317,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
                     ApplyChangeList.Changes,
                     changeList,
                     ApplyChangeList.EffectiveNodeIndex,
-                    effectiveNodeIndex
+                    effectiveNodeIndex,
                 )
             }
         }

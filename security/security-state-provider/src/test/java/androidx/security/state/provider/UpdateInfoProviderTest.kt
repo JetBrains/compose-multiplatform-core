@@ -25,6 +25,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ProviderInfo
 import android.net.Uri
 import androidx.security.state.SecurityPatchState.Companion.COMPONENT_SYSTEM
+import androidx.security.state.SerializableUpdateInfo
+import androidx.security.state.UpdateInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -59,7 +61,7 @@ class UpdateInfoProviderTest {
     private val expectedJson =
         Json.encodeToString(
             SerializableUpdateInfo.serializer(),
-            updateInfo.toSerializableUpdateInfo()
+            updateInfo.toSerializableUpdateInfo(),
         )
     private val mockEmptyEditor: SharedPreferences.Editor = mock<SharedPreferences.Editor> {}
     private val mockEditor: SharedPreferences.Editor =
@@ -75,7 +77,7 @@ class UpdateInfoProviderTest {
     private val componentName =
         ComponentName(
             mock<Context> { on { packageName } doReturn packageName },
-            UpdateInfoProvider::class.java
+            UpdateInfoProvider::class.java,
         )
     private val providerInfo =
         ProviderInfo().apply { authority = this@UpdateInfoProviderTest.authority }

@@ -20,6 +20,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "javax.inject:javax.inject",
+        "resolvedVersion": "1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
       },
@@ -28,11 +36,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "api",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "api"
     },
     {
       "coordinates": {
@@ -40,7 +47,7 @@
         "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "toConfiguration": "api"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

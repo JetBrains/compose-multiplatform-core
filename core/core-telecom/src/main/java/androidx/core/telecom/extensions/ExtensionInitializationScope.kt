@@ -88,15 +88,19 @@ public interface ExtensionInitializationScope {
      * specify participant related information, which will be shared with remote surfaces that
      * support displaying that information (automotive, watch, etc...).
      *
-     * @param initialParticipants The initial [Set] of [Participant]s in the call
+     * @param initialParticipants The initial [List] of [Participant]s in the call. Participants are
+     *   displayed on the remote screen according to their order within the participants list,
+     *   starting with the first element. Duplicate participants are removed. If the same
+     *   participant is added to the list more than once, **only the first occurrence of that
+     *   participant** will be retained in the list; subsequent duplicates are dropped.
      * @param initialActiveParticipant The initial [Participant] that is active in the call or
      *   `null` if there is no active participant.
      * @return The interface used by this application to further update the participant extension
      *   state to remote surfaces
      */
     public fun addParticipantExtension(
-        initialParticipants: Set<Participant> = emptySet(),
-        initialActiveParticipant: Participant? = null
+        initialParticipants: List<Participant> = emptyList(),
+        initialActiveParticipant: Participant? = null,
     ): ParticipantExtension
 
     /**
@@ -111,6 +115,11 @@ public interface ExtensionInitializationScope {
      * @param initialCallSilenceState The initial call silence value at the start of the call. True,
      *   signals silence the user and do not transmit audio data to the remote users. False signals
      *   the mic is transmitting audio data at the application layer.
+     * @param initialCanUserUpdateSilenceState The initial state determining if the user is allowed
+     *   to toggle the silence state. Set this to 'false' if the user joins the call in a restricted
+     *   state, such as being restricted by a moderator (e.g. a host hard-muting participants) ,
+     *   joining a live stream as a passive viewer, or using a hardware mode with no audio input.
+     *   Defaults to 'true'.
      * @param onLocalSilenceUpdate This is called when the user has requested to change their
      *   silence state on a remote surface. If true, this user has requested to silence the
      *   microphone. If false, this user has unsilenced the microphone. This operation should not
@@ -120,6 +129,7 @@ public interface ExtensionInitializationScope {
      */
     public fun addLocalCallSilenceExtension(
         initialCallSilenceState: Boolean,
+        initialCanUserUpdateSilenceState: Boolean = true,
         onLocalSilenceUpdate: (suspend (Boolean) -> Unit),
     ): LocalCallSilenceExtension
 

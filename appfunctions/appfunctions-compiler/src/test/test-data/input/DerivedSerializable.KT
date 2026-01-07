@@ -1,17 +1,25 @@
 package com.testdata
 
+import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
 
-@AppFunctionSerializable open class StringBaseSerializable(open val name: String) {}
+@AppFunctionSchemaCapability
+public interface AppFunctionOpenable {
+    public val stringToOpen: String
+}
+
+public interface OpenableResponse : AppFunctionOpenable {
+    override val stringToOpen: String
+}
 
 @AppFunctionSerializable
 open class LongBaseSerializable(
     open val age: Long,
-    override val name: String,
-) : StringBaseSerializable(name) {}
+    override val stringToOpen: String,
+) : OpenableResponse {}
 
 @AppFunctionSerializable
 class DerivedSerializable(
-    override val name: String,
+    override val stringToOpen: String,
     override val age: Long,
-) : LongBaseSerializable(age, name)
+) : LongBaseSerializable(age, stringToOpen)

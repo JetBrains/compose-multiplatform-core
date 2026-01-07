@@ -1,9 +1,9 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.collection.FloatFloatPair#getFirst():
-    Removed method androidx.collection.FloatFloatPair.getFirst()
-RemovedMethod: androidx.collection.FloatFloatPair#getSecond():
-    Removed method androidx.collection.FloatFloatPair.getSecond()
-RemovedMethod: androidx.collection.IntIntPair#getFirst():
-    Removed method androidx.collection.IntIntPair.getFirst()
-RemovedMethod: androidx.collection.IntIntPair#getSecond():
-    Removed method androidx.collection.IntIntPair.getSecond()
+AddedMethod: androidx.collection.ScatterMapKt#toScatterMap(androidx.collection.ScatterMap<K,V>):
+    Added method androidx.collection.ScatterMapKt.toScatterMap(androidx.collection.ScatterMap<K,V>)
+AddedMethod: androidx.collection.ScatterMapKt#toScatterMap(java.util.Map<K,? extends V>):
+    Added method androidx.collection.ScatterMapKt.toScatterMap(java.util.Map<K,? extends V>)
+AddedMethod: androidx.collection.ScatterSetKt#toScatterSet(androidx.collection.ScatterSet<E>):
+    Added method androidx.collection.ScatterSetKt.toScatterSet(androidx.collection.ScatterSet<E>)
+AddedMethod: androidx.collection.ScatterSetKt#toScatterSet(java.util.Collection<? extends E>):
+    Added method androidx.collection.ScatterSetKt.toScatterSet(java.util.Collection<? extends E>)

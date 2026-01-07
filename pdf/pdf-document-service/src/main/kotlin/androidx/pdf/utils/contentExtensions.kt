@@ -16,9 +16,12 @@
 
 package androidx.pdf.utils
 
+import android.annotation.SuppressLint
+import android.graphics.Point
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RestrictTo
+import androidx.pdf.RenderParams
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -26,6 +29,10 @@ import androidx.pdf.content.PdfPageImageContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
+import androidx.pdf.models.FormEditInfo
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.models.ListItem
+import kotlin.math.roundToInt
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun android.graphics.pdf.models.PageMatchBounds.toContentClass(): PageMatchBounds =
@@ -60,7 +67,7 @@ public fun android.graphics.pdf.models.selection.PageSelection.toContentClass():
             page = page,
             start = start.toContentClass(),
             stop = stop.toContentClass(),
-            selectedTextContents = selectedTextContents.map { it.toContentClass() }
+            selectedContents = selectedTextContents.map { it.toContentClass() },
         )
     }
 
@@ -92,6 +99,69 @@ public fun android.graphics.pdf.content.PdfPageGotoLinkContent.Destination.toCon
 public fun android.graphics.pdf.content.PdfPageLinkContent.toContentClass(): PdfPageLinkContent =
     requireSdkExtensionVersion {
         PdfPageLinkContent(bounds, uri)
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@SuppressLint("WrongConstant")
+public fun android.graphics.pdf.models.FormWidgetInfo.toContentClass(): FormWidgetInfo =
+    requireSdkExtensionVersion {
+        FormWidgetInfo(
+            widgetType,
+            widgetIndex,
+            widgetRect,
+            textValue,
+            accessibilityLabel,
+            isReadOnly,
+            isEditableText,
+            isMultiSelect,
+            isMultiLineText,
+            maxLength = maxLength.takeIf { it != -1 },
+            fontSize = fontSize.takeIf { it.toDouble() != 0.0 },
+            listItems.map { item -> item.toContentClass() }.takeIf { it.isNotEmpty() },
+        )
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+public fun android.graphics.pdf.models.ListItem.toContentClass(): ListItem =
+    requireSdkExtensionVersion {
+        ListItem(label, isSelected)
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@SuppressLint("WrongConstant")
+public fun FormEditInfo.toAndroidClass(): android.graphics.pdf.models.FormEditRecord =
+    requireSdkExtensionVersion {
+        val builder =
+            android.graphics.pdf.models.FormEditRecord.Builder(type, pageNumber, widgetIndex)
+        when (type) {
+            FormEditInfo.EDIT_TYPE_CLICK -> {
+                clickPoint?.let {
+                    builder.setClickPoint(Point(it.x.roundToInt(), it.y.roundToInt()))
+                }
+            }
+            FormEditInfo.EDIT_TYPE_SET_TEXT -> builder.setText(text)
+            FormEditInfo.EDIT_TYPE_SET_INDICES -> {
+                val selectedIndices = IntArray(selectedIndexCount)
+                for (i in 0 until selectedIndexCount) {
+                    selectedIndices[i] = getSelectedIndexAt(i)
+                }
+                builder.setSelectedIndices(selectedIndices)
+            }
+            else -> {}
+        }
+        builder.build()
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@SuppressLint("WrongConstant")
+public fun RenderParams.toAndroidClass(): android.graphics.pdf.RenderParams =
+    requireSdkExtensionVersion {
+        val builder = android.graphics.pdf.RenderParams.Builder(renderMode)
+        builder.setRenderFlags(renderFlags)
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 19) {
+            builder.setRenderFormContentMode(renderFormContentMode)
+        }
+        builder.build()
     }
 
 private inline fun <T> requireSdkExtensionVersion(block: () -> T): T {

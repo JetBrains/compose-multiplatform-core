@@ -31,11 +31,11 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class YuvImageOnePixelShiftQuirkTest(
     private val brand: String,
     private val model: String,
-    private val quirkEnablingExpected: Boolean
+    private val quirkEnablingExpected: Boolean,
 ) {
     @Test
     fun canEnableOnePixelShiftQuirkCorrectly() {
@@ -49,9 +49,9 @@ class YuvImageOnePixelShiftQuirkTest(
                         StreamConfigurationMapBuilder.newBuilder().build(),
                         OutputSizesCorrector(
                             FakeCameraMetadata(),
-                            StreamConfigurationMapBuilder.newBuilder().build()
-                        )
-                    )
+                            StreamConfigurationMapBuilder.newBuilder().build(),
+                        ),
+                    ),
                 )
                 .quirks
 
@@ -64,10 +64,10 @@ class YuvImageOnePixelShiftQuirkTest(
         @ParameterizedRobolectricTestRunner.Parameters(name = "Brand: {0}, Model: {1}")
         fun data() =
             listOf(
-                arrayOf("motorola", "MotoG3", true),
-                arrayOf("samsung", "SM-G532F", true),
-                arrayOf("samsung", "SM-J700F", true),
-                arrayOf("motorola", "MotoG100", false),
+                arrayOf<Any>("motorola", "MotoG3", true),
+                arrayOf<Any>("samsung", "SM-G532F", true),
+                arrayOf<Any>("samsung", "SM-J700F", true),
+                arrayOf<Any>("motorola", "MotoG100", false),
             )
     }
 }

@@ -18,7 +18,6 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,12 +42,18 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -102,6 +107,8 @@ import androidx.wear.compose.materialcore.animateSelectionColor
  *   emitting [Interaction]s for this radio button. You can use this to change the radio button's
  *   appearance or preview the radio button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
+ * @param transformation Transformation to be used when button appears inside a container that needs
+ *   to dynamically change its content separately from the background.
  * @param icon An optional slot for providing an icon to indicate the purpose of the button. The
  *   contents are expected to be center-aligned, both horizontally and vertically, and should be an
  *   icon of size 24.dp.
@@ -120,21 +127,33 @@ public fun RadioButton(
     colors: RadioButtonColors = RadioButtonDefaults.radioButtonColors(),
     contentPadding: PaddingValues = RadioButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
     icon: @Composable (BoxScope.() -> Unit)? = null,
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
-    label: @Composable RowScope.() -> Unit
+    label: @Composable RowScope.() -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
+    val backgroundColorState = colors.containerColor(enabled, selected)
+
+    val colorPainter =
+        remember(backgroundColorState) {
+            object : Painter() {
+                override val intrinsicSize: Size
+                    get() = Size.Unspecified
+
+                override fun DrawScope.onDraw() {
+                    drawRect(color = backgroundColorState.value)
+                }
+            }
+        }
 
     // Stadium/Pill shaped toggle button
     Row(
         modifier =
             modifier
                 .defaultMinSize(minHeight = MIN_HEIGHT)
-                .height(IntrinsicSize.Min)
                 .width(IntrinsicSize.Max)
-                .clip(shape = shape)
-                .background(colors.containerColor(enabled = enabled, selected = selected).value)
+                .surface(painter = colorPainter, shape = shape, transformation = transformation)
                 .selectable(
                     enabled = enabled,
                     selected = selected,
@@ -143,7 +162,7 @@ public fun RadioButton(
                         onSelect()
                     },
                     indication = ripple(),
-                    interactionSource = interactionSource
+                    interactionSource = interactionSource,
                 )
                 .padding(contentPadding)
                 .semantics {
@@ -152,7 +171,7 @@ public fun RadioButton(
                     // within the selection control.
                     role = Role.RadioButton
                 },
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
             Box(
@@ -160,8 +179,8 @@ public fun RadioButton(
                 content =
                     provideScopeContent(
                         color = colors.iconColor(enabled = enabled, selected = selected),
-                        content = icon
-                    )
+                        content = icon,
+                    ),
             )
             Spacer(modifier = Modifier.size(ICON_SPACING))
         }
@@ -176,7 +195,7 @@ public fun RadioButton(
                             maxLines = 3,
                             textAlign = TextAlign.Start,
                         ),
-                    content = label
+                    content = label,
                 ),
             secondaryLabel =
                 provideNullableScopeContent(
@@ -189,20 +208,17 @@ public fun RadioButton(
                             maxLines = 2,
                             textAlign = TextAlign.Start,
                         ),
-                    content = secondaryLabel
-                )
+                    content = secondaryLabel,
+                ),
         )
         Spacer(modifier = Modifier.size(SELECTION_CONTROL_SPACING))
         Box(
             modifier =
                 Modifier.align(Alignment.CenterVertically)
                     .size(width = SELECTION_CONTROL_WIDTH, height = SELECTION_CONTROL_HEIGHT)
-                    .wrapContentWidth(align = Alignment.End),
+                    .wrapContentWidth(align = Alignment.End)
         ) {
-            RadioControl(
-                selected = selected,
-                enabled = enabled,
-            ) { enabled, selected ->
+            RadioControl(selected = selected, enabled = enabled) { enabled, selected ->
                 colors.controlColor(enabled = enabled, selected = selected)
             }
         }
@@ -260,6 +276,8 @@ public fun RadioButton(
  *   and emitting [Interaction]s for this button's "clickable" tap area. You can use this to change
  *   the button's appearance or preview the button in different states. Note that if `null` is
  *   provided, interactions will still happen internally.
+ * @param transformation Transformation to be used when button appears inside a container that needs
+ *   to dynamically change its content separately from the background.
  * @param containerClickLabel Optional click label on the main body of the button for accessibility.
  * @param secondaryLabel A slot for providing the button's secondary label. The contents are
  *   expected to be "start" aligned.
@@ -278,12 +296,13 @@ public fun SplitRadioButton(
     colors: SplitRadioButtonColors = RadioButtonDefaults.splitRadioButtonColors(),
     selectionInteractionSource: MutableInteractionSource? = null,
     containerInteractionSource: MutableInteractionSource? = null,
+    transformation: SurfaceTransformation? = null,
     containerClickLabel: String? = null,
     contentPadding: PaddingValues = RadioButtonDefaults.ContentPadding,
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
-    label: @Composable RowScope.() -> Unit
+    label: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled, selected).value
+    val containerColorState = colors.containerColor(enabled, selected)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -292,7 +311,12 @@ public fun SplitRadioButton(
                 .defaultMinSize(minHeight = MIN_HEIGHT)
                 .height(IntrinsicSize.Min)
                 .width(IntrinsicSize.Max)
-                .clip(shape = shape)
+                .graphicsLayer {
+                    this.shape = shape
+                    clip = true
+                    val transformation = transformation ?: return@graphicsLayer
+                    with(transformation) { applyContainerTransformation() }
+                },
     ) {
         Row(
             modifier =
@@ -306,7 +330,7 @@ public fun SplitRadioButton(
                     .semantics { role = Role.Button }
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColorState.value) }
                     .padding(contentPadding)
                     .weight(1.0f),
             verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +346,7 @@ public fun SplitRadioButton(
                                 maxLines = 3,
                                 textAlign = TextAlign.Start,
                             ),
-                        content = label
+                        content = label,
                     ),
                 secondaryLabel =
                     provideNullableScopeContent(
@@ -335,16 +359,14 @@ public fun SplitRadioButton(
                                 maxLines = 2,
                                 textAlign = TextAlign.Start,
                             ),
-                        content = secondaryLabel
+                        content = secondaryLabel,
                     ),
             )
         }
 
         Spacer(modifier = Modifier.size(2.dp))
 
-        val splitBackground = if (enabled) containerColor else Color.Black
-        val splitBackgroundOverlay =
-            colors.splitContainerColor(enabled = enabled, selected = selected).value
+        val splitBackgroundOverlayState = colors.splitContainerColor(enabled, selected)
         val hapticFeedback = LocalHapticFeedback.current
 
         Box(
@@ -358,16 +380,16 @@ public fun SplitRadioButton(
                             onSelectionClick()
                         },
                         indication = ripple(),
-                        interactionSource = selectionInteractionSource
+                        interactionSource = selectionInteractionSource,
                     )
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(splitBackground)
-                    .drawWithCache {
-                        onDrawWithContent {
-                            drawRect(color = splitBackgroundOverlay)
-                            drawContent()
-                        }
+                    .drawBehind {
+                        drawRect(
+                            splitBackgroundOverlayState.value.compositeOver(
+                                if (enabled) containerColorState.value else Color.Black
+                            )
+                        )
                     }
                     .defaultMinSize(minWidth = SPLIT_MIN_WIDTH)
                     .wrapContentHeight(align = Alignment.CenterVertically)
@@ -387,7 +409,7 @@ public fun SplitRadioButton(
                         Modifier
                     } else {
                         Modifier.semantics { contentDescription = selectionContentDescription }
-                    }
+                    },
             ) { enabled, selected ->
                 colors.controlColor(enabled = enabled, selected = selected)
             }
@@ -472,7 +494,7 @@ public object RadioButtonDefaults {
         disabledUnselectedContentColor: Color = Color.Unspecified,
         disabledUnselectedSecondaryContentColor: Color = Color.Unspecified,
         disabledUnselectedIconColor: Color = Color.Unspecified,
-        disabledUnselectedControlColor: Color = Color.Unspecified
+        disabledUnselectedControlColor: Color = Color.Unspecified,
     ): RadioButtonColors =
         MaterialTheme.colorScheme.defaultRadioButtonColors.copy(
             selectedContainerColor = selectedContainerColor,
@@ -588,7 +610,7 @@ public object RadioButtonDefaults {
             disabledUnselectedControlColor = disabledUnselectedControlColor,
         )
 
-    internal val LabelSpacerSize = 2.dp
+    internal val LabelSpacerSize = 1.dp
     private val HorizontalPadding = 14.dp
     private val VerticalPadding = 8.dp
 
@@ -598,7 +620,7 @@ public object RadioButtonDefaults {
             start = HorizontalPadding,
             top = VerticalPadding,
             end = HorizontalPadding,
-            bottom = VerticalPadding
+            bottom = VerticalPadding,
         )
 
     private val ColorScheme.defaultRadioButtonColors: RadioButtonColors
@@ -939,7 +961,7 @@ public class RadioButtonColors(
             uncheckedColor = unselectedContainerColor,
             disabledCheckedColor = disabledSelectedContainerColor,
             disabledUncheckedColor = disabledUnselectedContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -957,7 +979,7 @@ public class RadioButtonColors(
             uncheckedColor = unselectedContentColor,
             disabledCheckedColor = disabledSelectedContentColor,
             disabledUncheckedColor = disabledUnselectedContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -975,7 +997,7 @@ public class RadioButtonColors(
             uncheckedColor = unselectedSecondaryContentColor,
             disabledCheckedColor = disabledSelectedSecondaryContentColor,
             disabledUncheckedColor = disabledUnselectedSecondaryContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -994,7 +1016,7 @@ public class RadioButtonColors(
             uncheckedColor = unselectedIconColor,
             disabledCheckedColor = disabledSelectedIconColor,
             disabledUncheckedColor = disabledUnselectedIconColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1013,7 +1035,7 @@ public class RadioButtonColors(
             uncheckedColor = unselectedControlColor,
             disabledCheckedColor = disabledSelectedControlColor,
             disabledUncheckedColor = disabledUnselectedControlColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -1273,7 +1295,7 @@ public class SplitRadioButtonColors(
             uncheckedColor = unselectedContainerColor,
             disabledCheckedColor = disabledSelectedContainerColor,
             disabledUncheckedColor = disabledUnselectedContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1292,7 +1314,7 @@ public class SplitRadioButtonColors(
             uncheckedColor = unselectedContentColor,
             disabledCheckedColor = disabledSelectedContentColor,
             disabledUncheckedColor = disabledUnselectedContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1311,7 +1333,7 @@ public class SplitRadioButtonColors(
             uncheckedColor = unselectedSecondaryContentColor,
             disabledCheckedColor = disabledSelectedSecondaryContentColor,
             disabledUncheckedColor = disabledUnselectedSecondaryContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1330,7 +1352,7 @@ public class SplitRadioButtonColors(
             uncheckedColor = unselectedSplitContainerColor,
             disabledCheckedColor = disabledSelectedSplitContainerColor,
             disabledUncheckedColor = disabledUnselectedSplitContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1349,7 +1371,7 @@ public class SplitRadioButtonColors(
             uncheckedColor = unselectedControlColor,
             disabledCheckedColor = disabledSelectedControlColor,
             disabledUncheckedColor = disabledUnselectedControlColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -1435,13 +1457,13 @@ internal fun RadioControl(
         dotAlphaAnimationSpec = PROGRESS_ANIMATION_SPEC,
         width = CONTROL_WIDTH,
         height = CONTROL_HEIGHT,
-        ripple = ripple()
+        ripple = ripple(),
     )
 
 @Composable
 private fun RowScope.Labels(
     label: @Composable RowScope.() -> Unit,
-    secondaryLabel: @Composable (RowScope.() -> Unit)?
+    secondaryLabel: @Composable (RowScope.() -> Unit)?,
 ) {
     Column(modifier = Modifier.weight(1.0f)) {
         Row(content = label)

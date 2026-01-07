@@ -37,6 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class MultiProcessGlanceAppWidgetTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val testWidget =
@@ -50,7 +51,7 @@ class MultiProcessGlanceAppWidgetTest {
             fun callCreateAppWidgetSession(
                 context: Context,
                 id: AppWidgetId,
-                options: Bundle?
+                options: Bundle?,
             ): AppWidgetSession = createAppWidgetSession(context, id, options)
         }
 

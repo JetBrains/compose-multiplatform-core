@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.OpenOnPhoneDialog
 import androidx.wear.compose.material3.OpenOnPhoneDialogDefaults
@@ -42,29 +41,26 @@ object OpenOnPhoneDialogBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
             val showDialog = remember { mutableStateOf(false) }
-            AppScaffold {
-                Column(
-                    Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Button(
+                    onClick = { showDialog.value = true },
+                    modifier = Modifier.semantics { contentDescription = SHOW_OPEN_ON_PHONE_DIALOG },
                 ) {
-                    Button(
-                        onClick = { showDialog.value = true },
-                        modifier =
-                            Modifier.semantics { contentDescription = SHOW_OPEN_ON_PHONE_DIALOG }
-                    ) {
-                        Text("Open")
-                    }
+                    Text("Open")
                 }
-                val text = OpenOnPhoneDialogDefaults.text
-                val style = OpenOnPhoneDialogDefaults.curvedTextStyle
-                OpenOnPhoneDialog(
-                    visible = showDialog.value,
-                    onDismissRequest = { showDialog.value = false },
-                    durationMillis = 2000,
-                    curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) }
-                )
             }
+            val text = OpenOnPhoneDialogDefaults.text
+            val style = OpenOnPhoneDialogDefaults.curvedTextStyle
+            OpenOnPhoneDialog(
+                visible = showDialog.value,
+                onDismissRequest = { showDialog.value = false },
+                durationMillis = 2000,
+                curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) },
+            )
         }
 
     override val exercise: MacrobenchmarkScope.() -> Unit

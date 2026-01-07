@@ -74,7 +74,7 @@ public actual open class NavDestinationBuilder<out D : NavDestination> {
     @Suppress("BuilderSetStyle")
     public actual inline fun <reified T : Any> deepLink(
         basePath: String,
-        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     ) {
         implementedInJetBrainsFork()
     }
@@ -83,7 +83,7 @@ public actual open class NavDestinationBuilder<out D : NavDestination> {
     public actual fun <T : Any> deepLink(
         route: KClass<T>,
         basePath: String,
-        navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     ) {
         implementedInJetBrainsFork()
     }

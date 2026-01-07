@@ -39,11 +39,11 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
     private val brand: String,
     private val cameraHwLevel: Int,
-    private val isEnabledExpected: Boolean
+    private val isEnabledExpected: Boolean,
 ) {
     companion object {
         @JvmStatic
@@ -52,18 +52,16 @@ class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
         )
         fun data() =
             listOf(
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, true),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_FULL, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_3, false),
-                arrayOf("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, false),
-                arrayOf("Google", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, true),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_FULL, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_3, false),
+                arrayOf<Any>("Samsung", INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, false),
+                arrayOf<Any>("Google", INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, false),
             )
     }
 
-    private fun getCameraQuirks(
-        cameraHwLevel: Int,
-    ): Quirks {
+    private fun getCameraQuirks(cameraHwLevel: Int): Quirks {
         val characteristicsMap =
             mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
                 .apply { this[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] = cameraHwLevel }
@@ -82,8 +80,8 @@ class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
                     StreamConfigurationMapBuilder.newBuilder().build(),
                     OutputSizesCorrector(
                         cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build()
-                    )
+                        StreamConfigurationMapBuilder.newBuilder().build(),
+                    ),
                 ),
             )
             .quirks

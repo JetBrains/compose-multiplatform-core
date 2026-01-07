@@ -16,13 +16,13 @@
 
 package androidx.compose.runtime.changelist
 
-import androidx.compose.runtime.Anchor
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.RememberManager
-import androidx.compose.runtime.SlotWriter
 import androidx.compose.runtime.changelist.Operation.InsertNodeFixup
 import androidx.compose.runtime.changelist.Operation.PostInsertNodeFixup
 import androidx.compose.runtime.changelist.Operation.UpdateNode
+import androidx.compose.runtime.composer.gapbuffer.Anchor
+import androidx.compose.runtime.composer.gapbuffer.SlotWriter
 import androidx.compose.runtime.runtimeCheck
 
 internal class FixupList : OperationsDebugStringFormattable() {
@@ -45,7 +45,7 @@ internal class FixupList : OperationsDebugStringFormattable() {
         applier: Applier<*>,
         slots: SlotWriter,
         rememberManager: RememberManager,
-        errorContext: OperationErrorContext?
+        errorContext: OperationErrorContext?,
     ) {
         runtimeCheck(pendingOperations.isEmpty()) {
             "FixupList has pending fixup operations that were not realized. " +
@@ -55,7 +55,7 @@ internal class FixupList : OperationsDebugStringFormattable() {
             applier,
             slots,
             rememberManager,
-            errorContext
+            errorContext,
         )
     }
 

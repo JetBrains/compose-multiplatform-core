@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-// Parcelize object is testing internal implementation of datastore-core library
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-
 package androidx.datastore.testapp.multiprocess.ipcActions
 
 import android.annotation.SuppressLint
@@ -27,7 +24,7 @@ import androidx.datastore.core.DataStoreImpl
 import androidx.datastore.core.FileStorage
 import androidx.datastore.core.MultiProcessCoordinator
 import androidx.datastore.core.Serializer
-import androidx.datastore.core.handlers.NoOpCorruptionHandler
+import androidx.datastore.core.handlers.ReThrowCorruptionHandler
 import androidx.datastore.core.okio.OkioSerializer
 import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.testapp.ProtoOkioSerializer
@@ -48,17 +45,17 @@ import okio.Path.Companion.toPath
 private val PROTO_SERIALIZER: Serializer<FooProto> =
     ProtoSerializer<FooProto>(
         FooProto.getDefaultInstance(),
-        ExtensionRegistryLite.getEmptyRegistry()
+        ExtensionRegistryLite.getEmptyRegistry(),
     )
 private val PROTO_OKIO_SERIALIZER: OkioSerializer<FooProto> =
     ProtoOkioSerializer<FooProto>(
         FooProto.getDefaultInstance(),
-        ExtensionRegistryLite.getEmptyRegistry()
+        ExtensionRegistryLite.getEmptyRegistry(),
     )
 
 internal enum class StorageVariant {
     FILE,
-    OKIO
+    OKIO,
 }
 
 /** Creates the same datastore in current process as well as in the other given [subjects]. */
@@ -67,7 +64,7 @@ internal suspend fun createMultiProcessTestDatastore(
     storageVariant: StorageVariant,
     hostDatastoreScope: CoroutineScope,
     corruptionHandler: Class<out CorruptionHandler<FooProto>>? = null,
-    vararg subjects: TwoWayIpcSubject
+    vararg subjects: TwoWayIpcSubject,
 ): DataStore<FooProto> {
     val currentProcessDatastore =
         createDatastore(
@@ -92,7 +89,7 @@ private fun createDatastore(
     filePath: String,
     storageVariant: StorageVariant,
     datastoreScope: CoroutineScope,
-    corruptionHandler: Class<out CorruptionHandler<FooProto>>?
+    corruptionHandler: Class<out CorruptionHandler<FooProto>>?,
 ): DataStoreImpl<FooProto> {
     val file = File(filePath)
     val produceFile = { file }
@@ -101,23 +98,23 @@ private fun createDatastore(
             FileStorage(
                 PROTO_SERIALIZER,
                 { MultiProcessCoordinator(Dispatchers.Default, it) },
-                produceFile
+                produceFile,
             )
         } else {
             OkioStorage(
                 FileSystem.SYSTEM,
                 PROTO_OKIO_SERIALIZER,
                 { path, _ -> MultiProcessCoordinator(Dispatchers.Default, path.toFile()) },
-                { file.absolutePath.toPath() }
+                { file.absolutePath.toPath() },
             )
         }
     val corruptionHandlerInstance =
         corruptionHandler?.getDeclaredConstructor()?.also { it.isAccessible = true }?.newInstance()
-            ?: NoOpCorruptionHandler()
+            ?: ReThrowCorruptionHandler()
     return DataStoreImpl(
         storage = storage,
         scope = datastoreScope,
-        corruptionHandler = corruptionHandlerInstance
+        corruptionHandler = corruptionHandlerInstance,
     )
 }
 
@@ -126,7 +123,7 @@ private fun createDatastore(
 private class CreateDatastoreAction(
     private val filePath: String,
     private val storageVariant: StorageVariant,
-    private val corruptionHandler: Class<out CorruptionHandler<FooProto>>?
+    private val corruptionHandler: Class<out CorruptionHandler<FooProto>>?,
 ) : IpcAction<CreateDatastoreAction>(), Parcelable {
     override suspend fun invokeInRemoteProcess(subject: TwoWayIpcSubject): CreateDatastoreAction {
         val store =

@@ -66,7 +66,7 @@ object StressTestUtil {
     fun launchCameraXActivityAndWaitForPreviewReady(
         cameraId: String,
         useCaseCombination: Int,
-        forceEnableStreamSharing: Boolean = false
+        forceEnableStreamSharing: Boolean = false,
     ): ActivityScenario<CameraXActivity> {
         if (useCaseCombination.and(BIND_PREVIEW) == 0) {
             throw IllegalArgumentException("Preview must be included!")
@@ -108,7 +108,7 @@ object StressTestUtil {
     fun assumeCameraSupportUseCaseCombination(
         camera: Camera,
         useCaseCombination: Int,
-        withStreamSharing: Boolean = true
+        withStreamSharing: Boolean = true,
     ) {
         val preview = Preview.Builder().build()
         val imageCapture =
@@ -133,7 +133,7 @@ object StressTestUtil {
         assumeTrue(
             camera.isUseCasesCombinationSupported(
                 withStreamSharing,
-                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray()
+                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray(),
             )
         )
     }
@@ -171,7 +171,7 @@ object StressTestUtil {
                                 Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
                                 else -> Camera2Config.defaultConfig()
                             },
-                            cameraId
+                            cameraId,
                         )
                     )
                 }

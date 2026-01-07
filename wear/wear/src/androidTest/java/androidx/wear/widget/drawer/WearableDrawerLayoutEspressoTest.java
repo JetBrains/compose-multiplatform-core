@@ -36,11 +36,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import android.content.Intent;
+import android.os.Build;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MenuItem.OnMenuItemClickListener;
@@ -97,6 +99,7 @@ public class WearableDrawerLayoutEspressoTest {
 
     @Mock WearableNavigationDrawerView.OnItemSelectedListener mNavDrawerItemSelectedListener;
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void openingNavigationDrawerDoesNotCloseActionDrawer() {
         // GIVEN a drawer layout with a peeking action and navigation drawer
@@ -121,6 +124,7 @@ public class WearableDrawerLayoutEspressoTest {
         assertTrue(actionDrawer.isPeeking());
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void swipingDownNavigationDrawerDoesNotCloseActionDrawer() {
         // GIVEN a drawer layout with a peeking action and navigation drawer
@@ -140,7 +144,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withId(R.id.action_drawer)).check(matches(isPeeking()));
     }
 
-
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void firstNavDrawerItemShouldBeSelectedInitially() {
         // GIVEN a top drawer
@@ -154,7 +158,7 @@ public class WearableDrawerLayoutEspressoTest {
                                 MAX_WAIT_MS));
 
         // THEN the text should display "0".
-        onView(withId(R.id.ws_nav_drawer_text)).check(matches(withText("0")));
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text)).check(matches(withText("0")));
     }
 
     @SdkSuppress(maxSdkVersion = 33) // b/322538394
@@ -170,13 +174,13 @@ public class WearableDrawerLayoutEspressoTest {
                                 MAX_WAIT_MS));
 
         // WHEN the second item is selected
-        onView(withId(R.id.ws_nav_drawer_icon_1)).perform(click());
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_icon_1)).perform(click());
 
         // THEN the text should display "1" and it should close.
-        onView(withId(R.id.ws_nav_drawer_text))
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text))
                 .perform(
                         waitForMatchingView(
-                                allOf(withId(R.id.ws_nav_drawer_text), withText("1")),
+                                allOf(withId(androidx.wear.R.id.ws_nav_drawer_text), withText("1")),
                                 MAX_WAIT_MS));
         onView(withId(R.id.navigation_drawer))
                 .perform(
@@ -200,7 +204,7 @@ public class WearableDrawerLayoutEspressoTest {
         selectNavItem(navDrawer, 1);
 
         // THEN the text should display "1" and the listener should be notified.
-        onView(withId(R.id.ws_nav_drawer_text))
+        onView(withId(androidx.wear.R.id.ws_nav_drawer_text))
                 .check(matches(withText("1")));
         verify(mNavDrawerItemSelectedListener).onItemSelected(1);
     }
@@ -220,13 +224,14 @@ public class WearableDrawerLayoutEspressoTest {
         selectNavItem(navDrawer, 1);
 
         // THEN the text should display "1" and the listener should be notified.
-        onView(allOf(withId(R.id.ws_navigation_drawer_item_text), isDisplayed()))
+        onView(allOf(withId(androidx.wear.R.id.ws_navigation_drawer_item_text), isDisplayed()))
                 .check(matches(withText("1")));
         verify(mNavDrawerItemSelectedListener).onItemSelected(1);
     }
 
     @Test
     public void navDrawerShouldOpenWhenCalledInOnCreate() {
+        assumeFalse("Test fails on cuttlefish b/460511513", Build.MODEL.contains("Cuttlefish"));
         // GIVEN an activity which calls openDrawer(Gravity.TOP) in onCreate
         // WHEN it is launched
         activityRule.launchActivity(
@@ -239,6 +244,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withId(R.id.navigation_drawer)).check(matches(isOpened(true)));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void actionDrawerShouldOpenWhenCalledInOnCreate() {
         // GIVEN an activity with only an action drawer which is opened in onCreate
@@ -253,6 +259,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withId(R.id.action_drawer)).check(matches(isOpened(true)));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void drawerContentViewShouldOnlyInflateOnceOpened() {
         // GIVEN a launched activity with only an action drawer
@@ -262,7 +269,7 @@ public class WearableDrawerLayoutEspressoTest {
                         .build());
 
         final RecyclerView actionList =
-                activityRule.getActivity().findViewById(R.id.action_list);
+                activityRule.getActivity().findViewById(androidx.wear.R.id.action_list);
 
         // WHEN it is opened
         WearableDrawerView actionDrawer = activityRule.getActivity().findViewById(
@@ -288,16 +295,17 @@ public class WearableDrawerLayoutEspressoTest {
                         .build());
 
         final RecyclerView actionList =
-                activityRule.getActivity().findViewById(R.id.action_list);
+                activityRule.getActivity().findViewById(androidx.wear.R.id.action_list);
 
         // THEN the drawer should not be visible and the draw action list should not have an
         // adapter set
-        onView(allOf(withId(R.id.action_list), not(isDisplayed())));
+        onView(allOf(withId(androidx.wear.R.id.action_list), not(isDisplayed())));
         assertNull(actionList.getAdapter());
     }
 
     @Test
     public void navDrawerShouldOpenWhenCalledInOnCreateAndThenCloseWhenRequested() {
+        assumeFalse("Test fails on cuttlefish b/460511513", Build.MODEL.contains("Cuttlefish"));
         // GIVEN an activity which calls openDrawer(Gravity.TOP) in onCreate, then closes it
         // WHEN it is launched
         activityRule.launchActivity(
@@ -316,6 +324,7 @@ public class WearableDrawerLayoutEspressoTest {
                                 MAX_WAIT_MS));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void openedNavDrawerShouldPreventSwipeToClose() {
         // GIVEN an activity which calls openDrawer(Gravity.TOP) in onCreate
@@ -329,6 +338,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withId(R.id.navigation_drawer)).check(matches(not(allowsSwipeToClose())));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void closedNavDrawerShouldNotPreventSwipeToClose() {
         // GIVEN an activity which doesn't start with the nav drawer open
@@ -338,6 +348,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withId(R.id.navigation_drawer)).check(matches(allowsSwipeToClose()));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void scrolledDownActionDrawerCanScrollUpWhenReOpened() {
         // GIVEN a freshly launched activity
@@ -382,7 +393,7 @@ public class WearableDrawerLayoutEspressoTest {
         DrawerTestActivity activity = activityRule.getActivity();
         ImageView peekIconView =
                 (ImageView) activity
-                        .findViewById(R.id.ws_action_drawer_peek_action_icon);
+                        .findViewById(androidx.wear.R.id.ws_action_drawer_peek_action_icon);
         // THEN its peek icon should not be null
         assertNotNull(peekIconView.getDrawable());
     }
@@ -401,10 +412,10 @@ public class WearableDrawerLayoutEspressoTest {
         OnMenuItemClickListener mockClickListener = mock(OnMenuItemClickListener.class);
         actionDrawer.setOnMenuItemClickListener(mockClickListener);
         // WHEN the action drawer peek view is tapped
-        onView(withId(R.id.ws_drawer_view_peek_container))
+        onView(withId(androidx.wear.R.id.ws_drawer_view_peek_container))
                 .perform(waitForMatchingView(
                         allOf(
-                                withId(R.id.ws_drawer_view_peek_container),
+                                withId(androidx.wear.R.id.ws_drawer_view_peek_container),
                                 isCompletelyDisplayed()),
                         MAX_WAIT_MS))
                 .perform(click());
@@ -438,6 +449,7 @@ public class WearableDrawerLayoutEspressoTest {
         verify(mockClickListener).onMenuItemClick(any(MenuItem.class));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void changingActionDrawerItemShouldUpdateView() {
         // GIVEN a drawer layout with an open action drawer
@@ -462,6 +474,7 @@ public class WearableDrawerLayoutEspressoTest {
         onView(withText("Modified item")).check(matches(isDisplayed()));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void removingActionDrawerItemShouldUpdateView() {
         // GIVEN a drawer layout with an open action drawer
@@ -495,6 +508,7 @@ public class WearableDrawerLayoutEspressoTest {
 
     @Test
     public void addingActionDrawerItemShouldUpdateView() {
+        assumeFalse("Test fails on cuttlefish b/460511513", Build.MODEL.contains("Cuttlefish"));
         // GIVEN a drawer layout with an open action drawer
         activityRule.launchActivity(
                 new DrawerTestActivity.Builder()
@@ -523,6 +537,7 @@ public class WearableDrawerLayoutEspressoTest {
                 .perform(waitForMatchingView(withText("New Item"), MAX_WAIT_MS));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427565061
     @Test
     public void flingInHorizontalScrollerDoesNotPeekDrawers() {
         // Note that this test uses a different activity to implement the list...

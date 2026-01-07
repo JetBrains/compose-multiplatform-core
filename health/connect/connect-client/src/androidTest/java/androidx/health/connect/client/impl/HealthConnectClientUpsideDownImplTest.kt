@@ -17,19 +17,31 @@
 package androidx.health.connect.client.impl
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.aggregate.AggregationResult
+import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
-import androidx.health.connect.client.impl.platform.aggregate.AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10
+import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
+import androidx.health.connect.client.feature.isPersonalHealthRecordFeatureAvailableInPlatform
+import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceFactory.CompleteStatus.COMPLETE
+import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceFactory.CompleteStatus.INCOMPLETE
+import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceFactory.createVaccinesUpsertMedicalResourceRequest
 import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS
 import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_13
+import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_15
+import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_16
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.readRecord
-import androidx.health.connect.client.records.BloodPressureRecord
+import androidx.health.connect.client.records.FhirResource.Companion.FHIR_RESOURCE_TYPE_IMMUNIZATION
+import androidx.health.connect.client.records.FhirVersion
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.MedicalResource.Companion.MEDICAL_RESOURCE_TYPE_VACCINES
+import androidx.health.connect.client.records.MedicalResourceId
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
@@ -41,13 +53,16 @@ import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ChangesTokenRequest
+import androidx.health.connect.client.request.CreateMedicalDataSourceRequest
+import androidx.health.connect.client.request.DeleteMedicalResourcesRequest
+import androidx.health.connect.client.request.GetMedicalDataSourcesRequest
+import androidx.health.connect.client.request.ReadMedicalResourcesInitialRequest
+import androidx.health.connect.client.request.ReadMedicalResourcesPageRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.Mass
-import androidx.health.connect.client.units.grams
 import androidx.health.connect.client.units.kilocalories
-import androidx.health.connect.client.units.millimetersOfMercury
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -62,18 +77,15 @@ import java.time.Period
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertThrows
-import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalPersonalHealthRecordApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, codeName = "UpsideDownCake")
@@ -86,6 +98,20 @@ class HealthConnectClientUpsideDownImplTest {
             LocalDate.now().minusDays(5).atStartOfDay().toInstant(ZoneOffset.UTC)
         private val ZONE_OFFSET = ZoneOffset.UTC
         private val ZONE_ID = ZoneId.of(ZONE_OFFSET.id)
+
+        private const val MEDICAL_DATA_SOURCE_DISPLAY_NAME = "Data source test app"
+        private val FHIR_BASE_URI = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/")
+        // lazy is needed, otherwise the object would be constructed without a check for PHR feature
+        // availability, which would lead to a crash.
+        private val FHIR_VERSION_4_0_1 by lazy { FhirVersion(4, 0, 1) }
+
+        private val TEST_RECORD_TYPES =
+            listOf(
+                StepsRecord::class,
+                HeartRateRecord::class,
+                NutritionRecord::class,
+                WeightRecord::class,
+            )
 
         fun getAllRecordPermissions(): Array<String> {
             val permissions: HashSet<String> = HashSet()
@@ -100,6 +126,23 @@ class HealthConnectClientUpsideDownImplTest {
                     permissions.add(HealthPermission.getReadPermission(recordType))
                     permissions.add(HealthPermission.getWritePermission(recordType))
                 }
+            }
+
+            if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 15) {
+                for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_15.keys) {
+                    permissions.add(HealthPermission.getReadPermission(recordType))
+                    permissions.add(HealthPermission.getWritePermission(recordType))
+                }
+            }
+            if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 16) {
+                for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_16.keys) {
+                    permissions.add(HealthPermission.getReadPermission(recordType))
+                    permissions.add(HealthPermission.getWritePermission(recordType))
+                }
+            }
+
+            if (isPersonalHealthRecordFeatureAvailableInPlatform()) {
+                permissions.addAll(HealthPermission.ALL_PERSONAL_HEALTH_RECORD_PERMISSIONS)
             }
 
             return permissions.toTypedArray()
@@ -121,14 +164,13 @@ class HealthConnectClientUpsideDownImplTest {
 
     @After
     fun tearDown() = runTest {
-        for (recordType in SDK_TO_PLATFORM_RECORD_CLASS.keys) {
+        for (recordType in TEST_RECORD_TYPES) {
             healthConnectClient.deleteRecords(recordType, TimeRangeFilter.after(Instant.EPOCH))
         }
-
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 13) {
-            for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_13.keys) {
-                healthConnectClient.deleteRecords(recordType, TimeRangeFilter.after(Instant.EPOCH))
-            }
+        if (isPersonalHealthRecordFeatureAvailableInPlatform()) {
+            healthConnectClient
+                .getMedicalDataSources(GetMedicalDataSourcesRequest(listOf(context.packageName)))
+                .forEach { healthConnectClient.deleteMedicalDataSourceWithData(it.id) }
         }
     }
 
@@ -140,7 +182,7 @@ class HealthConnectClientUpsideDownImplTest {
             setOf(
                 HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND,
                 HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE,
-                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE
+                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE,
             )) {
             assertThat(healthConnectClient.features.getFeatureStatus(feature))
                 .isEqualTo(HealthConnectFeatures.FEATURE_STATUS_AVAILABLE)
@@ -156,8 +198,60 @@ class HealthConnectClientUpsideDownImplTest {
                 HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND,
                 HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY,
                 HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE,
-                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE
+                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE,
+                HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION,
+                HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY,
             )
+
+        for (feature in features) {
+            assertThat(healthConnectClient.features.getFeatureStatus(feature))
+                .isEqualTo(HealthConnectFeatures.FEATURE_STATUS_UNAVAILABLE)
+        }
+    }
+
+    @Test
+    fun getFeatureStatus_featuresAddedInExt15_areAvailableInExt15() {
+        assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 15)
+
+        for (feature in
+            setOf(
+                HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION,
+                HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY,
+            )) {
+            assertThat(healthConnectClient.features.getFeatureStatus(feature))
+                .isEqualTo(HealthConnectFeatures.FEATURE_STATUS_AVAILABLE)
+        }
+    }
+
+    @Test
+    fun getFeatureStatus_belowUExt15_noneIsAvailable() {
+        assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 15)
+
+        val features = listOf(HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION)
+
+        for (feature in features) {
+            assertThat(healthConnectClient.features.getFeatureStatus(feature))
+                .isEqualTo(HealthConnectFeatures.FEATURE_STATUS_UNAVAILABLE)
+        }
+    }
+
+    @Test
+    fun getFeatureStatus_featuresAddedInExt16_areAvailableInExt16() {
+        assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 16)
+
+        assertThat(
+                healthConnectClient.features.getFeatureStatus(
+                    HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY
+                )
+            )
+            .isEqualTo(HealthConnectFeatures.FEATURE_STATUS_AVAILABLE)
+    }
+
+    @Test
+    fun getFeatureStatus_belowUExt16_noneIsAvailable() {
+        assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 16)
+
+        val features = listOf(HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY)
 
         for (feature in features) {
             assertThat(healthConnectClient.features.getFeatureStatus(feature))
@@ -211,7 +305,7 @@ class HealthConnectClientUpsideDownImplTest {
                             startZoneOffset = null,
                             endTime = START_TIME + 5.minutes,
                             endZoneOffset = null,
-                            metadata = Metadata.manualEntry(clientRecordId = "clientId")
+                            metadata = Metadata.manualEntry(clientRecordId = "clientId"),
                         ),
                     )
                 )
@@ -227,7 +321,7 @@ class HealthConnectClientUpsideDownImplTest {
         healthConnectClient.deleteRecords(
             StepsRecord::class,
             listOf(recordIds[1]),
-            listOf("clientId")
+            listOf("clientId"),
         )
 
         assertThat(
@@ -274,7 +368,7 @@ class HealthConnectClientUpsideDownImplTest {
 
         healthConnectClient.deleteRecords(
             StepsRecord::class,
-            TimeRangeFilter.before(START_TIME + 1.minutes + 30.seconds)
+            TimeRangeFilter.before(START_TIME + 1.minutes + 30.seconds),
         )
 
         assertThat(
@@ -313,7 +407,7 @@ class HealthConnectClientUpsideDownImplTest {
                     startZoneOffset = null,
                     endTime = START_TIME + 30.seconds,
                     endZoneOffset = null,
-                    metadata = Metadata.manualEntryWithId(id = id)
+                    metadata = Metadata.manualEntryWithId(id = id),
                 )
             )
         )
@@ -378,7 +472,7 @@ class HealthConnectClientUpsideDownImplTest {
             healthConnectClient.readRecords(
                 ReadRecordsRequest(
                     StepsRecord::class,
-                    TimeRangeFilter.after(START_TIME + 1.minutes + 30.seconds)
+                    TimeRangeFilter.after(START_TIME + 1.minutes + 30.seconds),
                 )
             )
 
@@ -398,8 +492,8 @@ class HealthConnectClientUpsideDownImplTest {
                     samples =
                         listOf(
                             HeartRateRecord.Sample(START_TIME, 57L),
-                            HeartRateRecord.Sample(START_TIME + 15.seconds, 120L)
-                        )
+                            HeartRateRecord.Sample(START_TIME + 15.seconds, 120L),
+                        ),
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 1.minutes,
@@ -410,8 +504,8 @@ class HealthConnectClientUpsideDownImplTest {
                     samples =
                         listOf(
                             HeartRateRecord.Sample(START_TIME + 1.minutes, 47L),
-                            HeartRateRecord.Sample(START_TIME + 1.minutes + 15.seconds, 48L)
-                        )
+                            HeartRateRecord.Sample(START_TIME + 1.minutes + 15.seconds, 48L),
+                        ),
                 ),
                 NutritionRecord(
                     startTime = START_TIME,
@@ -419,13 +513,13 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 1.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    energy = Energy.kilocalories(200.0)
+                    energy = Energy.kilocalories(200.0),
                 ),
                 WeightRecord(
                     time = START_TIME,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    weight = Mass.kilograms(100.0)
+                    weight = Mass.kilograms(100.0),
                 ),
             )
         )
@@ -441,7 +535,7 @@ class HealthConnectClientUpsideDownImplTest {
                         WeightRecord.WEIGHT_MAX,
                         WheelchairPushesRecord.COUNT_TOTAL,
                     ),
-                    TimeRangeFilter.after(Instant.EPOCH)
+                    TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -456,100 +550,14 @@ class HealthConnectClientUpsideDownImplTest {
         }
     }
 
-    // TODO(b/361297592): Remove once the aggregation bug is fixed
     @Test
-    fun aggregateRecords_unsupportedMetrics_throwsUOE() = runTest {
-        for (metric in AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10) {
-            assertThrows(UnsupportedOperationException::class.java) {
-                runBlocking {
-                    healthConnectClient.aggregate(
-                        AggregateRequest(setOf(metric), TimeRangeFilter.after(Instant.EPOCH))
-                    )
-                }
-            }
+    fun aggregateGroupByDuration() = runTest {
+        // Data origins are not supported for duration buckets pre sdkExt 10. See b/284163741
+        val dataOrigins =
+            if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 10)
+                emptySet()
+            else setOf(DataOrigin(context.packageName))
 
-            assertThrows(UnsupportedOperationException::class.java) {
-                runBlocking {
-                    healthConnectClient.aggregateGroupByDuration(
-                        AggregateGroupByDurationRequest(
-                            setOf(metric),
-                            TimeRangeFilter.after(Instant.EPOCH),
-                            Duration.ofDays(1)
-                        )
-                    )
-                }
-            }
-
-            assertThrows(UnsupportedOperationException::class.java) {
-                runBlocking {
-                    healthConnectClient.aggregateGroupByPeriod(
-                        AggregateGroupByPeriodRequest(
-                            setOf(metric),
-                            TimeRangeFilter.after(
-                                LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
-                            ),
-                            Period.ofDays(1)
-                        )
-                    )
-                }
-            }
-        }
-    }
-
-    @Ignore("b/326414908")
-    @Test
-    fun aggregateRecords_belowSdkExt10() = runTest {
-        assumeFalse(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 10)
-
-        healthConnectClient.insertRecords(
-            listOf(
-                NutritionRecord(
-                    startTime = START_TIME,
-                    startZoneOffset = ZoneOffset.UTC,
-                    endTime = START_TIME + 1.minutes,
-                    endZoneOffset = ZoneOffset.UTC,
-                    metadata = Metadata.manualEntry(),
-                    transFat = 0.5.grams
-                ),
-                BloodPressureRecord(
-                    time = START_TIME,
-                    zoneOffset = ZoneOffset.UTC,
-                    metadata = Metadata.manualEntry(),
-                    systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
-            )
-        )
-
-        val aggregateResponse =
-            healthConnectClient.aggregate(
-                AggregateRequest(
-                    setOf(
-                        BloodPressureRecord.DIASTOLIC_AVG,
-                        BloodPressureRecord.DIASTOLIC_MAX,
-                        BloodPressureRecord.DIASTOLIC_MIN,
-                        BloodPressureRecord.SYSTOLIC_AVG,
-                        BloodPressureRecord.SYSTOLIC_MAX,
-                        BloodPressureRecord.SYSTOLIC_MIN,
-                        NutritionRecord.TRANS_FAT_TOTAL
-                    ),
-                    TimeRangeFilter.after(Instant.EPOCH)
-                )
-            )
-
-        assertEquals(
-            aggregateResponse[NutritionRecord.TRANS_FAT_TOTAL] to 0.5.grams,
-            aggregateResponse[BloodPressureRecord.SYSTOLIC_AVG] to 120.millimetersOfMercury,
-            aggregateResponse[BloodPressureRecord.SYSTOLIC_MAX] to 120.millimetersOfMercury,
-            aggregateResponse[BloodPressureRecord.SYSTOLIC_MIN] to 120.millimetersOfMercury,
-            aggregateResponse[BloodPressureRecord.DIASTOLIC_AVG] to 80.millimetersOfMercury,
-            aggregateResponse[BloodPressureRecord.DIASTOLIC_MAX] to 80.millimetersOfMercury,
-            aggregateResponse[BloodPressureRecord.DIASTOLIC_MIN] to 80.millimetersOfMercury,
-        )
-    }
-
-    @Test
-    fun aggregateRecordsGroupByDuration() = runTest {
         healthConnectClient.insertRecords(
             listOf(
                 NutritionRecord(
@@ -575,25 +583,45 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 1.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
         val aggregateResponse =
             healthConnectClient.aggregateGroupByDuration(
                 AggregateGroupByDurationRequest(
-                    setOf(NutritionRecord.ENERGY_TOTAL),
+                    setOf(HeartRateRecord.BPM_AVG, NutritionRecord.ENERGY_TOTAL),
                     TimeRangeFilter.between(START_TIME, START_TIME + 1.minutes),
                     Duration.ofSeconds(30),
-                    setOf()
+                    setOf(),
                 )
             )
 
-        with(aggregateResponse) {
-            assertThat(this).hasSize(2)
-            assertThat(this[0].result[NutritionRecord.ENERGY_TOTAL]).isEqualTo(300.kilocalories)
-            assertThat(this[1].result[NutritionRecord.ENERGY_TOTAL]).isEqualTo(500.kilocalories)
-        }
+        assertThat(aggregateResponse)
+            .containsExactly(
+                AggregationResultGroupedByDuration(
+                    result =
+                        AggregationResult(
+                            longValues = emptyMap(),
+                            doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 300.0),
+                            dataOrigins = dataOrigins,
+                        ),
+                    startTime = START_TIME,
+                    endTime = START_TIME + 30.seconds,
+                    zoneOffset = ZoneOffset.UTC,
+                ),
+                AggregationResultGroupedByDuration(
+                    result =
+                        AggregationResult(
+                            longValues = emptyMap(),
+                            doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 500.0),
+                            dataOrigins = dataOrigins,
+                        ),
+                    startTime = START_TIME + 30.seconds,
+                    endTime = START_TIME + 1.minutes,
+                    zoneOffset = ZoneOffset.UTC,
+                ),
+            )
     }
 
     @Test
@@ -623,7 +651,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 1.days + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -635,7 +663,7 @@ class HealthConnectClientUpsideDownImplTest {
                         LocalDateTime.ofInstant(START_TIME, ZONE_ID),
                         LocalDateTime.ofInstant(START_TIME + 2.days, ZONE_ID),
                     ),
-                    timeRangeSlicer = Period.ofDays(1)
+                    timeRangeSlicer = Period.ofDays(1),
                 )
             )
 
@@ -673,7 +701,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -684,11 +712,8 @@ class HealthConnectClientUpsideDownImplTest {
             healthConnectClient.aggregateGroupByPeriod(
                 AggregateGroupByPeriodRequest(
                     setOf(NutritionRecord.ENERGY_TOTAL),
-                    TimeRangeFilter.between(
-                        queryStartTime,
-                        queryEndTime,
-                    ),
-                    timeRangeSlicer = Period.ofMonths(1)
+                    TimeRangeFilter.between(queryStartTime, queryEndTime),
+                    timeRangeSlicer = Period.ofMonths(1),
                 )
             )
 
@@ -714,11 +739,8 @@ class HealthConnectClientUpsideDownImplTest {
             healthConnectClient.aggregateGroupByPeriod(
                 AggregateGroupByPeriodRequest(
                     setOf(NutritionRecord.ENERGY_TOTAL),
-                    TimeRangeFilter.between(
-                        queryStartTime,
-                        queryEndTime,
-                    ),
-                    timeRangeSlicer = Period.ofMonths(1)
+                    TimeRangeFilter.between(queryStartTime, queryEndTime),
+                    timeRangeSlicer = Period.ofMonths(1),
                 )
             )
 
@@ -797,7 +819,7 @@ class HealthConnectClientUpsideDownImplTest {
                             metadata = Metadata.manualEntry(),
                             calcium = Mass.grams(15.0),
                             monounsaturatedFat = Mass.grams(50.0),
-                            energy = Energy.calories(300.0)
+                            energy = Energy.calories(300.0),
                         )
                     )
                 )
@@ -826,7 +848,7 @@ class HealthConnectClientUpsideDownImplTest {
                             metadata = Metadata.manualEntry(),
                             calcium = Mass.grams(0.0),
                             monounsaturatedFat = Mass.grams(0.0),
-                            energy = Energy.calories(0.0)
+                            energy = Energy.calories(0.0),
                         )
                     )
                 )
@@ -869,6 +891,10 @@ class HealthConnectClientUpsideDownImplTest {
 
     @Test
     fun getGrantedPermissions() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
         assertThat(healthConnectClient.permissionController.getGrantedPermissions())
             .containsExactlyElementsIn(getAllRecordPermissions())
     }
@@ -885,7 +911,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     energy = 600.kilocalories,
-                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY)
+                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY),
                 )
             )
         )
@@ -895,7 +921,7 @@ class HealthConnectClientUpsideDownImplTest {
                 AggregateGroupByDurationRequest(
                     metrics = setOf(NutritionRecord.ENERGY_TOTAL),
                     TimeRangeFilter.after(START_TIME),
-                    Duration.ofHours(1)
+                    Duration.ofHours(1),
                 )
             )
 
@@ -914,7 +940,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     energy = 600.kilocalories,
-                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY)
+                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY),
                 )
             )
         )
@@ -924,7 +950,7 @@ class HealthConnectClientUpsideDownImplTest {
                 AggregateGroupByDurationRequest(
                     metrics = setOf(NutritionRecord.ENERGY_TOTAL),
                     TimeRangeFilter.after(START_TIME),
-                    Duration.ofHours(1)
+                    Duration.ofHours(1),
                 )
             )
 
@@ -944,7 +970,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     energy = 600.kilocalories,
-                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY)
+                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY),
                 )
             )
         )
@@ -954,7 +980,7 @@ class HealthConnectClientUpsideDownImplTest {
                 AggregateGroupByPeriodRequest(
                     metrics = setOf(NutritionRecord.ENERGY_TOTAL),
                     TimeRangeFilter.after(LocalDateTime.ofInstant(START_TIME, ZONE_OFFSET)),
-                    Period.ofDays(1)
+                    Period.ofDays(1),
                 )
             )
 
@@ -973,7 +999,7 @@ class HealthConnectClientUpsideDownImplTest {
                     endTime = START_TIME + 10.minutes,
                     endZoneOffset = ZONE_OFFSET,
                     energy = 600.kilocalories,
-                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY)
+                    metadata = Metadata(recordingMethod = RECORDING_METHOD_MANUAL_ENTRY),
                 )
             )
         )
@@ -983,7 +1009,7 @@ class HealthConnectClientUpsideDownImplTest {
                 AggregateGroupByPeriodRequest(
                     metrics = setOf(NutritionRecord.ENERGY_TOTAL),
                     TimeRangeFilter.after(LocalDateTime.ofInstant(START_TIME, ZONE_OFFSET)),
-                    Period.ofDays(1)
+                    Period.ofDays(1),
                 )
             )
 
@@ -991,8 +1017,319 @@ class HealthConnectClientUpsideDownImplTest {
             .containsExactly(DataOrigin(packageName = context.packageName))
     }
 
-    private fun <A, E> assertEquals(vararg assertions: Pair<A, E>) {
-        assertions.forEach { (actual, expected) -> assertThat(actual).isEqualTo(expected) }
+    @Test
+    fun createMedicalDataSource_thenGetByRequest_expectSuccess() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+
+        // Create a MedicalDataSource
+        val createMedicalDataSourceResponse =
+            healthConnectClient.createMedicalDataSource(
+                CreateMedicalDataSourceRequest(
+                    fhirBaseUri = FHIR_BASE_URI,
+                    displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                    fhirVersion = FHIR_VERSION_4_0_1,
+                )
+            )
+        assertThat(createMedicalDataSourceResponse.id).isNotEmpty()
+
+        // Retrieve newly created data source by request and verify retrieved == created response
+        val getMedicalDataSourcesByRequestResponse =
+            healthConnectClient.getMedicalDataSources(
+                GetMedicalDataSourcesRequest(listOf(createMedicalDataSourceResponse.packageName))
+            )
+        assertThat(getMedicalDataSourcesByRequestResponse)
+            .containsExactly(createMedicalDataSourceResponse)
+    }
+
+    @Test
+    fun createMedicalDataSource_thenGetByIds_expectSuccess() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+
+        // Create a MedicalDataSource
+        val createMedicalDataSourceResponse =
+            healthConnectClient.createMedicalDataSource(
+                CreateMedicalDataSourceRequest(
+                    fhirBaseUri = FHIR_BASE_URI,
+                    displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                    fhirVersion = FHIR_VERSION_4_0_1,
+                )
+            )
+        assertThat(createMedicalDataSourceResponse.id).isNotEmpty()
+
+        // Retrieve newly created data source by ID and verify retrieved == created response
+        val getMedicalDataSourcesByIdsResponse =
+            healthConnectClient.getMedicalDataSources(listOf(createMedicalDataSourceResponse.id))
+        assertThat(getMedicalDataSourcesByIdsResponse).hasSize(1)
+        assertThat(getMedicalDataSourcesByIdsResponse)
+            .containsExactly(createMedicalDataSourceResponse)
+    }
+
+    @Test
+    fun createMedicalDataSource_thenDelete_expectSuccess() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+
+        // Create a MedicalDataSource
+        val createMedicalDataSourceResponse =
+            healthConnectClient.createMedicalDataSource(
+                CreateMedicalDataSourceRequest(
+                    fhirBaseUri = FHIR_BASE_URI,
+                    displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                    fhirVersion = FHIR_VERSION_4_0_1,
+                )
+            )
+        assertThat(createMedicalDataSourceResponse.id).isNotEmpty()
+
+        // Delete the newly created data source
+        healthConnectClient.deleteMedicalDataSourceWithData(createMedicalDataSourceResponse.id)
+
+        // Verify newly created data source does not exist
+        val getMedicalDataSourcesByIdsResponse =
+            healthConnectClient.getMedicalDataSources(listOf(createMedicalDataSourceResponse.id))
+        assertThat(getMedicalDataSourcesByIdsResponse).hasSize(0)
+    }
+
+    @Test
+    fun upsertNewMedicalResourcesThenReadByRequest_expectCorrectResponse() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+        val dataSourceId =
+            healthConnectClient
+                .createMedicalDataSource(
+                    CreateMedicalDataSourceRequest(
+                        fhirBaseUri = FHIR_BASE_URI,
+                        displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                        fhirVersion = FHIR_VERSION_4_0_1,
+                    )
+                )
+                .id
+        val requests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = "immunization-101",
+                ),
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = "immunization-102",
+                ),
+            )
+
+        // insert a new MedicalResource
+        val upsertResponse = healthConnectClient.upsertMedicalResources(requests)
+
+        assertThat(upsertResponse).hasSize(2)
+        assertThat(upsertResponse.map { it.fhirResource.data }).isEqualTo(requests.map { it.data })
+
+        // read the first MedicalResource with ReadMedicalResourcesInitialRequest
+        val firstPageResponse =
+            healthConnectClient.readMedicalResources(
+                ReadMedicalResourcesInitialRequest(
+                    MEDICAL_RESOURCE_TYPE_VACCINES,
+                    setOf(dataSourceId),
+                    pageSize = 1,
+                )
+            )
+
+        assertThat(firstPageResponse.medicalResources).containsExactly(upsertResponse[0])
+        assertThat(firstPageResponse.remainingCount).isEqualTo(1)
+        assertThat(firstPageResponse.nextPageToken).isNotNull()
+
+        // read the second MedicalResource with ReadMedicalResourcesPageRequest
+        val secondPageResponse =
+            healthConnectClient.readMedicalResources(
+                ReadMedicalResourcesPageRequest(firstPageResponse.nextPageToken!!)
+            )
+
+        assertThat(secondPageResponse.medicalResources).containsExactly(upsertResponse[1])
+        assertThat(secondPageResponse.remainingCount).isEqualTo(0)
+        assertThat(secondPageResponse.nextPageToken).isNull()
+    }
+
+    @Test
+    fun upsertNewMedicalResourcesThenReadByIds_expectCorrectResponse() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+        val dataSourceId =
+            healthConnectClient
+                .createMedicalDataSource(
+                    CreateMedicalDataSourceRequest(
+                        fhirBaseUri = FHIR_BASE_URI,
+                        displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                        fhirVersion = FHIR_VERSION_4_0_1,
+                    )
+                )
+                .id
+        val fhirResourceId = "immunization-101"
+        val requests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = fhirResourceId,
+                )
+            )
+
+        // insert a new MedicalResource
+        val upsertResponse = healthConnectClient.upsertMedicalResources(requests)
+
+        assertThat(upsertResponse).hasSize(1)
+        assertThat(upsertResponse[0].fhirResource.data).isEqualTo(requests[0].data)
+
+        // read back the MedicalResource
+        val medicalResources =
+            healthConnectClient.readMedicalResources(
+                listOf(
+                    MedicalResourceId(
+                        dataSourceId = dataSourceId,
+                        fhirResourceType = FHIR_RESOURCE_TYPE_IMMUNIZATION,
+                        fhirResourceId = fhirResourceId,
+                    )
+                )
+            )
+
+        assertThat(medicalResources).isEqualTo(upsertResponse)
+    }
+
+    @Test
+    fun upsertExistingMedicalResourcesThenReadByIds_expectCorrectResponse() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+        val dataSourceId =
+            healthConnectClient
+                .createMedicalDataSource(
+                    CreateMedicalDataSourceRequest(
+                        fhirBaseUri = FHIR_BASE_URI,
+                        displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                        fhirVersion = FHIR_VERSION_4_0_1,
+                    )
+                )
+                .id
+        val fhirResourceId = "immunization-101"
+        val insertRequests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = fhirResourceId,
+                    completeStatus = COMPLETE,
+                )
+            )
+
+        // insert a new MedicalResource
+        val insertResponse = healthConnectClient.upsertMedicalResources(insertRequests)
+
+        assertThat(insertResponse).hasSize(1)
+        assertThat(insertResponse[0].fhirResource.data).isEqualTo(insertRequests[0].data)
+
+        // update the inserted MedicalResource
+        val updateRequests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = fhirResourceId,
+                    completeStatus = INCOMPLETE, // change this from COMPLETE => INCOMPLETE
+                )
+            )
+
+        val updateResponse = healthConnectClient.upsertMedicalResources(updateRequests)
+        assertThat(updateResponse).hasSize(1)
+        assertThat(updateResponse[0].fhirResource.data).isEqualTo(updateRequests[0].data)
+        assertThat(insertResponse[0].id).isEqualTo(updateResponse[0].id)
+
+        // read back the MedicalResource
+        val medicalResources =
+            healthConnectClient.readMedicalResources(
+                listOf(
+                    MedicalResourceId(
+                        dataSourceId = dataSourceId,
+                        fhirResourceType = FHIR_RESOURCE_TYPE_IMMUNIZATION,
+                        fhirResourceId = fhirResourceId,
+                    )
+                )
+            )
+
+        assertThat(medicalResources).isEqualTo(updateResponse)
+    }
+
+    @Test
+    fun insertMedicalResourcesThenDeleteByIds_expectSuccessfulDeletion() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+        val dataSourceId =
+            healthConnectClient
+                .createMedicalDataSource(
+                    CreateMedicalDataSourceRequest(
+                        fhirBaseUri = FHIR_BASE_URI,
+                        displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                        fhirVersion = FHIR_VERSION_4_0_1,
+                    )
+                )
+                .id
+        val fhirResourceId = "immunization-101"
+        val requests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = fhirResourceId,
+                )
+            )
+        val insertResponse = healthConnectClient.upsertMedicalResources(requests)
+
+        healthConnectClient.deleteMedicalResources(insertResponse.map { it.id })
+
+        val medicalResources =
+            healthConnectClient.readMedicalResources(insertResponse.map { it.id })
+        assertThat(medicalResources).isEmpty()
+    }
+
+    @Test
+    fun insertMedicalResourcesThenDeleteByRequest_expectSuccessfulDeletion() = runTest {
+        assumeTrue(
+            "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
+        )
+        val dataSourceId =
+            healthConnectClient
+                .createMedicalDataSource(
+                    CreateMedicalDataSourceRequest(
+                        fhirBaseUri = FHIR_BASE_URI,
+                        displayName = MEDICAL_DATA_SOURCE_DISPLAY_NAME,
+                        fhirVersion = FHIR_VERSION_4_0_1,
+                    )
+                )
+                .id
+        val fhirResourceId = "immunization-101"
+        val requests =
+            listOf(
+                createVaccinesUpsertMedicalResourceRequest(
+                    dataSourceId = dataSourceId,
+                    fhirResourceId = fhirResourceId,
+                )
+            )
+        val insertResponse = healthConnectClient.upsertMedicalResources(requests)
+
+        healthConnectClient.deleteMedicalResources(
+            DeleteMedicalResourcesRequest(setOf(dataSourceId))
+        )
+
+        val medicalResources =
+            healthConnectClient.readMedicalResources(insertResponse.map { it.id })
+        assertThat(medicalResources).isEmpty()
     }
 
     private val Int.seconds: Duration

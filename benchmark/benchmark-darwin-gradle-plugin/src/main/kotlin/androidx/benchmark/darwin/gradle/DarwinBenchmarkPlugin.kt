@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
  * results in `json`.
  */
 class DarwinBenchmarkPlugin : Plugin<Project> {
+    @Suppress("UPPER_BOUND_VIOLATED_BASED_ON_JAVA_ANNOTATIONS")
     override fun apply(project: Project) {
         val extension =
             project.extensions.create("darwinBenchmark", DarwinBenchmarkPluginExtension::class.java)
@@ -58,17 +59,17 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
         // You can override the xcodeGenDownloadUri by specifying something like:
         // androidx.benchmark.darwin.xcodeGenDownloadUri=https://github.com/yonaskolb/XcodeGen/releases/download/2.32.0/xcodegen.zip
         val xcodeGenUri =
-            when (val uri = project.findProperty(XCODEGEN_DOWNLOAD_URI)) {
-                null ->
+            project.providers
+                .gradleProperty(XCODEGEN_DOWNLOAD_URI)
+                .orElse(
                     File(
                             project.rootProject.projectDir, // frameworks/support
-                            "../../prebuilts/androidx/external/xcodegen"
+                            "../../prebuilts/androidx/external/xcodegen",
                         )
                         .absoluteFile
                         .toURI()
                         .toString()
-                else -> uri.toString()
-            }
+                )
 
         val xcodeProjectPath =
             extension.xcodeProjectName.flatMap { name ->
@@ -92,7 +93,7 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
         val generateXCodeProjectTask =
             project.tasks.register(
                 GENERATE_XCODE_PROJECT_TASK,
-                GenerateXCodeProjectTask::class.java
+                GenerateXCodeProjectTask::class.java,
             ) {
                 it.xcodeGenPath.set(fetchXCodeGenTask.map { task -> task.xcodeGenBinary() })
                 it.yamlFile.set(extension.xcodeGenConfigFile)
@@ -103,7 +104,7 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
         val runDarwinBenchmarks =
             project.tasks.register(
                 RUN_DARWIN_BENCHMARKS_TASK,
-                RunDarwinBenchmarksTask::class.java
+                RunDarwinBenchmarksTask::class.java,
             ) {
                 val sharedService =
                     project.gradle.sharedServices.registrations
@@ -121,7 +122,7 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
 
         project.tasks.register(
             DARWIN_BENCHMARK_RESULTS_TASK,
-            DarwinBenchmarkResultsTask::class.java
+            DarwinBenchmarkResultsTask::class.java,
         ) {
             it.group = "Verification"
             it.description = "Run Kotlin Multiplatform Benchmarks for Darwin"

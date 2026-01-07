@@ -28,23 +28,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.FadingExpandingLabel
 
 @Sampled
 @Composable
 fun FadingExpandingLabelButtonSample() {
-    var text by remember { mutableStateOf("Line 1") }
+    var text by remember { mutableStateOf("Text Text Text Text") }
     var lines by remember { mutableIntStateOf(1) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Button(
             onClick = {
                 lines = lines % 3 + 1
-                text = (1..lines).joinToString(separator = "\n") { "Line $it" }
+                text = (1..lines).joinToString(separator = " ") { "Text Text Text Text" }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { FadingExpandingLabel(text = text) }
+            label = { FadingExpandingLabel(text = text, textAlign = TextAlign.Left) },
         )
     }
 }

@@ -17,13 +17,34 @@
 package androidx.savedstate.serialization
 
 import androidx.kruth.assertThat
+import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.serialization.utils.SavedStateSerializationBaseTest
 import kotlin.test.Test
 
+@IgnoreWebTarget
 internal class SavedStateCodecClassDiscriminatorPolymorphicTest :
     SavedStateSerializationBaseTest(
-        config = SavedStateConfig { classDiscriminatorMode = ClassDiscriminatorMode.POLYMORPHIC }
+        configuration =
+            SavedStateConfiguration { classDiscriminatorMode = ClassDiscriminatorMode.POLYMORPHIC }
     ) {
+
+    @Test
+    fun testNullWithNullableStaticType() {
+        doTestNullWithNullableStaticType {
+            assertThat(original).isEqualTo(deserialized)
+            assertThat(representation).isEqualTo(platformRepresentation)
+            assertThat(representation).isEqualTo("[=null]")
+        }
+    }
+
+    @Test
+    fun testNonNullWithNullableStaticType() {
+        doTestNonNullWithNullableStaticType {
+            assertThat(original).isEqualTo(deserialized)
+            assertThat(representation).isEqualTo(platformRepresentation)
+            assertThat(representation).isEqualTo("[value=true]")
+        }
+    }
 
     @Test
     fun testNullData() {

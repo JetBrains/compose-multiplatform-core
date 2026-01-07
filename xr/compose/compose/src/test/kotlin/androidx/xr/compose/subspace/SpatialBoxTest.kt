@@ -20,16 +20,16 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setSubspaceContent
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,17 +37,25 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialBox]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialBoxTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialBox_elementsAreCenteredByDefault() {
-        composeTestRule.setSubspaceContent {
-            SpatialBox(SubspaceModifier.size(100.dp)) {
-                SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                    Text(text = "Panel 1")
-                }
-                SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                    Text(text = "Panel 2")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp)) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
+                    }
                 }
             }
         }
@@ -67,13 +75,15 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_topLeft() {
-        composeTestRule.setSubspaceContent {
-            SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.TopLeft) {
-                SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                    Text(text = "Panel 1")
-                }
-                SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                    Text(text = "Panel 2")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.TopStart) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
+                    }
                 }
             }
         }
@@ -93,13 +103,15 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_bottomRight() {
-        composeTestRule.setSubspaceContent {
-            SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.BottomRight) {
-                SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                    Text(text = "Panel 1")
-                }
-                SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                    Text(text = "Panel 2")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.BottomEnd) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
+                    }
                 }
             }
         }
@@ -119,19 +131,23 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithModifier() {
-        composeTestRule.setSubspaceContent {
-            SpatialBox(SubspaceModifier.size(100.dp)) {
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel1")
-                        .size(50.dp)
-                        .align(SpatialAlignment.BottomLeft)
-                ) {
-                    Text(text = "Panel 1")
-                }
-                SpatialPanel(
-                    SubspaceModifier.testTag("panel2").size(50.dp).align(SpatialAlignment.TopRight)
-                ) {
-                    Text(text = "Panel 2")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp)) {
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel1")
+                            .size(50.dp)
+                            .align(SpatialAlignment.BottomStart)
+                    ) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel2")
+                            .size(50.dp)
+                            .align(SpatialAlignment.TopEnd)
+                    ) {
+                        Text(text = "Panel 2")
+                    }
                 }
             }
         }
@@ -151,13 +167,15 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsHonorPropagatedMinConstraints() {
-        composeTestRule.setSubspaceContent {
-            SpatialBox(SubspaceModifier.size(100.dp), propagateMinConstraints = true) {
-                SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                    Text(text = "Panel 1")
-                }
-                SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                    Text(text = "Panel 2")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), propagateMinConstraints = true) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
+                    }
                 }
             }
         }
@@ -173,5 +191,33 @@ class SpatialBoxTest {
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialBox_elementsHonorWithoutPropagatedMinConstraints() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(300.dp), propagateMinConstraints = false) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(150.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(150.dp)) {
+                        Text(text = "Panel 2")
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel1")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel2")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
     }
 }

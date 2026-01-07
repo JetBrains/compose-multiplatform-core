@@ -8,12 +8,10 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
 
     implementation(project(":appcompat:appcompat"))
     implementation(project(":appcompat:appcompat-resources"))
@@ -42,7 +40,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
     }

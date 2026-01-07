@@ -47,7 +47,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -55,18 +55,20 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.get
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.IconButtonDefaults.DefaultButtonSize
 import androidx.wear.compose.material3.IconButtonDefaults.ExtraSmallButtonSize
 import androidx.wear.compose.material3.IconButtonDefaults.LargeButtonSize
 import androidx.wear.compose.material3.IconButtonDefaults.SmallButtonSize
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 
 class IconButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -129,7 +131,7 @@ class IconButtonTest {
             IconButton(
                 onClick = { clicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -149,7 +151,7 @@ class IconButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -171,7 +173,7 @@ class IconButtonTest {
                     onClick = { /* Do nothing */ },
                     onLongClick = {},
                     enabled = true,
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {}
             }
         }
@@ -192,7 +194,7 @@ class IconButtonTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 onClick = {},
                 onLongClick = {},
-                onLongClickLabel = testLabel
+                onLongClickLabel = testLabel,
             ) {
                 Text("Button")
             }
@@ -209,7 +211,7 @@ class IconButtonTest {
             IconButton(
                 onClick = { clicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -229,7 +231,7 @@ class IconButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -258,7 +260,7 @@ class IconButtonTest {
         rule.setContentWithTheme {
             IconButton(
                 onClick = {},
-                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole }
+                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole },
             ) {
                 TestImage()
             }
@@ -301,7 +303,7 @@ class IconButtonTest {
         rule.verifyTapSize(expectedSize = MinimumButtonTapSize) { modifier ->
             IconButton(
                 onClick = {},
-                modifier = modifier.touchTargetAwareSize(ExtraSmallButtonSize)
+                modifier = modifier.touchTargetAwareSize(ExtraSmallButtonSize),
             ) {
                 TestImage()
             }
@@ -340,33 +342,38 @@ class IconButtonTest {
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animates_corners_to_75_percent_on_click() {
         val baseShape = RoundedCornerShape(20.dp)
         val pressedShape = RoundedCornerShape(0.dp)
 
+        // Ignore the color transition from enabled to disabled color
+        val colors = IconButtonColors(Color.Black, Color.Black, Color.Black, Color.Black)
+
         rule.verifyRoundedButtonTapAnimationEnd(
-            baseShape,
-            pressedShape,
-            0.75f,
-            8,
-            color = { IconButtonDefaults.filledIconButtonColors().containerColor }
+            baseShape = baseShape,
+            pressedShape = pressedShape,
+            targetProgress = 0.75f,
+            expectedFramesUntilTarget = 8,
+            color = { colors.containerColor },
+            antiAliasingGap = 4f,
         ) { modifier ->
             FilledIconButton(
                 onClick = {},
                 shapes = IconButtonShapes(baseShape, pressedShape),
-                modifier = modifier
+                modifier = modifier,
+                colors = colors,
             ) {}
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun default_shape_is_circular() {
         rule.isShape(
             expectedShape = CircleShape,
-            colors = { IconButtonDefaults.iconButtonColors() }
+            colors = { IconButtonDefaults.iconButtonColors() },
         ) { modifier ->
             IconButton(onClick = {}, modifier = modifier) {
                 // omit content to allow us to validate the shape by pixel checking.
@@ -374,7 +381,7 @@ class IconButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_shape_override() {
         val shape = CutCornerShape(4.dp)
@@ -384,25 +391,25 @@ class IconButtonTest {
             IconButton(
                 onClick = {},
                 modifier = modifier,
-                shapes = IconButtonDefaults.shapes(shape)
+                shapes = IconButtonDefaults.shapes(shape),
             ) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_icon_button_colors() {
         rule.verifyIconButtonColors(
             status = Status.Enabled,
             colors = { IconButtonDefaults.iconButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_icon_button_colors() {
         rule.verifyIconButtonColors(
@@ -411,22 +418,22 @@ class IconButtonTest {
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_icon_button_colors() {
         rule.verifyIconButtonColors(
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.primary },
-            expectedContentColor = { MaterialTheme.colorScheme.onPrimary }
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimary },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_icon_button_colors() {
         rule.verifyIconButtonColors(
@@ -437,22 +444,22 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_variant_icon_button_colors() {
         rule.verifyIconButtonColors(
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledVariantIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
-            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer }
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_variant_icon_button_colors() {
         rule.verifyIconButtonColors(
@@ -463,22 +470,22 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_icon_button_colors() {
         rule.verifyIconButtonColors(
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledTonalIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_icon_button_colors() {
         rule.verifyIconButtonColors(
@@ -489,22 +496,22 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_icon_button_colors() {
         rule.verifyIconButtonColors(
             status = Status.Enabled,
             colors = { IconButtonDefaults.outlinedIconButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_icon_button_colors() {
         rule.verifyIconButtonColors(
@@ -513,11 +520,11 @@ class IconButtonTest {
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_icon_button_correct_border_colors() {
         val status = Status.Enabled
@@ -525,11 +532,11 @@ class IconButtonTest {
             expectedBorderColor = { MaterialTheme.colorScheme.outline },
             content = { modifier: Modifier ->
                 OutlinedIconButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_icon_button_correct_border_colors() {
         val status = Status.Disabled
@@ -539,11 +546,11 @@ class IconButtonTest {
             },
             content = { modifier: Modifier ->
                 OutlinedIconButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_outlined_icon_button_border_color() {
         val status = Status.Enabled
@@ -558,14 +565,14 @@ class IconButtonTest {
                         ButtonDefaults.outlinedButtonBorder(
                             enabled = status.enabled(),
                             borderColor = Color.Green,
-                            disabledBorderColor = Color.Red
-                        )
+                            disabledBorderColor = Color.Red,
+                        ),
                 ) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun button_positioned_correctly() {
         var isScreenRound = false
@@ -576,7 +583,7 @@ class IconButtonTest {
                     onClick = {},
                     colors =
                         IconButtonDefaults.filledIconButtonColors(containerColor = Color.Green),
-                    modifier = Modifier.size(27.dp, 20.dp)
+                    modifier = Modifier.size(27.dp, 20.dp),
                 ) {}
             }
         }
@@ -628,7 +635,7 @@ class IconButtonTest {
                     actualContentColor = LocalContentColor.current
                 }
                 return@verifyColors actualContentColor
-            }
+            },
         )
     }
 }
@@ -637,7 +644,7 @@ class IconButtonTest {
 private fun ComposeContentTestRule.isShape(
     expectedShape: Shape,
     colors: @Composable () -> IconButtonColors,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable (Modifier) -> Unit,
 ) {
     var background = Color.Transparent
     var buttonColor = Color.Transparent
@@ -646,7 +653,7 @@ private fun ComposeContentTestRule.isShape(
     setContentWithTheme {
         background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
-            buttonColor = colors().containerColor(true)
+            buttonColor = colors().containerColor(true).value
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }

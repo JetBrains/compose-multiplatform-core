@@ -16,176 +16,164 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.media.AudioTrack
+import androidx.activity.ComponentActivity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.runtime.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.testing.FakeSceneRuntime
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argWhere
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialAudioTrackTest {
 
-    private var mockRuntime: JxrPlatformAdapter = mock()
-    private var mockRtAudioTrackExtensions: JxrPlatformAdapter.AudioTrackExtensionsWrapper = mock()
-
-    private val mockContentlessEntity = mock<JxrPlatformAdapter.Entity>()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private lateinit var sceneRuntime: SceneRuntime
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
 
     private lateinit var session: Session
 
     @Before
     fun setUp() {
-        mockRuntime.stub {
-            on { spatialEnvironment } doReturn mock()
-            on { activitySpace } doReturn mock()
-            on { activitySpaceRootImpl } doReturn mock()
-            on { headActivityPose } doReturn mock()
-            on { perceptionSpaceActivityPose } doReturn mock()
-            on { mainPanelEntity } doReturn mock()
-            on { createEntity(any(), any(), any()) } doReturn mockContentlessEntity
-        }
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
 
-        mockRtAudioTrackExtensions = mock()
-        whenever(mockRuntime.audioTrackExtensionsWrapper).thenReturn(mockRtAudioTrackExtensions)
-        session = Session.create(activity, mockRuntime)
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
+    }
+
+    @Test
+    fun setWithPointSource_callsRuntimeAudioTrackSetPointSource() {
+        val track = AudioTrack.Builder().build()
+
+        val entity = GroupEntity.create(session, "test")
+        val pointSourceParams = PointSourceParams(entity)
+
+        SpatialAudioTrack.setPointSourceParams(session, track, pointSourceParams)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        val rtAudioTrackExtensionsWrapper = fakeSceneRuntime.audioTrackExtensionsWrapper
+        val storedRtParams = rtAudioTrackExtensionsWrapper.pointSourceParamsMap[track]
+
+        assertThat(storedRtParams).isNotNull()
+        assertThat(storedRtParams?.entity).isEqualTo(pointSourceParams.rtPointSourceParams.entity)
+        assertThat(storedRtParams?.entity).isEqualTo(entity.rtEntity)
+    }
+
+    @Test
+    fun setWithPointSource_rethrowsIfExtensionThrows() {
+        val track = AudioTrack.Builder().build()
+
+        val entity = GroupEntity.create(session, "test")
+        val pointSourceParams = PointSourceParams(entity)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        fakeSceneRuntime.audioTrackExtensionsWrapper.fakeExtensionException =
+            IllegalStateException("Simulated runtime failure")
+
+        kotlin.test.assertFailsWith<IllegalStateException> {
+            SpatialAudioTrack.setPointSourceParams(session, track, pointSourceParams)
+        }
     }
 
     @Test
     fun setWithPointSource_callsRuntimeAudioTrackBuilderSetPointSource() {
         val builder = AudioTrack.Builder()
 
-        val entity = ContentlessEntity.create(session, "test")
-        val pointSourceAttributes = PointSourceAttributes(entity)
+        val entity = GroupEntity.create(session, "test")
+        val pointSourceParams = PointSourceParams(entity)
 
-        whenever(
-                mockRtAudioTrackExtensions.setPointSourceAttributes(
-                    eq(builder),
-                    any<JxrPlatformAdapter.PointSourceAttributes>(),
-                )
-            )
-            .thenReturn(builder)
+        SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        val rtAudioTrackExtensionsWrapper = fakeSceneRuntime.audioTrackExtensionsWrapper
+        val storedRtParams = rtAudioTrackExtensionsWrapper.pointSourceParamsBuilderMap[builder]
 
-        val actualBuilder =
-            SpatialAudioTrackBuilder.setPointSourceAttributes(
-                session,
-                builder,
-                pointSourceAttributes
-            )
-
-        verify(mockRtAudioTrackExtensions)
-            .setPointSourceAttributes(
-                eq(builder),
-                argWhere<JxrPlatformAdapter.PointSourceAttributes> {
-                    it.entity == mockContentlessEntity
-                },
-            )
-        assertThat(actualBuilder).isEqualTo(builder)
+        assertThat(storedRtParams).isNotNull()
+        assertThat(storedRtParams!!.entity).isEqualTo(pointSourceParams.rtPointSourceParams.entity)
     }
 
     @Test
     fun setWithSoundField_callsRuntimeAudioTrackBuilderSetSoundField() {
         val builder = AudioTrack.Builder()
         val soundFieldAttributes =
-            SoundFieldAttributes(SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER)
+            SoundFieldAttributes(SpatializerConstants.AmbisonicsOrder.FIRST_ORDER)
 
-        whenever(
-                mockRtAudioTrackExtensions.setSoundFieldAttributes(
-                    eq(builder),
-                    any<JxrPlatformAdapter.SoundFieldAttributes>(),
-                )
-            )
-            .thenReturn(builder)
+        SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        val rtAudioTrackExtensionsWrapper = fakeSceneRuntime.audioTrackExtensionsWrapper
 
-        val actualBuilder =
-            SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
-
-        verify(mockRtAudioTrackExtensions)
-            .setSoundFieldAttributes(
-                eq(builder),
-                argWhere<JxrPlatformAdapter.SoundFieldAttributes> {
-                    it.ambisonicsOrder == SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER
-                },
-            )
-        assertThat(actualBuilder).isEqualTo(builder)
+        assertThat(rtAudioTrackExtensionsWrapper.soundFieldAttributesBuilderMap[builder])
+            .isEqualTo(soundFieldAttributes.rtSoundFieldAttributes)
     }
 
     @Test
     fun getSourceType_callsRuntimeAudioTrackGetSourceType() {
         val audioTrack = AudioTrack.Builder().build()
-        val expectedSourceType = JxrPlatformAdapter.SpatializerConstants.SOURCE_TYPE_POINT_SOURCE
-
-        whenever(mockRtAudioTrackExtensions.getSpatialSourceType(eq(audioTrack)))
-            .thenReturn(expectedSourceType)
-
+        val expectedSourceType = RtSpatializerConstants.SOURCE_TYPE_POINT_SOURCE
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        fakeSceneRuntime.audioTrackExtensionsWrapper.spatialSourceTypeMap[audioTrack] =
+            expectedSourceType
         val sourceType = SpatialAudioTrack.getSpatialSourceType(session, audioTrack)
 
-        verify(mockRtAudioTrackExtensions).getSpatialSourceType(eq(audioTrack))
-        assertThat(sourceType).isEqualTo(expectedSourceType)
+        assertThat(sourceType.sourceTypeToRt()).isEqualTo(expectedSourceType)
     }
 
     @Test
-    fun getPointSourceAttributes_callsRuntimeAudioTrackGetPointSourceAttributes() {
+    fun getPointSourceParams_callsRuntimeAudioTrackGetPointSourceParams() {
         val audioTrack = AudioTrack.Builder().build()
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
 
         val temp: BaseEntity<*> = entity as BaseEntity<*>
-        val rtEntity = temp.rtEntity
-        val rtPointSourceAttributes = JxrPlatformAdapter.PointSourceAttributes(rtEntity)
+        val rtEntity = temp.rtEntity!!
+        val rtPointSourceParams = RtPointSourceParams(rtEntity)
 
-        whenever(mockRtAudioTrackExtensions.getPointSourceAttributes(eq(audioTrack)))
-            .thenReturn(rtPointSourceAttributes)
+        sceneRuntime.audioTrackExtensionsWrapper.setPointSourceParams(
+            audioTrack,
+            rtPointSourceParams,
+        )
+        val pointSourceParams = SpatialAudioTrack.getPointSourceParams(session, audioTrack)
 
-        val pointSourceAttributes = SpatialAudioTrack.getPointSourceAttributes(session, audioTrack)
-
-        verify(mockRtAudioTrackExtensions).getPointSourceAttributes(eq(audioTrack))
-        assertThat((pointSourceAttributes!!.entity as BaseEntity<*>).rtEntity).isEqualTo(rtEntity)
+        assertThat((pointSourceParams!!.entity as BaseEntity<*>).rtEntity).isEqualTo(rtEntity)
     }
 
     @Test
-    fun getPointSourceAttributes_returnsNullIfNotInRuntime() {
+    fun getPointSourceParams_returnsNullIfNotInRuntime() {
         val audioTrack = AudioTrack.Builder().build()
 
-        whenever(mockRtAudioTrackExtensions.getPointSourceAttributes(eq(audioTrack)))
-            .thenReturn(null)
+        val pointSourceParams = SpatialAudioTrack.getPointSourceParams(session, audioTrack)
 
-        val pointSourceAttributes = SpatialAudioTrack.getPointSourceAttributes(session, audioTrack)
-
-        assertThat(pointSourceAttributes).isNull()
+        assertThat(pointSourceParams).isNull()
     }
 
     @Test
-    fun getSoundFieldAttributes_callsRuntimeAudioTrackGetPointSourceAttributes() {
+    fun getSoundFieldAttributes_callsRuntimeAudioTrackGetSoundFieldAttributes() {
         val audioTrack = AudioTrack.Builder().build()
-        val expectedAmbisonicsOrder = SpatializerConstants.AMBISONICS_ORDER_THIRD_ORDER
+        val expectedAmbisonicsOrder = SpatializerConstants.AmbisonicsOrder.THIRD_ORDER
         val rtSoundFieldAttributes =
-            JxrPlatformAdapter.SoundFieldAttributes(expectedAmbisonicsOrder)
-
-        whenever(mockRtAudioTrackExtensions.getSoundFieldAttributes(eq(audioTrack)))
-            .thenReturn(rtSoundFieldAttributes)
-
+            RtSoundFieldAttributes(expectedAmbisonicsOrder.sourceTypeToRt())
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+        fakeSceneRuntime.audioTrackExtensionsWrapper.setSoundFieldAttributes(
+            audioTrack,
+            rtSoundFieldAttributes,
+        )
         val soundFieldAttributes = SpatialAudioTrack.getSoundFieldAttributes(session, audioTrack)
 
-        verify(mockRtAudioTrackExtensions).getSoundFieldAttributes(eq(audioTrack))
         assertThat(soundFieldAttributes?.order).isEqualTo(expectedAmbisonicsOrder)
     }
 
     @Test
     fun getSoundFieldAttributes_returnsNullIfNotInRuntime() {
         val audioTrack = AudioTrack.Builder().build()
-
-        whenever(mockRtAudioTrackExtensions.getSoundFieldAttributes(eq(audioTrack)))
-            .thenReturn(null)
 
         val soundFieldAttributes = SpatialAudioTrack.getSoundFieldAttributes(session, audioTrack)
 

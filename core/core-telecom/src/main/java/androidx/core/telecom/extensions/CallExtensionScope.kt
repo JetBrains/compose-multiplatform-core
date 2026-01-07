@@ -82,7 +82,7 @@ public interface CallExtensionScope {
      */
     public fun addParticipantExtension(
         onActiveParticipantChanged: suspend (Participant?) -> Unit,
-        onParticipantsUpdated: suspend (Set<Participant>) -> Unit
+        onParticipantsUpdated: suspend (Set<Participant>) -> Unit,
     ): ParticipantExtensionRemote
 
     /**
@@ -126,7 +126,7 @@ public interface CallExtensionScope {
      */
     public fun addMeetingSummaryExtension(
         onCurrentSpeakerChanged: suspend (CharSequence?) -> Unit,
-        onParticipantCountChanged: suspend (Int) -> Unit
+        onParticipantCountChanged: suspend (Int) -> Unit,
     ): MeetingSummaryRemote
 
     /**
@@ -146,10 +146,14 @@ public interface CallExtensionScope {
      *
      * @param onIsLocallySilencedUpdated Called when the local call silence state has changed and
      *   the UI should be updated.
+     * @param onCanUserUpdateSilence Called when the ability for the user to control the silence
+     *   state has changed. If `false`, the UI should disable the mic control (e.g. grey out the
+     *   button) because the user is restricted by a meeting moderator or hardware limitations.
      * @return The interface that is used to interact with the local call silence extension methods.
      */
     public fun addLocalCallSilenceExtension(
-        onIsLocallySilencedUpdated: suspend (Boolean) -> Unit
+        onIsLocallySilencedUpdated: suspend (Boolean) -> Unit,
+        onCanUserUpdateSilence: (suspend (Boolean) -> Unit) = { _ -> },
     ): LocalCallSilenceExtensionRemote
 
     /**

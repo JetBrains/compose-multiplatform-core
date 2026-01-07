@@ -19,7 +19,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 dependencies {
     // You might need to import this to resolve duplicate class in kotlin-stdlib.

@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.DefaultNavigationRailOverride.NavigationRail
 import androidx.compose.material3.internal.MappedInteractionSource
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.systemBarsForVisualComponents
@@ -71,6 +72,8 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.constrainHeight
@@ -81,8 +84,8 @@ import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m3.material.io/components/navigation-rail/overview" class="external"
- * target="_blank">Material Design bottom navigation rail</a>.
+ * [Material Design bottom navigation
+ * rail](https://m3.material.io/components/navigation-rail/overview)
  *
  * Navigation rails provide access to primary destinations in apps when using tablet and desktop
  * screens.
@@ -122,18 +125,50 @@ fun NavigationRail(
     contentColor: Color = contentColorFor(containerColor),
     header: @Composable (ColumnScope.() -> Unit)? = null,
     windowInsets: WindowInsets = NavigationRailDefaults.windowInsets,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    val context =
-        NavigationRailComponentOverrideContext(
-            modifier = modifier,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            header = header,
-            windowInsets = windowInsets,
-            content = content,
-        )
-    with(LocalNavigationRailComponentOverride.current) { context.NavigationRail() }
+    with(LocalNavigationRailOverride.current) {
+        NavigationRailOverrideScope(
+                modifier = modifier,
+                containerColor = containerColor,
+                contentColor = contentColor,
+                header = header,
+                windowInsets = windowInsets,
+                content = content,
+            )
+            .NavigationRail()
+    }
+}
+
+/**
+ * This override provides the default behavior of the [NavigationRail] component.
+ *
+ * [NavigationRailOverride] used when no override is specified.
+ */
+@ExperimentalMaterial3ComponentOverrideApi
+object DefaultNavigationRailOverride : NavigationRailOverride {
+    @Composable
+    override fun NavigationRailOverrideScope.NavigationRail() {
+        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
+            Column(
+                Modifier.fillMaxHeight()
+                    .windowInsetsPadding(windowInsets)
+                    .widthIn(min = NavigationRailCollapsedTokens.NarrowContainerWidth)
+                    .padding(vertical = NavigationRailVerticalPadding)
+                    .selectableGroup()
+                    .semantics { isTraversalGroup = true },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(NavigationRailVerticalPadding),
+            ) {
+                val header = header
+                if (header != null) {
+                    header()
+                    Spacer(Modifier.height(NavigationRailHeaderPadding))
+                }
+                content()
+            }
+        }
+    }
 }
 
 /**
@@ -185,7 +220,7 @@ fun NavigationRailItem(
             val iconColor by
                 animateColorAsState(
                     targetValue = colors.iconColor(selected = selected, enabled = enabled),
-                    animationSpec = colorAnimationSpec
+                    animationSpec = colorAnimationSpec,
                 )
             // If there's a label, don't have a11y services repeat the icon description.
             val clearSemantics = label != null && (alwaysShowLabel || selected)
@@ -201,12 +236,12 @@ fun NavigationRailItem(
                 val textColor by
                     animateColorAsState(
                         targetValue = colors.textColor(selected = selected, enabled = enabled),
-                        animationSpec = colorAnimationSpec
+                        animationSpec = colorAnimationSpec,
                     )
                 ProvideContentColorTextStyle(
                     contentColor = textColor,
                     textStyle = style,
-                    content = label
+                    content = label,
                 )
             }
         }
@@ -230,27 +265,30 @@ fun NavigationRailItem(
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             )
         val sizeAnimationProgress: State<Float> =
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
+                animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
             )
 
         // The entire item is selectable, but only the indicator pill shows the ripple. To achieve
         // this, we re-map the coordinates of the item's InteractionSource into the coordinates of
         // the indicator.
-        val deltaOffset: Offset
-        with(LocalDensity.current) {
-            val itemWidth = NavigationRailItemWidth.roundToPx()
-            val indicatorWidth = NavigationRailVerticalItemTokens.ActiveIndicatorWidth.roundToPx()
-            deltaOffset = Offset((itemWidth - indicatorWidth).toFloat() / 2, 0f)
+        val density = LocalDensity.current
+        val calculateDeltaOffset = {
+            with(density) {
+                val itemWidth = NavigationRailItemWidth.roundToPx()
+                val indicatorWidth =
+                    NavigationRailVerticalItemTokens.ActiveIndicatorWidth.roundToPx()
+                Offset((itemWidth - indicatorWidth).toFloat() / 2, 0f)
+            }
         }
         val offsetInteractionSource =
-            remember(interactionSource, deltaOffset) {
-                MappedInteractionSource(interactionSource, deltaOffset)
+            remember(interactionSource, calculateDeltaOffset) {
+                MappedInteractionSource(interactionSource, calculateDeltaOffset)
             }
 
         val indicatorShape =
@@ -371,7 +409,7 @@ object NavigationRailItemDefaults {
 
     @Deprecated(
         "Use overload with disabledIconColor and disabledTextColor",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     @Composable
     fun colors(
@@ -541,7 +579,7 @@ private fun NavigationRailItemLayout(
                     label()
                 }
             }
-        }
+        },
     ) { measurables, constraints ->
         @Suppress("NAME_SHADOWING")
         // Ensure that the progress is >= 0. It may be negative on bouncy springs, for example.
@@ -604,7 +642,7 @@ private fun MeasureScope.placeIcon(
             maxOf(
                 iconPlaceable.width,
                 indicatorRipplePlaceable.width,
-                indicatorPlaceable?.width ?: 0
+                indicatorPlaceable?.width ?: 0,
             )
         )
     val height = constraints.constrainHeight(NavigationRailItemHeight.roundToPx())
@@ -768,12 +806,12 @@ private val IndicatorVerticalPaddingNoLabel: Dp =
  * Interface that allows libraries to override the behavior of the [NavigationRail] component.
  *
  * To override this component, implement the member function of this interface, then provide the
- * implementation to [LocalNavigationRailComponentOverride] in the Compose hierarchy.
+ * implementation to [LocalNavigationRailOverride] in the Compose hierarchy.
  */
 @ExperimentalMaterial3ComponentOverrideApi
-interface NavigationRailComponentOverride {
+interface NavigationRailOverride {
     /** Behavior function that is called by the [NavigationRail] component. */
-    @Composable fun NavigationRailComponentOverrideContext.NavigationRail()
+    @Composable fun NavigationRailOverrideScope.NavigationRail()
 }
 
 /**
@@ -790,7 +828,7 @@ interface NavigationRailComponentOverride {
  * @param content the content of this navigation rail, typically 3-7 [NavigationRailItem]s
  */
 @ExperimentalMaterial3ComponentOverrideApi
-class NavigationRailComponentOverrideContext
+class NavigationRailOverrideScope
 internal constructor(
     val modifier: Modifier = Modifier,
     val containerColor: Color,
@@ -800,46 +838,9 @@ internal constructor(
     val content: @Composable ColumnScope.() -> Unit,
 )
 
-/**
- * [NavigationRailComponentOverride] used when no override is specified.
- *
- * This override provides the default behavior of the [NavigationRail] component.
- */
+/** CompositionLocal containing the currently-selected [NavigationRailOverride]. */
 @ExperimentalMaterial3ComponentOverrideApi
-object DefaultNavigationRailComponentOverride : NavigationRailComponentOverride {
-    @Composable
-    override fun NavigationRailComponentOverrideContext.NavigationRail() {
-        Surface(
-            color = containerColor,
-            contentColor = contentColor,
-            modifier = modifier,
-        ) {
-            Column(
-                Modifier.fillMaxHeight()
-                    .windowInsetsPadding(windowInsets)
-                    .widthIn(min = NavigationRailCollapsedTokens.NarrowContainerWidth)
-                    .padding(vertical = NavigationRailVerticalPadding)
-                    .selectableGroup(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(NavigationRailVerticalPadding)
-            ) {
-                val header = header
-                if (header != null) {
-                    header()
-                    Spacer(Modifier.height(NavigationRailHeaderPadding))
-                }
-                content()
-            }
-        }
-    }
-}
-
-/** CompositionLocal containing the currently-selected [NavigationRailComponentOverride]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3ComponentOverrideApi
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalNavigationRailComponentOverride:
-    ProvidableCompositionLocal<NavigationRailComponentOverride> =
+val LocalNavigationRailOverride: ProvidableCompositionLocal<NavigationRailOverride> =
     compositionLocalOf {
-        DefaultNavigationRailComponentOverride
+        DefaultNavigationRailOverride
     }

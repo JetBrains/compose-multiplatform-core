@@ -16,153 +16,186 @@
 
 package androidx.xr.scenecore
 
+import androidx.activity.ComponentActivity
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
+import androidx.xr.scenecore.testing.FakeExrImageResource
+import androidx.xr.scenecore.testing.FakeGltfModelResource
+import androidx.xr.scenecore.testing.FakeResource
+import androidx.xr.scenecore.testing.FakeSpatialEnvironment
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.shadows.ShadowLooper
 
 /**
  * Unit tests for the JXRCore SDK SpatialEnvironment Interface.
  *
  * TODO(b/329902726): Add a TestRuntime and verify CPM Integration.
  */
-@RunWith(JUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialEnvironmentTest {
 
-    private var mockRuntime: JxrPlatformAdapter = mock<JxrPlatformAdapter>()
-    private var mockRtEnvironment: JxrPlatformAdapter.SpatialEnvironment? = null
+    private lateinit var sceneRuntime: SceneRuntime
+    private lateinit var session: Session
+    private lateinit var fakeEnvironment: FakeSpatialEnvironment
     private var environment: SpatialEnvironment? = null
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
 
     @Before
     fun setUp() {
-        mockRtEnvironment = mock<JxrPlatformAdapter.SpatialEnvironment>()
-        whenever(mockRuntime.spatialEnvironment).thenReturn(mockRtEnvironment)
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
 
-        environment = SpatialEnvironment(mockRuntime)
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
+        fakeEnvironment = sceneRuntime.spatialEnvironment as FakeSpatialEnvironment
+        environment = SpatialEnvironment(sceneRuntime)
     }
 
     @Test
-    fun getCurrentPassthroughOpacity_getsRuntimePassthroughOpacity() {
+    fun currentPassthroughOpacity_getsRuntimePassthroughOpacity() {
         val rtOpacity = 0.3f
-        whenever(mockRtEnvironment!!.currentPassthroughOpacity).thenReturn(rtOpacity)
-        assertThat(environment!!.getCurrentPassthroughOpacity()).isEqualTo(rtOpacity)
-        verify(mockRtEnvironment!!).currentPassthroughOpacity
+        fakeEnvironment.passthroughOpacityChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(rtOpacity) }
+        }
+
+        assertThat(environment!!.currentPassthroughOpacity).isEqualTo(rtOpacity)
     }
 
     @Test
     fun getPassthroughOpacityPreference_getsRuntimePassthroughOpacityPreference() {
         val rtPreference = 0.3f
-        whenever(mockRtEnvironment!!.passthroughOpacityPreference).thenReturn(rtPreference)
+        fakeEnvironment.preferredPassthroughOpacity = rtPreference
 
-        assertThat(environment!!.getPassthroughOpacityPreference()).isEqualTo(rtPreference)
-        verify(mockRtEnvironment!!).passthroughOpacityPreference
+        assertThat(environment!!.preferredPassthroughOpacity).isEqualTo(rtPreference)
     }
 
     @Test
-    fun getPassthroughOpacityPreferenceNull_getsRuntimePassthroughOpacityPreference() {
-        val rtPreference = null as Float?
-        whenever(mockRtEnvironment!!.passthroughOpacityPreference).thenReturn(rtPreference)
+    fun getPassthroughOpacityPreferenceNoPreference_getsRuntimePassthroughOpacityPreference() {
+        val rtPreference = SpatialEnvironment.NO_PASSTHROUGH_OPACITY_PREFERENCE
+        fakeEnvironment.preferredPassthroughOpacity = rtPreference
 
-        assertThat(environment!!.getPassthroughOpacityPreference()).isEqualTo(rtPreference)
-        verify(mockRtEnvironment!!).passthroughOpacityPreference
+        assertThat(environment!!.preferredPassthroughOpacity).isEqualTo(rtPreference)
     }
 
     @Test
     fun setPassthroughOpacityPreference_callsRuntimeSetPassthroughOpacityPreference() {
         val preference = 0.3f
+        environment!!.preferredPassthroughOpacity = preference
 
-        whenever(mockRtEnvironment!!.setPassthroughOpacityPreference(any()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetPassthroughOpacityPreferenceResult
-                    .CHANGE_APPLIED
-            )
-        assertThat(environment!!.setPassthroughOpacityPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetPassthroughOpacityPreferenceChangeApplied::class.java
-            )
-
-        whenever(mockRtEnvironment!!.setPassthroughOpacityPreference(any()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetPassthroughOpacityPreferenceResult
-                    .CHANGE_PENDING
-            )
-        assertThat(environment!!.setPassthroughOpacityPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetPassthroughOpacityPreferenceChangePending::class.java
-            )
-
-        verify(mockRtEnvironment!!, times(2)).setPassthroughOpacityPreference(preference)
+        assertThat(fakeEnvironment.preferredPassthroughOpacity).isEqualTo(preference)
     }
 
     @Test
-    fun setPassthroughOpacityPreferenceNull_callsRuntimeSetPassthroughOpacityPreference() {
-        val preference = null as Float?
+    fun setPassthroughOpacityPreferenceNoPreference_callsRuntimeSetPassthroughOpacityPreference() {
+        val preference = SpatialEnvironment.NO_PASSTHROUGH_OPACITY_PREFERENCE
+        environment!!.preferredPassthroughOpacity = preference
 
-        whenever(mockRtEnvironment!!.setPassthroughOpacityPreference(anyOrNull()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetPassthroughOpacityPreferenceResult
-                    .CHANGE_APPLIED
-            )
-        assertThat(environment!!.setPassthroughOpacityPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetPassthroughOpacityPreferenceChangeApplied::class.java
-            )
-
-        whenever(mockRtEnvironment!!.setPassthroughOpacityPreference(anyOrNull()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetPassthroughOpacityPreferenceResult
-                    .CHANGE_PENDING
-            )
-        assertThat(environment!!.setPassthroughOpacityPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetPassthroughOpacityPreferenceChangePending::class.java
-            )
-
-        verify(mockRtEnvironment!!, times(2)).setPassthroughOpacityPreference(preference)
+        assertThat(fakeEnvironment.preferredPassthroughOpacity).isEqualTo(preference)
     }
 
     @Test
     fun addOnPassthroughOpacityChangedListener_ReceivesRuntimeOnPassthroughOpacityChangedEvents() {
+        check(fakeEnvironment.passthroughOpacityChangedListenerMap.size == 1)
+
         var listenerCalledWithValue = 0.0f
-        val captor = argumentCaptor<Consumer<Float>>()
         val listener = Consumer<Float> { floatValue: Float -> listenerCalledWithValue = floatValue }
         environment!!.addOnPassthroughOpacityChangedListener(listener)
-        verify(mockRtEnvironment!!).addOnPassthroughOpacityChangedListener(captor.capture())
-        captor.firstValue.accept(0.3f)
+
+        assertThat(fakeEnvironment.passthroughOpacityChangedListenerMap).hasSize(2)
+
+        fakeEnvironment.passthroughOpacityChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(0.3f) }
+        }
+        ShadowLooper.idleMainLooper()
+
         assertThat(listenerCalledWithValue).isEqualTo(0.3f)
     }
 
     @Test
-    fun removeOnPassthroughOpacityChangedListener_callsRuntimeRemoveOnPassthroughOpacityChangedListener() {
-        val captor = argumentCaptor<Consumer<Float>>()
+    fun addOnPassthroughOpacityChangedListener_withExecutor_receivesEventsOnExecutor() {
+        var listenerCalledWithValue = 0.0f
+        var listenerThread: Thread? = null
+        val executor = directExecutor()
+
+        val listener =
+            Consumer<Float> { floatValue: Float ->
+                listenerCalledWithValue = floatValue
+                listenerThread = Thread.currentThread()
+            }
+        environment!!.addOnPassthroughOpacityChangedListener(executor, listener)
+
+        val eventValue = 0.3f
+        fakeEnvironment.passthroughOpacityChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(0.3f) }
+        }
+
+        assertThat(listenerCalledWithValue).isEqualTo(eventValue)
+        assertThat(listenerThread).isNotNull()
+    }
+
+    @Test
+    fun addOnPassthroughOpacityChangedListener_withoutExecutor_usesMainThreadExecutor() {
         val listener = Consumer<Float> {}
+        environment!!.addOnPassthroughOpacityChangedListener(listener)
+
+        assertThat(fakeEnvironment.passthroughOpacityChangedListenerMap[listener])
+            .isEqualTo(HandlerExecutor.mainThreadExecutor)
+    }
+
+    @Test
+    fun removeOnPassthroughOpacityChangedListener_callsRuntimeRemoveOnPassthroughOpacityChangedListener() {
+        val listener = Consumer<Float> {}
+        environment!!.addOnPassthroughOpacityChangedListener(listener)
+
+        assertThat(fakeEnvironment.passthroughOpacityChangedListenerMap).hasSize(2)
+
         environment!!.removeOnPassthroughOpacityChangedListener(listener)
-        verify(mockRtEnvironment!!).removeOnPassthroughOpacityChangedListener(captor.capture())
-        assertThat(captor.firstValue).isEqualTo(listener)
+
+        assertThat(fakeEnvironment.passthroughOpacityChangedListenerMap).hasSize(1)
     }
 
     @Test
     fun spatialEnvironmentPreferenceEqualsHashcode_returnsTrueIfAllPropertiesAreEqual() {
-        val rtImageMock = mock<JxrPlatformAdapter.ExrImageResource>()
-        val rtModelMock = mock<JxrPlatformAdapter.GltfModelResource>()
+        val rtImage = FakeExrImageResource(0)
+        val rtModel = FakeGltfModelResource(0)
+        val rtMaterial = FakeResource()
+        val rtNodeName = "nodeName"
+        val rtAnimationName = "animationName"
         val rtPreference =
-            JxrPlatformAdapter.SpatialEnvironment.SpatialEnvironmentPreference(
-                rtImageMock,
-                rtModelMock
+            RtSpatialEnvironment.SpatialEnvironmentPreference(
+                rtImage,
+                rtModel,
+                rtMaterial,
+                rtNodeName,
+                rtAnimationName,
             )
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(rtImageMock),
-                GltfModel(rtModelMock)
+                ExrImage(null, rtImage),
+                GltfModel(null, rtModel),
+                object : Material {
+                    override val material = rtMaterial
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName,
+                rtAnimationName,
             )
 
         assertThat(preference).isEqualTo(rtPreference.toSpatialEnvironmentPreference())
@@ -172,20 +205,38 @@ class SpatialEnvironmentTest {
 
     @Test
     fun spatialEnvironmentPreferenceEqualsHashcode_returnsFalseIfAnyPropertiesAreNotEqual() {
-        val rtImageMock = mock<JxrPlatformAdapter.ExrImageResource>()
-        val rtModelMock = mock<JxrPlatformAdapter.GltfModelResource>()
-        val rtImageMock2 = mock<JxrPlatformAdapter.ExrImageResource>()
-        val rtModelMock2 = mock<JxrPlatformAdapter.GltfModelResource>()
+        val rtImage = FakeExrImageResource(1)
+        val rtModel = FakeGltfModelResource(1)
+        val rtMaterial = FakeResource(1)
+        val rtNodeName = "nodeName"
+        val rtAnimationName = "animationName"
+        val rtImage2 = FakeExrImageResource(2)
+        val rtModel2 = FakeGltfModelResource(2)
+        val rtMaterial2 = FakeResource(2)
+        val rtNodeName2 = "nodeName2"
+        val rtAnimationName2 = "animationName2"
         val rtPreference =
-            JxrPlatformAdapter.SpatialEnvironment.SpatialEnvironmentPreference(
-                rtImageMock,
-                rtModelMock
+            RtSpatialEnvironment.SpatialEnvironmentPreference(
+                rtImage,
+                rtModel,
+                rtMaterial,
+                rtNodeName,
+                rtAnimationName,
             )
 
         val preferenceDiffGeometry =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(rtImageMock),
-                GltfModel(rtModelMock2),
+                ExrImage(null, rtImage),
+                GltfModel(null, rtModel2),
+                object : Material {
+                    override val material = rtMaterial2
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName2,
+                rtAnimationName2,
             )
         assertThat(preferenceDiffGeometry)
             .isNotEqualTo(rtPreference.toSpatialEnvironmentPreference())
@@ -194,8 +245,17 @@ class SpatialEnvironmentTest {
 
         val preferenceDiffSkybox =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(rtImageMock2),
-                GltfModel(rtModelMock),
+                ExrImage(null, rtImage2),
+                GltfModel(null, rtModel),
+                object : Material {
+                    override val material = rtMaterial
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName,
+                rtAnimationName,
             )
         assertThat(preferenceDiffSkybox).isNotEqualTo(rtPreference.toSpatialEnvironmentPreference())
         assertThat(preferenceDiffSkybox.hashCode())
@@ -203,128 +263,115 @@ class SpatialEnvironmentTest {
     }
 
     @Test
-    fun setSpatialEnvironmentPreference_returnsRuntimeEnvironmentResultObject() {
-        val rtImageMock = mock<JxrPlatformAdapter.ExrImageResource>()
-        val rtModelMock = mock<JxrPlatformAdapter.GltfModelResource>()
+    fun setSpatialEnvironmentPreference_callsRuntimeMethod() {
+        val rtImage = FakeExrImageResource(0)
+        val rtModel = FakeGltfModelResource(0)
 
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
-                ExrImage(rtImageMock),
-                GltfModel(rtModelMock)
+                ExrImage(null, rtImage),
+                GltfModel(null, rtModel),
             )
+        val rtPreference = preference.toRtSpatialEnvironmentPreference()
 
-        whenever(mockRtEnvironment!!.setSpatialEnvironmentPreference(any()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult
-                    .CHANGE_APPLIED
-            )
-        assertThat(environment!!.setSpatialEnvironmentPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetSpatialEnvironmentPreferenceChangeApplied::class.java
-            )
+        environment!!.preferredSpatialEnvironment = preference
 
-        whenever(mockRtEnvironment!!.setSpatialEnvironmentPreference(any()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult
-                    .CHANGE_PENDING
-            )
-        assertThat(environment!!.setSpatialEnvironmentPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetSpatialEnvironmentPreferenceChangePending::class.java
-            )
-
-        verify(mockRtEnvironment!!, times(2)).setSpatialEnvironmentPreference(any())
+        assertThat(fakeEnvironment.preferredSpatialEnvironment).isEqualTo(rtPreference)
     }
 
     @Test
-    fun setSpatialEnvironmentPreferenceNull_returnsRuntimeEnvironmentResultObject() {
-        val preference = null as SpatialEnvironment.SpatialEnvironmentPreference?
+    fun setSpatialEnvironmentPreferenceNull_callsRuntimeMethod() {
+        check(environment!!.preferredSpatialEnvironment == null)
 
-        whenever(mockRtEnvironment!!.setSpatialEnvironmentPreference(anyOrNull()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult
-                    .CHANGE_APPLIED
-            )
-        assertThat(environment!!.setSpatialEnvironmentPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetSpatialEnvironmentPreferenceChangeApplied::class.java
-            )
+        val preference = SpatialEnvironment.SpatialEnvironmentPreference(null, null)
 
-        whenever(mockRtEnvironment!!.setSpatialEnvironmentPreference(anyOrNull()))
-            .thenReturn(
-                JxrPlatformAdapter.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult
-                    .CHANGE_PENDING
-            )
-        assertThat(environment!!.setSpatialEnvironmentPreference(preference))
-            .isInstanceOf(
-                SpatialEnvironment.SetSpatialEnvironmentPreferenceChangePending::class.java
-            )
+        environment!!.preferredSpatialEnvironment = preference
 
-        verify(mockRtEnvironment!!, times(2)).setSpatialEnvironmentPreference(anyOrNull())
+        assertThat(fakeEnvironment.preferredSpatialEnvironment).isNotNull()
+
+        environment!!.preferredSpatialEnvironment = null
+
+        assertThat(fakeEnvironment.preferredSpatialEnvironment).isNull()
     }
 
     @Test
     fun getSpatialEnvironmentPreference_getsRuntimeEnvironmentSpatialEnvironmentPreference() {
-        val rtImageMock = mock<JxrPlatformAdapter.ExrImageResource>()
-        val rtModelMock = mock<JxrPlatformAdapter.GltfModelResource>()
-        val rtPreference =
-            JxrPlatformAdapter.SpatialEnvironment.SpatialEnvironmentPreference(
-                rtImageMock,
-                rtModelMock
-            )
-        whenever(mockRtEnvironment!!.spatialEnvironmentPreference).thenReturn(rtPreference)
+        val rtImage = FakeExrImageResource(0)
+        val rtModel = FakeGltfModelResource(0)
+        val rtPreference = RtSpatialEnvironment.SpatialEnvironmentPreference(rtImage, rtModel)
+        fakeEnvironment.preferredSpatialEnvironment = rtPreference
 
-        assertThat(environment!!.getSpatialEnvironmentPreference())
+        assertThat(environment!!.preferredSpatialEnvironment)
             .isEqualTo(rtPreference.toSpatialEnvironmentPreference())
-        verify(mockRtEnvironment!!).spatialEnvironmentPreference
     }
 
     @Test
     fun getSpatialEnvironmentPreferenceNull_getsRuntimeEnvironmentSpatialEnvironmentPreference() {
-        val rtPreference =
-            null as JxrPlatformAdapter.SpatialEnvironment.SpatialEnvironmentPreference?
-        whenever(mockRtEnvironment!!.spatialEnvironmentPreference).thenReturn(rtPreference)
+        fakeEnvironment.preferredSpatialEnvironment = null
 
-        assertThat(environment!!.getSpatialEnvironmentPreference()).isEqualTo(null)
-        verify(mockRtEnvironment!!).spatialEnvironmentPreference
+        assertThat(environment!!.preferredSpatialEnvironment).isNull()
     }
 
     @Test
-    fun isSpatialEnvironmentPreferenceActive_callsRuntimeEnvironmentisSpatialEnvironmentPreferenceActive() {
-        whenever(mockRtEnvironment!!.isSpatialEnvironmentPreferenceActive).thenReturn(true)
-        assertThat(environment!!.isSpatialEnvironmentPreferenceActive()).isTrue()
-        verify(mockRtEnvironment!!).isSpatialEnvironmentPreferenceActive
+    fun isPreferredSpatialEnvironmentActive_callsRuntimeisPreferredSpatialEnvironmentActive() {
+        fakeEnvironment.spatialEnvironmentChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(true) }
+        }
+
+        assertThat(environment!!.isPreferredSpatialEnvironmentActive).isTrue()
     }
 
     @Test
     fun addOnSpatialEnvironmentChangedListener_ReceivesRuntimeEnvironmentOnEnvironmentChangedEvents() {
         var listenerCalled = false
-        val captor = argumentCaptor<Consumer<Boolean>>()
         val listener = Consumer<Boolean> { called: Boolean -> listenerCalled = called }
         environment!!.addOnSpatialEnvironmentChangedListener(listener)
-        verify(mockRtEnvironment!!).addOnSpatialEnvironmentChangedListener(captor.capture())
-        captor.firstValue.accept(true)
+        fakeEnvironment.spatialEnvironmentChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(true) }
+        }
+        ShadowLooper.idleMainLooper()
+
         assertThat(listenerCalled).isTrue()
     }
 
     @Test
-    fun removeOnSpatialEnvironmentChangedListener_callsRuntimeRemoveOnSpatialEnvironmentChangedListener() {
-        val captor = argumentCaptor<Consumer<Boolean>>()
+    fun addOnSpatialEnvironmentChangedListener_withExecutor_receivesEventsOnExecutor() {
+        var listenerCalledWithValue = false
+        var listenerThread: Thread? = null
+        val executor = directExecutor()
+
+        val listener =
+            Consumer<Boolean> { boolValue: Boolean ->
+                listenerCalledWithValue = boolValue
+                listenerThread = Thread.currentThread()
+            }
+        environment!!.addOnSpatialEnvironmentChangedListener(executor, listener)
+
+        val eventValue = true
+        fakeEnvironment.spatialEnvironmentChangedListenerMap.forEach { (consumer, executor) ->
+            executor.execute { consumer.accept(eventValue) }
+        }
+
+        assertThat(listenerCalledWithValue).isEqualTo(eventValue)
+        assertThat(listenerThread).isNotNull()
+    }
+
+    @Test
+    fun addOnSpatialEnvironmentChangedListener_withoutExecutor_usesMainThreadExecutor() {
         val listener = Consumer<Boolean> {}
+        environment!!.addOnSpatialEnvironmentChangedListener(listener)
+
+        assertThat(fakeEnvironment.spatialEnvironmentChangedListenerMap[listener])
+            .isEqualTo(HandlerExecutor.mainThreadExecutor)
+    }
+
+    @Test
+    fun removeOnSpatialEnvironmentChangedListener_callsRuntimeRemoveOnSpatialEnvironmentChangedListener() {
+        val listener = Consumer<Boolean> {}
+        environment!!.addOnSpatialEnvironmentChangedListener(listener)
+        assertThat(fakeEnvironment.spatialEnvironmentChangedListenerMap).hasSize(2)
+
         environment!!.removeOnSpatialEnvironmentChangedListener(listener)
-        verify(mockRtEnvironment!!).removeOnSpatialEnvironmentChangedListener(captor.capture())
-        assertThat(listener).isEqualTo(captor.firstValue)
-    }
-
-    @Test
-    fun requestFullSpaceMode_callsThrough() {
-        environment!!.requestFullSpaceMode()
-        verify(mockRuntime).requestFullSpaceMode()
-    }
-
-    @Test
-    fun requestHomeSpaceMode_callsThrough() {
-        environment!!.requestHomeSpaceMode()
-        verify(mockRuntime).requestHomeSpaceMode()
+        assertThat(fakeEnvironment.spatialEnvironmentChangedListenerMap).hasSize(1)
     }
 }

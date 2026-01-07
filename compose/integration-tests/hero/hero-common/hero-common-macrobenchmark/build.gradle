@@ -28,11 +28,9 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     api(libs.testUiautomator)
 

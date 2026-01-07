@@ -52,6 +52,8 @@
     <string name="use_crypto_auth_label">Use crypto-based authentication</string>
 
     <string name="authenticate_button_label">Authenticate</string>
+    <string name="second_authenticate_button_label">Second authenticate</string>
+    <string name="third_authenticate_button_label">Third authenticate</string>
     <string name="can_authenticate_button_label">Can authenticate</string>
     <string name="clear_log_label">Clear log</string>
 </resources>

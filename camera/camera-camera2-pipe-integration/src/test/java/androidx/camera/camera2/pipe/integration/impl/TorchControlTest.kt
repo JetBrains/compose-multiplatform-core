@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpAutoFlashAEModeDisabler
@@ -51,7 +50,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 class TorchControlTest {
 
@@ -66,11 +65,7 @@ class TorchControlTest {
     }
 
     private val metadata =
-        FakeCameraMetadata(
-            mapOf(
-                CameraCharacteristics.FLASH_INFO_AVAILABLE to true,
-            ),
-        )
+        FakeCameraMetadata(mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true))
 
     private val neverCompleteTorchRequestControl =
         FakeUseCaseCameraRequestControl().apply {
@@ -90,6 +85,7 @@ class TorchControlTest {
                 State3AControl(
                         fakeCameraProperties,
                         NoOpAutoFlashAEModeDisabler,
+                        fakeUseCaseThreads,
                     )
                     .apply { requestControl = fakeUseCaseCameraRequestControl },
                 fakeUseCaseThreads,
@@ -109,6 +105,7 @@ class TorchControlTest {
                     State3AControl(
                             fakeCameraProperties,
                             NoOpAutoFlashAEModeDisabler,
+                            fakeUseCaseThreads,
                         )
                         .apply { requestControl = fakeUseCaseCameraRequestControl },
                     fakeUseCaseThreads,
@@ -130,6 +127,7 @@ class TorchControlTest {
                     State3AControl(
                             fakeCameraProperties,
                             NoOpAutoFlashAEModeDisabler,
+                            fakeUseCaseThreads,
                         )
                         .apply { requestControl = fakeUseCaseCameraRequestControl },
                     fakeUseCaseThreads,
@@ -152,6 +150,7 @@ class TorchControlTest {
                     State3AControl(
                             fakeCameraProperties,
                             NoOpAutoFlashAEModeDisabler,
+                            fakeUseCaseThreads,
                         )
                         .apply { requestControl = fakeUseCaseCameraRequestControl },
                     fakeUseCaseThreads,
@@ -185,6 +184,7 @@ class TorchControlTest {
                     State3AControl(
                             fakeCameraProperties,
                             NoOpAutoFlashAEModeDisabler,
+                            fakeUseCaseThreads,
                         )
                         .apply { requestControl = fakeUseCaseCameraRequestControl },
                     fakeUseCaseThreads,
@@ -272,7 +272,7 @@ class TorchControlTest {
                         receivedTorchState.add(value)
                     }
                 }
-            }
+            },
         )
         torchControl.setTorchAsync(true)
         torchControl.setTorchAsync(false)
@@ -322,6 +322,63 @@ class TorchControlTest {
         assertThrows<CameraControl.OperationCanceledException> { deferred.awaitWithTimeout() }
         // Assert. The latest setTorch task should be completed.
         Truth.assertThat(deferred2.awaitWithTimeout()).isNotNull()
+    }
+
+    @Test
+    fun setRequestControl_whenTorchModeIsNull_requestControlNotCalled(): Unit = runBlocking {
+        // Arrange: torchMode is initially null
+        val requestControl = FakeUseCaseCameraRequestControl()
+        torchControl.torchMode = null // Ensure torchMode is null
+
+        // Act: Set requestControl again without explicitly setting torchMode
+        torchControl.requestControl = requestControl
+
+        // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+        // UseCaseCameraRequestControl
+        Truth.assertThat(requestControl.setTorchCalls).isEmpty()
+    }
+
+    @Test
+    fun setRequestControl_afterTorchEnabled_requestControlCalledWithTorchOn(): Unit = runBlocking {
+        // Arrange: torchMode is initially null
+        val requestControl = FakeUseCaseCameraRequestControl()
+        torchControl.setTorchAsync(true)
+
+        // Act: Set requestControl again without explicitly setting torchMode
+        torchControl.requestControl = requestControl
+
+        // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+        // UseCaseCameraRequestControl
+        Truth.assertThat(requestControl.setTorchCalls).contains(true)
+    }
+
+    @Test
+    fun setRequestControl_afterTorchDisabled_requestControlCalledWithTorchOff(): Unit =
+        runBlocking {
+            // Arrange: torchMode is initially null
+            val requestControl = FakeUseCaseCameraRequestControl()
+            torchControl.setTorchAsync(false)
+
+            // Act: Set requestControl again without explicitly setting torchMode
+            torchControl.requestControl = requestControl
+
+            // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+            // UseCaseCameraRequestControl
+            Truth.assertThat(requestControl.setTorchCalls).contains(false)
+        }
+
+    @Test
+    fun torchMode_isNull_afterReset() {
+        // Arrange: Set torch to ON, so torchMode is not null
+        torchControl.setTorchAsync(true)
+        Truth.assertThat(torchControl.torchStateLiveData.value).isEqualTo(TorchState.ON)
+        Truth.assertThat(torchControl.torchMode).isNotNull()
+
+        // Act: Call reset
+        torchControl.reset()
+
+        // Assert: torchMode should be null after reset
+        Truth.assertThat(torchControl.torchMode).isNull()
     }
 
     private suspend fun <T> Deferred<T>.awaitWithTimeout(

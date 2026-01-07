@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -255,7 +256,7 @@ fun WindowInsets(
     left: Dp = 0.dp,
     top: Dp = 0.dp,
     right: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): WindowInsets = FixedDpInsets(left, top, right, bottom)
 
 @Immutable
@@ -263,7 +264,7 @@ private class FixedIntInsets(
     private val leftVal: Int,
     private val topVal: Int,
     private val rightVal: Int,
-    private val bottomVal: Int
+    private val bottomVal: Int,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int = leftVal
 
@@ -305,7 +306,7 @@ private class FixedDpInsets(
     private val leftDp: Dp,
     private val topDp: Dp,
     private val rightDp: Dp,
-    private val bottomDp: Dp
+    private val bottomDp: Dp,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection) =
         with(density) { leftDp.roundToPx() }
@@ -479,7 +480,7 @@ private class AddedInsets(private val first: WindowInsets, private val second: W
 @Stable
 private class ExcludeInsets(
     private val included: WindowInsets,
-    private val excluded: WindowInsets
+    private val excluded: WindowInsets,
 ) : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection) =
         (included.getLeft(density, layoutDirection) - excluded.getLeft(density, layoutDirection))
@@ -690,6 +691,10 @@ expect val WindowInsets.Companion.tappableElement: WindowInsets
 
 /** The insets for the curved areas in a waterfall display. */
 expect val WindowInsets.Companion.waterfall: WindowInsets
+    @Composable get
+
+/** The path for the cutout, if any. */
+expect val WindowInsets.Companion.cutoutPath: Path?
     @Composable get
 
 /**

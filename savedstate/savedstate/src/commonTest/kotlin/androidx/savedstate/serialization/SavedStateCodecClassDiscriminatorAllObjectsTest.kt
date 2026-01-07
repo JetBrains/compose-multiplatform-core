@@ -18,13 +18,35 @@ package androidx.savedstate.serialization
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
+import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.serialization.utils.SavedStateSerializationBaseTest
 import kotlin.test.Test
 
+@IgnoreWebTarget
 internal class SavedStateCodecClassDiscriminatorAllObjectsTest :
     SavedStateSerializationBaseTest(
-        config = SavedStateConfig { classDiscriminatorMode = ClassDiscriminatorMode.ALL_OBJECTS }
+        configuration =
+            SavedStateConfiguration { classDiscriminatorMode = ClassDiscriminatorMode.ALL_OBJECTS }
     ) {
+
+    @Test
+    fun testNullWithNullableStaticType() {
+        doTestNullWithNullableStaticType {
+            assertThat(original).isEqualTo(deserialized)
+            assertThat(representation).isEqualTo(platformRepresentation)
+            assertThat(representation).isEqualTo("[=null]")
+        }
+    }
+
+    @Test
+    fun testNonNullWithNullableStaticType() {
+        doTestNonNullWithNullableStaticType {
+            assertThat(original).isEqualTo(deserialized)
+            assertThat(representation).isEqualTo(platformRepresentation)
+            assertThat(representation)
+                .isEqualTo("[type=androidx.savedstate.serialization.utils.BooleanData, value=true]")
+        }
+    }
 
     @Test
     fun testNullData() {

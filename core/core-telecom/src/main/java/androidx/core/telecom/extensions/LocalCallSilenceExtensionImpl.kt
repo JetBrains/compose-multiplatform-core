@@ -18,6 +18,7 @@ package androidx.core.telecom.extensions
 
 import android.content.Context
 import android.media.AudioManager
+import android.os.RemoteException
 import android.util.Log
 import androidx.core.telecom.internal.CallStateEvent
 import androidx.core.telecom.internal.CapabilityExchangeRepository
@@ -28,7 +29,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -39,7 +39,8 @@ internal class LocalCallSilenceExtensionImpl(
     coroutineContext: CoroutineContext,
     private val callStateFlow: MutableSharedFlow<CallStateEvent>,
     private val initialSilenceState: Boolean,
-    private val onLocalSilenceUpdate: suspend (Boolean) -> Unit
+    private val initialCanUserUpdateSilenceState: Boolean,
+    private val onLocalSilenceUpdate: suspend (Boolean) -> Unit,
 ) : LocalCallSilenceExtension {
     private val mAudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var mIsGloballyMuted: Boolean = false
@@ -59,7 +60,7 @@ internal class LocalCallSilenceExtensionImpl(
                 } else if (isInactive() && shouldRemute) {
                     Log.i(
                         TAG,
-                        "MUTING the mic globally to put the device back in its original state"
+                        "MUTING the mic globally to put the device back in its original state",
                     )
                     mAudioManager.setMicrophoneMute(true)
                     shouldRemute = false
@@ -93,12 +94,14 @@ internal class LocalCallSilenceExtensionImpl(
     }
 
     companion object {
-        internal const val VERSION = 1
+        internal const val VERSION = 2
+        internal const val AUTHORITATIVE_MUTE_MIN_VERSION = 2
         val TAG: String = LocalCallSilenceExtensionImpl::class.java.simpleName
     }
 
     internal val isLocallySilenced: MutableStateFlow<Boolean> =
         MutableStateFlow(initialSilenceState)
+    private val canUserUpdateSilenceState = MutableStateFlow(initialCanUserUpdateSilenceState)
 
     /**
      * This method is called by the VoIP application whenever the VoIP application wants to update
@@ -107,6 +110,11 @@ internal class LocalCallSilenceExtensionImpl(
     override suspend fun updateIsLocallySilenced(isSilenced: Boolean) {
         Log.i(TAG, "updateIsLocallySilenced: isSilenced=[$isSilenced]")
         isLocallySilenced.emit(isSilenced)
+    }
+
+    override suspend fun updateCanUserUpdateSilence(canUserUpdateSilence: Boolean) {
+        Log.i(TAG, "updateCanUserUpdateSilence: canUserUpdateSilence=[$canUserUpdateSilence]")
+        canUserUpdateSilenceState.emit(canUserUpdateSilence)
     }
 
     internal fun onExchangeStarted(callbacks: CapabilityExchangeRepository): Capability {
@@ -120,19 +128,39 @@ internal class LocalCallSilenceExtensionImpl(
 
     private fun onCreateLocalSilenceExtension(
         coroutineScope: CoroutineScope,
+        version: Int,
         remoteActions: Set<Int>,
-        binder: LocalCallSilenceStateListenerRemote
+        binder: LocalCallSilenceStateListenerRemote,
     ) {
-        Log.d(TAG, "onCreateLocalSilenceExtension: actions=$remoteActions")
-        // Synchronize initial state with remote
-        binder.updateIsLocallySilenced(initialSilenceState)
+        Log.d(TAG, "onCreateLocalSilenceExtension: version=[$version], actions=$remoteActions")
         // Setup listeners for changes to state
         isLocallySilenced
-            .drop(1) // drop the first value since the sync was already sent out
             .onEach {
                 // send all updates to the remote surfaces
                 // VoIP --> ICS
                 binder.updateIsLocallySilenced(it)
+            }
+            .launchIn(coroutineScope)
+        canUserUpdateSilenceState
+            .onEach { canUserUpdateSilenceState ->
+                try {
+                    Log.w(
+                        TAG,
+                        "onCreateLocalSilenceExtension: sending" +
+                            " canUserUpdateSilenceState=[$canUserUpdateSilenceState]",
+                    )
+                    if (version >= AUTHORITATIVE_MUTE_MIN_VERSION) {
+                        binder.updateCanUserUpdateSilence(canUserUpdateSilenceState)
+                    }
+                } catch (e: RemoteException) {
+                    // Remote (ICS) is likely on an older version, swallow exception
+                    Log.w(
+                        TAG,
+                        "onCreateLocalSilenceExtension: Failed to update " +
+                            "canUserUpdateSilenceState",
+                        e,
+                    )
+                }
             }
             .launchIn(coroutineScope)
         // hook up the callbacks so the remote ICS can update this impl
@@ -147,6 +175,10 @@ internal class LocalCallSilenceExtensionImpl(
      */
     private suspend fun localCallSilenceStateChanged(isSilenced: Boolean) {
         Log.i(TAG, "localCallSilenceStateChanged: isSilenced=[$isSilenced]")
+        // notify the voip application of the remote InCallService update
         onLocalSilenceUpdate(isSilenced)
+        // update all remote surfaces to be in sync with the new state
+        // and the isLocallySilenced state
+        updateIsLocallySilenced(isSilenced)
     }
 }

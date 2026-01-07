@@ -64,7 +64,8 @@ public final class Row implements Item {
      * The type of images supported within rows.
      */
     @RestrictTo(LIBRARY)
-    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE, IMAGE_TYPE_EXTRA_SMALL})
+    @IntDef(value = {IMAGE_TYPE_SMALL, IMAGE_TYPE_MEDIUM, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
+            IMAGE_TYPE_EXTRA_SMALL})
     @Retention(RetentionPolicy.SOURCE)
     @OptIn(markerClass = ExperimentalCarApi.class)
     public @interface RowImageType {
@@ -110,10 +111,21 @@ public final class Row implements Item {
     @ExperimentalCarApi
     public static final int IMAGE_TYPE_EXTRA_SMALL = (1 << 3);
 
+    /**
+     * Represents a medium image to be displayed in the row.
+     *
+     * <p>To minimize scaling artifacts across a wide range of car screens, apps should provide
+     * images targeting a 128 x 128 dp bounding box. If necessary, the image will be scaled down
+     * while preserving its aspect ratio.
+     */
+    @RequiresCarApi(8)
+    public static final int IMAGE_TYPE_MEDIUM = (1 << 4);
+
     private final boolean mIsEnabled;
     private final @Nullable CarText mTitle;
     private final List<CarText> mTexts;
     private final @Nullable CarIcon mImage;
+    private final @Nullable CarIcon mEndImage;
     private final List<Action> mActions;
     private final int mNumericDecoration;
     private final @Nullable Toggle mToggle;
@@ -122,6 +134,8 @@ public final class Row implements Item {
     private final boolean mIsBrowsable;
     @RowImageType
     private final int mRowImageType;
+    @RowImageType
+    private final int mRowEndImageType;
     private final boolean mIndexable;
 
     /**
@@ -154,6 +168,17 @@ public final class Row implements Item {
     }
 
     /**
+     * Returns a fixed-sized image to display at the end of the row content, or {@code null} if
+     * not set.
+     *
+     * @see Builder#setEndImage(CarIcon)
+     */
+    @RequiresCarApi(8)
+    public @Nullable CarIcon getEndImage() {
+        return mEndImage;
+    }
+
+    /**
      * Returns the list of additional actions.
      *
      * <p> Actions are displayed at the end of the row.
@@ -169,6 +194,13 @@ public final class Row implements Item {
     @RowImageType
     public int getRowImageType() {
         return mRowImageType;
+    }
+
+    /** Returns the type of the end image in the row. */
+    @RequiresCarApi(8)
+    @RowImageType
+    public int getRowEndImageType() {
+        return mRowEndImageType;
     }
 
     /**
@@ -268,6 +300,8 @@ public final class Row implements Item {
                 + (mTexts != null ? mTexts.size() : 0)
                 + ", image: "
                 + mImage
+                + ", endImage: "
+                + mEndImage
                 + ", isBrowsable: "
                 + mIsBrowsable
                 + ", isEnabled: "
@@ -281,11 +315,13 @@ public final class Row implements Item {
                 mTitle,
                 mTexts,
                 mImage,
+                mEndImage,
                 mToggle,
                 mOnClickDelegate == null,
                 mMetadata,
                 mIsBrowsable,
                 mRowImageType,
+                mRowEndImageType,
                 mIsEnabled,
                 mIndexable);
     }
@@ -304,11 +340,13 @@ public final class Row implements Item {
         return Objects.equals(mTitle, otherRow.mTitle)
                 && Objects.equals(mTexts, otherRow.mTexts)
                 && Objects.equals(mImage, otherRow.mImage)
+                && Objects.equals(mEndImage, otherRow.mEndImage)
                 && Objects.equals(mToggle, otherRow.mToggle)
                 && Objects.equals(mOnClickDelegate == null, otherRow.mOnClickDelegate == null)
                 && Objects.equals(mMetadata, otherRow.mMetadata)
                 && mIsBrowsable == otherRow.mIsBrowsable
                 && mRowImageType == otherRow.mRowImageType
+                && mRowEndImageType == otherRow.mRowEndImageType
                 && mIsEnabled == otherRow.isEnabled()
                 && mIndexable == otherRow.mIndexable;
     }
@@ -317,6 +355,7 @@ public final class Row implements Item {
         mTitle = builder.mTitle;
         mTexts = CollectionUtils.unmodifiableCopy(builder.mTexts);
         mImage = builder.mImage;
+        mEndImage = builder.mEndImage;
         mActions = CollectionUtils.unmodifiableCopy(builder.mActions);
         mNumericDecoration = builder.mDecoration;
         mToggle = builder.mToggle;
@@ -324,6 +363,7 @@ public final class Row implements Item {
         mMetadata = builder.mMetadata;
         mIsBrowsable = builder.mIsBrowsable;
         mRowImageType = builder.mRowImageType;
+        mRowEndImageType = builder.mRowEndImageType;
         mIsEnabled = builder.mIsEnabled;
         mIndexable = builder.mIndexable;
     }
@@ -333,6 +373,7 @@ public final class Row implements Item {
         mTitle = null;
         mTexts = Collections.emptyList();
         mImage = null;
+        mEndImage = null;
         mActions = Collections.emptyList();
         mNumericDecoration = NO_DECORATION;
         mToggle = null;
@@ -340,6 +381,7 @@ public final class Row implements Item {
         mMetadata = EMPTY_METADATA;
         mIsBrowsable = false;
         mRowImageType = IMAGE_TYPE_SMALL;
+        mRowEndImageType = IMAGE_TYPE_SMALL;
         mIsEnabled = true;
         mIndexable = true;
     }
@@ -350,6 +392,7 @@ public final class Row implements Item {
         @Nullable CarText mTitle;
         final List<CarText> mTexts = new ArrayList<>();
         @Nullable CarIcon mImage;
+        @Nullable CarIcon mEndImage;
         final List<Action> mActions = new ArrayList<>();
         int mDecoration = Row.NO_DECORATION;
         @Nullable Toggle mToggle;
@@ -358,6 +401,8 @@ public final class Row implements Item {
         boolean mIsBrowsable;
         @RowImageType
         int mRowImageType = IMAGE_TYPE_SMALL;
+        @RowImageType
+        int mRowEndImageType = IMAGE_TYPE_SMALL;
         boolean mIndexable = true;
 
         /**
@@ -515,14 +560,56 @@ public final class Row implements Item {
          * that work with different car screen pixel densities.
          *
          * @param image     the {@link CarIcon} to display or {@code null} to not display one
-         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL} or {@link
-         *                  #IMAGE_TYPE_LARGE}
+         * @param imageType one of {@link #IMAGE_TYPE_ICON}, {@link #IMAGE_TYPE_SMALL},
+         *                  {@link #IMAGE_TYPE_EXTRA_SMALL}, {@link #IMAGE_TYPE_MEDIUM} or
+         *                  {@link #IMAGE_TYPE_LARGE}
          * @throws NullPointerException if {@code image} is {@code null}
          */
         public @NonNull Builder setImage(@NonNull CarIcon image, @RowImageType int imageType) {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(image));
             mImage = image;
             mRowImageType = imageType;
+            return this;
+        }
+
+        /**
+         * Sets an image at the end of the row, with the default size {@link #IMAGE_TYPE_SMALL}.
+         *
+         * @throws NullPointerException if {@code endImage} is {@code null}
+         * @see #setEndImage(CarIcon, int)
+         */
+        @RequiresCarApi(8)
+        public @NonNull Builder setEndImage(@NonNull CarIcon image) {
+            return setEndImage(requireNonNull(image), IMAGE_TYPE_SMALL);
+        }
+
+        /**
+         * Sets an image to show at the <strong>end</strong> of the row content, but
+         * <strong>before</strong> the <strong>secondary actions</strong> (if set via
+         * {@link #addAction(Action)}), and is distinct from the primary image set via
+         * {@link #setImage(CarIcon)}.
+         *
+         * <p>The <strong>end image will not be honored</strong> if the row has any of the following
+         * elements:
+         * <ul>
+         * <li>A {@link Toggle} is set via {@link #setToggle(Toggle)}.</li>
+         * <li>The row is set to be browsable via {@link #setBrowsable(boolean)}.</li>
+         * <li>The row is part of a selectable itemlist </li>
+         * </ul>
+         *
+         * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
+         * not display one.
+         * @param rowEndImageType one of {@link #IMAGE_TYPE_SMALL}, {@link #IMAGE_TYPE_ICON},
+         *                        {@link #IMAGE_TYPE_LARGE}, {@link #IMAGE_TYPE_EXTRA_SMALL},
+         *                        {@link #IMAGE_TYPE_MEDIUM}
+         * @throws NullPointerException if {@code endImage} is {@code null}
+         */
+        @RequiresCarApi(8)
+        public @NonNull Builder setEndImage(@NonNull CarIcon endImage,
+        @RowImageType int rowEndImageType) {
+            CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(endImage));
+            mEndImage = endImage;
+            mRowEndImageType = rowEndImageType;
             return this;
         }
 
@@ -547,8 +634,10 @@ public final class Row implements Item {
         /**
          * Sets a numeric decoration to display in the row.
          *
-         * <p> Numeric decorations are displayed at the end of the row, but before any actions.
-         * Numeric decorations are not displayed in half-list templates.
+         * <p> Numeric decorations are displayed at the end of the row. A numeric decoration cannot
+         * be set with only a <b>single</b> action which will end up only showing the action;
+         * however, the decoration may be set with 2 actions. Numeric decorations are not displayed
+         * in half-list templates.
          *
          * <p> Numeric decorations typically represent a quantity of unseen content. For example, a
          * decoration might represent a number of missed notifications, or a number of unread
@@ -674,7 +763,7 @@ public final class Row implements Item {
          * <p>Individual items can be set to be included or excluded from filtered lists, but it's
          * also possible to enable/disable the creation of filtered lists as a whole via the
          * template's API (eg. {@code SectionedItemTemplate
-         * .Builder#setAlphabeticalIndexingAllowed(Boolean)}).
+         * .Builder#setAlphabeticalIndexingStrategy(int)}).
          */
         @ExperimentalCarApi
         public @NonNull Builder setIndexable(boolean indexable) {
@@ -706,7 +795,10 @@ public final class Row implements Item {
                     throw new IllegalStateException("A browsable row must not have a secondary "
                             + "action set");
                 }
-
+                if (mEndImage != null) {
+                    throw new IllegalStateException("A browsable row must not have an end image "
+                            + "set");
+                }
             }
 
             if (mToggle != null) {
@@ -723,6 +815,10 @@ public final class Row implements Item {
                 if (!mActions.isEmpty()) {
                     throw new IllegalStateException("If a row contains a toggle, it must not have "
                             + "a secondary action set");
+                }
+                if (mEndImage != null) {
+                    throw new IllegalStateException("If a row contains a toggle, it must not have "
+                            + "an end image set");
                 }
             }
 

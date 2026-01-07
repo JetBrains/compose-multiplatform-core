@@ -1,0 +1,35 @@
+// Signature format: 4.0
+package androidx.core.pip {
+
+  public final class PictureInPictureDelegate {
+    ctor public PictureInPictureDelegate(androidx.core.app.PictureInPictureProvider pictureInPictureProvider);
+    method public void addOnPictureInPictureEventListener(java.util.concurrent.Executor executor, androidx.core.pip.PictureInPictureDelegate.OnPictureInPictureEventListener listener);
+    method public void removeOnPictureInPictureEventListener(androidx.core.pip.PictureInPictureDelegate.OnPictureInPictureEventListener listener);
+    method public void setPictureInPictureParams(androidx.core.app.PictureInPictureParamsCompat pictureInPictureParamsCompat);
+  }
+
+  public static final class PictureInPictureDelegate.Event {
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event.Companion Companion;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event ENTERED;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event ENTER_ANIMATION_END;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event ENTER_ANIMATION_START;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event EXITED;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event STASHED;
+    field public static final androidx.core.pip.PictureInPictureDelegate.Event UNSTASHED;
+  }
+
+  public static final class PictureInPictureDelegate.Event.Companion {
+    property public androidx.core.pip.PictureInPictureDelegate.Event ENTERED;
+    property public androidx.core.pip.PictureInPictureDelegate.Event ENTER_ANIMATION_END;
+    property public androidx.core.pip.PictureInPictureDelegate.Event ENTER_ANIMATION_START;
+    property public androidx.core.pip.PictureInPictureDelegate.Event EXITED;
+    property public androidx.core.pip.PictureInPictureDelegate.Event STASHED;
+    property public androidx.core.pip.PictureInPictureDelegate.Event UNSTASHED;
+  }
+
+  public static interface PictureInPictureDelegate.OnPictureInPictureEventListener {
+    method public void onPictureInPictureEvent(androidx.core.pip.PictureInPictureDelegate.Event event, android.content.res.Configuration? config);
+  }
+
+}
+

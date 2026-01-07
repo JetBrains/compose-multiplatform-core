@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
@@ -50,5 +51,5 @@ androidx {
     doNotDocumentReason = "Repackaging only"
     license.name = "BSD-3-Clause"
     license.url = "https://opensource.org/licenses/BSD-3-Clause"
-    kotlinTarget = KotlinTarget.KOTLIN_2_0
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

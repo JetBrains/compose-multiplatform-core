@@ -1,0 +1,9 @@
+// Baseline format: 1.0
+HiddenSuperclass: androidx.xr.scenecore.Scene:
+    Public class androidx.xr.scenecore.Scene stripped of unavailable superclass androidx.xr.runtime.SessionConnector
+
+
+TypeParameterName: androidx.xr.scenecore.BaseEntity:
+    Invalid type parameter name "RtEntityType". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names
+TypeParameterName: androidx.xr.scenecore.BaseScenePose:
+    Invalid type parameter name "RtScenePoseType". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names

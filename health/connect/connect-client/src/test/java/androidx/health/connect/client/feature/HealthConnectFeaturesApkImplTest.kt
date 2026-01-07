@@ -47,7 +47,7 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
                 platformVersion =
                     HealthConnectPlatformVersion(
                         buildVersionCode = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-                    )
+                    ),
             ),
         FEATURE_ADDED_IN_CURRENT_APK_VERSION to
             HealthConnectVersionInfo(
@@ -55,7 +55,7 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
                 platformVersion =
                     HealthConnectPlatformVersion(
                         buildVersionCode = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-                    )
+                    ),
             ),
         FEATURE_ADDED_IN_PLATFORM_ONLY to
             HealthConnectVersionInfo(
@@ -63,7 +63,7 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
                     HealthConnectPlatformVersion(
                         buildVersionCode = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
                     )
-            )
+            ),
     )
 
 @RunWith(AndroidJUnit4::class)
@@ -88,7 +88,7 @@ class HealthConnectFeaturesApkImplTest {
         assertUnavailable(
             FEATURE_ADDED_IN_CURRENT_APK_VERSION,
             FEATURE_ADDED_IN_PLATFORM_ONLY,
-            FEATURE_NON_EXISTENT
+            FEATURE_NON_EXISTENT,
         )
     }
 
@@ -110,7 +110,7 @@ class HealthConnectFeaturesApkImplTest {
         return FEATURE_TO_VERSION_INFO_MAP.getFeatureStatus(
             context,
             DEFAULT_PROVIDER_PACKAGE_NAME,
-            feature
+            feature,
         )
     }
 

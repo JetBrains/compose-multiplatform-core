@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -24,15 +23,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
@@ -46,6 +43,7 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.GestureInclusion
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -53,9 +51,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class EdgeButtonScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -86,11 +84,11 @@ class EdgeButtonScreenshotTest {
                 modifier = Modifier.testTag("Pager"),
                 gestureInclusion =
                     object : GestureInclusion {
-                        override fun allowGesture(
+                        override fun ignoreGestureStart(
                             offset: Offset,
-                            layoutCoordinates: LayoutCoordinates
+                            layoutCoordinates: LayoutCoordinates,
                         ): Boolean {
-                            return true
+                            return false
                         }
                     },
                 // disable swipe to dismiss
@@ -184,7 +182,7 @@ class EdgeButtonScreenshotTest {
         buttonSize: EdgeButtonSize,
         constrainedHeight: Dp? = null,
         enabled: Boolean = true,
-        text: String = "Text"
+        text: String = "Text",
     ) {
         Box(Modifier.fillMaxSize()) {
             EdgeButton(
@@ -194,7 +192,7 @@ class EdgeButtonScreenshotTest {
                 modifier =
                     Modifier.align(Alignment.BottomEnd)
                         .testTag(TEST_TAG)
-                        .then(constrainedHeight?.let { Modifier.height(it) } ?: Modifier)
+                        .then(constrainedHeight?.let { Modifier.height(it) } ?: Modifier),
             ) {
                 BasicText(text)
             }
@@ -202,16 +200,13 @@ class EdgeButtonScreenshotTest {
     }
 
     @Composable
-    private fun BasicEdgeButtonWithIcon(
-        buttonSize: EdgeButtonSize,
-        enabled: Boolean = true,
-    ) {
+    private fun BasicEdgeButtonWithIcon(buttonSize: EdgeButtonSize, enabled: Boolean = true) {
         Box(Modifier.fillMaxSize()) {
             EdgeButton(
                 onClick = { /* Do something */ },
                 enabled = enabled,
                 buttonSize = buttonSize,
-                modifier = Modifier.align(Alignment.BottomEnd).testTag(TEST_TAG)
+                modifier = Modifier.align(Alignment.BottomEnd).testTag(TEST_TAG),
             ) {
                 TestIcon(modifier = Modifier.size(EdgeButtonDefaults.iconSizeFor(buttonSize)))
             }
@@ -221,7 +216,7 @@ class EdgeButtonScreenshotTest {
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         performActions: () -> Unit = {},
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             ScreenConfiguration(SCREEN_SIZE_SMALL) {
@@ -233,9 +228,6 @@ class EdgeButtonScreenshotTest {
 
         performActions()
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

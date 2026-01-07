@@ -28,11 +28,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
+        "identifier": "com.google.guava:guava",
+        "resolvedVersion": "33.3.1-jre"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "api"
     },
     {
       "coordinates": {
@@ -40,7 +39,7 @@
         "identifier": "com.google.guava:guava",
         "resolvedVersion": "33.3.1-jre"
       },
-      "toConfiguration": "api"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -53,19 +52,18 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlin:kotlin-test",
-        "resolvedVersion": "1.9.24"
+        "identifier": "io.reactivex.rxjava3:rxjava",
+        "resolvedVersion": "3.0.2"
       },
       "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
+        "identifier": "org.jetbrains.kotlin:kotlin-test",
+        "resolvedVersion": "1.9.24"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

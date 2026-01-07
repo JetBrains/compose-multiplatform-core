@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -52,7 +53,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.Navigator
-import androidx.navigation.compose.internal.LocalViewModelStoreOwner
 import androidx.navigation.compose.internal.PredictiveBackHandler
 import androidx.navigation.createGraph
 import androidx.navigation.get
@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -88,14 +88,14 @@ public fun NavHost(
     startDestination: String,
     modifier: Modifier = Modifier,
     route: String? = null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
         remember(route, startDestination, builder) {
             navController.createGraph(startDestination, route, builder)
         },
-        modifier
+        modifier,
     )
 }
 
@@ -121,7 +121,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -140,7 +140,7 @@ public fun NavHost(
         enterTransition,
     popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -152,7 +152,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -208,7 +208,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -221,7 +221,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -280,7 +280,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -293,7 +293,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -352,7 +352,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -365,7 +365,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -384,13 +384,13 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
     navController: NavHostController,
     graph: NavGraph,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ): Unit = NavHost(navController, graph, modifier)
 
 /**
@@ -410,7 +410,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -437,7 +437,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -486,7 +486,7 @@ public fun NavHost(
     sizeTransform:
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        null
+        null,
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -511,7 +511,18 @@ public fun NavHost(
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
     PredictiveBackHandler(currentBackStack.size > 1) { backEvent ->
+        // This block handles the three phases of a predictive back gesture:
+        // 1. OnStarted: When the gesture begins.
+        // 2. OnProgressed: As the user drags their finger.
+        // 3. OnCompleted or OnCancelled: When the gesture finishes or is cancelled.
+        //
+        // Always guard with `currentBackStack.size > 1`:
+        // If `enabled` becomes stale (set false mid-frame while a gesture is in-flight),
+        // these checks prevent IndexOutOfBounds when accessing the stack.
+
         var currentBackStackEntry: NavBackStackEntry? = null
+
+        // --- OnStarted ---
         if (currentBackStack.size > 1) {
             progress = 0f
             currentBackStackEntry = currentBackStack.lastOrNull()
@@ -521,16 +532,19 @@ public fun NavHost(
         }
         try {
             backEvent.collect {
+                // --- OnProgressed ---
                 if (currentBackStack.size > 1) {
                     inPredictiveBack = true
                     progress = it.progress
                 }
             }
+            // --- OnCompleted ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
                 composeNavigator.popBackStack(currentBackStackEntry!!, false)
             }
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
+            // --- OnCancelled ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
             }
@@ -616,8 +630,11 @@ public fun NavHost(
 
         if (inPredictiveBack) {
             LaunchedEffect(progress) {
-                val previousEntry = currentBackStack[currentBackStack.size - 2]
-                transitionState.seekTo(progress, previousEntry)
+                // Update transition progress safely (same guard against stale enabled state).
+                if (currentBackStack.size > 1) {
+                    val previousEntry = currentBackStack[currentBackStack.size - 2]
+                    transitionState.seekTo(progress, previousEntry)
+                }
             }
         } else {
             LaunchedEffect(backStackEntry) {
@@ -634,7 +651,7 @@ public fun NavHost(
                     animate(
                         transitionState.fraction,
                         0f,
-                        animationSpec = tween((transitionState.fraction * totalDuration).toInt())
+                        animationSpec = tween((transitionState.fraction * totalDuration).toInt()),
                     ) { value, _ ->
                         this@LaunchedEffect.launch {
                             if (value > 0) {
@@ -671,14 +688,14 @@ public fun NavHost(
                         finalEnter(this),
                         finalExit(this),
                         targetZIndex,
-                        finalSizeTransform(this)
+                        finalSizeTransform(this),
                     )
                 } else {
                     EnterTransition.None togetherWith ExitTransition.None
                 }
             },
             contentAlignment,
-            contentKey = { it.id }
+            contentKey = { it.id },
         ) {
             // In some specific cases, such as clearing your back stack by changing your
             // start destination, AnimatedContent can contain an entry that is no longer
@@ -702,7 +719,7 @@ public fun NavHost(
             currentEntry?.LocalOwnersProvider(saveableStateHolder) {
                 (currentEntry.destination as ComposeNavigator.Destination).content(
                     this,
-                    currentEntry
+                    currentEntry,
                 )
             }
         }
@@ -714,7 +731,7 @@ public fun NavHost(
                     // We need to make sure we are completing only when the start is settled on the
                     // actual entry.
                     (navController.currentBackStackEntry == null ||
-                        transition.targetState == navController.currentBackStackEntry)
+                        transition.targetState == backStackEntry)
             ) {
                 visibleEntries.forEach { entry -> composeNavigator.onTransitionComplete(entry) }
                 zIndices.removeIf { key, _ -> key != transition.targetState.id }

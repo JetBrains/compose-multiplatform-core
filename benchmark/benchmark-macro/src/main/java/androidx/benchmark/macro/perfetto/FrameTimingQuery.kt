@@ -34,23 +34,26 @@ internal object FrameTimingQuery {
             INNER JOIN thread USING(utid)
             INNER JOIN process USING(upid)
         WHERE (
-            ( slice.name LIKE "Choreographer#doFrame%" AND process.pid LIKE thread.tid) OR
-            ( slice.name LIKE "DrawFrame%" AND thread.name like "RenderThread" )
+            ( slice.name LIKE 'Choreographer#doFrame%'
+                AND slice.name NOT LIKE 'Choreographer#doFrame - resynced to%'
+                AND process.pid LIKE thread.tid
+            ) OR
+            ( slice.name LIKE 'DrawFrame%' AND thread.name = 'RenderThread' )
         ) AND ${processNameLikePkg(packageName)}
-        ------ Add in actual frame slices (prepended with "actual " to differentiate)
+        ------ Add in actual frame slices (prepended with 'actual ' to differentiate)
         UNION
         SELECT
-            "actual " || actual_frame_timeline_slice.name as name,
+            'actual ' || actual_frame_timeline_slice.name as name,
             actual_frame_timeline_slice.ts as ts,
             actual_frame_timeline_slice.dur as dur
         FROM actual_frame_timeline_slice
             INNER JOIN process USING(upid)
         WHERE
             ${processNameLikePkg(packageName)}
-        ------ Add in expected time slices (prepended with "expected " to differentiate)
+        ------ Add in expected time slices (prepended with 'expected ' to differentiate)
         UNION
         SELECT
-            "expected " || expected_frame_timeline_slice.name as name,
+            'expected ' || expected_frame_timeline_slice.name as name,
             expected_frame_timeline_slice.ts as ts,
             expected_frame_timeline_slice.dur as dur
         FROM expected_frame_timeline_slice
@@ -80,7 +83,7 @@ internal object FrameTimingQuery {
         Expected,
         Actual,
         UiThread,
-        RenderThread
+        RenderThread,
     }
 
     /**
@@ -92,7 +95,7 @@ internal object FrameTimingQuery {
         val uiSlice: Slice,
         val rtSlice: Slice,
         val expectedSlice: Slice?,
-        val actualSlice: Slice?
+        val actualSlice: Slice?,
     ) {
         fun get(subMetric: SubMetric): Long {
             return when (subMetric) {
@@ -227,7 +230,7 @@ internal object FrameTimingQuery {
                         uiSlice = uiSlice,
                         rtSlice = rtSlice,
                         expectedSlice = expectedSlice,
-                        actualSlice = actualSlice
+                        actualSlice = actualSlice,
                     )
                 } else {
                     null
@@ -239,7 +242,7 @@ internal object FrameTimingQuery {
             rtSlices.mapNotNull { rtSlice ->
                 FrameData.tryCreateBasic(
                     uiSlice = uiSlices.firstOrNull { it.contains(rtSlice.ts) },
-                    rtSlice = rtSlice
+                    rtSlice = rtSlice,
                 )
             }
         }

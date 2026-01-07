@@ -27,6 +27,7 @@ import androidx.compose.ui.node.InternalCoreApi
  * All pointer locations are relative to the device screen.
  */
 @InternalCoreApi
+@Suppress("KmpExperimentalMismatch") // actuals are not experimental
 internal expect class PointerInputEvent {
     val uptime: Long
     val pointers: List<PointerInputEventData>
@@ -62,7 +63,7 @@ internal data class PointerInputEventData(
 @OptIn(InternalCoreApi::class)
 internal expect class InternalPointerEvent(
     changes: LongSparseArray<PointerInputChange>,
-    pointerInputEvent: PointerInputEvent
+    pointerInputEvent: PointerInputEvent,
 ) {
     val changes: LongSparseArray<PointerInputChange>
 

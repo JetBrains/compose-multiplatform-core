@@ -70,7 +70,7 @@ public actual open class NavigatorProvider actual constructor() {
     @CallSuper
     public actual open fun addNavigator(
         name: String,
-        navigator: Navigator<out NavDestination>
+        navigator: Navigator<out NavDestination>,
     ): Navigator<out NavDestination>? {
         require(validateName(name)) { "navigator name cannot be an empty string" }
         val previousNavigator = _navigators[name]

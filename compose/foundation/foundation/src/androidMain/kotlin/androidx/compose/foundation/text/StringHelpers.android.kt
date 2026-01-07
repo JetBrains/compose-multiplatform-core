@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.text
 
-import androidx.compose.foundation.text.input.internal.findCodePointBefore
-import androidx.compose.foundation.text.input.internal.selection.TextFieldPreparedSelection.Companion.NoCharacterFound
 import androidx.emoji2.text.EmojiCompat
 import java.text.BreakIterator
 
@@ -40,14 +38,22 @@ internal actual fun String.findFollowingBreak(index: Int): Int {
     return it.following(index)
 }
 
-internal actual fun String.findCodePointOrEmojiStartBefore(index: Int): Int {
-    if (index <= 0) return NoCharacterFound
+/**
+ * @return the code point before the given [index], or [ifNotFound] if there is no code point before
+ *   [index].
+ */
+private fun CharSequence.findCodePointBefore(index: Int, ifNotFound: Int): Int =
+    if (index <= 0) ifNotFound
+    else java.lang.Character.offsetByCodePoints(this, index, /* codePointOffset= */ -1)
+
+internal actual fun String.findCodePointOrEmojiStartBefore(index: Int, ifNotFound: Int): Int {
+    if (index <= 0) return ifNotFound
 
     val emojiCompat = getEmojiCompatIfLoaded()
-    if (emojiCompat == null) return findCodePointBefore(index)
+    if (emojiCompat == null) return findCodePointBefore(index, ifNotFound)
 
     val emojiStart = emojiCompat.getEmojiStart(this, index - 1)
-    if (emojiStart < 0) return findCodePointBefore(index)
+    if (emojiStart < 0) return findCodePointBefore(index, ifNotFound)
 
     return emojiStart
 }

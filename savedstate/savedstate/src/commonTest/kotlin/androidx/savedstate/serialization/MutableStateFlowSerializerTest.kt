@@ -17,15 +17,19 @@
 package androidx.savedstate.serialization
 
 import androidx.kruth.assertThat
+import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.RobolectricTest
+import androidx.savedstate.serialization.SavedStateCodecTestUtils.encodeDecode
 import androidx.savedstate.serialization.serializers.MutableStateFlowSerializer
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
+@IgnoreWebTarget
 internal class MutableStateFlowSerializerTest : RobolectricTest() {
 
     @Test
@@ -97,12 +101,12 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
         testEncodeDecode(
             mutableState = MutableStateFlow(USER_JOHN_DOE),
             serializer = MutableStateFlowSerializer(USER_SERIALIZER),
-            config =
-                SavedStateConfig {
+            configuration =
+                SavedStateConfiguration {
                     serializersModule = SerializersModule {
                         contextual(User::class, serializer<User>())
                     }
-                }
+                },
         )
     }
 
@@ -126,18 +130,55 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
         testEncodeDecode(MutableStateFlow(mapOf(3 to "foo", 4 to "bar")))
     }
 
+    @Test
+    fun fallbackShouldWork() {
+        MutableStateFlow("foo")
+            .encodeDecode(
+                checkDecoded = { decoded, original ->
+                    assertThat(decoded.value).isEqualTo(original.value)
+                },
+                checkEncoded = {
+                    assertThat(size()).isEqualTo(1)
+                    assertThat(getString("")).isEqualTo("foo")
+                },
+            )
+    }
+
+    @Test
+    fun fallbackShouldWorkInPlugin() {
+        @Serializable
+        // The contextual serializer is still needed.
+        // See https://github.com/Kotlin/kotlinx.serialization/issues/2969.
+        data class Foo(@Contextual val bar: MutableStateFlow<String>)
+
+        Foo(MutableStateFlow("foo"))
+            .encodeDecode(
+                checkDecoded = { decoded, original ->
+                    assertThat(decoded.bar.value).isEqualTo(original.bar.value)
+                },
+                checkEncoded = {
+                    assertThat(size()).isEqualTo(1)
+                    assertThat(getString("bar")).isEqualTo("foo")
+                },
+            )
+    }
+
     private inline fun <reified T : Any> testEncodeDecode(
         mutableState: MutableStateFlow<T>,
         serializer: KSerializer<MutableStateFlow<T>> = MutableStateFlowSerializer<T>(),
-        config: SavedStateConfig = SavedStateConfig.DEFAULT
+        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
     ) {
         val encoded =
-            encodeToSavedState(serializer = serializer, config = config, value = mutableState)
+            encodeToSavedState(
+                serializer = serializer,
+                configuration = configuration,
+                value = mutableState,
+            )
         val decoded =
             decodeFromSavedState<MutableStateFlow<T>>(
                 deserializer = serializer,
-                config = config,
-                savedState = encoded
+                configuration = configuration,
+                savedState = encoded,
             )
         assertThat(decoded.value).isEqualTo(mutableState.value)
     }
@@ -153,7 +194,7 @@ internal class MutableStateFlowSerializerTest : RobolectricTest() {
     @Serializable
     private enum class MyEnum {
         A,
-        B
+        B,
     }
 
     @Serializable

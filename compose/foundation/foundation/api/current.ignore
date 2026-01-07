@@ -1,11 +1,17 @@
 // Baseline format: 1.0
-ParameterNameChange: androidx.compose.foundation.text.BasicTextKt#BasicText(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.Modifier, androidx.compose.ui.text.TextStyle, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult,kotlin.Unit>, int, boolean, int, int, java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent>, androidx.compose.ui.graphics.ColorProducer, androidx.compose.foundation.text.TextAutoSize) parameter #10:
-    Attempted to change parameter name from textAutoSize to autoSize in method androidx.compose.foundation.text.BasicTextKt.BasicText
+RemovedFromKotlin: androidx.compose.foundation.gestures.TransformableStateKt#animateRotateBy(androidx.compose.foundation.gestures.TransformableState, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.compose.foundation.gestures.TransformableStateKt.animateRotateBy(androidx.compose.foundation.gestures.TransformableState,float,androidx.compose.animation.core.AnimationSpec,kotlin.coroutines.Continuation) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.foundation.gestures.TransformableStateKt#animateZoomBy(androidx.compose.foundation.gestures.TransformableState, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.compose.foundation.gestures.TransformableStateKt.animateZoomBy(androidx.compose.foundation.gestures.TransformableState,float,androidx.compose.animation.core.AnimationSpec,kotlin.coroutines.Continuation) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.foundation.gestures.TransformableStateKt#rotateBy(androidx.compose.foundation.gestures.TransformableState, float, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.compose.foundation.gestures.TransformableStateKt.rotateBy(androidx.compose.foundation.gestures.TransformableState,float,kotlin.coroutines.Continuation) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.foundation.gestures.TransformableStateKt#zoomBy(androidx.compose.foundation.gestures.TransformableState, float, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Source breaking change: method androidx.compose.foundation.gestures.TransformableStateKt.zoomBy(androidx.compose.foundation.gestures.TransformableState,float,kotlin.coroutines.Continuation) can no longer be resolved from Kotlin source
 
 
-RemovedDeprecatedClass: androidx.compose.foundation.text.AutoSizeDefaults:
-    Removed deprecated class androidx.compose.foundation.text.AutoSizeDefaults
-
-
-RemovedInterface: androidx.compose.foundation.text.AutoSize:
-    Removed deprecated class androidx.compose.foundation.text.AutoSize
+RemovedMethod: androidx.compose.foundation.gestures.TransformableStateKt#animateBy(androidx.compose.foundation.gestures.TransformableState, float, androidx.compose.ui.geometry.Offset, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset>, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.coroutines.Continuation<? super java.lang.Void>):
+    Source breaking change: Removed method androidx.compose.foundation.gestures.TransformableStateKt.animateBy(androidx.compose.foundation.gestures.TransformableState,float,androidx.compose.ui.geometry.Offset,float,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset>,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,kotlin.coroutines.Continuation<? super java.lang.Void>)
+RemovedMethod: androidx.compose.foundation.gestures.TransformableStateKt#animatePanBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset>, kotlin.coroutines.Continuation<? super java.lang.Void>):
+    Source breaking change: Removed method androidx.compose.foundation.gestures.TransformableStateKt.animatePanBy(androidx.compose.foundation.gestures.TransformableState,androidx.compose.ui.geometry.Offset,androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset>,kotlin.coroutines.Continuation<? super java.lang.Void>)
+RemovedMethod: androidx.compose.foundation.gestures.TransformableStateKt#panBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset, kotlin.coroutines.Continuation<? super java.lang.Void>):
+    Source breaking change: Removed method androidx.compose.foundation.gestures.TransformableStateKt.panBy(androidx.compose.foundation.gestures.TransformableState,androidx.compose.ui.geometry.Offset,kotlin.coroutines.Continuation<? super java.lang.Void>)

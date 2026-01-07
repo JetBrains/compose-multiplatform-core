@@ -107,7 +107,9 @@ fun AggregateGroupByDurationRequest.toPlatformRequest(): AggregateRecordsRequest
     return AggregateRecordsRequest.Builder<Any>(timeRangeFilter.toPlatformTimeRangeFilter())
         .apply {
             dataOriginFilter.forEach { addDataOriginsFilter(it.toPlatformDataOrigin()) }
-            metrics.forEach { addAggregationType(it.toAggregationType()) }
+            metrics
+                .filter { it.isPlatformSupportedMetric() }
+                .forEach { addAggregationType(it.toAggregationType()) }
         }
         .build()
 }
@@ -116,7 +118,9 @@ fun AggregateGroupByPeriodRequest.toPlatformRequest(): AggregateRecordsRequest<A
     return AggregateRecordsRequest.Builder<Any>(timeRangeFilter.toPlatformLocalTimeRangeFilter())
         .apply {
             dataOriginFilter.forEach { addDataOriginsFilter(it.toPlatformDataOrigin()) }
-            metrics.forEach { addAggregationType(it.toAggregationType()) }
+            metrics
+                .filter { it.isPlatformSupportedMetric() }
+                .forEach { addAggregationType(it.toAggregationType()) }
         }
         .build()
 }

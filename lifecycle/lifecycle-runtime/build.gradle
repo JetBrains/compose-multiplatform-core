@@ -12,133 +12,102 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("androidx.baselineprofile")
 }
+
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.runtime"
+        withJava()
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+        // Needed for api tasks and docs generation
+        sourceSets {
+            androidMain {
+                kotlin.srcDirs += 'src/androidMain/java'
+            }
+        }
+    }
     desktop()
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api(project(":lifecycle:lifecycle-common"))
-                api("androidx.annotation:annotation:1.8.1")
-            }
-        }
-
-        commonTest {
-            dependencies {
-                implementation(project(":internal-testutils-lifecycle"))
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.kotlinTest)
-                implementation(project(":kruth:kruth"))
-                implementation(libs.atomicFu)
-            }
-        }
-
-        jvmCommonMain {
-            dependsOn(commonMain)
-            dependencies {
-                api("androidx.arch.core:core-common:2.2.0")
-            }
-        }
-
-        desktopMain {
-            dependsOn(jvmCommonMain)
-        }
-
-        desktopTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinCoroutinesSwing)
-            }
-        }
-
-        androidMain {
-            dependsOn(jvmCommonMain)
-            dependencies {
-                api(libs.kotlinCoroutinesAndroid)
-                implementation("androidx.core:core-viewtree:1.0.0")
-                implementation("androidx.arch.core:core-runtime:2.2.0")
-                implementation("androidx.profileinstaller:profileinstaller:1.4.0")
-            }
-        }
-
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.mockitoCore4)
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation("androidx.core:core-viewtree:1.0.0")
-                implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.kotlinCoroutinesTest)
-            }
-        }
-
-        nonJvmCommonMain {
-            dependsOn(commonMain)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmCommonMain)
-
-            // Required for WeakReference usage
+        configureEach {
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
-
-        nativeTest {
-            dependsOn(commonTest)
+        commonMain.dependencies {
+            api(project(":lifecycle:lifecycle-common"))
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
+        commonTest.dependencies {
+            implementation(project(":internal-testutils-lifecycle"))
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(libs.kotlinTest)
+            implementation(project(":kruth:kruth"))
+            implementation(libs.atomicFu)
+        }
 
-                    // Required for WeakReference usage
-                    languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
-                }
-                target.compilations["test"].defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
-            }
+        jvmAndAndroidMain.dependencies {
+            api("androidx.arch.core:core-common:2.2.0")
+        }
+
+        desktopTest.dependencies {
+            implementation(libs.kotlinCoroutinesSwing)
+        }
+
+        androidMain.dependencies {
+            api(libs.kotlinCoroutinesAndroid)
+            api(libs.jspecify)
+            implementation("androidx.core:core-viewtree:1.0.0")
+            implementation("androidx.arch.core:core-runtime:2.2.0")
+            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+        }
+
+        androidHostTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.mockitoCore4)
+        }
+
+        androidDeviceTest.dependencies {
+            implementation("androidx.core:core-viewtree:1.0.0")
+            implementation(libs.junit)
+            implementation(libs.truth)
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.kotlinCoroutinesTest)
+        }
+
+        webTest.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
     }
 }
 
 dependencies {
-    api(libs.jspecify)
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
-}
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.9.5") {
+            because "prevents symbols duplication"
+        }
     }
-
-    // Include `*.java` files into the build
-    sourceSets["main"].java.srcDir("src/androidMain/java")
-    sourceSets["test"].java.srcDir("src/androidUnitTest/kotlin")
-    namespace = "androidx.lifecycle.runtime"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {

@@ -70,14 +70,6 @@
     },
     {
       "coordinates": {
-        "type": "module",
-        "identifier": "com.squareup.wire:wire-runtime",
-        "resolvedVersion": "5.2.1"
-      },
-      "fromConfiguration": "implementation"
-    },
-    {
-      "coordinates": {
         "type": "project",
         "identifier": ":benchmark:benchmark-traceprocessor"
       },

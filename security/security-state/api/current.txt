@@ -3,6 +3,7 @@ package androidx.security.state {
 
   public class SecurityPatchState {
     ctor public SecurityPatchState(android.content.Context context);
+    ctor @BytecodeOnly public SecurityPatchState(android.content.Context!, java.util.List!, androidx.security.state.SecurityStateManagerCompat!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public SecurityPatchState(android.content.Context context, optional java.util.List<java.lang.String> systemModulePackageNames);
     ctor public SecurityPatchState(android.content.Context context, optional java.util.List<java.lang.String> systemModulePackageNames, optional androidx.security.state.SecurityStateManagerCompat? customSecurityStateManagerCompat);
     ctor public SecurityPatchState(android.content.Context context, optional java.util.List<java.lang.String> systemModulePackageNames, optional androidx.security.state.SecurityStateManagerCompat? customSecurityStateManagerCompat, optional String? vulnerabilityReportJsonString);
@@ -25,10 +26,11 @@ package androidx.security.state {
   public static final class SecurityPatchState.Companion {
     method public androidx.security.state.SecurityPatchState.SecurityPatchLevel getComponentSecurityPatchLevel(String component, String securityPatchLevel);
     method @RequiresApi(26) public android.net.Uri getVulnerabilityReportUrl(optional android.net.Uri serverUrl);
+    method @BytecodeOnly @RequiresApi(26) public static android.net.Uri! getVulnerabilityReportUrl$default(androidx.security.state.SecurityPatchState.Companion!, android.net.Uri!, int, Object!);
     property public static String COMPONENT_KERNEL;
     property public static String COMPONENT_SYSTEM;
     property public static String COMPONENT_SYSTEM_MODULES;
-    property public java.util.List<? extends java.lang.String> DEFAULT_SYSTEM_MODULES;
+    property public java.util.List<java.lang.String> DEFAULT_SYSTEM_MODULES;
     property public static String DEFAULT_VULNERABILITY_REPORTS_URL;
   }
 
@@ -65,6 +67,7 @@ package androidx.security.state {
 
   public static final class SecurityPatchState.VersionedSecurityPatchLevel extends androidx.security.state.SecurityPatchState.SecurityPatchLevel {
     ctor public SecurityPatchState.VersionedSecurityPatchLevel(int majorVersion, int minorVersion, optional int buildVersion, optional int patchVersion);
+    ctor @BytecodeOnly public SecurityPatchState.VersionedSecurityPatchLevel(int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public int compareTo(androidx.security.state.SecurityPatchState.SecurityPatchLevel other);
     method public static androidx.security.state.SecurityPatchState.VersionedSecurityPatchLevel fromString(String value);
     method public int getBuildVersion();
@@ -81,6 +84,7 @@ package androidx.security.state {
   public class SecurityStateManagerCompat {
     ctor public SecurityStateManagerCompat(android.content.Context context);
     method public android.os.Bundle getGlobalSecurityState(optional String moduleMetadataProviderPackageName);
+    method @BytecodeOnly public static android.os.Bundle! getGlobalSecurityState$default(androidx.security.state.SecurityStateManagerCompat!, String!, int, Object!);
     field public static final androidx.security.state.SecurityStateManagerCompat.Companion Companion;
     field public static final String KEY_KERNEL_VERSION = "kernel_version";
     field public static final String KEY_SYSTEM_SPL = "system_spl";
@@ -91,6 +95,27 @@ package androidx.security.state {
     property public static String KEY_KERNEL_VERSION;
     property public static String KEY_SYSTEM_SPL;
     property public static String KEY_VENDOR_SPL;
+  }
+
+  public final class UpdateInfo {
+    ctor public UpdateInfo(String uri, String component, String securityPatchLevel, java.util.Date publishedDate);
+    method @InaccessibleFromKotlin public String getComponent();
+    method @InaccessibleFromKotlin public java.util.Date getPublishedDate();
+    method @InaccessibleFromKotlin public String getSecurityPatchLevel();
+    method @InaccessibleFromKotlin public String getUri();
+    property public String component;
+    property public java.util.Date publishedDate;
+    property public String securityPatchLevel;
+    property public String uri;
+  }
+
+  public static final class UpdateInfo.Builder {
+    ctor public UpdateInfo.Builder();
+    method public androidx.security.state.UpdateInfo build();
+    method public androidx.security.state.UpdateInfo.Builder setComponent(String component);
+    method public androidx.security.state.UpdateInfo.Builder setPublishedDate(java.util.Date publishedDate);
+    method public androidx.security.state.UpdateInfo.Builder setSecurityPatchLevel(String securityPatchLevel);
+    method public androidx.security.state.UpdateInfo.Builder setUri(String uri);
   }
 
 }

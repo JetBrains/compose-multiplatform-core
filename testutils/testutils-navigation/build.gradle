@@ -27,7 +27,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -53,4 +52,5 @@ androidx {
 
 android {
     namespace = "androidx.testutils.navigation"
+    testOptions.unitTests.returnDefaultValues = true
 }
