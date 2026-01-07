@@ -240,3 +240,6 @@ private class PlatformInsetsPaddingModifierElement(
 }
 
 private class PlatformInsetsPaddingModifierNode: InsetsPaddingModifierNode(WindowInsets())
+
+// TODO: https://youtrack.jetbrains.com/issue/CMP-9483 remove with a conflict after AOSP merge
+internal const val InsetsConsumingModifierNodeKey = "androidx.compose.foundation.lazy.layout.InsetsConsumingModifierNode"
