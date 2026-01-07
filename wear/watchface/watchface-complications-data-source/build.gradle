@@ -21,12 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -40,12 +40,12 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.kotlinCoroutinesTest)
 
     compileOnly files("../../wear_sdk/wear-sdk.jar")
     testImplementation files("../../wear_sdk/wear-sdk.jar")
@@ -58,9 +58,6 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface.complications.datasource"
 }
 
@@ -70,4 +67,5 @@ androidx {
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

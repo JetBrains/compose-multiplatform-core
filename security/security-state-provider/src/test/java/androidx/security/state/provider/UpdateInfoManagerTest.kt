@@ -21,6 +21,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.state.SecurityPatchState
 import androidx.security.state.SecurityPatchState.Companion.COMPONENT_SYSTEM
+import androidx.security.state.SerializableUpdateInfo
+import androidx.security.state.UpdateInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -52,7 +54,7 @@ class UpdateInfoManagerTest {
     private val expectedJson =
         Json.encodeToString(
             SerializableUpdateInfo.serializer(),
-            updateInfo.toSerializableUpdateInfo()
+            updateInfo.toSerializableUpdateInfo(),
         )
     private val mockEmptyEditor: SharedPreferences.Editor = mock<SharedPreferences.Editor> {}
     private val mockEditor: SharedPreferences.Editor =

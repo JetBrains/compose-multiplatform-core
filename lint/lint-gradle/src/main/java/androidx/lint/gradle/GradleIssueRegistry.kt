@@ -29,9 +29,11 @@ class GradleIssueRegistry : IssueRegistry() {
             DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE,
             DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE,
             DiscouragedGradleMethodDetector.TO_STRING_ON_PROVIDER_ISSUE,
+            DiscouragedGradleMethodDetector.PERFORMANCE_ISSUE,
             FilePropertyDetector.FILE_PROPERTY_ISSUE,
             InternalApiUsageDetector.INTERNAL_GRADLE_ISSUE,
             InternalApiUsageDetector.INTERNAL_AGP_ISSUE,
+            InternalApiUsageDetector.INTERNAL_KGP_ISSUE,
             WithPluginClasspathUsageDetector.ISSUE,
             WithTypeWithoutConfigureEachUsageDetector.ISSUE,
         )

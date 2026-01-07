@@ -20,7 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 
 /**
- * Allows to specify semantic properties on a curved component. Note that currently only
+ * Allow specifying semantic properties on a curved component. Note that currently only
  * [contentDescription] and [traversalIndex] are supported, and they can be applied to curved text
  * and curvedComposable
  *
@@ -31,7 +31,27 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
  *   scope to allow access for common properties and its values.
  */
 public fun CurvedModifier.semantics(properties: CurvedSemanticsScope.() -> Unit): CurvedModifier =
-    this.then { child -> SemanticWrapper(child, properties) }
+    this.then { child ->
+        SemanticWrapper(child = child, isClearingSemantics = false, properties = properties)
+    }
+
+/**
+ * Allow specifying semantic properties on a curved component, and clearing the existing properties.
+ * Note that currently only [contentDescription] and [traversalIndex] are supported, and they can be
+ * applied to curved text and curvedComposable
+ *
+ * Sample for clearing semantics:
+ *
+ * @sample androidx.wear.compose.foundation.samples.CurvedClearSemanticsSample
+ * @param properties The properties to apply, [SemanticsPropertyReceiver] will be provided in the
+ *   scope to allow access for common properties and its values.
+ */
+public fun CurvedModifier.clearAndSetSemantics(
+    properties: CurvedSemanticsScope.() -> Unit
+): CurvedModifier =
+    this.then { child ->
+        SemanticWrapper(child = child, isClearingSemantics = true, properties = properties)
+    }
 
 /**
  * CurvedSemanticsScope is the scope provided by semantics lambda blocks, letting you set semantic
@@ -67,7 +87,8 @@ public class CurvedSemanticsScope {
 
 internal class SemanticWrapper(
     child: CurvedChild,
-    private val properties: CurvedSemanticsScope.() -> Unit
+    private val isClearingSemantics: Boolean,
+    private val properties: CurvedSemanticsScope.() -> Unit,
 ) : BaseCurvedChildWrapper(child) {
     @Composable
     override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
@@ -75,7 +96,11 @@ internal class SemanticWrapper(
         val scope = CurvedSemanticsScope().apply(properties)
         wrapped.SubComposition(
             semanticProperties.merge(
-                CurvedSemanticProperties(scope.contentDescription, scope.traversalIndex)
+                CurvedSemanticProperties(
+                    scope.contentDescription,
+                    scope.traversalIndex,
+                    isClearingSemantics,
+                )
             )
         )
     }

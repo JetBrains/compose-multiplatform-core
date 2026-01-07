@@ -51,6 +51,7 @@ import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,7 +86,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
 
                         override fun onActionItemClicked(
                             mode: ActionMode,
-                            item: MenuItem
+                            item: MenuItem,
                         ): Boolean {
                             return false
                         }
@@ -147,6 +148,10 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
     @LargeTest
     @Throws(InterruptedException::class)
     fun testBackCollapsesActionView() {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511639",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         with(ActivityScenario.launch(activityClass)) {
             // Click on the Search menu item
             onView(withId(R.id.action_search)).perform(click())
@@ -204,6 +209,10 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
     @Test
     @MediumTest
     fun testBackPressWithEmptyMenuHandledByActivity() {
+        assumeFalse(
+            "Test fails on cuttlefish b/460511639",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         with(ActivityScenario.launch(activityClass)) {
             // Pressing the menu key with an empty menu does nothing.
             val scenario = (this as? ActivityScenario<BaseTestActivity>)!!
@@ -231,14 +240,14 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_DEL.toLong(),
-                downEvent.keyCode.toLong()
+                downEvent.keyCode.toLong(),
             )
             val upEvent = scenario.withActivity { invokedKeyUpEvent }
             assertNotNull("onKeyUp called", upEvent)
             assertEquals(
                 "onKeyUp event matches",
                 KeyEvent.KEYCODE_DEL.toLong(),
-                upEvent.keyCode.toLong()
+                upEvent.keyCode.toLong(),
             )
         }
     }
@@ -256,7 +265,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_MENU.toLong(),
-                downEvent.keyCode.toLong()
+                downEvent.keyCode.toLong(),
             )
 
             val upEvent = scenario.withActivity { invokedKeyUpEvent }
@@ -264,7 +273,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_MENU.toLong(),
-                upEvent.keyCode.toLong()
+                upEvent.keyCode.toLong(),
             )
         }
     }
@@ -288,7 +297,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             scenario.withActivity {
                 MenuItemCompat.setContentDescription(
                     alphaItem,
-                    getString(R.string.alpha_menu_description)
+                    getString(R.string.alpha_menu_description),
                 )
                 MenuItemCompat.setTooltipText(alphaItem, getString(R.string.alpha_menu_tooltip))
             }

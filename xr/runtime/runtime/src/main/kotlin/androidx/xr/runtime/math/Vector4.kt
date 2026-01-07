@@ -25,10 +25,10 @@ import kotlin.math.sqrt
 /**
  * Represents a four-dimensional position in space.
  *
- * @param x X component of the vector.
- * @param y Y component of the vector.
- * @param z Z component of the vector.
- * @param w W component of the vector.
+ * @property x the x component of the vector
+ * @property y the y component of the vector
+ * @property z the z component of the vector
+ * @property w the w component of the vector
  */
 public class Vector4
 @JvmOverloads
@@ -60,26 +60,40 @@ constructor(
     public operator fun minus(other: Vector4): Vector4 =
         Vector4(x - other.x, y - other.y, z - other.z, w - other.w)
 
-    /** Get a new vector multiplied by a scalar amount. */
+    /**
+     * Get a new vector multiplied by a scalar amount.
+     *
+     * @param c the scalar to multiply by
+     */
     public operator fun times(c: Float): Vector4 = Vector4(x * c, y * c, z * c, w * c)
 
-    /** Returns a new vector with the product of this vector and the [other] vector. */
-    public operator fun times(other: Vector4): Vector4 =
-        Vector4(x * other.x, y * other.y, z * other.z, w * other.w)
-
-    /** Returns a new vector with this vector divided by a scalar amount. */
-    public operator fun div(c: Float): Vector4 = Vector4(x / c, y / c, z / c, w / c)
-
     /**
-     * Returns a new vector with each component of this vector divided by each corresponding
+     * Returns a new vector with each component of this vector multiplied by each corresponding
      * component of the [other] vector.
      */
-    public operator fun div(other: Vector4): Vector4 =
-        Vector4(x / other.x, y / other.y, z / other.z, w / other.w)
+    public fun scale(other: Vector4): Vector4 =
+        Vector4(x * other.x, y * other.y, z * other.z, w * other.w)
+
+    /**
+     * Returns a new vector with this vector divided by a scalar amount.
+     *
+     * @param c the scalar to divide by
+     */
+    public operator fun div(c: Float): Vector4 = Vector4(x / c, y / c, z / c, w / c)
 
     /** Returns the dot product of this vector and the [other] vector. */
     public infix fun dot(other: Vector4): Float =
         x * other.x + y * other.y + z * other.z + w * other.w
+
+    /** Returns the component-wise multiplicative inverse of this vector. */
+    public fun inverse(): Vector4 {
+        if (this.x == 0f || this.y == 0f || this.z == 0f || this.w == 0f) {
+            throw IllegalArgumentException(
+                "Cannot take the multiplicative inverse if any component of the Vector4 is zero."
+            )
+        }
+        return Vector4(1 / this.x, 1 / this.y, 1 / this.z, 1 / this.w)
+    }
 
     /** Returns the normalized version of this vector. */
     public fun toNormalized(): Vector4 {
@@ -91,6 +105,9 @@ constructor(
     /**
      * Returns a new vector with the each component of this vector clamped between corresponding
      * components of [min] and [max] vectors.
+     *
+     * @param min the minimum clamp values
+     * @param max the maximum clamp values
      */
     public fun clamp(min: Vector4, max: Vector4): Vector4 {
         val clampedX = clamp(x, min.x, max.x)
@@ -101,7 +118,14 @@ constructor(
         return Vector4(clampedX, clampedY, clampedZ, clampedW)
     }
 
-    /** Returns a copy of the vector. */
+    /**
+     * Returns a copy of the vector.
+     *
+     * @param x the new x value for the copied vector
+     * @param y the new y value for the copied vector
+     * @param z the new z value for the copied vector
+     * @param w the new w value for the copied vector
+     */
     @JvmOverloads
     public fun copy(
         x: Float = this.x,
@@ -118,7 +142,13 @@ constructor(
         return this.x == other.x && this.y == other.y && this.z == other.z && this.w == other.w
     }
 
-    override fun hashCode(): Int = 31 * x.hashCode() + y.hashCode() + z.hashCode() + w.hashCode()
+    override fun hashCode(): Int {
+        var result = x.hashCode()
+        result = 31 * result + y.hashCode()
+        result = 31 * result + z.hashCode()
+        result = 31 * result + w.hashCode()
+        return result
+    }
 
     override fun toString(): String = "[x=$x, y=$y, z=$z, w=$w]"
 
@@ -133,8 +163,11 @@ constructor(
         @JvmStatic public fun fromValue(value: Float): Vector4 = Vector4(value, value, value, value)
 
         /**
-         * Returns the angle between this vector and [other] vector in degrees. The result is never
-         * greater than 180 degrees.
+         * Returns the angle between [vector1] and [vector2] in degrees. The result is never greater
+         * than 180 degrees.
+         *
+         * @param vector1 the first vector
+         * @param vector2 the second vector
          */
         @JvmStatic
         public fun angleBetween(vector1: Vector4, vector2: Vector4): Float {
@@ -152,7 +185,12 @@ constructor(
             return acos(cos)
         }
 
-        /** Returns the distance between this vector and the [other] vector. */
+        /**
+         * Returns the distance between [vector1] and [vector2].
+         *
+         * @param vector1 the first vector
+         * @param vector2 the second vector
+         */
         @JvmStatic
         public fun distance(vector1: Vector4, vector2: Vector4): Float = (vector1 - vector2).length
 
@@ -161,6 +199,10 @@ constructor(
          * interpolation amount [ratio].
          *
          * If [ratio] is outside of the range `[0, 1]`, the returned vector will be extrapolated.
+         *
+         * @param start the starting vector
+         * @param end the ending vector
+         * @param ratio the interpolation ratio
          */
         @JvmStatic
         public fun lerp(start: Vector4, end: Vector4, ratio: Float): Vector4 =
@@ -171,17 +213,31 @@ constructor(
                 lerp(start.w, end.w, ratio),
             )
 
-        /** Returns the minimum of each component of the two vectors. */
+        /**
+         * Returns the minimum of each component of the two vectors.
+         *
+         * @param a the first vector
+         * @param b the second vector
+         */
         @JvmStatic
         public fun min(a: Vector4, b: Vector4): Vector4 =
             Vector4(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w))
 
-        /** Returns the maximum of each component of the two vectors. */
+        /**
+         * Returns the maximum of each component of the two vectors.
+         *
+         * @param a the first vector
+         * @param b the second vector
+         */
         @JvmStatic
         public fun max(a: Vector4, b: Vector4): Vector4 =
             Vector4(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w))
 
-        /** Returns the absolute values of each component of the vector. */
+        /**
+         * Returns the absolute values of each component of the vector.
+         *
+         * @param vector the vector to get the absolute values of
+         */
         @JvmStatic
         public fun abs(vector: Vector4): Vector4 =
             Vector4(abs(vector.x), abs(vector.y), abs(vector.z), abs(vector.w))

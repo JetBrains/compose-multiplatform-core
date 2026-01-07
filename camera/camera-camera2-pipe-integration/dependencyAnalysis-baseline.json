@@ -4,6 +4,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.annotation:annotation-experimental",
+        "resolvedVersion": "1.4.1"
+      },
+      "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.arch.core:core-common",
         "resolvedVersion": "2.1.0"
       },
@@ -31,7 +39,23 @@
         "identifier": "androidx.lifecycle:lifecycle-livedata-core",
         "resolvedVersion": "2.3.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -116,6 +140,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "javax.inject:javax.inject",
+        "resolvedVersion": "1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
       },
@@ -140,15 +172,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlin:kotlin-test-junit",
-        "resolvedVersion": "1.8.22"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "org.jetbrains.kotlin:kotlin-test",
         "resolvedVersion": "1.8.22"
       },
@@ -157,20 +180,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -183,10 +196,34 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jspecify:jspecify",
+        "resolvedVersion": "1.0.0"
+      },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "org.jspecify:jspecify",
         "resolvedVersion": "1.0.0"
       },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jspecify:jspecify",
+        "resolvedVersion": "1.0.0"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

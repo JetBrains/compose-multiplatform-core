@@ -16,90 +16,58 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Quaternion
-import androidx.xr.runtime.math.Vector3
 
-/**
- * A holder of the measured bounds.
- *
- * Based on [androidx.compose.ui.layout.LayoutCoordinates].
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** A holder of the measured bounds. */
 public interface SubspaceLayoutCoordinates {
     /** The pose of this layout in the local coordinates space, with translation in pixels. */
     public val pose: Pose
 
     /**
-     * The pose of this layout relative to the root entity of the Compose hierarchy, with
-     * translation in pixels.
+     * The pose of this layout relative to its parent in the Compose hierarchy, with translation in
+     * pixels.
+     */
+    public val poseInParent: Pose
+
+    /**
+     * The pose of this layout relative to the root of the Compose for XR's hierarchy with
+     * translation values in pixels.
      */
     public val poseInRoot: Pose
 
     /**
-     * The pose of this layout relative to its parent entity in the Compose hierarchy, with
-     * translation in pixels.
+     * The coordinates of the immediate parent in the layout hierarchy.
+     *
+     * For a layout, this is its parent layout. For a modifier, this is the modifier that preceded
+     * it, or the layout it is attached to if it is the first in the chain.
+     *
+     * Returns `null` only for the root of the hierarchy.
      */
-    public val poseInParentEntity: Pose
-
-    /** The position of the pose. */
-    @Deprecated("Use pose.position instead", ReplaceWith("pose.position"))
-    public val position: Vector3
-        get() = pose.translation
+    public val parentCoordinates: SubspaceLayoutCoordinates?
 
     /**
-     * The position of this layout relative to the root entity of the Compose hierarchy.
+     * The coordinates of the nearest parent layout, skipping any intermediate modifiers.
      *
-     * For testing only.
-     */
-    @Deprecated("Use poseInRoot.position instead", ReplaceWith("poseInRoot.position"))
-    public val positionInRoot: Vector3
-        get() = poseInRoot.translation
-
-    /** The position of this layout relative to its parent entity in the Compose hierarchy. */
-    @Deprecated(
-        "Use poseInParentEntity.position instead",
-        ReplaceWith("poseInParentEntity.position")
-    )
-    public val positionInParentEntity: Vector3
-        get() = poseInParentEntity.translation
-
-    /** The rotation of the pose. */
-    @Deprecated("Use pose.rotation instead", ReplaceWith("pose.rotation"))
-    public val rotation: Quaternion
-        get() = pose.rotation
-
-    /**
-     * The rotation of this layout relative to the root entity of the Compose hierarchy.
+     * This is useful for positioning relative to the containing layout composable, irrespective of
+     * any modifiers applied to it.
      *
-     * For testing only.
+     * Returns `null` only for the root of the hierarchy.
      */
-    @Deprecated("Use poseInRoot.rotation instead", ReplaceWith("poseInRoot.rotation"))
-    public val rotationInRoot: Quaternion
-        get() = poseInRoot.rotation
-
-    /** The rotation of this layout relative to its parent entity in the Compose hierarchy. */
-    @Deprecated(
-        "Use poseInParentEntity.rotation instead",
-        ReplaceWith("poseInParentEntity.rotation")
-    )
-    public val rotationInParentEntity: Quaternion
-        get() = poseInParentEntity.rotation
+    public val parentLayoutCoordinates: SubspaceLayoutCoordinates?
 
     /**
      * The size of this layout in the local coordinates space.
      *
-     * This is also useful for providing the size of the node to the [OnGloballyPositionedModifier].
+     * This is also useful for providing the size of the node to the [onGloballyPositioned] subspace
+     * modifier.
      */
     public val size: IntVolumeSize
 }
 
 /** Returns information on pose, position and size. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceLayoutCoordinates.toDebugString(): String = buildString {
+internal fun SubspaceLayoutCoordinates.toDebugString(): String = buildString {
     appendLine("pose: $pose")
-    appendLine("poseInParentEntity: $poseInParentEntity")
+    appendLine("poseInParent: $poseInParent")
     appendLine("size: $size")
 }

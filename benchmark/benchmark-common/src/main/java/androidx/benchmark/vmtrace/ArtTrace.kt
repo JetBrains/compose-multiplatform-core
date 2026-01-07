@@ -45,7 +45,7 @@ internal class ArtTrace(
                 clockId = clockId,
                 uuidProvider = uuidProvider,
                 pid = pid,
-                flushEvents
+                flushEvents,
             )
         VmTraceParser(artTrace, parser).parse()
         parser.flushEndEvents()
@@ -66,7 +66,7 @@ internal class ArtTrace(
         private val clockId: Int,
         private val uuidProvider: UuidProvider,
         private val pid: Int,
-        private val flushEvents: (List<TracePacket>) -> Unit
+        private val flushEvents: (List<TracePacket>) -> Unit,
     ) : VmTraceHandler {
 
         private data class ThreadTrack(
@@ -74,7 +74,7 @@ internal class ArtTrace(
             val name: String,
             var created: Boolean,
             var depth: Int = 0,
-            var isDefault: Boolean = false
+            var isDefault: Boolean = false,
         )
 
         private val events = mutableListOf<TracePacket>()
@@ -160,7 +160,7 @@ internal class ArtTrace(
                                     TrackEvent.Type.TYPE_SLICE_END
                                 },
                             track_uuid = if (threadTrack.isDefault) null else threadTrack.uuid,
-                            name_iid = if (isBegin) nameIid else null
+                            name_iid = if (isBegin) nameIid else null,
                         ),
                     interned_data = internedData,
                     sequence_flags =
@@ -173,11 +173,11 @@ internal class ArtTrace(
                         if (internedData != null) {
                             TracePacketDefaults(
                                 timestamp_clock_id = clockId,
-                                track_event_defaults = TrackEventDefaults(threadTrack.uuid)
+                                track_event_defaults = TrackEventDefaults(threadTrack.uuid),
                             )
                         } else {
                             null
-                        }
+                        },
                 )
             )
             if (internedData != null || events.size > eventsBetweenFlush) {
@@ -192,7 +192,7 @@ internal class ArtTrace(
             methodId: Long,
             methodAction: TraceAction,
             threadTime: Int,
-            globalTime: Int
+            globalTime: Int,
         ) {
             val threadTrack = threads[threadId]!!
             if (!threadTrack.created) {
@@ -214,7 +214,7 @@ internal class ArtTrace(
                                 // cases since a benchmark isn't likely to overlap atrace events,
                                 // this
                                 // is just done out of caution
-                                disallow_merging_with_system_tracks = true
+                                disallow_merging_with_system_tracks = true,
                             ),
                     )
                 )
@@ -234,14 +234,14 @@ internal class ArtTrace(
                         threadTrack,
                         true,
                         timestampNs,
-                        RUN_WITH_MEASUREMENT_DISABLED_INTERNID
+                        RUN_WITH_MEASUREMENT_DISABLED_INTERNID,
                     )
                 }
                 storeMethodEvent(
                     threadTrack,
                     isBegin = methodAction == TraceAction.METHOD_ENTER,
                     timestampNs,
-                    methodId + internOffset
+                    methodId + internOffset,
                 )
                 if (methodId == resumeMeasurementMethodId && !isBegin) {
                     // we know the end of resume is (functionally) also the end of
@@ -252,7 +252,7 @@ internal class ArtTrace(
                         threadTrack,
                         false,
                         timestampNs,
-                        RUN_WITH_MEASUREMENT_DISABLED_INTERNID
+                        RUN_WITH_MEASUREMENT_DISABLED_INTERNID,
                     )
                 }
             }
@@ -269,7 +269,7 @@ internal class ArtTrace(
                                 TrackEvent(
                                     type = TrackEvent.Type.TYPE_SLICE_END,
                                     track_uuid = threadTrack.uuid,
-                                )
+                                ),
                         )
                     )
                 }

@@ -21,7 +21,6 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.media.ImageReader
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraBackendFactory
 import androidx.camera.camera2.pipe.CameraGraph
@@ -32,15 +31,18 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
-import androidx.camera.camera2.pipe.internal.ImageSourceMap
-import androidx.camera.camera2.pipe.media.ImageReaderImageSources
 import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
 import androidx.camera.camera2.pipe.testing.FakeAudioRestrictionController
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
+import androidx.camera.camera2.pipe.testing.FakeImageReaders
+import androidx.camera.camera2.pipe.testing.FakeImageSources
+import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
@@ -55,6 +57,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -72,14 +75,16 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraGraphImplTest {
-    private val testScope = TestScope()
+    private val testScheduler = TestCoroutineScheduler()
+    private val testScope = TestScope(testScheduler)
+    private val testBackgroundScope = TestScope(testScheduler)
 
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val metadata =
         FakeCameraMetadata(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
+            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
         )
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val imageReader1 = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 4)
@@ -94,29 +99,29 @@ internal class CameraGraphImplTest {
 
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
-        CameraGraph.Config(
-            camera = metadata.camera,
-            streams = listOf(stream1Config, stream2Config),
-        )
-    private val threads = FakeThreads.fromTestScope(testScope)
+        CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
+    private val threads = FakeThreads.fromTestScope(testBackgroundScope)
+    private val cameraPipeLifetime = CameraPipeLifetime(Job())
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(
             defaultBackendId = backend.id,
             cameraBackends = mapOf(backend.id to CameraBackendFactory { backend }),
             context,
-            threads
+            threads,
+            cameraPipeLifetime,
         )
     private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
-    private val imageSources = ImageReaderImageSources(threads)
+    private val fakeSurfaces = FakeSurfaces()
+    private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
+    private val imageSources = FakeImageSources(fakeImageReaders)
     private val frameCaptureQueue = FrameCaptureQueue()
     private val cameraController =
         CameraControllerSimulator(cameraContext, graphId, graphConfig, fakeGraphProcessor)
     private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
-    private val streamGraph = StreamGraphImpl(metadata, graphConfig, cameraControllerProvider)
-    private val imageSourceMap = ImageSourceMap(graphConfig, streamGraph, imageSources)
-    private val frameDistributor =
-        FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue) {}
+    private val streamGraph =
+        StreamGraphImpl(metadata, graphConfig, imageSources, cameraControllerProvider)
+    private val frameDistributor = FrameDistributor(streamGraph.imageSourceMap, frameCaptureQueue)
     private val surfaceGraph =
         SurfaceGraph(streamGraph, cameraControllerProvider, cameraSurfaceManager, emptyMap())
     private val audioRestriction = FakeAudioRestrictionController()
@@ -136,8 +141,10 @@ internal class CameraGraphImplTest {
             frameCaptureQueue,
             audioRestriction,
             graphId,
-            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope),
-            sessionLock
+            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testBackgroundScope),
+            CameraGraphRequestListenersImpl(sessionLock, fakeGraphProcessor, testScope),
+            sessionLock,
+            testBackgroundScope,
         )
     private val stream1: CameraStream =
         checkNotNull(cameraGraph.streams[stream1Config]) {
@@ -233,6 +240,13 @@ internal class CameraGraphImplTest {
             advanceUntilIdle()
 
             assertThat(fakeGraphProcessor.closed).isFalse()
+        }
+
+    @Test
+    fun closingCameraGraphClosesImageSources() =
+        testScope.runTest {
+            cameraGraph.close()
+            imageSources.checkImageSourcesClosed()
         }
 
     @Test

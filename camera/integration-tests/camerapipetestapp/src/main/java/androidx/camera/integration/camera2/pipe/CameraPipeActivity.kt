@@ -190,7 +190,7 @@ class CameraPipeActivity : CameraPermissionActivity() {
                     cameraPipe,
                     cameraIds,
                     listOf(ui.viewfinder, ui.viewfinder2),
-                    listOf(Size(1280, 720), Size(1280, 720))
+                    listOf(Size(1280, 720), Size(1280, 720)),
                 )
             ui.viewfinderText.text = cameras[0].cameraInfoString()
             ui.viewfinderText2.text = cameras[1].cameraInfoString()

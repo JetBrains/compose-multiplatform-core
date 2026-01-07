@@ -20,7 +20,6 @@ import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
-import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.ApplicationVariant
@@ -76,6 +75,7 @@ internal abstract class AgpPlugin(
     private val onTestVariantBlockScheduler = OnVariantBlockScheduler<TestVariant>("test")
 
     private var checkedAgpVersion = false
+    private var variantsConfigured = false
 
     fun onApply() {
 
@@ -112,8 +112,6 @@ internal abstract class AgpPlugin(
             }
         }
 
-        onBeforeFinalizeDsl()
-
         testAndroidComponentExtension()?.let { testComponent ->
             testComponent.finalizeDsl {
                 onTestFinalizeDsl(it)
@@ -125,6 +123,7 @@ internal abstract class AgpPlugin(
             }
             testComponent.beforeVariants { onTestBeforeVariants(it) }
             testComponent.onVariants {
+                variantsConfigured = true
                 onTestVariantBlockScheduler.onVariant(it)
                 onTestVariants(it)
             }
@@ -141,6 +140,7 @@ internal abstract class AgpPlugin(
             }
             applicationComponent.beforeVariants { onApplicationBeforeVariants(it) }
             applicationComponent.onVariants {
+                variantsConfigured = true
                 onAppVariantBlockScheduler.onVariant(it)
                 onApplicationVariants(it)
             }
@@ -157,6 +157,7 @@ internal abstract class AgpPlugin(
             }
             libraryComponent.beforeVariants { onLibraryBeforeVariants(it) }
             libraryComponent.onVariants {
+                variantsConfigured = true
                 onLibraryVariantBlockScheduler.onVariant(it)
                 onLibraryVariants(it)
             }
@@ -173,42 +174,14 @@ internal abstract class AgpPlugin(
             }
             commonComponent.beforeVariants { onBeforeVariants(it) }
             commonComponent.onVariants {
+                variantsConfigured = true
                 onVariantBlockScheduler.onVariant(it)
                 onVariants(it)
             }
         }
 
-        // Runs the after variants callback that is module type dependent
-        val testedExtension = testedExtension()
-        val testExtension = testExtension()
-
-        val variants =
-            when {
-                testedExtension != null &&
-                    testedExtension is com.android.build.gradle.AppExtension -> {
-                    testedExtension.applicationVariants
-                }
-                testedExtension != null &&
-                    testedExtension is com.android.build.gradle.LibraryExtension -> {
-                    testedExtension.libraryVariants
-                }
-                testExtension != null -> {
-                    testExtension.applicationVariants
-                }
-                else -> {
-                    if (isGradleSyncRunning()) return
-                    // This cannot happen because of user configuration because the plugin is only
-                    // applied if there is an android gradle plugin.
-                    throw GradleException(
-                        "Module `${project.path}` is not a supported android module."
-                    )
-                }
-            }
-
-        var applied = false
-        variants.configureEach {
-            if (applied) return@configureEach
-            applied = true
+        project.afterEvaluate {
+            if (isGradleSyncRunning() || !variantsConfigured) return@afterEvaluate
 
             // Execute all the scheduled variant blocks
             afterVariantsBlocks.forEach { it() }
@@ -237,7 +210,7 @@ internal abstract class AgpPlugin(
     protected fun <T : Task> addArtifactToConfiguration(
         configurationName: String,
         taskProvider: TaskProvider<T>,
-        artifactType: String
+        artifactType: String,
     ) {
         project.artifacts { artifactHandler ->
             artifactHandler.add(configurationName, taskProvider) { artifact ->
@@ -309,7 +282,7 @@ internal abstract class AgpPlugin(
         Gradle Plugin version $maxAgpVersionExclusive and it may not work as intended.
         Current version is $agpVersion.
                 """
-                        .trimIndent()
+                        .trimIndent(),
             )
         }
     }
@@ -354,8 +327,6 @@ internal abstract class AgpPlugin(
 
     // Shared callbacks
 
-    protected open fun onBeforeFinalizeDsl() {}
-
     protected open fun onFinalizeDsl(extension: AndroidComponentsExtension<*, *, *>) {}
 
     protected open fun onBeforeVariants(variantBuilder: VariantBuilder) {}
@@ -377,12 +348,6 @@ internal abstract class AgpPlugin(
 
     private fun androidComponentsExtension(): AndroidComponentsExtension<*, *, *>? =
         project.extensions.findByType(AndroidComponentsExtension::class.java)
-
-    private fun testedExtension(): TestedExtension? =
-        project.extensions.findByType(TestedExtension::class.java)
-
-    private fun testExtension(): com.android.build.gradle.TestExtension? =
-        project.extensions.findByType(com.android.build.gradle.TestExtension::class.java)
 }
 
 private val gradleSyncProps by lazy {
@@ -402,7 +367,7 @@ internal fun Project.isGradleSyncRunning() =
 internal enum class AgpPluginId(val value: String) {
     ID_ANDROID_APPLICATION_PLUGIN("com.android.application"),
     ID_ANDROID_LIBRARY_PLUGIN("com.android.library"),
-    ID_ANDROID_TEST_PLUGIN("com.android.test")
+    ID_ANDROID_TEST_PLUGIN("com.android.test"),
 }
 
 /**

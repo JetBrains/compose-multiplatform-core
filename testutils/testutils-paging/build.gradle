@@ -21,6 +21,9 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
+import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
 
 plugins {
@@ -34,18 +37,21 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
+    mingwX64()
+
+    defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                implementation(project(":paging:paging-common"))
-                implementation(libs.kotlinTest)
-            }
+        commonMain.dependencies {
+            implementation(project(":paging:paging-common"))
+            implementation(libs.kotlinTest)
         }
     }
 }
 
 androidx {
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
     type = SoftwareType.INTERNAL_TEST_LIBRARY
 }

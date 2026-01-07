@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("deprecation")
+
 package androidx.wear.tiles.samples.tile
 
 import android.content.Context
@@ -103,7 +105,7 @@ private fun resources() =
                             .setResourceId(R.drawable.avatar)
                             .build()
                     )
-                    .build()
+                    .build(),
             )
             .addIdToImageMapping(
                 ICON_ID,
@@ -113,7 +115,7 @@ private fun resources() =
                             .setResourceId(R.drawable.baseline_blender_24)
                             .build()
                     )
-                    .build()
+                    .build(),
             )
             .setVersion(RESOURCES_VERSION)
             .build()
@@ -144,6 +146,7 @@ private fun tileLayout(
         primaryLayout(
             mainSlot = { graphicDataCardSample() },
             margins = MAX_PRIMARY_LAYOUT_MARGIN,
+            titleSlot = { text("Title".layoutString) },
             bottomSlot = {
                 textEdgeButton(
                     onClick =
@@ -156,11 +159,11 @@ private fun tileLayout(
                         LayoutString(
                             staticValue = "Edge ---",
                             dynamicValue = dynamicFooValue,
-                            "999".asLayoutConstraint()
+                            "999".asLayoutConstraint(),
                         )
                     )
                 }
-            }
+            },
         )
     }
 
@@ -201,7 +204,7 @@ private fun MaterialScope.oneSlotButtons() = buttonGroup {
             modifier = LayoutModifier.contentDescription("Icon button"),
             width = expand(),
             height = expand(),
-            iconContent = { icon(ICON_ID) }
+            iconContent = { icon(ICON_ID) },
         )
     }
     buttonGroupItem {
@@ -211,7 +214,7 @@ private fun MaterialScope.oneSlotButtons() = buttonGroup {
             width = expand(),
             height = expand(),
             shape = shapes.none,
-            iconContent = { icon(ICON_ID) }
+            iconContent = { icon(ICON_ID) },
         )
     }
     buttonGroupItem {
@@ -223,7 +226,7 @@ private fun MaterialScope.oneSlotButtons() = buttonGroup {
             style = smallTextButtonStyle(),
             shape = shapes.extraSmall,
             colors = filledVariantButtonColors(),
-            labelContent = { text("Dec".layoutString) }
+            labelContent = { text("Dec".layoutString) },
         )
     }
 }
@@ -237,31 +240,13 @@ private fun MaterialScope.appCardSample() =
                 backgroundColor = colorScheme.tertiary,
                 titleColor = colorScheme.onTertiary,
                 contentColor = colorScheme.onTertiary,
-                timeColor = colorScheme.onTertiary
+                timeColor = colorScheme.onTertiary,
             ),
-        title = {
-            text(
-                "Title Card!".layoutString,
-                maxLines = 1,
-            )
-        },
-        content = {
-            text(
-                "Content of this Card!".layoutString,
-                maxLines = 1,
-            )
-        },
-        label = {
-            text(
-                "Hello and welcome Tiles in AndroidX!".layoutString,
-            )
-        },
+        title = { text("Title Card!".layoutString, maxLines = 1) },
+        content = { text("Content of this Card!".layoutString, maxLines = 1) },
+        label = { text("Hello and welcome Tiles in AndroidX!".layoutString) },
         avatar = { avatarImage(AVATAR_ID) },
-        time = {
-            text(
-                "NOW".layoutString,
-            )
-        }
+        time = { text("NOW".layoutString) },
     )
 
 private fun MaterialScope.graphicDataCardSample() =
@@ -270,16 +255,8 @@ private fun MaterialScope.graphicDataCardSample() =
         modifier = LayoutModifier.contentDescription("Graphic Data Card"),
         height = expand(),
         horizontalAlignment = LayoutElementBuilders.HORIZONTAL_ALIGN_END,
-        title = {
-            text(
-                "1,234!".layoutString,
-            )
-        },
-        content = {
-            text(
-                "steps".layoutString,
-            )
-        },
+        title = { text("1,234!".layoutString) },
+        content = { text("steps".layoutString) },
         graphic = {
             constructGraphic(
                 mainContent = {
@@ -287,13 +264,12 @@ private fun MaterialScope.graphicDataCardSample() =
                         segmentCount = 6,
                         startAngleDegrees = 200F,
                         endAngleDegrees = 520F,
-                        dynamicProgress =
-                            DynamicFloat.animate(0.0F, 1.5F, recommendedAnimationSpec),
+                        dynamicProgress = DynamicFloat.animate(0.0F, 1.5F, recommendedAnimationSpec),
                     )
                 },
-                iconContent = { icon(ICON_ID) }
+                iconContent = { icon(ICON_ID) },
             )
-        }
+        },
     )
 
 private fun MaterialScope.graphicDataCardSampleWithFallbackProgressIndicator(context: Context) =
@@ -302,16 +278,8 @@ private fun MaterialScope.graphicDataCardSampleWithFallbackProgressIndicator(con
         modifier = LayoutModifier.contentDescription("Graphic Data Card"),
         height = expand(),
         horizontalAlignment = LayoutElementBuilders.HORIZONTAL_ALIGN_END,
-        title = {
-            text(
-                "1,234!".layoutString,
-            )
-        },
-        content = {
-            text(
-                "steps".layoutString,
-            )
-        },
+        title = { text("1,234!".layoutString) },
+        content = { text("steps".layoutString) },
         graphic = {
             materialScope(
                 context = context,
@@ -320,17 +288,17 @@ private fun MaterialScope.graphicDataCardSampleWithFallbackProgressIndicator(con
                         .setRendererSchemaVersion(
                             VersionInfo.Builder().setMajor(1).setMinor(402).build()
                         )
-                        .build()
+                        .build(),
             ) {
                 segmentedCircularProgressIndicator(
                     segmentCount = 6,
                     startAngleDegrees = 200F,
                     endAngleDegrees = 520F,
                     dynamicProgress = DynamicFloat.animate(0.0F, 1.5F, recommendedAnimationSpec),
-                    size = dp(55F)
+                    size = dp(55F),
                 )
             }
-        }
+        },
     )
 
 private fun MaterialScope.dataCards() = buttonGroup {

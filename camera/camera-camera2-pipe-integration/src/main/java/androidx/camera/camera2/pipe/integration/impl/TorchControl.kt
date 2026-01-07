@@ -23,8 +23,6 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.defaultTorchStrengthLevel
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.maxTorchStrengthLevel
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
 import androidx.camera.camera2.pipe.integration.compat.Api35Compat
 import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailable
@@ -56,25 +54,29 @@ constructor(
         get() = _requestControl
         set(value) {
             _requestControl = value
-            setTorchAsync(
-                torch =
-                    when (torchStateLiveData.value) {
-                        androidx.camera.core.TorchState.ON -> true
-                        else -> false
-                    },
-                cancelPreviousTask = false,
-            )
+
+            if (torchMode != null) {
+                setTorchAsync(
+                    torch =
+                        when (torchStateLiveData.value) {
+                            androidx.camera.core.TorchState.ON -> true
+                            else -> false
+                        },
+                    cancelPreviousTask = false,
+                )
+            }
         }
 
     override fun reset() {
         updateTorchState(TorchMode.OFF)
         stopRunningTaskInternal()
         setTorchAsync(false)
+        torchMode = null
     }
 
     private val hasFlashUnit: Boolean = cameraProperties.isFlashAvailable()
 
-    @VisibleForTesting internal var torchMode = TorchMode.OFF
+    @VisibleForTesting internal var torchMode: TorchMode? = null
     private val _torchState = MutableLiveData(androidx.camera.core.TorchState.OFF)
     public val torchStateLiveData: LiveData<Int>
         get() = _torchState
@@ -116,7 +118,7 @@ constructor(
         cancelPreviousTask: Boolean = true,
         ignoreFlashUnitAvailability: Boolean = false,
     ): Deferred<Unit> {
-        debug { "TorchControl#setTorchAsync: torch mode = $mode" }
+        Camera2Logger.debug { "TorchControl#setTorchAsync: torch mode = $mode" }
 
         val signal = CompletableDeferred<Unit>()
 
@@ -141,12 +143,13 @@ constructor(
             // Hold the internal AE mode to ON while the torch is turned ON. If torch is OFF, a
             // value of null will make the state3AControl calculate the correct AE mode based on
             // other settings.
-            state3AControl.preferredAeMode =
+            state3AControl.setPreferredAeModeAsync(
                 if (isFlashUnitOn(mode)) CaptureRequest.CONTROL_AE_MODE_ON else null
+            )
             val aeMode: AeMode =
                 AeMode.fromIntOrNull(state3AControl.getFinalSupportedAeMode())
                     ?: run {
-                        warn {
+                        Camera2Logger.warn {
                             "TorchControl#setTorchAsync: Failed to convert ae mode of value" +
                                 " ${state3AControl.getFinalSupportedAeMode()} with" +
                                 " AeMode.fromIntOrNull, fallback to AeMode.ON"
@@ -194,7 +197,7 @@ constructor(
             }
         }
 
-        if (level < 1 || level > maxTorchStrength) {
+        if (level !in 1..maxTorchStrength) {
             return CompletableDeferred<Unit>().apply {
                 createFailureResult(
                     IllegalArgumentException("The given torch strength level is invalid.")
@@ -210,7 +213,7 @@ constructor(
     }
 
     private fun updateTorchStrengthLevelAsync(level: Int): Deferred<Unit> {
-        var signal = CompletableDeferred<Unit>()
+        val signal = CompletableDeferred<Unit>()
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
                 isTorchStrengthSupported

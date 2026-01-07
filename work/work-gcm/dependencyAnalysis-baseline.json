@@ -4,13 +4,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.room:room-compiler"
-      },
-      "fromConfiguration": "annotationProcessor"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.7.0-beta01"
       },
@@ -27,11 +20,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.room:room-runtime",
-        "resolvedVersion": "2.6.1"
+        "identifier": "androidx.room:room-compiler",
+        "resolvedVersion": "2.5.0"
       },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
+      "fromConfiguration": "annotationProcessor"
     },
     {
       "coordinates": {

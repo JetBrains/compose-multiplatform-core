@@ -26,7 +26,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -34,7 +33,6 @@ dependencies {
     constraints {
         implementation(project(":core:core"))
     }
-    api(libs.kotlinStdlib)
     implementation("androidx.annotation:annotation:1.8.1")
     api(project(":core:core"))
 
@@ -44,7 +42,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.core.testing"
 }
 

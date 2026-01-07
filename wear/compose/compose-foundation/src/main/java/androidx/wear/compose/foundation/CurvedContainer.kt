@@ -41,7 +41,7 @@ internal constructor(internal val curvedLayoutDirection: CurvedLayoutDirection) 
 internal abstract class ContainerChild(
     curvedLayoutDirection: CurvedLayoutDirection,
     internal val reverseLayout: Boolean,
-    contentBuilder: CurvedScope.() -> Unit
+    contentBuilder: CurvedScope.() -> Unit,
 ) : CurvedChild() {
     private val curvedContainerScope = CurvedScope(curvedLayoutDirection).apply(contentBuilder)
     internal val children
@@ -67,7 +67,7 @@ internal abstract class ContainerChild(
                 CurvedMeasureScope(
                     subDensity = this,
                     curvedContainerScope.curvedLayoutDirection,
-                    radius
+                    radius,
                 )
             ) {
                 with(node) { initializeMeasure(measurables) }

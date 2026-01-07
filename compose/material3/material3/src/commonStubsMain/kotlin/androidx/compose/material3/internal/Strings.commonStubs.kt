@@ -77,6 +77,7 @@ internal actual value class Strings constructor(val value: Int) {
         actual val DateRangeInputInvalidRangeInput: Strings = implementedInJetBrainsFork()
         actual val FloatingToolbarCollapse: Strings = implementedInJetBrainsFork()
         actual val FloatingToolbarExpand: Strings = implementedInJetBrainsFork()
+        actual val FloatingToolbarMoreOptions: Strings = implementedInJetBrainsFork()
         actual val BottomSheetPaneTitle: Strings = implementedInJetBrainsFork()
         actual val BottomSheetDragHandleDescription: Strings = implementedInJetBrainsFork()
         actual val BottomSheetPartialExpandDescription: Strings = implementedInJetBrainsFork()
@@ -101,8 +102,12 @@ internal actual value class Strings constructor(val value: Int) {
         actual val TimeInputDialogTitle: Strings = implementedInJetBrainsFork()
         actual val TimePickerToggleKeyboard: Strings = implementedInJetBrainsFork()
         actual val TimePickerToggleTouch: Strings = implementedInJetBrainsFork()
+        actual val TimePickerMinuteError: Strings = implementedInJetBrainsFork()
+        actual val TimePickerHourError: Strings = implementedInJetBrainsFork()
+        actual val TimePicker24HourError: Strings = implementedInJetBrainsFork()
         actual val ToggleDropdownMenu: Strings = implementedInJetBrainsFork()
         actual val WideNavigationRailPaneTitle: Strings = implementedInJetBrainsFork()
+        actual val ButtonGroupMoreOptions: Strings = implementedInJetBrainsFork()
     }
 }
 

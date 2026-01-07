@@ -16,12 +16,12 @@
 
 package androidx.compose.ui.demos.autofill
 
-import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
@@ -43,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.graphics.Color
@@ -55,7 +56,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun BTFResetCredentialsDemo() {
@@ -68,28 +68,27 @@ fun BTFResetCredentialsDemo() {
             state = remember { TextFieldState() },
             modifier =
                 Modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
-                    contentType = ContentType.NewUsername
+                    contentType = ContentType.NewUsername + ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
         BasicTextField(
             state = remember { TextFieldState() },
             modifier =
                 Modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
-                    contentType = ContentType.NewPassword
+                    contentType = ContentType.NewPassword + ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         // Submit button
-        Button(onClick = { autofillManager?.commit() }) { Text("Reset credentials") }
+        Button(onClick = { autofillManager?.commit() }) { Text("Create credentials") }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun BasicTextFieldAutofill() {
@@ -105,7 +104,7 @@ fun BasicTextFieldAutofill() {
                     contentType = ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         BasicTextField(
@@ -115,7 +114,7 @@ fun BasicTextFieldAutofill() {
                     contentType = ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
         // Submit button
@@ -124,7 +123,6 @@ fun BasicTextFieldAutofill() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun BasicSecureTextFieldAutofillDemo() {
@@ -141,10 +139,8 @@ fun BasicSecureTextFieldAutofillDemo() {
                     contentType = ContentType.Username
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.LightGray),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
-        // TODO(mnuzen): Check if `Password` ContentType should automatically
-        //  be applied to a BasicSecureTextField.
         BasicSecureTextField(
             state = remember { TextFieldState() },
             textObfuscationMode =
@@ -158,17 +154,18 @@ fun BasicSecureTextFieldAutofillDemo() {
                     contentType = ContentType.Password
                 },
             textStyle = MaterialTheme.typography.body1.copy(color = Color.White),
-            cursorBrush = SolidColor(Color.White)
+            cursorBrush = SolidColor(Color.White),
         )
 
-        Checkbox(checked = visible, onCheckedChange = { visible = it })
-
-        IconToggleButton(checked = visible, onCheckedChange = { visible = it }) {
-            // TODO(MNUZEN): double check to make sure adding icon toggle does not break anything
-            if (visible) {
-                Icon(Icons.Default.Warning, "")
-            } else {
-                Icon(Icons.Default.Info, "")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = visible, onCheckedChange = { visible = it })
+            Text("Show password.")
+            IconToggleButton(checked = visible, onCheckedChange = { visible = it }) {
+                if (visible) {
+                    Icon(Icons.Default.Warning, "Display password")
+                } else {
+                    Icon(Icons.Default.Info, "Password displayed")
+                }
             }
         }
 
@@ -178,7 +175,6 @@ fun BasicSecureTextFieldAutofillDemo() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun LegacyTextFieldAutofillDemo() {
@@ -193,7 +189,7 @@ fun LegacyTextFieldAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -201,7 +197,7 @@ fun LegacyTextFieldAutofillDemo() {
             value = passwordInput,
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
-            modifier = Modifier.semantics { contentType = ContentType.Password }
+            modifier = Modifier.semantics { contentType = ContentType.Password },
         )
 
         // Submit button
@@ -210,7 +206,6 @@ fun LegacyTextFieldAutofillDemo() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun OutlinedTextFieldAutofillDemo() {
@@ -225,7 +220,7 @@ fun OutlinedTextFieldAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -233,7 +228,7 @@ fun OutlinedTextFieldAutofillDemo() {
             value = passwordInput,
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
-            modifier = Modifier.semantics { contentType = ContentType.Password }
+            modifier = Modifier.semantics { contentType = ContentType.Password },
         )
 
         // Submit button
@@ -242,7 +237,6 @@ fun OutlinedTextFieldAutofillDemo() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@SuppressLint("NullAnnotationGroup")
 @Preview
 @Composable
 fun OutlinedTextFieldVisualTransformationAutofillDemo() {
@@ -257,7 +251,7 @@ fun OutlinedTextFieldVisualTransformationAutofillDemo() {
             value = usernameInput,
             onValueChange = { usernameInput = it },
             label = { Text("Enter username here") },
-            modifier = Modifier.semantics { contentType = ContentType.Username }
+            modifier = Modifier.semantics { contentType = ContentType.Username },
         )
 
         // Password textfield
@@ -266,7 +260,7 @@ fun OutlinedTextFieldVisualTransformationAutofillDemo() {
             onValueChange = { passwordInput = it },
             label = { Text("Enter password here") },
             modifier = Modifier.semantics { contentType = ContentType.Password },
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
         )
 
         // Submit button

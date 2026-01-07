@@ -30,7 +30,7 @@ import androidx.wear.protolayout.testing.TestContext.Companion.EMPTY_CONTEXT
  */
 public class LayoutElementMatcher(
     internal val description: String,
-    private val matcher: (LayoutElement, TestContext) -> Boolean
+    private val matcher: (LayoutElement, TestContext) -> Boolean,
 ) {
     /**
      * Constructor for the Wrapper of element matcher lambdas that allows to build string explaining
@@ -41,13 +41,13 @@ public class LayoutElementMatcher(
      */
     public constructor(
         description: String,
-        matcher: (LayoutElement) -> Boolean
+        matcher: (LayoutElement) -> Boolean,
     ) : this(description, { element, _ -> matcher(element) })
 
     /** Returns whether the given element is matched by this matcher under the given context. */
     internal fun matches(
         element: LayoutElement,
-        assertionContext: TestContext = EMPTY_CONTEXT
+        assertionContext: TestContext = EMPTY_CONTEXT,
     ): Boolean = matcher(element, assertionContext)
 
     /**

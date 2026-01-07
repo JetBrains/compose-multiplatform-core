@@ -82,7 +82,7 @@ internal fun RoundButton(
                     else Modifier
                 )
                 .background(color = backgroundColor(enabled), shape = shape),
-        content = content
+        content = content,
     )
 }
 
@@ -125,13 +125,13 @@ internal fun rememberAnimatedPressedButtonShape(
             rememberAnimatedRoundedCornerShape(
                 shape = shape,
                 pressedShape = pressedShape,
-                progress = progress.asState()
+                progress = progress.asState(),
             )
         else ->
             rememberAnimatedCornerBasedShape(
                 shape = shape,
                 pressedShape = pressedShape,
-                progress = progress.asState()
+                progress = progress.asState(),
             )
     }
 }
@@ -142,7 +142,7 @@ internal fun animateButtonShape(
     pressedShape: Shape,
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
-    interactionSource: MutableInteractionSource?
+    interactionSource: MutableInteractionSource?,
 ) =
     if (shape is CornerBasedShape && pressedShape is CornerBasedShape && shape !== pressedShape) {
         val finalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -153,7 +153,7 @@ internal fun animateButtonShape(
                 shape = shape,
                 pressedShape = pressedShape,
                 onPressAnimationSpec = onPressAnimationSpec,
-                onReleaseAnimationSpec = onReleaseAnimationSpec
+                onReleaseAnimationSpec = onReleaseAnimationSpec,
             )
         finalShape to finalInteractionSource
     } else {
@@ -170,7 +170,7 @@ internal fun animateToggleButtonShape(
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
     checked: Boolean,
-    interactionSource: MutableInteractionSource?
+    interactionSource: MutableInteractionSource?,
 ): Pair<Shape, MutableInteractionSource?> {
     return if (checkedShape === uncheckedShape) {
         // Reuse pressed animation
@@ -179,7 +179,7 @@ internal fun animateToggleButtonShape(
             pressedShape = uncheckedPressedShape,
             onPressAnimationSpec = onPressAnimationSpec,
             onReleaseAnimationSpec = onReleaseAnimationSpec,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
     } else if (
         uncheckedShape is RoundedCornerShape &&

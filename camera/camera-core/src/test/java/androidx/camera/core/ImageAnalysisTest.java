@@ -18,6 +18,7 @@ package androidx.camera.core;
 
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -25,11 +26,12 @@ import static org.junit.Assert.assertThrows;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Pair;
+import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
@@ -38,6 +40,8 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ImageAnalysisConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
+import androidx.camera.core.impl.SessionConfig;
+import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
@@ -82,7 +86,7 @@ import java.util.concurrent.TimeoutException;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class ImageAnalysisTest {
 
     private static final Size APP_RESOLUTION = new Size(100, 200);
@@ -129,12 +133,15 @@ public class ImageAnalysisTest {
 
         CameraInternal camera = new FakeCamera();
 
-        CameraFactory.Provider cameraFactoryProvider = (ignored1, ignored2, ignored3, ignored4) -> {
-            FakeCameraFactory cameraFactory = new FakeCameraFactory();
-            cameraFactory.insertDefaultBackCamera(camera.getCameraInfoInternal().getCameraId(),
-                    () -> camera);
-            return cameraFactory;
-        };
+        CameraFactory.Provider cameraFactoryProvider =
+                (ignored0, ignored1, ignored2, ignored3,
+                        ignore4, ignored5) -> {
+                    FakeCameraFactory cameraFactory = new FakeCameraFactory();
+                    cameraFactory.insertDefaultBackCamera(
+                            camera.getCameraInfoInternal().getCameraId(),
+                            () -> camera);
+                    return cameraFactory;
+                };
         CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
                 FakeAppConfig.create()).setCameraFactoryProvider(cameraFactoryProvider).build();
 
@@ -489,6 +496,24 @@ public class ImageAnalysisTest {
     }
 
     @Test
+    public void sessionConfigMatchesStreamSpec() {
+        mImageAnalysis = new ImageAnalysis.Builder()
+                .setSessionOptionUnpacker((resolution, config, builder) -> {
+                }).build();
+        StreamSpec streamSpec = StreamSpec.builder(new Size(640, 480))
+                .setSessionType(SESSION_TYPE_HIGH_SPEED)
+                .setExpectedFrameRateRange(Range.create(30, 60))
+                .build();
+
+        mImageAnalysis.bindToCamera(new FakeCamera(), null, null, null);
+        mImageAnalysis.updateSuggestedStreamSpec(streamSpec, null);
+
+        SessionConfig sessionConfig = mImageAnalysis.getSessionConfig();
+        assertThat(sessionConfig.getSessionType()).isEqualTo(SESSION_TYPE_HIGH_SPEED);
+        assertThat(sessionConfig.getExpectedFrameRateRange()).isEqualTo(Range.create(30, 60));
+    }
+
+    @Test
     public void sessionConfigHasStreamSpecImplementationOptions_whenUpdateStreamSpecImplOptions()
             throws CameraUseCaseAdapter.CameraException {
         setUpImageAnalysisWithStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST);
@@ -530,6 +555,33 @@ public class ImageAnalysisTest {
                         .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                         .setResolutionSelector(new ResolutionSelector.Builder().build())
                         .build());
+    }
+
+    @Test
+    public void setTargetRotationByRotationProvider_rotationIsUpdated() {
+        // Arrange.
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
+        RotationProvider rotationProvider = new RotationProvider(
+                ApplicationProvider.getApplicationContext(),
+                true);
+        imageAnalysis.setRotationProvider(rotationProvider);
+
+        CameraUseCaseAdapter cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(
+                ApplicationProvider.getApplicationContext(),
+                CameraSelector.DEFAULT_BACK_CAMERA);
+
+        try {
+            cameraUseCaseAdapter.addUseCases(Collections.singleton(imageAnalysis));
+        } catch (CameraUseCaseAdapter.CameraException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Act.
+        rotationProvider.updateOrientationForTesting(180);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        // Assert.
+        assertThat(imageAnalysis.getTargetRotation()).isEqualTo(Surface.ROTATION_180);
     }
 
     void assertCanReceiveAnalysisImage(ImageAnalysis imageAnalysis) throws InterruptedException {

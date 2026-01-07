@@ -31,15 +31,11 @@ import kotlin.math.sqrt
  * @param height The height of the bitmap.
  * @param seed The seed used to generate the gradient colors.
  */
-fun GradientBitmap(
-    width: Int,
-    height: Int,
-    seed: Int,
-): Bitmap =
+fun GradientBitmap(width: Int, height: Int, seed: Int): Bitmap =
     GradientBitmap(
         width = width,
         height = height,
-        colors = gradientColorsFor(seed * 100 /* introduce greater variance */)
+        colors = gradientColorsFor(seed * 100 /* introduce greater variance */),
     )
 
 /**
@@ -50,11 +46,7 @@ fun GradientBitmap(
  * @param height The height of the bitmap.
  * @param colors The gradient colors.
  */
-fun GradientBitmap(
-    width: Int,
-    height: Int,
-    colors: IntArray,
-): Bitmap {
+fun GradientBitmap(width: Int, height: Int, colors: IntArray): Bitmap {
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val cx = width / 2f
@@ -89,7 +81,7 @@ private val firstGradientPalette =
         0xFFA50E0E.toInt(),
         0xFF1E8E3E.toInt(),
         0xFFE8710A.toInt(),
-        0xFFE52592.toInt()
+        0xFFE52592.toInt(),
     )
 
 private val secondGradientPalette =
@@ -102,5 +94,5 @@ private val secondGradientPalette =
         0xFF9334E6.toInt(),
         0xFF12B5CB.toInt(),
         0xFFFCC934.toInt(),
-        0xFF4285F4.toInt()
+        0xFF4285F4.toInt(),
     )

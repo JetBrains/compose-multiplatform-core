@@ -40,13 +40,12 @@ import androidx.wear.protolayout.TypeBuilders.StringProp
 import androidx.wear.protolayout.expression.AppDataKey
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
-import androidx.wear.protolayout.expression.PlatformEventKeys
+import androidx.wear.protolayout.expression.PlatformEventSources
 import androidx.wear.protolayout.expression.PlatformHealthSources
 import androidx.wear.protolayout.expression.PlatformHealthSources.Keys
 import androidx.wear.protolayout.expression.dynamicDataMapOf
 import androidx.wear.protolayout.expression.intAppDataKey
 import androidx.wear.protolayout.expression.mapTo
-import androidx.wear.protolayout.expression.platformVisibilityStatus
 import androidx.wear.protolayout.layout.basicText
 import androidx.wear.protolayout.modifiers.loadAction
 import androidx.wear.protolayout.types.LayoutString
@@ -182,7 +181,7 @@ class FiltersTest {
             hasText("$heartRateValue")
                 .matches(
                     testElement,
-                    TestContext(dynamicDataMapOf(Keys.HEART_RATE_BPM mapTo heartRateValue))
+                    TestContext(dynamicDataMapOf(Keys.HEART_RATE_BPM mapTo heartRateValue)),
                 )
         )
 
@@ -199,20 +198,20 @@ class FiltersTest {
         val textContent =
             LayoutString(
                 staticContent,
-                DynamicString.onCondition(platformVisibilityStatus())
+                DynamicString.onCondition(PlatformEventSources.isLayoutVisible())
                     .use(visibleContent)
                     .elseUse(invisibleContent),
-                staticContent.asLayoutConstraint()
+                staticContent.asLayoutConstraint(),
             )
         val testElement = basicText(textContent)
 
         assert(
-            hasText(
-                    visibleContent,
-                )
+            hasText(visibleContent)
                 .matches(
                     testElement,
-                    TestContext(dynamicDataMapOf(PlatformEventKeys.VISIBILITY_STATUS mapTo true))
+                    TestContext(
+                        dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo true)
+                    ),
                 )
         )
 
@@ -220,7 +219,9 @@ class FiltersTest {
             hasText(invisibleContent)
                 .matches(
                     testElement,
-                    TestContext(dynamicDataMapOf(PlatformEventKeys.VISIBILITY_STATUS mapTo false))
+                    TestContext(
+                        dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo false)
+                    ),
                 )
         )
 
@@ -230,6 +231,7 @@ class FiltersTest {
     }
 
     @Test
+    @Suppress("deprecation")
     fun hasImage() {
         val resId = "randomRes"
         val testElement = Image.Builder().setResourceId(resId).build()
@@ -282,14 +284,14 @@ class FiltersTest {
             hasColor(Color.MAGENTA)
                 .matches(
                     testBox,
-                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.MAGENTA)))
+                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.MAGENTA))),
                 )
         )
         assert(
             hasColor(Color.CYAN)
                 .matches(
                     testBox,
-                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.CYAN)))
+                    TestContext(dynamicDataMapOf(stateKey mapTo Color.valueOf(Color.CYAN))),
                 )
         )
     }
@@ -300,7 +302,7 @@ class FiltersTest {
             basicText(
                 "text".layoutString,
                 fontStyle =
-                    FontStyle.Builder().setColor(ColorProp.Builder(Color.CYAN).build()).build()
+                    FontStyle.Builder().setColor(ColorProp.Builder(Color.CYAN).build()).build(),
             )
 
         assert(hasColor(Color.CYAN).matches(testText))
@@ -308,6 +310,7 @@ class FiltersTest {
     }
 
     @Test
+    @Suppress("deprecation")
     fun hasColor_onImageTint() {
         val testImage =
             Image.Builder()
@@ -382,6 +385,7 @@ class FiltersTest {
     }
 
     @Test
+    @Suppress("deprecation")
     fun hasSize_image() {
         val width1 = dp(20F)
         val height1 = expand()
@@ -424,6 +428,7 @@ class FiltersTest {
     }
 
     @Test
+    @Suppress("deprecation")
     fun hasChild() {
         val width = dp(20F)
         val testLayout =
@@ -454,6 +459,7 @@ class FiltersTest {
     }
 
     @Test
+    @Suppress("deprecation")
     fun hasDescendant() {
         val width = dp(20F)
         val testLayout =
@@ -546,7 +552,7 @@ class FiltersTest {
                                         .setRadius(dp(cornerRadius))
                                         .setBottomLeftRadius(
                                             dp(bottomLeftXRadius),
-                                            dp(bottomLeftYRadius)
+                                            dp(bottomLeftYRadius),
                                         )
                                         .build()
                                 )

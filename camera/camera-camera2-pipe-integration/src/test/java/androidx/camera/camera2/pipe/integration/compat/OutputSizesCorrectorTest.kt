@@ -35,11 +35,13 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 import org.robolectric.util.ReflectionHelpers
 
 private const val CAMERA_ID_0 = "0"
+private const val CAMERA_ID_1 = "1"
 
 private const val MOTOROLA_BRAND_NAME = "motorola"
 private const val MOTOROLA_E5_PLAY_MODEL_NAME = "moto e5 play"
 private const val SAMSUNG_BRAND_NAME = "SAMSUNG"
 private const val SAMSUNG_J7_DEVICE_NAME = "J7XELTE"
+private const val SAMSUNG_Z_FOLD_4_DEVICE_NAME = "q4q"
 
 private val outputSizes =
     arrayOf(
@@ -60,9 +62,28 @@ private val outputSizes =
         Size(320, 240),
     )
 
+private val zFold4OutputSizes =
+    arrayOf(
+        Size(1280, 720),
+        Size(1920, 1080),
+        Size(2304, 1296),
+        Size(640, 360),
+        Size(177, 144),
+        Size(2336, 1080),
+        Size(2400, 1080),
+        Size(1920, 824),
+        Size(1088, 1088),
+        Size(1728, 1728),
+        Size(2736, 2736),
+        Size(1824, 712),
+        // Add some other sizes
+        Size(1280, 960),
+        Size(640, 480),
+    )
+
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class OutputSizesCorrectorTest {
     @Test
     fun canAddExtraSupportedSizesForMotoE5PlayByFormat() {
@@ -73,18 +94,14 @@ class OutputSizesCorrectorTest {
                 MOTOROLA_E5_PLAY_MODEL_NAME,
                 CAMERA_ID_0,
                 CameraCharacteristics.LENS_FACING_BACK,
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             )
 
         val resultList =
             outputSizesCorrector
                 .applyQuirks(
-                    arrayOf(
-                        Size(4128, 3096),
-                        Size(4128, 2322),
-                        Size(3088, 3088),
-                    ),
-                    ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
+                    arrayOf(Size(4128, 3096), Size(4128, 2322), Size(3088, 3088)),
+                    ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
                 )
                 .toList()
 
@@ -112,18 +129,14 @@ class OutputSizesCorrectorTest {
                 MOTOROLA_E5_PLAY_MODEL_NAME,
                 CAMERA_ID_0,
                 CameraCharacteristics.LENS_FACING_BACK,
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             )
 
         val resultList =
             outputSizesCorrector
                 .applyQuirks(
-                    arrayOf(
-                        Size(4128, 3096),
-                        Size(4128, 2322),
-                        Size(3088, 3088),
-                    ),
-                    SurfaceTexture::class.java
+                    arrayOf(Size(4128, 3096), Size(4128, 2322), Size(3088, 3088)),
+                    SurfaceTexture::class.java,
                 )
                 .toList()
 
@@ -152,7 +165,7 @@ class OutputSizesCorrectorTest {
                 null,
                 CAMERA_ID_0,
                 CameraCharacteristics.LENS_FACING_BACK,
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
             )
 
         val sizesWithQuirks: Array<Size> =
@@ -191,7 +204,7 @@ class OutputSizesCorrectorTest {
                 null,
                 CAMERA_ID_0,
                 CameraCharacteristics.LENS_FACING_BACK,
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
             )
 
         val resultList: List<Size> =
@@ -213,13 +226,32 @@ class OutputSizesCorrectorTest {
             .inOrder()
     }
 
+    @Test
+    fun canExcludeSamsungZFold4ProblematicSizes() {
+        val outputSizesCorrector =
+            createOutputSizesCorrector(
+                SAMSUNG_BRAND_NAME,
+                SAMSUNG_Z_FOLD_4_DEVICE_NAME,
+                null,
+                CAMERA_ID_1,
+                CameraCharacteristics.LENS_FACING_FRONT,
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        val resultList: List<Size> =
+            outputSizesCorrector.applyQuirks(zFold4OutputSizes, ImageFormat.YUV_420_888).toList()
+
+        Truth.assertThat(resultList)
+            .containsExactlyElementsIn(listOf(Size(1280, 960), Size(640, 480)))
+            .inOrder()
+    }
+
     private fun createOutputSizesCorrector(
         brand: String,
         device: String?,
         model: String?,
         cameraId: String,
         lensFacing: Int,
-        hardwareLevel: Int
+        hardwareLevel: Int,
     ): OutputSizesCorrector {
         ReflectionHelpers.setStaticField(Build::class.java, "BRAND", brand)
         device?.let { ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", it) }
@@ -237,10 +269,10 @@ class OutputSizesCorrectorTest {
                     mapOf(
                         CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to hardwareLevel,
                         CameraCharacteristics.LENS_FACING to lensFacing,
-                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to map
-                    )
+                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to map,
+                    ),
             ),
-            map
+            map,
         )
     }
 }

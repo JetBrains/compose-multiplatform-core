@@ -29,14 +29,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
 import androidx.xr.compose.testing.assertPositionIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setSubspaceContent
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,13 +45,21 @@ import org.junit.runner.RunWith
 /** Tests for [offset] modifier. */
 @RunWith(AndroidJUnit4::class)
 class OffsetTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun offset_positiveValuesArePositionedCorrectly() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").offset(20.dp, 20.dp, 20.dp)) {
-                Text(text = "Panel")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").offset(20.dp, 20.dp, 20.dp)) {
+                    Text(text = "Panel")
+                }
             }
         }
 
@@ -61,9 +70,11 @@ class OffsetTest {
 
     @Test
     fun offset_negativeValuesArePositionedCorrectly() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.testTag("panel").offset(-20.dp, -20.dp, -20.dp)) {
-                Text(text = "Panel")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").offset(-20.dp, -20.dp, -20.dp)) {
+                    Text(text = "Panel")
+                }
             }
         }
 
@@ -74,14 +85,16 @@ class OffsetTest {
 
     @Test
     fun offset_combinedWithOtherModifiersArePositionedCorrectly() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                SubspaceModifier.testTag("panel")
-                    .width(100.dp)
-                    .offset(10.dp, 10.dp, 10.dp)
-                    .height(100.dp)
-            ) {
-                Text(text = "Panel")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(100.dp)
+                        .offset(10.dp, 10.dp, 10.dp)
+                        .height(100.dp)
+                ) {
+                    Text(text = "Panel")
+                }
             }
         }
 
@@ -92,16 +105,22 @@ class OffsetTest {
 
     @Test
     fun offset_nestedLayoutsArePositionedCorrectly() {
-        composeTestRule.setSubspaceContent {
-            SpatialRow(SubspaceModifier.width(1000.dp)) {
-                SpatialColumn(SubspaceModifier.weight(1f)) {
-                    SpatialPanel(SubspaceModifier.testTag("panel1").offset(10.dp, 10.dp, 10.dp)) {
-                        Text(text = "Panel 1")
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.width(1000.dp)) {
+                    SpatialColumn(SubspaceModifier.weight(1f)) {
+                        SpatialPanel(
+                            SubspaceModifier.testTag("panel1").offset(10.dp, 10.dp, 10.dp)
+                        ) {
+                            Text(text = "Panel 1")
+                        }
                     }
-                }
-                SpatialColumn(SubspaceModifier.weight(1f)) {
-                    SpatialPanel(SubspaceModifier.testTag("panel2").offset(10.dp, 10.dp, 10.dp)) {
-                        Text(text = "Panel 2")
+                    SpatialColumn(SubspaceModifier.weight(1f)) {
+                        SpatialPanel(
+                            SubspaceModifier.testTag("panel2").offset(10.dp, 10.dp, 10.dp)
+                        ) {
+                            Text(text = "Panel 2")
+                        }
                     }
                 }
             }
@@ -120,14 +139,16 @@ class OffsetTest {
 
     @Test
     fun offset_updatesDynamically() {
-        composeTestRule.setSubspaceContent {
-            var offsetX by remember { mutableStateOf(0.dp) }
-            SpatialPanel(SubspaceModifier.testTag("panel").offset(x = offsetX)) {
-                Button(
-                    modifier = Modifier.testTag("button"),
-                    onClick = { offsetX = offsetX + 10.dp }
-                ) {
-                    Text(text = "Click to change offset")
+        composeTestRule.setContent {
+            Subspace {
+                var offsetX by remember { mutableStateOf(0.dp) }
+                SpatialPanel(SubspaceModifier.testTag("panel").offset(x = offsetX)) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { offsetX = offsetX + 10.dp },
+                    ) {
+                        Text(text = "Click to change offset")
+                    }
                 }
             }
         }

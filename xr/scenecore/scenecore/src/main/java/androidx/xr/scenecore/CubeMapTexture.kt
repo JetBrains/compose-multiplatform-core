@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,22 @@ package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.JxrPlatformAdapter.TextureResource as RtTextureResource
-import java.lang.ref.WeakReference
+import androidx.xr.runtime.Session
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.TextureResource as RtTextureResource
 
 /** [CubeMapTexture] represents a cube map texture that can be used with materials. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class CubeMapTexture
-internal constructor(texture: RtTextureResource, session: WeakReference<Session>) :
-    Texture(texture, TextureSampler.create(), session) {
+public class CubeMapTexture internal constructor(texture: RtTextureResource, session: Session) :
+    Texture(texture, session) {
 
     public companion object {
         internal fun borrowReflectionTexture(
-            platformAdapter: JxrPlatformAdapter,
-            session: WeakReference<Session>,
+            renderingRuntime: RenderingRuntime,
+            session: Session,
         ): CubeMapTexture {
             // TODO(b/396116100): Handle null return from borrow reflection texture.
-            return CubeMapTexture(platformAdapter.borrowReflectionTexture()!!, session)
+            return CubeMapTexture(renderingRuntime.borrowReflectionTexture()!!, session)
         }
 
         /**
@@ -51,9 +51,7 @@ internal constructor(texture: RtTextureResource, session: WeakReference<Session>
         @MainThread
         @JvmStatic
         public fun borrowReflectionTexture(session: Session): CubeMapTexture {
-            // The WeakReference prevents the Session (and its Activity) from being held in memory
-            // indefinitely.
-            return borrowReflectionTexture(session.platformAdapter, WeakReference(session))
+            return borrowReflectionTexture(session.renderingRuntime, session)
         }
     }
 }

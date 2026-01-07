@@ -28,8 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.dp
@@ -38,13 +37,13 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.rotary.RotaryScrollTest.Companion.TEST_TAG
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-@OptIn(ExperimentalTestApi::class)
 class HapticsTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
     private val focusRequester = FocusRequester()
 
     @Test
@@ -156,12 +155,11 @@ class HapticsTest {
     }
 
     @Composable
-    private fun SLCRotaryFling(
-        scrollFeedbackProvider: ScrollFeedbackProvider,
-    ) {
+    private fun SLCRotaryFling(scrollFeedbackProvider: ScrollFeedbackProvider) {
         val scrollableState = rememberScalingLazyListState()
         val viewConfiguration = ViewConfiguration.get(LocalContext.current)
         val flingBehavior = ScrollableDefaults.flingBehavior()
+
         ScalingLazyColumn(
             state = scrollableState,
             rotaryScrollableBehavior = null,
@@ -175,7 +173,7 @@ class HapticsTest {
                                 rotaryHaptics =
                                     PlatformRotaryHapticHandler(
                                         scrollableState,
-                                        scrollFeedbackProvider
+                                        scrollFeedbackProvider,
                                     ),
                                 rotaryFlingHandlerFactory = { inputDeviceId, initialTimestamp ->
                                     RotaryFlingHandler(
@@ -184,24 +182,23 @@ class HapticsTest {
                                         viewConfiguration = viewConfiguration,
                                         flingTimeframe = 20,
                                         inputDeviceId = inputDeviceId,
-                                        initialTimestamp = initialTimestamp
+                                        initialTimestamp = initialTimestamp,
                                     )
                                 },
-                                scrollHandlerFactory = { RotaryScrollHandler(scrollableState) }
+                                scrollHandlerFactory = { RotaryScrollHandler(scrollableState) },
                             ),
                         focusRequester = focusRequester,
-                        reverseDirection = false
-                    )
+                        reverseDirection = false,
+                    ),
         ) {
             items(300) { BasicText(text = "Item #$it") }
         }
     }
 
     @Composable
-    private fun SLCHighResRotarySnap(
-        scrollFeedbackProvider: ScrollFeedbackProvider,
-    ) {
+    private fun SLCHighResRotarySnap(scrollFeedbackProvider: ScrollFeedbackProvider) {
         val scrollableState = rememberScalingLazyListState()
+
         val layoutInfoProvider =
             remember(scrollableState) {
                 ScalingLazyColumnRotarySnapLayoutInfoProvider(scrollableState)
@@ -219,14 +216,14 @@ class HapticsTest {
                                 rotaryHaptics =
                                     PlatformRotaryHapticHandler(
                                         scrollableState,
-                                        scrollFeedbackProvider
+                                        scrollFeedbackProvider,
                                     ),
                                 scrollDistanceDivider =
-                                    RotarySnapSensitivity.DEFAULT.resistanceFactor,
+                                    RotarySnapSensitivityValues.Default.resistanceFactor,
                                 thresholdHandlerFactory = {
                                     ThresholdHandler(
-                                        RotarySnapSensitivity.DEFAULT.minThresholdDivider,
-                                        RotarySnapSensitivity.DEFAULT.maxThresholdDivider
+                                        RotarySnapSensitivityValues.Default.minThresholdDivider,
+                                        RotarySnapSensitivityValues.Default.maxThresholdDivider,
                                     ) {
                                         50f
                                     }
@@ -237,17 +234,15 @@ class HapticsTest {
                                 scrollHandlerFactory = { RotaryScrollHandler(scrollableState) },
                             ),
                         focusRequester = focusRequester,
-                        reverseDirection = false
-                    )
+                        reverseDirection = false,
+                    ),
         ) {
             items(300) { BasicText(text = "Item #$it") }
         }
     }
 
     @Composable
-    private fun SLCLowResRotarySnap(
-        scrollFeedbackProvider: ScrollFeedbackProvider,
-    ) {
+    private fun SLCLowResRotarySnap(scrollFeedbackProvider: ScrollFeedbackProvider) {
         val scrollableState = rememberScalingLazyListState()
         val layoutInfoProvider =
             remember(scrollableState) {
@@ -266,15 +261,15 @@ class HapticsTest {
                                 rotaryHaptics =
                                     PlatformRotaryHapticHandler(
                                         scrollableState,
-                                        scrollFeedbackProvider
+                                        scrollFeedbackProvider,
                                     ),
                                 snapHandlerFactory = {
                                     RotarySnapHandler(scrollableState, layoutInfoProvider, 0)
                                 },
                             ),
                         focusRequester = focusRequester,
-                        reverseDirection = false
-                    )
+                        reverseDirection = false,
+                    ),
         ) {
             items(300) { BasicText(text = "Item #$it") }
         }
@@ -297,7 +292,7 @@ class HapticsTest {
             inputDeviceId: Int,
             source: Int,
             axis: Int,
-            deltaInPixels: Int
+            deltaInPixels: Int,
         ) {
             onScrollProgressCounter++
         }

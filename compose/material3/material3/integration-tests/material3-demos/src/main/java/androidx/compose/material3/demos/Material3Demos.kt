@@ -23,6 +23,18 @@ val Material3Demos =
     DemoCategory(
         "Material 3",
         listOf(
+            ComposableDemo("Button Groups") { ButtonGroupDemos() },
+            DemoCategory(
+                "Carousel",
+                listOf(
+                    ComposableDemo("LazyColumn") { MultiAspectCarouselLazyColumnDemo() },
+                    ComposableDemo("Fading LazyRow") { FadingMultiAspectCarouselLazyRowDemo() },
+                    ComposableDemo("LazyHorizontalGrid") {
+                        MultiAspectCarouselLazyHorizontalGridDemo()
+                    },
+                    ComposableDemo("LazyVerticalGrid") { MultiAspectCarouselLazyVerticalGridDemo() },
+                ),
+            ),
             ComposableDemo("Color Scheme") { ColorSchemeDemo() },
             ComposableDemo("FAB Menu") { FloatingActionButtonMenuDemo() },
             ComposableDemo("Pull To Refresh") { PullToRefreshDemo() },
@@ -38,7 +50,7 @@ val Material3Demos =
                     ComposableDemo("Icon button & icon toggle buttons") {
                         IconButtonAndToggleButtonsDemo()
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "Shapes",
@@ -46,7 +58,10 @@ val Material3Demos =
                     ComposableDemo("Shape") { ShapeDemo() },
                     ComposableDemo("Material Shape") { MaterialShapeDemo() },
                     ComposableDemo("Material Shape Morphing") { MaterialShapeMorphDemo() },
-                )
-            )
+                ),
+            ),
+            ComposableDemo("Navigation Suite Scaffold") {
+                NavigationSuiteScaffoldCustomConfigDemo()
+            },
         ),
     )

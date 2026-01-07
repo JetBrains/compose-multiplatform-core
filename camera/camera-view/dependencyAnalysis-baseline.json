@@ -20,6 +20,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.arch.core:core-common",
+        "resolvedVersion": "2.1.0"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.fragment:fragment",
         "resolvedVersion": "1.1.0"
       },
@@ -31,7 +39,23 @@
         "identifier": "androidx.lifecycle:lifecycle-livedata-core",
         "resolvedVersion": "2.3.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -64,24 +88,6 @@
         "resolvedVersion": "1.8.0-alpha01"
       },
       "toConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "com.google.auto.value:auto-value-annotations",
-        "resolvedVersion": "1.6.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "compileOnly"
     },
     {
       "coordinates": {
@@ -170,14 +176,6 @@
         "resolvedVersion": "4.14"
       },
       "toConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "project",
-        "identifier": ":camera:camera-camera2"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     }
   ]
 }

@@ -19,13 +19,12 @@
 package androidx.compose.ui.platform
 
 import androidx.annotation.RestrictTo
-import androidx.compose.runtime.Composable
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.CompositionLocal
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
@@ -41,6 +40,8 @@ import androidx.compose.ui.node.Owner
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.LifecycleOwner
@@ -83,7 +84,7 @@ val LocalAutofillManager =
 /** The CompositionLocal to provide communication with platform clipboard service. */
 @Deprecated(
     "Use LocalClipboard instead which supports suspend functions",
-    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard")
+    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard"),
 )
 val LocalClipboardManager =
     staticCompositionLocalOf<ClipboardManager> { noLocalProvidedFor("LocalClipboardManager") }
@@ -122,7 +123,7 @@ val LocalFocusManager =
 @Suppress("DEPRECATION")
 @Deprecated(
     "LocalFontLoader is replaced with LocalFontFamilyResolver",
-    replaceWith = ReplaceWith("LocalFontFamilyResolver")
+    replaceWith = ReplaceWith("LocalFontFamilyResolver"),
 )
 @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 val LocalFontLoader =
@@ -146,6 +147,22 @@ val LocalInputModeManager =
 /** The CompositionLocal to provide the layout direction. */
 val LocalLayoutDirection =
     staticCompositionLocalOf<LayoutDirection> { noLocalProvidedFor("LocalLayoutDirection") }
+
+/** The providable CompositionLocal to provide the locale list. This list can never be empty. */
+@get:VisibleForTesting
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+val LocalProvidableLocaleList: ProvidableCompositionLocal<LocaleList> = staticCompositionLocalOf {
+    noLocalProvidedFor("LocalProvidableLocaleList")
+}
+
+/** The CompositionLocal to provide the locale list. This list will never be empty. */
+val LocalLocaleList: CompositionLocal<LocaleList>
+    get() = LocalProvidableLocaleList
+
+/** The CompositionLocal to provide the locale. */
+val LocalLocale: CompositionLocal<Locale> = compositionLocalWithComputedDefaultOf {
+    LocalLocaleList.currentValue.first()
+}
 
 /** The CompositionLocal to provide communication with platform text input service. */
 @Deprecated("Use PlatformTextInputModifierNode instead.")
@@ -205,40 +222,6 @@ val LocalScrollCaptureInProgress: CompositionLocal<Boolean>
  * `cursorBrush` to `BasicTextField` to implement a custom design
  */
 val LocalCursorBlinkEnabled: ProvidableCompositionLocal<Boolean> = staticCompositionLocalOf { true }
-
-@ExperimentalComposeUiApi
-@Composable
-internal fun ProvideCommonCompositionLocals(
-    owner: Owner,
-    uriHandler: UriHandler,
-    content: @Composable () -> Unit
-) {
-    CompositionLocalProvider(
-        LocalAccessibilityManager provides owner.accessibilityManager,
-        LocalAutofill provides owner.autofill,
-        LocalAutofillManager provides owner.autofillManager,
-        LocalAutofillTree provides owner.autofillTree,
-        LocalClipboardManager provides owner.clipboardManager,
-        LocalClipboard provides owner.clipboard,
-        LocalDensity provides owner.density,
-        LocalFocusManager provides owner.focusOwner,
-        @Suppress("DEPRECATION") LocalFontLoader providesDefault
-            @Suppress("DEPRECATION") owner.fontLoader,
-        LocalFontFamilyResolver providesDefault owner.fontFamilyResolver,
-        LocalHapticFeedback provides owner.hapticFeedBack,
-        LocalInputModeManager provides owner.inputModeManager,
-        LocalLayoutDirection provides owner.layoutDirection,
-        LocalTextInputService provides owner.textInputService,
-        LocalSoftwareKeyboardController provides owner.softwareKeyboardController,
-        LocalTextToolbar provides owner.textToolbar,
-        LocalUriHandler provides uriHandler,
-        LocalViewConfiguration provides owner.viewConfiguration,
-        LocalWindowInfo provides owner.windowInfo,
-        LocalPointerIconService provides owner.pointerIconService,
-        LocalGraphicsContext provides owner.graphicsContext,
-        content = content
-    )
-}
 
 private fun noLocalProvidedFor(name: String): Nothing {
     error("CompositionLocal $name not present")

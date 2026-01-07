@@ -16,12 +16,12 @@ EXIT_VALUE=0
 # Validate translation exports, if present
 if ! busytown/impl/check_translations.sh; then
   EXIT_VALUE=1
+elif ! busytown/impl/verify-gradle-signature.sh; then
+  EXIT_VALUE=1
 else
   # Run Gradle
   # If/when we enable desktop, enable VerifyDependencyVersionsTask.kt/shouldVerifyConfiguration
-  if ! busytown/impl/build.sh buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms \
-      -Pandroidx.enableComposeCompilerMetrics=true \
-      -Pandroidx.enableComposeCompilerReports=true \
+  if ! busytown/impl/build.sh buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms generateJavaKzip generateKotlinKzip \
       --no-daemon "$@"; then
     EXIT_VALUE=1
   else

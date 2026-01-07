@@ -28,7 +28,7 @@ class ReplaceWithDetectorMethodTest {
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.StaticMethodExplicitClass")
+                javaSample("replacewith.StaticMethodExplicitClass"),
             )
 
         val expected =

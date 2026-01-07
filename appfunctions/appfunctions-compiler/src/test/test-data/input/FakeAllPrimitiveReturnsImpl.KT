@@ -1,6 +1,6 @@
 package com.testdata
 
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.service.AppFunction
 import androidx.appfunctions.AppFunctionContext
 
 class FakeAllPrimitiveReturnsImpl : FakeAllPrimitiveReturns {
@@ -83,11 +83,6 @@ class FakeAllPrimitiveReturnsImpl : FakeAllPrimitiveReturns {
     ): IntArray = intArrayOf()
 
     @AppFunction
-    override fun byteArrayListReturn(
-        appFunctionContext: AppFunctionContext,
-    ): List<ByteArray> = listOf()
-
-    @AppFunction
     override fun longArrayReturn(
         appFunctionContext: AppFunctionContext,
     ): LongArray = longArrayOf()
@@ -118,11 +113,6 @@ class FakeAllPrimitiveReturnsImpl : FakeAllPrimitiveReturns {
     ): List<String>? = null
 
     @AppFunction
-    override fun nullableByteArrayListReturn(
-        appFunctionContext: AppFunctionContext,
-    ): List<ByteArray>? = null
-
-    @AppFunction
     override fun nullableIntArrayReturn(
         appFunctionContext: AppFunctionContext,
     ): IntArray? = null
@@ -146,11 +136,6 @@ class FakeAllPrimitiveReturnsImpl : FakeAllPrimitiveReturns {
     override fun nullableFloatArrayReturn(
         appFunctionContext: AppFunctionContext,
     ): FloatArray? = null
-
-    @AppFunction
-    override fun nullableByteArrayItemListReturn(
-        appFunctionContext: AppFunctionContext,
-    ): List<ByteArray?> = emptyList()
 
     @AppFunction
     override fun nullableStringItemListReturn(

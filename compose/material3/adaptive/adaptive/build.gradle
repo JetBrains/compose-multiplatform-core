@@ -21,76 +21,56 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3.adaptive"
+    }
     jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.compose.foundation:foundation:1.6.5")
-                api("androidx.compose.ui:ui-geometry:1.6.5")
-                api("androidx.window:window-core:1.3.0")
-            }
+        commonMain.dependencies {
+            implementation("androidx.compose.foundation:foundation:1.10.0-beta02")
+            implementation("androidx.compose.ui:ui:1.10.0-beta02")
+            api("androidx.window:window-core:1.5.0")
         }
 
-        commonTest {
-            dependencies {
-            }
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+            api("androidx.annotation:annotation-experimental:1.5.1")
+            api("androidx.window:window:1.5.0")
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
+        commonStubsMain.dependsOn(commonMain)
+        jvmStubsMain.dependsOn(commonStubsMain)
+        linuxx64StubsMain.dependsOn(commonStubsMain)
+
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:material3:material3"))
+            implementation(project(":compose:test-utils"))
+            implementation(project(":window:window-testing"))
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.truth)
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                api("androidx.annotation:annotation-experimental:1.4.1")
-                api("androidx.window:window:1.3.0")
-            }
-        }
-
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:material3:material3"))
-                implementation(project(":compose:test-utils"))
-                implementation(project(":window:window-testing"))
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.truth)
-            }
-        }
-
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.truth)
-            }
+        androidHostTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.truth)
         }
     }
 }
@@ -101,9 +81,4 @@ androidx {
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Library"
     legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material3.adaptive"
 }

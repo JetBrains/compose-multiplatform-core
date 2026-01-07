@@ -16,11 +16,11 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -29,7 +29,6 @@ import androidx.xr.runtime.math.Vector3
  * Offset the content by ([x] dp, [y] dp, [z] dp). The offsets can be positive as well as
  * non-positive.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.offset(x: Dp = 0.dp, y: Dp = 0.dp, z: Dp = 0.dp): SubspaceModifier =
     this then SubspaceOffsetElement(x = x, y = y, z = z)
 
@@ -40,9 +39,7 @@ private class SubspaceOffsetElement(public val x: Dp, public val y: Dp, public v
     }
 
     override fun update(node: OffsetNode) {
-        node.x = x
-        node.y = y
-        node.z = z
+        node.update(x, y, z)
     }
 
     override fun hashCode(): Int {
@@ -62,10 +59,20 @@ private class SubspaceOffsetElement(public val x: Dp, public val y: Dp, public v
 
 private class OffsetNode(public var x: Dp, public var y: Dp, public var z: Dp) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
-    override fun MeasureScope.measure(
-        measurable: Measurable,
+
+    override val shouldAutoInvalidate: Boolean = false
+
+    fun update(x: Dp, y: Dp, z: Dp) {
+        if (this.x != x || this.y != y || this.z != z) invalidatePlacement()
+        this.x = x
+        this.y = y
+        this.z = z
+    }
+
+    override fun SubspaceMeasureScope.measure(
+        measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
-    ): MeasureResult {
+    ): SubspaceMeasureResult {
         val placeable = measurable.measure(constraints)
         return layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
             placeable.place(
@@ -73,7 +80,7 @@ private class OffsetNode(public var x: Dp, public var y: Dp, public var z: Dp) :
                     Vector3(
                         x.roundToPx().toFloat(),
                         y.roundToPx().toFloat(),
-                        z.roundToPx().toFloat()
+                        z.roundToPx().toFloat(),
                     )
                 )
             )

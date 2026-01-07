@@ -35,12 +35,13 @@ class AnimationIssueRegistry : IssueRegistry() {
                 AnimatedContentDetector.UnusedTargetStateInContentKeyLambda,
                 SharedTransitionScopeDetector.UnusedSharedTransitionModifierParameter,
                 SharedTransitionScopeDetector.ConstantContentStateKeyInItemsCall,
+                LookaheadAnimationVisualDebuggingDetector.DisallowLookaheadAnimationVisualDebug,
             )
 
     override val vendor =
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.animation",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

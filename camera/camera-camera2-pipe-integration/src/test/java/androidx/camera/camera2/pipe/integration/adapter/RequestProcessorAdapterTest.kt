@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
@@ -31,7 +30,7 @@ import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.CameraPipeKeys
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.testing.CameraGraphSimulator
@@ -63,7 +62,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class RequestProcessorAdapterTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
@@ -102,10 +101,7 @@ class RequestProcessorAdapterTest {
             .build()
 
     private val sessionProcessorSurfaces =
-        listOf(
-            previewProcessorSurface,
-            imageCaptureProcessorSurface,
-        )
+        listOf(previewProcessorSurface, imageCaptureProcessorSurface)
 
     private var cameraGraphSimulator: CameraGraphSimulator? = null
     private var requestProcessorAdapter: RequestProcessorAdapter? = null
@@ -136,21 +132,28 @@ class RequestProcessorAdapterTest {
             buildMap<DeferrableSurface, StreamId> {
                 put(
                     previewProcessorSurface,
-                    checkNotNull(simulator.streams[previewStreamConfig]).id
+                    checkNotNull(simulator.streams[previewStreamConfig]).id,
                 )
                 put(
                     imageCaptureProcessorSurface,
-                    checkNotNull(simulator.streams[imageCaptureStreamConfig]).id
+                    checkNotNull(simulator.streams[imageCaptureStreamConfig]).id,
                 )
             }
-        val useCaseGraphConfig =
-            UseCaseGraphConfig(simulator, surfaceToStreamMap, CameraStateAdapter())
+        val cameraStateAdapter = CameraStateAdapter()
+        val useCaseGraphContext =
+            UseCaseGraphContext(
+                cameraGraphProvider = { simulator },
+                defaultSurfaceToStreamMap = surfaceToStreamMap,
+                cameraStateAdapter = cameraStateAdapter,
+                streamConfigMapProvider = { emptyMap() },
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            )
 
         val executor = MoreExecutors.directExecutor()
         val dispatcher = executor.asCoroutineDispatcher()
         val useCaseThreads = UseCaseThreads(scope, executor, dispatcher)
         requestProcessorAdapter =
-            RequestProcessorAdapter(useCaseGraphConfig, sessionProcessorSurfaces, useCaseThreads)
+            RequestProcessorAdapter(useCaseGraphContext, sessionProcessorSurfaces, useCaseThreads)
                 .apply { sessionConfig = fakeSessionConfig }
         scope.advanceUntilIdle()
     }
@@ -206,7 +209,7 @@ class RequestProcessorAdapterTest {
                         .apply {
                             setCaptureRequestOption(
                                 CaptureRequest.CONTROL_AE_MODE,
-                                CONTROL_AE_MODE_OFF
+                                CONTROL_AE_MODE_OFF,
                             )
                         }
                         .build()

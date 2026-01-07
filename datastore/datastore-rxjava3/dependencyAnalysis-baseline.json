@@ -4,15 +4,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "com.google.truth:truth",
         "resolvedVersion": "1.0.1"
       },
@@ -23,7 +14,21 @@
         "type": "project",
         "identifier": ":datastore:datastore-core"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":datastore:datastore-core"
+      },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":datastore:datastore-core"
+      },
+      "toConfiguration": "testImplementation"
     }
   ]
 }

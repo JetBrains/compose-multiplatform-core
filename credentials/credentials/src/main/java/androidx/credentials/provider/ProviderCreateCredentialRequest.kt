@@ -17,6 +17,7 @@ package androidx.credentials.provider
 
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialRequest
 import androidx.credentials.provider.CallingAppInfo.Companion.EXTRA_CREDENTIAL_REQUEST_ORIGIN
 import androidx.credentials.provider.CallingAppInfo.Companion.extractCallingAppInfo
@@ -29,23 +30,37 @@ import androidx.credentials.provider.CallingAppInfo.Companion.setCallingAppInfo
  * This request contains the actual request coming from the calling app, and the application
  * information associated with the calling app.
  *
- * @constructor constructs an instance of [ProviderCreateCredentialRequest]
  * @property callingRequest the complete [CreateCredentialRequest] coming from the calling app that
  *   is requesting for credential creation
  * @property callingAppInfo information pertaining to the calling app making the request
  * @property biometricPromptResult the result of a Biometric Prompt authentication flow, that is
  *   propagated to the provider if the provider requested for
  *   [androidx.credentials.CredentialManager] to handle the authentication flow
+ * @constructor constructs an instance of [ProviderCreateCredentialRequest]
  * @throws NullPointerException If [callingRequest], or [callingAppInfo] is null
  */
 class ProviderCreateCredentialRequest
-@JvmOverloads
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 constructor(
     val callingRequest: CreateCredentialRequest,
     val callingAppInfo: CallingAppInfo,
-    val biometricPromptResult: BiometricPromptResult? = null
+    val biometricPromptResult: BiometricPromptResult?,
+    // The source Bundle used to construct this request, if applicable
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val sourceBundle: Bundle?,
 ) {
+    /**
+     * @constructor constructs an instance of [ProviderCreateCredentialRequest]
+     * @throws NullPointerException If [callingRequest], or [callingAppInfo] is null
+     */
+    @JvmOverloads
+    constructor(
+        callingRequest: CreateCredentialRequest,
+        callingAppInfo: CallingAppInfo,
+        biometricPromptResult: BiometricPromptResult? = null,
+    ) : this(callingRequest, callingAppInfo, biometricPromptResult, null)
+
     companion object {
+
         private const val EXTRA_CREATE_CREDENTIAL_REQUEST_TYPE =
             "androidx.credentials.provider.extra.CREATE_CREDENTIAL_REQUEST_TYPE"
         private const val EXTRA_CREATE_REQUEST_CANDIDATE_QUERY_DATA =
@@ -66,11 +81,11 @@ constructor(
             bundle.putString(EXTRA_CREATE_CREDENTIAL_REQUEST_TYPE, request.callingRequest.type)
             bundle.putBundle(
                 EXTRA_CREATE_REQUEST_CREDENTIAL_DATA,
-                request.callingRequest.credentialData
+                request.callingRequest.credentialData,
             )
             bundle.putBundle(
                 EXTRA_CREATE_REQUEST_CANDIDATE_QUERY_DATA,
-                request.callingRequest.candidateQueryData
+                request.callingRequest.candidateQueryData,
             )
             bundle.setCallingAppInfo(request.callingAppInfo)
             return bundle
@@ -108,9 +123,11 @@ constructor(
                             requestData,
                             candidateQueryData,
                             requireSystemProvider = false,
-                            origin
+                            origin,
                         ),
                     callingAppInfo = callingAppInfo,
+                    biometricPromptResult = null,
+                    sourceBundle = bundle,
                 )
             } catch (e: Exception) {
                 throw IllegalArgumentException("Conversion failed with $e")

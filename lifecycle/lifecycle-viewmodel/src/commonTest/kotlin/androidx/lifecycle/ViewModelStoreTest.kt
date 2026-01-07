@@ -16,8 +16,10 @@
 package androidx.lifecycle
 
 import androidx.kruth.assertThat
+import androidx.lifecycle.viewmodel.IgnoreWebTarget
 import kotlin.test.Test
 
+@IgnoreWebTarget
 class ViewModelStoreTest {
 
     @Test
@@ -34,6 +36,17 @@ class ViewModelStoreTest {
         assertThat(viewModel2.cleared).isTrue()
         assertThat(store["a"]).isNull()
         assertThat(store["b"]).isNull()
+    }
+
+    @Test
+    fun testToString() {
+        class SubStore : ViewModelStore()
+        val store = SubStore()
+        store.put("key1", TestViewModel())
+
+        // Verify identity included (discourage parsing) and keys listed.
+        val identity = store.hashCode().toString(16)
+        assertThat(store.toString()).isEqualTo("SubStore#$identity(keys=[key1])")
     }
 
     private open class TestViewModel : ViewModel() {

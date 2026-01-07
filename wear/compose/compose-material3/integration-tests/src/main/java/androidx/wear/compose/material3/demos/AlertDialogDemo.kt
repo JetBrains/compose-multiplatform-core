@@ -18,8 +18,10 @@ package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,11 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
@@ -50,18 +53,35 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.TransformationSpec
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissSample
+import androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissTransformingContentSample
 import androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsSample
+import androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsTransformingContentSample
 import androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonSample
+import androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonTransformingContentSample
 
 val AlertDialogDemos =
     listOf(
-        ComposableDemo("Edge button") { AlertDialogWithEdgeButtonSample() },
-        ComposableDemo("Confirm and Dismiss") { AlertDialogWithConfirmAndDismissSample() },
-        ComposableDemo("Content groups") { AlertDialogWithContentGroupsSample() },
-        ComposableDemo("Button stack") { AlertDialogWithButtonStack() },
+        ComposableDemo("Edge button (SLC)") { AlertDialogWithEdgeButtonSample() },
+        ComposableDemo("Edge button (TLC)") {
+            AlertDialogWithEdgeButtonTransformingContentSample()
+        },
+        ComposableDemo("Confirm and Dismiss (SLC)") { AlertDialogWithConfirmAndDismissSample() },
+        ComposableDemo("Confirm and Dismiss (TLC)") {
+            AlertDialogWithConfirmAndDismissTransformingContentSample()
+        },
+        ComposableDemo("Content groups (SLC)") { AlertDialogWithContentGroupsSample() },
+        ComposableDemo("Content groups (TLC)") {
+            AlertDialogWithContentGroupsTransformingContentSample()
+        },
+        ComposableDemo("Button stack (SLC)") { AlertDialogWithSLCButtonStack() },
+        ComposableDemo("Button stack (TLC)") { AlertDialogWithTLCButtonStack() },
         ComposableDemo("AlertDialog builder") { AlertDialogBuilder() },
     )
 
@@ -70,152 +90,242 @@ fun AlertDialogBuilder() {
     val scrollState = rememberScalingLazyListState()
 
     var showIcon by remember { mutableStateOf(false) }
-    var showMessage by remember { mutableStateOf(false) }
+    var showTitle by remember { mutableStateOf(TextSize.SMALL) }
+    var showMessage by remember { mutableStateOf<TextSize?>(null) }
     var showSecondaryButton by remember { mutableStateOf(false) }
     var showCaption by remember { mutableStateOf(false) }
     var buttonsType by remember { mutableStateOf(AlertButtonsType.EDGE_BUTTON) }
-
+    var useTLC by remember { mutableStateOf(false) }
+    var useSLC by remember { mutableStateOf(true) }
     var showDialog by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve AlertDialog's Performance
-    AppScaffold {
-        ScreenScaffold(
-            scrollState = scrollState,
-        ) {
-            ScalingLazyColumn(modifier = Modifier.fillMaxSize(), state = scrollState) {
-                item { ListHeader { Text("AlertDialog") } }
-                item {
-                    SwitchButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        checked = showIcon,
-                        onCheckedChange = { showIcon = it },
-                        label = { Text("Icon") },
-                    )
-                }
-                item {
-                    SwitchButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        checked = true,
-                        enabled = false,
-                        onCheckedChange = {},
-                        label = { Text("Title") },
-                    )
-                }
-                item {
-                    SwitchButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        checked = showMessage,
-                        onCheckedChange = { showMessage = it },
-                        label = { Text("Message") },
-                    )
-                }
-                item {
-                    SwitchButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        checked = showSecondaryButton,
-                        onCheckedChange = { showSecondaryButton = it },
-                        label = { Text("Secondary button") },
-                    )
-                }
-                item {
-                    SwitchButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        checked = showCaption,
-                        onCheckedChange = { showCaption = it },
-                        label = { Text("Caption") },
-                    )
-                }
-                item { ListHeader { Text("Buttons") } }
-                item {
-                    RadioButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        selected = buttonsType == AlertButtonsType.EDGE_BUTTON,
-                        onSelect = { buttonsType = AlertButtonsType.EDGE_BUTTON },
-                        label = { Text("Single EdgeButton") },
-                    )
-                }
-                item {
-                    RadioButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        selected = buttonsType == AlertButtonsType.CONFIRM_DISMISS,
-                        onSelect = { buttonsType = AlertButtonsType.CONFIRM_DISMISS },
-                        label = { Text("Ok/Cancel buttons") },
-                    )
-                }
-                item {
-                    RadioButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        selected = buttonsType == AlertButtonsType.NO_BUTTONS,
-                        onSelect = { buttonsType = AlertButtonsType.NO_BUTTONS },
-                        label = { Text("No EdgeButton") },
-                    )
-                }
-                item { Button(onClick = { showDialog = true }, label = { Text("Show dialog") }) }
+    ScreenScaffold(scrollState = scrollState) {
+        ScalingLazyColumn(modifier = Modifier.fillMaxSize(), state = scrollState) {
+            item { ListHeader { Text("AlertDialog") } }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = showIcon,
+                    onCheckedChange = { showIcon = it },
+                    label = { Text("Icon") },
+                )
             }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = showTitle == TextSize.SMALL,
+                    onSelect = { showTitle = TextSize.SMALL },
+                    label = { Text("Title (sm)") },
+                )
+            }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = showTitle == TextSize.LARGE,
+                    onSelect = { showTitle = TextSize.LARGE },
+                    label = { Text("Title (lg)") },
+                )
+            }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = showMessage == TextSize.SMALL,
+                    onCheckedChange = { showMessage = if (it) TextSize.SMALL else null },
+                    label = { Text("Message (sm)") },
+                )
+            }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = showMessage == TextSize.LARGE,
+                    onCheckedChange = { showMessage = if (it) TextSize.LARGE else null },
+                    label = { Text("Message (lg)") },
+                )
+            }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = showSecondaryButton,
+                    onCheckedChange = { showSecondaryButton = it },
+                    label = { Text("Secondary button") },
+                )
+            }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    checked = showCaption,
+                    onCheckedChange = { showCaption = it },
+                    label = { Text("Caption") },
+                )
+            }
+            item { ListHeader { Text("Buttons") } }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = buttonsType == AlertButtonsType.EDGE_BUTTON,
+                    onSelect = { buttonsType = AlertButtonsType.EDGE_BUTTON },
+                    label = { Text("Single EdgeButton") },
+                )
+            }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = buttonsType == AlertButtonsType.CONFIRM_DISMISS,
+                    onSelect = { buttonsType = AlertButtonsType.CONFIRM_DISMISS },
+                    label = { Text("Ok/Cancel buttons") },
+                )
+            }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = buttonsType == AlertButtonsType.NO_BUTTONS,
+                    onSelect = { buttonsType = AlertButtonsType.NO_BUTTONS },
+                    label = { Text("No EdgeButton") },
+                )
+            }
+            item { ListHeader { Text("Container") } }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = useSLC,
+                    onSelect = {
+                        useSLC = true
+                        useTLC = false
+                    },
+                    label = { Text("Use SLC") },
+                )
+            }
+            item {
+                RadioButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    selected = useTLC,
+                    onSelect = {
+                        useTLC = true
+                        useSLC = false
+                    },
+                    label = { Text("Use TLC") },
+                )
+            }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { Button(onClick = { showDialog = true }, label = { Text("Show dialog") }) }
         }
+    }
 
-        CustomAlertDialog(
-            show = showDialog,
-            showIcon = showIcon,
-            showCaption = showCaption,
-            showSecondaryButton = showSecondaryButton,
-            showMessage = showMessage,
-            buttonsType = buttonsType,
-            onConfirmButton = { showDialog = false },
-            onDismissRequest = { showDialog = false }
+    CustomAlertDialog(
+        show = showDialog,
+        showIcon = showIcon,
+        showCaption = showCaption,
+        showSecondaryButton = showSecondaryButton,
+        showTitle = showTitle,
+        showMessage = showMessage,
+        buttonsType = buttonsType,
+        onConfirmButton = { showDialog = false },
+        onDismissRequest = { showDialog = false },
+        useSLC = useSLC,
+    )
+}
+
+@Composable
+fun AlertDialogWithSLCButtonStack() {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showDialog = true },
+            label = { Text("Show Dialog") },
         )
+    }
+
+    AlertDialog(
+        visible = showDialog,
+        onDismissRequest = { showDialog = false },
+        icon = {
+            Icon(
+                Icons.Rounded.AccountCircle,
+                modifier = Modifier.size(32.dp),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = { Text("Allow access to your photos?") },
+        text = { Text("Lerp ipsum dolor sit amet.") },
+    ) {
+        item {
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showDialog = false },
+                label = { Text("While using app") },
+            )
+        }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showDialog = false },
+                label = { Text("Ask every time") },
+            )
+        }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showDialog = false },
+                label = { Text("Don't allow") },
+            )
+        }
     }
 }
 
 @Composable
-fun AlertDialogWithButtonStack() {
+fun AlertDialogWithTLCButtonStack() {
     var showDialog by remember { mutableStateOf(false) }
+    val transformationSpec = rememberTransformationSpec()
 
-    // Use AppScaffold to improve AlertDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showDialog = true },
-                label = { Text("Show Dialog") }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showDialog = true },
+            label = { Text("Show Dialog") },
+        )
+    }
+
+    AlertDialog(
+        visible = showDialog,
+        onDismissRequest = { showDialog = false },
+        icon = {
+            Icon(
+                Icons.Rounded.AccountCircle,
+                modifier = Modifier.size(32.dp),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = { Text("Allow access to your photos?") },
+        text = { Text("Lerp ipsum dolor sit amet.") },
+        transformationSpec = transformationSpec,
+    ) {
+        item {
+            Button(
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+                onClick = { showDialog = false },
+                label = { Text("While using app") },
             )
         }
-
-        AlertDialog(
-            visible = showDialog,
-            onDismissRequest = { showDialog = false },
-            icon = {
-                Icon(
-                    Icons.Rounded.AccountCircle,
-                    modifier = Modifier.size(32.dp),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = { Text("Allow access to your photos?") },
-            text = { Text("Lerp ipsum dolor sit amet.") }
-        ) {
-            item {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showDialog = false },
-                    label = { Text("While using app") },
-                )
-            }
-            item {
-                FilledTonalButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showDialog = false },
-                    label = { Text("Ask every time") },
-                )
-            }
-            item {
-                FilledTonalButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showDialog = false },
-                    label = { Text("Don't allow") },
-                )
-            }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+                onClick = { showDialog = false },
+                label = { Text("Ask every time") },
+            )
+        }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
+                onClick = { showDialog = false },
+                label = { Text("Don't allow") },
+            )
         }
     }
 }
@@ -226,29 +336,61 @@ private fun CustomAlertDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
+    showTitle: TextSize,
     showIcon: Boolean,
+    showMessage: TextSize?,
     onConfirmButton: () -> Unit,
     buttonsType: AlertButtonsType,
-    showMessage: Boolean,
     showSecondaryButton: Boolean,
     showCaption: Boolean,
+    useSLC: Boolean,
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val captionHorizontalPadding = screenWidth.dp * 0.0416f
+
+    val slcContent: (ScalingLazyListScope.() -> Unit)? =
+        if (showSecondaryButton || showCaption) {
+            {
+                if (showSecondaryButton) {
+                    item { SecondaryButton() }
+                }
+                if (showCaption) {
+                    item { Caption(captionHorizontalPadding) }
+                    if (buttonsType == AlertButtonsType.EDGE_BUTTON) {
+                        item { AlertDialogDefaults.GroupSeparator() }
+                    }
+                }
+            }
+        } else null
+
+    val tlcContent: (TransformingLazyColumnScope.() -> Unit)? =
+        if (showSecondaryButton || showCaption) {
+            {
+                if (showSecondaryButton) {
+                    item { SecondaryButton(transformation = rememberTransformationSpec()) }
+                }
+                if (showCaption) {
+                    item { Caption(captionHorizontalPadding) }
+                    if (buttonsType == AlertButtonsType.EDGE_BUTTON) {
+                        item { AlertDialogDefaults.GroupSeparator() }
+                    }
+                }
+            }
+        } else null
 
     AlertDialogHelper(
         show = show,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         properties = properties,
-        title = { Text("Mobile network is not currently available") },
+        title = { Title(showTitle) },
         icon =
             if (showIcon) {
                 { ExclamationMark() }
             } else null,
         message =
-            if (showMessage) {
-                { Message() }
+            if (showMessage != null) {
+                { Message(showMessage) }
             } else null,
         onConfirmButton =
             if (buttonsType == AlertButtonsType.CONFIRM_DISMISS) {
@@ -256,26 +398,14 @@ private fun CustomAlertDialog(
             } else null,
         onDismissButton =
             if (buttonsType == AlertButtonsType.CONFIRM_DISMISS) {
-                { /* dismiss action */ }
+                onDismissRequest
             } else null,
         onEdgeButton =
             if (buttonsType == AlertButtonsType.EDGE_BUTTON) {
                 onConfirmButton
             } else null,
-        content =
-            if (showSecondaryButton || showCaption) {
-                {
-                    if (showSecondaryButton) {
-                        item { SecondaryButton() }
-                    }
-                    if (showCaption) {
-                        item { Caption(captionHorizontalPadding) }
-                        if (buttonsType == AlertButtonsType.EDGE_BUTTON) {
-                            item { AlertDialogDefaults.GroupSeparator() }
-                        }
-                    }
-                }
-            } else null
+        contentSLC = if (useSLC) slcContent else null,
+        contentTLC = if (!useSLC) tlcContent else null,
     )
 }
 
@@ -290,14 +420,28 @@ internal fun ExclamationMark() {
             "!",
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 }
 
 @Composable
-private fun Message() {
-    Text("Your battery is low. Turn on battery saver.")
+private fun Title(size: TextSize) {
+    when (size) {
+        TextSize.SMALL -> Text("Mobile network")
+        TextSize.LARGE -> Text("Your mobile network is off")
+    }
+}
+
+@Composable
+private fun Message(size: TextSize) {
+    when (size) {
+        TextSize.SMALL -> Text("Your battery is low. Turn on battery saver.")
+        TextSize.LARGE ->
+            Text(
+                "Your battery is low. Turn on battery saver. Or charge your device. You need a charger for that! Don't forget your at home!"
+            )
+    }
 }
 
 @Composable
@@ -313,12 +457,25 @@ private fun SecondaryButton() {
 }
 
 @Composable
+private fun TransformingLazyColumnItemScope.SecondaryButton(transformation: TransformationSpec) {
+    var checked by remember { mutableStateOf(false) }
+    SwitchButton(
+        modifier = Modifier.fillMaxWidth().transformedHeight(this, transformation),
+        checked = checked,
+        enabled = true,
+        transformation = SurfaceTransformation(transformation),
+        onCheckedChange = { checked = it },
+        label = { Text("Don't show again") },
+    )
+}
+
+@Composable
 private fun Caption(horizontalPadding: Dp) =
     Text(
         modifier = Modifier.padding(horizontal = horizontalPadding),
-        text = "Caption enim ad minim, quis eu veniam vel aru fermentum eu tristique",
+        text = "Caption enim ad minim, quis eu veniam vel",
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.outline
+        color = MaterialTheme.colorScheme.outline,
     )
 
 @Composable
@@ -333,49 +490,101 @@ private fun AlertDialogHelper(
     onDismissButton: (() -> Unit)?,
     onConfirmButton: (() -> Unit)?,
     onEdgeButton: (() -> Unit)?,
-    content: (ScalingLazyListScope.() -> Unit)?
+    contentSLC: (ScalingLazyListScope.() -> Unit)?,
+    contentTLC: (TransformingLazyColumnScope.() -> Unit)?,
 ) {
+    val useSLC = contentSLC != null
     if (onConfirmButton != null && onDismissButton != null) {
-        AlertDialog(
-            visible = show,
-            onDismissRequest = onDismissRequest,
-            modifier = modifier,
-            properties = properties,
-            title = title,
-            icon = icon,
-            text = message,
-            confirmButton = { AlertDialogDefaults.ConfirmButton(onConfirmButton) },
-            dismissButton = { AlertDialogDefaults.DismissButton(onDismissButton) },
-            content = content
-        )
+        if (useSLC) {
+            AlertDialog(
+                visible = show,
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                confirmButton = { AlertDialogDefaults.ConfirmButton(onConfirmButton) },
+                dismissButton = { AlertDialogDefaults.DismissButton(onDismissButton) },
+                content = contentSLC,
+            )
+        } else {
+            AlertDialog(
+                visible = show,
+                transformationSpec = rememberTransformationSpec(),
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                confirmButton = { AlertDialogDefaults.ConfirmButton(onConfirmButton) },
+                dismissButton = { AlertDialogDefaults.DismissButton(onDismissButton) },
+                content = contentTLC,
+            )
+        }
     } else if (onEdgeButton != null) {
-        AlertDialog(
-            visible = show,
-            onDismissRequest = onDismissRequest,
-            modifier = modifier,
-            properties = properties,
-            title = title,
-            icon = icon,
-            text = message,
-            edgeButton = { AlertDialogDefaults.EdgeButton(onEdgeButton) },
-            content = content
-        )
+        if (useSLC) {
+            AlertDialog(
+                visible = show,
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                edgeButton = { AlertDialogDefaults.EdgeButton(onEdgeButton) },
+                content = contentSLC,
+            )
+        } else {
+            AlertDialog(
+                visible = show,
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                edgeButton = { AlertDialogDefaults.EdgeButton(onEdgeButton) },
+                content = contentTLC,
+                transformationSpec = rememberTransformationSpec(),
+            )
+        }
     } else {
-        AlertDialog(
-            visible = show,
-            onDismissRequest = onDismissRequest,
-            modifier = modifier,
-            properties = properties,
-            title = title,
-            icon = icon,
-            text = message,
-            content = content
-        )
+        if (useSLC) {
+            AlertDialog(
+                visible = show,
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                content = contentSLC,
+            )
+        } else {
+            AlertDialog(
+                visible = show,
+                onDismissRequest = onDismissRequest,
+                modifier = modifier,
+                properties = properties,
+                title = title,
+                icon = icon,
+                text = message,
+                content = contentTLC,
+                transformationSpec = rememberTransformationSpec(),
+            )
+        }
     }
 }
 
 private enum class AlertButtonsType {
     NO_BUTTONS,
     EDGE_BUTTON,
-    CONFIRM_DISMISS
+    CONFIRM_DISMISS,
+}
+
+private enum class TextSize {
+    SMALL,
+    LARGE,
 }

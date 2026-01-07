@@ -15,7 +15,6 @@
  */
 
 import androidx.build.AndroidXConfig
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import androidx.build.ProjectLayoutType
@@ -37,25 +36,14 @@ androidXMultiplatform {
     jvm()
     androidLibrary {
         namespace = "androidx.benchmark.traceprocessor"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.8.1")
-                implementation(libs.wireRuntime)
-            }
-        }
-        androidMain {
-            dependsOn(commonMain)
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            implementation(libs.wireRuntime)
         }
     }
 }
@@ -74,13 +62,6 @@ tasks.withType(KotlinCompile).configureEach {
 // See https://github.com/square/wire/issues/3199
 tasks.named("multiplatformSourceJar").configure {
     dependsOn(tasks.named("generateCommonMainProtos"))
-}
-afterEvaluate {
-    if (!ProjectLayoutType.isPlayground(project)) {
-        tasks.named("generateJavaKzip").configure {
-            dependsOn(tasks.named("generateCommonMainProtos"))
-        }
-    }
 }
 
 wire {
@@ -117,7 +98,6 @@ wire {
     prune 'perfetto.protos.AndroidNetworkMetric'
     prune 'perfetto.protos.AndroidPackageList'
     prune 'perfetto.protos.AndroidPowerRails'
-    prune 'perfetto.protos.AndroidProcessMetadata'
     prune 'perfetto.protos.AndroidRtRuntimeMetric'
     prune 'perfetto.protos.AndroidSimpleperfMetric'
     prune 'perfetto.protos.AndroidSurfaceflingerMetric'
@@ -138,6 +118,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "AndroidX Benchmark TraceProcessor"
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_2_0
+    samples(project(":benchmark:benchmark-samples"))
 }

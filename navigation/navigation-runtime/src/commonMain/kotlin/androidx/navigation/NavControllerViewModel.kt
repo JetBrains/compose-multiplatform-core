@@ -16,7 +16,11 @@
 package androidx.navigation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.get
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.internal.identityHashCode
 
 /**
@@ -63,5 +67,14 @@ internal class NavControllerViewModel : ViewModel(), NavViewModelStoreProvider {
         return sb.toString()
     }
 
-    companion object
+    companion object {
+        fun getInstance(viewModelStore: ViewModelStore): NavControllerViewModel {
+            val viewModelProvider = ViewModelProvider.create(viewModelStore, FACTORY)
+            return viewModelProvider.get()
+        }
+    }
+}
+
+private val FACTORY: ViewModelProvider.Factory = viewModelFactory {
+    initializer { NavControllerViewModel() }
 }

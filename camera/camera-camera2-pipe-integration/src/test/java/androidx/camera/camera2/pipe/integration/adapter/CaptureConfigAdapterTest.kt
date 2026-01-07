@@ -18,14 +18,13 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsQuirkOverride
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
@@ -52,7 +51,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class CaptureConfigAdapterTest {
     private val fakeUseCaseThreads by lazy {
@@ -60,11 +59,7 @@ class CaptureConfigAdapterTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(
-            cameraScope,
-            executor,
-            dispatcher,
-        )
+        UseCaseThreads(cameraScope, executor, dispatcher)
     }
     private val fakeCameraProperties = FakeCameraProperties()
     private val surface = FakeSurface()
@@ -86,7 +81,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         }
     }
@@ -103,7 +98,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         }
 
@@ -137,7 +132,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
         request.listeners.forEach { listener -> listener.onAborted(request) }
 
@@ -164,7 +159,7 @@ class CaptureConfigAdapterTest {
                 .apply {
                     setCaptureRequestOption(
                         CaptureRequest.FLASH_MODE,
-                        CaptureRequest.FLASH_MODE_OFF
+                        CaptureRequest.FLASH_MODE_OFF,
                     )
                 }
                 .build()
@@ -174,7 +169,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert
@@ -205,7 +200,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert
@@ -236,7 +231,7 @@ class CaptureConfigAdapterTest {
             configAdapter.mapToRequest(
                 captureConfig,
                 RequestTemplate(CameraDevice.TEMPLATE_PREVIEW),
-                sessionConfigOptions
+                sessionConfigOptions,
             )
 
         // Assert, the options of the single capture should have higher priority.
@@ -346,17 +341,22 @@ class CaptureConfigAdapterTest {
 
     private fun createConfigAdapter(
         templateParamsOverride: TemplateParamsOverride = NoOpTemplateParamsOverride
-    ) =
-        CaptureConfigAdapter(
-            useCaseGraphConfig =
-                UseCaseGraphConfig(
-                    graph = FakeCameraGraph(),
-                    surfaceToStreamMap = mapOf(surface to StreamId(0)),
-                    cameraStateAdapter = CameraStateAdapter(),
+    ): CaptureConfigAdapter {
+        val cameraStateAdapter = CameraStateAdapter()
+        return CaptureConfigAdapter(
+            useCaseGraphContext =
+                UseCaseGraphContext(
+                    cameraGraphProvider = { FakeCameraGraph() },
+                    cameraStateAdapter = cameraStateAdapter,
+                    graphStateToCameraStateAdapter =
+                        GraphStateToCameraStateAdapter(cameraStateAdapter),
+                    streamConfigMapProvider = { emptyMap() },
+                    defaultSurfaceToStreamMap = mapOf(surface to StreamId(0)),
                 ),
             cameraProperties = fakeCameraProperties,
             zslControl = ZslControlNoOpImpl(),
             threads = fakeUseCaseThreads,
             templateParamsOverride = templateParamsOverride,
         )
+    }
 }

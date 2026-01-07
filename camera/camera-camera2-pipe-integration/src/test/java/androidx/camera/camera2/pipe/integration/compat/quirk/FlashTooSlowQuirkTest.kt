@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -35,33 +34,33 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FlashTooSlowQuirkTest(
     private val model: String,
     private val lensFacing: Int,
-    private val enabled: Boolean
+    private val enabled: Boolean,
 ) {
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "Model: {0}")
         fun data() =
             listOf(
-                arrayOf("Pixel 3a", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false),
-                arrayOf("Pixel 3a XL", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 4", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 4 XL", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 4a", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 4a (5g)", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 5", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 5a", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Pixel 6", CameraCharacteristics.LENS_FACING_BACK, false),
-                arrayOf("sm-a320f", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("SM-A320FL", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("Samsung S7", CameraCharacteristics.LENS_FACING_BACK, false),
-                arrayOf("moto g(20)", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("itel l6006", CameraCharacteristics.LENS_FACING_BACK, true),
-                arrayOf("rmx3231", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 3a", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 3a", CameraCharacteristics.LENS_FACING_FRONT, false),
+                arrayOf<Any>("Pixel 3a XL", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 4", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 4 XL", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 4a", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 4a (5g)", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 5", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 5a", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Pixel 6", CameraCharacteristics.LENS_FACING_BACK, false),
+                arrayOf<Any>("sm-a320f", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("SM-A320FL", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("Samsung S7", CameraCharacteristics.LENS_FACING_BACK, false),
+                arrayOf<Any>("moto g(20)", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("itel l6006", CameraCharacteristics.LENS_FACING_BACK, true),
+                arrayOf<Any>("rmx3231", CameraCharacteristics.LENS_FACING_BACK, true),
             )
     }
 
@@ -81,9 +80,9 @@ class FlashTooSlowQuirkTest(
                     StreamConfigurationMapBuilder.newBuilder().build(),
                     OutputSizesCorrector(
                         cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build()
-                    )
-                )
+                        StreamConfigurationMapBuilder.newBuilder().build(),
+                    ),
+                ),
             )
             .quirks
     }

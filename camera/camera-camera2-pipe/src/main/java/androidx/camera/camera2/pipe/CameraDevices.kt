@@ -73,7 +73,7 @@ public interface CameraDevices {
      */
     public suspend fun getCameraMetadata(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId? = null,
     ): CameraMetadata?
 
     /**
@@ -82,7 +82,7 @@ public interface CameraDevices {
      */
     public fun awaitCameraMetadata(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId? = null,
     ): CameraMetadata?
 
     /**
@@ -100,7 +100,7 @@ public interface CameraDevices {
      */
     public fun disconnectAsync(
         cameraId: CameraId,
-        cameraBackendId: CameraBackendId? = null
+        cameraBackendId: CameraBackendId? = null,
     ): Deferred<Unit>
 
     /** Non blocking operation that disconnects all active Cameras. */
@@ -121,7 +121,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "findAll() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("awaitCameraIds"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public fun findAll(): List<CameraId>
 
@@ -132,7 +132,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "ids() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("getCameraIds"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public suspend fun ids(): List<CameraId>
 
@@ -144,7 +144,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "getMetadata() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("getCameraMetadata"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public suspend fun getMetadata(camera: CameraId): CameraMetadata
 
@@ -155,7 +155,7 @@ public interface CameraDevices {
     @Deprecated(
         message = "awaitMetadata() is not able to specify a specific CameraBackendId to query.",
         replaceWith = ReplaceWith("awaitCameraMetadata"),
-        level = DeprecationLevel.WARNING
+        level = DeprecationLevel.WARNING,
     )
     public fun awaitMetadata(camera: CameraId): CameraMetadata
 }
@@ -192,7 +192,7 @@ public value class CameraId(public val value: String) {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun CameraDevices.find(
     cameraBackendId: CameraBackendId? = null,
-    includePhysicalCameraMetadata: Boolean = false
+    includePhysicalCameraMetadata: Boolean = false,
 ): Flow<CameraMetadata> = flow {
     val cameraIds = this@find.getCameraIds() ?: return@flow
 

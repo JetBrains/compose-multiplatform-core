@@ -24,11 +24,14 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Adapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.concurrent.futures.await
 import androidx.core.view.children
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -37,28 +40,32 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.multiprocess.test.MultiProcessTests.Companion.timeout
 import androidx.glance.appwidget.multiprocess.test.TestWidget.Companion.setContent
 import androidx.glance.text.Text
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.multiprocess.RemoteWorkManager
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import java.io.FileInputStream
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -80,32 +87,41 @@ class MultiProcessTests {
     @Before
     fun before() {
         checkCustomProcess()
+        WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        waitForBroadcastIdle()
     }
 
     @After
     fun after() {
-        AppWidgetHost(context, 1234).deleteHost()
-        RemoteWorkManager.getInstance(context).cancelAllWork()
+        AppWidgetHost(context, 1234).apply { appWidgetIds.forEach { deleteAppWidgetId(it) } }
+        runBlocking { RemoteWorkManager.getInstance(context).cancelAllWork().await() }
         uiAutomation.dropShellPermissionIdentity()
     }
 
     private fun bindWidget(): AppWidgetHostView {
         uiAutomation.adoptShellPermissionIdentity(Manifest.permission.BIND_APPWIDGET)
-        val host = AppWidgetHost(context, 1234)
-        host.deleteHost()
-        val appWidgetId = host.allocateAppWidgetId()
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val bound =
-            appWidgetManager.bindAppWidgetIdIfAllowed(
-                appWidgetId,
-                ComponentName(context, TestWidgetReceiver::class.java)
-            )
-        assertWithMessage("Failed to bind").that(bound).isTrue()
-        val hostView =
-            host.createView(context, appWidgetId, appWidgetManager.getAppWidgetInfo(appWidgetId))
-        activityRule.scenario.onActivity { activity -> activity.setContentView(hostView) }
-        host.startListening()
-        return hostView
+        var hostView: AppWidgetHostView? = null
+        activityRule.scenario.onActivity { activity ->
+            val host = AppWidgetHost(activity, 1234)
+            val appWidgetId = host.allocateAppWidgetId()
+            val appWidgetManager = AppWidgetManager.getInstance(activity)
+            val bound =
+                appWidgetManager.bindAppWidgetIdIfAllowed(
+                    appWidgetId,
+                    ComponentName(activity, TestWidgetReceiver::class.java),
+                )
+            assertWithMessage("Failed to bind").that(bound).isTrue()
+            Log.v("MultiProcessTests", "Bound widget $appWidgetId")
+            host.startListening()
+            hostView =
+                host.createView(
+                    activity,
+                    appWidgetId,
+                    appWidgetManager.getAppWidgetInfo(appWidgetId),
+                )
+            activity.setContentView(hostView)
+        }
+        return hostView!!
     }
 
     @Test
@@ -118,6 +134,10 @@ class MultiProcessTests {
 
     @Test
     fun list() = runBlocking {
+        assumeFalse(
+            "Test fails on cuttlefish b/460513394",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         setContent { LazyColumn { items(10, { it.toLong() }) { Text("$it") } } }
 
         val list = bindWidget().waitForChildren().findByType<ListView>()
@@ -142,12 +162,19 @@ class MultiProcessTests {
                 // Click listener is registered on parent view
                 assertThat((textView.parent as View).performClick()).isTrue()
             }
-            withTimeout(10.seconds) { state.first { it == 1 } }
+            val result = withTimeoutOrNull(timeout) { state.first { it == 1 } }
+            assertWithMessage("Did not receive the state change within $timeout")
+                .that(result)
+                .isNotNull()
         }
 
     @Test
     fun runAction() =
         runBlocking<Unit> {
+            assumeFalse(
+                "Test fails on cuttlefish b/460513394",
+                Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+            )
             val state = app.actionFlow.apply { value = 0 }
             setContent {
                 Text(
@@ -161,15 +188,22 @@ class MultiProcessTests {
                 // Click listener is registered on parent view
                 assertThat((textView.parent as View).performClick()).isTrue()
             }
-            withTimeout(10.seconds) { state.first { it == 1 } }
+            val result = withTimeoutOrNull(timeout) { state.first { it == 1 } }
+            assertWithMessage("Did not receive the state change within $timeout")
+                .that(result)
+                .isNotNull()
         }
+
+    companion object {
+        val timeout = 5.minutes
+    }
 }
 
 class TestAction : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         checkCustomProcess()
         (context.applicationContext as TestApplication).actionFlow.value = 1
@@ -183,13 +217,13 @@ private inline fun <reified T : View> View.findByType(): T =
 private fun <T : View> View.findByType(clazz: KClass<T>): T? =
     when {
         clazz.isInstance(this) -> clazz.cast(this)
-        this is ViewGroup -> children.firstNotNullOf { it.findByType(clazz) }
+        this is ViewGroup -> children.firstNotNullOfOrNull { it.findByType(clazz) }
         else -> null
     }
 
 /** Waits for the AppWidgetHostView to have children and returns the unboxed host view. */
 private suspend fun AppWidgetHostView.waitForChildren(): View {
-    fun test(): Boolean = childCount == 1 && getChildAt(0).id != android.R.id.empty
+    fun test(): Boolean = findViewById<View>(androidx.glance.appwidget.R.id.rootView) != null
     if (test()) return (getChildAt(0) as ViewGroup).getChildAt(0)
 
     val channel = Channel<Unit>(Channel.CONFLATED)
@@ -199,17 +233,43 @@ private suspend fun AppWidgetHostView.waitForChildren(): View {
         }
     }
     post { viewTreeObserver.addOnDrawListener(onDraw) }
-    withTimeout(10.seconds) { channel.receive() }
-    assertTrue(childCount == 1, "Resumed but no children")
+    val result = withTimeoutOrNull(timeout) { channel.receive() }
+    assertWithMessage("Did not receive children within $timeout").that(result).isNotNull()
     post { viewTreeObserver.removeOnDrawListener(onDraw) }
     return (getChildAt(0) as ViewGroup).getChildAt(0)
 }
 
 /** Waits for the ListView to have an adapter. */
-private suspend fun ListView.waitForAdapter() =
-    withTimeout(10.seconds) {
-        while (adapter == null) {
-            delay(500.milliseconds)
+private suspend fun ListView.waitForAdapter(): Adapter {
+    val adapter =
+        withTimeoutOrNull(timeout) {
+            while (adapter == null) {
+                delay(500.milliseconds)
+            }
+            adapter!!
         }
-        adapter!!
-    }
+    assertWithMessage("Did not find list adapter within $timeout").that(adapter).isNotNull()
+    return adapter!!
+}
+
+fun waitForBroadcastIdle() {
+    // Default timeout set per observation with FTL devices in b/283484546
+    val cmd: String =
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
+            // wait for pending broadcasts until this point to be completed for UDC+
+            "am wait-for-broadcast-barrier"
+        } else {
+            // wait for broadcast queues to be idle. This is less preferred approach as it can
+            // technically take forever.
+            "am wait-for-broadcast-idle"
+        }
+    Log.v("MultiProcessTests", runShellCommand("timeout ${timeout.inWholeSeconds} $cmd"))
+}
+
+/** Run a command and retrieve the output as a string. */
+fun runShellCommand(command: String): String {
+    return InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand(command)
+        .use { FileInputStream(it.fileDescriptor).reader().readText() }
+}

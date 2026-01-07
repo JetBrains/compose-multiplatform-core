@@ -12,6 +12,22 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.appsearch:appsearch-compiler",
+        "resolvedVersion": "1.1.0-beta01"
+      },
+      "toConfiguration": "androidTestAnnotationProcessor"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.appsearch:appsearch-compiler",
+        "resolvedVersion": "1.1.0-beta01"
+      },
+      "toConfiguration": "annotationProcessor"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.concurrent:concurrent-futures",
         "resolvedVersion": "1.1.0"
       },
@@ -32,15 +48,6 @@
         "resolvedVersion": "1.7.0-alpha01"
       },
       "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "com.google.auto.service:auto-service-annotations",
-        "resolvedVersion": "1.0-rc6"
-      },
-      "fromConfiguration": "api",
-      "toConfiguration": "compileOnly"
     },
     {
       "coordinates": {
@@ -73,13 +80,6 @@
         "resolvedVersion": "4.28.2"
       },
       "fromConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "project",
-        "identifier": ":appsearch:appsearch-compiler"
-      },
-      "fromConfiguration": "androidTestAnnotationProcessor"
     }
   ]
 }

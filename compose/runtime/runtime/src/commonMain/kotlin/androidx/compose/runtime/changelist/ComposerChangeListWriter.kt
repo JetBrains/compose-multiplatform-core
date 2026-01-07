@@ -16,31 +16,31 @@
 
 package androidx.compose.runtime.changelist
 
-import androidx.compose.runtime.Anchor
-import androidx.compose.runtime.ComposerImpl
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.ControlledComposition
+import androidx.compose.runtime.GapComposer
 import androidx.compose.runtime.IntStack
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MovableContentState
 import androidx.compose.runtime.MovableContentStateReference
 import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberObserverHolder
-import androidx.compose.runtime.SlotReader
-import androidx.compose.runtime.SlotTable
 import androidx.compose.runtime.Stack
+import androidx.compose.runtime.composer.gapbuffer.Anchor
+import androidx.compose.runtime.composer.gapbuffer.SlotReader
+import androidx.compose.runtime.composer.gapbuffer.SlotTable
 import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.runtimeCheck
 
 internal class ComposerChangeListWriter(
     /**
-     * The [Composer][ComposerImpl] that is building this ChangeList. The Composer's state may be
+     * The [Composer][GapComposer] that is building this ChangeList. The Composer's state may be
      * used to determine how the ChangeList should be written to.
      */
-    private val composer: ComposerImpl,
+    private val composer: GapComposer,
     /** The ChangeList that will be written to */
-    var changeList: ChangeList
+    var changeList: ChangeList,
 ) {
     private val reader: SlotReader
         get() = composer.reader
@@ -93,7 +93,7 @@ internal class ComposerChangeListWriter(
     // If an up is recorded before the corresponding down is realized then it is simply removed
     // from the downNodes stack.
     private var pendingUps = 0
-    private var pendingDownNodes = Stack<Any?>()
+    private val pendingDownNodes = Stack<Any?>()
 
     private var removeFrom = -1
     private var moveFrom = -1
@@ -429,12 +429,13 @@ internal class ComposerChangeListWriter(
     fun releaseMovableGroupAtCurrent(
         composition: ControlledComposition,
         parentContext: CompositionContext,
-        reference: MovableContentStateReference
+        reference: MovableContentStateReference,
     ) {
         changeList.pushReleaseMovableGroupAtCurrent(composition, parentContext, reference)
     }
 
     fun endMovableContentPlacement() {
+        pushPendingUpsAndDowns()
         changeList.pushEndMovableContentPlacement()
         writersReaderDelta = 0
     }
@@ -452,6 +453,16 @@ internal class ComposerChangeListWriter(
         startedGroup = false
         startedGroups.clear()
         writersReaderDelta = 0
+
+        implicitRootStart = true
+
+        pendingUps = 0
+        pendingDownNodes.clear()
+
+        removeFrom = -1
+        moveFrom = -1
+        moveTo = -1
+        moveCount = 0
     }
 
     fun deactivateCurrentGroup() {

@@ -16,8 +16,8 @@
 
 package androidx.tracing.benchmark.driver
 
-import androidx.tracing.driver.PooledTracePacketArray
-import androidx.tracing.driver.TraceSink
+import androidx.tracing.PooledTracePacketArray
+import androidx.tracing.TraceSink
 
 /** A sink that does very little. We simply drop the trace packets without writing it to a file. */
 class NoOpSink : TraceSink() {
@@ -26,6 +26,10 @@ class NoOpSink : TraceSink() {
     }
 
     override fun flush() {
+        // Does nothing
+    }
+
+    override fun onDroppedTraceEvent() {
         // Does nothing
     }
 

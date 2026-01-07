@@ -16,14 +16,13 @@
 
 
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="32dp"
-    android:height="40dp"
-    android:viewportHeight="40"
-    android:viewportWidth="32">
+    android:width="36dp"
+    android:height="48dp"
+    android:viewportHeight="48"
+    android:viewportWidth="36">
 
-    <!-- Clipped Oval Path (32 dp width instead of 40 dp) -->
+    <!-- Clipped Circle Path (36 dp width instead of 48 dp) -->
     <path
         android:fillColor="?attr/colorSurfaceContainerHigh"
-        android:pathData="M40,20 A20,20 0 1,1 8,4 A20,20 0 0,1 40,20 Z" />
+        android:pathData="M24,24 m -24,0 a 24,24 0 1,0 48,0 a 24,24 0 1,0 -48,0" />
 </vector>
-

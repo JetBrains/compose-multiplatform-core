@@ -127,7 +127,7 @@ suspend fun InsertExerciseRoute(healthConnectClient: HealthConnectClient) {
                         longitude = startLongitude + longitudeDeltaPerSecond * timeSeconds,
                         horizontalAccuracy = Length.meters(2.0),
                         verticalAccuracy = Length.meters(2.0),
-                        altitude = Length.meters(19.0)
+                        altitude = Length.meters(19.0),
                     )
                 }
             )
@@ -145,7 +145,7 @@ suspend fun InsertExerciseRoute(healthConnectClient: HealthConnectClient) {
             exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
             title = "Morning Run",
             notes = "A nice run in a park",
-            exerciseRoute = exerciseRoute
+            exerciseRoute = exerciseRoute,
         )
 
     healthConnectClient.insertRecords(listOf(exerciseSessionRecord))

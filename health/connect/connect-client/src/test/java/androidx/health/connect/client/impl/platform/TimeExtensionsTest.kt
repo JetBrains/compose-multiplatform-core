@@ -97,7 +97,7 @@ class TimeExtensionsTest {
         timeRange =
             LocalTimeRange(
                 Instant.ofEpochMilli(100).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC),
-                Instant.ofEpochMilli(200).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC)
+                Instant.ofEpochMilli(200).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC),
             )
         assertThat(Instant.ofEpochMilli(99).isWithin(timeRange, ZoneOffset.UTC)).isFalse()
         assertThat(Instant.ofEpochMilli(200).isWithin(timeRange, ZoneOffset.UTC)).isFalse()
@@ -141,7 +141,7 @@ class TimeExtensionsTest {
         timeRange =
             LocalTimeRange(
                 Instant.ofEpochMilli(100).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC),
-                Instant.ofEpochMilli(200).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC)
+                Instant.ofEpochMilli(200).toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC),
             )
         assertThat(Instant.ofEpochMilli(100).isWithin(timeRange, ZoneOffset.UTC)).isTrue()
         assertThat(Instant.ofEpochMilli(101).isWithin(timeRange, ZoneOffset.UTC)).isTrue()

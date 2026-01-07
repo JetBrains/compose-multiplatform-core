@@ -16,23 +16,16 @@
 
 package androidx.compose.runtime
 
-import androidx.compose.runtime.mock.compositionTest
-import androidx.compose.runtime.mock.expectNoChanges
+import androidx.collection.intListOf
+import androidx.collection.mutableIntListOf
 import androidx.compose.runtime.snapshots.Snapshot
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 
@@ -133,65 +126,122 @@ class SnapshotFlowTests {
         collector2.cancel()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun collectAsState_schedulesOnLocalContext() = compositionTest {
-        val stateFlow = MutableStateFlow(1)
-        val flow =
-            stateFlow.map { value ->
-                val dispatcher = currentCoroutineContext()[CoroutineDispatcher.Key]
-                "$value on ${if (dispatcher is TestDispatcher) "Test" else "$dispatcher"}"
-            }
+    fun sharingOneSnapshotFlowManager_watchingSameStateObject() = runTest {
+        val state = mutableStateOf(false)
 
-        var lastOuterSeen: String? = null
-        var lastInnerSeen: String? = null
-        var lastNestedSeen: String? = null
-        var lastExplicitSeen: String? = null
+        val manager = SnapshotFlowManager()
 
-        compose {
-            lastOuterSeen = flow.collectAsState("").value
-            CompositionLocalProvider(
-                LocalCollectAsStateCoroutineContext provides rememberFakeDispatcher("Outer")
-            ) {
-                lastInnerSeen = flow.collectAsState("").value
-                CompositionLocalProvider(
-                    LocalCollectAsStateCoroutineContext provides rememberFakeDispatcher("Inner")
-                ) {
-                    lastNestedSeen = flow.collectAsState("").value
-                    lastExplicitSeen =
-                        flow.collectAsState("", rememberFakeDispatcher("Explicit")).value
+        val result1 = mutableListOf<Boolean>()
+        val collector1 =
+            snapshotFlow(manager) { state.value }.onEach { result1.add(it) }.launchIn(this)
+
+        val collector2Done = Latch().also { it.closeLatch() }
+        val result2 = mutableListOf<Boolean>()
+        val collector2 =
+            snapshotFlow(manager) { state.value }
+                .onEach {
+                    result2.add(it)
+                    if (result2.size == 2) {
+                        collector2Done.openLatch()
+                    }
                 }
-            }
-        }
+                .launchIn(this + Dispatchers.Unconfined)
 
-        advanceTimeBy(1)
-        expectNoChanges()
+        // This test uses the `runTest` single-threaded dispatcher, which means that changes aren't
+        // flushed to observers until we `yield()` intentionally.
+        yield()
 
-        assertEquals("1 on Test", lastOuterSeen)
-        assertEquals("1 on Outer", lastInnerSeen)
-        assertEquals("1 on Inner", lastNestedSeen)
-        assertEquals("1 on Explicit", lastExplicitSeen)
+        state.value = true
 
-        stateFlow.value++
-        advanceTimeBy(1)
-        expectNoChanges()
+        Snapshot.sendApplyNotifications()
+        yield()
 
-        assertEquals("2 on Test", lastOuterSeen)
-        assertEquals("2 on Outer", lastInnerSeen)
-        assertEquals("2 on Inner", lastNestedSeen)
-        assertEquals("2 on Explicit", lastExplicitSeen)
+        collector2Done.await()
+        assertEquals(listOf(false, true), result1)
+        assertEquals(listOf(false, true), result2)
+
+        collector1.cancel()
+        collector2.cancel()
     }
 
-    @Composable
-    private fun rememberFakeDispatcher(name: String) = remember { NamedUnconfinedDispatcher(name) }
+    @Test
+    fun sharingOneSnapshotFlowManager_watchingDifferentStateObjects() = runTest {
+        var state1 by mutableIntStateOf(0)
+        var state2 by mutableIntStateOf(0)
 
-    class NamedUnconfinedDispatcher(val name: String) : CoroutineDispatcher() {
-        override fun isDispatchNeeded(context: CoroutineContext) = false
+        val manager = SnapshotFlowManager()
 
-        override fun dispatch(context: CoroutineContext, block: Runnable) {
-            block.run()
-        }
+        val result1 = mutableIntListOf()
+        val collector1 = snapshotFlow(manager) { state1 }.onEach { result1.add(it) }.launchIn(this)
 
-        override fun toString() = name
+        val collector2Done = Latch().also { it.closeLatch() }
+        val collector2 =
+            snapshotFlow(manager) { state2 }
+                .onEach {
+                    if (it == 2) {
+                        collector2Done.openLatch()
+                    }
+                }
+                .launchIn(this + Dispatchers.Unconfined)
+
+        // This test uses the `runTest` single-threaded dispatcher, which means that changes aren't
+        // flushed to observers until we `yield()` intentionally.
+        yield()
+
+        state1++
+        Snapshot.sendApplyNotifications()
+        yield()
+
+        state2++
+        Snapshot.sendApplyNotifications()
+        yield()
+
+        state1++
+        state2++
+        Snapshot.sendApplyNotifications()
+        yield()
+
+        collector2Done.await()
+        assertEquals(intListOf(0, 1, 2), result1)
+
+        collector1.cancel()
+        collector2.cancel()
+    }
+
+    @Test
+    fun twoSnapshotFlowsWithDistinctManagers() = runTest {
+        val state = mutableStateOf(false)
+
+        val result1 = mutableListOf<Boolean>()
+        val collector1 = snapshotFlow { state.value }.onEach { result1.add(it) }.launchIn(this)
+
+        val collector2Done = Latch().also { it.closeLatch() }
+        val result2 = mutableListOf<Boolean>()
+        val collector2 =
+            snapshotFlow { state.value }
+                .onEach {
+                    result2.add(it)
+                    if (result2.size == 2) {
+                        collector2Done.openLatch()
+                    }
+                }
+                .launchIn(this + Dispatchers.Unconfined)
+
+        // This test uses the `runTest` single-threaded dispatcher, which means that changes aren't
+        // flushed to observers until we `yield()` intentionally.
+        yield()
+
+        state.value = true
+
+        Snapshot.sendApplyNotifications()
+        yield()
+
+        collector2Done.await()
+        assertEquals(listOf(false, true), result1)
+        assertEquals(listOf(false, true), result2)
+
+        collector1.cancel()
+        collector2.cancel()
     }
 }

@@ -20,6 +20,7 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
+/** Public factory for creating DataStore instances. */
 public expect object DataStoreFactory {
 
     public fun <T> create(

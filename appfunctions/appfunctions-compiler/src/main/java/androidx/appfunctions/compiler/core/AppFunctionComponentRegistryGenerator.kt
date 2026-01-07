@@ -60,8 +60,10 @@ class AppFunctionComponentRegistryGenerator(private val codeGenerator: CodeGener
         category: String,
         components: List<AppFunctionComponent>,
     ) {
+        // Ensure the generated registry is stable
+        val sortedComponents = components.sortedBy { it.qualifiedName }
         val className = getRegistryClassName(moduleName, category)
-        val annotationBuilder =
+        var annotationBuilder =
             AnnotationSpec.builder(AppFunctionComponentRegistryAnnotation.CLASS_NAME)
                 .addMember(
                     "${AppFunctionComponentRegistryAnnotation.PROPERTY_COMPONENT_CATEGORY} = %S",
@@ -73,16 +75,31 @@ class AppFunctionComponentRegistryGenerator(private val codeGenerator: CodeGener
                             "${AppFunctionComponentRegistryAnnotation.PROPERTY_COMPONENT_NAMES} = ["
                         )
                         indent()
-                        // Ensure the generated registry is stable
-                        val sortedQualifiedNames =
-                            components.map(AppFunctionComponent::qualifiedName).sorted()
-                        for (componentName in sortedQualifiedNames) {
-                            addStatement("%S,", componentName)
+                        for (component in sortedComponents) {
+                            addStatement("%S,", component.qualifiedName)
                         }
                         unindent()
                         add("]")
                     }
                 )
+        if (
+            category == AppFunctionComponentRegistryAnnotation.Category.FUNCTION ||
+                category == AppFunctionComponentRegistryAnnotation.Category.SERIALIZABLE
+        ) {
+            annotationBuilder.addMember(
+                buildCodeBlock {
+                    addStatement(
+                        "${AppFunctionComponentRegistryAnnotation.PROPERTY_COMPONENT_DOCSTRINGS} = ["
+                    )
+                    indent()
+                    for (component in sortedComponents) {
+                        addStatement("%S,", component.docString)
+                    }
+                    unindent()
+                    add("]")
+                }
+            )
+        }
 
         val registryClassBuilder = TypeSpec.classBuilder(className)
         registryClassBuilder.addAnnotation(annotationBuilder.build())
@@ -116,5 +133,7 @@ class AppFunctionComponentRegistryGenerator(private val codeGenerator: CodeGener
         val qualifiedName: String,
         /** The source files used to generate the component. */
         val sourceFiles: Set<KSFile> = emptySet(),
+        /** DocString of the component. */
+        val docString: String = "",
     )
 }

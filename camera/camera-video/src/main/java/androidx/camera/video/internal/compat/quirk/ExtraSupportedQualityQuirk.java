@@ -35,7 +35,6 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.Quirk;
-import androidx.camera.video.VideoSpec;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
 
 import org.jspecify.annotations.NonNull;
@@ -112,7 +111,7 @@ public class ExtraSupportedQualityQuirk implements Quirk {
         Map<Integer, EncoderProfilesProxy> extraEncoderProfilesMap = new HashMap<>();
         extraEncoderProfilesMap.put(QUALITY_480P, profiles480p);
         // Update QUALITY_HIGH if necessary.
-        Size sizeHigh = new Size(videoProfileHigh.getWidth(), videoProfileHigh.getHeight());
+        Size sizeHigh = videoProfileHigh.getResolution();
         if (getArea(RESOLUTION_480P) > getArea(sizeHigh)) {
             extraEncoderProfilesMap.put(QUALITY_HIGH, profiles480p);
         }
@@ -124,6 +123,6 @@ public class ExtraSupportedQualityQuirk implements Quirk {
             VideoEncoderInfo.@NonNull Finder videoEncoderInfoFinder) {
         VideoEncoderInfo encoderInfo = videoEncoderInfoFinder.find(videoProfile.getMediaType());
         return encoderInfo != null ? encoderInfo.getSupportedBitrateRange()
-                : VideoSpec.BITRATE_RANGE_AUTO;
+                : Range.create(0, Integer.MAX_VALUE);
     }
 }

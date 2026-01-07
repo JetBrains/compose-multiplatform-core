@@ -17,11 +17,12 @@
 package androidx.compose.runtime
 
 @MustBeDocumented
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER
+    AnnotationTarget.PROPERTY_SETTER,
 )
-expect annotation class TestOnly()
+@Suppress("KmpVisibilityMismatch") // internal in android
+public expect annotation class TestOnly()

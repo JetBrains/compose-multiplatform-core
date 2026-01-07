@@ -45,6 +45,7 @@ fun mouseInputAnimateMoveTo() {
         animateMoveTo(bottomRight)
         // Note that an actual user wouldn't be able to instantly
         // move from the bottom right to the top right
+        advanceEventTime()
         moveTo(topRight)
         animateMoveTo(bottomLeft)
     }
@@ -60,7 +61,7 @@ fun mouseInputAnimateMoveAlong() {
                 val angle = 2 * PI * it / 1000
                 center + Offset(r * cos(angle).toFloat(), r * sin(angle).toFloat())
             },
-            durationMillis = 1000L
+            durationMillis = 1000L,
         )
     }
 }

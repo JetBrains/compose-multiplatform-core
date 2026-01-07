@@ -20,20 +20,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 
 /**
- * Defines an area of the UI component where gestures that start within this area will be consumed
- * by the component itself, preventing other components or the platform from consuming the gesture.
- *
- * This should be used to define areas where the component should explicitly handle gestures,
- * overriding any potential platform or other component behavior.
+ * [GestureInclusion] provides fine-grained control over which gestures a component should handle,
+ * given the start offset and the layout coordinates of the component.
  */
 public interface GestureInclusion {
     /**
-     * Determines whether a gesture starting at the given offset should be consumed by this
-     * component.
+     * Determines whether a gesture starting at the given offset will be handled by this component.
      *
      * @param offset The offset of the gesture within the component's layout.
      * @param layoutCoordinates The layout coordinates of the component.
-     * @return `true` if the gesture should be consumed by this component, `false` otherwise.
+     * @return `true` if the gesture should be ignored by this component, `false` otherwise.
      */
-    public fun allowGesture(offset: Offset, layoutCoordinates: LayoutCoordinates): Boolean
+    public fun ignoreGestureStart(offset: Offset, layoutCoordinates: LayoutCoordinates): Boolean
 }

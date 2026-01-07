@@ -28,98 +28,70 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
 
     public actual abstract fun parseValue(value: String): T
 
-    public actual open fun parseValue(value: String, previousValue: T): T {
-        implementedInJetBrainsFork()
-    }
+    public actual open fun parseValue(value: String, previousValue: T): T = parseValue(value)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public actual fun parseAndPut(bundle: SavedState, key: String, value: String): T {
-        implementedInJetBrainsFork()
-    }
+    public actual fun parseAndPut(bundle: SavedState, key: String, value: String): T =
+        navTypeParseAndPut(bundle, key, value)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun parseAndPut(
         bundle: SavedState,
         key: String,
         value: String?,
-        previousValue: T
-    ): T {
-        implementedInJetBrainsFork()
-    }
+        previousValue: T,
+    ): T = navTypeParseAndPut(bundle, key, value, previousValue)
 
-    public actual open fun serializeAsValue(value: T): String {
-        implementedInJetBrainsFork()
-    }
+    public actual open fun serializeAsValue(value: T): String = value.toString()
 
-    public actual open val name: String
-        get() = implementedInJetBrainsFork()
+    public actual open val name: String = "nav_type"
 
-    public actual open fun valueEquals(value: T, other: T): Boolean {
-        implementedInJetBrainsFork()
-    }
+    public actual open fun valueEquals(value: T, other: T): Boolean = value == other
 
     public actual companion object {
         @JvmStatic
         @Suppress("NON_FINAL_MEMBER_IN_OBJECT")
-        public actual open fun fromArgType(type: String?, packageName: String?): NavType<*> {
-            implementedInJetBrainsFork()
-        }
+        public actual open fun fromArgType(type: String?, packageName: String?): NavType<*> =
+            navTypeFromArgType(type)
+                ?: if (!type.isNullOrEmpty()) {
+                    throw IllegalArgumentException(
+                        "Object of type $type is not supported for navigation arguments."
+                    )
+                } else {
+                    StringType
+                }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        public actual fun inferFromValue(value: String): NavType<Any> {
-            implementedInJetBrainsFork()
-        }
+        public actual fun inferFromValue(value: String): NavType<Any> = navTypeInferFromValue(value)
 
+        @Suppress("UNCHECKED_CAST") // needed for cast to NavType<Any>
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        public actual fun inferFromValueType(value: Any?): NavType<Any> {
-            implementedInJetBrainsFork()
-        }
+        public actual fun inferFromValueType(value: Any?): NavType<Any> =
+            navTypeInferFromValueType(value)
+                ?: if (value is Array<*>) {
+                    StringArrayType as NavType<Any>
+                } else {
+                    throw IllegalArgumentException(
+                        "$value is not supported for navigation arguments."
+                    )
+                }
 
-        public actual val IntType: NavType<Int>
-            get() = implementedInJetBrainsFork()
-
-        public actual val IntArrayType: NavType<IntArray?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val IntListType: NavType<List<Int>?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val LongType: NavType<Long>
-            get() = implementedInJetBrainsFork()
-
-        public actual val LongArrayType: NavType<LongArray?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val LongListType: NavType<List<Long>?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val FloatType: NavType<Float>
-            get() = implementedInJetBrainsFork()
-
-        public actual val FloatArrayType: NavType<FloatArray?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val FloatListType: NavType<List<Float>?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val BoolType: NavType<Boolean>
-            get() = implementedInJetBrainsFork()
-
-        public actual val BoolArrayType: NavType<BooleanArray?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val BoolListType: NavType<List<Boolean>?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val StringType: NavType<String?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val StringArrayType: NavType<Array<String>?>
-            get() = implementedInJetBrainsFork()
-
-        public actual val StringListType: NavType<List<String>?>
-            get() = implementedInJetBrainsFork()
+        public actual val IntType: NavType<Int> = IntNavType()
+        public actual val IntArrayType: NavType<IntArray?> = IntArrayNavType()
+        public actual val IntListType: NavType<List<Int>?> = IntListNavType()
+        public actual val LongType: NavType<Long> = LongNavType()
+        public actual val LongArrayType: NavType<LongArray?> = LongArrayNavType()
+        public actual val LongListType: NavType<List<Long>?> = LongListNavType()
+        public actual val FloatType: NavType<Float> = FloatNavType()
+        public actual val FloatArrayType: NavType<FloatArray?> = FloatArrayNavType()
+        public actual val FloatListType: NavType<List<Float>?> = FloatListNavType()
+        public actual val BoolType: NavType<Boolean> = BoolNavType()
+        public actual val BoolArrayType: NavType<BooleanArray?> = BoolArrayNavType()
+        public actual val BoolListType: NavType<List<Boolean>?> = BoolListNavType()
+        public actual val StringType: NavType<String?> = StringNavType()
+        public actual val StringArrayType: NavType<Array<String>?> = StringArrayNavType()
+        public actual val StringListType: NavType<List<String>?> = StringListNavType()
     }
 }

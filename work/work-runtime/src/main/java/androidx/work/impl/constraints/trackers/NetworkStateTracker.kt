@@ -32,12 +32,8 @@ import androidx.annotation.RestrictTo
 import androidx.core.net.ConnectivityManagerCompat
 import androidx.work.Logger
 import androidx.work.impl.constraints.NetworkState
-import androidx.work.impl.utils.getActiveNetworkCompat
-import androidx.work.impl.utils.getNetworkCapabilitiesCompat
-import androidx.work.impl.utils.hasCapabilityCompat
 import androidx.work.impl.utils.registerDefaultNetworkCallbackCompat
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
-import androidx.work.impl.utils.unregisterNetworkCallbackCompat
 
 /**
  * A [ConstraintTracker] for monitoring network state.
@@ -52,9 +48,9 @@ import androidx.work.impl.utils.unregisterNetworkCallbackCompat
  * https://android.googlesource.com/platform/frameworks/base/+/oreo-release/services/core/java/com/android/server/job/controllers/ConnectivityController.java}
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun NetworkStateTracker(
+public fun NetworkStateTracker(
     context: Context,
-    taskExecutor: TaskExecutor
+    taskExecutor: TaskExecutor,
 ): ConstraintTracker<NetworkState> {
     // Based on requiring ConnectivityManager#registerDefaultNetworkCallback - added in API 24.
     return if (Build.VERSION.SDK_INT >= 24) {
@@ -68,41 +64,60 @@ private val TAG = Logger.tagWithPrefix("NetworkStateTracker")
 
 internal val ConnectivityManager.isActiveNetworkValidated: Boolean
     get() =
-        if (Build.VERSION.SDK_INT < 23) {
-            false // NET_CAPABILITY_VALIDATED not available until API 23. Used on API 26+.
-        } else
-            try {
-                val network = getActiveNetworkCompat()
-                val capabilities = getNetworkCapabilitiesCompat(network)
-                (capabilities?.hasCapabilityCompat(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
-                    ?: false
-            } catch (exception: SecurityException) {
-                // b/163342798
-                Logger.get().error(TAG, "Unable to validate active network", exception)
-                false
-            }
+        try {
+            val network = activeNetwork
+            val capabilities = getNetworkCapabilities(network)
+            (capabilities?.hasCapability(NET_CAPABILITY_VALIDATED)) ?: false
+        } catch (exception: SecurityException) {
+            // b/163342798
+            Logger.get().error(TAG, "Unable to validate active network", exception)
+            false
+        }
 
+/**
+ * Returns the current [NetworkState].
+ *
+ * @param connectivityManager The [ConnectivityManager]
+ * @param isBlocked The cached blocked status from the [NetworkCallback.onBlockedStatusChanged].
+ */
 @Suppress("DEPRECATION")
-internal val ConnectivityManager.activeNetworkState: NetworkState
-    get() {
-        // Use getActiveNetworkInfo() instead of getNetworkInfo(network) because it can detect VPNs.
-        val info = activeNetworkInfo
+internal fun getActiveNetworkState(
+    connectivityManager: ConnectivityManager,
+    isBlocked: Boolean,
+): NetworkState {
+    try {
+        // Use getActiveNetworkInfo() instead of getNetworkInfo(network) because it can detect
+        // VPNs.
+        val info = connectivityManager.activeNetworkInfo
         val isConnected = info != null && info.isConnected
-        val isValidated = isActiveNetworkValidated
-        val isMetered = ConnectivityManagerCompat.isActiveNetworkMetered(this)
+        val isValidated = connectivityManager.isActiveNetworkValidated
+        val isMetered = ConnectivityManagerCompat.isActiveNetworkMetered(connectivityManager)
         val isNotRoaming = info != null && !info.isRoaming
-        return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
-    } // b/163342798
-
-@get:RequiresApi(28)
-internal val NetworkCapabilities.activeNetworkState: NetworkState
-    get() {
-        val isConnected = hasCapability(NET_CAPABILITY_INTERNET)
-        val isValidated = hasCapability(NET_CAPABILITY_VALIDATED)
-        val isMetered = !hasCapability(NET_CAPABILITY_NOT_METERED) // API 28 only
-        val isNotRoaming = hasCapability(NET_CAPABILITY_NOT_ROAMING) // API 28 only
-        return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
+        return NetworkState(isConnected, isValidated, isMetered, isNotRoaming, isBlocked)
+    } catch (exception: SecurityException) {
+        // b/406629536 and b/163342798
+        Logger.get().error(TAG, "Unable to get active network state", exception)
+        return NetworkState(
+            isConnected = false,
+            isValidated = false,
+            isMetered = false,
+            isNotRoaming = true,
+            isBlocked = isBlocked,
+        )
     }
+}
+
+@RequiresApi(28)
+internal fun getActiveNetworkState(
+    capabilities: NetworkCapabilities,
+    isBlocked: Boolean,
+): NetworkState {
+    val isConnected = capabilities.hasCapability(NET_CAPABILITY_INTERNET)
+    val isValidated = capabilities.hasCapability(NET_CAPABILITY_VALIDATED)
+    val isMetered = !capabilities.hasCapability(NET_CAPABILITY_NOT_METERED) // API 28 only
+    val isNotRoaming = capabilities.hasCapability(NET_CAPABILITY_NOT_ROAMING) // API 28 only
+    return NetworkState(isConnected, isValidated, isMetered, isNotRoaming, isBlocked)
+}
 
 internal class NetworkStateTrackerPre24(context: Context, taskExecutor: TaskExecutor) :
     BroadcastReceiverConstraintTracker<NetworkState>(context, taskExecutor) {
@@ -114,7 +129,7 @@ internal class NetworkStateTrackerPre24(context: Context, taskExecutor: TaskExec
         @Suppress("DEPRECATION")
         if (intent.action == ConnectivityManager.CONNECTIVITY_ACTION) {
             Logger.get().debug(TAG, "Network broadcast received")
-            state = connectivityManager.activeNetworkState
+            state = getActiveNetworkState(connectivityManager, /* isBlocked= */ false)
         }
     }
 
@@ -122,7 +137,7 @@ internal class NetworkStateTrackerPre24(context: Context, taskExecutor: TaskExec
     override val intentFilter: IntentFilter
         get() = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
 
-    override fun readSystemState(): NetworkState = connectivityManager.activeNetworkState
+    override fun readSystemState(): NetworkState = getActiveNetworkState(connectivityManager, false)
 }
 
 @RequiresApi(24)
@@ -132,13 +147,26 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
     private val connectivityManager: ConnectivityManager =
         appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    override fun readSystemState(): NetworkState = connectivityManager.activeNetworkState
+    private val lock = Any()
+
+    @Volatile private var isBlocked: Boolean = false
+
+    override fun readSystemState(): NetworkState {
+        if (Build.VERSION.SDK_INT >= 28) {
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+            if (capabilities != null) {
+                return getActiveNetworkState(capabilities, isBlocked)
+            }
+        }
+        return getActiveNetworkState(connectivityManager, isBlocked)
+    }
 
     private val networkCallback =
         object : NetworkCallback() {
             override fun onCapabilitiesChanged(
                 network: Network,
-                capabilities: NetworkCapabilities
+                capabilities: NetworkCapabilities,
             ) {
                 // The Network parameter is unreliable when a VPN app is running - use active
                 // network.
@@ -147,15 +175,37 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
                     if (Build.VERSION.SDK_INT >= 28) {
                         // Get the active network state from the capabilities itself.
                         // b/323479909
-                        capabilities.activeNetworkState
+                        getActiveNetworkState(capabilities, isBlocked)
                     } else {
-                        connectivityManager.activeNetworkState
+                        // Fallback for API 24-27 where getActiveNetworkState(capabilities) isn't
+                        // used
+                        getActiveNetworkState(connectivityManager, isBlocked)
                     }
             }
 
             override fun onLost(network: Network) {
                 Logger.get().debug(TAG, "Network connection lost")
-                state = connectivityManager.activeNetworkState
+                // Return a disconnected state without re-querying ConnectivityManager
+                state =
+                    NetworkState(
+                        isConnected = false,
+                        isValidated = false,
+                        isMetered = false,
+                        isNotRoaming = false,
+                        isBlocked = false,
+                    )
+            }
+
+            override fun onBlockedStatusChanged(network: Network, blocked: Boolean) {
+                if (network == connectivityManager.activeNetwork) {
+                    Logger.get().debug(TAG, "Network blocked status changed: $blocked")
+                    val currentState = state
+                    synchronized(lock) {
+                        if (isBlocked == blocked) return
+                        isBlocked = blocked
+                    }
+                    state = currentState.copy(isBlocked = blocked)
+                }
             }
         }
 
@@ -177,7 +227,7 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
     override fun stopTracking() {
         try {
             Logger.get().debug(TAG, "Unregistering network callback")
-            connectivityManager.unregisterNetworkCallbackCompat(networkCallback)
+            connectivityManager.unregisterNetworkCallback(networkCallback)
         } catch (e: IllegalArgumentException) {
             // Catching the exceptions since and moving on - this tracker is only used for
             // GreedyScheduler and there is nothing to be done about device-specific bugs.

@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.os.Looper
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpAutoFlashAEModeDisabler
@@ -58,7 +57,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FlashControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -70,11 +69,7 @@ class FlashControlTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(
-            cameraScope,
-            executor,
-            dispatcher,
-        )
+        UseCaseThreads(cameraScope, executor, dispatcher)
     }
     private val fakeRequestControl = FakeUseCaseCameraRequestControl()
     private lateinit var state3AControl: State3AControl
@@ -115,10 +110,7 @@ class FlashControlTest {
         val cameraProperties = FakeCameraProperties(metadata)
 
         state3AControl =
-            State3AControl(
-                    cameraProperties,
-                    NoOpAutoFlashAEModeDisabler,
-                )
+            State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler, fakeUseCaseThreads)
                 .apply { requestControl = fakeRequestControl }
 
         torchControl =
@@ -150,14 +142,10 @@ class FlashControlTest {
         val flashControl =
             FlashControl(
                 fakeCameraProperties,
-                State3AControl(
-                        fakeCameraProperties,
-                        NoOpAutoFlashAEModeDisabler,
-                    )
-                    .apply { requestControl = fakeRequestControl },
+                state3AControl,
                 fakeUseCaseThreads,
                 TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads),
-                NotUseFlashModeTorchFor3aUpdate
+                NotUseFlashModeTorchFor3aUpdate,
             )
 
         assertThrows<CameraControl.OperationCanceledException> {

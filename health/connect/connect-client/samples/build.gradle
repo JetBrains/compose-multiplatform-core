@@ -26,11 +26,9 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":health:connect:connect-client"))
@@ -50,5 +48,5 @@ android {
     defaultConfig {
         minSdk = 26
     }
-    compileSdk = 35
+    compileSdk = 36
 }

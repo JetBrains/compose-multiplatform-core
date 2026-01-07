@@ -84,7 +84,7 @@ class PageObjectPdfFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
 
@@ -174,7 +174,7 @@ class PageObjectPdfFragment : Fragment() {
                 Bitmap.createBitmap(
                     sourcePage.getWidth(),
                     sourcePage.getHeight(),
-                    Bitmap.Config.ARGB_8888
+                    Bitmap.Config.ARGB_8888,
                 )
 
             sourcePage.render(bitmap)
@@ -194,7 +194,7 @@ class PageObjectPdfFragment : Fragment() {
             val outputFile =
                 File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
-                    mFileName + EDIT_PDF
+                    mFileName + EDIT_PDF,
                 )
 
             // Write the PDF to the file

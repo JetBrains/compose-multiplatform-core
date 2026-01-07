@@ -31,30 +31,42 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.ExpandedDockedSearchBar
+import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.ExpandedDockedSearchBarWithGap
+import androidx.compose.material3.ExpandedFullScreenContainedSearchBar
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SearchBarState
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopSearchBar
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberSearchBarState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Preview
@@ -64,39 +76,23 @@ fun SimpleSearchBarSample() {
     val searchBarState = rememberSearchBarState()
     val textFieldState = rememberTextFieldState()
     val scope = rememberCoroutineScope()
-
     val inputField =
         @Composable {
             SearchBarDefaults.InputField(
-                modifier = Modifier,
-                searchBarState = searchBarState,
                 textFieldState = textFieldState,
+                searchBarState = searchBarState,
                 onSearch = { scope.launch { searchBarState.animateToCollapsed() } },
-                placeholder = { Text("Search...") },
-                leadingIcon = {
-                    if (searchBarState.currentValue == SearchBarValue.Expanded) {
-                        IconButton(
-                            onClick = { scope.launch { searchBarState.animateToCollapsed() } }
-                        ) {
-                            Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
+                placeholder = {
+                    Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search")
                 },
-                trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+                leadingIcon = { SampleLeadingIcon(searchBarState, scope) },
+                trailingIcon = { SampleTrailingIcon() },
             )
         }
 
-    SearchBar(
-        state = searchBarState,
-        inputField = inputField,
-    )
-    ExpandedFullScreenSearchBar(
-        state = searchBarState,
-        inputField = inputField,
-    ) {
-        SearchResults(
+    SearchBar(state = searchBarState, inputField = inputField)
+    ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
+        SampleSearchResults(
             onResultClick = { result ->
                 textFieldState.setTextAndPlaceCursorAtEnd(result)
                 scope.launch { searchBarState.animateToCollapsed() }
@@ -105,6 +101,7 @@ fun SimpleSearchBarSample() {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -113,55 +110,51 @@ fun FullScreenSearchBarScaffoldSample() {
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
-
+    val appBarWithSearchColors =
+        SearchBarDefaults.appBarWithSearchColors(
+            searchBarColors = SearchBarDefaults.containedColors(state = searchBarState)
+        )
     val inputField =
         @Composable {
             SearchBarDefaults.InputField(
-                modifier = Modifier,
-                searchBarState = searchBarState,
                 textFieldState = textFieldState,
+                searchBarState = searchBarState,
+                colors = appBarWithSearchColors.searchBarColors.inputFieldColors,
                 onSearch = { scope.launch { searchBarState.animateToCollapsed() } },
-                placeholder = { Text("Search...") },
-                leadingIcon = {
-                    if (searchBarState.currentValue == SearchBarValue.Expanded) {
-                        IconButton(
-                            onClick = { scope.launch { searchBarState.animateToCollapsed() } }
-                        ) {
-                            Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
+                placeholder = {
+                    Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search")
                 },
-                trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+                leadingIcon = { SampleLeadingIcon(searchBarState, scope) },
+                trailingIcon = { SampleTrailingIcon() },
             )
         }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopSearchBar(
+            AppBarWithSearch(
                 scrollBehavior = scrollBehavior,
                 state = searchBarState,
+                colors = appBarWithSearchColors,
                 inputField = inputField,
+                navigationIcon = { SampleNavigationIcon() },
+                actions = { SampleActions() },
             )
-            ExpandedFullScreenSearchBar(
+            ExpandedFullScreenContainedSearchBar(
                 state = searchBarState,
                 inputField = inputField,
+                colors = appBarWithSearchColors.searchBarColors,
             ) {
-                SearchResults(
+                SampleSearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
                         scope.launch { searchBarState.animateToCollapsed() }
                     }
                 )
             }
-        }
+        },
     ) { padding ->
-        LazyColumn(
-            contentPadding = padding,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        LazyColumn(contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val list = List(100) { "Text $it" }
             items(count = list.size) {
                 Text(
@@ -173,6 +166,7 @@ fun FullScreenSearchBarScaffoldSample() {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -181,55 +175,44 @@ fun DockedSearchBarScaffoldSample() {
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
-
+    val appBarWithSearchColors = SearchBarDefaults.appBarWithSearchColors()
     val inputField =
         @Composable {
             SearchBarDefaults.InputField(
-                modifier = Modifier,
-                searchBarState = searchBarState,
                 textFieldState = textFieldState,
+                searchBarState = searchBarState,
+                colors = appBarWithSearchColors.searchBarColors.inputFieldColors,
                 onSearch = { scope.launch { searchBarState.animateToCollapsed() } },
-                placeholder = { Text("Search...") },
-                leadingIcon = {
-                    if (searchBarState.currentValue == SearchBarValue.Expanded) {
-                        IconButton(
-                            onClick = { scope.launch { searchBarState.animateToCollapsed() } }
-                        ) {
-                            Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
+                placeholder = {
+                    Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search")
                 },
-                trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+                leadingIcon = { SampleLeadingIcon(searchBarState, scope) },
+                trailingIcon = { SampleTrailingIcon() },
             )
         }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopSearchBar(
+            AppBarWithSearch(
                 scrollBehavior = scrollBehavior,
                 state = searchBarState,
+                colors = appBarWithSearchColors,
                 inputField = inputField,
+                navigationIcon = { SampleNavigationIcon() },
+                actions = { SampleActions() },
             )
-            ExpandedDockedSearchBar(
-                state = searchBarState,
-                inputField = inputField,
-            ) {
-                SearchResults(
+            ExpandedDockedSearchBarWithGap(state = searchBarState, inputField = inputField) {
+                SampleSearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
                         scope.launch { searchBarState.animateToCollapsed() }
                     }
                 )
             }
-        }
+        },
     ) { padding ->
-        LazyColumn(
-            contentPadding = padding,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        LazyColumn(contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val list = List(100) { "Text $it" }
             items(count = list.size) {
                 Text(
@@ -242,10 +225,7 @@ fun DockedSearchBarScaffoldSample() {
 }
 
 @Composable
-private fun SearchResults(
-    onResultClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun SampleSearchResults(onResultClick: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState())) {
         repeat(10) { idx ->
             val resultText = "Suggestion $idx"
@@ -257,8 +237,64 @@ private fun SearchResults(
                 modifier =
                     Modifier.clickable { onResultClick(resultText) }
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
     }
 }
+
+@Composable
+private fun SampleLeadingIcon(searchBarState: SearchBarState, scope: CoroutineScope) =
+    if (searchBarState.currentValue == SearchBarValue.Expanded) {
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text("Back") } },
+            state = rememberTooltipState(),
+        ) {
+            IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) {
+                Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+            }
+        }
+    } else {
+        Icon(Icons.Default.Search, contentDescription = null)
+    }
+
+@Composable
+private fun SampleTrailingIcon() =
+    TooltipBox(
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text("Mic") } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(onClick = { /* doSomething() */ }) {
+            Icon(imageVector = Icons.Default.Mic, contentDescription = "Mic")
+        }
+    }
+
+@Composable
+private fun SampleNavigationIcon() =
+    TooltipBox(
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text("Menu") } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(onClick = { /* doSomething() */ }) {
+            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+        }
+    }
+
+@Composable
+private fun SampleActions() =
+    TooltipBox(
+        positionProvider =
+            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text("Account") } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(onClick = { /* doSomething() */ }) {
+            Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Account")
+        }
+    }

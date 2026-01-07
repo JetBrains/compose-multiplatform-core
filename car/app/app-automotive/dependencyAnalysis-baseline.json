@@ -4,15 +4,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.fragment:fragment-testing",
-        "resolvedVersion": "1.2.3"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.lifecycle:lifecycle-common-java8",
         "resolvedVersion": "2.2.0"
       },
@@ -29,10 +20,26 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-common",
+        "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.lifecycle:lifecycle-livedata-core",
         "resolvedVersion": "2.3.0"
       },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-livedata-core",
+        "resolvedVersion": "2.3.0"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {
@@ -53,11 +60,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
+        "identifier": "androidx.lifecycle:lifecycle-viewmodel",
+        "resolvedVersion": "2.3.0"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

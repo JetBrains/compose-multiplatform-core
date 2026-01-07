@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Targets: [linuxX64.linuxx64Stubs]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -38,6 +38,7 @@ open class androidx.navigation/NavController { // androidx.navigation/NavControl
         open fun <get-navigatorProvider>(): androidx.navigation/NavigatorProvider // androidx.navigation/NavController.navigatorProvider.<get-navigatorProvider>|<get-navigatorProvider>(){}[0]
         open fun <set-navigatorProvider>(androidx.navigation/NavigatorProvider) // androidx.navigation/NavController.navigatorProvider.<set-navigatorProvider>|<set-navigatorProvider>(androidx.navigation.NavigatorProvider){}[0]
 
+    final fun (androidx.navigation/NavDestination).findDestinationComprehensive(kotlin/Int, kotlin/Boolean): androidx.navigation/NavDestination? // androidx.navigation/NavController.findDestinationComprehensive|findDestinationComprehensive@androidx.navigation.NavDestination(kotlin.Int;kotlin.Boolean){}[0]
     final fun <#A1: kotlin/Any> clearBackStack(#A1): kotlin/Boolean // androidx.navigation/NavController.clearBackStack|clearBackStack(0:0){0§<kotlin.Any>}[0]
     final fun <#A1: kotlin/Any> clearBackStack(kotlin.reflect/KClass<#A1>): kotlin/Boolean // androidx.navigation/NavController.clearBackStack|clearBackStack(kotlin.reflect.KClass<0:0>){0§<kotlin.Any>}[0]
     final fun <#A1: kotlin/Any> getBackStackEntry(#A1): androidx.navigation/NavBackStackEntry // androidx.navigation/NavController.getBackStackEntry|getBackStackEntry(0:0){0§<kotlin.Any>}[0]
@@ -47,6 +48,7 @@ open class androidx.navigation/NavController { // androidx.navigation/NavControl
     final fun <#A1: kotlin/Any> popBackStack(#A1, kotlin/Boolean, kotlin/Boolean = ...): kotlin/Boolean // androidx.navigation/NavController.popBackStack|popBackStack(0:0;kotlin.Boolean;kotlin.Boolean){0§<kotlin.Any>}[0]
     final fun <#A1: kotlin/Any> popBackStack(kotlin.reflect/KClass<#A1>, kotlin/Boolean, kotlin/Boolean = ...): kotlin/Boolean // androidx.navigation/NavController.popBackStack|popBackStack(kotlin.reflect.KClass<0:0>;kotlin.Boolean;kotlin.Boolean){0§<kotlin.Any>}[0]
     final fun clearBackStack(kotlin/String): kotlin/Boolean // androidx.navigation/NavController.clearBackStack|clearBackStack(kotlin.String){}[0]
+    final fun findDestination(kotlin/Int): androidx.navigation/NavDestination? // androidx.navigation/NavController.findDestination|findDestination(kotlin.Int){}[0]
     final fun findDestination(kotlin/String): androidx.navigation/NavDestination? // androidx.navigation/NavController.findDestination|findDestination(kotlin.String){}[0]
     final fun getBackStackEntry(kotlin/String): androidx.navigation/NavBackStackEntry // androidx.navigation/NavController.getBackStackEntry|getBackStackEntry(kotlin.String){}[0]
     final fun handleDeepLink(androidx.navigation/NavDeepLinkRequest): kotlin/Boolean // androidx.navigation/NavController.handleDeepLink|handleDeepLink(androidx.navigation.NavDeepLinkRequest){}[0]
@@ -65,6 +67,8 @@ open class androidx.navigation/NavController { // androidx.navigation/NavControl
     open fun navigate(androidx.navigation/NavUri, androidx.navigation/NavOptions?, androidx.navigation/Navigator.Extras?) // androidx.navigation/NavController.navigate|navigate(androidx.navigation.NavUri;androidx.navigation.NavOptions?;androidx.navigation.Navigator.Extras?){}[0]
     open fun navigateUp(): kotlin/Boolean // androidx.navigation/NavController.navigateUp|navigateUp(){}[0]
     open fun popBackStack(): kotlin/Boolean // androidx.navigation/NavController.popBackStack|popBackStack(){}[0]
+    open fun popBackStack(kotlin/Int, kotlin/Boolean): kotlin/Boolean // androidx.navigation/NavController.popBackStack|popBackStack(kotlin.Int;kotlin.Boolean){}[0]
+    open fun popBackStack(kotlin/Int, kotlin/Boolean, kotlin/Boolean): kotlin/Boolean // androidx.navigation/NavController.popBackStack|popBackStack(kotlin.Int;kotlin.Boolean;kotlin.Boolean){}[0]
     open fun removeOnDestinationChangedListener(androidx.navigation/NavController.OnDestinationChangedListener) // androidx.navigation/NavController.removeOnDestinationChangedListener|removeOnDestinationChangedListener(androidx.navigation.NavController.OnDestinationChangedListener){}[0]
     open fun restoreState(androidx.savedstate/SavedState?) // androidx.navigation/NavController.restoreState|restoreState(androidx.savedstate.SavedState?){}[0]
     open fun saveState(): androidx.savedstate/SavedState? // androidx.navigation/NavController.saveState|saveState(){}[0]
@@ -77,6 +81,9 @@ open class androidx.navigation/NavController { // androidx.navigation/NavControl
     }
 
     final object Companion { // androidx.navigation/NavController.Companion|null[0]
+        final const val KEY_DEEP_LINK_HANDLED // androidx.navigation/NavController.Companion.KEY_DEEP_LINK_HANDLED|{}KEY_DEEP_LINK_HANDLED[0]
+            final fun <get-KEY_DEEP_LINK_HANDLED>(): kotlin/String // androidx.navigation/NavController.Companion.KEY_DEEP_LINK_HANDLED.<get-KEY_DEEP_LINK_HANDLED>|<get-KEY_DEEP_LINK_HANDLED>(){}[0]
+
         final fun enableDeepLinkSaveState(kotlin/Boolean) // androidx.navigation/NavController.Companion.enableDeepLinkSaveState|enableDeepLinkSaveState(kotlin.Boolean){}[0]
     }
 }

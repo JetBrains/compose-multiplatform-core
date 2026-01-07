@@ -100,6 +100,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "com.google.guava:guava",
+        "resolvedVersion": "33.3.1-jre"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "com.google.truth:truth",
         "resolvedVersion": "1.0.1"
       },
@@ -120,24 +128,6 @@
         "resolvedVersion": "4.13.2"
       },
       "fromConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
     },
     {
       "coordinates": {

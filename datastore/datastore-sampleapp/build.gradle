@@ -26,7 +26,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
     alias(libs.plugins.kotlinSerialization)
 }
@@ -39,7 +38,6 @@ dependencies {
     implementation(project(":datastore:datastore"))
 
     implementation(libs.protobufLite)
-    implementation(libs.kotlinStdlib)
     implementation("androidx.appcompat:appcompat:1.2.0")
     implementation("androidx.activity:activity-ktx:1.5.0")
 
@@ -55,5 +53,11 @@ dependencies {
 
 android {
     namespace = "com.example.datastoresampleapp"
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
 }
 

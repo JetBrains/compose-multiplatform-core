@@ -29,7 +29,7 @@ import kotlin.math.sqrt
 public class MetricResult(
     val name: String,
     val data: List<Double>,
-    val iterationData: List<List<Double>>? = null
+    val iterationData: List<List<Double>>? = null,
 ) {
     val median: Double
     val medianIndex: Int
@@ -91,6 +91,7 @@ public class MetricResult(
         status.putDouble("${prefix}${bundleName}_min", min)
         status.putDouble("${prefix}${bundleName}_median", median)
         status.putDouble("${prefix}${bundleName}_stddev", standardDeviation)
+        status.putDouble("${prefix}${bundleName}_max", max)
     }
 
     public fun putPercentilesInBundle(status: Bundle, prefix: String) {

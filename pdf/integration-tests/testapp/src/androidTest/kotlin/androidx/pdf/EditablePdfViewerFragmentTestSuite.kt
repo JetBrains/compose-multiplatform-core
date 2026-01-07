@@ -1,0 +1,540 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.pdf
+
+import android.content.pm.ActivityInfo
+import android.os.Build
+import android.os.ext.SdkExtensions
+import androidx.annotation.RequiresExtension
+import androidx.fragment.app.testing.FragmentScenario
+import androidx.fragment.app.testing.launchFragmentInContainer
+import androidx.lifecycle.Lifecycle
+import androidx.pdf.FragmentUtils.scenarioLoadDocument
+import androidx.pdf.actions.TwoFingerSwipeDownAction
+import androidx.pdf.actions.TwoFingerSwipeUpAction
+import androidx.pdf.ink.R as InkR
+import androidx.pdf.ink.R as PdfInkR
+import androidx.pdf.ink.model.ApplyInProgressException
+import androidx.pdf.ink.view.AnnotationToolbar
+import androidx.pdf.util.Preconditions
+import androidx.pdf.view.PdfView
+import androidx.pdf.viewer.fragment.R as PdfR
+import androidx.test.espresso.Espresso.onIdle
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.doubleClick
+import androidx.test.espresso.action.ViewActions.pressBack
+import androidx.test.espresso.action.ViewActions.swipeDown
+import androidx.test.espresso.action.ViewActions.swipeLeft
+import androidx.test.espresso.action.ViewActions.swipeUp
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
+import com.google.common.truth.Truth.assertThat
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import org.hamcrest.CoreMatchers.not
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.greaterThan
+import org.hamcrest.Matchers.lessThan
+import org.junit.After
+import org.junit.Assume.assumeFalse
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@LargeTest
+@RunWith(AndroidJUnit4::class)
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+class EditablePdfViewerFragmentTestSuite {
+    private lateinit var scenario: FragmentScenario<TestEditablePdfViewerFragment>
+
+    @Before
+    fun setup() {
+        assumeFalse(
+            "Test fails on cuttlefish b/465861868",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
+        scenario =
+            launchFragmentInContainer<TestEditablePdfViewerFragment>(
+                    themeResId =
+                        com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
+                    initialState = Lifecycle.State.INITIALIZED,
+                )
+                .onFragment { fragment ->
+                    IdlingRegistry.getInstance()
+                        .register(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+                    IdlingRegistry.getInstance()
+                        .register(fragment.pdfScrollIdlingResource.countingIdlingResource)
+                    IdlingRegistry.getInstance()
+                        .register(fragment.pdfApplyEditsIdlingResource.countingIdlingResource)
+                }
+    }
+
+    @After
+    fun cleanup() {
+        if (!::scenario.isInitialized) return
+
+        scenario.onFragment { fragment ->
+            IdlingRegistry.getInstance()
+                .unregister(fragment.pdfLoadingIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance()
+                .unregister(fragment.pdfScrollIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance()
+                .unregister(fragment.pdfApplyEditsIdlingResource.countingIdlingResource)
+        }
+        scenario.close()
+    }
+
+    private fun loadDocumentAndSetupFragment() {
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_FILE,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+        onIdle() // Wait for document to load
+
+        scenario.onFragment { fragment ->
+            Preconditions.checkArgument(
+                fragment.documentLoaded,
+                "Unable to load document due to ${fragment.documentError?.message}",
+            )
+            fragment.setIsAnnotationIntentResolvable(true)
+            fragment.isToolboxVisible = true
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_viewerMode_singleFingerNavigation() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        val initialPage = getCurrentPageNumber()
+
+        // Scroll Up (to next page)
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
+        scenario.onFragment { fragment -> fragment.pdfScrollIdlingResource.increment() }
+        onIdle()
+
+        val pageAfterSwipeUp = getCurrentPageNumber()
+        assertThat(pageAfterSwipeUp, greaterThan(initialPage))
+
+        // Scroll Down (to previous page)
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeDown())
+        scenario.onFragment { fragment -> fragment.pdfScrollIdlingResource.increment() }
+        onIdle()
+
+        val pageAfterSwipeDown = getCurrentPageNumber()
+        assertThat(pageAfterSwipeDown, lessThan(pageAfterSwipeUp))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_editMode_singleFingerAnnotation() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // Perform a swipe (single touch) on the pdfContentLayout to create an annotation.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+
+        // Press back and verify discard dialog appears due to unsaved changes to check if
+        // annotation is created.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        onIdle()
+
+        onView(withText(InkR.string.discard_changes_dialog_title))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_editMode_twoFingerNavigation() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        val initialPageInEditMode = getCurrentPageNumber()
+
+        // Perform a two-finger swipe up for scrolling.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(TwoFingerSwipeUpAction())
+        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
+        onIdle()
+
+        val pageAfterTwoFingerSwipeUp = getCurrentPageNumber()
+        assertThat(pageAfterTwoFingerSwipeUp, greaterThan(initialPageInEditMode))
+
+        // Perform a two-finger swipe down.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(TwoFingerSwipeDownAction())
+        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
+        onIdle()
+
+        val pageAfterTwoFingerSwipeDown = getCurrentPageNumber()
+        assertThat(pageAfterTwoFingerSwipeDown, lessThan(pageAfterTwoFingerSwipeUp))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_exitEditModeWithNoUnsavedChanges_exitsWithoutShowingDialog() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // No annotations made, so no unsaved changes.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        onIdle()
+
+        onView(withText(InkR.string.discard_changes_dialog_title)).check(doesNotExist())
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed())) // Back in viewer mode
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_exitEditModeWithUnsavedChanges_showsDiscardDialog() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // Create an annotation
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+
+        // 1. Press back, dialog should appear
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        onIdle()
+        onView(withText(InkR.string.discard_changes_dialog_title))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
+
+        // 2. Click "Keep editing", dialog disappears, still in edit mode
+        onView(withText(InkR.string.keep_editing_button)).perform(click())
+        onIdle()
+        onView(withText(InkR.string.discard_changes_dialog_title)).check(doesNotExist())
+        onView(withId(R.id.edit_fab)).check(matches(not(isDisplayed()))) // Still in edit mode
+
+        // 3. Press back again, dialog reappears
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        onIdle()
+        onView(withText(InkR.string.discard_changes_dialog_title))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
+
+        // 4. Click "Discard", dialog disappears, back in viewer mode
+        onView(withText(InkR.string.discard_button)).perform(click())
+        onIdle()
+        onView(withText(InkR.string.discard_changes_dialog_title)).check(doesNotExist())
+        onView(withId(R.id.edit_fab)).check(matches(isDisplayed())) // Back to viewer mode
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_enterAndExitEditMode_togglesState() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        // 1. Verify initial state (Viewer Mode)
+        scenario.onFragment { fragment -> assertThat(fragment.isEditModeEnabled).isFalse() }
+
+        // 2. Enter Edit Mode
+        enterEditMode()
+
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isEditModeEnabled).isTrue()
+            assertThat(fragment.onEnterEditModeCalled).isTrue()
+        }
+
+        // 3. Exit Edit Mode
+        scenario.onFragment { fragment -> fragment.isEditModeEnabled = false }
+        onIdle()
+
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isEditModeEnabled).isFalse()
+            assertThat(fragment.onExitEditModeCalled).isTrue()
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_applyDraftEdits_callbacks() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // Create an annotation
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+
+        // Apply draft edits
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isApplyEditsInProgress).isFalse()
+            fragment.pdfApplyEditsIdlingResource.increment()
+            fragment.applyDraftEdits()
+            assertThat(fragment.isApplyEditsInProgress).isTrue()
+        }
+
+        onIdle()
+
+        // Verify success callback was called and progress is finished
+        scenario.onFragment { fragment ->
+            assertThat(fragment.onApplyEditsSuccessCalled).isTrue()
+            assertThat(fragment.isApplyEditsInProgress).isFalse()
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_applyDraftEdits_throwsIfInProgress() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+
+        scenario.onFragment { fragment ->
+            // 1. Start the first apply operation
+            fragment.pdfApplyEditsIdlingResource.increment()
+            fragment.applyDraftEdits()
+            assertThat(fragment.isApplyEditsInProgress).isTrue()
+
+            // 2. Attempt a second apply operation immediately and verify it throws
+            try {
+                fragment.applyDraftEdits()
+            } catch (e: Exception) {
+                assertThat(e).isInstanceOf(ApplyInProgressException::class.java)
+            }
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_hasUnsavedChanges() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        // 1. Initially, no unsaved changes
+        var hasChanges = true
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
+
+        // 2. Enter edit mode, still no changes
+        enterEditMode()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
+
+        // 3. Create an annotation, now there are unsaved changes
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isTrue()
+
+        // 4. Apply edits, changes should be saved
+        scenario.onFragment { it.applyDraftEdits() }
+        onIdle()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_testUndoRedo() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+        // Assert undo/redo buttons is initially disabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(not(isEnabled())))
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert AnnotationView is visible
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Assert undo button gets enabled after a stroke is drawn; but redo remains disabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(isEnabled()))
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+
+        // Undo last drawn annotation
+        onView(withId(PdfInkR.id.undo_button)).perform(click())
+        // Assert user cannot perform any more undo steps after last annotation is undone
+        onView(withId(PdfInkR.id.undo_button)).check(matches(not(isEnabled())))
+        // Assert redo button gets enabled
+        onView(withId(PdfInkR.id.redo_button)).check(matches(isEnabled()))
+
+        // Now perform a redo
+        onView(withId(PdfInkR.id.redo_button)).perform(click())
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+        // Assert undo button gets enabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(isEnabled()))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_annotationDisabled() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        var pdfView: PdfView? = null
+        scenario.onFragment { fragment -> pdfView = fragment.view?.findViewById(R.id.pdfView) }
+
+        enterEditMode()
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert AnnotationView is visible
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Disable annotations
+        onView(withId(PdfInkR.id.toggle_annotation_button)).perform(click())
+        // Assert AnnotationView is hidden
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(not(isDisplayed())))
+
+        val fitToScreenZoom = pdfView?.zoom
+        // try interacting with the content rendered on the pdf view
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(PdfR.id.pdfContentLayout)).perform(doubleClick())
+        // wait for gesture to complete
+        onIdle()
+        // assert interaction actually occurred on PdfView
+        assertThat(pdfView?.zoom).isGreaterThan(fitToScreenZoom)
+
+        // Toggle once again to enable annotations
+        onView(withId(PdfInkR.id.toggle_annotation_button)).perform(click())
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Try same interaction when annotation interaction is enabled
+        onView(withId(PdfR.id.pdfContentLayout)).perform(doubleClick())
+        // assert double tapping again doesn't fit to screen as touch is consumed by wet stroke's
+        // view
+        assertNotEquals(fitToScreenZoom, pdfView?.zoom)
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_toolbarPopupDismissed_OnContentTouch() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+
+        // Click again to show brush slider
+        onView(withId(PdfInkR.id.pen_button)).perform(click())
+
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(isDisplayed()))
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert brush size selector is not displayed
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(not(isDisplayed())))
+
+        onView(withId(PdfInkR.id.color_palette_button)).perform(click())
+        onView(withId(PdfInkR.id.color_palette)).check(matches(isDisplayed()))
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert color palette is not displayed
+        onView(withId(PdfInkR.id.color_palette)).check(matches(not(isDisplayed())))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_toolbarPopupDismissed_OnBackPress() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+
+        // Click again to show brush slider
+        onView(withId(PdfInkR.id.pen_button)).perform(click())
+
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(isDisplayed()))
+        // Press back to show discard dialog
+        onView(withId(PdfR.id.pdfContentLayout)).perform(pressBack())
+        // Assert brush size selector is not displayed
+        onView(withId(PdfInkR.id.brush_size_selector)).check(matches(not(isDisplayed())))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_annotationToolbar_isConfigPopupVisible() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        var annotationToolbar: AnnotationToolbar? = null
+        scenario.onFragment { fragment ->
+            fragment.view?.findViewById<AnnotationToolbar>(PdfInkR.id.annotationToolbar)?.let {
+                annotationToolbar = it
+            }
+        }
+
+        // open brush size selector
+        onView(withId(PdfInkR.id.pen_button)).perform(click())
+
+        assertNotNull(annotationToolbar)
+        assertTrue(annotationToolbar.isConfigPopupVisible)
+
+        onView(withId(PdfInkR.id.pdf_annotation_view)).perform(click())
+        assertFalse(annotationToolbar.isConfigPopupVisible)
+
+        // open color palette
+        onView(withId(PdfInkR.id.color_palette_button)).perform(click())
+        assertTrue(annotationToolbar.isConfigPopupVisible)
+
+        onView(withId(PdfInkR.id.pdf_annotation_view)).perform(click())
+        assertFalse(annotationToolbar.isConfigPopupVisible)
+    }
+
+    private fun enterEditMode() {
+        onView(withId(R.id.edit_fab)).apply {
+            check(matches(isDisplayed()))
+            perform(click())
+            check(matches(not(isDisplayed())))
+        }
+        onIdle()
+    }
+
+    private fun getCurrentPageNumber(): Int {
+        var pageNum = 0
+        scenario.onFragment { fragment ->
+            pageNum =
+                fragment
+                    .getPdfViewInstance()
+                    .currentPageIndicatorLabel
+                    .trim()
+                    .split(" / ")[0]
+                    .toInt()
+        }
+        return pageNum
+    }
+
+    companion object {
+        private const val TEST_DOCUMENT_FILE = "sample.pdf"
+        private const val REQUIRED_EXTENSION_VERSION = 18
+
+        fun isRequiredSdkExtensionAvailable(): Boolean {
+            // Get the device's version for the specified SDK extension
+            val deviceExtensionVersion = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R)
+            return deviceExtensionVersion >= REQUIRED_EXTENSION_VERSION
+        }
+    }
+}

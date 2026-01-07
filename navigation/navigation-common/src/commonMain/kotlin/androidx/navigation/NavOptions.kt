@@ -23,6 +23,17 @@ import kotlinx.serialization.InternalSerializationApi
 public expect class NavOptions {
 
     /**
+     * The destination to pop up to before navigating. When set, all non-matching destinations
+     * should be popped from the back stack.
+     *
+     * @return the destinationId to pop up to, clearing all intervening destinations
+     * @see Builder.setPopUpTo
+     * @see isPopUpToInclusive
+     * @see shouldPopUpToSaveState
+     */
+    public val popUpToId: Int
+
+    /**
      * Route for the destination to pop up to before navigating. When set, all non-matching
      * destinations should be popped from the back stack.
      *
@@ -91,7 +102,7 @@ public expect class NavOptions {
     public fun shouldPopUpToSaveState(): Boolean
 
     /** Builder for constructing new instances of NavOptions. */
-    public class Builder {
+    public class Builder() {
 
         /**
          * Launch a navigation target as single-top if you are making a lateral navigation between
@@ -128,7 +139,7 @@ public expect class NavOptions {
         public fun setPopUpTo(
             route: String?,
             inclusive: Boolean,
-            saveState: Boolean = false
+            saveState: Boolean = false,
         ): Builder
 
         /**
@@ -152,7 +163,7 @@ public expect class NavOptions {
         @Suppress("MissingGetterMatchingBuilder") // no need for getter
         public inline fun <reified T : Any> setPopUpTo(
             inclusive: Boolean,
-            saveState: Boolean = false
+            saveState: Boolean = false,
         ): Builder
 
         /**
@@ -176,7 +187,7 @@ public expect class NavOptions {
         public fun <T : Any> setPopUpTo(
             route: KClass<T>,
             inclusive: Boolean,
-            saveState: Boolean = false
+            saveState: Boolean = false,
         ): Builder
 
         /**
@@ -202,7 +213,7 @@ public expect class NavOptions {
         public fun <T : Any> setPopUpTo(
             route: T,
             inclusive: Boolean,
-            saveState: Boolean = false
+            saveState: Boolean = false,
         ): Builder
 
         /** @return a constructed NavOptions */

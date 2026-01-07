@@ -26,7 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
@@ -35,8 +35,10 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -49,7 +51,10 @@ class ComposeCameraAppTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(*ComposeCameraActivity.REQUIRED_PERMISSIONS)
 
-    @get:Rule val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
+    @OptIn(ExperimentalCoroutinesApi::class) // b/457970052
+    @get:Rule
+    val androidComposeTestRule =
+        createAndroidComposeRule<ComposeCameraActivity>(UnconfinedTestDispatcher())
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
@@ -60,7 +65,7 @@ class ComposeCameraAppTest {
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeInput/Output buffer fails issue. Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_LENS_FACING))
 
@@ -74,11 +79,7 @@ class ComposeCameraAppTest {
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
-        assertStreamState(
-            ComposeCameraScreen.ImageCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Navigating from ImageCapture to VideoCapture screen
@@ -92,47 +93,41 @@ class ComposeCameraAppTest {
         // Get VideoCapture Navigation Tab (Node)
         val node =
             androidComposeTestRule.onNode(
-                SemanticsMatcher.expectValue(
-                        SemanticsProperties.Role,
-                        Role.Tab,
-                    )
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
                     .and(
                         SemanticsMatcher.expectValue(
                             SemanticsProperties.ContentDescription,
-                            listOf("VideoCapture")
+                            listOf("VideoCapture"),
                         )
                     )
             )
+
+        // Set expected ComposeCameraScreen and StreamState for testing
+        androidComposeTestRule.activityRule.scenario.onActivity {
+            it.setUpExpectedScreenAndStreamState(
+                ComposeCameraScreen.VideoCapture,
+                PreviewView.StreamState.STREAMING,
+            )
+        }
 
         // Ensure that Tab is selected after we click on it
         node.performClick().assertIsSelected()
 
         // Assert VideoCapture's PreviewView is streaming
-        assertStreamState(
-            ComposeCameraScreen.VideoCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Asserts that the StreamState in the ComposeCameraScreen reaches
     // expectedState within a reasonable timeout
-    private fun assertStreamState(
-        expectedScreen: ComposeCameraScreen,
-        expectedState: PreviewView.StreamState,
-        scenario: ActivityScenario<ComposeCameraActivity>,
+    private fun assertExpectedScreenAndStreamState(
+        scenario: ActivityScenario<ComposeCameraActivity>
     ) =
         runBlocking<Unit> {
             lateinit var result: Deferred<Boolean>
 
             scenario.onActivity { activity ->
                 // Make async Coroutine to wait the result, not block the test thread.
-                result = async {
-                    activity.waitForStreamState(
-                        expectedScreen = expectedScreen,
-                        expectedState = expectedState
-                    )
-                }
+                result = async { activity.waitForExpectedScreenAndStreamState() }
             }
 
             Truth.assertThat(result.await()).isTrue()

@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -85,6 +86,7 @@ public class GridLayoutManagerTest extends BaseGridLayoutManagerTest {
 
     @Test
     public void focusSearchFailureDown() throws Throwable {
+        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         focusSearchFailure(true);
     }
 
@@ -976,7 +978,6 @@ public class GridLayoutManagerTest extends BaseGridLayoutManagerTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     public void onInitializeAccessibilityNodeInfo_addActionScrollToPosition_addedWithNonEmptyList()
             throws Throwable {
         final RecyclerView recyclerView = setupBasic(new Config(3, 1));
