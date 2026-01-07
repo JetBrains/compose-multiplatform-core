@@ -392,7 +392,7 @@ internal abstract class InsetsConsumingModifierNode : Modifier.Node(), Traversab
         private set
 
     override val traverseKey: Any
-        get() = "androidx.compose.foundation.lazy.layout.InsetsConsumingModifierNode"
+        get() = "androidx.compose.foundation.layout.ConsumedInsetsProvider"
 
     /**
      * The [WindowInsets] consumed by this modifier, including any [WindowInsets] consumed by
