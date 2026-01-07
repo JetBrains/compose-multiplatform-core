@@ -147,7 +147,6 @@ androidXMultiplatform {
             dependsOn(skikoMain)
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.truth)
                 implementation(libs.skiko)
             }
         }
