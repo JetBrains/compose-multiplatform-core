@@ -147,6 +147,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
         project.configureTests()
         project.changeMavenCoordinatesToJetBrains()
+        project.configureRedirectionCapability()
         project.configureMavenArtifactUpload(componentFactory)
         project.configureDependencyVerification()
         project.plugins.all { plugin ->
