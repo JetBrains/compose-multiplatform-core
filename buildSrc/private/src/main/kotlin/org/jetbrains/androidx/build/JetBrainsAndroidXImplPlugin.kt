@@ -141,6 +141,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     override fun apply(project: Project) {
         if (isJetBrainsForkStructureEnabled(project)) {
             project.changeMavenCoordinatesToJetBrains()
+            project.configureRedirectionCapability()
             project.configureMavenArtifactUpload(componentFactory)
             project.configureDependencyVerification()
 

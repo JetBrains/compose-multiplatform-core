@@ -141,10 +141,10 @@ object JetBrainsPublication {
                 "org.jetbrains.compose.collection-internal"
             projectPath == ":compose:desktop:desktop" ->
                 "org.jetbrains.compose.desktop"
-            androidxGroup?.startsWith("androidx.compose") == true->
-                androidxGroup.replace("androidx.compose", "org.jetbrains.compose")
-            androidxGroup?.startsWith("androidx") == true ->
-                androidxGroup.replace("androidx", "org.jetbrains.androidx")
+            androidxGroup?.startsWith("androidx.compose.") == true ->
+                androidxGroup.replace("androidx.compose.", "org.jetbrains.compose.")
+            androidxGroup?.startsWith("androidx.") == true ->
+                androidxGroup.replace("androidx.", "org.jetbrains.androidx.")
             else -> null
         }
     }
@@ -164,7 +164,8 @@ object JetBrainsPublication {
         .flatMap { entry -> entry.value.map { entry.key to it  } }
         .associate { it.second.path to it.first }
 
-    fun shouldPublish(project: Project): Boolean = projectPathToComponent.containsKey(project.path)
+    fun shouldPublish(project: Project): Boolean = shouldPublish(project.path)
+    fun shouldPublish(path: String): Boolean = projectPathToComponent.containsKey(path)
 
     fun isLibraryRegistered(libraryName: String) =
         libraryToComponents.containsKey(libraryName)
