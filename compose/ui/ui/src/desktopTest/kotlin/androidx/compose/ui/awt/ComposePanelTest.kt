@@ -42,7 +42,6 @@ import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.assertColorsWithinTolerance
 import androidx.compose.ui.background
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -901,15 +900,30 @@ class ComposePanelTest {
 
     @Test
     fun `ComposePanel draws background correctly`() = runApplicationTest {
+        // Show a canvas and a `ComposePanel` with the same background and compare the two colors.
+        // Simply comparing to the set color doesn't work because Robot returns the color after
+        // the OS transforms it to the screen color space (which doesn't seem to be accessible from
+        // the JVM).
+
+        val bgColor = java.awt.Color.RED
+
+        val canvas = java.awt.Canvas().apply {
+            size = Dimension(300, 300)
+            background = bgColor
+        }
+
         val composePanel = ComposePanel().apply {
             size = Dimension(300, 300)
-            background = java.awt.Color.RED
+            background = bgColor
         }
         composePanel.setContent { }
 
+
         val frame = JFrame().apply {
-            contentPane = composePanel
-            size = Dimension(300, 300)
+            contentPane.layout = BoxLayout(contentPane, BoxLayout.Y_AXIS)
+            contentPane.add(canvas)
+            contentPane.add(composePanel)
+            size = Dimension(300, 600)
         }
 
         try {
@@ -917,8 +931,9 @@ class ComposePanelTest {
             awaitIdle()
             val robot = java.awt.Robot()
             val frameBounds = frame.bounds
-            val centerPixel = robot.getPixelColor(frameBounds.centerX.toInt(), frameBounds.centerY.toInt())
-            assertColorsWithinTolerance(expected = java.awt.Color.RED, actual = centerPixel)
+            val canvasPixel = robot.getPixelColor(frameBounds.centerX.toInt(), (0.25 * frameBounds.centerY).toInt())
+            val composePixel = robot.getPixelColor(frameBounds.centerX.toInt(), (0.75 * frameBounds.centerY).toInt())
+            assertThat(composePixel).isEqualTo(canvasPixel)
         } finally {
             frame.dispose()
         }

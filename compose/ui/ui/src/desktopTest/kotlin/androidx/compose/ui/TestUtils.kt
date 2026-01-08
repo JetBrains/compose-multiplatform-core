@@ -41,8 +41,6 @@ import java.awt.image.MultiResolutionImage
 import java.text.AttributedString
 import javax.swing.Icon
 import javax.swing.ImageIcon
-import kotlin.math.abs
-import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -287,23 +285,4 @@ internal fun ImageComposeScene.runUntilIdle(
         render(time)
     }
     return time
-}
-
-/**
- * Asserts that the two colors are within the given tolerance of each other, on each component.
- */
-fun assertColorsWithinTolerance(expected: java.awt.Color, actual: java.awt.Color, tolerance: Int = 5) {
-    require(tolerance >= 0) { "Tolerance must be non-negative." }
-
-    fun assertDiffIsWithinTolerance(channelName: String, expected: Int, actual: Int) {
-        assertTrue(
-            abs(expected - actual) <= tolerance,
-            message = "Difference in $channelName component between expected ($expected) and actual ($actual) is greater than allowed ($tolerance)"
-        )
-    }
-
-    assertDiffIsWithinTolerance("alpha", expected.alpha, actual.alpha)
-    assertDiffIsWithinTolerance("red", expected.red, actual.red)
-    assertDiffIsWithinTolerance("green", expected.green, actual.green)
-    assertDiffIsWithinTolerance("blue", expected.blue, actual.blue)
 }
