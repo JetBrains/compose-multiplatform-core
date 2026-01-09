@@ -131,7 +131,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(skikoMain)
                 dependencies {
                     implementation(libs.kotlinStdlib)
-                    implementation("org.jetbrains.runtime:jbr-api:1.9.0")
+                    implementation(libs.jbrApi)
                 }
             }
             nonJvmMain.dependsOn(skikoMain)
