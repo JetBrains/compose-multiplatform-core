@@ -44,7 +44,7 @@ private class JetBrainsCapabilityRule : ComponentMetadataRule {
         // Add capability with a common resolver group to enable conflict resolution
         allVariants { variant ->
             variant.withCapabilities {
-//                it.addCapability(id.name, id.group, id.version)
+                // Use implicit declaration
             }
         }
     }
@@ -60,6 +60,15 @@ fun Project.configureJetBrainsCapabilityResolution() {
 
     // Configure capability resolution for all projects
     configurations.configureEach { configuration ->
+
+        // https://github.com/gradle/gradle/issues/35943 workaround
+        if (path.contains("integration-tests") || path.contains("samples")) {
+            configuration.resolutionStrategy.dependencySubstitution {
+                it.substitute(it.module("androidx.compose.ui:ui"))
+                    .using(it.project(":compose:ui:ui"))
+            }
+        }
+
         configuration.resolutionStrategy.capabilitiesResolution.all { details ->
             if (details.capability.group.startsWith(ANDROIDX_GROUP_PREFIX)) {
                 details.selectPreferredAndroidXCandidate()
@@ -69,7 +78,9 @@ fun Project.configureJetBrainsCapabilityResolution() {
 }
 
 fun Project.configureRedirectionCapability() {
+    if (!JetBrainsPublication.shouldPublish(this)) return
     val redirection = artifactRedirection() ?: return
+    if (redirection.targetNames.isEmpty()) return
 
     // Configure resolution strategy to handle all capability conflicts
     configurations.configureEach { configuration ->
