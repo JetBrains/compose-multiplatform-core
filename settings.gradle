@@ -369,18 +369,18 @@ filteredProjects.add(":lint-checks")
 
 // A set of stubbed projects:
 @Field Set<String> stubbedProjects = new HashSet<String>()
-stubbedProjects.add(":annotation:annotation")
-stubbedProjects.add(":collection:collection")
-stubbedProjects.add(":compose:runtime:runtime")
-stubbedProjects.add(":compose:runtime:runtime-saveable")
-stubbedProjects.add(":lifecycle:lifecycle-common")
-stubbedProjects.add(":lifecycle:lifecycle-runtime")
-stubbedProjects.add(":lifecycle:lifecycle-runtime-compose")
-stubbedProjects.add(":lifecycle:lifecycle-viewmodel")
-stubbedProjects.add(":lifecycle:lifecycle-viewmodel-savedstate")
-stubbedProjects.add(":savedstate:savedstate")
-stubbedProjects.add(":savedstate:savedstate-compose")
-stubbedProjects.add(":window:window-core")
+//stubbedProjects.add(":annotation:annotation")
+//stubbedProjects.add(":collection:collection")
+//stubbedProjects.add(":compose:runtime:runtime")
+//stubbedProjects.add(":compose:runtime:runtime-saveable")
+//stubbedProjects.add(":lifecycle:lifecycle-common")
+//stubbedProjects.add(":lifecycle:lifecycle-runtime")
+//stubbedProjects.add(":lifecycle:lifecycle-runtime-compose")
+//stubbedProjects.add(":lifecycle:lifecycle-viewmodel")
+//stubbedProjects.add(":lifecycle:lifecycle-viewmodel-savedstate")
+//stubbedProjects.add(":savedstate:savedstate")
+//stubbedProjects.add(":savedstate:savedstate-compose")
+//stubbedProjects.add(":window:window-core")
 
 static def shouldIncludeInJetBrainsFork(String name, filePath) {
     if (filePath != null && filePath instanceof File) {
@@ -389,13 +389,6 @@ static def shouldIncludeInJetBrainsFork(String name, filePath) {
     }
     if (name.contains(":hero") ||
         name.startsWith(":navigation:navigation-safe-args-") ||
-        name.startsWith(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples") ||
-        name.startsWith(":lifecycle:lifecycle-runtime-compose:integration-tests:lifecycle-runtime-compose-demos") ||
-        name.startsWith(":compose:runtime:runtime-retain") ||
-        name.startsWith(":compose:runtime:runtime:benchmark") ||
-        name.startsWith(":compose:runtime:runtime-annotation") ||
-        name.startsWith(":docs-tip-of-tree") ||
-        name.startsWith(":docs-public") ||
         name.startsWith(":emoji2") ||
         name.startsWith(":hilt") ||
         name.startsWith(":room") ||
