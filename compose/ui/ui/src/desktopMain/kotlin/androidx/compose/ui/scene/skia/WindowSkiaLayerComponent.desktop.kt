@@ -140,10 +140,15 @@ internal class WindowSkiaLayerComponent(
         get() = contentComponent.transparency
         set(value) {
             contentComponent.transparency = value
-            contentComponent.background = if (value && windowContext.isWindowTransparent) {
-                 java.awt.Color(0, 0, 0, 0)
-            } else {
-                null  // This will use the parent's background
+            contentComponent.background = when {
+                !value -> null  // This will use the parent's background
+                // In case of transparent Metal canvas on an opaque window, background values with
+                // alpha == 0 will make the result color black after clearing the canvas.
+                // The case of `transparency = true` together with `!windowContext.isWindowTransparent`
+                // is needed for "Experimental interop on a regular (non-transparent) window"
+                // (per @MatkovIvan)
+                !windowContext.isWindowTransparent && (renderApi == GraphicsApi.METAL) -> null
+                else -> java.awt.Color(0, 0, 0, 0)
             }
         }
     override var fullscreen by contentComponent::fullscreen
