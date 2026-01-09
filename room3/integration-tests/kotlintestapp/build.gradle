@@ -27,7 +27,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
     id("com.google.devtools.ksp")
     id("androidx.room3")
 }
