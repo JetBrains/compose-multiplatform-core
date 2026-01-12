@@ -21,7 +21,8 @@ import org.gradle.api.Project
 
 enum class ProjectLayoutType {
     ANDROIDX,
-    PLAYGROUND;
+    PLAYGROUND,
+    JETBRAINS_FORK;
 
     companion object {
         /** Returns the project layout type for the project (PLAYGROUND or ANDROIDX) */
@@ -32,6 +33,7 @@ enum class ProjectLayoutType {
                 "playground" -> PLAYGROUND
                 null,
                 "androidx" -> ANDROIDX
+                "jetbrains-fork" -> JETBRAINS_FORK
                 else -> error("Invalid project type $value")
             }
         }
@@ -39,7 +41,17 @@ enum class ProjectLayoutType {
         /** @return `true` if running in a Playground (Github) setup, `false` otherwise. */
         @JvmStatic
         fun isPlayground(project: Project): Boolean {
-            return ProjectLayoutType.from(project) == PLAYGROUND
+            return when(ProjectLayoutType.from(project)) {
+                ANDROIDX -> false
+                PLAYGROUND -> true
+
+                // This check is used to determine if prebuilt dependencies are available,
+                // so despite of applying playground gradle plugin, we need to return true here
+                JETBRAINS_FORK -> true
+            }
         }
+
+        @JvmStatic
+        fun isJetBrainsFork(project: Project) = ProjectLayoutType.from(project) == JETBRAINS_FORK
     }
 }
