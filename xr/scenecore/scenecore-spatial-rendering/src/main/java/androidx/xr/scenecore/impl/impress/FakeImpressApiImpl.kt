@@ -213,6 +213,10 @@ public class FakeImpressApiImpl : ImpressApi {
         throw IllegalArgumentException("not implemented")
     }
 
+    override fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean) {
+        throw IllegalArgumentException("not implemented")
+    }
+
     @Suppress("RestrictTo")
     override suspend fun animateGltfModel(
         impressNode: ImpressNode,

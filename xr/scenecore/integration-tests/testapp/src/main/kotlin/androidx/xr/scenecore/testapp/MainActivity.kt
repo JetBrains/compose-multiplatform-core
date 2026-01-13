@@ -45,8 +45,8 @@ import androidx.xr.scenecore.testapp.headlockedui.HeadLockedUiActivity
 import androidx.xr.scenecore.testapp.hittest.HitTestActivity
 import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
 import androidx.xr.scenecore.testapp.memoryleak.MemoryLeakActivity
-import androidx.xr.scenecore.testapp.model.GltfModelAnimation
-import androidx.xr.scenecore.testapp.model.GltfModelMaterialTexture
+import androidx.xr.scenecore.testapp.model.GltfModelAnimationActivity
+import androidx.xr.scenecore.testapp.model.GltfModelMaterialTextureActivity
 import androidx.xr.scenecore.testapp.movable.MovableActivity
 import androidx.xr.scenecore.testapp.panelcoordinate.PanelCoordinateActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity() {
             Tests.HEAD_LOCKED_UI_TEST.test -> startActivity(createIntent<HeadLockedUiActivity>())
 
             Tests.GLTF_MODEL_MATERIAL_TEXTURE_TEST.test ->
-                startActivity(createIntent<GltfModelMaterialTexture>())
+                startActivity(createIntent<GltfModelMaterialTextureActivity>())
 
             Tests.MOVABLE_PANEL_TEST.test -> startActivity(createIntent<MovableActivity>())
 
@@ -296,7 +296,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(createIntent<PanelCoordinateActivity>())
 
             Tests.GLTF_MODEL_ANIMATION_TEST.test ->
-                startActivity(createIntent<GltfModelAnimation>())
+                startActivity(createIntent<GltfModelAnimationActivity>())
 
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")

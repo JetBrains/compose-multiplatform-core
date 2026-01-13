@@ -507,17 +507,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     /** Configures all mac targets supported by AndroidX. */
     @JvmOverloads
     fun mac(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
-        return listOfNotNull(macosX64(block), macosArm64(block))
-    }
-
-    @JvmOverloads
-    fun macosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTargetWithHostTests? {
-        supportedPlatforms.add(PlatformIdentifier.MAC_OSX_64)
-        return if (project.enableMac()) {
-            kotlinExtension.macosX64 { block?.execute(this) }
-        } else {
-            null
-        }
+        return listOfNotNull(macosArm64(block))
     }
 
     @JvmOverloads
@@ -533,7 +523,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     /** Configures all ios targets supported by AndroidX. */
     @JvmOverloads
     fun ios(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
-        return listOfNotNull(iosX64(block), iosArm64(block), iosSimulatorArm64(block))
+        return listOfNotNull(iosArm64(block), iosSimulatorArm64(block))
     }
 
     @JvmOverloads
@@ -541,16 +531,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         supportedPlatforms.add(PlatformIdentifier.IOS_ARM_64)
         return if (project.enableMac()) {
             kotlinExtension.iosArm64 { block?.execute(this) }
-        } else {
-            null
-        }
-    }
-
-    @JvmOverloads
-    fun iosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
-        supportedPlatforms.add(PlatformIdentifier.IOS_X_64)
-        return if (project.enableMac()) {
-            kotlinExtension.iosX64 { block?.execute(this) }
         } else {
             null
         }
@@ -570,7 +550,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @JvmOverloads
     fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
         return listOfNotNull(
-            watchosX64(block),
             watchosArm32(block),
             watchosArm64(block),
             watchosDeviceArm64(block),
@@ -609,16 +588,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     }
 
     @JvmOverloads
-    fun watchosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
-        supportedPlatforms.add(PlatformIdentifier.WATCHOS_X_64)
-        return if (project.enableMac()) {
-            kotlinExtension.watchosX64 { block?.execute(this) }
-        } else {
-            null
-        }
-    }
-
-    @JvmOverloads
     fun watchosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
         supportedPlatforms.add(PlatformIdentifier.WATCHOS_SIMULATOR_ARM_64)
         return if (project.enableMac()) {
@@ -631,7 +600,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     /** Configures all tvos targets supported by AndroidX. */
     @JvmOverloads
     fun tvos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
-        return listOfNotNull(tvosX64(block), tvosArm64(block), tvosSimulatorArm64(block))
+        return listOfNotNull(tvosArm64(block), tvosSimulatorArm64(block))
     }
 
     @JvmOverloads
@@ -639,16 +608,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         supportedPlatforms.add(PlatformIdentifier.TVOS_ARM_64)
         return if (project.enableMac()) {
             kotlinExtension.tvosArm64 { block?.execute(this) }
-        } else {
-            null
-        }
-    }
-
-    @JvmOverloads
-    fun tvosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
-        supportedPlatforms.add(PlatformIdentifier.TVOS_X_64)
-        return if (project.enableMac()) {
-            kotlinExtension.tvosX64 { block?.execute(this) }
         } else {
             null
         }

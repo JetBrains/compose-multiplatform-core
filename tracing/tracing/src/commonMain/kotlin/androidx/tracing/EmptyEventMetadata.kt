@@ -34,6 +34,10 @@ internal object EmptyEventMetadata : EventMetadata() {
         // Does nothing
     }
 
+    override fun addCallStackEntry(name: String, sourceFile: String?, lineNumber: Int) {
+        // Does nothing
+    }
+
     override fun addCategory(name: String) {
         // Does nothing
     }

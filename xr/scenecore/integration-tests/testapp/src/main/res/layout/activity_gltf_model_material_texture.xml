@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".model.GltfModelMaterialTexture">
+    tools:context=".model.GltfModelMaterialTextureActivity">
 
   <com.google.android.material.appbar.MaterialToolbar
       android:id="@+id/gltf_model_topAppBar"

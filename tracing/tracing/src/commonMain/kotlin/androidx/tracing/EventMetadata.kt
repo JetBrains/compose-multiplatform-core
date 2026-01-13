@@ -34,6 +34,9 @@ public abstract class EventMetadata internal constructor() {
     /** Adds a metadata entry where the type of the [value] is an [String]. */
     public abstract fun addMetadataEntry(name: String, value: String)
 
+    /** Adds call stack frame information to the [TraceEvent]. */
+    public abstract fun addCallStackEntry(name: String, sourceFile: String?, lineNumber: Int)
+
     /**
      * Adds additional categories to the [TraceEvent].
      *

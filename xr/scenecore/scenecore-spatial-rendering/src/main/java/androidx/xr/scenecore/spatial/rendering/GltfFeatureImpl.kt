@@ -95,26 +95,27 @@ internal class GltfFeatureImpl(
         currentAnimationJob?.cancel()
         val coroutineDispatcher = executor.asCoroutineDispatcher()
         animationState = GltfEntity.AnimationState.PLAYING
-        CoroutineScope(coroutineDispatcher).launch {
-            try {
-                // The @MainThread annotation is a "Lint" check. As soon as you call launch, you are
-                // creating a new asynchronous task. The Dispatcher you pass to launch decides where
-                // that task runs. If you try to access that context from a background thread
-                // (which is where executor put you), the native code looks for the context, doesn't
-                // find it (or finds a mismatch), and fails or crashes
-                withContext(Dispatchers.Main) {
-                    impressApi.animateGltfModel(modelImpressNode, animationName, loop)
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                // Some other error happened.  Log it and stop the animation.
-                Log.e("GltfFeatureImpl", "Could not start animation: $e")
-            } finally {
-                if (currentAnimationJob === coroutineContext[Job]) {
-                    animationState = GltfEntity.AnimationState.STOPPED
+        currentAnimationJob =
+            CoroutineScope(coroutineDispatcher).launch {
+                try {
+                    // The @MainThread annotation is a "Lint" check. As soon as you call launch, you
+                    // are creating a new asynchronous task. The Dispatcher you pass to launch
+                    // decides where that task runs. If you try to access that context from a
+                    // background thread (which is where executor put you), the native code looks
+                    // for the context, doesn't find it (or finds a mismatch), and fails or crashes
+                    withContext(Dispatchers.Main) {
+                        impressApi.animateGltfModel(modelImpressNode, animationName, loop)
+                    }
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    // Some other error happened.  Log it and stop the animation.
+                    Log.e("GltfFeatureImpl", "Could not start animation: $e")
+                } finally {
+                    if (currentAnimationJob === coroutineContext[Job]) {
+                        animationState = GltfEntity.AnimationState.STOPPED
+                    }
                 }
             }
-        }
     }
 
     @MainThread

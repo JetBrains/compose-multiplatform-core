@@ -230,6 +230,14 @@ public interface ImpressApi {
     public fun setGltfModelColliderEnabled(impressNode: ImpressNode, enableCollider: Boolean)
 
     /**
+     * Enable reform affordance for a glTF model.
+     *
+     * @param impressNode The object of Impress node for the instance of the glTF model.
+     * @param enabled If the reform affordance should be added or removed.
+     */
+    public fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean)
+
+    /**
      * Starts an animation on an instanced GLTFModel.
      *
      * @param impressNode The object of the Impress node for the instance of the GLTF

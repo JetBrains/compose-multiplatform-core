@@ -149,6 +149,27 @@ class GltfFeatureImplTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun startAnimation_afterImpressCallback_stopsAnimation() =
+        runTest(testDispatcher) {
+            val animationName = "test_animation"
+
+            runBlocking {
+                Mockito.doAnswer {
+                        assertThat(gltfFeature.animationState)
+                            .isEqualTo(GltfEntity.AnimationState.PLAYING)
+                        null
+                    }
+                    .`when`(mockImpressApi)
+                    .animateGltfModel(modelImpressNode, animationName, false)
+            }
+            gltfFeature.startAnimation(/* looping= */ false, animationName, executor)
+            assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+            executor.runAll()
+            assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun stopAnimation_stopsAnimation() =
         runTest(testDispatcher) {
             val animationName = "test_animation"

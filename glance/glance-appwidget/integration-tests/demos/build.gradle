@@ -22,7 +22,15 @@ plugins {
     id("com.android.experimental.built-in-kotlin")
 }
 
+android {
+    defaultConfig {
+        minSdkVersion 29 // todo: temp
+    }
+}
+
 dependencies {
+    implementation(project(":compose:remote:remote-core"))
+    implementation(project(":compose:remote:remote-creation"))
 
     implementation(project(":glance:glance"))
     implementation(project(":glance:glance-appwidget"))

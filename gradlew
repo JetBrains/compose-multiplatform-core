@@ -97,8 +97,6 @@ cd "`dirname \"$PRG\"`/" >/dev/null
 APP_HOME="`pwd -P`"
 cd "$SAVED" >/dev/null
 
-CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-
 # --------- androidx specific code needed for lint and java. ------------------
 
 # Pick the correct fullsdk for this OS.
@@ -176,7 +174,6 @@ fi
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
     APP_HOME=`cygpath --path --mixed "$APP_HOME"`
-    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
     JAVACMD=`cygpath --unix "$JAVACMD"`
 
     # We build the pattern for arguments to be converted via cygpath
@@ -468,7 +465,7 @@ function runGradle() {
   else
     VERIFICATION_ARGUMENT=--dependency-verification=strict
   fi
-  if $wrapper "$JAVACMD" "${JVM_OPTS[@]}" $TMPDIR_ARG -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain $HOME_SYSTEM_PROPERTY_ARGUMENT $TMPDIR_ARG $VERIFICATION_ARGUMENT "$ORG_GRADLE_JVMARGS" "$@"; then
+  if $wrapper "$JAVACMD" "${JVM_OPTS[@]}" $TMPDIR_ARG -jar "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" $HOME_SYSTEM_PROPERTY_ARGUMENT $TMPDIR_ARG $VERIFICATION_ARGUMENT "$ORG_GRADLE_JVMARGS" "$@"; then
     RETURN_VALUE=0
   else
     # Print AndroidX-specific help message if build fails

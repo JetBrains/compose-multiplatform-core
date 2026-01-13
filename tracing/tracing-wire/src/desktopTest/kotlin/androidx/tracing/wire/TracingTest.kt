@@ -16,7 +16,6 @@
 
 package androidx.tracing.wire
 
-import androidx.tracing.AtomicInteger
 import androidx.tracing.DEFAULT_LONG
 import androidx.tracing.PooledTracePacketArray
 import androidx.tracing.TRACE_PACKET_BUFFER_SIZE
@@ -38,6 +37,7 @@ import kotlinx.coroutines.test.runTest
 import okio.blackholeSink
 import okio.buffer
 import org.junit.Before
+import perfetto.protos.MutableCallstack
 import perfetto.protos.MutableTracePacket
 import perfetto.protos.MutableTrackDescriptor
 import perfetto.protos.MutableTrackEvent
@@ -67,9 +67,12 @@ class TestSink : TraceSink() {
                             // this is sometimes not used, but we don't care about extra
                             // allocations during this test
                             scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG),
-                            // We don't reset annotations in tests. Allocations are okay here.
+                            // We don't reset in tests & allocations are okay here.
                             scratchAnnotations = mutableListOf(),
-                            scratchAnnotationIndex = AtomicInteger(-1),
+                            scratchAnnotationIndex = IntArray(size = 1) { _ -> -1 },
+                            scratchCallStack = MutableCallstack(),
+                            scratchFrames = mutableListOf(),
+                            scratchFrameIndex = IntArray(size = 1) { _ -> -1 },
                         )
                     }
             )
@@ -281,6 +284,36 @@ class TracingTest {
             actual = sink.packetCountOnDroppedTracePacket,
             message = "Unexpected number of packets",
         )
+    }
+
+    @Test
+    internal fun testTrackEventsWithCallStackFrames() {
+        driver.use {
+            tracer.trace(
+                category = "category",
+                name = "section",
+                metadataBlock = {
+                    addCallStackEntry(name = "name", sourceFile = "sourceFile", lineNumber = 1)
+                },
+            ) {
+                // Do nothing
+            }
+        }
+
+        // 2 packets for track descriptors (process + thread)
+        // 2 packets for begin and end section.
+        assertEquals(4, sink.packets.size)
+        assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
+        assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name != null })
+        sink.firstStartStopWithName("section") { start, _ ->
+            // There should be only one category
+            assertEquals(1, start.track_event!!.categories.size)
+            assertEquals(1, start.track_event!!.callstack!!.frames.size)
+            val frame = start.track_event!!.callstack!!.frames[0]
+            assertEquals("name", frame.function_name)
+            assertEquals("sourceFile", frame.source_file)
+            assertEquals(1, frame.line_number)
+        }
     }
 
     internal class TraceSinkDelegate(private val sink: TraceSink) : TraceSink() {

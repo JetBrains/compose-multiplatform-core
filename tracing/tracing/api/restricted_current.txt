@@ -28,6 +28,7 @@ package androidx.tracing {
   }
 
   public abstract class EventMetadata {
+    method public abstract void addCallStackEntry(String name, String? sourceFile, int lineNumber);
     method public abstract void addCategory(String name);
     method public abstract void addMetadataEntry(String name, boolean value);
     method public abstract void addMetadataEntry(String name, double value);
@@ -51,6 +52,16 @@ package androidx.tracing {
   public final class EventMetadataCloseableKt {
     method @InaccessibleFromKotlin @kotlin.PublishedApi internal static androidx.tracing.EventMetadataCloseable getEmptyEventMetadataCloseable();
     property @kotlin.PublishedApi internal static androidx.tracing.EventMetadataCloseable EmptyEventMetadataCloseable;
+  }
+
+  @SuppressCompatibility @androidx.tracing.DelicateTracingApi public final class Frame {
+    method public void reset();
+    property public int lineNumber;
+    property public String? name;
+    property public String? sourceFile;
+    field public int lineNumber;
+    field public String? name;
+    field public String? sourceFile;
   }
 
   @SuppressCompatibility @androidx.tracing.DelicateTracingApi public final class MetadataEntry {
@@ -151,7 +162,9 @@ package androidx.tracing {
     property public Double? counterDoubleValue;
     property public Long? counterLongValue;
     property public java.util.List<java.lang.Long> flowIds;
+    property public java.util.List<androidx.tracing.Frame> frames;
     property public int lastCategoryIndex;
+    property public int lastFrameIndex;
     property public int lastMetadataEntryIndex;
     property public java.util.List<androidx.tracing.MetadataEntry> metadataEntries;
     property public String? name;
@@ -164,7 +177,9 @@ package androidx.tracing {
     field public Double? counterDoubleValue;
     field public Long? counterLongValue;
     field public java.util.List<java.lang.Long> flowIds;
+    field public java.util.List<androidx.tracing.Frame> frames;
     field public int lastCategoryIndex;
+    field public int lastFrameIndex;
     field public int lastMetadataEntryIndex;
     field public java.util.List<androidx.tracing.MetadataEntry> metadataEntries;
     field public String? name;

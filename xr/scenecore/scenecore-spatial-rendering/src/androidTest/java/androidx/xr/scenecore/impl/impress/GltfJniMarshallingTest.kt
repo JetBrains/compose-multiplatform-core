@@ -128,6 +128,20 @@ class GltfJniMarshallingTest : BaseJniMarshallingTest() {
     }
 
     @Test
+    fun setGltfReformAffordanceEnabled_marshalsParams() {
+        val expectedEnabled = false
+        ImpressApiTestHelper.nativeSetExpectedSetGltfReformAffordanceEnabled(
+            TEST_NODE_ID,
+            expectedEnabled,
+        )
+        val impressNode = ImpressNode(TEST_NODE_ID)
+
+        mImpressApi.setGltfReformAffordanceEnabled(impressNode, expectedEnabled)
+
+        // This JNI call does not return any data, so the only assertion is on the native side.
+    }
+
+    @Test
     fun animateGltfModel_marshalsParams_invokesOnComplete() {
         runBlocking {
             val expectedLoop = true

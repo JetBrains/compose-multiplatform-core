@@ -53,4 +53,22 @@ class TraceEventTest {
             actual = event.categories,
         )
     }
+
+    @Test
+    internal fun testRecyclingOfTraceEventForCallStackFrames() {
+        val event = TraceEvent()
+        val scope = TraceEventScope()
+        scope.event = event
+        repeat(6) {
+            scope.addCallStackEntry(name = "call stack $it", sourceFile = null, lineNumber = -1)
+        }
+        assertEquals(expected = 6, event.frames.size)
+        event.reset()
+        // Make sure we resize correctly
+        assertTrue { event.frames.size == FRAMES_EXPECTED_SIZE }
+        assertEquals(
+            expected = MutableList(size = FRAMES_EXPECTED_SIZE) { Frame() },
+            actual = event.frames,
+        )
+    }
 }

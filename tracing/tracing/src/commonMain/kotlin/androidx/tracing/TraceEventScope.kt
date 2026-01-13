@@ -55,6 +55,13 @@ internal class TraceEventScope() : EventMetadata() {
         entry.stringValue = value
     }
 
+    override fun addCallStackEntry(name: String, sourceFile: String?, lineNumber: Int) {
+        val frame = nextCallStackEntry()
+        frame.name = name
+        frame.sourceFile = sourceFile
+        frame.lineNumber = lineNumber
+    }
+
     override fun addCategory(name: String) {
         val event = event!!
         event.lastCategoryIndex += 1
@@ -74,6 +81,17 @@ internal class TraceEventScope() : EventMetadata() {
             event.metadataEntries += MetadataEntry()
         }
         return event.metadataEntries[event.lastMetadataEntryIndex]
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun nextCallStackEntry(): Frame {
+        val event = event!!
+        event.lastFrameIndex += 1
+        if (event.lastFrameIndex >= event.frames.size) {
+            // Resize if necessary.
+            event.frames += Frame()
+        }
+        return event.frames[event.lastFrameIndex]
     }
 
     @DelicateTracingApi

@@ -355,6 +355,16 @@ public class ImpressApiImpl : ImpressApi {
         )
 
     /**
+     * Enables reform affordance on an instanced gLTF model.
+     *
+     * @param impressNode The integer ID of the impress node for the instance of the gLTF
+     * @param enabled A boolean indicated whether to add or remove the reform affordance for the
+     *   gLTF model.
+     */
+    override fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean): Unit =
+        nSetGltfReformAffordanceEnabled(getViewNativeHandle(view), impressNode.handle, enabled)
+
+    /**
      * Starts an animation on an instanced GLTFModel.
      *
      * @param impressNode The integer ID of the Impress node for the instance of the GLTF
@@ -376,18 +386,6 @@ public class ImpressApiImpl : ImpressApi {
             animationName,
             looping,
             object : AssetAnimator {
-                // Hold a reference to the completer to ensure it isn't garbage
-                // collected until the C++ side releases the reference to the
-                // AssetAnimator. The future returned by
-                // CallbackToFutureAdapter.getFuture() aggressively tries to let the
-                // garbage collector clean up the completer as an optimization, we
-                // are concerned that this could cause the future to never fire, or
-                // cancel incorrectly and return an error, especially since the code
-                // that calls this simply allows the future to go out of scope
-                // without storing it. This might not actually be a problem, but
-                // this code shouldn't be harmful and should reduce the uncertainty.
-                // We should eventually have a different way of communicating
-                // animation completion back to the application. See b/362368652. {
                 override fun onComplete() {
                     continuation.resume(null)
                 }
@@ -1473,6 +1471,12 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         gltfToken: Long,
         enableCollider: Boolean,
+    )
+
+    private external fun nSetGltfReformAffordanceEnabled(
+        view: Long,
+        impressNode: Int,
+        enabled: Boolean,
     )
 
     private external fun nAnimateGltfModel(

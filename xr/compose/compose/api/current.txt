@@ -1008,11 +1008,11 @@ package androidx.xr.compose.subspace.layout {
     property public androidx.xr.compose.unit.IntVolumeSize size;
   }
 
-  public final class SpatialRoundedCornerShape extends androidx.xr.compose.subspace.layout.SpatialShape {
+  public final class SpatialRoundedCornerShape implements androidx.xr.compose.subspace.layout.SpatialShape {
     ctor public SpatialRoundedCornerShape(androidx.compose.foundation.shape.CornerSize size);
   }
 
-  public abstract class SpatialShape {
+  public sealed nonexhaustive interface SpatialShape {
   }
 
   public interface SubspaceLayoutCoordinates {

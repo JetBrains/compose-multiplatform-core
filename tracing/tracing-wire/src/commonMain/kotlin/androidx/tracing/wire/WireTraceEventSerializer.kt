@@ -16,9 +16,9 @@
 
 package androidx.tracing.wire
 
-import androidx.tracing.AtomicInteger
 import androidx.tracing.DEFAULT_LONG
 import androidx.tracing.DEFAULT_STRING
+import androidx.tracing.FRAMES_EXPECTED_SIZE
 import androidx.tracing.LAST_CATEGORY_INDEX
 import androidx.tracing.METADATA_ENTRIES_EXPECTED_SIZE
 import androidx.tracing.METADATA_TYPE_BOOLEAN
@@ -30,6 +30,7 @@ import androidx.tracing.TRACK_DESCRIPTOR_TYPE_PROCESS
 import androidx.tracing.TRACK_DESCRIPTOR_TYPE_THREAD
 import androidx.tracing.TraceEvent
 import com.squareup.wire.ProtoWriter
+import perfetto.protos.MutableCallstack
 import perfetto.protos.MutableCounterDescriptor
 import perfetto.protos.MutableDebugAnnotation
 import perfetto.protos.MutableProcessDescriptor
@@ -61,8 +62,17 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         MutableList(size = METADATA_ENTRIES_EXPECTED_SIZE) { MutableDebugAnnotation() }
 
     /** This is passed by ref, to avoid unnecessary computation. */
-    // Using a Long for convenience, given we already have a commonized definition.
-    private val scratchAnnotationIndex = AtomicInteger(/* initialValue= */ -1)
+    private val scratchAnnotationIndex = IntArray(1) { _ -> -1 }
+
+    /** Scratch call stack */
+    private var scratchCallStack = MutableCallstack()
+
+    /** Private scratchpad of callstack information. */
+    private var scratchFrames: MutableList<MutableCallstack.MutableFrame> =
+        MutableList(size = FRAMES_EXPECTED_SIZE) { MutableCallstack.MutableFrame() }
+
+    /** This is passed by ref, to avoid unnecessary computation. */
+    private val scratchFrameIndex = IntArray(1) { _ -> -1 }
 
     /**
      * Private scratchpad descriptor, used to avoid allocating a descriptor for each new track
@@ -81,6 +91,9 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchTrackEvent = scratchTrackEvent,
             scratchAnnotations = scratchAnnotations,
             scratchAnnotationIndex = scratchAnnotationIndex,
+            scratchCallStack = scratchCallStack,
+            scratchFrames = scratchFrames,
+            scratchFrameIndex = scratchFrameIndex,
         )
         MutableTracePacket.Companion.ADAPTER.encodeWithTag(
             writer = protoWriter,
@@ -88,11 +101,12 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             value = scratchTracePacket,
         )
         resetScratchAnnotations()
+        resetScratchFrames()
     }
 
     /** Reset and resize scratch annotations when necessary. */
     inline fun resetScratchAnnotations() {
-        val index = scratchAnnotationIndex.get()
+        val index = scratchAnnotationIndex[0]
         val size = index + 1
         // Reset
         repeat(size) {
@@ -107,7 +121,27 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         if (size > METADATA_ENTRIES_EXPECTED_SIZE) {
             scratchAnnotations = scratchAnnotations.subList(0, METADATA_ENTRIES_EXPECTED_SIZE)
         }
-        scratchAnnotationIndex.set(-1)
+        scratchAnnotationIndex[0] = -1
+    }
+
+    inline fun resetScratchFrames() {
+        if (scratchCallStack.frames.isNotEmpty()) {
+            scratchCallStack.frames = emptyList()
+        }
+        val index = scratchFrameIndex[0]
+        val size = index + 1
+        // Reset
+        repeat(size) {
+            val scratchFrame = scratchFrames[it]
+            scratchFrame.function_name = null
+            scratchFrame.source_file = null
+            scratchFrame.line_number = null
+        }
+        // Resize
+        if (size > FRAMES_EXPECTED_SIZE) {
+            scratchFrames = scratchFrames.subList(0, FRAMES_EXPECTED_SIZE)
+        }
+        scratchFrameIndex[0] = -1
     }
 
     companion object {
@@ -125,7 +159,10 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchTrackDescriptor: MutableTrackDescriptor,
             scratchTrackEvent: MutableTrackEvent,
             scratchAnnotations: MutableList<MutableDebugAnnotation>,
-            scratchAnnotationIndex: AtomicInteger,
+            scratchAnnotationIndex: IntArray,
+            scratchCallStack: MutableCallstack,
+            scratchFrames: MutableList<MutableCallstack.MutableFrame>,
+            scratchFrameIndex: IntArray,
         ) {
             scratchTracePacket.timestamp = event.timestamp
             // in the common case when the track_descriptor isn't needed, clear it on the
@@ -223,12 +260,35 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                         }
                     }
                 }
-                scratchAnnotationIndex.set(index)
+                scratchAnnotationIndex[0] = index
                 if (index >= 0) {
                     // The actual usable annotations in the pool.
                     // The actual resizing happens once we have finished the write.
                     val debugAnnotations = scratchAnnotations.subList(0, index + 1)
                     scratchTrackEvent.debug_annotations = debugAnnotations
+                }
+                // Call Stack Frames
+                index = -1
+                repeat(event.lastFrameIndex + 1) {
+                    index += 1
+                    if (index >= scratchFrames.size) {
+                        scratchFrames += MutableCallstack.MutableFrame()
+                    }
+                    val frameEntry = event.frames[it]
+                    val frame = scratchFrames[it]
+                    frame.function_name = frameEntry.name
+                    frame.source_file = frameEntry.sourceFile
+                    frame.line_number = frameEntry.lineNumber
+                }
+                scratchFrameIndex[0] = index
+                if (index >= 0) {
+                    // The actual number of frames in the pool
+                    // The actual resizing happens once we have finished the write.
+                    val frames = scratchFrames.subList(0, index + 1)
+                    scratchCallStack.frames = frames
+                    scratchTrackEvent.callstack = scratchCallStack
+                } else {
+                    scratchTrackEvent.callstack = null
                 }
                 // Update trace packet
                 scratchTracePacket.track_event = scratchTrackEvent

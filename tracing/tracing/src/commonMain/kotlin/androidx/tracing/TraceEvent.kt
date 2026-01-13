@@ -32,6 +32,8 @@ import androidx.annotation.RestrictTo
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val CATEGORIES_EXPECTED_SIZE: Int = 4
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val FRAMES_EXPECTED_SIZE: Int = 4
+
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_INDEX_WHEN_EMPTY: Int = -1
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_CATEGORY_INDEX: Int = 0
@@ -143,6 +145,20 @@ internal constructor(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
     public var lastCategoryIndex: Int,
+
+    /** A list of call stack frames that can be associated to the [androidx.tracing.TraceEvent]. */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var frames: MutableList<Frame>,
+
+    /**
+     * Keeping track of the index separately for [frames], because the `MutableList` is
+     * pre-allocated with sentinel objects for performance reasons. This `index` can be used to
+     * determine the true `size` of the [frames] `MutableList`.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var lastFrameIndex: Int,
 ) {
     public constructor() :
         this(
@@ -159,6 +175,8 @@ internal constructor(
             lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY,
             categories = MutableList(size = CATEGORIES_EXPECTED_SIZE) { DEFAULT_STRING },
             lastCategoryIndex = LAST_CATEGORY_INDEX,
+            frames = MutableList(size = FRAMES_EXPECTED_SIZE) { Frame() },
+            lastFrameIndex = LAST_INDEX_WHEN_EMPTY,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -248,6 +266,13 @@ internal constructor(
                 categories = categories.subList(0, CATEGORIES_EXPECTED_SIZE)
             }
             lastCategoryIndex = LAST_CATEGORY_INDEX
+        }
+        if (lastFrameIndex >= 0) {
+            repeat(lastFrameIndex + 1) { frames[it].reset() }
+            if (lastFrameIndex >= FRAMES_EXPECTED_SIZE) {
+                frames = frames.subList(0, FRAMES_EXPECTED_SIZE)
+            }
+            lastFrameIndex = LAST_INDEX_WHEN_EMPTY
         }
     }
 }

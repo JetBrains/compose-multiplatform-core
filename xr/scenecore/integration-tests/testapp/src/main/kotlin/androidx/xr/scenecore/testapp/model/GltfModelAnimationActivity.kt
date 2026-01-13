@@ -39,7 +39,7 @@ import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
-class GltfModelAnimation : AppCompatActivity() {
+class GltfModelAnimationActivity : AppCompatActivity() {
 
     enum class AnimationState(val value: String) {
         PLAYING("PLAYING"),
@@ -85,13 +85,13 @@ class GltfModelAnimation : AppCompatActivity() {
 
         findViewById<Toolbar>(R.id.gltf_model_animation_topAppBar).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this@GltfModelAnimation.finish() }
+            it.setNavigationOnClickListener { this@GltfModelAnimationActivity.finish() }
             it.setTitle(getString(R.string.cuj_gltf_model_animation_test))
         }
 
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
             it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelAnimation) }
+            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelAnimationActivity) }
         }
 
         createGltfModelButton = findViewById(R.id.gltf_model_create)

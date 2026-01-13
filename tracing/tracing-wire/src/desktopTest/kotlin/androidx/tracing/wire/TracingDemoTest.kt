@@ -51,6 +51,11 @@ class TracingDemoTest {
                     name = "trace",
                     metadataBlock = {
                         addMetadataEntry("context", "basic trace with 1 suspension point")
+                        addCallStackEntry(
+                            name = TracingDemoTest::class.java.name,
+                            sourceFile = "/path/to/TracingDemoTest.kt",
+                            lineNumber = -1,
+                        )
                     },
                 ) {
                     tracer.instant(category = "category", name = "Delaying") {

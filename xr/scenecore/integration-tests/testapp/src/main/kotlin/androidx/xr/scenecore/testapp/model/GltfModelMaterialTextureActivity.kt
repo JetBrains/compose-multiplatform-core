@@ -49,8 +49,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n")
-class GltfModelMaterialTexture : AppCompatActivity() {
-    private val TAG = "GltfModelMaterialTexture"
+class GltfModelMaterialTextureActivity : AppCompatActivity() {
+    private val TAG = "GltfModelMaterialTextureActivity"
     private val ANIMATION_NAME = "Fast_Flying"
     private val MESH_NAME = "Dragon"
     private val DRAGON_SCALE = 0.2f
@@ -80,13 +80,13 @@ class GltfModelMaterialTexture : AppCompatActivity() {
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this@GltfModelMaterialTexture.finish() }
+            it.setNavigationOnClickListener { this@GltfModelMaterialTextureActivity.finish() }
             it.setTitle(getString(R.string.cuj_gltf_model_material_texture_test))
         }
 
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
             it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelMaterialTexture) }
+            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelMaterialTextureActivity) }
         }
 
         findViewById<Button>(R.id.gltf_model_toggle_hsm_fsm).also { button ->
