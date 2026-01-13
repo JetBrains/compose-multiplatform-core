@@ -17,7 +17,6 @@
 package androidx.glance.wear.composable
 
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -25,6 +24,7 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.painter.RemotePainter
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 

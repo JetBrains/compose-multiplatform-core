@@ -83,26 +83,6 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
         private set
 
     /**
-     * The [SpatialUser] represents the user within the XR scene, providing access to tracking
-     * information for the user's head and eyes.
-     *
-     * Use it to get the following:
-     * - **Head Pose**: Access [SpatialUser.head] to get the position and orientation of the user's
-     *   head in the scene.
-     * - **Camera Views**: Access [SpatialUser.cameraViews] to get the pose and field of view for
-     *   each of the user's camera views.
-     *
-     * Note: Accessing properties on [SpatialUser] requires head tracking to be enabled in the
-     * session [androidx.xr.runtime.Session.config].
-     *
-     * @see SpatialUser
-     * @see Head
-     * @see CameraView
-     */
-    public lateinit var spatialUser: SpatialUser
-        private set
-
-    /**
      * A spatialized [MainPanelEntity] associated with the "main window" for the Activity. When in
      * Home Space Mode, this is the application's "main window".
      *
@@ -177,9 +157,13 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
         perceptionSpace = PerceptionSpace.create(sceneRuntime)
         activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
         val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().first()
-        spatialUser = SpatialUser.create(perceptionRuntime.lifecycleManager, sceneRuntime)
         mainPanelEntity =
-            MainPanelEntity.create(perceptionRuntime.lifecycleManager, sceneRuntime, entityManager)
+            MainPanelEntity.create(
+                perceptionRuntime.lifecycleManager,
+                sceneRuntime,
+                perceptionSpace,
+                entityManager,
+            )
         sceneRuntime.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(

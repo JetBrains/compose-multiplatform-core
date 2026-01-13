@@ -77,7 +77,7 @@ class AndroidEdgeEffect implements ScrollingEdgeEffect {
         if (!mEffect.isFinished()) {
             AndroidPaintContext paintContext = (AndroidPaintContext) context;
             if (phase == PRE_DRAW) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // REMOVE IN PLATFORM
                     float distance = mEffect.getDistance() / 10f;
                     if (distance > 0) {
                         switch (mDirection) {
@@ -110,8 +110,9 @@ class AndroidEdgeEffect implements ScrollingEdgeEffect {
                         mEffect.draw(mRecordingCanvas);
                         context.needsRepaint();
                     }
-                }
-            } else if (phase == POST_DRAW) {
+                } // REMOVE IN PLATFORM
+            } else if (phase == POST_DRAW) { // REMOVE IN PLATFORM
+                // BEGIN-REMOVE-IN-PLATFORM
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                     mEffect.setColor(Color.BLACK);
                     LayoutComponent layoutComponent = (LayoutComponent) component;
@@ -148,6 +149,7 @@ class AndroidEdgeEffect implements ScrollingEdgeEffect {
                     }
                     context.needsRepaint();
                 }
+                // END-REMOVE-IN-PLATFORM
             }
         }
     }

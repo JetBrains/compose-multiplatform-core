@@ -28,11 +28,11 @@ import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposePath
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope.Companion.DefaultBlendMode
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope.Companion.DefaultFilterQuality
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteSolidColor
 import androidx.compose.remote.creation.compose.capture.withTransform
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.shaders.RemoteSolidColor
 import androidx.compose.remote.creation.compose.state.FallbackCreationState
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString

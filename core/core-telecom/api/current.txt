@@ -136,6 +136,7 @@ package androidx.core.telecom {
     method @RequiresPermission("android.permission.MANAGE_OWN_CALLS") public void registerAppWithTelecom(int capabilities, optional int backwardsCompatSdkLevel);
     method @BytecodeOnly @RequiresPermission("android.permission.MANAGE_OWN_CALLS") public static void registerAppWithTelecom$default(androidx.core.telecom.CallsManager!, int, int, int, Object!);
     field public static final int CAPABILITY_BASELINE = 1; // 0x1
+    field public static final int CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK = 8; // 0x8
     field public static final int CAPABILITY_SUPPORTS_CALL_STREAMING = 4; // 0x4
     field public static final int CAPABILITY_SUPPORTS_VIDEO_CALLING = 2; // 0x2
     field public static final androidx.core.telecom.CallsManager.Companion Companion;
@@ -143,6 +144,7 @@ package androidx.core.telecom {
 
   public static final class CallsManager.Companion {
     property public static int CAPABILITY_BASELINE;
+    property public static int CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK;
     property public static int CAPABILITY_SUPPORTS_CALL_STREAMING;
     property public static int CAPABILITY_SUPPORTS_VIDEO_CALLING;
   }

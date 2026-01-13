@@ -63,18 +63,32 @@ public class FakeMovableComponent : FakeComponent(), MovableComponent {
     /** Sets the size of the interaction highlight extent. */
     override var size: Dimensions = Dimensions(2.0f, 1.0f, 0.0f)
 
+    /** The default executor for the component */
+    public var defaultExecutor: Executor = FakeScheduledExecutorService()
+
     /**
      * For test purposes only.
      *
      * A map of move event listeners to their executors.
      */
-    private val moveEventListenersMap: MutableMap<MoveEventListener, Executor> = mutableMapOf()
+    internal val moveEventListenersMap: MutableMap<MoveEventListener, Executor> = mutableMapOf()
 
     /** The number of times setPlanePoseForMoveUpdatePose is called */
     public var setPlanePoseForMoveUpdatePoseCallCount: Long = 0
 
     /** The last plane pose set by setPlanePoseForMoveUpdatePose */
     public var lastPlanePose: Pose? = null
+
+    /**
+     * Adds the listener to the set of active listeners for the move events.
+     *
+     * <p>The listener is invoked on the default executor of the runtime.
+     *
+     * @param moveEventListener The move event listener to set.
+     */
+    override fun addMoveEventListener(moveEventListener: MoveEventListener) {
+        moveEventListenersMap.put(moveEventListener, defaultExecutor)
+    }
 
     /**
      * Adds the listener to the set of active listeners for the move events.

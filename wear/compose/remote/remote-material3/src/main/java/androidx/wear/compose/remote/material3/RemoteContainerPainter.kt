@@ -17,9 +17,9 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope
-import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.painter.RemotePainter
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 
 @Suppress("RestrictedApiAndroidX")

@@ -37,8 +37,8 @@ import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.RemotePath
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteShader
-import androidx.compose.remote.creation.compose.capture.shaders.colorFilterModeToInt
+import androidx.compose.remote.creation.compose.shaders.RemoteShader
+import androidx.compose.remote.creation.compose.shaders.colorFilterModeToInt
 import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBitmapFont

@@ -45,7 +45,7 @@ private constructor(provider: LifecycleOwner, private val enforceMainThread: Boo
      * Lifecycle object isn't great idea neither, because it keeps strong references on all other
      * listeners, so you'll leak all of them as well.
      */
-    private val lifecycleOwner: WeakReference<LifecycleOwner>
+    private val lifecycleOwner = WeakReference(provider)
     private var addingObserverCounter = 0
     private var handlingEvent = false
     private var newEventOccurred = false
@@ -69,10 +69,6 @@ private constructor(provider: LifecycleOwner, private val enforceMainThread: Boo
      * @param provider The owner LifecycleOwner
      */
     public actual constructor(provider: LifecycleOwner) : this(provider, true)
-
-    init {
-        lifecycleOwner = WeakReference(provider)
-    }
 
     actual override var currentState: State
         get() = state

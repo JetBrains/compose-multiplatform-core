@@ -1,6 +1,11 @@
 // Signature format: 4.0
 package androidx.xr.compose.platform {
 
+  public final class ActivityExtKt {
+    method public static suspend Object? requestFullSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public static suspend Object? requestHomeSpace(androidx.activity.ComponentActivity, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   public final class LocalSessionKt {
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.runtime.Session?> getLocalSession();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.runtime.Session?> LocalSession;
@@ -30,13 +35,13 @@ package androidx.xr.compose.platform {
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.compose.platform.SpatialCapabilities> LocalSpatialCapabilities;
   }
 
-  public interface SpatialConfiguration {
-    method @InaccessibleFromKotlin public default androidx.xr.compose.unit.DpVolumeSize getBounds();
-    method @InaccessibleFromKotlin public default boolean hasXrSpatialFeature();
-    method public default void requestFullSpaceMode();
-    method public default void requestHomeSpaceMode();
-    property public default androidx.xr.compose.unit.DpVolumeSize bounds;
-    property public default boolean hasXrSpatialFeature;
+  public sealed nonexhaustive interface SpatialConfiguration {
+    method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getBounds();
+    method @InaccessibleFromKotlin public boolean hasXrSpatialFeature();
+    method @Deprecated public void requestFullSpaceMode();
+    method @Deprecated public void requestHomeSpaceMode();
+    property public abstract androidx.xr.compose.unit.DpVolumeSize bounds;
+    property public abstract boolean hasXrSpatialFeature;
     field public static final androidx.xr.compose.platform.SpatialConfiguration.Companion Companion;
   }
 
@@ -181,8 +186,6 @@ package androidx.xr.compose.spatial {
   public final class SubspaceKt {
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void AnchoredSubspace(androidx.xr.scenecore.AnchorEntity lockTo, optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void AnchoredSubspace(androidx.xr.scenecore.AnchorEntity, androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
-    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void ApplicationSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void PlanarEmbeddedSubspace(kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);

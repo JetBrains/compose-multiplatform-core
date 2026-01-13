@@ -96,7 +96,7 @@ class PerceivedResolutionManager(
                     )
                     mTextView?.setLine(
                         "Main Panel Perceived Resolution",
-                        session.scene.mainPanelEntity.getPerceivedResolution().toString(),
+                        session.scene.mainPanelEntity.getPerceivedResolution(cameraLeft).toString(),
                     )
 
                     mTextView?.setLine(
@@ -116,7 +116,9 @@ class PerceivedResolutionManager(
                         )
                         mTextView?.setLine(
                             "Panel Entity Perceived Resolution",
-                            panelEntityManager.panelEntity!!.getPerceivedResolution().toString(),
+                            panelEntityManager.panelEntity!!
+                                .getPerceivedResolution(cameraLeft)
+                                .toString(),
                         )
                     } else {
                         mTextView?.setLine(
@@ -150,7 +152,9 @@ class PerceivedResolutionManager(
                         )
                         mTextView?.setLine(
                             "Surface Entity Perceived Resolution",
-                            surfaceEntityManager.surfaceEntity?.getPerceivedResolution().toString(),
+                            surfaceEntityManager.surfaceEntity
+                                ?.getPerceivedResolution(cameraLeft)
+                                .toString(),
                         )
                     } else {
                         mTextView?.setLine("Surface Entity dimensions", "Can't Retrieve it")

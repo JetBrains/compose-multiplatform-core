@@ -25,8 +25,6 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.math.assertPose
 import androidx.xr.runtime.testing.math.assertVector3
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary
-import androidx.xr.scenecore.impl.perception.Session
 import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
@@ -51,7 +49,6 @@ import com.android.extensions.xr.space.ShadowSpatialState
 import com.android.extensions.xr.space.SpatialCapabilities
 import com.android.extensions.xr.space.SpatialState
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.Futures.immediateFuture
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.DefaultAsserter.fail
 import kotlinx.coroutines.CoroutineStart
@@ -63,7 +60,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
@@ -80,7 +76,6 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         Robolectric.buildActivity(Activity::class.java)
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val perceptionLibrary = Mockito.mock(PerceptionLibrary::class.java)
     private val nodeRepository = NodeRepository.getInstance()
     private lateinit var xrExtensions: XrExtensions
     private lateinit var testRuntime: SceneRuntime
@@ -92,7 +87,6 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
             fakeExecutor,
             xrExtensions,
             EntityManager(),
-            perceptionLibrary,
             unscaledGravityAlignedActivitySpace,
         )
     }
@@ -100,8 +94,6 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
     @Before
     fun setUp() {
         xrExtensions = XrExtensionsProvider.getXrExtensions()!!
-        `when`(perceptionLibrary.initSession(eq(activity), any(), eq(fakeExecutor)))
-            .thenReturn(immediateFuture(Mockito.mock(Session::class.java)))
 
         testRuntime = createTestSceneRuntime(/* unscaledGravityAlignedActivitySpace= */ false)
 

@@ -74,6 +74,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
@@ -272,7 +273,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         }
     }
 
-    private fun setupControlPanel(session: Session) {
+    private fun setupControlPanel(session: Session, arDevice: ArDevice) {
         // Dispose previous control panel if it exists
         controlPanelEntity?.dispose()
         controlPanelEntity = null
@@ -283,7 +284,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 setViewCompositionStrategy(
                     ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
                 )
-                setContent { VideoPlayerControls(session) }
+                setContent { VideoPlayerControls(session, arDevice) }
             }
 
         controlPanelEntity =
@@ -373,12 +374,13 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         activity: SurfaceEntityPlaybackActivity,
         session: Session,
     ): View {
+        val arDevice = ArDevice.getInstance(session)
         val view =
             ComposeView(activity.applicationContext).apply {
                 setViewCompositionStrategy(
                     ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
                 )
-                setContent { SurfaceEntityPlaybackActivityUI(session, activity) }
+                setContent { SurfaceEntityPlaybackActivityUI(session, arDevice, activity) }
             }
         view.setViewTreeLifecycleOwner(activity as LifecycleOwner)
         view.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
@@ -387,7 +389,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun VideoPlayerControls(session: Session) {
+    fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
         var featherRadiusY by remember { mutableFloatStateOf(0.0f) }
         Column(
@@ -438,13 +440,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                         surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
                         // Move the Quad-shaped canvas to a spot in front of the User.
                         surfaceEntity!!.setPose(
-                            session.scene.spatialUser.head?.transformPoseTo(
-                                Pose(
-                                    Vector3(0.0f, 0.0f, -1.5f),
-                                    Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
-                                ),
-                                session.scene.activitySpace,
-                            )!!
+                            session.scene.perceptionSpace
+                                .getScenePoseFromPerceptionPose(arDevice.state.value.devicePose)
+                                .transformPoseTo(
+                                    Pose(
+                                        Vector3(0.0f, 0.0f, -1.5f),
+                                        Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
+                                    ),
+                                    session.scene.activitySpace,
+                                )
                         )
                     }
                 ) {
@@ -529,6 +533,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun PlayVideoButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         videoUri: String,
         stereoMode: SurfaceEntity.StereoMode,
@@ -559,10 +564,10 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 var actualPose = pose
                 if (!(shape is SurfaceEntity.Shape.Quad)) {
                     actualPose =
-                        session.scene.spatialUser.head?.transformPoseTo(
-                            Pose.Identity,
+                        session.scene.perceptionSpace.transformPoseTo(
+                            arDevice.state.value.devicePose,
                             session.scene.activitySpace,
-                        )!!
+                        )
                 }
 
                 // Create SurfaceEntity and MovableComponent if they don't exist.
@@ -744,7 +749,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 }
                 player.playWhenReady = true
                 player.prepare()
-                setupControlPanel(session)
+                setupControlPanel(session, arDevice)
             },
             modifier = Modifier.fillMaxWidth().height(28.dp),
             colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
@@ -760,9 +765,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun BigBuckBunnyButton(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun BigBuckBunnyButton(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/vid_bigbuckbunny.mp4".
             videoUri =
@@ -780,12 +791,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun MVHEVCLeftPrimaryButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_left_primary_1080.mov".
@@ -806,12 +819,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun MVHEVCRightPrimaryButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_right_primary_1080.mov".
@@ -830,9 +845,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Naver180Button(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun Naver180Button(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Naver180.mp4".
             videoUri = Environment.getExternalStorageDirectory().path + "/Download/Naver180.mp4",
@@ -847,9 +868,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Galaxy360Button(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun Galaxy360Button(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Galaxy11_VR_3D360.mp4"
             videoUri =
@@ -865,9 +892,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Naver180MVHEVCButton(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun Naver180MVHEVCButton(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Naver180_MV-HEVC.mp4"
             videoUri =
@@ -883,9 +916,15 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Galaxy360MVHEVCButton(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun Galaxy360MVHEVCButton(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/Galaxy11_VR_3D360_MV-HEVC.mp4"
@@ -905,12 +944,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun SideBySideProtectedButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/sdr_singleview_protected.mp4"
@@ -931,12 +972,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun MVHEVCLeftPrimaryProtectedButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_left_primary_1080_protected.mp4"
@@ -957,12 +1000,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun HDRVideoPlaybackButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/hdr_pq_1000nits_1080p.mp4"
@@ -983,12 +1028,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun SingleViewRotated270HalfWidthButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/single_view_rotated_270_half_width.mp4"
@@ -1009,12 +1056,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     @Composable
     fun MVHEVCLeftPrimaryRotated180Button(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         enabled: Boolean = true,
         loop: Boolean = false,
     ) {
         PlayVideoButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_left_primary_rotated_180.mp4".
@@ -1033,7 +1082,11 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SurfaceEntityPlaybackActivityUI(session: Session, activity: SurfaceEntityPlaybackActivity) {
+    fun SurfaceEntityPlaybackActivityUI(
+        session: Session,
+        arDevice: ArDevice,
+        activity: SurfaceEntityPlaybackActivity,
+    ) {
         val videoPaused = remember { mutableStateOf(false) }
         val alphaMaskEnabled = remember { mutableStateOf(false) }
 
@@ -1076,24 +1129,24 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 if (videoPlaying == false) {
 
                     // High level testcases
-                    BigBuckBunnyButton(session, activity)
-                    MVHEVCLeftPrimaryButton(session, activity)
-                    MVHEVCRightPrimaryButton(session, activity)
-                    Naver180Button(session, activity)
-                    Naver180MVHEVCButton(session, activity)
-                    Galaxy360Button(session, activity)
-                    Galaxy360MVHEVCButton(session, activity)
-                    SideBySideProtectedButton(session, activity)
-                    MVHEVCLeftPrimaryProtectedButton(session, activity)
-                    HDRVideoPlaybackButton(session, activity)
-                    SingleViewRotated270HalfWidthButton(session, activity)
-                    MVHEVCLeftPrimaryRotated180Button(session, activity)
+                    BigBuckBunnyButton(session, arDevice, activity)
+                    MVHEVCLeftPrimaryButton(session, arDevice, activity)
+                    MVHEVCRightPrimaryButton(session, arDevice, activity)
+                    Naver180Button(session, arDevice, activity)
+                    Naver180MVHEVCButton(session, arDevice, activity)
+                    Galaxy360Button(session, arDevice, activity)
+                    Galaxy360MVHEVCButton(session, arDevice, activity)
+                    SideBySideProtectedButton(session, arDevice, activity)
+                    MVHEVCLeftPrimaryProtectedButton(session, arDevice, activity)
+                    HDRVideoPlaybackButton(session, arDevice, activity)
+                    SingleViewRotated270HalfWidthButton(session, arDevice, activity)
+                    MVHEVCLeftPrimaryRotated180Button(session, arDevice, activity)
                 } else {
                     Column(
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.weight(1f).padding(8.dp),
                     ) {
-                        VideoPlayerControls(session)
+                        VideoPlayerControls(session, arDevice)
                         Button(
                             onClick = {
                                 videoPaused.value = !videoPaused.value

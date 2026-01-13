@@ -18,6 +18,7 @@ package androidx.xr.scenecore.runtime
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 
 /**
@@ -95,12 +96,14 @@ public interface SurfaceEntity : Entity {
      * Gets the perceived resolution of the entity in the camera view.
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode.
+     * [PerceivedResolutionResult.InvalidRenderViewpoint] in Home Space Mode.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
      * the camera without changing the distance of the entity to the camera.
      *
+     * @param renderViewScenePose The [ScenePose] that represents the camera pose.
+     * @param renderViewFov The [FieldOfView] of the camera.
      * @return A [PerceivedResolutionResult] which encapsulates the outcome:
      *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
      *       is successful.
@@ -110,7 +113,10 @@ public interface SurfaceEntity : Entity {
      *
      * @see PerceivedResolutionResult
      */
-    public fun getPerceivedResolution(): PerceivedResolutionResult
+    public fun getPerceivedResolution(
+        renderViewScenePose: ScenePose,
+        renderViewFov: FieldOfView,
+    ): PerceivedResolutionResult
 
     /**
      * Indicates whether explicit color information has been set for the surface content. If

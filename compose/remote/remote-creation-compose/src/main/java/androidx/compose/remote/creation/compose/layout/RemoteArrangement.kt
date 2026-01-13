@@ -22,44 +22,42 @@ import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.ui.unit.dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface RemoteArrangement {
+public object RemoteArrangement {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Horizontal {
+    public sealed interface Horizontal {
         public fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Horizontal
 
         public fun toRemoteCompose(): Int
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface Vertical {
+    public sealed interface Vertical {
         public fun toComposeUi(): androidx.compose.foundation.layout.Arrangement.Vertical
 
         public fun toRemoteCompose(): Int
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public interface HorizontalOrVertical : Horizontal, Vertical {
+    public sealed interface HorizontalOrVertical : Horizontal, Vertical {
         override fun toComposeUi():
             androidx.compose.foundation.layout.Arrangement.HorizontalOrVertical
 
         override fun toRemoteCompose(): Int
     }
 
-    public companion object {
-        public val Top: RemoteArrangement.Vertical = VerticalArrangement(0)
-        public val Center: RemoteArrangement.Vertical = VerticalArrangement(1)
-        public val Bottom: RemoteArrangement.Vertical = VerticalArrangement(2)
-        public val Start: RemoteArrangement.Horizontal = HorizontalArrangement(3)
-        public val CenterHorizontally: RemoteArrangement.Horizontal = HorizontalArrangement(4)
-        public val End: RemoteArrangement.Horizontal = HorizontalArrangement(5)
-        public val SpaceBetween: RemoteArrangement.HorizontalOrVertical =
-            HorizontalOrVerticalArrangement(6)
-        public val SpaceEvenly: RemoteArrangement.HorizontalOrVertical =
-            HorizontalOrVerticalArrangement(7)
-        public val SpaceAround: RemoteArrangement.HorizontalOrVertical =
-            HorizontalOrVerticalArrangement(8)
-    }
+    public val Top: RemoteArrangement.Vertical = VerticalArrangement(0)
+    public val Center: RemoteArrangement.Vertical = VerticalArrangement(1)
+    public val Bottom: RemoteArrangement.Vertical = VerticalArrangement(2)
+    public val Start: RemoteArrangement.Horizontal = HorizontalArrangement(3)
+    public val CenterHorizontally: RemoteArrangement.Horizontal = HorizontalArrangement(4)
+    public val End: RemoteArrangement.Horizontal = HorizontalArrangement(5)
+    public val SpaceBetween: RemoteArrangement.HorizontalOrVertical =
+        HorizontalOrVerticalArrangement(6)
+    public val SpaceEvenly: RemoteArrangement.HorizontalOrVertical =
+        HorizontalOrVerticalArrangement(7)
+    public val SpaceAround: RemoteArrangement.HorizontalOrVertical =
+        HorizontalOrVerticalArrangement(8)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

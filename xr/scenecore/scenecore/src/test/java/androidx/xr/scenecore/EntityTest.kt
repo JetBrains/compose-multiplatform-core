@@ -21,6 +21,7 @@ import android.os.Build
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
+import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
@@ -69,6 +70,7 @@ class EntityTest {
     private lateinit var renderingRuntime: RenderingRuntime
     private lateinit var entityManager: EntityManager
     private lateinit var session: Session
+    private lateinit var renderViewpoint: RenderViewpoint
 
     private lateinit var lifecycleManager: LifecycleManager
     private lateinit var activitySpace: ActivitySpace
@@ -135,6 +137,7 @@ class EntityTest {
                 deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
             )
         )
+        renderViewpoint = RenderViewpoint.left(session)!!
         entityManager = session.scene.entityManager
         activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
         gltfModel = GltfModel.create(session, Paths.get("test.glb"))
@@ -582,20 +585,20 @@ class EntityTest {
         val runtimeResult = RtPerceivedResolutionResult.Success(runtimePixelDimensions)
         (panelEntity.rtEntity as FakePanelEntity).setPerceivedResolution(runtimeResult)
 
-        val result = panelEntity.getPerceivedResolution()
+        val result = panelEntity.getPerceivedResolution(renderViewpoint)
         assertThat(result).isInstanceOf(PerceivedResolutionResult.Success::class.java)
         val successResult = result as PerceivedResolutionResult.Success
         assertThat(successResult.perceivedResolution.width).isEqualTo(100)
         assertThat(successResult.perceivedResolution.height).isEqualTo(200)
 
-        val runtimeResult2 = RtPerceivedResolutionResult.InvalidCameraView()
+        val runtimeResult2 = RtPerceivedResolutionResult.InvalidRenderViewpoint()
         (panelEntity.rtEntity as FakePanelEntity).setPerceivedResolution(runtimeResult2)
-        assertThat(panelEntity.getPerceivedResolution())
-            .isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
+        assertThat(panelEntity.getPerceivedResolution(renderViewpoint))
+            .isInstanceOf(PerceivedResolutionResult.InvalidRenderViewpoint::class.java)
 
         val runtimeResult3 = RtPerceivedResolutionResult.EntityTooClose()
         (panelEntity.rtEntity as FakePanelEntity).setPerceivedResolution(runtimeResult3)
-        assertThat(panelEntity.getPerceivedResolution())
+        assertThat(panelEntity.getPerceivedResolution(renderViewpoint))
             .isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
     }
 
@@ -608,41 +611,11 @@ class EntityTest {
             runtimeResult
         )
 
-        val result = activityPanelEntity.getPerceivedResolution()
+        val result = activityPanelEntity.getPerceivedResolution(renderViewpoint)
         assertThat(result).isInstanceOf(PerceivedResolutionResult.Success::class.java)
         val successResult = result as PerceivedResolutionResult.Success
         assertThat(successResult.perceivedResolution.width).isEqualTo(100)
         assertThat(successResult.perceivedResolution.height).isEqualTo(200)
-    }
-
-    @Test
-    fun panelEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
-
-        val exception =
-            assertFailsWith<IllegalStateException> { panelEntity.getPerceivedResolution() }
-        assertThat(exception.message)
-            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
-    }
-
-    @Test
-    fun surfaceEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
-
-        val exception =
-            assertFailsWith<IllegalStateException> { surfaceEntity.getPerceivedResolution() }
-        assertThat(exception.message)
-            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
-    }
-
-    @Test
-    fun activityPanelEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
-
-        val exception =
-            assertFailsWith<IllegalStateException> { activityPanelEntity.getPerceivedResolution() }
-        assertThat(exception.message)
-            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
     }
 
     @Test
@@ -977,7 +950,7 @@ class EntityTest {
         val runtimeResult = RtPerceivedResolutionResult.Success(runtimePixelDimensions)
         (surfaceEntity.rtEntity as FakeSurfaceEntity).setPerceivedResolution(runtimeResult)
 
-        val scenecoreResult = surfaceEntity.getPerceivedResolution()
+        val scenecoreResult = surfaceEntity.getPerceivedResolution(renderViewpoint)
         assertThat(scenecoreResult).isInstanceOf(PerceivedResolutionResult.Success::class.java)
         val successResult = scenecoreResult as PerceivedResolutionResult.Success
         assertThat(successResult.perceivedResolution.width).isEqualTo(100)
@@ -1107,7 +1080,9 @@ class EntityTest {
         assertFailsWith<Entity.DisposedException> { surfaceEntity.stereoMode }
         assertFailsWith<Entity.DisposedException> { panelEntity.sizeInPixels }
         assertFailsWith<Entity.DisposedException> { groupEntity.getScale() }
-        assertFailsWith<Entity.DisposedException> { activityPanelEntity.getPerceivedResolution() }
+        assertFailsWith<Entity.DisposedException> {
+            activityPanelEntity.getPerceivedResolution(renderViewpoint)
+        }
 
         assertFailsWith<Entity.DisposedException> { gltfModelEntity.getScale() }
         assertFailsWith<Entity.DisposedException> { gltfModelEntity.setPose(Pose.Identity) }

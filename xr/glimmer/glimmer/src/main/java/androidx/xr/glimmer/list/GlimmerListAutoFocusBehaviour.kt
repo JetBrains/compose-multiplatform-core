@@ -42,6 +42,8 @@ internal class GlimmerListAutoFocusBehaviour {
     internal var properties: GlimmerListAutoFocusProperties? = null
         private set
 
+    internal var isAutoFocusEnabled: Boolean = true
+
     internal fun applyAutoFocusProperties(newProperties: GlimmerListAutoFocusProperties?) {
         properties = newProperties
         pendingRequestFocus = newProperties != null
@@ -49,7 +51,7 @@ internal class GlimmerListAutoFocusBehaviour {
 
     internal fun onAfterLayout(node: DelegatableNode) {
         val properties = properties
-        if (pendingRequestFocus && properties != null) {
+        if (isAutoFocusEnabled && pendingRequestFocus && properties != null) {
             val focusLinePosition = getFocusLinePosition(properties)
             val coordinates = node.requireLayoutCoordinates()
 

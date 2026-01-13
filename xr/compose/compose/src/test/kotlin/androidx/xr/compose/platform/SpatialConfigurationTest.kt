@@ -58,7 +58,7 @@ class SpatialConfigurationTest {
 
         composeTestRule.setContent {
             assertFailsWith<UnsupportedOperationException> {
-                LocalSpatialConfiguration.current.requestFullSpaceMode()
+                @Suppress("DEPRECATION") LocalSpatialConfiguration.current.requestFullSpaceMode()
             }
         }
     }
@@ -69,7 +69,7 @@ class SpatialConfigurationTest {
 
         composeTestRule.setContent {
             assertFailsWith<UnsupportedOperationException> {
-                LocalSpatialConfiguration.current.requestHomeSpaceMode()
+                @Suppress("DEPRECATION") LocalSpatialConfiguration.current.requestHomeSpaceMode()
             }
         }
     }
@@ -88,9 +88,9 @@ class SpatialConfigurationTest {
         }
 
         composeTestRule.onNodeWithText("Full").assertExists()
-        composeTestRule.runOnIdle { configuration?.requestHomeSpaceMode() }
+        composeTestRule.runOnIdle { @Suppress("DEPRECATION") configuration?.requestHomeSpaceMode() }
         composeTestRule.onNodeWithText("Home").assertExists()
-        composeTestRule.runOnIdle { configuration?.requestFullSpaceMode() }
+        composeTestRule.runOnIdle { @Suppress("DEPRECATION") configuration?.requestFullSpaceMode() }
         composeTestRule.onNodeWithText("Full").assertExists()
     }
 

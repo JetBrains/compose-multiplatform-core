@@ -18,7 +18,6 @@
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
-import androidx.compose.remote.creation.compose.capture.vector.RemotePathData
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -28,6 +27,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteColor
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.vector.RemotePathData
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable

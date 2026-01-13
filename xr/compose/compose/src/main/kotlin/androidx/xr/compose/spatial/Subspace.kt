@@ -132,65 +132,6 @@ public fun Subspace(
 }
 
 /**
- * Create a 3D area that the app can render spatial content into.
- *
- * ApplicationSubspace creates a Compose for XR's Spatial UI hierarchy (3D Scene Graph) in your
- * application's regular Compose UI tree. In this Subspace, You can use a @SubspaceComposable to
- * create 3D UI elements.
- *
- * Each call to ApplicationSubspace creates a new, independent Spatial UI hierarchy. It does **not**
- * inherit the spatial position, orientation, or scale of any parent ApplicationSubspace it is
- * nested within. Its position and scale are solely decided by the system's recommended position and
- * scale. To create an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use
- * the [Subspace] instead.
- *
- * By default, this Subspace is automatically bounded by the system's recommended content box. This
- * box represents a comfortable, human-scale area in front of the user, sized to occupy a
- * significant portion of their view on any given device. Using this default is the suggested way to
- * create responsive spatial layouts that look great without hardcoding dimensions.
- * SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand to fill this recommended box.
- * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
- * set `allowUnboundedSubspace = true`.
- *
- * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
- * Tablet).
- *
- * On XR devices that cannot currently render spatial UI, the ApplicationSubspace will still create
- * its scene and all of its internal state, even though nothing may be rendered. This is to ensure
- * that the state is maintained consistently in the spatial scene and to allow preparation for the
- * support of rendering spatial UI. State should be maintained by the compose runtime and events
- * that cause the compose runtime to lose state (app process killed or configuration change) will
- * also cause the ApplicationSubspace to lose its state.
- *
- * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
- * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
- *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
- *   space.
- * @param content The 3D content to render within this Subspace.
- */
-@Composable
-@ComposableOpenTarget(index = -1)
-@Deprecated(
-    "Use the Subspace API instead.",
-    ReplaceWith(
-        "Subspace(modifier = modifier, allowUnboundedSubspace = allowUnboundedSubspace, content = content)"
-    ),
-)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-public fun ApplicationSubspace(
-    modifier: SubspaceModifier = SubspaceModifier,
-    allowUnboundedSubspace: Boolean = false,
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
-) {
-    Subspace(
-        modifier = modifier,
-        allowUnboundedSubspace = allowUnboundedSubspace,
-        subspaceRootNode = LocalSubspaceRootNode.current,
-        content = content,
-    )
-}
-
-/**
  * Create a Subspace that is rooted in the application space.
  *
  * This is used as the top-level Subspace within the context of the default task window. Nested
@@ -558,15 +499,36 @@ private fun View.findVolumeConstraints(): VolumeConstraints? {
 }
 
 /**
- * Creates an ApplicationSubspace that places its content at a real-world location represented by
+ * Creates a [Subspace] that places its content at a real-world location represented by
  * [AnchorEntity].
  *
  * This is useful for placing UI elements on real-world surfaces or at specific spatial locations.
  * The visual stability of the anchored content depends on the underlying system's ability to track
  * the [AnchorEntity].
  *
- * [AnchoredSubspace] follows the same conventions as [ApplicationSubspace], including layout and
- * sizing behaviors. See [ApplicationSubspace] for more details.
+ * Each call to AnchoredSubspace creates a new, independent Spatial UI hierarchy. It does **not**
+ * inherit the spatial position, orientation, or scale of any parent AnchoredSubspace it is nested
+ * within. Its position and scale are solely decided by the system's recommended position and scale.
+ * To create an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use the
+ * [Subspace] instead.
+ *
+ * By default, this Subspace is automatically bounded by the system's recommended content box. This
+ * box represents a comfortable, human-scale area in front of the user, sized to occupy a
+ * significant portion of their view on any given device. Using this default is the suggested way to
+ * create responsive spatial layouts that look great without hardcoding dimensions.
+ * SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand to fill this recommended box.
+ * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
+ * set `allowUnboundedSubspace = true`.
+ *
+ * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
+ * Tablet).
+ *
+ * On XR devices that cannot currently render spatial UI, the AnchoredSubspace will still create its
+ * scene and all of its internal state, even though nothing may be rendered. This is to ensure that
+ * the state is maintained consistently in the spatial scene and to allow preparation for the
+ * support of rendering spatial UI. State should be maintained by the compose runtime and events
+ * that cause the compose runtime to lose state (app process killed or configuration change) will
+ * also cause the AnchoredSubspace to lose its state.
  *
  * Note: For Creating, loading, and persisting anchors, please check
  * [androidx.xr.scenecore.AnchorEntity] for more information
@@ -580,7 +542,6 @@ private fun View.findVolumeConstraints(): VolumeConstraints? {
  *   space.
  * @param content The content to render within this Subspace.
  * @sample androidx.xr.compose.samples.AnchoredSubspaceSample
- * @see [ApplicationSubspace]
  */
 @Composable
 @ComposableOpenTarget(index = -1)

@@ -196,7 +196,6 @@ internal fun List(
                 .then(state.remeasurementModifier)
                 .then(state.awaitLayoutModifier)
                 .autoFocus(state.autoFocusBehaviour)
-                // TODO: b/433237949 - Behaviour conflicts between the AutoFocus and D-Pad.
                 .lazyLayoutSemantics(
                     itemProviderLambda = itemProvider,
                     state = semanticState,

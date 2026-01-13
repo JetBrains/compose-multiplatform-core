@@ -493,6 +493,34 @@ fun RcTextDemo2(): RemoteComposeContext {
 }
 
 @Suppress("RestrictedApiAndroidX")
+fun RcTextDemo2b(): RemoteComposeContext {
+    return RemoteComposeContextAndroid(
+        600,
+        600,
+        "Demo",
+        7,
+        RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+        AndroidxRcPlatformServices(),
+    ) {
+        root {
+            column(Modifier.fillMaxSize().background(Color.YELLOW)) {
+                text("Joke of the day")
+                text(
+                    "Why don't scientists trust atoms? Because they make up everything!",
+                    modifier = Modifier.verticalWeight(1f).fillMaxWidth().background(Color.GREEN),
+                    autosize = true,
+                    minFontSize = 48f,
+                    maxFontSize = 200f,
+                    overflow = CoreText.OVERFLOW_ELLIPSIS,
+                    hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_NONE,
+                )
+                text("This is a joke")
+            }
+        }
+    }
+}
+
+@Suppress("RestrictedApiAndroidX")
 fun RcTextDemo(): RemoteComposeContext {
     return RemoteComposeContextAndroid(
         600,
@@ -544,6 +572,8 @@ fun RcTextDemo(): RemoteComposeContext {
         }
     }
 }
+
+@Preview @Composable fun RcCardAutosizePreview() = RemoteDocPreview(RcTextDemo2b())
 
 @Preview @Composable fun RcTextDemoPreview() = RemoteDocPreview(RcTextDemo())
 

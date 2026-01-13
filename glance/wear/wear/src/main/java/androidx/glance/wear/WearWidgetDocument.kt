@@ -19,8 +19,8 @@ package androidx.glance.wear
 import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
-import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
+import androidx.compose.remote.creation.compose.painter.RemotePainter
+import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp

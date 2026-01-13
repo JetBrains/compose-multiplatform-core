@@ -19,14 +19,24 @@ package androidx.xr.glimmer.list
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusTargetModifierNode
 import androidx.compose.ui.focus.Focusability
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerInputModifierNode
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyInputModifierNode
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.rotary.RotaryInputModifierNode
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntSize
 
 /** Read the auto focus value from [behaviour] and apply it to children after the layout pass. */
 internal fun Modifier.autoFocus(behaviour: GlimmerListAutoFocusBehaviour): Modifier =
@@ -62,7 +72,12 @@ private class GlimmerListAutoFocusNodeElement(
 }
 
 private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFocusBehaviour) :
-    DelegatingNode(), LayoutModifierNode {
+    DelegatingNode(),
+    KeyInputModifierNode,
+    IndirectPointerInputModifierNode,
+    PointerInputModifierNode,
+    RotaryInputModifierNode,
+    LayoutModifierNode {
 
     private val focusTargetModifierNode =
         delegate(FocusTargetModifierNode(focusability = Focusability.Never))
@@ -92,5 +107,36 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
             // better callback is introduced, we should replace it.
             behaviour.onAfterLayout(this)
         }
+    }
+
+    override fun onPreKeyEvent(event: KeyEvent): Boolean {
+        // A key event means we should suppress the auto-focus so focus will be handled as expected.
+        behaviour.isAutoFocusEnabled = false
+        return false
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean = false
+
+    override fun onIndirectPointerEvent(event: IndirectPointerEvent, pass: PointerEventPass) {
+        behaviour.isAutoFocusEnabled = true
+    }
+
+    override fun onCancelIndirectPointerInput() = Unit
+
+    override fun onPointerEvent(
+        pointerEvent: PointerEvent,
+        pass: PointerEventPass,
+        bounds: IntSize,
+    ) {
+        behaviour.isAutoFocusEnabled = false
+    }
+
+    override fun onCancelPointerInput() {}
+
+    override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean = false
+
+    override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+        behaviour.isAutoFocusEnabled = false
+        return false
     }
 }

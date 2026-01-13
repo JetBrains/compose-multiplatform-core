@@ -19,11 +19,8 @@ package androidx.xr.scenecore
 import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.CameraViewScenePose as RtCameraViewScenePose
-import androidx.xr.scenecore.runtime.HeadScenePose as RtHeadScenePose
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose as RtPerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -123,67 +120,6 @@ protected constructor(internal val rtScenePose: RtScenePoseType) : ScenePose {
 
     override suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult? {
         return hitTest(origin, direction, ScenePose.HitTestFilter.SELF_SCENE.toRtHitTestFilter())
-    }
-}
-
-/** An [ScenePose] which tracks a camera view's position and view into physical space. */
-public class CameraView
-private constructor(private val rtCameraViewScenePose: RtCameraViewScenePose) :
-    BaseScenePose<RtCameraViewScenePose>(rtCameraViewScenePose) {
-
-    internal companion object {
-        internal fun createLeft(sceneRuntime: SceneRuntime): CameraView? {
-            val cameraViewScenePose =
-                sceneRuntime.getCameraViewActivityPose(
-                    RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
-                )
-            return cameraViewScenePose?.let { CameraView(it) }
-        }
-
-        internal fun createRight(sceneRuntime: SceneRuntime): CameraView? {
-            val cameraViewScenePose =
-                sceneRuntime.getCameraViewActivityPose(
-                    RtCameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
-                )
-            return cameraViewScenePose?.let { CameraView(it) }
-        }
-    }
-
-    /** Describes the type of camera that this CameraView represents. */
-    public enum class CameraType {
-        /** This CameraView represents an unknown camera view. */
-        UNKNOWN,
-
-        /** This CameraView represents the user's left eye. */
-        LEFT_EYE,
-
-        /** This CameraView represents the user's right eye. */
-        RIGHT_EYE,
-    }
-
-    public val cameraType: CameraType = CameraType.UNKNOWN
-
-    /** Gets the FOV for the camera. */
-    public val fov: FieldOfView
-        get() {
-            val rtFov = rtCameraViewScenePose.fov
-            return FieldOfView(rtFov.angleLeft, rtFov.angleRight, rtFov.angleUp, rtFov.angleDown)
-        }
-}
-
-/**
- * Head is an [ScenePose] used to track the position of the user's head. If there is a left and
- * right camera it is calculated as the position between the two.
- */
-public class Head private constructor(rtScenePose: RtHeadScenePose) :
-    BaseScenePose<RtHeadScenePose>(rtScenePose) {
-
-    internal companion object {
-
-        /** Factory function for creating [Head] instance. */
-        internal fun create(sceneRuntime: SceneRuntime): Head? {
-            return sceneRuntime.headActivityPose?.let { Head(it) }
-        }
     }
 }
 

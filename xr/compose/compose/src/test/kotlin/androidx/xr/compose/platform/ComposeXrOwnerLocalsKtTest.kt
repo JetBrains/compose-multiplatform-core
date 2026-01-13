@@ -76,8 +76,8 @@ class ComposeXrOwnerLocalsKtTest {
         // Phase 1: Create the initial instance in the first activity.
         val activity1 = composeTestRule.activity
         val decorView1 = activity1.window.decorView
-        val locals1 = assertNotNull(decorView1.getOrCreateXrOwnerLocals(activity1))
-        val locals2 = assertNotNull(decorView1.getOrCreateXrOwnerLocals(activity1))
+        val locals1 = assertNotNull(activity1.getOrCreateXrOwnerLocals())
+        val locals2 = assertNotNull(activity1.getOrCreateXrOwnerLocals())
         assertThat(locals1).isSameInstanceAs(locals2)
         assertThat(locals1.session).isSameInstanceAs(locals2.session)
 
@@ -96,8 +96,7 @@ class ComposeXrOwnerLocalsKtTest {
         assertThat(activity1.isDestroyed).isTrue()
         assertThat(activity2).isNotSameInstanceAs(activity1)
 
-        val decorView2 = activity2.window.decorView
-        val locals3 = assertNotNull(decorView2.getOrCreateXrOwnerLocals(activity2))
+        val locals3 = assertNotNull(activity2.getOrCreateXrOwnerLocals())
         assertThat(locals3).isNotSameInstanceAs(locals1)
         assertThat(locals3.session).isNotSameInstanceAs(locals1.session)
     }

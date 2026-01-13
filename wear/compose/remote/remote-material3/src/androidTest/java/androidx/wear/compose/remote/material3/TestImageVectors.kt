@@ -17,9 +17,9 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
-import androidx.compose.remote.creation.compose.capture.vector.RemotePathData
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.vector.RemotePathData
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 

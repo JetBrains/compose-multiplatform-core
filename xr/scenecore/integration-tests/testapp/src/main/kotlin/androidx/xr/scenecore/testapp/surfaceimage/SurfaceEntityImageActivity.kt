@@ -61,6 +61,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.DeviceTrackingMode
 import androidx.xr.runtime.Session
@@ -188,6 +189,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
 
         val session = (Session.create(this) as SessionCreateSuccess).session
         session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        val arDevice = ArDevice.getInstance(session)
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.scene.keyEntity = session.scene.mainPanelEntity
 
@@ -206,7 +208,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         lifecycleScope.launch {
             alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
         }
-        setContent { HelloWorld(session, activity) }
+        setContent { HelloWorld(session, arDevice, activity) }
     }
 
     override fun onDestroy() {
@@ -221,11 +223,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     // TODO: b/324947709 - Refactor common @Composable code into a utility library for common usage
     // across sample apps.
     @Composable
-    fun HelloWorld(session: Session, activity: SurfaceEntityImageActivity) {
+    fun HelloWorld(session: Session, arDevice: ArDevice, activity: SurfaceEntityImageActivity) {
         // Add a panel to the main activity with a button to toggle passthrough
         LaunchedEffect(Unit) {
             activity.setContentView(
-                createButtonViewUsingCompose(activity = activity, session = session)
+                createButtonViewUsingCompose(
+                    activity = activity,
+                    session = session,
+                    arDevice = arDevice,
+                )
             )
         }
     }
@@ -260,7 +266,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         }
     }
 
-    private fun setupControlPanel(session: Session) {
+    private fun setupControlPanel(session: Session, arDevice: ArDevice) {
         // Dispose previous control panel if it exists
         controlPanelEntity?.dispose()
         controlPanelEntity = null
@@ -271,7 +277,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 setViewCompositionStrategy(
                     ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
                 )
-                setContent { VideoPlayerControls(session) }
+                setContent { VideoPlayerControls(session, arDevice) }
             }
 
         controlPanelEntity =
@@ -338,13 +344,14 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     private fun createButtonViewUsingCompose(
         activity: SurfaceEntityImageActivity,
         session: Session,
+        arDevice: ArDevice,
     ): View {
         val view =
             ComposeView(activity.applicationContext).apply {
                 setViewCompositionStrategy(
                     ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
                 )
-                setContent { SurfaceEntityImageActivityUI(session, activity) }
+                setContent { SurfaceEntityImageActivityUI(session, arDevice, activity) }
             }
         view.setViewTreeLifecycleOwner(activity as LifecycleOwner)
         view.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
@@ -353,7 +360,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     }
 
     @Composable
-    fun VideoPlayerControls(session: Session) {
+    fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
         var featherRadiusY by remember { mutableFloatStateOf(0.0f) }
         Column(
@@ -400,13 +407,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                         surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
                         // Move the Quad-shaped canvas to a spot in front of the User.
                         surfaceEntity!!.setPose(
-                            session.scene.spatialUser.head?.transformPoseTo(
-                                Pose(
-                                    Vector3(0.0f, 0.0f, -1.5f),
-                                    Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
-                                ),
-                                session.scene.activitySpace,
-                            )!!
+                            session.scene.perceptionSpace
+                                .getScenePoseFromPerceptionPose(arDevice.state.value.devicePose)
+                                .transformPoseTo(
+                                    Pose(
+                                        Vector3(0.0f, 0.0f, -1.5f),
+                                        Quaternion(0.0f, 0.0f, 0.0f, 1.0f),
+                                    ),
+                                    session.scene.activitySpace,
+                                )
                         )
                     }
                 ) {
@@ -487,6 +496,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     @OptIn(ExperimentalSurfaceEntityPixelDimensionsApi::class)
     fun ShowBitmapButton(
         session: Session,
+        arDevice: ArDevice,
         activity: Activity,
         bitmapUri: String,
         stereoMode: SurfaceEntity.StereoMode,
@@ -532,10 +542,10 @@ class SurfaceEntityImageActivity : ComponentActivity() {
 
                 if (!(canvasShape is SurfaceEntity.Shape.Quad)) {
                     actualPose =
-                        session.scene.spatialUser.head?.transformPoseTo(
-                            Pose.Identity,
+                        session.scene.perceptionSpace.transformPoseTo(
+                            arDevice.state.value.devicePose,
                             session.scene.activitySpace,
-                        )!!
+                        )
                 }
 
                 // Create SurfaceEntity and MovableComponent if they don't exist.
@@ -598,7 +608,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 val canvas = surfaceEntity!!.getSurface().lockHardwareCanvas()
                 canvas.drawBitmap(bitmap, 0.0f, 0.0f, null)
                 surfaceEntity!!.getSurface().unlockCanvasAndPost(canvas)
-                setupControlPanel(session)
+                setupControlPanel(session, arDevice)
                 updateSurfaceEntityVisuals()
             },
             modifier = Modifier.fillMaxWidth().height(28.dp),
@@ -615,9 +625,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     }
 
     @Composable
-    fun StereoBitmapQuadButton(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun StereoBitmapQuadButton(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         ShowBitmapButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/2d_Flats_sbs_downsampled.jpg".
@@ -635,9 +651,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     }
 
     @Composable
-    fun StereoBitmap180Button(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun StereoBitmap180Button(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         ShowBitmapButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/VR180_CANON_downsampled.png".
@@ -655,9 +677,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     }
 
     @Composable
-    fun MonoBitmap360Button(session: Session, activity: Activity, enabled: Boolean = true) {
+    fun MonoBitmap360Button(
+        session: Session,
+        arDevice: ArDevice,
+        activity: Activity,
+        enabled: Boolean = true,
+    ) {
         ShowBitmapButton(
             session = session,
+            arDevice = arDevice,
             activity = activity,
             // For Testers: Note that this translates to
             // "/sdcard/Download/360Flats_downsampled.jpg".
@@ -675,7 +703,11 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SurfaceEntityImageActivityUI(session: Session, activity: SurfaceEntityImageActivity) {
+    fun SurfaceEntityImageActivityUI(
+        session: Session,
+        arDevice: ArDevice,
+        activity: SurfaceEntityImageActivity,
+    ) {
         remember { mutableStateOf(false) }
         val alphaMaskEnabled = remember { mutableStateOf(false) }
 
@@ -717,15 +749,15 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 Text(text = "SurfaceEntity", fontSize = 30.sp)
                 if (imageShowing == false) {
                     // High level testcases
-                    StereoBitmapQuadButton(session, activity)
-                    StereoBitmap180Button(session, activity)
-                    MonoBitmap360Button(session, activity)
+                    StereoBitmapQuadButton(session, arDevice, activity)
+                    StereoBitmap180Button(session, arDevice, activity)
+                    MonoBitmap360Button(session, arDevice, activity)
                 } else {
                     Column(
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.weight(1f).padding(8.dp),
                     ) {
-                        VideoPlayerControls(session)
+                        VideoPlayerControls(session, arDevice)
                         Button(
                             onClick = {
                                 alphaMaskEnabled.value = !alphaMaskEnabled.value

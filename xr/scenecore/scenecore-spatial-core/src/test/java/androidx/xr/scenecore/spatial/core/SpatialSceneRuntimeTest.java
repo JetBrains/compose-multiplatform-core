@@ -24,8 +24,6 @@ import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
 import static com.android.extensions.xr.node.ReformOptions.ALLOW_RESIZE;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
-import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -50,24 +48,16 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.perception.Fov;
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
-import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.impl.perception.ViewProjection;
-import androidx.xr.scenecore.impl.perception.ViewProjections;
-import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorEntity.State;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Component;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
-import androidx.xr.scenecore.runtime.HeadScenePose;
 import androidx.xr.scenecore.runtime.InputEvent;
 import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.InteractableComponent;
@@ -117,7 +107,6 @@ import com.android.extensions.xr.space.VisibilityState;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.After;
@@ -143,8 +132,6 @@ public class SpatialSceneRuntimeTest {
     Activity mActivity;
     private SpatialSceneRuntime mRuntime;
     private final EntityManager mEntityManager = new EntityManager();
-    private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
-    private final Session mSession = mock(Session.class);
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
     private final @NonNull XrExtensions mXrExtensions =
             Objects.requireNonNull(XrExtensionsProvider.getXrExtensions());
@@ -156,9 +143,6 @@ public class SpatialSceneRuntimeTest {
 
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE);
-        when(mPerceptionLibrary.initSession(mActivity, OPEN_XR_REFERENCE_SPACE_TYPE, mFakeExecutor))
-                .thenReturn(immediateFuture(mSession));
-        when(mPerceptionLibrary.getActivity()).thenReturn(mActivity);
 
         mRuntime =
                 SpatialSceneRuntime.create(
@@ -166,7 +150,6 @@ public class SpatialSceneRuntimeTest {
                         mFakeExecutor,
                         mXrExtensions,
                         mEntityManager,
-                        mPerceptionLibrary,
                         false);
     }
 
@@ -214,28 +197,6 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void initRuntimePerceptionFailure() {
-        ListenableFuture<Session> sessionFuture =
-                immediateFailedFuture(
-                        new FailedToInitializeException("Failed to initialize a session."));
-        when(mPerceptionLibrary.initSession(mActivity, OPEN_XR_REFERENCE_SPACE_TYPE, mFakeExecutor))
-                .thenReturn(sessionFuture);
-
-        mRuntime =
-                SpatialSceneRuntime.create(
-                        mActivity,
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new EntityManager(),
-                        mPerceptionLibrary,
-                        false);
-
-        // The perception library failed to initialize a session, but the runtime should still be
-        // created.
-        assertThat(mRuntime).isNotNull();
-    }
-
-    @Test
     public void getEnvironment_returnsEnvironment() {
         SpatialEnvironment environment = mRuntime.getSpatialEnvironment();
         assertThat(environment).isNotNull();
@@ -249,78 +210,6 @@ public class SpatialSceneRuntimeTest {
         // Verify that there is an underlying extension node.
         ActivitySpaceImpl activitySpaceImpl = (ActivitySpaceImpl) activitySpace;
         assertThat(activitySpaceImpl.getNode()).isNotNull();
-    }
-
-    @Test
-    public void getHeadScenePose_returnsNullIfNotReady() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.getHeadPose()).thenReturn(null);
-        HeadScenePose headScenePose = mRuntime.getHeadActivityPose();
-
-        assertThat(headScenePose).isNull();
-    }
-
-    @Test
-    public void getHeadScenePose_returnsScenePose() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.getHeadPose())
-                .thenReturn(androidx.xr.scenecore.impl.perception.Pose.identity());
-        HeadScenePose headScenePose = mRuntime.getHeadActivityPose();
-
-        assertThat(headScenePose).isNotNull();
-    }
-
-    @Test
-    public void getCameraViewScenePose_returnsNullIfNotReady() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.getStereoViews()).thenReturn(new ViewProjections(null, null));
-
-        CameraViewScenePose leftCameraViewScenePose =
-                mRuntime.getCameraViewActivityPose(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
-        CameraViewScenePose rightCameraViewScenePose =
-                mRuntime.getCameraViewActivityPose(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE);
-
-        assertThat(leftCameraViewScenePose).isNull();
-        assertThat(rightCameraViewScenePose).isNull();
-    }
-
-    @Test
-    public void getLeftCameraViewScenePose_returnsScenePose() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        ViewProjection viewProjection =
-                new ViewProjection(
-                        androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
-        when(mSession.getStereoViews())
-                .thenReturn(new ViewProjections(viewProjection, viewProjection));
-        CameraViewScenePose cameraViewScenePose =
-                mRuntime.getCameraViewActivityPose(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
-
-        assertThat(cameraViewScenePose).isNotNull();
-    }
-
-    @Test
-    public void getRightCameraViewScenePose_returnsScenePose() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        ViewProjection viewProjection =
-                new ViewProjection(
-                        androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
-        when(mSession.getStereoViews())
-                .thenReturn(new ViewProjections(viewProjection, viewProjection));
-        CameraViewScenePose cameraViewScenePose =
-                mRuntime.getCameraViewActivityPose(
-                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE);
-
-        assertThat(cameraViewScenePose).isNotNull();
-    }
-
-    @Test
-    public void getUnknownCameraViewScenePose_returnsEmptyOptional() {
-        CameraViewScenePose cameraViewScenePose = mRuntime.getCameraViewActivityPose(555);
-
-        assertThat(cameraViewScenePose).isNull();
     }
 
     @Test
@@ -1088,7 +977,9 @@ public class SpatialSceneRuntimeTest {
     @Test
     public void createPointerCaptureComponent_returnsComponent() {
         PointerCaptureComponent pointerCaptureComponent =
-                mRuntime.createPointerCaptureComponent(null, (inputEvent) -> {}, (state) -> {});
+                mRuntime.createPointerCaptureComponent(null, (inputEvent) -> {
+                }, (state) -> {
+                });
 
         assertThat(pointerCaptureComponent).isNotNull();
     }
@@ -2338,11 +2229,11 @@ public class SpatialSceneRuntimeTest {
         PanelEntity testEntity = createPanelEntity();
 
         assertThat(
-                        testEntity.addComponent(
-                                mRuntime.createMovableComponent(
-                                        /* systemMovable= */ true,
-                                        /* scaleInZ= */ true,
-                                        /* userAnchorable */ false)))
+                testEntity.addComponent(
+                        mRuntime.createMovableComponent(
+                                /* systemMovable= */ true,
+                                /* scaleInZ= */ true,
+                                /* userAnchorable */ false)))
                 .isTrue();
 
         testEntity.setHidden(true);
@@ -2353,34 +2244,6 @@ public class SpatialSceneRuntimeTest {
 
         assertThat(mNodeRepository.getReformOptions(getNode(testEntity)).getEnabledReform())
                 .isEqualTo(ALLOW_MOVE);
-    }
-
-    @Test
-    public void
-            getStereoViewsInOpenXrUnboundedSpace_returnsNullWhenPerceptionSessionUninitialized() {
-        when(mPerceptionLibrary.getSession()).thenReturn(null);
-
-        assertThat(mRuntime.getStereoViewsInOpenXrUnboundedSpace()).isNull();
-    }
-
-    @Test
-    public void getStereoViewsInOpenXrUnboundedSpace_returnsViewProjections() {
-        ViewProjection leftViewProjection =
-                new ViewProjection(
-                        new androidx.xr.scenecore.impl.perception.Pose(-1f, 1f, 1f, 0f, 0f, 0f, 1f),
-                        new Fov(-1f, -1f, -1f, -1f));
-
-        ViewProjection rightViewProjection =
-                new ViewProjection(
-                        new androidx.xr.scenecore.impl.perception.Pose(1f, 1f, 1f, 0f, 0f, 0f, 1f),
-                        new Fov(1f, 1f, 1f, 1f));
-
-        when(mSession.getStereoViews())
-                .thenReturn(new ViewProjections(leftViewProjection, rightViewProjection));
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-
-        assertThat(mRuntime.getStereoViewsInOpenXrUnboundedSpace())
-                .isEqualTo(new ViewProjections(leftViewProjection, rightViewProjection));
     }
 
     @Test

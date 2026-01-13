@@ -16,14 +16,17 @@
 
 package androidx.xr.scenecore.spatial.core;
 
+import static androidx.xr.scenecore.spatial.core.PerceivedResolutionUtils.getDisplayResolutionInPixels;
+
 import android.content.Context;
 import android.view.Surface;
 
+import androidx.xr.runtime.FieldOfView;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
+import androidx.xr.scenecore.runtime.ScenePose;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.SurfaceFeature;
@@ -34,6 +37,7 @@ import com.android.extensions.xr.XrExtensions;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -168,14 +172,8 @@ final class SurfaceEntityImpl extends BaseRenderingEntity implements SurfaceEnti
     }
 
     @Override
-    public @NonNull PerceivedResolutionResult getPerceivedResolution() {
-        // Get the Camera View with which to compute Perceived Resolution
-        CameraViewScenePose cameraView =
-                PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
-        if (cameraView == null) {
-            return new PerceivedResolutionResult.InvalidCameraView();
-        }
-
+    public @NonNull PerceivedResolutionResult getPerceivedResolution(
+            @NonNull ScenePose renderViewScenePose, @NonNull FieldOfView renderViewFov) {
         // Compute the width, height, and depth in activity space units
         Dimensions dimensionsInLocalUnits = getDimensions();
         Vector3 activitySpaceScale = getScale(Space.ACTIVITY);
@@ -186,7 +184,10 @@ final class SurfaceEntityImpl extends BaseRenderingEntity implements SurfaceEnti
                         dimensionsInLocalUnits.depth * activitySpaceScale.getZ());
 
         return PerceivedResolutionUtils.getPerceivedResolutionOf3DBox(
-                cameraView,
+                renderViewScenePose,
+                renderViewFov,
+                /* viewPlaneInPixels= */
+                getDisplayResolutionInPixels(Objects.requireNonNull(getContext())),
                 /* boxDimensionsInActivitySpace= */ dimensionsInActivitySpace,
                 /* boxPositionInActivitySpace= */ getPose(Space.ACTIVITY).getTranslation());
     }

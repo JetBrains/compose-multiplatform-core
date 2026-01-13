@@ -23,7 +23,6 @@ import android.view.View
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.AnchorEntity
-import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
@@ -55,30 +54,6 @@ class FakeSceneRuntimeTest {
     @Test
     fun getState_whenCreated_returnsCreatedState() {
         assertThat(fakeSceneRuntime.state).isEqualTo(FakeSceneRuntime.State.CREATED)
-    }
-
-    @Test
-    fun getCameraViewScenePose_returnsCameraViewScenePoseWithCorrectType() {
-        val cameraViewScenePose =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewScenePose.CameraType.CAMERA_TYPE_UNKNOWN
-            )
-        val cameraViewScenePoseL =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
-            )
-        val cameraViewScenePoseR =
-            fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
-            )
-
-        assertThat(cameraViewScenePose).isNull()
-        assertThat(cameraViewScenePoseL).isNotNull()
-        assertThat((cameraViewScenePoseL as FakeCameraViewScenePose).cameraType)
-            .isEqualTo(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE)
-        assertThat(cameraViewScenePoseR).isNotNull()
-        assertThat((cameraViewScenePoseR as FakeCameraViewScenePose).cameraType)
-            .isEqualTo(CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE)
     }
 
     @Test

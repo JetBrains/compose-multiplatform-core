@@ -130,19 +130,6 @@ package androidx.xr.scenecore {
     property public androidx.xr.runtime.math.Pose activitySpacePose;
   }
 
-  public final class CameraView extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.CameraViewScenePose> {
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.CameraView.CameraType getCameraType();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFov();
-    property public androidx.xr.scenecore.CameraView.CameraType cameraType;
-    property public androidx.xr.runtime.FieldOfView fov;
-  }
-
-  public enum CameraView.CameraType {
-    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType LEFT_EYE;
-    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType RIGHT_EYE;
-    enum_constant public static final androidx.xr.scenecore.CameraView.CameraType UNKNOWN;
-  }
-
   public interface Component {
   }
 
@@ -265,9 +252,6 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.GroupEntity create(androidx.xr.runtime.Session session, String name);
     method public androidx.xr.scenecore.GroupEntity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
     method @BytecodeOnly public static androidx.xr.scenecore.GroupEntity! create$default(androidx.xr.scenecore.GroupEntity.Companion!, androidx.xr.runtime.Session!, String!, androidx.xr.runtime.math.Pose!, int, Object!);
-  }
-
-  public final class Head extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.HeadScenePose> {
   }
 
   public final class HitTestResult {
@@ -519,7 +503,7 @@ package androidx.xr.scenecore {
     method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
     method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public final float getCornerRadius();
-    method public final androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution();
+    method public final androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution(androidx.xr.arcore.RenderViewpoint renderViewpoint);
     method @InaccessibleFromKotlin public final androidx.xr.runtime.math.FloatSize2d getSize();
     method @InaccessibleFromKotlin public final androidx.xr.runtime.math.IntSize2d getSizeInPixels();
     method @InaccessibleFromKotlin public final boolean isMainPanelEntity();
@@ -551,8 +535,8 @@ package androidx.xr.scenecore {
     ctor public PerceivedResolutionResult.EntityTooClose();
   }
 
-  public static final class PerceivedResolutionResult.InvalidCameraView extends androidx.xr.scenecore.PerceivedResolutionResult {
-    ctor public PerceivedResolutionResult.InvalidCameraView();
+  public static final class PerceivedResolutionResult.InvalidRenderViewpoint extends androidx.xr.scenecore.PerceivedResolutionResult {
+    ctor public PerceivedResolutionResult.InvalidRenderViewpoint();
   }
 
   public static final class PerceivedResolutionResult.Success extends androidx.xr.scenecore.PerceivedResolutionResult {
@@ -697,7 +681,6 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.PerceptionSpace getPerceptionSpace();
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.SpatialCapability> getSpatialCapabilities();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SpatialEnvironment getSpatialEnvironment();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.SpatialUser getSpatialUser();
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<java.util.Set<androidx.xr.scenecore.SpatialCapability>> listener);
     method public void requestFullSpaceMode();
     method public void requestHomeSpaceMode();
@@ -714,7 +697,6 @@ package androidx.xr.scenecore {
     property public androidx.xr.scenecore.PerceptionSpace perceptionSpace;
     property public java.util.Set<androidx.xr.scenecore.SpatialCapability> spatialCapabilities;
     property public androidx.xr.scenecore.SpatialEnvironment spatialEnvironment;
-    property public androidx.xr.scenecore.SpatialUser spatialUser;
   }
 
   public interface ScenePose {
@@ -881,13 +863,6 @@ package androidx.xr.scenecore {
     field public static final int PLAY_FAILED = 0; // 0x0
   }
 
-  public final class SpatialUser {
-    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> getCameraViews();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.Head? getHead();
-    property public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> cameraViews;
-    property public androidx.xr.scenecore.Head? head;
-  }
-
   public final class SpatialVisibility {
     field public static final androidx.xr.scenecore.SpatialVisibility.Companion Companion;
     field public static final androidx.xr.scenecore.SpatialVisibility OUTSIDE_FIELD_OF_VIEW;
@@ -950,7 +925,7 @@ package androidx.xr.scenecore {
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getDimensions();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams getEdgeFeatheringParams();
-    method public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution(androidx.xr.arcore.RenderViewpoint renderViewpoint);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SurfaceEntity.StereoMode getStereoMode();
     method @MainThread public android.view.Surface getSurface();

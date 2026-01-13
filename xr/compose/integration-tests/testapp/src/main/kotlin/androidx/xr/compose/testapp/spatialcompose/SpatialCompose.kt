@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.platform.LocalSpatialConfiguration
+import androidx.xr.compose.platform.requestFullSpace
+import androidx.xr.compose.platform.requestHomeSpace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
@@ -113,6 +115,7 @@ import java.time.Clock
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SpatialCompose : ComponentActivity() {
 
@@ -141,8 +144,10 @@ class SpatialCompose : ComponentActivity() {
 
     @Composable
     fun MainPanelContent() {
+        val scope = rememberCoroutineScope()
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Spatial Compose Test"
+
         CommonTestScaffold(
             title = title,
             showBottomBar = true,
@@ -156,14 +161,15 @@ class SpatialCompose : ComponentActivity() {
                 ) {
                     Text("Panel Center - main task window")
                     val isSpatialUiEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
-                    val config = LocalSpatialConfiguration.current
 
                     Button(
                         onClick = {
-                            if (isSpatialUiEnabled) {
-                                config.requestHomeSpaceMode()
-                            } else {
-                                config.requestFullSpaceMode()
+                            scope.launch {
+                                if (isSpatialUiEnabled) {
+                                    requestHomeSpace()
+                                } else {
+                                    requestFullSpace()
+                                }
                             }
                         }
                     ) {

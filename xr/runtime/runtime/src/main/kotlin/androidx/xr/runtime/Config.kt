@@ -467,7 +467,7 @@ constructor(
     public class CameraFacingDirection
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Use the world-facing camera. This is the default behavior across all devices. */
             @JvmField public val WORLD: CameraFacingDirection = CameraFacingDirection(0)

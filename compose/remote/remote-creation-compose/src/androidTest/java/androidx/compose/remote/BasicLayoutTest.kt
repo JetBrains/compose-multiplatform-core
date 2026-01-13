@@ -33,8 +33,6 @@ import androidx.compose.remote.creation.compose.capture.rememberAsyncRemoteDocum
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rotate
 import androidx.compose.remote.creation.compose.capture.scale
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.capture.shaders.radialGradient
 import androidx.compose.remote.creation.compose.capture.translate
 import androidx.compose.remote.creation.compose.layout.CaptureAsBitmap
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
@@ -64,6 +62,8 @@ import androidx.compose.remote.creation.compose.modifier.onTouchUp
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.shaders.radialGradient
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rdp

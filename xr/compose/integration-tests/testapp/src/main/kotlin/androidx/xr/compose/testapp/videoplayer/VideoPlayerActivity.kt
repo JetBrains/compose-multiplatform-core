@@ -587,10 +587,10 @@ class VideoPlayerActivity : ComponentActivity() {
             VideoPlayerButtons.GALAXY_360_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_MVHEVC_BUTTON.ordinal,
             VideoPlayerButtons.NAVER_180_BUTTON.ordinal -> {
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
+                session.scene.perceptionSpace.transformPoseTo(
+                    arDevice.state.value.devicePose,
                     session.scene.activitySpace,
-                )!!
+                )
             }
 
             else -> {

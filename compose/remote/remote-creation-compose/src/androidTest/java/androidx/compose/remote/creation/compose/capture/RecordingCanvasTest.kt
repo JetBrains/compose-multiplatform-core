@@ -37,8 +37,8 @@ import androidx.compose.remote.core.operations.PaintData
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteLinearShader
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteSweepShader
+import androidx.compose.remote.creation.compose.shaders.RemoteLinearShader
+import androidx.compose.remote.creation.compose.shaders.RemoteSweepShader
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBlendModeColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteBoolean

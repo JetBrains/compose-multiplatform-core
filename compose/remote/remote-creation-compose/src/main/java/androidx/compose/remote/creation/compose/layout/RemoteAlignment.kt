@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface RemoteAlignment {
+public object RemoteAlignment {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Horizontal {
@@ -37,15 +37,12 @@ public interface RemoteAlignment {
         public fun toRemoteCompose(): Int
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public companion object {
-        public val Start: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(0)
-        public val CenterHorizontally: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(1)
-        public val End: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(2)
-        public val Top: RemoteAlignment.Vertical = RemoteVerticalAlignment(3)
-        public val CenterVertically: RemoteAlignment.Vertical = RemoteVerticalAlignment(4)
-        public val Bottom: RemoteAlignment.Vertical = RemoteVerticalAlignment(5)
-    }
+    public val Start: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(0)
+    public val CenterHorizontally: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(1)
+    public val End: RemoteAlignment.Horizontal = RemoteHorizontalAlignment(2)
+    public val Top: RemoteAlignment.Vertical = RemoteVerticalAlignment(3)
+    public val CenterVertically: RemoteAlignment.Vertical = RemoteVerticalAlignment(4)
+    public val Bottom: RemoteAlignment.Vertical = RemoteVerticalAlignment(5)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

@@ -55,11 +55,15 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import junit.framework.TestCase.assertEquals
+import kotlin.test.DefaultAsserter.assertNull
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -380,6 +384,57 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                 }
             }
             assertTrue("onConnected never received", hasConnected)
+        }
+    }
+
+    /**
+     * Reproduces the bug where the initial active participant is null, but the InCallService
+     * receives the string "null".
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testVoipAndIcsWithParticipantsInitialNullState() = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+
+            createAndVerifyVoipCall(
+                voipAppControl,
+                callback,
+                listOf(getParticipantCapability(emptySet())),
+                parameters.direction,
+            )
+
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            val speakerEmission = CompletableDeferred<CharSequence?>()
+            var hasConnected = false
+
+            with(ics) {
+                connectExtensions(call) {
+                    addMeetingSummaryExtension(
+                        onCurrentSpeakerChanged = { name -> speakerEmission.complete(name) },
+                        onParticipantCountChanged = {},
+                    )
+                    onConnected {
+                        hasConnected = true
+                        runBlocking {
+                            try {
+                                val actualSpeaker = withTimeout(5000) { speakerEmission.await() }
+                                assertNull(
+                                    "Expected active speaker to be null, but" +
+                                        " received '$actualSpeaker'",
+                                    actualSpeaker,
+                                )
+                            } catch (e: TimeoutCancellationException) {
+                                fail("Timed out waiting for onCurrentSpeakerChanged to fire")
+                            }
+                        }
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never ran - test setup failed", hasConnected)
         }
     }
 

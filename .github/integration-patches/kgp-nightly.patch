@@ -1,3 +1,42 @@
+diff --git a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
+index a66f676e7b4..5e634e4ab65 100644
+--- a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
++++ b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
+@@ -42,7 +42,7 @@ import org.gradle.api.file.RegularFile
+ import org.gradle.api.file.RegularFileProperty
+ import org.gradle.api.provider.Provider
+ import org.gradle.api.tasks.TaskProvider
+-import org.jetbrains.kotlin.abi.tools.api.v2.KlibTarget
++import org.jetbrains.kotlin.abi.tools.KlibTarget
+ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation.Companion.MAIN_COMPILATION_NAME
+ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+diff --git a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/GenerateAbiTask.kt b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/GenerateAbiTask.kt
+index c9da66caf83..477cd2f6630 100644
+--- a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/GenerateAbiTask.kt
++++ b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/GenerateAbiTask.kt
+@@ -37,9 +37,9 @@ import org.gradle.api.tasks.TaskAction
+ import org.gradle.workers.WorkAction
+ import org.gradle.workers.WorkParameters
+ import org.gradle.workers.WorkerExecutor
+-import org.jetbrains.kotlin.abi.tools.AbiToolsFactory
+-import org.jetbrains.kotlin.abi.tools.api.AbiFilters
+-import org.jetbrains.kotlin.abi.tools.api.v2.KlibTarget
++import org.jetbrains.kotlin.abi.tools.AbiFilters
++import org.jetbrains.kotlin.abi.tools.AbiTools
++import org.jetbrains.kotlin.abi.tools.KlibTarget
+ 
+ @CacheableTask
+ abstract class GenerateAbiTask
+@@ -78,7 +78,7 @@ abstract class KlibDumpWorker : WorkAction<KlibDumpWorker.Parameters> {
+         abstract val excludedAnnotatedWith: SetProperty<String>
+     }
+ 
+-    private val abiTools = AbiToolsFactory().get().v2
++    private val abiTools = AbiTools.getInstance()
+ 
+     override fun execute() {
+         val klibTargets = parameters.klibs.get()
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt b/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
 index abf6e304bcd..1cdc74bc684 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt

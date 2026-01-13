@@ -74,20 +74,6 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?>? getSubspaceNodeHolder();
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.CameraViewScenePose {
-    ctor public FakeCameraViewScenePose();
-    ctor public FakeCameraViewScenePose(optional @androidx.xr.scenecore.runtime.CameraViewScenePose.CameraType int cameraType);
-    ctor @BytecodeOnly public FakeCameraViewScenePose(int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @InaccessibleFromKotlin public int getCameraType();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getDisplayResolutionInPixels();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.CameraViewScenePose.Fov getFov();
-    method @InaccessibleFromKotlin public void setDisplayResolutionInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
-    method @InaccessibleFromKotlin public void setFov(androidx.xr.scenecore.runtime.CameraViewScenePose.Fov);
-    property public int cameraType;
-    property public androidx.xr.scenecore.runtime.PixelDimensions displayResolutionInPixels;
-    property public androidx.xr.scenecore.runtime.CameraViewScenePose.Fov fov;
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeComponent implements androidx.xr.scenecore.runtime.Component {
     ctor public FakeComponent();
     method @InaccessibleFromKotlin public final boolean getCanBeAttached();
@@ -207,10 +193,6 @@ package androidx.xr.scenecore.testing {
     property public long mToken;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeHeadScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.HeadScenePose {
-    ctor public FakeHeadScenePose();
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeInteractableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.InteractableComponent {
     ctor public FakeInteractableComponent();
     method public void onInputEvent(androidx.xr.scenecore.runtime.InputEvent event);
@@ -228,7 +210,9 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeMovableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.MovableComponent {
     ctor public FakeMovableComponent();
+    method public void addMoveEventListener(androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
     method public void addMoveEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
+    method @InaccessibleFromKotlin public java.util.concurrent.Executor getDefaultExecutor();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getLastPlanePose();
     method @InaccessibleFromKotlin public boolean getScaleInZ();
     method @InaccessibleFromKotlin public int getScaleWithDistanceMode();
@@ -238,11 +222,13 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public boolean getUserAnchorable();
     method public void onMoveEvent(androidx.xr.scenecore.runtime.MoveEvent event);
     method public void removeMoveEventListener(androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
+    method @InaccessibleFromKotlin public void setDefaultExecutor(java.util.concurrent.Executor);
     method @InaccessibleFromKotlin public void setLastPlanePose(androidx.xr.runtime.math.Pose?);
     method public void setPlanePoseForMoveUpdatePose(androidx.xr.runtime.math.Pose? planePose, androidx.xr.runtime.math.Pose moveUpdatePose);
     method @InaccessibleFromKotlin public void setScaleWithDistanceMode(int);
     method @InaccessibleFromKotlin public void setSetPlanePoseForMoveUpdatePoseCallCount(long);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
+    property public java.util.concurrent.Executor defaultExecutor;
     property public androidx.xr.runtime.math.Pose? lastPlanePose;
     property public boolean scaleInZ;
     property public int scaleWithDistanceMode;
@@ -260,7 +246,7 @@ package androidx.xr.scenecore.testing {
     ctor public FakePanelEntity(optional android.view.View? view);
     ctor @BytecodeOnly public FakePanelEntity(android.view.View!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public float getCornerRadius();
-    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution(androidx.xr.scenecore.runtime.ScenePose renderViewScenePose, androidx.xr.runtime.FieldOfView renderViewFov);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getSizeInPixels();
     method @InaccessibleFromKotlin public void setCornerRadius(float);
@@ -618,11 +604,9 @@ package androidx.xr.scenecore.testing {
     method public void enablePanelDepthTest(boolean enabled);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeActivitySpace getActivitySpace();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeAudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
-    method public androidx.xr.scenecore.runtime.CameraViewScenePose? getCameraViewActivityPose(@androidx.xr.scenecore.runtime.CameraViewScenePose.CameraType int cameraType);
     method @InaccessibleFromKotlin public float getDeviceDpPerMeter();
     method @InaccessibleFromKotlin public boolean getEnabledPanelDepthTest();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor? getExecutor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HeadScenePose? getHeadActivityPose();
     method @InaccessibleFromKotlin public android.app.Activity? getLastSetPreferredAspectRatioActivity();
     method @InaccessibleFromKotlin public float getLastSetPreferredAspectRatioRatio();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PanelEntity getMainPanelEntity();
@@ -654,7 +638,6 @@ package androidx.xr.scenecore.testing {
     property public float deviceDpPerMeter;
     property public boolean enabledPanelDepthTest;
     property public java.util.concurrent.Executor? executor;
-    property public androidx.xr.scenecore.runtime.HeadScenePose? headActivityPose;
     property public android.app.Activity? lastSetPreferredAspectRatioActivity;
     property public float lastSetPreferredAspectRatioRatio;
     property public androidx.xr.scenecore.runtime.PanelEntity mainPanelEntity;
@@ -802,7 +785,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
     method @InaccessibleFromKotlin public boolean getMContentColorMetadataSet();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
-    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
+    method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution(androidx.xr.scenecore.runtime.ScenePose renderViewScenePose, androidx.xr.runtime.FieldOfView renderViewFov);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public int getStereoMode();

@@ -395,6 +395,12 @@ internal interface Owner : PositionCalculator {
      */
     fun dispatchOnScrollChanged(delta: Offset) {}
 
+    /**
+     * Invalidates the layer that the root elements are drawn in. This does not invalidate any child
+     * layers.
+     */
+    fun invalidateRootLayer() {}
+
     companion object {
         /**
          * Enables additional (and expensive to do in production) assertions. Useful to be set to

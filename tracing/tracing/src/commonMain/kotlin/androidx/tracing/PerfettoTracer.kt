@@ -90,8 +90,10 @@ public class PerfettoTracer(context: TraceContext, name: String) :
         val current =
             buildThreadContextElement(
                 // Placeholder to be filled in by beginSectionWithMetadata
-                category = DEFAULT_STRING,
-                name = DEFAULT_STRING,
+                // Start off with the parent category and names so we have something consistent
+                // when using the PlatformThreadContextElement for explicit trace propagation.
+                category = parent?.category ?: DEFAULT_STRING,
+                name = parent?.name ?: DEFAULT_STRING,
                 flowIds = parent?.flowIds ?: listOf(monotonicId()),
                 // This method is called before a coroutine is resumed on a thread that
                 // belongs to a dispatcher. This can be called more than once. So avoid creating

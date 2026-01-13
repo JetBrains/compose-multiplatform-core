@@ -19,8 +19,8 @@ package androidx.glance.wear
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.legacy.TileProvider

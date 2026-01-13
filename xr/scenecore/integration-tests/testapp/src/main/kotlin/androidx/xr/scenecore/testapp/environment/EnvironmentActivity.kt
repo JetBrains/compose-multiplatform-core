@@ -152,6 +152,24 @@ class EnvironmentActivity : AppCompatActivity() {
     }
 
     private fun skyBoxButtonHandlers() {
+        // Load skybox from a Path
+        findViewById<Button>(R.id.environment_load_path).setOnClickListener {
+            lifecycleScope.launch {
+                greySkybox =
+                    ExrImage.createFromZip(session!!, Paths.get("skyboxes", "GreySkybox.zip"))
+                addEvent(EventType.SKYBOX_CHANGED, "Grey Skybox loaded from Path")
+            }
+        }
+
+        // Load skybox from a bytes
+        findViewById<Button>(R.id.environment_load_bytes).setOnClickListener {
+            lifecycleScope.launch {
+                val bytes = assets.open("skyboxes/BlueSkybox.zip").readBytes()
+                blueSkybox = ExrImage.createFromZip(session!!, bytes, "BlueSkybox.zip")
+                addEvent(EventType.SKYBOX_CHANGED, "Blue Skybox loaded from Bytes")
+            }
+        }
+
         // handle grey skybox
         findViewById<Button>(R.id.environment_button2_1).setOnClickListener {
             setGeoAndSkybox(greySkybox, spatialEnvironmentPreference?.geometry)
@@ -241,8 +259,6 @@ class EnvironmentActivity : AppCompatActivity() {
     }
 
     private suspend fun loadResources() {
-        this.greySkybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "GreySkybox.zip"))
-        this.blueSkybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
         this.groundGeometry = GltfModel.create(session!!, Paths.get("models", "GroundGeometry.glb"))
         this.rockGeometry = GltfModel.create(session!!, Paths.get("models", "RocksGeometry.glb"))
         this.dragonGeometry =

@@ -102,13 +102,14 @@ class HitTestActivity : AppCompatActivity() {
                         session!!.scene.perceptionSpace.getScenePoseFromPerceptionPose(headPose)
                     val hitTest = headScenePose.hitTest(Vector3(), Vector3(0f, 0f, -1f))
                     if (hitTest != null && hitTest.surfaceNormal != null) {
+                        val devicePose = device.state.value.devicePose
                         val updatedRotation =
                             Quaternion.fromLookTowards(
                                 hitTest.surfaceNormal!!,
                                 session!!
                                     .scene
-                                    .spatialUser
-                                    .head!!
+                                    .perceptionSpace
+                                    .getScenePoseFromPerceptionPose(devicePose)
                                     .transformPoseTo(
                                         Pose(Vector3(0f, 1f, 0f)),
                                         session!!.scene.activitySpace,
@@ -118,8 +119,8 @@ class HitTestActivity : AppCompatActivity() {
                         val hitTestPose =
                             session!!
                                 .scene
-                                .spatialUser
-                                .head!!
+                                .perceptionSpace
+                                .getScenePoseFromPerceptionPose(devicePose)
                                 .transformPoseTo(
                                     Pose(hitTest.hitPosition!!, updatedRotation),
                                     session!!.scene.activitySpace,

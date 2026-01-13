@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.remote.creation.compose.capture.shapes
+package androidx.compose.remote.creation.compose.shapes
 
 import android.content.Context
 import android.graphics.Color

@@ -54,8 +54,8 @@ public val LocalGlanceId: ProvidableCompositionLocal<GlanceId> =
 /** Are we targeting RemoteViews or RemoteCompose? */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: unrestrict
 public val LocalBackend: ProvidableCompositionLocal<Backend> = staticCompositionLocalOf {
-    Backend.RemoteCompose
-} // TODO DO NOT HARDCODE THIS REVISIT IT
+    Backend.RemoteView
+}
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: unrestrict
     public get
 

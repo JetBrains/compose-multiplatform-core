@@ -115,6 +115,7 @@ dependencies {
     androidTestImplementation("androidx.palette:palette:1.0.0")
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
+    androidTestImplementation(project(":exifinterface:exifinterface"))
 
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)

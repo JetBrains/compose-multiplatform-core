@@ -18,13 +18,8 @@ package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Quaternion
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
 import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.runtime.CameraViewScenePose
-import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
@@ -41,6 +36,7 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -64,6 +60,8 @@ class SurfaceFeatureImplTest {
 
         impressApi = mock(ImpressApi::class.java)
         `when`(impressApi.createImpressNode()).thenReturn(fakeImpressApi.createImpressNode())
+        `when`(impressApi.createStereoSurface(any(), any(), any()))
+            .thenReturn(fakeImpressApi.createImpressNode())
 
         Assert.assertNotNull(xrExtensions)
         val node = xrExtensions.createNode()
@@ -103,25 +101,6 @@ class SurfaceFeatureImplTest {
     private fun createDefaultSurfaceFeature(shape: SurfaceEntity.Shape): SurfaceFeatureImpl {
         surfaceFeature = createSurfaceFeature(SurfaceEntity.SurfaceProtection.NONE, shape)
         return surfaceFeature
-    }
-
-    private fun setupDefaultMockCameraView(): CameraViewScenePose {
-        val cameraView = mock(CameraViewScenePose::class.java)
-        `when`(cameraView.cameraType)
-            .thenReturn(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE)
-        `when`(cameraView.activitySpacePose)
-            .thenReturn(Pose(Vector3(0f, 0f, 0f), Quaternion.Identity))
-
-        val fov =
-            CameraViewScenePose.Fov(
-                Math.atan(1.0).toFloat(),
-                Math.atan(1.0).toFloat(),
-                Math.atan(1.0).toFloat(),
-                Math.atan(1.0).toFloat(),
-            )
-        `when`(cameraView.fov).thenReturn(fov)
-        `when`(cameraView.displayResolutionInPixels).thenReturn(PixelDimensions(1000, 1000))
-        return cameraView
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface

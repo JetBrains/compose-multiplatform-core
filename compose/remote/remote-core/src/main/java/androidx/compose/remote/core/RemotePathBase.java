@@ -71,7 +71,7 @@ public class RemotePathBase {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public float @NonNull[] getPath() {
+    public float @NonNull [] getPath() {
         return mPath;
     }
 

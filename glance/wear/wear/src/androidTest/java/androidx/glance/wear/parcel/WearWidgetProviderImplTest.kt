@@ -18,8 +18,8 @@ package androidx.glance.wear.parcel
 
 import android.content.ComponentName
 import android.content.Context
-import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color

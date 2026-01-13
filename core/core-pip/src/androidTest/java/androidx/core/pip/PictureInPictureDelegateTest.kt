@@ -40,7 +40,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalPictureInPicture::class)
 class PictureInPictureDelegateTest {
     @SdkSuppress(minSdkVersion = 31)
     @Test

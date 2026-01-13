@@ -46,9 +46,6 @@ public interface SceneRuntime : JxrRuntime {
     /** Returns the Activity Space entity at the root of the scene. */
     public val activitySpace: ActivitySpace
 
-    /** Returns the HeadScenePose for the session or null if it not ready. */
-    public val headActivityPose: HeadScenePose?
-
     /** Returns the PerceptionSpaceScenePose for the Session. */
     public val perceptionSpaceActivityPose: PerceptionSpaceScenePose
 
@@ -73,16 +70,6 @@ public interface SceneRuntime : JxrRuntime {
 
     /** Returns a [MediaPlayerExtensionsWrapper] instance. */
     public val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper
-
-    /**
-     * Returns the CameraViewScenePose for the specified camera type or null if it is not
-     * ready/available.
-     *
-     * @param cameraType The type of camera to retrieve the pose for.
-     */
-    public fun getCameraViewActivityPose(
-        @CameraViewScenePose.CameraType cameraType: Int
-    ): CameraViewScenePose?
 
     /**
      * Returns an [ScenePose] based off of a position within the perception space.

@@ -187,9 +187,9 @@ class EntityManagerTest {
     private fun createPanelEntity() {
         panelEntity =
             PanelEntity.create(
-                session.perceptionRuntime.lifecycleManager,
                 activity,
                 sceneRuntime,
+                session.scene.perceptionSpace,
                 entityManager,
                 TextView(activity),
                 IntSize2d(720, 480),
@@ -222,6 +222,7 @@ class EntityManagerTest {
             ActivityPanelEntity.create(
                 session.perceptionRuntime.lifecycleManager,
                 sceneRuntime,
+                session.scene.perceptionSpace,
                 entityManager,
                 IntSize2d(640, 480),
                 "test",

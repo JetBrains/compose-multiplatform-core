@@ -22,4 +22,6 @@
     <item name="compose_xr_registered_scenes" type="id" />
     <item name="compose_xr_main_panel_owner_queue" type="id" />
     <item name="compose_xr_local_view_entity" type="id" />
+    <item name="compose_xr_current_space_request" type="id" />
+    <item name="compose_xr_space_request_mutex" type="id" />
 </resources>

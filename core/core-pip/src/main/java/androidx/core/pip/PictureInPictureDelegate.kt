@@ -34,7 +34,6 @@ import java.util.concurrent.Executor
  * @param pictureInPictureProvider [PictureInPictureProvider] instance that this delegate will call
  *   into for actual Picture-in-Picture functionalities.
  */
-@ExperimentalPictureInPicture
 public class PictureInPictureDelegate(pictureInPictureProvider: PictureInPictureProvider) {
 
     private var pictureInPictureProviderRef: WeakReference<PictureInPictureProvider> =

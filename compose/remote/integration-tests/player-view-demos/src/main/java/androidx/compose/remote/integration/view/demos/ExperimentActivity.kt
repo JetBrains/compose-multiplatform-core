@@ -85,6 +85,7 @@ import androidx.compose.remote.integration.view.demos.examples.RcCanvasComponent
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2b
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3b
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3c
@@ -328,6 +329,7 @@ class ExperimentActivity : ComponentActivity() {
                     getpc("Long Text Ellipsis") { RcTextDemo3c() },
                     getpc("Line height Text") { RcTextDemo3() },
                     getpc("Autosize Text") { RcTextDemo2() },
+                    getpc("Autosize Card") { RcTextDemo2b() },
                     getpc("Text baseline") { RcTextDemo() },
                     getpc("CountDown") { countDown() },
                     getpc("Cube 3D") { cube3d() },

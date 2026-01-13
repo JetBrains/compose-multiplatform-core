@@ -338,7 +338,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                 movable = videoAttr.movable,
             )
 
-        alignPoseToPlayerHead(scene, surfaceParent!!)
+        alignPoseToPlayerHead(scene, device, surfaceParent!!)
 
         exoPlayer =
             createExoPlayer(
@@ -432,8 +432,12 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
     }
 
     companion object {
-        private fun alignPoseToPlayerHead(scene: Scene, entity: GroupEntity) {
-            val pose = scene.spatialUser.head?.transformPoseTo(Pose.Identity, scene.activitySpace)!!
+        private fun alignPoseToPlayerHead(scene: Scene, device: ArDevice, entity: GroupEntity) {
+            val pose =
+                scene.perceptionSpace.transformPoseTo(
+                    device.state.value.devicePose,
+                    scene.activitySpace,
+                )
             val rotation = Quaternion.fromEulerAngles(0.0f, pose.rotation.eulerAngles.y, 0.0f)
             entity.setPose(Pose(pose.translation, rotation))
         }

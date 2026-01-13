@@ -196,6 +196,11 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     @Override
+    public void addMoveEventListener(@NonNull MoveEventListener moveEventListener) {
+        mMoveEventListenersMap.put(moveEventListener, mRuntimeExecutor);
+    }
+
+    @Override
     public void addMoveEventListener(@NonNull Executor executor,
             @NonNull MoveEventListener moveEventListener) {
         mMoveEventListenersMap.put(moveEventListener, executor);

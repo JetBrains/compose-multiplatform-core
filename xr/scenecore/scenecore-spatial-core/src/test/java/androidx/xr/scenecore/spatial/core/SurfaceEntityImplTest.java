@@ -19,18 +19,17 @@ package androidx.xr.scenecore.spatial.core;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
+import androidx.xr.runtime.FieldOfView;
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.Space;
@@ -38,6 +37,7 @@ import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.SurfaceEntity.Shape;
 import androidx.xr.scenecore.runtime.SurfaceFeature;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.testing.FakeScenePose;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import androidx.xr.scenecore.testing.FakeSurfaceFeature;
 
@@ -57,6 +57,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
@@ -73,10 +74,26 @@ public final class SurfaceEntityImplTest {
     private final Activity mActivity = mActivityController.create().start().get();
     private FakeSurfaceFeature mFakeSurfaceFeature;
     private final SurfaceFeature mMockSurfaceFeature = Mockito.mock(SurfaceFeature.class);
+    private FakeScenePose mRenderViewScenePose;
+    private FieldOfView mRenderViewFov;
+    private final PixelDimensions mViewPlaneResolution = new PixelDimensions(2000, 1000);
 
     @Before
     public void setUp() {
+        String widthAndHeightConfig =
+                "+w" + mViewPlaneResolution.width + "dp-h" + mViewPlaneResolution.height + "dp";
+        RuntimeEnvironment.setQualifiers(widthAndHeightConfig);
+
         createDefaultSurfaceEntity(new Shape.Quad(new FloatSize2d(1f, 1f)));
+
+        mRenderViewScenePose = new FakeScenePose();
+        mRenderViewScenePose.setActivitySpacePose(
+                new Pose(new Vector3(0f, 0f, 0f), Quaternion.Identity));
+        mRenderViewFov = new FieldOfView(
+                (float) Math.atan(1.0),
+                (float) Math.atan(1.0),
+                (float) Math.atan(1.0),
+                (float) Math.atan(1.0));
     }
 
     @After
@@ -127,24 +144,6 @@ public final class SurfaceEntityImplTest {
         mSurfaceEntity.setPose(pose, Space.PARENT);
 
         return mSurfaceEntity;
-    }
-
-    private CameraViewScenePose setupDefaultMockCameraView() {
-        CameraViewScenePose cameraView = mock(CameraViewScenePose.class);
-        when(cameraView.getCameraType())
-                .thenReturn(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
-        when(cameraView.getActivitySpacePose())
-                .thenReturn(new Pose(new Vector3(0f, 0f, 0f), Quaternion.Identity));
-
-        CameraViewScenePose.Fov fov =
-                new CameraViewScenePose.Fov(
-                        (float) Math.atan(1.0), (float) Math.atan(1.0),
-                        (float) Math.atan(1.0), (float) Math.atan(1.0));
-        when(cameraView.getFov()).thenReturn(fov);
-        when(cameraView.getDisplayResolutionInPixels()).thenReturn(new PixelDimensions(1000, 1000));
-        mEntityManager.clear();
-        mEntityManager.addSystemSpaceActivityPose(cameraView);
-        return cameraView;
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
@@ -253,25 +252,17 @@ public final class SurfaceEntityImplTest {
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
-    public void getPerceivedResolution_noCameraView_returnsInvalidCameraView() {
-        mEntityManager.clear(); // Ensure no camera views
-        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution();
-
-        assertThat(result).isInstanceOf(PerceivedResolutionResult.InvalidCameraView.class);
-    }
-
-    @Ignore // b/428211243 this test currently leaks android.view.Surface
-    @Test
     public void getPerceivedResolution_quadInFront_returnsSuccess() {
         Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(2.0f, 1.0f)); // 2m wide, 1m high
         // Recreate mSurfaceEntity with the specific shape for this test
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
-        setupDefaultMockCameraView();
+        when(mMockSurfaceFeature.getShape()).thenReturn(quadShape);
 
         mSurfaceEntity.setPose(new Pose(new Vector3(0f, 0f, -2f), Quaternion.Identity)); // 2m away
         mSurfaceEntity.setScale(new Vector3(1f, 1f, 1f));
 
-        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution();
+        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution(
+                mRenderViewScenePose, mRenderViewFov);
         assertThat(result).isInstanceOf(PerceivedResolutionResult.Success.class);
         PerceivedResolutionResult.Success successResult =
                 (PerceivedResolutionResult.Success) result;
@@ -285,13 +276,14 @@ public final class SurfaceEntityImplTest {
     public void getPerceivedResolution_sphereInFront_returnsSuccess() {
         Shape.Sphere sphereShape = new Shape.Sphere(1.0f); // radius 1m
         mSurfaceEntity = createDefaultSurfaceEntity(sphereShape);
-        setupDefaultMockCameraView();
+        when(mMockSurfaceFeature.getShape()).thenReturn(sphereShape);
 
         mSurfaceEntity.setPose(new Pose(new Vector3(0f, 0f, -3f), Quaternion.Identity)); //
         // Center 3m away
         mSurfaceEntity.setScale(new Vector3(1f, 1f, 1f));
 
-        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution();
+        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution(
+                mRenderViewScenePose, mRenderViewFov);
         assertThat(result).isInstanceOf(PerceivedResolutionResult.Success.class);
         PerceivedResolutionResult.Success successResult =
                 (PerceivedResolutionResult.Success) result;
@@ -305,14 +297,15 @@ public final class SurfaceEntityImplTest {
     public void getPerceivedResolution_quadTooClose_returnsEntityTooClose() {
         Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(2.0f, 1.0f));
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
-        setupDefaultMockCameraView();
+        when(mMockSurfaceFeature.getShape()).thenReturn(quadShape);
 
         float veryCloseDistance = PerceivedResolutionUtils.PERCEIVED_RESOLUTION_EPSILON / 2f;
         mSurfaceEntity.setPose(
                 new Pose(new Vector3(0f, 0f, -veryCloseDistance), Quaternion.Identity));
         mSurfaceEntity.setScale(new Vector3(1f, 1f, 1f));
 
-        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution();
+        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution(
+                mRenderViewScenePose, mRenderViewFov);
         assertThat(result).isInstanceOf(PerceivedResolutionResult.EntityTooClose.class);
     }
 
@@ -321,12 +314,13 @@ public final class SurfaceEntityImplTest {
     public void getPerceivedResolution_quadWithScale_calculatesCorrectly() {
         Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
         mSurfaceEntity = createDefaultSurfaceEntity(quadShape);
-        setupDefaultMockCameraView();
+        when(mMockSurfaceFeature.getShape()).thenReturn(quadShape);
 
         mSurfaceEntity.setPose(new Pose(new Vector3(0f, 0f, -2f), Quaternion.Identity)); // 2m away
         mSurfaceEntity.setScale(new Vector3(2f, 3f, 1f)); // Scaled to 2m wide, 3m high
 
-        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution();
+        PerceivedResolutionResult result = mSurfaceEntity.getPerceivedResolution(
+                mRenderViewScenePose, mRenderViewFov);
         assertThat(result).isInstanceOf(PerceivedResolutionResult.Success.class);
         PerceivedResolutionResult.Success successResult =
                 (PerceivedResolutionResult.Success) result;

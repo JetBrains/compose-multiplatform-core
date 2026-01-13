@@ -44,7 +44,7 @@ class OpenXrGeospatialTest {
 
     companion object {
         init {
-            System.loadLibrary("androidx.xr.runtime.openxr.test")
+            System.loadLibrary("androidx.xr.arcore.openxr.test")
         }
 
         const val XR_POLL_TIME_MS = 20L

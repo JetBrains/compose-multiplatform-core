@@ -22,10 +22,8 @@ import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -43,9 +41,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
-import androidx.xr.scenecore.impl.perception.Plane;
-import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener;
 import androidx.xr.scenecore.runtime.AnchorEntity.State;
 import androidx.xr.scenecore.runtime.Space;
@@ -139,11 +134,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     private static final long NATIVE_POINTER = 1234567890L;
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    private final PerceptionLibrary mPerceptionLibrary = Mockito.mock(PerceptionLibrary.class);
-    private final Session mSession = Mockito.mock(Session.class);
-    private final Plane mPlane = mock(Plane.class);
-    private final androidx.xr.scenecore.impl.perception.Anchor mAnchor =
-            Mockito.mock(androidx.xr.scenecore.impl.perception.Anchor.class);
     private final OnStateChangedListener mAnchorStateListener =
             Mockito.mock(OnStateChangedListener.class);
     private final IBinder mSharedAnchorToken = Mockito.mock(IBinder.class);
@@ -160,7 +150,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     public void doBeforeEachTest() {
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
         Activity activity = activityController.create().start().get();
-        when(mPerceptionLibrary.getActivity()).thenReturn(activity);
         Node taskNode = Objects.requireNonNull(mXrExtensions).createNode();
         mActivitySpace =
                 new ActivitySpaceImpl(
@@ -535,7 +524,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     @Test
     public void disposeAnchor_detachesAnchor() {
-        when(mAnchor.detach()).thenReturn(true);
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
         anchorEntity.setOnStateChangedListener(mAnchorStateListener);
         verify(mAnchorStateListener, never()).onStateChanged(State.ERROR);
@@ -559,7 +547,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     @Test
     public void disposeAnchorTwice_callsCalbackOnce() {
-        when(mAnchor.detach()).thenReturn(true);
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
         anchorEntity.setOnStateChangedListener(mAnchorStateListener);
         verify(mAnchorStateListener, never()).onStateChanged(State.ERROR);

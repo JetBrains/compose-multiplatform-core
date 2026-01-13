@@ -92,21 +92,6 @@ class SceneTest {
     }
 
     @Test
-    fun getSpatialUser_returnsSpatialUser() {
-        val spatialUser = session.scene.spatialUser
-
-        assertThat(spatialUser).isNotNull()
-    }
-
-    @Test
-    fun getSpatialUserTwice_returnsSameUser() {
-        val spatialUser1 = session.scene.spatialUser
-        val spatialUser2 = session.scene.spatialUser
-
-        assertThat(spatialUser1).isEqualTo(spatialUser2)
-    }
-
-    @Test
     fun getPerceptionSpace_returnPerceptionSpace() {
         val perceptionSpace = session.scene.perceptionSpace
 

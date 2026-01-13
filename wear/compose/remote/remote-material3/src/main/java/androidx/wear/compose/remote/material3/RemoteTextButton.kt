@@ -20,12 +20,12 @@ package androidx.wear.compose.remote.material3
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
-import androidx.compose.remote.creation.compose.capture.shapes.RemoteCircleShape
-import androidx.compose.remote.creation.compose.capture.shapes.RemoteRoundedCornerShape
-import androidx.compose.remote.creation.compose.capture.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
+import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
