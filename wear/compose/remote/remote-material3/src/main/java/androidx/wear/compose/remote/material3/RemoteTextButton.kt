@@ -53,6 +53,7 @@ import androidx.wear.compose.material3.TextButtonDefaults
  *
  * Example of an [RemoteTextButton] with shape animation of rounded corners on press:
  *
+ * @sample androidx.wear.compose.remote.material3.samples.RemoteTextButtonSimpleSample
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param shape Defines the shape for this button. Defaults to a static shape based on

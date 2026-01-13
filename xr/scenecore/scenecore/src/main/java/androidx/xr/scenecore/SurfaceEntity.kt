@@ -22,7 +22,6 @@ import androidx.annotation.FloatRange
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.runtime.Config
 import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d

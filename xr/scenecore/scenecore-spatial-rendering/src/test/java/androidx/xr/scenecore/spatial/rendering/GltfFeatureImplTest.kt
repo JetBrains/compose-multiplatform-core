@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.spatial.rendering
 
 import androidx.concurrent.futures.ResolvableFuture
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
 import androidx.xr.scenecore.impl.impress.GltfModel
 import androidx.xr.scenecore.impl.impress.ImpressApi
@@ -32,9 +33,11 @@ import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.node.Node
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.androidxr.splitengine.SubspaceNode
+import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,7 +69,8 @@ class GltfFeatureImplTest {
     private val executor = FakeScheduledExecutorService()
     private val mockImpressApi = mock(ImpressApi::class.java)
     private val fakeImpressApi = FakeImpressApiImpl()
-    private val splitEngineSubspaceManager = Mockito.mock(SplitEngineSubspaceManager::class.java)
+    private val splitEngineSubspaceManager = mock(SplitEngineSubspaceManager::class.java)
+    private val mockRenderer = mock(ImpSplitEngineRenderer::class.java)
     private lateinit var modelImpressNode: ImpressNode
 
     private val subspaceNode: Node = xrExtensions.createNode()
@@ -109,7 +113,13 @@ class GltfFeatureImplTest {
         `when`(mockImpressApi.getGltfModelBoundingBox(modelImpressNode))
             .thenReturn(fakeImpressApi.getGltfModelBoundingBox(modelImpressNode))
 
-        return GltfFeatureImpl(model, mockImpressApi, splitEngineSubspaceManager, xrExtensions)
+        return GltfFeatureImpl(
+            model,
+            mockImpressApi,
+            splitEngineSubspaceManager,
+            xrExtensions,
+            mockRenderer,
+        )
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
@@ -311,6 +321,21 @@ class GltfFeatureImplTest {
     }
 
     @Test
+    fun addOnBoundsUpdateListener_setsFrameListener() {
+        val listener = Consumer<BoundingBox> {}
+        gltfFeature.addOnBoundsUpdateListener(listener)
+        verify(mockRenderer).frameListener = Mockito.any()
+    }
+
+    @Test
+    fun removeOnBoundsUpdateListener_clearsFrameListener() {
+        val listener = Consumer<BoundingBox> {}
+        gltfFeature.addOnBoundsUpdateListener(listener)
+        gltfFeature.removeOnBoundsUpdateListener(listener)
+        verify(mockRenderer).frameListener = null
+    }
+
+    @Test
     @Throws(Exception::class)
     fun dispose_clearsOverridesAndDeletesSubspace() {
         val material = createWaterMaterial(/* isAlphaMapVersion= */ false)
@@ -333,6 +358,7 @@ class GltfFeatureImplTest {
         verify(mockImpressApi).clearMaterialOverride(modelImpressNode, nodeName1, primitiveIndex1)
         verify(mockImpressApi).clearMaterialOverride(modelImpressNode, nodeName2, primitiveIndex2)
         verify(splitEngineSubspaceManager).deleteSubspace(SUBSPACE_ID)
+        verify(mockRenderer).frameListener = null
     }
 
     companion object {

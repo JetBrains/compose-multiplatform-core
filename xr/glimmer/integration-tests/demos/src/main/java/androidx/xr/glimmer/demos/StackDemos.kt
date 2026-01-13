@@ -28,11 +28,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.Card
 import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.Icon
+import androidx.xr.glimmer.LocalTextStyle
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.samples.VerticalStackSample
 import androidx.xr.glimmer.stack.VerticalStack
@@ -62,7 +64,10 @@ internal fun VerticalStackVaryingItemSizeDemo() {
                         Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)
                             .itemDecoration(CardDefaults.shape)
                 ) {
-                    Text("Item-$index")
+                    Text(
+                        "Item-$index",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
                 }
             }
         }
@@ -75,7 +80,10 @@ internal fun VerticalStackVariousContentDemo() {
         VerticalStack(modifier = Modifier.fillMaxWidth().height(364.dp)) {
             item {
                 Card(modifier = Modifier.itemDecoration(CardDefaults.shape)) {
-                    Text("This is a card")
+                    Text(
+                        "This is a card",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
                 }
             }
             item {
@@ -83,16 +91,27 @@ internal fun VerticalStackVariousContentDemo() {
                     trailingIcon = { Icon(FavoriteIcon, "Localized description") },
                     modifier = Modifier.itemDecoration(CardDefaults.shape),
                 ) {
-                    Text("This is a card with a trailing icon")
+                    Text(
+                        "This is a card with a trailing icon",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
                 }
             }
             item {
                 Card(
-                    title = { Text("Title") },
+                    title = {
+                        Text(
+                            "Title",
+                            style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                        )
+                    },
                     leadingIcon = { Icon(FavoriteIcon, "Localized description") },
                     modifier = Modifier.itemDecoration(CardDefaults.shape),
                 ) {
-                    Text("This is a card with a title and leading icon")
+                    Text(
+                        "This is a card with a title and leading icon",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
                 }
             }
             item {
@@ -100,17 +119,31 @@ internal fun VerticalStackVariousContentDemo() {
                     Text(
                         "This is a card with a lot of text that will wrap to multiple lines. The maximum recommend number of lines of text for a card is 10.",
                         overflow = TextOverflow.Ellipsis,
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
                     )
                 }
             }
             item {
                 Card(
-                    title = { Text("Title") },
-                    subtitle = { Text("Subtitle") },
+                    title = {
+                        Text(
+                            "Title",
+                            style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                        )
+                    },
+                    subtitle = {
+                        Text(
+                            "Subtitle",
+                            style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                        )
+                    },
                     leadingIcon = { Icon(FavoriteIcon, "Localized description") },
                     modifier = Modifier.itemDecoration(CardDefaults.shape),
                 ) {
-                    Text("This is a card with a lot of text that will wrap to multiple lines.")
+                    Text(
+                        "This is a card with a lot of text that will wrap to multiple lines.",
+                        style = LocalTextStyle.current.copy(textMotion = TextMotion.Animated),
+                    )
                 }
             }
         }

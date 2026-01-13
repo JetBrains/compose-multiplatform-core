@@ -30,7 +30,7 @@ import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.PdfEdits
-import androidx.pdf.annotation.processor.PdfAnnotationsProcessor
+import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import java.util.Collections
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -39,7 +39,7 @@ import kotlinx.coroutines.sync.withLock
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class InMemoryAnnotationsManager(
     private val fetcher: PageAnnotationFetcher,
-    private val annotationsProcessor: PdfAnnotationsProcessor,
+    private val annotationsProcessor: BatchPdfAnnotationsProcessor,
 ) : AnnotationsManager {
     @VisibleForTesting
     internal val annotationEditsDraftState: AnnotationEditsDraftState =
@@ -199,29 +199,32 @@ public class InMemoryAnnotationsManager(
 
     /** Processes the add operations for commit. */
     private fun List<AnnotationEditOperation>.processAddOperations(): AddEditResult {
-        val addPdfAnnotationsData = this.map { it.edit }
-        val addEditResult = annotationsProcessor.processAddEdits(addPdfAnnotationsData)
-        associateAospIds(addEditResult.success)
-        return addEditResult
+        //        val addPdfAnnotationsData = this.map { it.edit }
+        //        val addEditResult = annotationsProcessor.processAddEdits(addPdfAnnotationsData)
+        //        associateAospIds(addEditResult.success)
+        //        return addEditResult
+        TODO()
     }
 
     /** Processes the remove operations for commit. */
     private fun List<AnnotationEditOperation>.processRemoveOperations(): ModifyEditResult {
-        val aospIds = this.mapNotNull { editIdToAospIdMap[it.edit.editId] }
-        return annotationsProcessor.processRemoveEdits(aospIds)
+        //        val aospIds = this.mapNotNull { editIdToAospIdMap[it.edit.editId] }
+        //        return annotationsProcessor.processRemoveEdits(aospIds)
+        TODO()
     }
 
     /** Processes the update operations for commit. */
     private fun List<AnnotationEditOperation>.processUpdateOperations(): ModifyEditResult {
-        val pdfAnnotationsData =
-            this.mapNotNull {
-                val editId = it.edit.editId
-                editIdToAospIdMap[editId]?.let { aospId ->
-                    PdfAnnotationData(aospId, it.edit.annotation)
-                }
-            }
-
-        return annotationsProcessor.processUpdateEdits(pdfAnnotationsData)
+        //        val pdfAnnotationsData =
+        //            this.mapNotNull {
+        //                val editId = it.edit.editId
+        //                editIdToAospIdMap[editId]?.let { aospId ->
+        //                    PdfAnnotationData(aospId, it.edit.annotation)
+        //                }
+        //            }
+        //
+        //        return annotationsProcessor.processUpdateEdits(pdfAnnotationsData)
+        TODO()
     }
 
     /**

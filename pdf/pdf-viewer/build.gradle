@@ -58,6 +58,7 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.mockitoKotlin4)
     androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 

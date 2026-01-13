@@ -126,11 +126,15 @@ public data class RemoteRadialGradient(
 
         validateColorStops(colors = colors, colorStops = stops)
         val realCenter = center ?: size.center
+        val centerX = resolve(realCenter.x, size.width)
+        val centerY = resolve(realCenter.y, size.height)
         val realRadius = radius ?: (size.width.min(size.height) / 2f)
+        val resolvedRadius = resolve(realRadius, size.minDimension / 2f)
+
         return RemoteRadialShader(
-            realCenter.x.toFloat(),
-            realCenter.y.toFloat(),
-            realRadius.toFloat(),
+            centerX.toFloat(),
+            centerY.toFloat(),
+            resolvedRadius.toFloat(),
             // No change for Android O+, map the colors directly to their argb equivalent
             IntArray(colors.size) { i -> colors[i].toArgb() },
             stops?.toFloatArray(),

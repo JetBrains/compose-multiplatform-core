@@ -38,7 +38,7 @@ import androidx.compose.remote.creation.compose.layout.CaptureAsBitmap
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteCanvas
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas0
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteContext
@@ -51,7 +51,7 @@ import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clickable
-import androidx.compose.remote.creation.compose.modifier.drawWithContent
+import androidx.compose.remote.creation.compose.modifier.drawWithContent0
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
@@ -69,6 +69,7 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.serialization.yaml.YAMLSerializer
@@ -92,7 +93,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.font.FontFamily
@@ -404,7 +405,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                RemoteCanvas(
+                RemoteCanvas0(
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
@@ -450,7 +451,7 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                RemoteCanvas(
+                RemoteCanvas0(
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
@@ -779,7 +780,8 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
                 RemoteBox(
-                    modifier = RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action"))
+                    modifier =
+                        RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action".rs))
                 )
             }
         }
@@ -811,7 +813,8 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
                 val param = rememberRemoteIntValue { 128 }
                 RemoteBox(
                     modifier =
-                        RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action", param))
+                        RemoteModifier.size(100.rdp)
+                            .clickable(HostAction("my_host_action".rs, param))
                 )
             }
         }
@@ -1150,11 +1153,11 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
         val painter = rememberVectorPainter(icon)
         val iconSizePx = with(LocalDensity.current) { Dp(size.value.internalAsFloat()).toPx() }
         val scale = iconSizePx / 24f
-        RemoteCanvas(modifier = RemoteModifier.size(size)) {
+        RemoteCanvas0(modifier = RemoteModifier.size(size)) {
             scale(scale, pivot = RemoteOffset.Zero) {
                 // Suppressed because of https://buganizer.corp.google.com/issues/375131944
                 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-                with(painter.vector.root) { this@RemoteCanvas.drawScope.draw() }
+                with(painter.vector.root) { this@RemoteCanvas0.drawScope.draw() }
             }
         }
     }
@@ -1317,16 +1320,16 @@ list:
             ) {
                 RemoteBox(
                     modifier =
-                        RemoteModifier.drawWithContent {
-                                rotate(37f) { this@drawWithContent.drawContent() }
+                        RemoteModifier.drawWithContent0 {
+                                rotate(37f) { this@drawWithContent0.drawContent() }
                                 translate(40f, 40f) {
                                     rotate(45f) {
-                                        scale(1.2f) { this@drawWithContent.drawContent() }
+                                        scale(1.2f) { this@drawWithContent0.drawContent() }
                                     }
                                 }
                                 drawContent()
                                 translate(-40f, -40f) {
-                                    rotate(30f) { this@drawWithContent.drawContent() }
+                                    rotate(30f) { this@drawWithContent0.drawContent() }
                                 }
                             }
                             .size(64.rdp)

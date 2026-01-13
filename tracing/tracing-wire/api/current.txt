@@ -8,7 +8,7 @@ package androidx.tracing.wire {
   }
 
   public final class TraceSink extends androidx.tracing.TraceSink {
-    ctor public TraceSink(int sequenceId, okio.BufferedSink bufferedSink, optional kotlin.coroutines.CoroutineContext coroutineContext);
+    ctor public TraceSink(@IntRange(from=1L) int sequenceId, okio.BufferedSink bufferedSink, optional kotlin.coroutines.CoroutineContext coroutineContext);
     ctor @BytecodeOnly public TraceSink(int, okio.BufferedSink!, kotlin.coroutines.CoroutineContext!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void close();
     method public void enqueue(androidx.tracing.PooledTracePacketArray pooledPacketArray);

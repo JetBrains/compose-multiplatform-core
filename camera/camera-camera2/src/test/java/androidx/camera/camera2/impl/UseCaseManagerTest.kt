@@ -761,7 +761,7 @@ class UseCaseManagerTest {
         lowLightBoostControl =
             LowLightBoostControl(
                 fakeCameraMetadata,
-                State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler),
+                State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler, useCaseThreads),
                 useCaseThreads,
                 ComboRequestListener(),
             )

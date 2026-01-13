@@ -51,6 +51,13 @@ internal class ProjectedDeviceLifecycle(
                 when (deviceState) {
                     ProjectedDeviceState.ACTIVE -> handleLifecycleEventOnMainThread(Event.ON_START)
                     ProjectedDeviceState.INACTIVE -> handleLifecycleEventOnMainThread(Event.ON_STOP)
+                    ProjectedDeviceState.DESTROYED -> {
+                        if (registry.currentState.isAtLeast(State.CREATED)) {
+                            handleLifecycleEventOnMainThread(Event.ON_DESTROY)
+                        }
+                        projectedService?.unregisterProjectedDeviceStateListener(this)
+                        serviceConnection?.disconnect()
+                    }
                 }
             }
         }

@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore.impl.impress
 
-import android.content.res.Resources.NotFoundException
 import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.Looper
@@ -106,7 +105,7 @@ public class FakeImpressApiImpl : ImpressApi {
     // Non-functional resource manager.
     private val resourceManager = BindingsResourceManager(Handler(Looper.getMainLooper()))
     // Vector of image based lighting asset tokens.
-    private val imageBasedLightingAssets: MutableList<Long> = ArrayList()
+    private val imageBasedLightingAssets: MutableMap<Long, ExrImage> = mutableMapOf()
     // Map of model tokens to the list of impress nodes that are instances of that model.
     private val gltfModels: MutableMap<Long, MutableList<Int>> = HashMap()
     // Map of impress nodes to their parent impress nodes.
@@ -143,18 +142,15 @@ public class FakeImpressApiImpl : ImpressApi {
     override fun getBindingsResourceManager(): BindingsResourceManager = resourceManager
 
     override fun releaseImageBasedLightingAsset(iblToken: Long) {
-        if (!imageBasedLightingAssets.contains(iblToken)) {
-            throw NotFoundException("Image based lighting asset token not found")
-        }
         imageBasedLightingAssets.remove(iblToken)
     }
 
     @Suppress("RestrictTo")
     override suspend fun loadImageBasedLightingAsset(path: String): ExrImage {
         val token = (nextImageBasedLightingAssetId++).toLong()
-        imageBasedLightingAssets.add(token)
         val exrImage: ExrImage =
             ExrImage.Builder().setImpressApi(this).setNativeExrImage(token).build()
+        imageBasedLightingAssets[token] = exrImage
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
         return exrImage
     }
@@ -162,9 +158,9 @@ public class FakeImpressApiImpl : ImpressApi {
     @Suppress("RestrictTo")
     override suspend fun loadImageBasedLightingAsset(data: ByteArray, key: String): ExrImage {
         val token = (nextImageBasedLightingAssetId++).toLong()
-        imageBasedLightingAssets.add(token)
         val exrImage: ExrImage =
             ExrImage.Builder().setImpressApi(this).setNativeExrImage(token).build()
+        imageBasedLightingAssets[token] = exrImage
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
         return exrImage
     }
@@ -190,9 +186,6 @@ public class FakeImpressApiImpl : ImpressApi {
     }
 
     override fun releaseGltfAsset(gltfToken: Long) {
-        if (!gltfModels.containsKey(gltfToken)) {
-            throw NotFoundException("Model token not found")
-        }
         gltfModels.remove(gltfToken)
     }
 
@@ -917,8 +910,8 @@ public class FakeImpressApiImpl : ImpressApi {
     }
 
     // Returns the list of image based lighting assets that have been loaded.
-    public fun getImageBasedLightingAssets(): MutableList<Long> {
-        return imageBasedLightingAssets
+    public fun getImageBasedLightingAssets(): List<Long> {
+        return imageBasedLightingAssets.keys.toList()
     }
 
     // Returns the map of glTF model tokens to their associated impress nodes.

@@ -17,6 +17,7 @@
 package androidx.pdf.annotation.registry
 
 import androidx.pdf.annotation.AnnotationHandleIdGenerator
+import androidx.pdf.annotation.AnnotationHandleIdGenerator.composeAnnotationId
 import java.util.Collections
 
 /** A thread-safe, in-memory implementation of [AnnotationHandleRegistry]. */
@@ -29,13 +30,14 @@ internal class StablePdfAnnotationHandleRegistry : AnnotationHandleRegistry {
     private val sourceToHandleMap: MutableMap<String, String> =
         Collections.synchronizedMap(HashMap())
 
-    override fun getHandleId(sourceId: String): String {
+    override fun getHandleId(pageNum: Int, sourceId: String): String {
         synchronized(lock) {
             if (sourceToHandleMap[sourceId] != null) {
                 return sourceToHandleMap.getValue(sourceId)
             }
 
-            val newHandleId = AnnotationHandleIdGenerator.generateId()
+            val newHandleId =
+                composeAnnotationId(pageNum, id = AnnotationHandleIdGenerator.generateId())
 
             handleToSourceMap[newHandleId] = sourceId
             sourceToHandleMap[sourceId] = newHandleId

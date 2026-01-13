@@ -37,10 +37,7 @@ public class RemotePathBuilder {
         get() = _nodes
 
     /** Closes the current contour by adding a [PathNode.Close] to [nodes]. */
-    public fun close(): RemotePathBuilder {
-        _nodes.add(PathNode.Close)
-        return this
-    }
+    public fun close(): RemotePathBuilder = apply { _nodes.add(PathNode.Close) }
 
     /**
      * Start a new contour at position ([x], [y]) by adding a [PathNode.MoveTo] to [nodes].
@@ -48,9 +45,8 @@ public class RemotePathBuilder {
      * @param x The x coordinate of the start of the new contour
      * @param y The y coordinate of the start of the new contour
      */
-    public fun moveTo(x: RemoteFloat, y: RemoteFloat): RemotePathBuilder {
+    public fun moveTo(x: RemoteFloat, y: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.MoveTo(x.id, y.id))
-        return this
     }
 
     /**
@@ -60,9 +56,8 @@ public class RemotePathBuilder {
      * @param dx The x offset of the start of the new contour, relative to the last path position
      * @param dy The y offset of the start of the new contour, relative to the last path position
      */
-    public fun moveToRelative(dx: RemoteFloat, dy: RemoteFloat): RemotePathBuilder {
+    public fun moveToRelative(dx: RemoteFloat, dy: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeMoveTo(dx.id, dy.id))
-        return this
     }
 
     /**
@@ -73,9 +68,8 @@ public class RemotePathBuilder {
      * @param x The x coordinate of the end of the line
      * @param y The y coordinate of the end of the line
      */
-    public fun lineTo(x: RemoteFloat, y: RemoteFloat): RemotePathBuilder {
+    public fun lineTo(x: RemoteFloat, y: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.LineTo(x.id, y.id))
-        return this
     }
 
     /**
@@ -86,9 +80,8 @@ public class RemotePathBuilder {
      * @param dx The x offset of the end of the line, relative to the last path position
      * @param dy The y offset of the end of the line, relative to the last path position
      */
-    public fun lineToRelative(dx: RemoteFloat, dy: RemoteFloat): RemotePathBuilder {
+    public fun lineToRelative(dx: RemoteFloat, dy: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeLineTo(dx.id, dy.id))
-        return this
     }
 
     /**
@@ -98,9 +91,8 @@ public class RemotePathBuilder {
      *
      * @param x The x coordinate of the end of the line
      */
-    public fun horizontalLineTo(x: RemoteFloat): RemotePathBuilder {
+    public fun horizontalLineTo(x: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.HorizontalTo(x.id))
-        return this
     }
 
     /**
@@ -111,9 +103,8 @@ public class RemotePathBuilder {
      *
      * @param dx The x offset of the end of the line, relative to the last path position
      */
-    public fun horizontalLineToRelative(dx: RemoteFloat): RemotePathBuilder {
+    public fun horizontalLineToRelative(dx: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeHorizontalTo(dx.id))
-        return this
     }
 
     /**
@@ -123,9 +114,8 @@ public class RemotePathBuilder {
      *
      * @param y The y coordinate of the end of the line
      */
-    public fun verticalLineTo(y: RemoteFloat): RemotePathBuilder {
+    public fun verticalLineTo(y: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.VerticalTo(y.id))
-        return this
     }
 
     /**
@@ -136,9 +126,8 @@ public class RemotePathBuilder {
      *
      * @param dy The y offset of the end of the line, relative to the last path position
      */
-    public fun verticalLineToRelative(dy: RemoteFloat): RemotePathBuilder {
+    public fun verticalLineToRelative(dy: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeVerticalTo(dy.id))
-        return this
     }
 
     /**
@@ -160,9 +149,8 @@ public class RemotePathBuilder {
         y2: RemoteFloat,
         x3: RemoteFloat,
         y3: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(PathNode.CurveTo(x1.id, y1.id, x2.id, y2.id, x3.id, y3.id))
-        return this
     }
 
     /**
@@ -190,9 +178,8 @@ public class RemotePathBuilder {
         dy2: RemoteFloat,
         dx3: RemoteFloat,
         dy3: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeCurveTo(dx1.id, dy1.id, dx2.id, dy2.id, dx3.id, dy3.id))
-        return this
     }
 
     /**
@@ -213,9 +200,8 @@ public class RemotePathBuilder {
         y1: RemoteFloat,
         x2: RemoteFloat,
         y2: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(PathNode.ReflectiveCurveTo(x1.id, y1.id, x2.id, y2.id))
-        return this
     }
 
     /**
@@ -238,9 +224,8 @@ public class RemotePathBuilder {
         dy1: RemoteFloat,
         dx2: RemoteFloat,
         dy2: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeReflectiveCurveTo(dx1.id, dy1.id, dx2.id, dy2.id))
-        return this
     }
 
     /**
@@ -258,10 +243,7 @@ public class RemotePathBuilder {
         y1: RemoteFloat,
         x2: RemoteFloat,
         y2: RemoteFloat,
-    ): RemotePathBuilder {
-        _nodes.add(PathNode.QuadTo(x1.id, y1.id, x2.id, y2.id))
-        return this
-    }
+    ): RemotePathBuilder = apply { _nodes.add(PathNode.QuadTo(x1.id, y1.id, x2.id, y2.id)) }
 
     /**
      * Add a quadratic Bézier by adding a [PathNode.RelativeQuadTo] to [nodes]. If no contour has
@@ -282,9 +264,8 @@ public class RemotePathBuilder {
         dy1: RemoteFloat,
         dx2: RemoteFloat,
         dy2: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(PathNode.RelativeQuadTo(dx1.id, dy1.id, dx2.id, dy2.id))
-        return this
     }
 
     /**
@@ -297,9 +278,8 @@ public class RemotePathBuilder {
      * @param x1 The x coordinate of the end point of the quadratic curve
      * @param y1 The y coordinate of the end point of the quadratic curve
      */
-    public fun reflectiveQuadTo(x1: RemoteFloat, y1: RemoteFloat): RemotePathBuilder {
+    public fun reflectiveQuadTo(x1: RemoteFloat, y1: RemoteFloat): RemotePathBuilder = apply {
         _nodes.add(PathNode.ReflectiveQuadTo(x1.id, y1.id))
-        return this
     }
 
     /**
@@ -313,10 +293,10 @@ public class RemotePathBuilder {
      * @param dy1 The y offset of the end point of the quadratic curve, relative to the last path
      *   position
      */
-    public fun reflectiveQuadToRelative(dx1: RemoteFloat, dy1: RemoteFloat): RemotePathBuilder {
-        _nodes.add(PathNode.RelativeReflectiveQuadTo(dx1.id, dy1.id))
-        return this
-    }
+    public fun reflectiveQuadToRelative(dx1: RemoteFloat, dy1: RemoteFloat): RemotePathBuilder =
+        apply {
+            _nodes.add(PathNode.RelativeReflectiveQuadTo(dx1.id, dy1.id))
+        }
 
     /**
      * Add an elliptical arc from the last point to the position ([x1], [y1]) by adding
@@ -353,7 +333,7 @@ public class RemotePathBuilder {
         isPositiveArc: Boolean,
         x1: RemoteFloat,
         y1: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(
             PathNode.ArcTo(
                 horizontalEllipseRadius.id,
@@ -365,7 +345,6 @@ public class RemotePathBuilder {
                 y1.id,
             )
         )
-        return this
     }
 
     /**
@@ -403,7 +382,7 @@ public class RemotePathBuilder {
         isPositiveArc: Boolean,
         dx1: RemoteFloat,
         dy1: RemoteFloat,
-    ): RemotePathBuilder {
+    ): RemotePathBuilder = apply {
         _nodes.add(
             PathNode.RelativeArcTo(
                 a.id,
@@ -415,6 +394,5 @@ public class RemotePathBuilder {
                 dy1.id,
             )
         )
-        return this
     }
 }

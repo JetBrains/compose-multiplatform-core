@@ -464,6 +464,76 @@ class SpatialEnvironmentFeatureImplTest {
     }
 
     @Test
+    fun setPreferredSpatialEnvironment_asyncAnimation_startsAnimation() = runBlocking {
+        val exr = fakeLoadEnvironment("fakeEnvironment")
+        val gltf = fakeLoadGltfAsset("fakeGltfAsset")
+        val animationName = "fakeAnimation"
+
+        environment.preferredSpatialEnvironment =
+            SpatialEnvironmentPreference(exr, gltf, null, null, animationName)
+
+        // Will execute animateGltfModel.
+        runUiThreadTasks()
+
+        val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
+        assertThat(loopingAnimatingNodes).isEqualTo(1)
+    }
+
+    @Test
+    fun setPreferredSpatialEnvironment_createsNewRootNode_whenGeometryChanges() = runBlocking {
+        val gltf1 = fakeLoadGltfAsset("fakeGltfAsset1")
+        val gltf2 = fakeLoadGltfAsset("fakeGltfAsset2")
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(null, gltf1)
+        runUiThreadTasks()
+
+        val firstEnvNode = ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+        assertThat(firstEnvNode).isNotNull()
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(null, gltf2)
+        runUiThreadTasks()
+
+        val secondEnvNode = ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+        assertThat(secondEnvNode).isNotNull()
+
+        // Verify a new root node was attached.
+        assertThat(secondEnvNode).isNotEqualTo(firstEnvNode)
+    }
+
+    @Test
+    fun setPreferredSpatialEnvironment_reusesRootNode_whenGeometryIsSame() = runBlocking {
+        val gltf = fakeLoadGltfAsset("fakeGltfAsset")
+        val skybox1 = fakeLoadEnvironment("fakeEnvironment1")
+        val skybox2 = fakeLoadEnvironment("fakeEnvironment2")
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(skybox1, gltf)
+        runUiThreadTasks()
+        val firstEnvNode = ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(skybox2, gltf)
+        runUiThreadTasks()
+        val secondEnvNode = ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+
+        assertThat(secondEnvNode).isSameInstanceAs(firstEnvNode)
+    }
+
+    @Test
+    fun setPreferredSpatialEnvironment_detaches_whenPreferenceIsNull() = runBlocking {
+        val gltf = fakeLoadGltfAsset("fakeGltfAsset")
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(null, gltf)
+        runUiThreadTasks()
+
+        assertThat(ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity))
+            .isNotNull()
+
+        environment.preferredSpatialEnvironment = null
+        runUiThreadTasks()
+
+        assertThat(ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)).isNull()
+    }
+
+    @Test
     fun dispose_clearsResources() = runBlocking {
         val exr = fakeLoadEnvironment("fakeEnvironment")
         val gltf = fakeLoadGltfAsset("fakeGltfAsset")

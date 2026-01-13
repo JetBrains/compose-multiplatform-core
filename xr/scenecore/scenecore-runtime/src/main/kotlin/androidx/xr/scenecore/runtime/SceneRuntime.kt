@@ -72,6 +72,14 @@ public interface SceneRuntime : JxrRuntime {
     public val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper
 
     /**
+     * The current state of the boundary consent from the underlying system.
+     *
+     * This is `true` if consent has been explicitly granted or the boundary system has been
+     * disabled by the user (implicit consent). Otherwise, this is `false`.
+     */
+    public val isBoundaryConsentGranted: Boolean
+
+    /**
      * Returns an [ScenePose] based off of a position within the perception space.
      *
      * @param pose The pose with respect to the perception space [ActivitySpace].
@@ -234,14 +242,14 @@ public interface SceneRuntime : JxrRuntime {
     public fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<PixelDimensions>,
-    ): Unit
+    )
 
     /**
      * Releases the listener previously added by [addPerceivedResolutionChangedListener].
      *
      * @param listener The [Consumer] to be removed. It will no longer receive change events.
      */
-    public fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>): Unit
+    public fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>)
 
     /**
      * If the primary Activity for the Session that owns this object has focus, causes it to be
@@ -433,4 +441,38 @@ public interface SceneRuntime : JxrRuntime {
     ): PointerCaptureComponent
 
     public fun createSpatialPointerComponent(): SpatialPointerComponent
+
+    /**
+     * Creates an instance of [BoundsComponent].
+     *
+     * This component allows an application to monitor changes to the spatial bounds of an entity.
+     * Once created, the component can be attached to an entity that supports bounds tracking. After
+     * attachment, listeners can be added via [BoundsComponent.addOnBoundsUpdateListener] to receive
+     * notifications when the entity's bounds change due to animations or other transformations.
+     *
+     * @return A new [BoundsComponent] instance.
+     * @see BoundsComponent
+     */
+    public fun createBoundsComponent(): BoundsComponent
+
+    /**
+     * Adds the given [Consumer] as a listener to be invoked when the boundary consent state
+     * changes.
+     *
+     * @param callbackExecutor The [Executor] on which to invoke the listener.
+     * @param listener The [Consumer] to be invoked asynchronously on the given [callbackExecutor]
+     *   with the new boundary consent state (`true` if granted, `false` otherwise). Refer to
+     *   [isBoundaryConsentGranted] for a detailed explanation of the states.
+     */
+    public fun addOnBoundaryConsentChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<Boolean>,
+    )
+
+    /**
+     * Releases the given [Consumer] from receiving updates when the boundary consent state changes.
+     *
+     * @param listener The [Consumer] to be removed. It will no longer receive change events.
+     */
+    public fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>)
 }

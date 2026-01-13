@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
  *
  * Example of an [RemoteIconButton] with shape animation of rounded corners on press:
  *
+ * @sample androidx.wear.compose.remote.material3.samples.RemoteIconButtonSimpleSample
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param shape Defines the shape for this button. Defaults to a static shape based on

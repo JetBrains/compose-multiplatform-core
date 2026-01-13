@@ -293,12 +293,17 @@ public data class RemoteLinearGradient(
     override fun createShader(size: RemoteSize): Shader {
         val realStart = start ?: RemoteOffset(0.0f, 0.0f)
         val realEnd = end ?: endVector(size)
+
+        val x0 = resolve(realStart.x, size.width)
+        val y0 = resolve(realStart.y, size.height)
+        val x1 = resolve(realEnd.x, size.width)
+        val y1 = resolve(realEnd.y, size.height)
         validateColorStops(colors = colors, colorStops = stops)
         return RemoteLinearShader(
-            x0 = realStart.x.toFloat(),
-            y0 = realStart.y.toFloat(),
-            x1 = realEnd.x.toFloat(),
-            y1 = realEnd.y.toFloat(),
+            x0 = x0.toFloat(),
+            y0 = y0.toFloat(),
+            x1 = x1.toFloat(),
+            y1 = y1.toFloat(),
             colors =
                 // No change for Android O+, map the colors directly to their argb equivalent
                 IntArray(colors.size) { i -> colors[i].toArgb() },

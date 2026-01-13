@@ -19,6 +19,7 @@ package androidx.tracing
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ThreadContextElement
 
+@Suppress("KmpSignatureClash") // also defined in desktop
 internal class DefaultThreadContextElement(
     override var category: String,
     override var name: String,

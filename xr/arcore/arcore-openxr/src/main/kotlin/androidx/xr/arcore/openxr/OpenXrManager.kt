@@ -183,7 +183,7 @@ internal constructor(
         }
 
         if (config.faceTracking != this.config.faceTracking) {
-            if (config.faceTracking == Config.FaceTrackingMode.USER) {
+            if (config.faceTracking == Config.FaceTrackingMode.BLEND_SHAPES) {
                 if (!nativeGetFaceTrackerCalibration()) {
                     throw FaceTrackingNotCalibratedException()
                 }

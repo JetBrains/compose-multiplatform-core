@@ -494,6 +494,22 @@ public class ScrollModifierOperation extends ListActionsOperation
     }
 
     @Override
+    public float contentWidth() {
+        if (mDirection == 1) {
+            return mContentDimension;
+        }
+        return mWidth;
+    }
+
+    @Override
+    public float contentHeight() {
+        if (mDirection == 0) {
+            return mContentDimension;
+        }
+        return mHeight;
+    }
+
+    @Override
     public void serialize(@NonNull MapSerializer serializer) {
         serializer
                 .addTags(SerializeTags.MODIFIER)

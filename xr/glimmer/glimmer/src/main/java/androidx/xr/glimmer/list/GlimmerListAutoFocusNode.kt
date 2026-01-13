@@ -38,40 +38,39 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 
-/** Read the auto focus value from [behaviour] and apply it to children after the layout pass. */
-internal fun Modifier.autoFocus(behaviour: GlimmerListAutoFocusBehaviour): Modifier =
-    this then GlimmerListAutoFocusNodeElement(behaviour)
+/** Read the auto focus value from [state] and apply it to children after the layout pass. */
+internal fun Modifier.autoFocus(state: GlimmerListAutoFocusState): Modifier =
+    this then GlimmerListAutoFocusNodeElement(state)
 
-private class GlimmerListAutoFocusNodeElement(
-    private val behaviour: GlimmerListAutoFocusBehaviour
-) : ModifierNodeElement<GlimmerListAutoFocusNode>() {
+private class GlimmerListAutoFocusNodeElement(private val state: GlimmerListAutoFocusState) :
+    ModifierNodeElement<GlimmerListAutoFocusNode>() {
 
     override fun create(): GlimmerListAutoFocusNode {
-        return GlimmerListAutoFocusNode(behaviour)
+        return GlimmerListAutoFocusNode(state)
     }
 
     override fun update(node: GlimmerListAutoFocusNode) {
-        node.update(behaviour)
+        node.update(state)
     }
 
     override fun InspectorInfo.inspectableProperties() {
         name = "autoFocus"
-        properties["behaviour"] = behaviour
+        properties["state"] = state
     }
 
     override fun hashCode(): Int {
-        return behaviour.hashCode()
+        return state.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is GlimmerListAutoFocusNodeElement) return false
 
-        return behaviour == other.behaviour
+        return state == other.state
     }
 }
 
-private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFocusBehaviour) :
+private class GlimmerListAutoFocusNode(private var state: GlimmerListAutoFocusState) :
     DelegatingNode(),
     KeyInputModifierNode,
     IndirectPointerInputModifierNode,
@@ -82,8 +81,8 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
     private val focusTargetModifierNode =
         delegate(FocusTargetModifierNode(focusability = Focusability.Never))
 
-    fun update(behaviour: GlimmerListAutoFocusBehaviour) {
-        this.behaviour = behaviour
+    fun update(state: GlimmerListAutoFocusState) {
+        this.state = state
     }
 
     override fun MeasureScope.measure(
@@ -105,20 +104,20 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
             // out. We don't have a dedicated callback for `onAfterLayout` or `onPreDraw` yet. So
             // far, we've been using the `onGloballyPositioned` callback for that purpose. If a
             // better callback is introduced, we should replace it.
-            behaviour.onAfterLayout(this)
+            state.onAfterLayout(this)
         }
     }
 
     override fun onPreKeyEvent(event: KeyEvent): Boolean {
         // A key event means we should suppress the auto-focus so focus will be handled as expected.
-        behaviour.isAutoFocusEnabled = false
+        state.isAutoFocusEnabled = false
         return false
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean = false
 
     override fun onIndirectPointerEvent(event: IndirectPointerEvent, pass: PointerEventPass) {
-        behaviour.isAutoFocusEnabled = true
+        state.isAutoFocusEnabled = true
     }
 
     override fun onCancelIndirectPointerInput() = Unit
@@ -128,7 +127,7 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
         pass: PointerEventPass,
         bounds: IntSize,
     ) {
-        behaviour.isAutoFocusEnabled = false
+        state.isAutoFocusEnabled = false
     }
 
     override fun onCancelPointerInput() {}
@@ -136,7 +135,7 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
     override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean = false
 
     override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-        behaviour.isAutoFocusEnabled = false
+        state.isAutoFocusEnabled = false
         return false
     }
 }

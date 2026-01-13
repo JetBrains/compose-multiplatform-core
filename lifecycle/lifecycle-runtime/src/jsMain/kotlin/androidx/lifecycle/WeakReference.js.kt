@@ -16,15 +16,15 @@
 
 package androidx.lifecycle
 
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private var delegate: WeakRef? = WeakRef(reference)
+
+    actual fun get(): T? = delegate?.deref()?.unsafeCast<T>()
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef
 private external class WeakRef {
     constructor(target: Any)
 
     fun deref(): Any?
-}
-
-internal actual class WeakReference<T : Any> actual constructor(reference: T) {
-    private var weakRef: WeakRef? = WeakRef(reference)
-
-    actual fun get(): T? = weakRef?.deref()?.unsafeCast<T>()
 }

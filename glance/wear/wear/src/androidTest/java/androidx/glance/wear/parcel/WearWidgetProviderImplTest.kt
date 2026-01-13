@@ -19,7 +19,6 @@ package androidx.glance.wear.parcel
 import android.content.ComponentName
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
-import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -76,6 +75,9 @@ class WearWidgetProviderImplTest {
                 containerType = CONTAINER_TYPE_LARGE,
                 widthDp = 200f,
                 heightDp = 200f,
+                horizontalPaddingDp = 8f,
+                verticalPaddingDp = 8f,
+                cornerRadiusDp = 16f,
             )
         val channelWidgetCallback = ChannelWidgetCallback(this, contentChannel)
         val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
@@ -94,6 +96,9 @@ class WearWidgetProviderImplTest {
                 containerType = CONTAINER_TYPE_LARGE,
                 widthDp = 200f,
                 heightDp = 200f,
+                horizontalPaddingDp = 0f,
+                verticalPaddingDp = 0f,
+                cornerRadiusDp = 0f,
             )
         testWidget.content = { RemoteText("Testing ...") }
         val expectedRcDocumentHierarchy =
@@ -103,15 +108,11 @@ class WearWidgetProviderImplTest {
               BOX [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 MODIFIERS
                   ROUNDED_CLIP_RECT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                CANVAS [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-                  MODIFIERS
-                  CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-                    ComponentValue value 43 set to WIDTH of Component -7
-                    ComponentValue value 44 set to HEIGHT of Component -7
-                BOX [-8:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
+                  BACKGROUND = [0.0, 0.0, 0.0, 0.0] color [0.0, 0.0, 0.0, 0.0] shape [0]
+                BOX [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                   MODIFIERS
                     PADDING = [0.0, 0.0, 0.0, 0.0]
-                  TEXT_LAYOUT [-10:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
                     MODIFIERS
             """
                 .trimIndent()
@@ -224,9 +225,7 @@ class WearWidgetProviderImplTest {
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
-            return WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Transparent)) {
-                content()
-            }
+            return WearWidgetDocument(backgroundColor = Color.Transparent) { content() }
         }
 
         override suspend fun onAdded(context: Context, widgetHandle: ActiveWearWidgetHandle) {

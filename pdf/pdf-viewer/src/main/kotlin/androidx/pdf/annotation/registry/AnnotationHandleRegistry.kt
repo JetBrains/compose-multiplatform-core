@@ -16,18 +16,22 @@
 
 package androidx.pdf.annotation.registry
 
+import androidx.annotation.RestrictTo
+
 /** Maintains a bidirectional mapping between internal data identifiers and stable handles. */
-internal interface AnnotationHandleRegistry {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface AnnotationHandleRegistry {
     /**
      * Retrieves or generates a stable Handle ID for a given [sourceId].
      *
      * If a handle already exists for this source ID, it is returned. If not, a new unique handle is
      * generated, mapped, and returned.
      *
+     * @param pageNum The page number where the annotation exists.
      * @param sourceId The internal identifier.
      * @return A stable, session-scoped string safe for use.
      */
-    fun getHandleId(sourceId: String): String
+    public fun getHandleId(pageNum: Int, sourceId: String): String
 
     /**
      * Resolves a Handle ID back to its underlying Source ID.
@@ -35,8 +39,14 @@ internal interface AnnotationHandleRegistry {
      * @param handleId The session-scoped identifier.
      * @return The underlying Source ID, or `null` if the handle is not found/expired.
      */
-    fun getSourceId(handleId: String): String?
+    public fun getSourceId(handleId: String): String?
 
     /** Clears all mappings. */
-    fun clear(): Unit
+    public fun clear(): Unit
+
+    public companion object {
+        public fun create(): AnnotationHandleRegistry {
+            return StablePdfAnnotationHandleRegistry()
+        }
+    }
 }

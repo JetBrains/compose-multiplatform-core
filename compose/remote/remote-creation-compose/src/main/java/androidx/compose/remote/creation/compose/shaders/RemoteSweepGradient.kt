@@ -112,10 +112,12 @@ public data class RemoteSweepGradient(
 
     override fun createShader(size: RemoteSize): Shader {
         val realCenter = center ?: size.center
+        val centerX = resolve(realCenter.x, size.width)
+        val centerY = resolve(realCenter.y, size.height)
         validateColorStops(colors = colors, colorStops = stops)
         return RemoteSweepShader(
-            realCenter.x.toFloat(),
-            realCenter.y.toFloat(),
+            centerX.toFloat(),
+            centerY.toFloat(),
             // No change for Android O+, map the colors directly to their argb equivalent
             IntArray(colors.size) { i -> colors[i].toArgb() },
             stops?.toFloatArray(),

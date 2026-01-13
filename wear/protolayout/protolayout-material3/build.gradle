@@ -78,7 +78,6 @@ androidx {
     samples(project(":wear:protolayout:protolayout-material3-samples"))
     inceptionYear = "2024"
     description = "Material3 components library for ProtoLayout."
-    samples(project(":wear:protolayout:protolayout-material3-samples"))
     addGoldenImageAssets()
     enableRobolectric()
 }

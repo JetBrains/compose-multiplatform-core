@@ -74,6 +74,17 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?>? getSubspaceNodeHolder();
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeBoundsComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.BoundsComponent {
+    ctor public FakeBoundsComponent();
+    method public void addOnBoundsUpdateListener(java.util.concurrent.Executor executor, java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.GltfEntity? getEntity();
+    method @InaccessibleFromKotlin public java.util.concurrent.ConcurrentHashMap<java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox>,java.util.concurrent.Executor> getListeners();
+    method public void onBoundsUpdate(androidx.xr.runtime.math.BoundingBox boundingBox);
+    method public void removeOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
+    property public androidx.xr.scenecore.runtime.GltfEntity? entity;
+    property public java.util.concurrent.ConcurrentHashMap<java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox>,java.util.concurrent.Executor> listeners;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeComponent implements androidx.xr.scenecore.runtime.Component {
     ctor public FakeComponent();
     method @InaccessibleFromKotlin public final boolean getCanBeAttached();
@@ -103,7 +114,7 @@ package androidx.xr.scenecore.testing {
     method public void removeAllComponents();
     method public void removeComponent(androidx.xr.scenecore.runtime.Component component);
     method public void removeInputEventListener(androidx.xr.scenecore.runtime.InputEventListener listener);
-    method public void setAlpha(float alpha, @androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
+    method public void setAlpha(float alpha);
     method @InaccessibleFromKotlin public void setContentDescription(CharSequence);
     method public void setHidden(boolean hidden);
     method @InaccessibleFromKotlin public void setParent(androidx.xr.scenecore.runtime.Entity?);
@@ -131,7 +142,7 @@ package androidx.xr.scenecore.testing {
     method public void clearMaterialOverride(String nodeName, int primitiveIndex);
     method @InaccessibleFromKotlin public int getAnimationState();
     method @InaccessibleFromKotlin public final String? getCurrentAnimationName();
-    method public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
     method @InaccessibleFromKotlin public final androidx.xr.scenecore.testing.FakeGltfEntity.Node getNode();
     method @InaccessibleFromKotlin public final java.util.List<java.lang.String> getSupportedAnimationNames();
     method @InaccessibleFromKotlin public final boolean isLooping();
@@ -145,6 +156,7 @@ package androidx.xr.scenecore.testing {
     method public void stopAnimation();
     property @androidx.xr.scenecore.runtime.GltfEntity.AnimationStateValue public int animationState;
     property public final String? currentAnimationName;
+    property public androidx.xr.runtime.math.BoundingBox gltfModelBoundingBox;
     property public final boolean isLooping;
     property public final androidx.xr.scenecore.testing.FakeGltfEntity.Node node;
     property public final java.util.List<java.lang.String> supportedAnimationNames;
@@ -161,12 +173,14 @@ package androidx.xr.scenecore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.runtime.GltfFeature {
     ctor public FakeGltfFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
     method public void addAnimationStateListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Integer> listener);
+    method public void addOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
     method public void clearMaterialOverride(String nodeName, int primitiveIndex);
     method @InaccessibleFromKotlin public int getAnimationState();
     method public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getSize();
     method public void pauseAnimation();
     method public void removeAnimationStateListener(java.util.function.Consumer<java.lang.Integer> listener);
+    method public void removeOnBoundsUpdateListener(java.util.function.Consumer<androidx.xr.runtime.math.BoundingBox> listener);
     method public void resumeAnimation();
     method public void setColliderEnabled(boolean enableCollider);
     method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
@@ -583,12 +597,14 @@ package androidx.xr.scenecore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.scenecore.runtime.RenderingEntityFactory androidx.xr.scenecore.runtime.SceneRuntime {
     ctor public FakeSceneRuntime(boolean unscaledGravityAlignedActivitySpace, optional java.util.concurrent.Executor? executor);
     ctor @BytecodeOnly public FakeSceneRuntime(boolean, java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public void addOnBoundaryConsentChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<java.lang.Boolean> listener);
     method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
     method public void clearSpatialVisibilityChangedListener();
     method public androidx.xr.scenecore.runtime.ActivityPanelEntity createActivityPanelEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.PixelDimensions windowBoundsPx, String name, android.app.Activity hostActivity, androidx.xr.scenecore.runtime.Entity? parent);
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity();
     method public androidx.xr.scenecore.testing.FakeAnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.runtime.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.runtime.PlaneSemantic> planeSemanticFilter);
+    method public androidx.xr.scenecore.runtime.BoundsComponent createBoundsComponent();
     method public androidx.xr.scenecore.testing.FakeGltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity? parentEntity);
     method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity? parent);
     method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
@@ -604,6 +620,7 @@ package androidx.xr.scenecore.testing {
     method public void enablePanelDepthTest(boolean enabled);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeActivitySpace getActivitySpace();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeAudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
+    method @InaccessibleFromKotlin public java.util.Map<java.util.function.Consumer<java.lang.Boolean>,java.util.concurrent.Executor> getBoundaryConsentChangedMap();
     method @InaccessibleFromKotlin public float getDeviceDpPerMeter();
     method @InaccessibleFromKotlin public boolean getEnabledPanelDepthTest();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor? getExecutor();
@@ -621,6 +638,9 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialModeChangeListener? getSpatialModeChangeListener();
     method @InaccessibleFromKotlin public java.util.Map<java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility>,java.util.concurrent.Executor> getSpatialVisibilityChangedMap();
     method @InaccessibleFromKotlin public Enum<androidx.xr.scenecore.testing.FakeSceneRuntime.State> getState();
+    method @InaccessibleFromKotlin public boolean isBoundaryConsentGranted();
+    method public void onBoundaryConsentChanged(boolean boundaryConsent);
+    method public void removeOnBoundaryConsentChangedListener(java.util.function.Consumer<java.lang.Boolean> listener);
     method public void removePerceivedResolutionChangedListener(java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
     method public void requestFullSpaceMode();
@@ -635,9 +655,11 @@ package androidx.xr.scenecore.testing {
     method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility> listener);
     property public androidx.xr.scenecore.testing.FakeActivitySpace activitySpace;
     property public androidx.xr.scenecore.testing.FakeAudioTrackExtensionsWrapper audioTrackExtensionsWrapper;
+    property public java.util.Map<java.util.function.Consumer<java.lang.Boolean>,java.util.concurrent.Executor> boundaryConsentChangedMap;
     property public float deviceDpPerMeter;
     property public boolean enabledPanelDepthTest;
     property public java.util.concurrent.Executor? executor;
+    property public boolean isBoundaryConsentGranted;
     property public android.app.Activity? lastSetPreferredAspectRatioActivity;
     property public float lastSetPreferredAspectRatioRatio;
     property public androidx.xr.scenecore.runtime.PanelEntity mainPanelEntity;

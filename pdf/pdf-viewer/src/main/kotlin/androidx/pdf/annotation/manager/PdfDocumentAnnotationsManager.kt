@@ -16,7 +16,7 @@
 
 package androidx.pdf.annotation.manager
 
-import androidx.pdf.annotation.AnnotationHandleIdGenerator.composeAnnotationId
+import androidx.pdf.EditsDraft
 import androidx.pdf.annotation.AnnotationHandleIdGenerator.decomposeAnnotationId
 import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.draftstate.AnnotationEditsDraftState
@@ -49,14 +49,17 @@ internal class PdfDocumentAnnotationsManager(
 ) : PdfAnnotationsManager {
     override suspend fun getAnnotations(pageNum: Int): List<KeyedPdfAnnotation> {
         // TODO(b/462603193): Remove the map once draft state returns KeyedPdfAnnotation
-        val draftAnnotations =
-            draftState.getEdits(pageNum).map {
-                KeyedPdfAnnotation(key = it.editId.toString(), annotation = it.annotation)
-            }
+        val draftAnnotations = draftState.getDraftAnnotations(pageNum)
         val persistedAnnotations = annotationsRepository.getAnnotationsForPage(pageNum)
 
         val reconciledAnnotations = reconcileAnnotations(persistedAnnotations)
         return reconciledAnnotations + draftAnnotations
+    }
+
+    override suspend fun getAnnotationModifications(): EditsDraft {
+        val draftModificationsSnapshot = draftState.getModificationsSnapshot()
+        val persistedModificationsSnapshot = operationsTracker.getModificationsSnapshot()
+        return persistedModificationsSnapshot + draftModificationsSnapshot
     }
 
     override fun addAnnotation(annotation: PdfAnnotation): String {
@@ -66,25 +69,35 @@ internal class PdfDocumentAnnotationsManager(
             key = draftId,
             annotation,
         )
-        return composeAnnotationId(pageNum = annotation.pageNum, id = draftId)
+        return draftId
+    }
+
+    override fun addAnnotation(keyedAnnotation: KeyedPdfAnnotation): String {
+        val draftId = draftState.addDraftAnnotation(keyedAnnotation)
+        operationsTracker.addEntry(
+            operationType = KeyedAnnotationOperation.OperationType.ADD,
+            key = draftId,
+            keyedAnnotation.annotation,
+        )
+        return draftId
     }
 
     override suspend fun removeAnnotation(annotationId: String): PdfAnnotation? {
-        val (pageNum, handleId) = decomposeAnnotationId(annotationId)
-        val sourceId = handleRegistry.getSourceId(handleId)
+        val (pageNum, _) = decomposeAnnotationId(annotationId)
+        val sourceId = handleRegistry.getSourceId(annotationId)
 
         val annotationToRemove: PdfAnnotation? =
             if (sourceId != null) {
-                val updatedContent = operationsTracker.getUpdatedAnnotation(handleId)
+                val updatedContent = operationsTracker.getUpdatedAnnotation(annotationId)
                 updatedContent ?: annotationsRepository.getAnnotation(pageNum, sourceId)?.annotation
             } else {
-                draftState.removeAnnotation(pageNum, handleId)
+                draftState.removeAnnotation(pageNum, annotationId)
             }
 
         if (annotationToRemove != null) {
             operationsTracker.addEntry(
                 operationType = KeyedAnnotationOperation.OperationType.REMOVE,
-                key = handleId,
+                key = annotationId,
                 annotation = annotationToRemove,
             )
         }
@@ -96,46 +109,71 @@ internal class PdfDocumentAnnotationsManager(
         annotationId: String,
         newAnnotation: PdfAnnotation,
     ): PdfAnnotation {
-        val (pageNum, handleId) = decomposeAnnotationId(annotationId)
+        val (pageNum, _) = decomposeAnnotationId(annotationId)
 
         val previousAnnotation: PdfAnnotation = run {
-            val pendingUpdate = operationsTracker.getUpdatedAnnotation(handleId)
+            val pendingUpdate = operationsTracker.getUpdatedAnnotation(annotationId)
             if (pendingUpdate != null) return@run pendingUpdate
 
-            val previousDraftAnnotation = draftState.getDraftAnnotation(pageNum, handleId)
+            val previousDraftAnnotation = draftState.getDraftAnnotation(pageNum, annotationId)
             if (previousDraftAnnotation != null) {
                 return@run previousDraftAnnotation
             }
 
             val sourceId =
-                handleRegistry.getSourceId(handleId)
+                handleRegistry.getSourceId(annotationId)
                     ?: throw NoSuchElementException(
-                        "Cannot update: ID $handleId not found on page $pageNum"
+                        "Cannot update: ID $annotationId not found on page $pageNum"
                     )
 
             annotationsRepository.getAnnotation(pageNum, sourceId)?.annotation
                 ?: throw NoSuchElementException("Annotation $sourceId not found in repository")
         }
 
-        val persistedAnnotationId = handleRegistry.getSourceId(handleId)
+        val persistedAnnotationId = handleRegistry.getSourceId(annotationId)
         if (persistedAnnotationId == null) {
-            draftState.updateDraftAnnotation(pageNum, handleId, newAnnotation)
+            draftState.updateDraftAnnotation(pageNum, annotationId, newAnnotation)
         }
         operationsTracker.addEntry(
             operationType = KeyedAnnotationOperation.OperationType.UPDATE,
-            key = handleId,
+            key = annotationId,
             annotation = newAnnotation,
         )
         return previousAnnotation
     }
 
+    override fun discardChanges() {
+        draftState.clear()
+        operationsTracker.clear()
+    }
+
+    /**
+     * Reconciles the raw persisted annotations with the current pending operations (edits and
+     * deletions).
+     *
+     * This function transforms the static repository data into the current view state by performing
+     * three operations:
+     * 1. **ID Translation:** Converts the repository's Source IDs into stable "Handle IDs" via the
+     *    [handleRegistry], ensuring the caller interacts with a unified identifier system.
+     * 2. **Filtering (Deletions):** Checks if an annotation has been marked as deleted in the
+     *    [operationsTracker] and excludes it if so.
+     * 3. **Overlaying (Updates):** Checks if an annotation has a pending update in the
+     *    [operationsTracker] and substitutes the stale persisted content with the fresh updated
+     *    content.
+     *
+     * @param keyedAnnotations The list of annotations fetched directly from the repository (keyed
+     *   by Source ID).
+     * @return A list of [KeyedPdfAnnotation]s keyed by Handle ID, reflecting the current user
+     *   edits.
+     */
     private fun reconcileAnnotations(
         keyedAnnotations: List<KeyedPdfAnnotation>
     ): List<KeyedPdfAnnotation> {
-        return keyedAnnotations.mapNotNull { annotation ->
+        return keyedAnnotations.mapNotNull { keyedAnnotation ->
             // Persisted annotations need to have a proxy id so that the caller can have a
             // unified id.
-            val handleId = handleRegistry.getHandleId(annotation.key)
+            val handleId =
+                handleRegistry.getHandleId(keyedAnnotation.annotation.pageNum, keyedAnnotation.key)
 
             if (operationsTracker.isDeleted(handleId)) {
                 return@mapNotNull null
@@ -145,7 +183,7 @@ internal class PdfDocumentAnnotationsManager(
                 return@mapNotNull KeyedPdfAnnotation(handleId, updatedContent)
             }
 
-            KeyedPdfAnnotation(key = handleId, annotation = annotation.annotation)
+            KeyedPdfAnnotation(key = handleId, annotation = keyedAnnotation.annotation)
         }
     }
 }

@@ -489,7 +489,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          *
          * @param formEditInfo The edit to be applied to the [PdfDocument] Note: In order to
          *   correctly update the state the formEditInfo at the document the [formEditInfo] must be
-         *   applied to the document via [androidx.pdf.annotation.EditablePdfDocument.applyEdit].
+         *   applied to the document via [androidx.pdf.EditablePdfDocument.applyEdit].
          */
         public fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo)
     }
@@ -809,20 +809,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             zoom,
             pageLayoutManager?.visiblePageAreas,
         ) ?: true
-    }
-
-    /** Returns a [SparseArray] of page locations ([RectF]) in view coordinates. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun getCurrentPageLocations(): SparseArray<RectF> {
-        val localPageLayoutManager = pageLayoutManager ?: return SparseArray()
-        val pageLocations = localPageLayoutManager.pageLocations
-
-        val pageLocationsInViewCoords = SparseArray<RectF>(pageLocations.size())
-        pageLocations.forEach { page, pageLocationsInContentCoords ->
-            val rectToTransform = RectF(pageLocationsInContentCoords)
-            pageLocationsInViewCoords.put(page, rectToTransform.asViewRectF())
-        }
-        return pageLocationsInViewCoords
     }
 
     @VisibleForTesting internal var pdfViewAccessibilityManager: PdfViewAccessibilityManager? = null

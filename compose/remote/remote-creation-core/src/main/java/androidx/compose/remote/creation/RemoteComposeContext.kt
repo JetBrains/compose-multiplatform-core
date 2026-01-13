@@ -1497,6 +1497,36 @@ public open class RemoteComposeContext {
         return mRemoteWriter.ComponentHeight()
     }
 
+    /** Content Width */
+    public fun ComponentContentWidth(): RFloat {
+        return mRemoteWriter.ComponentContentWidth()
+    }
+
+    /** Content Height */
+    public fun ComponentContentHeight(): RFloat {
+        return mRemoteWriter.ComponentContentHeight()
+    }
+
+    /** X */
+    public fun ComponentX(): RFloat {
+        return mRemoteWriter.ComponentX()
+    }
+
+    /** Y */
+    public fun ComponentY(): RFloat {
+        return mRemoteWriter.ComponentY()
+    }
+
+    /** Root X */
+    public fun ComponentRootX(): RFloat {
+        return mRemoteWriter.ComponentRootX()
+    }
+
+    /** Root Y */
+    public fun ComponentRootY(): RFloat {
+        return mRemoteWriter.ComponentRootY()
+    }
+
     /** generate random number */
     public fun rand(): RFloat {
         return mRemoteWriter.rand()

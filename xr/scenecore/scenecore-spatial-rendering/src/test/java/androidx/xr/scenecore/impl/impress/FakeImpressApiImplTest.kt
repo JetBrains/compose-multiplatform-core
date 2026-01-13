@@ -51,6 +51,8 @@ class FakeImpressApiImplTest {
             val model = fakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment.zip")
 
             assertThat(model).isNotNull()
+
+            model.releaseBindingsResource(model.nativeHandle)
         }
     }
 
@@ -62,6 +64,8 @@ class FakeImpressApiImplTest {
             val model = fakeImpressApi.loadImageBasedLightingAsset(byteArray, "fakeEnvironment.zip")
 
             assertThat(model).isNotNull()
+
+            model.releaseBindingsResource(model.nativeHandle)
         }
     }
 

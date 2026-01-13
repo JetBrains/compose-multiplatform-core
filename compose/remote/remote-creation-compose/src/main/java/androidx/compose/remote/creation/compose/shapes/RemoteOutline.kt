@@ -17,15 +17,14 @@
 
 package androidx.compose.remote.creation.compose.shapes
 
-import android.graphics.Rect
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemotePath
-import androidx.compose.remote.creation.compose.capture.RemoteDrawScope
+import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
+import androidx.compose.remote.creation.compose.layout.RemoteOffset
+import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.layout.conicTo
 import androidx.compose.remote.creation.compose.layout.lineTo
 import androidx.compose.remote.creation.compose.layout.moveTo
-import androidx.compose.remote.creation.compose.layout.remoteComponentHeight
-import androidx.compose.remote.creation.compose.layout.remoteComponentWidth
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rf
@@ -42,23 +41,24 @@ public sealed class RemoteOutline {
 
     /** Rectangular area. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public class Rectangle(public val rect: Rect) : RemoteOutline() {
+    public class Rectangle(public val topLeft: RemoteOffset, public val size: RemoteSize) :
+        RemoteOutline() {
         override fun RemoteDrawScope.drawOutline(paint: RemotePaint) {
-            canvas.drawRect(rect, paint)
+            drawRect(paint, topLeft, size)
         }
     }
 
     /** Rectangular area with rounded corners. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class Rounded(
-        private val topStart: RemoteFloat,
-        private val topEnd: RemoteFloat,
-        private val bottomEnd: RemoteFloat,
-        private val bottomStart: RemoteFloat,
+        internal val topStart: RemoteFloat,
+        internal val topEnd: RemoteFloat,
+        internal val bottomEnd: RemoteFloat,
+        internal val bottomStart: RemoteFloat,
     ) : RemoteOutline() {
         override fun RemoteDrawScope.drawOutline(paint: RemotePaint) {
-            val w = remoteComponentWidth(canvas.creationState)
-            val h = remoteComponentHeight(canvas.creationState)
+            val w = remoteWidth
+            val h = remoteHeight
             // Remap corner radii based on layout direction
             val topLeft: RemoteFloat
             val topRight: RemoteFloat
@@ -116,7 +116,7 @@ public sealed class RemoteOutline {
 
             // 6. Close the path
             path.close()
-            canvas.drawRPath(path, paint)
+            drawPath(path, paint)
         }
     }
 
@@ -124,7 +124,7 @@ public sealed class RemoteOutline {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class Generic(public val path: RemotePath) : RemoteOutline() {
         override fun RemoteDrawScope.drawOutline(paint: RemotePaint) {
-            canvas.drawRPath(path, paint)
+            drawPath(path, paint)
         }
     }
 

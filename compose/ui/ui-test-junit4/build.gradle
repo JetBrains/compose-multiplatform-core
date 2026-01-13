@@ -80,6 +80,23 @@ androidXMultiplatform {
             implementation(libs.mockitoKotlin)
         }
 
+        androidHostTest {
+            dependencies {
+                implementation(libs.testRules)
+                implementation(libs.testRunner)
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(libs.junit)
+                implementation(libs.truth)
+                implementation(libs.kotlinTest)
+                implementation(libs.mockitoCore4)
+                implementation(libs.mockitoKotlin4)
+                implementation(libs.byteBuddy)
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":internal-testutils-fonts"))
+                implementation(project(":compose:test-utils"))
+            }
+        }
+
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)
@@ -121,4 +138,5 @@ androidx {
     inceptionYear = "2020"
     description = "Compose testing integration with JUnit4"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

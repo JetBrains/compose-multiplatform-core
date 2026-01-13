@@ -175,7 +175,7 @@ class ArCoreManagerTest {
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(faceTracking = Config.FaceTrackingMode.USER)
+        val config = Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES)
 
         assertThrows<UnsupportedOperationException> { underTest.configure(config) }
     }

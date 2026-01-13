@@ -39,5 +39,6 @@
     <dimen name="color_palette_content_size">32dp</dimen>
     <dimen name="color_palette_expanded_content_width">40dp</dimen>
     <dimen name="color_palette_item_stroke_width">1dp</dimen>
+    <dimen name="annotation_toolbar_corner_radius">28dp</dimen>
     <!-- Annotation Toolbar dimens - END -->
 </resources>

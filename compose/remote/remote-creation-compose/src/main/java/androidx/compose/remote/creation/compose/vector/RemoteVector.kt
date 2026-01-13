@@ -19,11 +19,8 @@ package androidx.compose.remote.creation.compose.vector
 import android.graphics.Paint
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemotePath
-import androidx.compose.remote.creation.compose.capture.RemoteDrawScope
-import androidx.compose.remote.creation.compose.capture.scale
 import androidx.compose.remote.creation.compose.capture.toRemotePath
-import androidx.compose.remote.creation.compose.capture.withTransform
-import androidx.compose.remote.creation.compose.layout.RemoteOffset
+import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.state.RemoteColorFilter
 import androidx.compose.remote.creation.compose.state.RemotePaint
@@ -79,16 +76,12 @@ internal class RemoteVectorComponent(val root: RemoteGroupComponent) : RemoteVNo
     private var rootScaleY = 1f.rf
 
     private fun RemoteDrawScope.drawVector(tintFilter: RemoteColorFilter?) {
-        with(root) {
-            scale(rootScaleX.toFloat(), rootScaleY.toFloat(), RemoteOffset.Zero) {
-                draw(tintFilter)
-            }
-        }
+        with(root) { scale(rootScaleX, rootScaleY) { draw(tintFilter) } }
     }
 
     override fun RemoteDrawScope.draw(colorFilter: RemoteColorFilter?) {
-        rootScaleX = remote.component.width / viewportSize.width
-        rootScaleY = remote.component.height / viewportSize.height
+        rootScaleX = remoteWidth / viewportSize.width
+        rootScaleY = remoteHeight / viewportSize.height
         val targetFilter = colorFilter ?: intrinsicColorFilter
         drawVector(targetFilter)
     }
@@ -132,7 +125,7 @@ internal class RemotePathComponent : RemoteVNode() {
         val paint = RemotePaint().apply { remoteColorFilter = colorFilter }
         fill?.let {
             paint.style = Paint.Style.FILL
-            canvas.drawRPath(renderPath, paint)
+            drawPath(renderPath, paint)
         }
         stroke?.let {
             paint.style = Paint.Style.STROKE
@@ -140,7 +133,7 @@ internal class RemotePathComponent : RemoteVNode() {
             paint.strokeMiter = strokeLineMiter
             paint.strokeCap = strokeLineCap.toAndroidCap()
             paint.strokeJoin = strokeLineJoin.toAndroidJoin()
-            canvas.drawRPath(renderPath, paint)
+            drawPath(renderPath, paint)
         }
     }
 

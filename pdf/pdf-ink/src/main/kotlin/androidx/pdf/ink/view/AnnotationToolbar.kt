@@ -17,7 +17,9 @@
 package androidx.pdf.ink.view
 
 import android.content.Context
-import android.content.res.ColorStateList
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -27,6 +29,8 @@ import android.widget.LinearLayout.HORIZONTAL
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.os.HandlerCompat
 import androidx.pdf.ink.R
 import androidx.pdf.ink.view.brush.BrushSizeSelectorView
@@ -102,6 +106,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             viewmodel.onAction(ToolbarIntent.RedoAvailabilityChanged(value))
         }
 
+    /**
+     * Returns true if any of the configuration popups (color palette or brush size slider) are
+     * currently visible.
+     */
+    public val isConfigPopupVisible: Boolean
+        get() = with(viewmodel.state.value) { isColorPaletteVisible || isBrushSizeSliderVisible }
+
     /** Dismisses any currently visible popups (such as the color palette or brush size slider). */
     public fun dismissPopups() {
         viewmodel.onAction(ToolbarIntent.DismissPopups)
@@ -143,6 +154,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private val penPaletteItems = getPenPaletteItems(context)
     private val highlighterPaletteItems = getHighlightPaletteItems(context)
+
+    private val iconFillDrawable: Drawable? by lazy {
+        ContextCompat.getDrawable(context, R.drawable.color_palette_icon_fill)?.mutate()
+    }
+    private val iconStrokeDrawable: Drawable? by lazy {
+        ContextCompat.getDrawable(context, R.drawable.color_palette_icon_stroke)?.mutate()
+    }
 
     // Required to disable any animation while performing screenshot tests
     @VisibleForTesting internal var areAnimationsEnabled: Boolean = true
@@ -354,14 +372,31 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         when (paletteItem) {
             is Color -> {
-                colorPaletteButton.iconTint = ColorStateList.valueOf(paletteItem.color)
-                colorPaletteButton.setIconResource(R.drawable.color_palette_icon_drawable)
+                updateIconColor(paletteItem.color)
             }
 
             is Emoji -> {
                 colorPaletteButton.icon = ContextCompat.getDrawable(context, paletteItem.emoji)
                 colorPaletteButton.iconTint = null
             }
+        }
+    }
+
+    private fun updateIconColor(dynamicColor: Int) {
+        val fill = iconFillDrawable ?: return
+        val stroke = iconStrokeDrawable ?: return
+
+        DrawableCompat.setTint(fill, dynamicColor)
+
+        val layers = arrayOf(fill, stroke)
+        val colorPaletteVector = LayerDrawable(layers)
+
+        colorPaletteButton.apply {
+            // By converting the LayerDrawable to a Bitmap, we "flatten" it into a static image.
+            // This prevents the MaterialButton from overriding our custom colors with its own
+            // theme-based tinting logic.
+            icon = BitmapDrawable(resources, colorPaletteVector.toBitmap())
+            iconTint = null
         }
     }
 

@@ -50,7 +50,9 @@ import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 
 internal const val DEFAULT_REQUEST_TEMPLATE = CameraDevice.TEMPLATE_PREVIEW
 
@@ -99,23 +101,25 @@ public interface UseCaseCameraRequestControl {
     ): Deferred<Unit>
 
     /**
-     * Asynchronously sets parameters for the repeating capture request by invoking a factory
-     * function.
+     * Submits parameters for the repeating capture request immediately within the current scope.
      *
-     * This overload is an optimization. The provided [valuesFactory] lambda will be invoked on the
-     * internal camera executor, not on the calling thread. This allows the caller to avoid
-     * expensive map creation or computation on their current thread, which is especially useful
-     * when calling from within a `synchronized` block.
+     * Unlike [setParametersAsync], this method does not perform thread confinement safety checks.
+     * It assumes the caller is already executing within the [UseCaseCameraScope] sequential thread.
      *
-     * @param valuesFactory A lambda function that produces the parameter map. This will be executed
-     *   on the camera executor thread.
-     * @param type The [Type] of the parameters to set.
-     * @param optionPriority The priority of these options.
-     * @return A [Deferred] that completes when the parameters have been submitted.
+     * This method starts the update operation immediately (undispatched) and returns a signal
+     * indicating when the camera graph has processed the update.
+     *
+     * **Warning:** This method **must** be called from the [UseCaseCameraScope] sequential thread.
+     * calling it from other threads may lead to concurrency issues or race conditions.
+     *
+     * @param values A map of [CaptureRequest.Key] to their new values.
+     * @param type The category of parameters being set (default: [Type.DEFAULT]).
+     * @param optionPriority The priority for resolving conflicts (default:
+     *   [defaultOptionPriority]).
+     * @return A [Deferred] that completes when the camera state has been successfully updated.
      */
-    @AnyThread
-    public fun setParametersAsync(
-        valuesFactory: () -> Map<CaptureRequest.Key<*>, Any>,
+    public fun submitParameters(
+        values: Map<CaptureRequest.Key<*>, Any>,
         type: Type = Type.DEFAULT,
         optionPriority: Config.OptionPriority = defaultOptionPriority,
     ): Deferred<Unit>
@@ -339,17 +343,18 @@ constructor(
         } ?: canceledResult
     }
 
-    override fun setParametersAsync(
-        valuesFactory: () -> Map<CaptureRequest.Key<*>, Any>,
+    override fun submitParameters(
+        values: Map<CaptureRequest.Key<*>, Any>,
         type: UseCaseCameraRequestControl.Type,
         optionPriority: Config.OptionPriority,
     ): Deferred<Unit> {
-        return runIfNotClosed {
-            threads.confineDeferredSuspend {
-                val values = valuesFactory()
-                setParametersInternal(type, values, optionPriority)
-            }
-        } ?: canceledResult
+        if (closed) {
+            return canceledResult
+        }
+        threads.checkOnSequentialThread()
+        return threads.sequentialScope.async(start = CoroutineStart.UNDISPATCHED) {
+            setParametersInternal(type, values, optionPriority).await()
+        }
     }
 
     private suspend fun setParametersInternal(

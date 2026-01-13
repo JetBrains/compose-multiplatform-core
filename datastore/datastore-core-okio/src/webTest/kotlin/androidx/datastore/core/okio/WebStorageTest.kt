@@ -25,6 +25,7 @@ import androidx.kruth.assertThrows
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlinx.browser.sessionStorage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +34,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.builtins.serializer
+import okio.BufferedSink
+import okio.BufferedSource
 
 // TODO(b/441511612): Add testing once LocalStorage and OPFS are supported.
 class WebStorageTest {
@@ -114,5 +117,55 @@ class WebStorageTest {
         assertEquals(dataToWrite, readData)
     }
 
-    // TODO: Add test CorruptionException case
+    @Test
+    fun binaryData_isStoredAndRetrievedCorrectly() = runTest {
+        val storeName = "test-binary-store"
+
+        // Serializer that mimics Wire/Protobuf behavior
+        @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
+        val rawByteSerializer =
+            object : OkioSerializer<ByteArray> {
+                override val defaultValue: ByteArray = byteArrayOf()
+
+                override suspend fun readFrom(source: BufferedSource): ByteArray {
+                    return source.readByteArray()
+                }
+
+                override suspend fun writeTo(t: ByteArray, sink: BufferedSink) {
+                    sink.write(t)
+                }
+            }
+
+        val storage: Storage<ByteArray> =
+            WebStorage(
+                serializer = rawByteSerializer,
+                name = storeName,
+                storageType = WebStorageType.SESSION,
+            )
+
+        // Binary data with invalid UTF-8 sequences
+        val originalData =
+            byteArrayOf(
+                0x89.toByte(),
+                0x50.toByte(),
+                0x4e.toByte(),
+                0x47.toByte(),
+                0xff.toByte(),
+                0xd8.toByte(),
+                0xff.toByte(),
+                0xe0.toByte(),
+            )
+
+        val connection = storage.createConnection()
+        try {
+            connection.writeScope { writeData(originalData) }
+
+            val readData = connection.readScope { readData() }
+            // Content should be equal, if not we have corrupted data
+            assertContentEquals(originalData, readData)
+        } finally {
+            connection.close()
+            sessionStorage.removeItem(storeName)
+        }
+    }
 }

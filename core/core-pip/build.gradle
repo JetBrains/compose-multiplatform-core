@@ -45,7 +45,7 @@ android {
 androidx {
     name = "androidx.core:core-pip"
     type = SoftwareType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.CORE
+    mavenVersion = LibraryVersions.CORE_PIP
     inceptionYear = "2025"
     description = "This library helps implementing the PiP (Picture-in-Picture) feature on API 24 and later."
 }

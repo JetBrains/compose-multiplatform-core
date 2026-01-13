@@ -31,6 +31,8 @@ import org.robolectric.RobolectricTestRunner
 class StablePdfAnnotationHandleRegistryTest {
     private lateinit var registry: StablePdfAnnotationHandleRegistry
 
+    private val pageNum = 0
+
     @Before
     fun setup() {
         registry = StablePdfAnnotationHandleRegistry()
@@ -40,7 +42,7 @@ class StablePdfAnnotationHandleRegistryTest {
     fun getHandleId_newSource_generatesNewHandle() {
         val sourceId = "source_123"
 
-        val handle = registry.getHandleId(sourceId)
+        val handle = registry.getHandleId(pageNum, sourceId)
 
         assertThat(handle).isNotEmpty()
         assertThat(handle).isNotEqualTo(sourceId)
@@ -50,9 +52,9 @@ class StablePdfAnnotationHandleRegistryTest {
     fun getHandleId_existingSource_returnsSameHandle() {
         val sourceId = "source_123"
 
-        val handle1 = registry.getHandleId(sourceId)
+        val handle1 = registry.getHandleId(pageNum, sourceId)
 
-        val handle2 = registry.getHandleId(sourceId)
+        val handle2 = registry.getHandleId(pageNum, sourceId)
 
         assertThat(handle1).isEqualTo(handle2)
     }
@@ -62,8 +64,8 @@ class StablePdfAnnotationHandleRegistryTest {
         val sourceA = "source_A"
         val sourceB = "source_B"
 
-        val handleA = registry.getHandleId(sourceA)
-        val handleB = registry.getHandleId(sourceB)
+        val handleA = registry.getHandleId(pageNum, sourceA)
+        val handleB = registry.getHandleId(pageNum, sourceB)
 
         assertThat(handleA).isNotEqualTo(handleB)
     }
@@ -71,7 +73,7 @@ class StablePdfAnnotationHandleRegistryTest {
     @Test
     fun getSourceId_existingHandle_returnsCorrectSource() {
         val sourceId = "source_123"
-        val handle = registry.getHandleId(sourceId)
+        val handle = registry.getHandleId(pageNum, sourceId)
 
         val retrievedSource = registry.getSourceId(handle)
 
@@ -87,13 +89,13 @@ class StablePdfAnnotationHandleRegistryTest {
     @Test
     fun clear_removesAllMappings() {
         val sourceId = "source_123"
-        val handle = registry.getHandleId(sourceId)
+        val handle = registry.getHandleId(pageNum, sourceId)
 
         registry.clear()
 
         assertThat(registry.getSourceId(handle)).isNull()
 
-        val newHandle = registry.getHandleId(sourceId)
+        val newHandle = registry.getHandleId(pageNum, sourceId)
         assertThat(newHandle).isNotEqualTo(handle)
     }
 
@@ -103,7 +105,9 @@ class StablePdfAnnotationHandleRegistryTest {
         val threadCount = 100
 
         val deferredHandles =
-            (1..threadCount).map { async(Dispatchers.IO) { registry.getHandleId(sourceId) } }
+            (1..threadCount).map {
+                async(Dispatchers.IO) { registry.getHandleId(pageNum, sourceId) }
+            }
 
         val results = deferredHandles.awaitAll()
 
@@ -119,7 +123,7 @@ class StablePdfAnnotationHandleRegistryTest {
             (1..threadCount).map { i ->
                 async(Dispatchers.IO) {
                     val sourceId = "source_$i"
-                    registry.getHandleId(sourceId)
+                    registry.getHandleId(pageNum, sourceId)
                 }
             }
 

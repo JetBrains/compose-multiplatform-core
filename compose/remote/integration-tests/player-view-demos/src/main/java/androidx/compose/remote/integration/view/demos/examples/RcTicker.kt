@@ -29,11 +29,14 @@ import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemotePath
+import androidx.compose.remote.creation.actions.HostAction
+import androidx.compose.remote.creation.max
 import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.RoundedRectShape
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.creation.random
+import androidx.compose.remote.creation.sign
+import androidx.compose.remote.creation.times
 import androidx.compose.remote.integration.view.demos.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +48,7 @@ import kotlin.math.ln
 import kotlin.math.sqrt
 
 private lateinit var color: RcTickerColorPack
+private lateinit var fontSize: RcFontSizes
 
 @Preview
 @Composable
@@ -67,6 +71,7 @@ fun RcTicker(context: Context): RemoteComposeContext {
         AndroidxRcPlatformServices(),
     ) {
         color = RcTickerColorPack(this)
+        fontSize = RcFontSizes(this)
         root {
             column(Modifier.fillMaxSize().backgroundId(color.backgroundId)) {
                 row(Modifier.padding(32f)) {
@@ -74,17 +79,14 @@ fun RcTicker(context: Context): RemoteComposeContext {
                     text(
                         "Watchlist",
                         Modifier.padding(24),
-                        fontSize = 48f,
+                        fontSize = fontSize.head1,
                         colorId = color.textColorId,
                     )
                     space()
                     //  image(Modifier.size(80), imageId, ImageScaling.SCALE_INSIDE, 1f)
                     refreshIcon()
                 }
-                column(
-                    Modifier.fillMaxWidth().verticalWeight(1f).padding(32f).verticalScroll(),
-                    horizontal = ColumnLayout.CENTER,
-                ) {
+                MyScroll() {
                     bigstock("Dow Jones", 47739.32f, "-0.45%")
                     stock("S&P 500", 6846.51f, "-0.35%")
                     stock("Nasdaq", 23545.9f, "-0.14%")
@@ -94,6 +96,28 @@ fun RcTicker(context: Context): RemoteComposeContext {
                 }
             }
         }
+    }
+}
+
+@Suppress("RestrictedApiAndroidX")
+fun RemoteComposeContextAndroid.MyScroll(content: RemoteComposeContextAndroid.() -> Unit) {
+    box(Modifier.fillMaxWidth().verticalWeight(1f).fillMaxWidth()) {
+        val position = rf(0f)
+        lateinit var sHeight: RFloat
+        column(
+            Modifier.fillMaxSize()
+                .componentId(4343)
+                //  .padding(32f)
+                .verticalScroll(position.toFloat()),
+            horizontal = ColumnLayout.CENTER,
+        ) {
+            column(horizontal = ColumnLayout.CENTER) {
+                content()
+                sHeight = ComponentHeight()
+            }
+        }
+
+        scrollbar1(color.stockNameId, position, sHeight)
     }
 }
 
@@ -131,7 +155,7 @@ fun RemoteComposeContextAndroid.stock(name: String, price: Float, change: String
         Modifier.padding(32, 0, 32, 28)
             .clip(RoundedRectShape(s, s, s, s))
             .backgroundId(color.panelsId)
-            .padding(24)
+            .padding(24, 24, 24, 8)
     ) {
         column {
             row(vertical = RowLayout.BOTTOM) {
@@ -141,9 +165,9 @@ fun RemoteComposeContextAndroid.stock(name: String, price: Float, change: String
                         Rc.TextFromFloat.PAD_AFTER_ZERO
 
                 val priceDollars = createTextFromFloat(price, 8, 0, numFlags)
-                text(priceDollars, colorId = color.stockPriceId, fontSize = 72f)
+                text(priceDollars, colorId = color.stockPriceId, fontSize = fontSize.priceDollars)
                 val priceCents = createTextFromFloat(price, 0, 2, numFlags)
-                text(priceCents, colorId = color.stockNameId, fontSize = 66f)
+                text(priceCents, colorId = color.stockNameId, fontSize = fontSize.priceCents)
             }
             row {
                 column {
@@ -159,7 +183,7 @@ fun RemoteComposeContextAndroid.stock(name: String, price: Float, change: String
 
 @Suppress("RestrictedApiAndroidX")
 fun RemoteComposeContextAndroid.bigstock(name: String, price: Float, change: String) {
-    column(Modifier.padding(32, 0, 32, 1)) {
+    column(Modifier.padding(32, 40, 48, 1)) {
         row {
             column {
                 val numFlags =
@@ -171,20 +195,20 @@ fun RemoteComposeContextAndroid.bigstock(name: String, price: Float, change: Str
                     text(
                         priceDollars,
                         colorId = color.stockPriceId,
-                        fontSize = 84f,
+                        fontSize = fontSize.bigPriceDollars,
                         fontFamily = "Roboto",
                     )
                     val priceCents = createTextFromFloat(price, 0, 2, numFlags)
-                    text(priceCents, colorId = color.stockNameId, fontSize = 66f)
+                    text(priceCents, colorId = color.stockNameId, fontSize = fontSize.bigPriceCents)
                 }
 
-                row(Modifier.padding(0, 10, 0, 0)) {
-                    text(name, colorId = color.stockNameId, fontSize = 32f)
+                row(Modifier.padding(0, 16, 0, 0)) {
+                    text(name, colorId = color.stockNameId, fontSize = fontSize.name)
                     text(
                         change,
                         Modifier.padding(8, 0, 0, 0),
                         colorId = color.dotColorId,
-                        fontSize = 32f,
+                        fontSize = fontSize.name,
                     )
                 }
             }
@@ -197,7 +221,7 @@ fun RemoteComposeContextAndroid.bigstock(name: String, price: Float, change: Str
 
 @Suppress("RestrictedApiAndroidX")
 private fun RemoteComposeContextAndroid.graph() {
-    canvas(RecordingModifier().height(200).fillMaxWidth()) {
+    canvas(RecordingModifier().height(260).fillMaxWidth()) {
         val w = ComponentWidth() // component.width()
         val h = ComponentHeight()
         val cx = (w / 2f).flush()
@@ -285,6 +309,38 @@ fun RemoteComposeContextAndroid.direction() {
 @Suppress("RestrictedApiAndroidX")
 fun RemoteComposeContextAndroid.mColor(light: Int, dark: Int): Int {
     return writer.addThemedColor(light.toShort(), dark.toShort()).toInt()
+}
+
+@Suppress("RestrictedApiAndroidX")
+private class RcFontSizes(val rc: RemoteComposeContextAndroid) {
+    private val head1Base: Float = 42f / 37f
+    private val normalBase: Float = 48f / 37f
+    private val bigPriceDollarsBase: Float = 84f / 37f
+    private val bigPriceCentsBase: Float = 66f / 37f
+    private val priceDollarsBase: Float = 64f / 37f
+    private val priceCentsBase: Float = 48f / 37f
+    private val nameBase: Float = 32f / 37f
+
+    var normal: Float
+    var head1: Float
+    var bigPriceDollars: Float
+    var bigPriceCents: Float
+    var priceDollars: Float
+    var priceCents: Float
+    var name: Float
+
+    init {
+        val fontScale = rc.rf(Rc.System.FONT_SIZE)
+
+        head1 = (head1Base * fontScale).toFloat()
+        normal = (normalBase * fontScale).toFloat()
+        bigPriceDollars = (bigPriceDollarsBase * fontScale).toFloat()
+        bigPriceCents = (bigPriceCentsBase * fontScale).toFloat()
+        priceDollars = (priceDollarsBase * fontScale).toFloat()
+        priceCents = (priceCentsBase * fontScale).toFloat()
+        name = (nameBase * fontScale).toFloat()
+        rc.addDebugMessage(" font scale ", fontScale)
+    }
 }
 
 @Suppress("LocalVariableName", "RestrictedApiAndroidX")
@@ -396,7 +452,8 @@ private fun divide(random: Random, arr: FloatArray, left: Int, right: Int, rough
 @Suppress("RestrictedApiAndroidX")
 private fun RemoteComposeContextAndroid.refreshIcon() {
     val size = 64
-    canvas(Modifier.size(size)) {
+    val action = HostAction(567, textCreateId("refresh"))
+    canvas(Modifier.size(size).onTouchDown(action)) {
         val path = refreshPath()
         scale(size / 960f, size / 960f)
         painter.setColorId(color.textColorId).commit()
@@ -436,6 +493,7 @@ fun RemoteComposeContextAndroid.refreshPath(): Int {
  * @param daysPerPoint Trading days represented by each point (default: 1.0 for daily)
  * @return List of stock prices as doubles
  */
+@Suppress("RestrictedApiAndroidX")
 fun generateStockDataArray(
     numPoints: Int,
     startPrice: Float,
@@ -462,8 +520,34 @@ fun generateStockDataArray(
     return prices
 }
 
+@Suppress("RestrictedApiAndroidX")
 private fun generateRandomNormal(random: Random): Float {
     val u1: Float = random.nextFloat()
     val u2: Float = random.nextFloat()
     return (sqrt(-2.0 * ln(u1)) * cos(2.0 * Math.PI * u2)).toFloat()
+}
+
+@Suppress("RestrictedApiAndroidX")
+private fun RemoteComposeContextAndroid.scrollbar1(
+    color: Int,
+    touchPosition: RFloat,
+    scrollPanelSize: RFloat,
+) {
+
+    startCanvas(RecordingModifier().fillMaxSize())
+    val width = ComponentWidth()
+    val height = ComponentHeight()
+    val alpha = sign(max(0f, touchTime() - animationTime() + 0.1)).anim(1.2f)
+
+    painter.setColorId(color).setAlpha(alpha.toFloat()).setStrokeWidth(10f).commit()
+    val len = height * height / scrollPanelSize
+    val off = height * touchPosition / scrollPanelSize
+
+    drawLine((width - 5f), off, (width - 5f), off + len)
+    endCanvas()
+}
+
+@Suppress("RestrictedApiAndroidX")
+fun RemoteComposeContextAndroid.touchTime(): RFloat {
+    return rf(Rc.Touch.TOUCH_EVENT_TIME)
 }

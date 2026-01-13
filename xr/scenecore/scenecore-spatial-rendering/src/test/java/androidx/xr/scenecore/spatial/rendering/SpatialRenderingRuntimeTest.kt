@@ -148,7 +148,13 @@ class SpatialRenderingRuntimeTest {
             }
 
             feature =
-                GltfFeatureImpl(gltfModel, impressApi, splitEngineSubspaceManager, xrExtensions)
+                GltfFeatureImpl(
+                    gltfModel,
+                    impressApi,
+                    splitEngineSubspaceManager,
+                    xrExtensions,
+                    splitEngineRenderer,
+                )
         }
 
         return renderingEntityFactory.createGltfEntity(feature!!, pose, sceneRuntime.activitySpace)

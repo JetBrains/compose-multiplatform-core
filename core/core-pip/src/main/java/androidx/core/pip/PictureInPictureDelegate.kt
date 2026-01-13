@@ -116,15 +116,21 @@ public class PictureInPictureDelegate(pictureInPictureProvider: PictureInPicture
         )
     }
 
-    /** Sets the [PictureInPictureParamsCompat] instance for PiP. */
+    /**
+     * Sets the [PictureInPictureParamsCompat] instance for PiP.
+     *
+     * @param pictureInPictureParamsCompat [PictureInPictureParamsCompat] instance to set, and it's
+     *   subjected to be changed. For instance, the aspectRatio would be capped in between the
+     *   minimal and maximum allowed aspectRatio; and the sourceRectHint would be center cropped to
+     *   match the aspectRatio.
+     */
     public fun setPictureInPictureParams(
         pictureInPictureParamsCompat: PictureInPictureParamsCompat
     ) {
-        this@PictureInPictureDelegate.pictureInPictureParamsCompat = pictureInPictureParamsCompat
+        val validatedParams = PictureInPictureParamsValidator.validate(pictureInPictureParamsCompat)
+        this@PictureInPictureDelegate.pictureInPictureParamsCompat = validatedParams
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            pictureInPictureProviderRef
-                .get()
-                ?.setPictureInPictureParams(pictureInPictureParamsCompat)
+            pictureInPictureProviderRef.get()?.setPictureInPictureParams(validatedParams)
         }
     }
 

@@ -228,6 +228,8 @@ public class RemoteComposeView extends FrameLayout implements View.OnAttachState
         mARContext.loadFloat(RemoteContext.ID_TOUCH_EVENT_TIME, -Float.MAX_VALUE);
         mARContext.loadFloat(RemoteContext.ID_FONT_SIZE, getDefaultTextSize());
 
+        mDocument.applyDataOperations(mARContext);
+
         invalidate();
         Integer fps = (Integer) mDocument.getDocument().getProperty(Header.DOC_DESIRED_FPS);
         if (fps != null && fps > 0) {

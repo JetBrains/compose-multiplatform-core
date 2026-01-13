@@ -25,6 +25,7 @@ import androidx.datastore.core.WriteScope
 import androidx.datastore.core.use
 import kotlinx.browser.sessionStorage
 import okio.Buffer
+import okio.ByteString.Companion.decodeBase64
 import org.w3c.dom.Storage as DomStorage
 
 // TODO(b/441511612): Support LocalStorage and OPFS.
@@ -99,7 +100,11 @@ internal open class WebReadScope<T>(
             return serializer.defaultValue
         }
 
-        val buffer = Buffer().writeUtf8(stringData)
+        val byteStringData =
+            stringData.decodeBase64()
+                ?: throw CorruptionException("Unable to decode Base64 stored data.")
+        val buffer = Buffer().write(byteStringData)
+
         try {
             return serializer.readFrom(buffer)
         } catch (ex: Exception) {
@@ -123,7 +128,7 @@ internal class WebWriteScope<T>(
         checkClose()
         val buffer = Buffer()
         serializer.writeTo(value, buffer)
-        val stringData = buffer.readUtf8()
+        val stringData = buffer.readByteString().base64()
         domStorage.setItem(name, stringData)
     }
 }

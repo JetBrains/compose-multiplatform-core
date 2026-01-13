@@ -250,10 +250,12 @@ public object EncoderProfilesUtil {
         )
 
     /** A utility method to create an AudioProfileProxy with some default values. */
-    public fun createFakeAudioProfileProxy(): AudioProfileProxy {
+    public fun createFakeAudioProfileProxy(
+        audioMediaType: String = DEFAULT_AUDIO_MEDIA_TYPE
+    ): AudioProfileProxy {
         return AudioProfileProxy.create(
             DEFAULT_AUDIO_CODEC,
-            DEFAULT_AUDIO_MEDIA_TYPE,
+            audioMediaType,
             DEFAULT_AUDIO_BITRATE,
             DEFAULT_AUDIO_SAMPLE_RATE,
             DEFAULT_AUDIO_CHANNELS,

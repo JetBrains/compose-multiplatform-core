@@ -33,6 +33,9 @@ class WearWidgetParamsTest {
                 containerType = ContainerInfo.CONTAINER_TYPE_SMALL,
                 widthDp = 200.5f,
                 heightDp = 300.25f,
+                horizontalPaddingDp = 9f,
+                verticalPaddingDp = 8f,
+                cornerRadiusDp = 16f,
             )
 
         val parcel = originalParams.toParcel()
@@ -42,5 +45,8 @@ class WearWidgetParamsTest {
         assertThat(restoredParams.containerType).isEqualTo(originalParams.containerType)
         assertThat(restoredParams.widthDp).isEqualTo(originalParams.widthDp)
         assertThat(restoredParams.heightDp).isEqualTo(originalParams.heightDp)
+        assertThat(restoredParams.horizontalPaddingDp).isEqualTo(originalParams.horizontalPaddingDp)
+        assertThat(restoredParams.verticalPaddingDp).isEqualTo(originalParams.verticalPaddingDp)
+        assertThat(restoredParams.cornerRadiusDp).isEqualTo(originalParams.cornerRadiusDp)
     }
 }

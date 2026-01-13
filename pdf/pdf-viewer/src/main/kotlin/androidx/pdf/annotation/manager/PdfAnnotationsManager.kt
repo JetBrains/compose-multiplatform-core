@@ -17,13 +17,18 @@
 package androidx.pdf.annotation.manager
 
 import androidx.annotation.RestrictTo
+import androidx.pdf.EditsDraft
+import androidx.pdf.PdfDocument
 import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.draftstate.AnnotationEditsDraftState
 import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.operations.AnnotationOperationsTracker
+import androidx.pdf.annotation.registry.AnnotationHandleRegistry
+import androidx.pdf.annotation.repository.AnnotationsRepository
 
 /** Manages annotations for a PDF document. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface PdfAnnotationsManager {
-
     /**
      * Retrieves the draft and persisted annotations for a given page number.
      *
@@ -31,6 +36,21 @@ public interface PdfAnnotationsManager {
      * @return A list of [KeyedPdfAnnotation] for the specified page.
      */
     public suspend fun getAnnotations(pageNum: Int): List<KeyedPdfAnnotation>
+
+    /**
+     * Retrieves all local modifications made to the document annotations.
+     *
+     * @return A [EditsDraft] representing the current state of all modified items.
+     */
+    public suspend fun getAnnotationModifications(): EditsDraft
+
+    /**
+     * Adds a new keyed annotation.
+     *
+     * @param keyedAnnotation The [KeyedPdfAnnotation] to add.
+     * @return The annotation id assigned to the newly added annotation.
+     */
+    public fun addAnnotation(keyedAnnotation: KeyedPdfAnnotation): String
 
     /**
      * Adds a new annotation.
@@ -61,4 +81,19 @@ public interface PdfAnnotationsManager {
         annotationId: String,
         newAnnotation: PdfAnnotation,
     ): PdfAnnotation
+
+    /** Discards all changes made to the annotations. */
+    public fun discardChanges(): Unit
+
+    public companion object {
+        public fun create(document: PdfDocument): PdfAnnotationsManager {
+            val handleRegistry = AnnotationHandleRegistry.create()
+            return PdfDocumentAnnotationsManager(
+                draftState = AnnotationEditsDraftState.create(),
+                annotationsRepository = AnnotationsRepository.create(document),
+                handleRegistry = handleRegistry,
+                operationsTracker = AnnotationOperationsTracker.create(handleRegistry),
+            )
+        }
+    }
 }

@@ -1918,6 +1918,15 @@ public class RemoteComposeBuffer {
      *
      * @param id id of the value
      */
+    public void addComponentValue(int id, int type) {
+        ComponentValue.apply(mBuffer, type, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component width value
+     *
+     * @param id id of the value
+     */
     public void addComponentWidthValue(int id) {
         ComponentValue.apply(mBuffer, ComponentValue.WIDTH, mLastComponentId, id);
     }
@@ -1929,6 +1938,60 @@ public class RemoteComposeBuffer {
      */
     public void addComponentHeightValue(int id) {
         ComponentValue.apply(mBuffer, ComponentValue.HEIGHT, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's content width value
+     *
+     * @param id id of the value
+     */
+    public void addComponentContentWidthValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.CONTENT_WIDTH, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's content height value
+     *
+     * @param id id of the value
+     */
+    public void addComponentContentHeightValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.CONTENT_HEIGHT, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's x value (in parent coordinates)
+     *
+     * @param id id of the value
+     */
+    public void addComponentXValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.POS_X, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's y value (in parent coordinates)
+     *
+     * @param id id of the value
+     */
+    public void addComponentYValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.POS_Y, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's x value (in root coordinates)
+     *
+     * @param id id of the value
+     */
+    public void addComponentRootXValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.POS_ROOT_X, mLastComponentId, id);
+    }
+
+    /**
+     * Add a component's y value (in root coordinates)
+     *
+     * @param id id of the value
+     */
+    public void addComponentRootYValue(int id) {
+        ComponentValue.apply(mBuffer, ComponentValue.POS_ROOT_Y, mLastComponentId, id);
     }
 
     /**

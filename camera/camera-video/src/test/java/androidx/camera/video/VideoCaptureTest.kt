@@ -59,6 +59,7 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.MirrorMode.MIRROR_MODE_OFF
 import androidx.camera.core.MirrorMode.MIRROR_MODE_ON
 import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+import androidx.camera.core.RotationProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo
 import androidx.camera.core.UseCase
@@ -2098,6 +2099,24 @@ class VideoCaptureTest {
         assertThat(sizeToMaxFpsMap[RESOLUTION_1080P]).isEqualTo(120)
         assertThat(sizeToMaxFpsMap[RESOLUTION_720P]).isEqualTo(240)
         assertThat(sizeToMaxFpsMap[RESOLUTION_480P]).isNull()
+    }
+
+    @Test
+    fun setTargetRotationByRotationProvider_rotationIsUpdated() {
+        // Arrange.
+        val videoCapture = createVideoCapture()
+        val rotationProvider = RotationProvider(context, true)
+        videoCapture.setRotationProvider(rotationProvider)
+        setupCamera()
+        createCameraUseCaseAdapter()
+        addAndAttachUseCases(videoCapture)
+
+        // Act.
+        rotationProvider.updateOrientationForTesting(180)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        // Assert.
+        assertThat(videoCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
     }
 
     private fun testSelectedQualityIsExpected(

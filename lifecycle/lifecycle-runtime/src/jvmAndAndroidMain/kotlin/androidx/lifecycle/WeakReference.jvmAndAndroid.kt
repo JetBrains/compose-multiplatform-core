@@ -16,9 +16,9 @@
 
 package androidx.lifecycle
 
-// Added to compile common for both JVM and non-JVM targets. Does nothing for JVM.
 internal actual class WeakReference<T : Any> actual constructor(reference: T) {
-    actual fun get(): T? {
-        TODO("Not yet implemented")
-    }
+    private val delegate = java.lang.ref.WeakReference(reference)
+
+    @Suppress("NewApi") // TODO(b/437073246)
+    actual fun get(): T? = delegate.get()
 }

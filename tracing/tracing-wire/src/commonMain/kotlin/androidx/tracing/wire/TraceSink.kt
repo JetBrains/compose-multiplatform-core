@@ -17,6 +17,7 @@
 package androidx.tracing.wire
 
 import androidx.annotation.GuardedBy
+import androidx.annotation.IntRange
 import androidx.tracing.PooledTracePacketArray
 import androidx.tracing.Queue
 import androidx.tracing.synchronized
@@ -29,7 +30,6 @@ import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import okio.BufferedSink
@@ -62,8 +62,10 @@ public class TraceSink(
      *
      * This is only relevant when merging traces across multiple sources (e.g. combining the trace
      * output of this library with a trace captured on Android with Perfetto).
+     *
+     * Value must be greater than 0.
      */
-    sequenceId: Int,
+    @IntRange(from = 1) sequenceId: Int,
 
     /** Output [BufferedSink] the trace will be written to. */
     private val bufferedSink: BufferedSink,
@@ -95,6 +97,9 @@ public class TraceSink(
     @GuardedBy("drainLock") private var resumeDrain: Continuation<Unit>
 
     init {
+        require(sequenceId > 0) {
+            "Provided sequenceId was $sequenceId, it must be greater than 0."
+        }
         resumeDrain =
             suspend {
                     coroutineContext[Job]?.invokeOnCompletion { makeDrainRequest() }

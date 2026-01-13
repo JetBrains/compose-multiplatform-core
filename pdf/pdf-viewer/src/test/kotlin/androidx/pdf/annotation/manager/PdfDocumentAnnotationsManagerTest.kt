@@ -77,7 +77,7 @@ class PdfDocumentAnnotationsManagerTest {
         assertThat(result).hasSize(1)
         assertThat(result[0].annotation).isEqualTo(annotA)
         // Verify a handle was generated
-        val handleId = handleRegistry.getHandleId(sourceId)
+        val handleId = handleRegistry.getHandleId(pageNum, sourceId)
         assertThat(result[0].key).isEqualTo(handleId)
     }
 
@@ -147,8 +147,7 @@ class PdfDocumentAnnotationsManagerTest {
         repository.seedAnnotations(pageNum, listOf(KeyedPdfAnnotation(sourceId, annotA)))
 
         // We need the handle ID to compose the ID passed to removeAnnotation
-        val handleId = handleRegistry.getHandleId(sourceId)
-        val composedId = composeAnnotationId(pageNum, handleId)
+        val composedId = handleRegistry.getHandleId(pageNum, sourceId)
 
         val removed = manager.removeAnnotation(composedId)
 
@@ -159,7 +158,7 @@ class PdfDocumentAnnotationsManagerTest {
         assertThat(snapshot).hasSize(1)
         assertThat(snapshot[0].operationType)
             .isEqualTo(KeyedAnnotationOperation.OperationType.REMOVE)
-        assertThat(snapshot[0].keyedAnnotation.key).isEqualTo(handleId)
+        assertThat(snapshot[0].keyedAnnotation.key).isEqualTo(composedId)
 
         // Verify getAnnotations hides it
         val visible = manager.getAnnotations(pageNum)
@@ -170,8 +169,7 @@ class PdfDocumentAnnotationsManagerTest {
     fun removeAnnotation_persistedWithLocalUpdate_removesUpdatedContent() = runTest {
         val sourceId = "source_1"
         repository.seedAnnotations(pageNum, listOf(KeyedPdfAnnotation(sourceId, annotA)))
-        val handleId = handleRegistry.getHandleId(sourceId)
-        val composedId = composeAnnotationId(pageNum, handleId)
+        val composedId = handleRegistry.getHandleId(pageNum, sourceId)
 
         // Update first
         manager.updateAnnotation(composedId, updatedAnnotA)
@@ -183,7 +181,7 @@ class PdfDocumentAnnotationsManagerTest {
         assertThat(removed).isEqualTo(updatedAnnotA)
 
         // Verify Tracker has REMOVE op
-        assertThat(operationsTracker.isDeleted(handleId)).isTrue()
+        assertThat(operationsTracker.isDeleted(composedId)).isTrue()
     }
 
     @Test
@@ -207,21 +205,20 @@ class PdfDocumentAnnotationsManagerTest {
     fun updateAnnotation_persistedAnnotation_updatesTrackerAndReconciles() = runTest {
         val sourceId = "source_1"
         repository.seedAnnotations(pageNum, listOf(KeyedPdfAnnotation(sourceId, annotA)))
-        val handleId = handleRegistry.getHandleId(sourceId)
-        val composedId = composeAnnotationId(pageNum, handleId)
+        val composedId = handleRegistry.getHandleId(pageNum, sourceId)
 
         val previous = manager.updateAnnotation(composedId, updatedAnnotA)
 
         assertThat(previous).isEqualTo(annotA)
 
         // Verify Tracker
-        val updatedContent = operationsTracker.getUpdatedAnnotation(handleId)
+        val updatedContent = operationsTracker.getUpdatedAnnotation(composedId)
         assertThat(updatedContent).isEqualTo(updatedAnnotA)
 
         // Verify getAnnotations returns updated content with same handle
         val result = manager.getAnnotations(pageNum)
         assertThat(result).hasSize(1)
-        assertThat(result[0].key).isEqualTo(handleId)
+        assertThat(result[0].key).isEqualTo(composedId)
         assertThat(result[0].annotation).isEqualTo(updatedAnnotA)
     }
 
@@ -229,8 +226,7 @@ class PdfDocumentAnnotationsManagerTest {
     fun updateAnnotation_persistedAnnotationMultipleTimes_returnsLastUpdatedValue() = runTest {
         val sourceId = "source_1"
         repository.seedAnnotations(pageNum, listOf(KeyedPdfAnnotation(sourceId, annotA)))
-        val handleId = handleRegistry.getHandleId(sourceId)
-        val composedId = composeAnnotationId(pageNum, handleId)
+        val composedId = handleRegistry.getHandleId(pageNum, sourceId)
 
         manager.updateAnnotation(composedId, updatedAnnotA)
         val previous2 = manager.updateAnnotation(composedId, annotB)

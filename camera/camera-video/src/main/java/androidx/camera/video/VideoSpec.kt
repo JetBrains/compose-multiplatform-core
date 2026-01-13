@@ -29,6 +29,7 @@ public constructor(
     public val encodeFrameRate: Int = ENCODE_FRAME_RATE_AUTO,
     public val bitrate: Int = BITRATE_AUTO,
     @get:AspectRatio.Ratio public val aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
+    public val mimeType: String = MIME_TYPE_AUTO,
 ) {
 
     /** Returns a [Builder] instance with the same property values as this instance. */
@@ -38,6 +39,7 @@ public constructor(
             .setEncodeFrameRate(encodeFrameRate)
             .setBitrate(bitrate)
             .setAspectRatio(aspectRatio)
+            .setMimeType(mimeType)
     }
 
     public override fun toString(): String {
@@ -45,7 +47,8 @@ public constructor(
             "qualitySelector=$qualitySelector, " +
             "encodeFrameRate=$encodeFrameRate, " +
             "bitrate=$bitrate, " +
-            "aspectRatio=$aspectRatio" +
+            "aspectRatio=$aspectRatio, " +
+            "mimeType=$mimeType" +
             "}"
     }
 
@@ -55,11 +58,12 @@ public constructor(
         return qualitySelector == other.qualitySelector &&
             encodeFrameRate == other.encodeFrameRate &&
             bitrate == other.bitrate &&
-            aspectRatio == other.aspectRatio
+            aspectRatio == other.aspectRatio &&
+            mimeType == other.mimeType
     }
 
     public override fun hashCode(): Int {
-        return Objects.hash(qualitySelector, encodeFrameRate, bitrate, aspectRatio)
+        return Objects.hash(qualitySelector, encodeFrameRate, bitrate, aspectRatio, mimeType)
     }
 
     /** The builder of the [VideoSpec]. */
@@ -69,6 +73,7 @@ public constructor(
         private var encodeFrameRate: Int = ENCODE_FRAME_RATE_AUTO
         private var bitrate: Int = BITRATE_AUTO
         private var aspectRatio: Int = AspectRatio.RATIO_DEFAULT
+        private var mimeType: String = MIME_TYPE_AUTO
 
         /**
          * Sets the [QualitySelector].
@@ -104,9 +109,16 @@ public constructor(
             this.aspectRatio = aspectRatio
         }
 
+        /**
+         * Sets the MIME type.
+         *
+         * If not set, defaults to [MIME_TYPE_AUTO].
+         */
+        public fun setMimeType(mimeType: String): Builder = apply { this.mimeType = mimeType }
+
         /** Builds the VideoSpec instance. */
         public fun build(): VideoSpec {
-            return VideoSpec(qualitySelector, encodeFrameRate, bitrate, aspectRatio)
+            return VideoSpec(qualitySelector, encodeFrameRate, bitrate, aspectRatio, mimeType)
         }
     }
 
@@ -116,6 +128,9 @@ public constructor(
 
         /** No preference for bitrate. */
         public const val BITRATE_AUTO: Int = 0
+
+        /** No preference for MIME type. */
+        public const val MIME_TYPE_AUTO: String = "video/*"
 
         /** Quality selector representing no preference for quality. */
         @JvmField

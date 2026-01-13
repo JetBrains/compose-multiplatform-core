@@ -46,7 +46,7 @@ public class KeyedPdfAnnotation(public val key: String, public val annotation: P
 
     override fun writeToParcel(p0: Parcel, p1: Int) {
         p0.writeString(key)
-        p0.writeParcelable(annotation, p1)
+        annotation.writeToParcel(p0, p1)
     }
 
     public companion object {

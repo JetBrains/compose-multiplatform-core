@@ -172,4 +172,13 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isTraversableDelegatesFixEnabled: Boolean = true
+
+    /**
+     * This flag enables ComposeViewContext to be created automatically and used across ComposeViews
+     * within the same hierarchy. With the flag disabled, ComposeViewContext will only be created
+     * when explicitly provided to a ComposeView.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isSharedComposeViewContextEnabled: Boolean = true
 }

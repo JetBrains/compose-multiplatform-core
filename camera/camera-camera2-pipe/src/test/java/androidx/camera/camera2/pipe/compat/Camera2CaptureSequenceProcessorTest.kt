@@ -145,6 +145,10 @@ internal class Camera2CaptureSequenceProcessorTest {
     fun teardown() {
         mainLooper.idle()
         RobolectricCameras.clear()
+        surface1.release()
+        surface2.release()
+        surface3.release()
+        surface4.release()
     }
 
     @Test
@@ -186,6 +190,11 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1, stream2.id to surface2),
+                outputToSurfaceMap =
+                    mapOf(
+                        stream1.outputs.single().id to surface1,
+                        stream2.outputs.single().id to surface2,
+                    ),
                 streamGraph,
             )
 
@@ -228,6 +237,7 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
+                mapOf(stream1.outputs.single().id to surface1),
                 streamGraph,
             )
         val captureSequence =
@@ -255,6 +265,7 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
+                mapOf(stream1.outputs.single().id to surface1),
                 streamGraph,
             )
 
@@ -281,6 +292,7 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
+                mapOf(stream1.outputs.single().id to surface1),
                 streamGraph,
             )
         val captureSequence =
@@ -311,6 +323,10 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream3.id to surface3, stream4.id to surface4),
+                mapOf(
+                    stream3.outputs.single().id to surface3,
+                    stream4.outputs.single().id to surface4,
+                ),
                 highSpeedStreamGraph,
             )
 

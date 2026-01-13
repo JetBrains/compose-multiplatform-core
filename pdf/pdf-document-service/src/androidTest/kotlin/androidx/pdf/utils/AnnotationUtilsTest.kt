@@ -94,7 +94,7 @@ class AnnotationUtilsTest {
 
         fun isRequiredSdkExtensionAvailable(): Boolean {
             // Get the device's version for the specified SDK extension
-            val deviceExtensionVersion = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R)
+            val deviceExtensionVersion = SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S)
             return deviceExtensionVersion >= REQUIRED_EXTENSION_VERSION
         }
 

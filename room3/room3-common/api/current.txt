@@ -99,6 +99,18 @@ package androidx.room3 {
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Dao {
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface DaoReturnTypeConverter {
+    ctor @KotlinOnly public DaoReturnTypeConverter(androidx.room3.OperationType... operations);
+    method @InaccessibleFromKotlin public abstract androidx.room3.OperationType[] operations();
+    property public abstract androidx.room3.OperationType[] operations;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CLASS}) public @interface DaoReturnTypeConverters {
+    ctor @KotlinOnly public DaoReturnTypeConverters(optional kotlin.reflect.KClass<? extends java.lang.Object?>... value);
+    method @InaccessibleFromKotlin public abstract Class<? extends java.lang.Object?>[] value();
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?>[] value;
+  }
+
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Database {
     ctor @KotlinOnly public Database(optional kotlin.reflect.KClass<? extends java.lang.Object?>[] entities, optional kotlin.reflect.KClass<? extends java.lang.Object?>[] views, int version, optional boolean exportSchema, optional androidx.room3.AutoMigration[] autoMigrations);
     method @InaccessibleFromKotlin public abstract androidx.room3.AutoMigration[] autoMigrations();
@@ -332,6 +344,11 @@ package androidx.room3 {
     field public static final int NONE = 0; // 0x0
     field public static final int REPLACE = 1; // 0x1
     field @Deprecated public static final int ROLLBACK = 2; // 0x2
+  }
+
+  public enum OperationType {
+    enum_constant public static final androidx.room3.OperationType READ;
+    enum_constant public static final androidx.room3.OperationType WRITE;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface PrimaryKey {

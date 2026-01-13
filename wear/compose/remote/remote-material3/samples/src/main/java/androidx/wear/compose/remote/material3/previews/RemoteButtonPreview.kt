@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rb
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.wear.compose.remote.material3.RemoteButton
 import androidx.wear.compose.remote.material3.RemoteButtonDefaults
+import androidx.wear.compose.remote.material3.RemoteCompactButton
 import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.remote.material3.RemoteText
 import androidx.wear.compose.remote.material3.buttonSizeModifier
@@ -128,6 +130,64 @@ fun RemoteButtonWithIconAndSecondaryLabel() {
 private fun RemoteButtonWithIconAndSecondaryLabelPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) = RemotePreview(profile = profile) { Container { RemoteButtonWithIconAndSecondaryLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteCompactButtonWithIcon() {
+    RemoteCompactButton(
+        modifier = RemoteModifier,
+        icon = {
+            RemoteIcon(
+                modifier = RemoteModifier.size(RemoteButtonDefaults.SmallIconSize),
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().iconColor,
+            )
+        },
+        label = null,
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteCompactButtonWithIconPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithIcon() } }
+
+@Composable
+@RemoteComposable
+fun RemoteCompactButtonWithLabel() {
+    RemoteCompactButton(modifier = RemoteModifier, label = { RemoteText("label".rs) })
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteCompactButtonWithLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithLabel() } }
+
+@Composable
+@RemoteComposable
+fun RemoteCompactButtonWithIconAndLabel() {
+    RemoteCompactButton(
+        modifier = RemoteModifier,
+        icon = {
+            RemoteIcon(
+                modifier = RemoteModifier.size(RemoteButtonDefaults.ExtraSmallIconSize),
+                imageVector = TestImageVectors.VolumeUp,
+                contentDescription = null,
+                tint = RemoteButtonDefaults.buttonColors().iconColor,
+            )
+        },
+        label = { RemoteText("label".rs) },
+    )
+}
+
+@WearPreviewDevices
+@Composable
+private fun RemoteCompactButtonWithIconAndLabelPreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) = RemotePreview(profile = profile) { Container { RemoteCompactButtonWithIconAndLabel() } }
 
 @Composable
 @RemoteComposable

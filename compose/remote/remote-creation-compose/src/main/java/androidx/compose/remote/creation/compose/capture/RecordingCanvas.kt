@@ -171,9 +171,10 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
             }
         val tmpLastStrokeWidth = paint.strokeWidth
         val tmpLastTextSize = paint.textSize
-        val tmpLastStrokeCapOrdinal = paint.strokeCap.ordinal
-        val tmpLastStrokeJoinOrdinal = paint.strokeJoin.ordinal
-        val tmpLastStyleOrdinal = paint.style.ordinal
+        // Handle NPE in Robolectric
+        val tmpLastStrokeCapOrdinal = paint.strokeCap?.ordinal ?: Paint.Cap.BUTT.ordinal
+        val tmpLastStrokeJoinOrdinal = paint.strokeJoin?.ordinal ?: Paint.Join.MITER.ordinal
+        val tmpLastStyleOrdinal = paint.style?.ordinal ?: Paint.Style.FILL.ordinal
         val paintTypeface = paint.typeface
         val tmpTypeface =
             when (paintTypeface) {
@@ -246,17 +247,17 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
             send = true
         }
         if (forceSendingPaint || lastStrokeCapOrdinal != tmpLastStrokeCapOrdinal) {
-            paintBundle.setStrokeCap(paint.strokeCap.ordinal)
+            paintBundle.setStrokeCap(tmpLastStrokeCapOrdinal)
             lastStrokeCapOrdinal = tmpLastStrokeCapOrdinal
             send = true
         }
         if (forceSendingPaint || lastStrokeJoinOrdinal != tmpLastStrokeJoinOrdinal) {
-            paintBundle.setStrokeJoin(paint.strokeJoin.ordinal)
+            paintBundle.setStrokeJoin(tmpLastStrokeJoinOrdinal)
             lastStrokeJoinOrdinal = tmpLastStrokeJoinOrdinal
             send = true
         }
         if (forceSendingPaint || lastStyleOrdinal != tmpLastStyleOrdinal) {
-            paintBundle.setStyle(paint.style.ordinal)
+            paintBundle.setStyle(tmpLastStyleOrdinal)
             lastStyleOrdinal = tmpLastStyleOrdinal
             send = true
         }
@@ -559,6 +560,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         document.drawRect(rect.left, rect.top, rect.right, rect.bottom)
     }
 
+    /** For V1 compatibility. */
     override fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
         usePaint(paint)
         document.drawOval(left, top, right, bottom)
@@ -614,6 +616,30 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
+    public fun drawTextOnCircle(
+        text: RemoteString,
+        centerX: RemoteFloat,
+        centerY: RemoteFloat,
+        radius: RemoteFloat,
+        startAngle: RemoteFloat,
+        warpRadiusOffset: RemoteFloat,
+        alignment: DrawTextOnCircle.Alignment,
+        placement: DrawTextOnCircle.Placement,
+        paint: RemotePaint,
+    ) {
+        usePaint(paint)
+        document.drawTextOnCircle(
+            text.getIdForCreationState(creationState),
+            centerX.getFloatIdForCreationState(creationState),
+            centerY.getFloatIdForCreationState(creationState),
+            radius.getFloatIdForCreationState(creationState),
+            startAngle.getFloatIdForCreationState(creationState),
+            warpRadiusOffset.getFloatIdForCreationState(creationState),
+            alignment,
+            placement,
+        )
+    }
+
     override fun drawLine(startX: Float, startY: Float, stopX: Float, stopY: Float, paint: Paint) {
         //        println("NRO drawLine")
         usePaint(paint)
@@ -663,6 +689,15 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         document.scale(
             sx.getFloatIdForCreationState(creationState),
             sy.getFloatIdForCreationState(creationState),
+        )
+    }
+
+    public fun scale(sx: RemoteFloat, sy: RemoteFloat, px: RemoteFloat, py: RemoteFloat) {
+        document.scale(
+            sx.getFloatIdForCreationState(creationState),
+            sy.getFloatIdForCreationState(creationState),
+            px.getFloatIdForCreationState(creationState),
+            py.getFloatIdForCreationState(creationState),
         )
     }
 
@@ -977,6 +1012,12 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
             panx.getFloatIdForCreationState(creationState),
             pany.getFloatIdForCreationState(creationState),
         )
+    }
+
+    public fun drawRPath(path: RemotePath, paint: RemotePaint) {
+        usePaint(paint)
+        val pathId = document.addPathData(path)
+        document.drawPath(pathId)
     }
 
     override fun drawPath(path: Path, paint: Paint) {

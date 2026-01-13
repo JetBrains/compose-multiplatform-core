@@ -16,11 +16,12 @@
 
 package androidx.lifecycle
 
-import kotlin.js.JsAny
-import kotlin.js.JsReference
-import kotlin.js.get
-import kotlin.js.toJsReference
-import kotlin.js.unsafeCast
+@Suppress("OPT_IN_USAGE") // Can't opt-in: https://youtrack.jetbrains.com/issue/KT-79716
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private var delegate: WeakRef? = WeakRef(reference.toJsReference())
+
+    actual fun get(): T? = delegate?.deref()?.unsafeCast<JsReference<T>>()?.get()
+}
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef
 @Suppress("OPT_IN_USAGE") // Can't opt-in: https://youtrack.jetbrains.com/issue/KT-79716
@@ -28,11 +29,4 @@ private external class WeakRef {
     constructor(target: JsAny)
 
     fun deref(): JsAny?
-}
-
-@Suppress("OPT_IN_USAGE") // Can't opt-in: https://youtrack.jetbrains.com/issue/KT-79716
-internal actual class WeakReference<T : Any> actual constructor(reference: T) {
-    private var weakRef: WeakRef? = WeakRef(reference.toJsReference())
-
-    actual fun get(): T? = weakRef?.deref()?.unsafeCast<JsReference<T>>()?.get()
 }

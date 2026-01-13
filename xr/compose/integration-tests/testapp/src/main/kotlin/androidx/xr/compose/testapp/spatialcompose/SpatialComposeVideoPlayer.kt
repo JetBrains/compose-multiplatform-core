@@ -88,17 +88,18 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialSpacer
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SurfaceProtection
+import androidx.xr.compose.subspace.draw.alpha
 import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.testapp.common.isMvHevcSupported
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -533,19 +534,24 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Button(
+                                                enabled = isMvHevcSupported(),
                                                 onClick = {
                                                     stereoMode = StereoMode.MultiviewLeftPrimary
-                                                }
+                                                },
                                             ) {
                                                 Text("Multiview Left Primary")
                                             }
                                             Button(
+                                                enabled = isMvHevcSupported(),
                                                 onClick = {
                                                     stereoMode = StereoMode.MultiviewRightPrimary
-                                                }
+                                                },
                                             ) {
                                                 Text("Multiview Right Primary")
                                             }
+                                        }
+                                        if (!isMvHevcSupported()) {
+                                            Text("MV-HEVC is not supported on this device.")
                                         }
 
                                         val surfaceText =

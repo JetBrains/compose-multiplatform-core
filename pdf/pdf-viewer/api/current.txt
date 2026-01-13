@@ -11,12 +11,14 @@ package androidx.pdf {
     method public suspend Object? getPageInfo(int pageNumber, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument.PageInfo>);
     method public suspend Object? getPageInfos(kotlin.ranges.IntRange pageRange, kotlin.coroutines.Continuation<? super java.util.List<androidx.pdf.PdfDocument.PageInfo>>);
     method public suspend Object? getPageLinks(int pageNumber, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument.PdfPageLinks>);
+    method @InaccessibleFromKotlin public androidx.pdf.RenderParams getRenderParams();
     method public suspend Object? getSelectionBounds(int pageNumber, android.graphics.PointF start, android.graphics.PointF stop, kotlin.coroutines.Continuation<? super androidx.pdf.content.PageSelection?>);
     method @InaccessibleFromKotlin public android.net.Uri getUri();
     method @InaccessibleFromKotlin public boolean isLinearized();
     method public suspend Object? searchDocument(String query, kotlin.ranges.IntRange pageRange, kotlin.coroutines.Continuation<? super android.util.SparseArray<java.util.List<androidx.pdf.content.PageMatchBounds>>>);
     property public abstract boolean isLinearized;
     property public abstract int pageCount;
+    property public abstract androidx.pdf.RenderParams renderParams;
     property public abstract android.net.Uri uri;
     field public static final androidx.pdf.PdfDocument.Companion Companion;
   }
@@ -58,9 +60,9 @@ package androidx.pdf {
   }
 
   public interface PdfLoader {
-    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? openDocument(android.net.Uri uri, android.os.ParcelFileDescriptor fileDescriptor, optional String? password, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument>) throws java.io.IOException;
+    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? openDocument(android.net.Uri uri, android.os.ParcelFileDescriptor fileDescriptor, optional String? password, optional androidx.pdf.RenderParams renderParams, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument>) throws java.io.IOException;
     method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? openDocument(android.net.Uri uri, optional String? password, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument>) throws java.io.IOException;
-    method @BytecodeOnly @kotlin.jvm.Throws(exceptionClasses=IOException::class) public static Object! openDocument$default(androidx.pdf.PdfLoader!, android.net.Uri!, android.os.ParcelFileDescriptor!, String!, kotlin.coroutines.Continuation!, int, Object!) throws java.io.IOException;
+    method @BytecodeOnly @kotlin.jvm.Throws(exceptionClasses=IOException::class) public static Object! openDocument$default(androidx.pdf.PdfLoader!, android.net.Uri!, android.os.ParcelFileDescriptor!, String!, androidx.pdf.RenderParams!, kotlin.coroutines.Continuation!, int, Object!) throws java.io.IOException;
     method @BytecodeOnly @kotlin.jvm.Throws(exceptionClasses=IOException::class) public static Object! openDocument$default(androidx.pdf.PdfLoader!, android.net.Uri!, String!, kotlin.coroutines.Continuation!, int, Object!) throws java.io.IOException;
   }
 
@@ -96,6 +98,43 @@ package androidx.pdf {
 
   public interface PdfWriteHandle extends java.io.Closeable {
     method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? writeTo(android.os.ParcelFileDescriptor destination, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws java.io.IOException;
+  }
+
+  public final class RenderParams implements android.os.Parcelable {
+    ctor public RenderParams(int renderMode, optional int renderFlags, optional int renderFormContentMode);
+    ctor @BytecodeOnly public RenderParams(int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public int describeContents();
+    method @InaccessibleFromKotlin public int getRenderFlags();
+    method @InaccessibleFromKotlin public int getRenderFormContentMode();
+    method @InaccessibleFromKotlin public int getRenderMode();
+    method public void writeToParcel(android.os.Parcel dest, int flags);
+    property public int renderFlags;
+    property public int renderFormContentMode;
+    property public int renderMode;
+    field public static final android.os.Parcelable.Creator<androidx.pdf.RenderParams> CREATOR;
+    field public static final androidx.pdf.RenderParams.Companion Companion;
+    field public static final int FLAG_RENDER_FREETEXT = 16; // 0x10
+    field public static final int FLAG_RENDER_HIGHLIGHT_ANNOTATIONS = 4; // 0x4
+    field public static final int FLAG_RENDER_NONE = 0; // 0x0
+    field public static final int FLAG_RENDER_STAMP_ANNOTATIONS = 8; // 0x8
+    field public static final int FLAG_RENDER_TEXT_ANNOTATIONS = 2; // 0x2
+    field public static final int RENDER_FORM_CONTENT_DISABLED = 2; // 0x2
+    field public static final int RENDER_FORM_CONTENT_ENABLED = 1; // 0x1
+    field public static final int RENDER_MODE_FOR_DISPLAY = 1; // 0x1
+    field public static final int RENDER_MODE_FOR_PRINT = 2; // 0x2
+  }
+
+  public static final class RenderParams.Companion {
+    property public android.os.Parcelable.Creator<androidx.pdf.RenderParams> CREATOR;
+    property public static int FLAG_RENDER_FREETEXT;
+    property public static int FLAG_RENDER_HIGHLIGHT_ANNOTATIONS;
+    property public static int FLAG_RENDER_NONE;
+    property public static int FLAG_RENDER_STAMP_ANNOTATIONS;
+    property public static int FLAG_RENDER_TEXT_ANNOTATIONS;
+    property public static int RENDER_FORM_CONTENT_DISABLED;
+    property public static int RENDER_FORM_CONTENT_ENABLED;
+    property public static int RENDER_MODE_FOR_DISPLAY;
+    property public static int RENDER_MODE_FOR_PRINT;
   }
 
 }

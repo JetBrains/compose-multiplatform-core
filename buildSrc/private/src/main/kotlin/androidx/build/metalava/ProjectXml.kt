@@ -39,8 +39,15 @@ internal object ProjectXml {
         compiledSourceJar: File,
         outputFile: File,
     ) {
+        // Compute the files for each source set initially so they can be checked multiple times
+        // without recomputing.
+        val sourceSetFiles =
+            sourceSets.associate { sourceSet ->
+                sourceSet.sourceSetName to sourceFiles(sourceSet.sourcePaths)
+            }
+        val filteredSourceSets = filterSourceSets(sourceSets, sourceSetFiles)
         val sourceSetElements =
-            sourceSets.map { sourceSet ->
+            filteredSourceSets.map { sourceSet ->
                 val sourceSetDependencies = sourceSet.dependencyClasspath.files
                 // Include Android jars only for JVM and Android source sets (they are needed for
                 // JVM because they provide the java standard libraries).
@@ -56,7 +63,7 @@ internal object ProjectXml {
                 createSourceSetElement(
                     sourceSet.sourceSetName,
                     sourceSet.dependsOnSourceSets,
-                    sourceFiles(sourceSet.sourcePaths),
+                    sourceSetFiles[sourceSet.sourceSetName]!!,
                     allDependencies,
                     compiledSourceJar,
                     sourceSet.kotlinPlatforms,
@@ -64,6 +71,36 @@ internal object ProjectXml {
             }
         val projectElement = createProjectElement(sourceSetElements)
         writeXml(projectElement, outputFile.writer())
+    }
+
+    /**
+     * Returns a filtered list of source sets, removing those that have no source files and are not
+     * depended on by any other source sets.
+     */
+    @VisibleForTesting
+    fun filterSourceSets(
+        sourceSets: List<SourceSetInputs>,
+        sourceSetFiles: Map<String, List<File>>,
+    ): List<SourceSetInputs> {
+        val filtered =
+            sourceSets.filter { sourceSet ->
+                // Include any source sets with source files.
+                sourceSetFiles[sourceSet.sourceSetName]!!.isNotEmpty() ||
+                    // Include any source sets that are depended on by another source set.
+                    sourceSets.any { otherSourceSet ->
+                        sourceSet.sourceSetName in otherSourceSet.dependsOnSourceSets
+                    } ||
+                    // Include androidMain, even if it has no source files, to prevent errors that
+                    // come from excluding the primary source set for the android compilation.
+                    sourceSet.sourceSetName == "androidMain"
+            }
+        // If any source sets were filtered, do another pass as there may be source sets which were
+        // previously depended on by filtered source sets which now can also be filtered.
+        return if (filtered.size == sourceSets.size) {
+            filtered
+        } else {
+            filterSourceSets(filtered, sourceSetFiles)
+        }
     }
 
     /** Writes the [element] as XML to the [writer] and closes the stream. */

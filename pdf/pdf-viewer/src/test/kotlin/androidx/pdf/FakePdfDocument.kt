@@ -38,6 +38,7 @@ import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +52,7 @@ internal open class FakePdfDocument(
     internal val pages: List<Point?> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val isLinearized: Boolean = false,
+    override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
@@ -138,17 +140,25 @@ internal open class FakePdfDocument(
         start: PointF,
         stop: PointF,
     ): PageSelection {
-        // TODO(b/376136631) provide a useful implementation when it's needed for testing
+        val selectionRect = RectF(start.x, start.y, stop.x, stop.y).apply { sort() }
+
         val selectedTextContents =
-            if (textContents.isEmpty()) {
-                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
-            } else {
-                listOf(textContents[pageNumber])
-            }
+            textContents.getOrNull(pageNumber)?.let { content ->
+                // Filter text bounds that intersect with the selection
+                val intersectingBounds =
+                    content.bounds.mapNotNull { textRect ->
+                        RectF().takeIf { it.setIntersect(selectionRect, textRect) }
+                    }
+
+                if (intersectingBounds.isNotEmpty()) {
+                    listOf(PdfPageTextContent(intersectingBounds, content.text))
+                } else emptyList()
+            } ?: emptyList()
+
         return PageSelection(
             pageNumber,
-            SelectionBoundary(0),
-            SelectionBoundary(0),
+            SelectionBoundary(index = 0, point = Point(start.x.roundToInt(), start.y.roundToInt())),
+            SelectionBoundary(index = 0, point = Point(stop.x.roundToInt(), stop.y.roundToInt())),
             selectedTextContents,
         )
     }

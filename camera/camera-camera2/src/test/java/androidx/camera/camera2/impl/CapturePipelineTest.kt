@@ -321,9 +321,8 @@ class CapturePipelineTest {
     @Before
     fun setUp() {
         state3AControl =
-            State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
-                requestControl = fakeRequestControl
-            }
+            State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler, fakeUseCaseThreads)
+                .apply { requestControl = fakeRequestControl }
 
         torchControl =
             TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads).also {

@@ -38,12 +38,48 @@ public class UseCaseThreads(
     public val backgroundDispatcher: CoroutineDispatcher,
 ) {
     public val mainHandler: Handler = Handler(Looper.getMainLooper())
-    public val sequentialExecutor: Executor =
+    private val sequentialExecutorDelegate =
         CameraXExecutors.newSequentialExecutor(backgroundExecutor)
+
+    /**
+     * A thread-local flag to identify if the current thread is executing a task for this specific
+     * instance of [UseCaseThreads].
+     */
+    private val isSequentialThread = ThreadLocal<Boolean>()
+
+    /**
+     * Executor that enforces sequential execution and sets the [isSequentialThread] flag during
+     * task execution.
+     */
+    public val sequentialExecutor: Executor = Executor { command ->
+        sequentialExecutorDelegate.execute {
+            isSequentialThread.set(true)
+            try {
+                command.run()
+            } finally {
+                isSequentialThread.remove()
+            }
+        }
+    }
     private val sequentialDispatcher = sequentialExecutor.asCoroutineDispatcher()
     public var sequentialScope: CoroutineScope =
         CoroutineScope(scope.coroutineContext + SupervisorJob() + sequentialDispatcher)
         @VisibleForTesting set
+
+    /**
+     * Verifies that the current thread is the one associated with the [sequentialScope].
+     *
+     * This method is critical for functions using [kotlinx.coroutines.CoroutineStart.UNDISPATCHED]
+     * to ensure they are safely accessing state confined to the sequential thread.
+     *
+     * @throws IllegalStateException if called from a different thread context.
+     */
+    public fun checkOnSequentialThread() {
+        check(isSequentialThread.get() == true) {
+            "Thread check failed: This method must be called from the UseCaseThreads sequential " +
+                "scope. Current thread: ${Thread.currentThread().name}"
+        }
+    }
 
     /**
      * Confines a [Deferred] returning `block` parameter to [UseCaseThreads.sequentialScope] for the

@@ -1110,6 +1110,29 @@ class ImageCaptureTest {
         assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
     }
 
+    @Test
+    fun setTargetRotationByRotationProvider_rotationIsUpdated() {
+        // Arrange.
+        val imageCapture = ImageCapture.Builder().build()
+        val rotationProvider = RotationProvider(ApplicationProvider.getApplicationContext(), true)
+        imageCapture.setRotationProvider(rotationProvider)
+
+        cameraUseCaseAdapter =
+            CameraUtil.createCameraUseCaseAdapter(
+                ApplicationProvider.getApplicationContext(),
+                CameraSelector.DEFAULT_BACK_CAMERA,
+            )
+
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+
+        // Act.
+        rotationProvider.updateOrientationForTesting(180)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert.
+        assertThat(imageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
     private fun bindImageCapture(
         captureMode: Int = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
         viewPort: ViewPort? = null,

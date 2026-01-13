@@ -22,8 +22,8 @@
  * modifying its settings.
  */
 
+
 import androidx.build.AndroidXConfig
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {

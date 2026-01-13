@@ -21,7 +21,6 @@ import android.os.Build
 import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.SandboxedPdfDocumentTest.Companion.withDocument
 import androidx.pdf.SandboxedPdfDocumentTest.Companion.withEditableDocument
-import androidx.pdf.annotation.EditablePdfDocument
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem

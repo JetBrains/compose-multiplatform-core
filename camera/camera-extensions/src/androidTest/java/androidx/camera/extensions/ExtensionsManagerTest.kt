@@ -29,21 +29,17 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.SessionProcessor
-import androidx.camera.extensions.impl.ExtensionsTestlibControl
 import androidx.camera.extensions.impl.advanced.Camera2OutputConfigImpl
 import androidx.camera.extensions.impl.advanced.Camera2SessionConfigImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceConfigurationImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceImpl
 import androidx.camera.extensions.impl.advanced.RequestProcessorImpl
 import androidx.camera.extensions.impl.advanced.SessionProcessorImpl
-import androidx.camera.extensions.internal.Camera2ExtensionsUtil.shouldUseCamera2Extensions
-import androidx.camera.extensions.internal.ClientVersion
 import androidx.camera.extensions.internal.ExtensionVersion
 import androidx.camera.extensions.internal.ExtensionsUtils
 import androidx.camera.extensions.internal.VendorExtender
 import androidx.camera.extensions.internal.Version
 import androidx.camera.extensions.internal.sessionprocessor.AdvancedSessionProcessor
-import androidx.camera.extensions.internal.sessionprocessor.BasicExtenderSessionProcessor
 import androidx.camera.extensions.internal.sessionprocessor.Camera2ExtensionsSessionProcessor
 import androidx.camera.extensions.util.ExtensionsTestUtil
 import androidx.camera.extensions.util.ExtensionsTestUtil.CAMERA_PIPE_IMPLEMENTATION_OPTION
@@ -77,7 +73,6 @@ import org.junit.runners.Parameterized
 class ExtensionsManagerTest(
     private val implName: String,
     private val cameraXConfig: CameraXConfig,
-    private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
     @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int,
 ) {
@@ -106,7 +101,6 @@ class ExtensionsManagerTest(
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
 
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-        ExtensionsTestlibControl.getInstance().setImplementationType(implType)
     }
 
     @After
@@ -124,42 +118,9 @@ class ExtensionsManagerTest(
         val context: Context = ApplicationProvider.getApplicationContext()
 
         @JvmStatic
-        @Parameterized.Parameters(
-            name = "cameraXConfig = {0}, implType = {2}, mode = {3}, facing = {4}"
-        )
+        @Parameterized.Parameters(name = "cameraXConfig = {0}, mode = {2}, facing = {3}")
         fun data(): Collection<Array<Any>> {
             return ExtensionsTestUtil.getAllImplExtensionsLensFacingCombinations(context, false)
-        }
-    }
-
-    @Test
-    fun getInstanceSuccessfully_whenExtensionAvailabilityIsNotAvailable() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider, ClientVersion("99.0.0"))[
-                    10000, TimeUnit.MILLISECONDS]
-
-        assumeTrue(
-            extensionsManager.extensionsAvailability !=
-                ExtensionsManager.ExtensionsAvailability.LIBRARY_AVAILABLE
-        )
-        assertThat(extensionsManager).isNotNull()
-    }
-
-    @Test
-    fun getExtensionsCameraSelectorThrowsException_whenExtensionAvailabilityIsNotAvailable() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider, ClientVersion("99.0.0"))[
-                    10000, TimeUnit.MILLISECONDS]
-
-        assumeTrue(
-            extensionsManager.extensionsAvailability !=
-                ExtensionsManager.ExtensionsAvailability.LIBRARY_AVAILABLE
-        )
-
-        val baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-
-        assertThrows<IllegalArgumentException> {
-            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
         }
     }
 
@@ -298,29 +259,12 @@ class ExtensionsManagerTest(
                     return estimatedCaptureLatency
                 }
             }
-        extensionsManager.setVendorExtenderFactory { _, _ -> fakeVendorExtender }
+        extensionsManager.setVendorExtenderFactory { _ -> fakeVendorExtender }
 
         assertThat(
                 extensionsManager.getEstimatedCaptureLatencyRange(baseCameraSelector, extensionMode)
             )
             .isEqualTo(estimatedCaptureLatency)
-    }
-
-    @Test
-    fun getEstimatedCaptureLatencyRangeReturnNull_whenExtensionAvailabilityIsNotAvailable() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider, ClientVersion("99.0.0"))[
-                    10000, TimeUnit.MILLISECONDS]
-
-        assumeTrue(
-            extensionsManager.extensionsAvailability !=
-                ExtensionsManager.ExtensionsAvailability.LIBRARY_AVAILABLE
-        )
-
-        assertThat(
-                extensionsManager.getEstimatedCaptureLatencyRange(baseCameraSelector, extensionMode)
-            )
-            .isNull()
     }
 
     @Test
@@ -450,7 +394,7 @@ class ExtensionsManagerTest(
                     return emptyArray()
                 }
             }
-        extensionsManager.setVendorExtenderFactory { _, _ -> fakeVendorExtender }
+        extensionsManager.setVendorExtenderFactory { _ -> fakeVendorExtender }
 
         assumeTrue(
             extensionsManager.extensionsAvailability ==
@@ -478,7 +422,7 @@ class ExtensionsManagerTest(
                     return arrayOf(Size(1920, 1080))
                 }
             }
-        extensionsManager.setVendorExtenderFactory { _, _ -> fakeVendorExtender }
+        extensionsManager.setVendorExtenderFactory { _ -> fakeVendorExtender }
 
         assumeTrue(
             extensionsManager.extensionsAvailability ==
@@ -487,21 +431,6 @@ class ExtensionsManagerTest(
 
         assertThat(extensionsManager.isImageAnalysisSupported(baseCameraSelector, extensionMode))
             .isTrue()
-    }
-
-    @Test
-    fun isImageAnalysisSupportedIsFalse_whenExtensionAvailabilityIsNotAvailable() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider, ClientVersion("99.0.0"))[
-                    10000, TimeUnit.MILLISECONDS]
-
-        assumeTrue(
-            extensionsManager.extensionsAvailability !=
-                ExtensionsManager.ExtensionsAvailability.LIBRARY_AVAILABLE
-        )
-
-        assertThat(extensionsManager.isImageAnalysisSupported(baseCameraSelector, extensionMode))
-            .isFalse()
     }
 
     @Test
@@ -531,7 +460,7 @@ class ExtensionsManagerTest(
                     return true
                 }
             }
-        extensionsManager.setVendorExtenderFactory { _, _ -> fakeVendorExtender }
+        extensionsManager.setVendorExtenderFactory { _ -> fakeVendorExtender }
 
         // 2. Act
         val camera =
@@ -560,7 +489,7 @@ class ExtensionsManagerTest(
                     return true
                 }
             }
-        extensionsManager.setVendorExtenderFactory { _, _ -> fakeVendorExtender }
+        extensionsManager.setVendorExtenderFactory { _ -> fakeVendorExtender }
 
         // 2. Act
         val camera =
@@ -635,7 +564,7 @@ class ExtensionsManagerTest(
         val extensionCameraSelector = checkExtensionAvailabilityAndInit()
 
         // Inject fake VendorExtenderFactory to provide custom VendorExtender
-        extensionsManager.setVendorExtenderFactory { _, _ ->
+        extensionsManager.setVendorExtenderFactory { _ ->
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
@@ -742,24 +671,11 @@ class ExtensionsManagerTest(
         // Get and check the session processor type is correct
         (cameraProvider.getCameraInfo(extensionCameraSelector) as AdapterCameraInfo)
             .sessionProcessor
-            ?.also {
-                if (shouldUseCamera2Extensions(cameraProvider.configImplType)) {
-                    assertThat(it).isInstanceOf(Camera2ExtensionsSessionProcessor::class.java)
-                } else if (ExtensionVersion.isAdvancedExtenderSupported()) {
-                    assertThat(it).isInstanceOf(AdvancedSessionProcessor::class.java)
-                } else {
-                    assertThat(it).isInstanceOf(BasicExtenderSessionProcessor::class.java)
-                }
-            }
+            ?.also { assertThat(it).isInstanceOf(Camera2ExtensionsSessionProcessor::class.java) }
     }
 
     private fun isExtensionAvailableByCameraInfo(cameraInfo: CameraInfo): Boolean {
-        var vendorExtender =
-            ExtensionsTestUtil.createVendorExtender(
-                context,
-                extensionMode,
-                cameraProvider.configImplType,
-            )
+        var vendorExtender = ExtensionsTestUtil.createVendorExtender(context, extensionMode)
         val cameraId = (cameraInfo as CameraInfoInternal).cameraId
 
         return vendorExtender.isExtensionAvailable(

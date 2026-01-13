@@ -21,9 +21,6 @@ import static androidx.camera.extensions.ExtensionMode.BOKEH;
 import static androidx.camera.extensions.ExtensionMode.FACE_RETOUCH;
 import static androidx.camera.extensions.ExtensionMode.HDR;
 import static androidx.camera.extensions.ExtensionMode.NIGHT;
-import static androidx.camera.extensions.impl.ExtensionsTestlibControl.ImplementationType.OEM_IMPL;
-import static androidx.camera.extensions.impl.ExtensionsTestlibControl.ImplementationType.TESTLIB_ADVANCED;
-import static androidx.camera.extensions.impl.ExtensionsTestlibControl.ImplementationType.TESTLIB_BASIC;
 
 import android.content.Context;
 import android.hardware.camera2.CameraCaptureSession;
@@ -35,7 +32,6 @@ import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraXConfig;
-import androidx.camera.core.ExtendableBuilder;
 import androidx.camera.core.impl.Config;
 import androidx.camera.extensions.ExtensionMode;
 import androidx.camera.extensions.ExtensionsManager;
@@ -46,7 +42,6 @@ import androidx.camera.extensions.impl.BeautyPreviewExtenderImpl;
 import androidx.camera.extensions.impl.BokehImageCaptureExtenderImpl;
 import androidx.camera.extensions.impl.BokehPreviewExtenderImpl;
 import androidx.camera.extensions.impl.ExtensionVersionImpl;
-import androidx.camera.extensions.impl.ExtensionsTestlibControl;
 import androidx.camera.extensions.impl.HdrImageCaptureExtenderImpl;
 import androidx.camera.extensions.impl.HdrPreviewExtenderImpl;
 import androidx.camera.extensions.impl.NightImageCaptureExtenderImpl;
@@ -56,8 +51,6 @@ import androidx.camera.extensions.impl.advanced.BeautyAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.BokehAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.NightAdvancedExtenderImpl;
-import androidx.camera.extensions.internal.AdvancedVendorExtender;
-import androidx.camera.extensions.internal.BasicVendorExtender;
 import androidx.camera.extensions.internal.Camera2ExtensionsInfo;
 import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ExtensionVersion;
@@ -85,6 +78,9 @@ public class ExtensionsTestUtil {
                     CameraCaptureSession.CaptureCallback.class);
     public static final String CAMERA2_IMPLEMENTATION_OPTION = "camera2";
     public static final String CAMERA_PIPE_IMPLEMENTATION_OPTION = "camera_pipe";
+
+    private static final int BASE_COMBINATION_ARRAY_POS_MODE = 0;
+    private static final int BASE_COMBINATION_ARRAY_POS_LENS_FACING = 1;
 
     private static boolean isAdvancedExtender() {
         ExtensionVersionImpl extensionVersion = new ExtensionVersionImpl();
@@ -183,8 +179,7 @@ public class ExtensionsTestUtil {
     public static boolean isExtensionAvailable(@NonNull ExtensionsManager extensionsManager,
             @NonNull CameraSelector cameraSelector, int extensionMode) {
         // Return false if classes are removed by OEMs
-        if (ExtensionsTestlibControl.getInstance().getImplementationType() == OEM_IMPL
-                && !doesOEMImplementationExistForMode(extensionMode)) {
+        if (!doesOEMImplementationExistForMode(extensionMode)) {
             return false;
         }
 
@@ -199,58 +194,24 @@ public class ExtensionsTestUtil {
             @NonNull Context context,
             boolean excludeUnavailableModes
     ) {
-        ExtensionsTestlibControl.ImplementationType implType =
-                ExtensionsTestlibControl.getInstance().getImplementationType();
-
-        if (implType == TESTLIB_ADVANCED) {
-            ExtensionsTestlibControl.getInstance().setImplementationType(TESTLIB_BASIC);
-            implType = TESTLIB_BASIC;
-        }
-
-        List<Object[]> basicOrOemImplList = Arrays.asList(new Object[][]{
-                {implType, BOKEH, CameraSelector.LENS_FACING_FRONT},
-                {implType, BOKEH, CameraSelector.LENS_FACING_BACK},
-                {implType, HDR, CameraSelector.LENS_FACING_FRONT},
-                {implType, HDR, CameraSelector.LENS_FACING_BACK},
-                {implType, FACE_RETOUCH, CameraSelector.LENS_FACING_FRONT},
-                {implType, FACE_RETOUCH, CameraSelector.LENS_FACING_BACK},
-                {implType, NIGHT, CameraSelector.LENS_FACING_FRONT},
-                {implType, NIGHT, CameraSelector.LENS_FACING_BACK},
-                {implType, AUTO, CameraSelector.LENS_FACING_FRONT},
-                {implType, AUTO, CameraSelector.LENS_FACING_BACK}
+        // BASE_COMBINATION_ARRAY_POS_MODE = 0
+        // BASE_COMBINATION_ARRAY_POS_LENS_FACING = 1
+        List<Object[]> allPossibleCombinations = Arrays.asList(new Object[][]{
+                {BOKEH, CameraSelector.LENS_FACING_FRONT},
+                {BOKEH, CameraSelector.LENS_FACING_BACK},
+                {HDR, CameraSelector.LENS_FACING_FRONT},
+                {HDR, CameraSelector.LENS_FACING_BACK},
+                {FACE_RETOUCH, CameraSelector.LENS_FACING_FRONT},
+                {FACE_RETOUCH, CameraSelector.LENS_FACING_BACK},
+                {NIGHT, CameraSelector.LENS_FACING_FRONT},
+                {NIGHT, CameraSelector.LENS_FACING_BACK},
+                {AUTO, CameraSelector.LENS_FACING_FRONT},
+                {AUTO, CameraSelector.LENS_FACING_BACK}
         });
 
-        if (implType == OEM_IMPL) {
-            List<Object[]> allList = excludeUnavailableModes ? filterOutUnavailableMode(context,
-                    basicOrOemImplList) : basicOrOemImplList;
-            return getConfigPrependedCombinations(allList);
-        }
-
-        List<Object[]> advancedList = Arrays.asList(new Object[][]{
-                {TESTLIB_ADVANCED, BOKEH, CameraSelector.LENS_FACING_FRONT},
-                {TESTLIB_ADVANCED, BOKEH, CameraSelector.LENS_FACING_BACK},
-                {TESTLIB_ADVANCED, HDR, CameraSelector.LENS_FACING_FRONT},
-                {TESTLIB_ADVANCED, HDR, CameraSelector.LENS_FACING_BACK},
-                {TESTLIB_ADVANCED, FACE_RETOUCH, CameraSelector.LENS_FACING_FRONT},
-                {TESTLIB_ADVANCED, FACE_RETOUCH, CameraSelector.LENS_FACING_BACK},
-                {TESTLIB_ADVANCED, NIGHT, CameraSelector.LENS_FACING_FRONT},
-                {TESTLIB_ADVANCED, NIGHT, CameraSelector.LENS_FACING_BACK},
-                {TESTLIB_ADVANCED, AUTO, CameraSelector.LENS_FACING_FRONT},
-                {TESTLIB_ADVANCED, AUTO, CameraSelector.LENS_FACING_BACK}
-        });
-
-        List<Object[]> allList = new ArrayList<>();
-        allList.addAll(excludeUnavailableModes
-                ? filterOutUnavailableMode(context, basicOrOemImplList) : basicOrOemImplList);
-        ExtensionsTestlibControl.getInstance().setImplementationType(TESTLIB_ADVANCED);
-
-        allList.addAll(excludeUnavailableModes
-                ? filterOutUnavailableMode(context, advancedList) : advancedList);
-
-        // Reset to basic in case advanced is used accidentally.
-        ExtensionsTestlibControl.getInstance().setImplementationType(TESTLIB_BASIC);
-
-        return getConfigPrependedCombinations(allList);
+        return getConfigPrependedCombinations(
+                excludeUnavailableModes ? filterOutUnavailableMode(context, allPossibleCombinations)
+                        : allPossibleCombinations);
     }
 
     private static List<Object[]> filterOutUnavailableMode(Context context,
@@ -264,8 +225,8 @@ public class ExtensionsTestUtil {
 
             List<Object[]> result = new ArrayList<>();
             for (Object[] item : list) {
-                int mode = (int) item[1];
-                int lensFacing = (int) item[2];
+                int mode = (int) item[BASE_COMBINATION_ARRAY_POS_MODE];
+                int lensFacing = (int) item[BASE_COMBINATION_ARRAY_POS_LENS_FACING];
                 if (isExtensionAvailable(extensionsManager, lensFacing, mode)) {
                     result.add(item);
                 }
@@ -313,45 +274,29 @@ public class ExtensionsTestUtil {
                 && !isSpecificSkippedDevice() && !isSpecificSkippedDeviceWithExtensionMode(mode);
     }
 
-    private static boolean isAdvancedExtenderSupported() {
-        if (ExtensionVersion.getRuntimeVersion().compareTo(Version.VERSION_1_2) < 0) {
-            return false;
-        }
-        return ExtensionVersion.isAdvancedExtenderSupported();
-    }
-
     /**
      * Creates the {@link VendorExtender} instance for testing.
      *
      * @param applicationContext the application context which will be used to retrieve the
      *                           camera characteristics info.
      * @param mode               the target extension mode.
-     * @param configImplType     the config impl type to run the test
      * @return the corresponding {@link VendorExtender} instance.
      */
     public static @NonNull VendorExtender createVendorExtender(@NonNull Context applicationContext,
-            @ExtensionMode.Mode int mode,
-            @CameraXConfig.ImplType int configImplType) {
-        if (configImplType == CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE) {
-            // Returns Camera2ExtensionsVendorExtender only when API level is 33 or above and
-            // configImplType is PIPE.
-            // CameraExtensionCharacteristics#getAvailableCaptureRequestKeys(int) is supported
-            // since API level 33 that allows app to clearly know whether features like
-            // tap-to-focus or zoom ratio are supported or not.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                CameraManager cameraManager = applicationContext.getSystemService(
-                        CameraManager.class);
-                return new Camera2ExtensionsVendorExtender(mode,
-                        new Camera2ExtensionsInfo(cameraManager));
-            } else {
-                return new VendorExtender() {
-                };
-            }
+            @ExtensionMode.Mode int mode) {
+        // Returns Camera2ExtensionsVendorExtender only when API level is 33 or above.
+        // CameraExtensionCharacteristics#getAvailableCaptureRequestKeys(int) is supported since
+        // API level 33 that allows app to clearly know whether features like tap-to-focus or zoom
+        // ratio are supported or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            CameraManager cameraManager = applicationContext.getSystemService(
+                    CameraManager.class);
+            return new Camera2ExtensionsVendorExtender(mode,
+                    new Camera2ExtensionsInfo(cameraManager));
+        } else {
+            return new VendorExtender() {
+            };
         }
-        if (isAdvancedExtenderSupported()) {
-            return new AdvancedVendorExtender(mode);
-        }
-        return new BasicVendorExtender(mode);
     }
 
     /**
@@ -416,17 +361,5 @@ public class ExtensionsTestUtil {
      */
     public static boolean extensionsDisabledByQuirk(@NonNull String cameraId) {
         return new ExtensionDisabledValidator().shouldDisableExtension(cameraId);
-    }
-
-    /**
-     * Sets the camera2 repeating request capture callback to the use case builder.
-     */
-    public static <T> void setCamera2SessionCaptureCallback(
-            ExtendableBuilder<T> usecaseBuilder,
-            CameraCaptureSession.@NonNull CaptureCallback captureCallback) {
-        usecaseBuilder.getMutableConfig().insertOption(
-                SESSION_CAPTURE_CALLBACK_OPTION,
-                captureCallback
-        );
     }
 }

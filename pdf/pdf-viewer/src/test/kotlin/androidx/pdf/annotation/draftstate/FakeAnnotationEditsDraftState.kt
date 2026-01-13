@@ -16,7 +16,9 @@
 
 package androidx.pdf.annotation.draftstate
 
+import androidx.pdf.EditsDraft
 import androidx.pdf.annotation.AnnotationHandleIdGenerator
+import androidx.pdf.annotation.AnnotationHandleIdGenerator.composeAnnotationId
 import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.PdfAnnotation
@@ -27,10 +29,18 @@ import androidx.pdf.annotation.models.TestPdfAnnotation
 class FakeAnnotationEditsDraftState : AnnotationEditsDraftState {
     private val drafts = mutableMapOf<Int, MutableMap<String, PdfAnnotation>>()
 
-    override fun addDraftAnnotation(annotation: PdfAnnotation): String {
-        val handle = AnnotationHandleIdGenerator.generateId()
+    override fun addDraftAnnotation(keyedAnnotation: KeyedPdfAnnotation): String {
+        val handle = keyedAnnotation.key
+        val annotation = keyedAnnotation.annotation
         drafts.getOrPut(annotation.pageNum) { mutableMapOf() }[handle] = annotation
         return handle
+    }
+
+    override fun addDraftAnnotation(annotation: PdfAnnotation): String {
+        val annotationId =
+            composeAnnotationId(annotation.pageNum, AnnotationHandleIdGenerator.generateId())
+        drafts.getOrPut(annotation.pageNum) { mutableMapOf() }[annotationId] = annotation
+        return annotationId
     }
 
     override fun getDraftAnnotation(pageNum: Int, handleId: String): PdfAnnotation? {
@@ -43,22 +53,29 @@ class FakeAnnotationEditsDraftState : AnnotationEditsDraftState {
         } ?: emptyList()
     }
 
-    override fun removeAnnotation(pageNum: Int, handleId: String): PdfAnnotation {
-        return drafts[pageNum]?.remove(handleId)!!
+    override fun removeAnnotation(pageNum: Int, annotationId: String): PdfAnnotation {
+        return drafts[pageNum]?.remove(annotationId)!!
     }
 
     override fun updateDraftAnnotation(
         pageNum: Int,
-        handleId: String,
+        annotationId: String,
         newAnnotation: PdfAnnotation,
     ): PdfAnnotation {
-        val old = drafts[pageNum]?.get(handleId) ?: throw NoSuchElementException()
-        drafts[pageNum]?.put(handleId, newAnnotation)
+        val old = drafts[pageNum]?.get(annotationId) ?: throw NoSuchElementException()
+        drafts[pageNum]?.put(annotationId, newAnnotation)
         return old
     }
 
     // Unused interface methods stubbed
-    override fun getDraftAnnotations(pageNum: Int): List<KeyedPdfAnnotation> = emptyList()
+    override fun getDraftAnnotations(pageNum: Int): List<KeyedPdfAnnotation> {
+        return drafts[pageNum]?.map { (key, annotation) -> KeyedPdfAnnotation(key, annotation) }
+            ?: emptyList()
+    }
+
+    override fun getModificationsSnapshot(): EditsDraft {
+        TODO("Not yet implemented")
+    }
 
     override fun addEditById(id: EditId, annotation: PdfAnnotation) {}
 

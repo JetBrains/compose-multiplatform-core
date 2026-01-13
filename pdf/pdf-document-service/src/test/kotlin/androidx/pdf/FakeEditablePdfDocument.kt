@@ -18,29 +18,25 @@ package androidx.pdf
 
 import android.graphics.PointF
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import android.util.SparseArray
-import androidx.pdf.annotation.EditablePdfDocument
 import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
-import androidx.pdf.annotation.models.EditsResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.PdfEdit
 import androidx.pdf.annotation.models.PdfEditEntry
-import androidx.pdf.annotation.models.PdfEdits
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import java.util.UUID
 
-/** Fake implementation of [androidx.pdf.annotation.EditablePdfDocument] for testing. */
+/** Fake implementation of [EditablePdfDocument] for testing. */
 internal class FakeEditablePdfDocument(
     override val uri: Uri,
     override val pageCount: Int,
     override val isLinearized: Boolean = false,
+    override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     override val formType: Int = -1,
 ) : EditablePdfDocument() {
     private val annotationsByPage = mutableMapOf<Int, MutableList<PdfEditEntry<out PdfEdit>>>()
@@ -51,13 +47,6 @@ internal class FakeEditablePdfDocument(
         val editId = EditId(pageNum, UUID.randomUUID().toString())
         val data = PdfAnnotationData(editId, annotation)
         annotationsByPage.getOrPut(pageNum) { mutableListOf() }.add(data)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(pageNum: Int): List<T> {
-        getAnnotationsForPageCallCount[pageNum] =
-            getAnnotationsForPageCallCount.getOrDefault(pageNum, 0) + 1
-        return (annotationsByPage[pageNum] ?: emptyList()).toList() as List<T>
     }
 
     override fun addOnPdfContentInvalidatedListener(
@@ -72,39 +61,7 @@ internal class FakeEditablePdfDocument(
         TODO("Not yet implemented")
     }
 
-    override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult {
-        TODO("Not yet implemented")
-    }
-
-    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
-        TODO("Not yet implemented")
-    }
-
-    override fun addEdit(edit: PdfEdit): EditId {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeEdit(editId: EditId): PdfEdit {
-        TODO("Not yet implemented")
-    }
-
-    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun commitEdits(): EditsResult {
-        TODO("Not yet implemented")
-    }
-
-    override fun getAllEdits(): PdfEdits {
-        TODO("Not yet implemented")
-    }
-
-    override fun clearUncommittedEdits() {
+    override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
         TODO("Not yet implemented")
     }
 

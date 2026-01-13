@@ -75,24 +75,35 @@ class OnBackPressedDispatcher(
     private var hasEnabledCallbacks = false
 
     /**
+     * Bridges this dispatcher to the underlying [NavigationEventDispatcher] lazily.
+     *
+     * Initialization of the [NavigationEventDispatcher] involves loading the `navigation-event`
+     * library classes. We use an anonymous object to hold the dispatcher and input together,
+     * ensuring they are initialized and linked atomically only when first accessed.
+     */
+    private val impl by lazy {
+        object {
+            val dispatcher = NavigationEventDispatcher { fallbackOnBackPressed?.run() }
+            val input = OnBackPressedEventInput().also { dispatcher.addInput(it) }
+        }
+    }
+
+    /**
      * This [OnBackPressedDispatcher] class will delegate all interactions to [eventDispatcher],
      * which provides a KMP-compatible API while preserving behavior compatibility with existing
      * callback mechanisms.
      *
      * @see [OnBackPressedCallback.eventHandlers]
      */
-    internal val eventDispatcher = NavigationEventDispatcher { fallbackOnBackPressed?.run() }
+    internal val eventDispatcher
+        get() = impl.dispatcher
 
     /**
      * Input source representing back events initiated by this dispatcher (for example, via a direct
      * call to [onBackPressed]).
      */
-    private val eventInput = OnBackPressedEventInput()
-
-    init {
-        // Connects this dispatcher's input to the event dispatcher.
-        eventDispatcher.addInput(eventInput)
-    }
+    private val eventInput
+        get() = impl.input
 
     @JvmOverloads
     constructor(fallbackOnBackPressed: Runnable? = null) : this(fallbackOnBackPressed, null)

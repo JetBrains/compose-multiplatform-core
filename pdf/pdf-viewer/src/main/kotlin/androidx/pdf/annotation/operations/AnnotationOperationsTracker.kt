@@ -16,10 +16,14 @@
 
 package androidx.pdf.annotation.operations
 
+import androidx.annotation.RestrictTo
+import androidx.pdf.EditsDraft
 import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.registry.AnnotationHandleRegistry
 
 /** Manages and tracks the lifecycle of annotation modification operations within a session. */
-internal interface AnnotationOperationsTracker {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface AnnotationOperationsTracker {
     /**
      * Records a new operation for a specific annotation.
      *
@@ -37,7 +41,7 @@ internal interface AnnotationOperationsTracker {
      * @throws IllegalStateException If the requested transition is invalid based on the current
      *   state of the [key].
      */
-    fun addEntry(
+    public fun addEntry(
         operationType: KeyedAnnotationOperation.OperationType,
         key: String,
         annotation: PdfAnnotation,
@@ -48,7 +52,16 @@ internal interface AnnotationOperationsTracker {
      *
      * @return A list of [KeyedAnnotationOperation] objects ready to be persisted or rendered.
      */
-    fun getSnapshot(): List<KeyedAnnotationOperation>
+    public fun getSnapshot(): List<KeyedAnnotationOperation>
+
+    /**
+     * Retrieves a snapshot of all current modifications (additions, updates, and removals)
+     * accumulated in this tracker.
+     *
+     * @return An [EditsDraft] object containing the ordered collection of operations (Inserts,
+     *   Updates, Removes).
+     */
+    public fun getModificationsSnapshot(): EditsDraft
 
     /**
      * Returns the new annotation if the annotation with [key] has been updated. Returns null
@@ -56,15 +69,21 @@ internal interface AnnotationOperationsTracker {
      *
      * @param key The unique identifier to look up.
      */
-    fun getUpdatedAnnotation(key: String): PdfAnnotation?
+    public fun getUpdatedAnnotation(key: String): PdfAnnotation?
 
     /**
      * Returns true if the persisted annotation with [key] has been marked for deletion.
      *
      * @param key The unique identifier to look up.
      */
-    fun isDeleted(key: String): Boolean
+    public fun isDeleted(key: String): Boolean
 
     /** Resets the internal state of the tracker. */
-    fun clear(): Unit
+    public fun clear(): Unit
+
+    public companion object {
+        public fun create(registry: AnnotationHandleRegistry): AnnotationOperationsTracker {
+            return SessionAnnotationOperationsTracker(registry)
+        }
+    }
 }

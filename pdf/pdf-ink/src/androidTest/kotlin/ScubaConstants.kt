@@ -28,6 +28,10 @@ internal const val ANNOTATION_TOOLBAR_WITH_PEN_SELECTED = "annotation_toolbar_wi
 internal const val ANNOTATION_TOOLBAR_WITH_SLIDER_VISIBLE = "annotation_toolbar_with_slider_visible"
 internal const val ANNOTATION_TOOLBAR_WITH_COLOR_PALETTE_VISIBLE =
     "annotation_toolbar_with_color_palette_visible"
+
+internal const val ANNOTATION_TOOLBAR_IN_DARK_MODE = "annotation_toolbar_in_dark_mode"
+
+internal const val ANNOTATION_TOOLBAR_IN_LIGHT_MODE = "annotation_toolbar_in_light_mode"
 internal const val BRUSH_SIZE_SELECTED_ON_STEP_0 = "brush_size_selector_on_step_0"
 internal const val BRUSH_SIZE_SELECTED_ON_STEP_4 = "brush_size_selector_on_step_4"
 internal const val PALETTE_COLOR_ITEM_UNSELECTED = "palette_color_item_unselected"

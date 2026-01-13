@@ -96,7 +96,7 @@ object StaticPreviewDataParser {
                     Context.CONTEXT_IGNORE_SECURITY,
                 )
             providerContext.resources.getXml(xmlResId).use { parser ->
-                return PreviewData.inflate(providerContext, parser)
+                return PreviewData.inflate(context, providerContext, parser)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing complication preview data for $providerComponent", e)

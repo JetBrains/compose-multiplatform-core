@@ -34,18 +34,8 @@ import androidx.pdf.PdfDocument.BitmapSource
 import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
-import androidx.pdf.annotation.EditablePdfDocument
 import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.manager.InMemoryAnnotationsManager
-import androidx.pdf.annotation.models.AnnotationResult
-import androidx.pdf.annotation.models.EditId
-import androidx.pdf.annotation.models.EditsResult
-import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.PdfAnnotationData
-import androidx.pdf.annotation.models.PdfEdit
-import androidx.pdf.annotation.models.PdfEditEntry
-import androidx.pdf.annotation.models.PdfEdits
-import androidx.pdf.annotation.processor.PdfAnnotationsProcessor
+import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
@@ -101,13 +91,11 @@ public class SandboxedPdfDocument(
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int,
-    private val annotationsProcessor: PdfAnnotationsProcessor,
+    override val renderParams: RenderParams,
+    private val batchPdfAnnotationsProcessor: BatchPdfAnnotationsProcessor,
 ) : EditablePdfDocument() {
 
     private val refCount = AtomicInteger(1)
-
-    private val annotationsManager =
-        InMemoryAnnotationsManager(::getAnnotations, annotationsProcessor)
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
@@ -266,6 +254,23 @@ public class SandboxedPdfDocument(
         }
     }
 
+    override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
+        return batchPdfAnnotationsProcessor.process(editsDraft)
+    }
+
+    /**
+     * Generates a handle for writing the document. This handle should be closed after use.
+     *
+     * @return A [PdfWriteHandle] for the document.
+     */
+    override fun createWriteHandle(): PdfWriteHandle {
+        refCount.incrementAndGet()
+        return PdfWriteHandleImpl(this)
+    }
+
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> =
+        getKeyedAnnotationsForPage(pageNum)
+
     @WorkerThread
     override fun close() {
         if (refCount.decrementAndGet() > 0) return
@@ -290,6 +295,7 @@ public class SandboxedPdfDocument(
          *
          * @param scaledPageSizePx The desired size of the bitmap in pixels.
          * @param tileRegion The optional region of the page to render (null for the entire page).
+         * @param renderParams The render params used to render contents on the bitmap.
          * @return The bitmap of the specified page or region.
          */
         override suspend fun getBitmap(scaledPageSizePx: Size, tileRegion: Rect?): Bitmap {
@@ -299,6 +305,7 @@ public class SandboxedPdfDocument(
                         pageNumber,
                         scaledPageSizePx.width,
                         scaledPageSizePx.height,
+                        renderParams,
                     ) ?: getDefaultBitmap(scaledPageSizePx.width, scaledPageSizePx.height)
                 } else {
                     val offsetX = tileRegion.left
@@ -311,6 +318,7 @@ public class SandboxedPdfDocument(
                         scaledPageSizePx.height,
                         offsetX,
                         offsetY,
+                        renderParams,
                     ) ?: getDefaultBitmap(tileRegion.width(), tileRegion.height())
                 }
             }
@@ -408,96 +416,19 @@ public class SandboxedPdfDocument(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(pageNum: Int): List<T> =
-        annotationsManager.getAnnotationsForPage(pageNum) as List<T>
-
-    override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
-        // Wrapping the process method inside withDocument is important because if the service
-        // disconnected/crashed, withDocument is responsible for retrying the request.
-        return withDocument { annotationsProcessor.process(annotations) }
-    }
-
-    override suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult {
-        val annotationResult = withDocument { pdfDocumentRemote ->
-            pdfDocumentRemote.addAnnotations(sourcePfd)
-        }
-        if (annotationResult != null) {
-            return annotationResult
-        }
-
-        return AnnotationResult(listOf(), listOf())
-    }
-
-    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
-        when (entry) {
-            is PdfAnnotationData -> annotationsManager.addAnnotationById(entry.id, entry.annotation)
-            else ->
-                throw UnsupportedOperationException("Unsupported edit type: ${entry.edit::class}")
-        }
-    }
-
-    override fun addEdit(edit: PdfEdit): EditId {
-        return when (edit) {
-            is PdfAnnotation -> annotationsManager.addAnnotation(edit)
-            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
-        }
-    }
-
-    override fun removeEdit(editId: EditId): PdfEdit = annotationsManager.removeAnnotation(editId)
-
-    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
-        return when (edit) {
-            is PdfAnnotation -> annotationsManager.updateAnnotation(editId, edit)
-            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
-        }
-    }
-
-    override fun clearUncommittedEdits() {
-        return annotationsManager.clearUncommittedEdits()
-    }
-
-    /**
-     * Generates a handle for writing the document. This handle should be closed after use.
-     *
-     * @return A [PdfWriteHandle] for the document.
-     */
-    override fun createWriteHandle(): PdfWriteHandle {
-        refCount.incrementAndGet()
-        return PdfWriteHandleImpl(this)
-    }
-
-    // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument
-    internal suspend fun getAnnotationsFromDraftState(pageNum: Int): List<PdfAnnotationData> {
-        return annotationsManager.getAnnotationsForPage(pageNum)
-    }
-
-    override suspend fun commitEdits(): EditsResult {
-        return annotationsManager.commitEdits()
-    }
-
-    override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
-
-    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
-        // TODO: Implement this method after cleaning up getEditsForPage method
-        return listOf()
-    }
-
-    private suspend fun getAnnotations(pageNum: Int): List<PdfAnnotation> {
-        val firstBatch = withDocument { it.getAllPageAnnotations(pageNum) } ?: return emptyList()
+    private suspend fun getKeyedAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        val firstBatch = withDocument { it.getPageAnnotations(pageNum) } ?: return emptyList()
         if (firstBatch.totalBatchCount <= 1) {
-            return firstBatch.annotations.map { it.annotation }
+            return firstBatch.annotations
         }
 
         return coroutineScope {
-            val firstAnnotations = firstBatch.annotations.map { it.annotation }
+            val firstAnnotations = firstBatch.annotations
             val deferredRemainingBatches =
                 (1 until firstBatch.totalBatchCount).map { batchIndex ->
                     async {
                         withDocument { remote ->
-                            remote.getBatchedPageAnnotations(pageNum, batchIndex).annotations.map {
-                                it.annotation
-                            }
+                            remote.getBatchedPageAnnotations(pageNum, batchIndex).annotations
                         }
                     }
                 }

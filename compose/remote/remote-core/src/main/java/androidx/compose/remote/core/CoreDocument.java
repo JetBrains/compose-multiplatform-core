@@ -1122,6 +1122,7 @@ public class CoreDocument implements Serializable {
      */
     public void initializeContext(@NonNull RemoteContext context) {
         initializeContext(context, null);
+        applyDataOperations(context);
     }
 
     /**
@@ -1143,9 +1144,15 @@ public class CoreDocument implements Serializable {
                 mRemoteComposeState.cacheData(i, bitmapMap.get(i));
             }
         }
-
         context.mDocument = this;
         context.mRemoteComposeState = mRemoteComposeState;
+    }
+
+    /**
+     * Apply operations in data mode. Used in the initialization phase.
+     * @param context
+     */
+    public void applyDataOperations(@NonNull RemoteContext context) {
         // mark context to be in DATA mode, which will skip the painting ops.
         context.mMode = RemoteContext.ContextMode.DATA;
         mTimeVariables.updateTime(context);

@@ -30,14 +30,14 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialGltfModelStatus.Failed
 import androidx.xr.compose.subspace.SpatialGltfModelStatus.Loaded
 import androidx.xr.compose.subspace.SpatialGltfModelStatus.Loading
+import androidx.xr.compose.subspace.draw.alpha
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.sizeIn
-import androidx.xr.compose.subspace.layout.testTag
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsEqualTo
@@ -71,7 +71,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @TargetApi(Build.VERSION_CODES.O) // needed for the Paths.get API
 class SpatialGltfModelTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     // --- Test Cases ---
 
@@ -433,7 +439,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
                         }
                     }
@@ -484,7 +490,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
                         }
                     }
@@ -539,7 +545,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
                         }
                     }
@@ -587,7 +593,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val entity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by entity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
                         }
                     }
@@ -635,7 +641,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromCenterAndHalfExtents(
                                     center = Vector3.Zero,
                                     // Intrinsic size: 2m wide, 1m tall, 1m deep
@@ -698,7 +704,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromCenterAndHalfExtents(
                                     center = Vector3.Zero,
                                     halfExtents =
@@ -757,7 +763,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         val gltfEntity = it.createGltfEntity(pose, loadedGltf, parentEntity)
                         return object : GltfEntity by gltfEntity {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromCenterAndHalfExtents(
                                     center = Vector3.Zero,
                                     // Intrinsic size: 1m wide, 1m tall, 2m deep
@@ -818,7 +824,7 @@ class SpatialGltfModelTest {
                     ): GltfEntity {
                         return object :
                             GltfEntity by it.createGltfEntity(pose, loadedGltf, parentEntity) {
-                            override fun getGltfModelBoundingBox(): BoundingBox =
+                            override val gltfModelBoundingBox: BoundingBox =
                                 BoundingBox.fromCenterAndHalfExtents(
                                     center = Vector3.Zero,
                                     halfExtents = FloatSize3d(),

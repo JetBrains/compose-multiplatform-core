@@ -17,7 +17,6 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.compose.action.Action
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -45,15 +44,13 @@ internal fun RemoteRoundButton(
     shape: RemoteShape,
     content: @Composable @RemoteComposable () -> Unit,
 ) {
-    val state = LocalRemoteComposeCreationState.current
-
     RemoteBox(
         horizontalAlignment = RemoteAlignment.CenterHorizontally,
         verticalArrangement = RemoteArrangement.Center,
         modifier =
             modifier
                 .drawWithContent {
-                    drawShapedBackground(
+                    drawScope.drawShapedBackground(
                         shape = shape,
                         color = backgroundColor,
                         enabled = enabled,
@@ -61,7 +58,6 @@ internal fun RemoteRoundButton(
                         disabledContainerPainter = null,
                         borderColor = borderColor,
                         borderStrokeWidth = border?.value,
-                        state = state,
                     )
                     drawContent()
                 }

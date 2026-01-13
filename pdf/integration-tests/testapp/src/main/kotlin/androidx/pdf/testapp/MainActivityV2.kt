@@ -47,7 +47,7 @@ import com.google.android.material.button.MaterialButton
 @SuppressLint("RestrictedApiAndroidX")
 @Suppress("NewApi")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-internal class MainActivityV2 : AppCompatActivity() {
+internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.FragmentListener {
 
     private lateinit var pdfViewerFragment: PdfViewerFragment
 
@@ -116,13 +116,6 @@ internal class MainActivityV2 : AppCompatActivity() {
         preferenceButton = findViewById(R.id.preference_button)
         savePdfButton = findViewById(R.id.save_pdf_button)
 
-        if (pdfViewerFragment is EditablePdfHostFragment) {
-            savePdfButton.visibility = View.VISIBLE
-            pdfViewerFragment.onSaveCompletion = { savePdfButton.isEnabled = true }
-        } else {
-            savePdfButton.visibility = View.GONE
-        }
-
         openPdfButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
 
         searchButton.setOnClickListener { pdfViewerFragment.isTextSearchActive = true }
@@ -180,6 +173,18 @@ internal class MainActivityV2 : AppCompatActivity() {
 
             insets
         }
+    }
+
+    override fun onEnterEditMode() {
+        savePdfButton.visibility = View.VISIBLE
+    }
+
+    override fun onExitEditMode() {
+        savePdfButton.visibility = View.GONE
+    }
+
+    override fun onSaveComplete() {
+        savePdfButton.isEnabled = true
     }
 
     companion object {

@@ -504,4 +504,96 @@ class SceneTest {
 
         assertThat(session.scene.keyEntity).isNull()
     }
+
+    @Test
+    fun keyEntity_setFirstTime_invokesSpatialModeChangeListenersWithLastRecommendedValues() {
+        val recommendedPose = Pose(Vector3(1f, 2f, 3f))
+        val recommendedScale = Vector3(5f, 5f, 5f)
+
+        // Trigger a mode change to set lastRecommended values
+        sceneRuntime.spatialModeChangeListener?.onSpatialModeChanged(
+            recommendedPose,
+            recommendedScale,
+        )
+
+        val keyEntity = GroupEntity.create(session, "Test Entity")
+        session.scene.keyEntity = keyEntity
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertThat(keyEntity.getPose()).isEqualTo(recommendedPose)
+        assertThat(keyEntity.getScale()).isEqualTo(recommendedScale.x)
+    }
+
+    @Test
+    fun keyEntity_setFirstTime_invokesCustomSpatialModeChangeListenersWithLastRecommendedValues() {
+        val recommendedPose = Pose(Vector3(1f, 2f, 3f))
+        val recommendedScale = Vector3(5f, 5f, 5f)
+        var testSpatialModeChangeCount = 0
+
+        // Trigger a mode change to set lastRecommended values
+        sceneRuntime.spatialModeChangeListener?.onSpatialModeChanged(
+            recommendedPose,
+            recommendedScale,
+        )
+
+        val keyEntity = GroupEntity.create(session, "Test Entity")
+        session.scene.keyEntity = keyEntity
+        session.scene.setSpatialModeChangedListener { _ -> testSpatialModeChangeCount++ }
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        // Check that spatial mode change listener was invoked twice, once on spatial mode change
+        // and later when keyEntity was set.
+        assertThat(testSpatialModeChangeCount).isEqualTo(2)
+    }
+
+    @Test
+    fun isBoundaryConsentGranted_callsThroughToRuntime() {
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+
+        fakeSceneRuntime.onBoundaryConsentChanged(true)
+
+        assertThat(session.scene.isBoundaryConsentGranted).isTrue()
+
+        fakeSceneRuntime.onBoundaryConsentChanged(false)
+
+        assertThat(session.scene.isBoundaryConsentGranted).isFalse()
+    }
+
+    @Test
+    fun addOnBoundaryConsentChangedListener_withExecutor_callsThroughToRuntime() {
+        val listener = Consumer<Boolean> {}
+        val executor = directExecutor()
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+
+        session.scene.addOnBoundaryConsentChangedListener(executor, listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).containsEntry(listener, executor)
+    }
+
+    @Test
+    fun addOnBoundaryConsentChangedListener_withNoExecutor_callsThroughToRuntimeWithMainExecutor() {
+        val listener = Consumer<Boolean> {}
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+
+        session.scene.addOnBoundaryConsentChangedListener(listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap)
+            .containsEntry(listener, HandlerExecutor.mainThreadExecutor)
+    }
+
+    @Test
+    fun removeOnBoundaryConsentChangedListener_callsThroughToRuntime() {
+        val listener = Consumer<Boolean> {}
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
+
+        session.scene.addOnBoundaryConsentChangedListener(listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).hasSize(1)
+
+        session.scene.removeOnBoundaryConsentChangedListener(listener)
+
+        assertThat(fakeSceneRuntime.boundaryConsentChangedMap).hasSize(0)
+    }
 }

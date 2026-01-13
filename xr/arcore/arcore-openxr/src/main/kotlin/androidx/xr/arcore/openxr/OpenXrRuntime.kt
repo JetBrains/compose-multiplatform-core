@@ -88,7 +88,7 @@ internal constructor(
                 Config.AnchorPersistenceMode.DISABLED,
                 Config.AnchorPersistenceMode.LOCAL,
                 Config.FaceTrackingMode.DISABLED,
-                Config.FaceTrackingMode.USER,
+                Config.FaceTrackingMode.BLEND_SHAPES,
                 Config.GeospatialMode.DISABLED,
                 Config.EyeTrackingMode.DISABLED,
                 Config.EyeTrackingMode.COARSE_TRACKING,

@@ -18,6 +18,8 @@ package androidx.xr.scenecore.impl.impress;
 
 /** Helper class that provides JNI hooks for testing the Impress API bindings. */
 final class ImpressApiTestHelper {
+    private ImpressApiTestHelper() {}
+
     // Hooks for test state management.
     static native long nativeCreateTestView();
 
@@ -96,6 +98,4 @@ final class ImpressApiTestHelper {
     static native void nativeSetGetReflectionTextureFromIblSuccessToken(long textureToken);
 
     static native void nativeSetExpectedBorrowTexture(long textureHandle);
-
-    private ImpressApiTestHelper() {}
 }

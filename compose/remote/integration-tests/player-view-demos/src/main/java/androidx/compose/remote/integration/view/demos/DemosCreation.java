@@ -60,6 +60,10 @@ public abstract class DemosCreation {
      */
     public static @NonNull ArrayList<RCDoc> getDemos(@NonNull Activity activity) {
         return new ArrayList<>(Arrays.asList(
+
+                getp("0/og/serverClock", ServerSideKt::serverClock),
+
+
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
                 getp("2/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
                 getp("1/Example/color", DemoColorKt::colorButtons),

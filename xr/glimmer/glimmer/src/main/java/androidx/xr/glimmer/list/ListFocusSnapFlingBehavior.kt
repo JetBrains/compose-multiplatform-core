@@ -52,7 +52,7 @@ public fun SnapLayoutInfoProvider(state: ListState): SnapLayoutInfoProvider =
             if (state.layoutInfo.totalItemsCount == 0) {
                 return 0f
             }
-            val autoFocusMeasureResult = state.autoFocusBehaviour.properties ?: return 0f
+            val autoFocusMeasureResult = state.autoFocusState.properties ?: return 0f
 
             var lowerBoundOffset = Float.NEGATIVE_INFINITY
             var upperBoundOffset = Float.POSITIVE_INFINITY

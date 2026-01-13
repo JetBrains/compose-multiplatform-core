@@ -93,6 +93,8 @@ public object OrbiterDefaults {
     public val Elevation: Dp = SpatialElevationLevel.Level1
 }
 
+private val EmptyContent: @Composable () -> Unit = {}
+
 /**
  * A composable that creates an orbiter along the top or bottom edges of a view.
  *
@@ -343,12 +345,8 @@ private class SpatialOrbiter(
 ) : RememberObserver {
     private var view: ComposeView? = null
     private var panelEntity: CorePanelEntity? = null
-    private val _content = mutableStateOf<@Composable () -> Unit>({})
-    var content: @Composable () -> Unit
-        get() = _content.value
-        set(value) {
-            _content.value = value
-        }
+
+    var content: @Composable () -> Unit by mutableStateOf(EmptyContent)
 
     var orbiterData: OrbiterData by mutableStateOf(initialOrbiterData)
 

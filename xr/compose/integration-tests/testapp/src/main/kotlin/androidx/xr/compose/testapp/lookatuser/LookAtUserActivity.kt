@@ -71,9 +71,9 @@ import androidx.xr.runtime.Config
 /**
  * Test Activity for the [billboard] modifier. This activity demonstrates the effect of applying
  * [billboard] to various spatial containers, including [SpatialPanel], [SpatialRow], and
- * [SpatialColumn]. When enabled, the modifier ensures the spatial composable's content always
- * rotates to face the user's current head position, regardless of the user's movement or the
- * composable's initial placement.
+ * [SpatialColumn]. The modifier ensures the spatial composable's content always rotates to face the
+ * user's current head position, regardless of the user's movement or the composable's initial
+ * placement.
  */
 class LookAtUserActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,9 +92,9 @@ class LookAtUserActivity : ComponentActivity() {
         )
 
         // Global state for billboard toggling
-        var isBillboardOn by remember { mutableStateOf(false) }
+        var isBillboardOn by remember { mutableStateOf(true) }
         // Global state for lookAtUser toggling
-        var isLookAtUserOn by remember { mutableStateOf(false) }
+        var isLookAtUserOn by remember { mutableStateOf(true) }
 
         IntegrationTestsAppTheme {
             Subspace(modifier = SubspaceModifier.width(1200.dp).height(1400.dp)) {
@@ -184,8 +184,10 @@ class LookAtUserActivity : ComponentActivity() {
             (SubspaceModifier, @Composable () -> Unit) -> Unit,
     ) {
         var finalModifier = SubspaceModifier.width(400.dp).height(200.dp)
-        if (feature == "Billboard") finalModifier = finalModifier.billboard(enabled = isFeatureOn)
-        if (feature == "LookAtUser") finalModifier = finalModifier.lookAtUser(enabled = isFeatureOn)
+        if (isFeatureOn) {
+            if (feature == "Billboard") finalModifier = finalModifier.billboard()
+            if (feature == "LookAtUser") finalModifier = finalModifier.lookAtUser()
+        }
 
         // The inner content function (passed to the container)
         val innerContent: @Composable () -> Unit = {

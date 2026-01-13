@@ -47,6 +47,14 @@ public interface PdfDocument : Closeable {
     /** Indicates whether the document is linearized (optimized for fast web viewing). */
     public val isLinearized: Boolean
 
+    /**
+     * The render params used to determine the contents that will be rendered on the bitmap.
+     *
+     * @see RenderParams
+     * @see BitmapSource.getBitmap
+     */
+    public val renderParams: RenderParams
+
     /** The type of form present in the document. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val formType: Int
 
@@ -242,7 +250,8 @@ public interface PdfDocument : Closeable {
 
         /**
          * Asynchronously retrieves a bitmap representation of the page, optionally constrained to a
-         * specific tile region.
+         * specific tile region. [renderParams] is used to determine what contents are rendered on
+         * the bitmap.
          *
          * @param scaledPageSizePx The scaled page size in pixels, representing the page size in
          *   case of no zoom, and scaled page size in case of zooming.
@@ -250,6 +259,7 @@ public interface PdfDocument : Closeable {
          *   within the `scaledPageSizePx`. This identifies the tile. If null, the entire page is
          *   included.
          * @return The bitmap representation of the page.
+         * @see renderParams
          */
         public suspend fun getBitmap(scaledPageSizePx: Size, tileRegion: Rect? = null): Bitmap
     }

@@ -24,6 +24,7 @@ open class androidx.lifecycle/LifecycleRegistry : androidx.lifecycle/Lifecycle {
 
     open fun addObserver(androidx.lifecycle/LifecycleObserver) // androidx.lifecycle/LifecycleRegistry.addObserver|addObserver(androidx.lifecycle.LifecycleObserver){}[0]
     open fun handleLifecycleEvent(androidx.lifecycle/Lifecycle.Event) // androidx.lifecycle/LifecycleRegistry.handleLifecycleEvent|handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event){}[0]
+    open fun markState(androidx.lifecycle/Lifecycle.State) // androidx.lifecycle/LifecycleRegistry.markState|markState(androidx.lifecycle.Lifecycle.State){}[0]
     open fun removeObserver(androidx.lifecycle/LifecycleObserver) // androidx.lifecycle/LifecycleRegistry.removeObserver|removeObserver(androidx.lifecycle.LifecycleObserver){}[0]
 
     final object Companion { // androidx.lifecycle/LifecycleRegistry.Companion|null[0]

@@ -55,8 +55,7 @@
         android:contentDescription="@string/annotation_color_palette_button_content_desc"
         app:cornerRadius="@dimen/color_palette_icon_corner_radius"
         app:backgroundTint="?attr/colorSurfaceContainerLowest"
-        app:iconTint="@color/default_palette_color"
-        app:icon="@drawable/color_palette_icon_drawable"/>
+        app:icon="@drawable/color_palette_icon_fill"/>
 
     <LinearLayout
         android:id="@+id/undo_redo_container"

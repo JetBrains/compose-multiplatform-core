@@ -383,7 +383,6 @@ private val nonPublicMarkers =
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn",
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext11OptIn",
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn",
-        "androidx.privacysandbox.ui.core.ExperimentalFeatures.DelegatingAdapterApi",
         "androidx.room3.ExperimentalRoomApi",
         "androidx.room3.compiler.processing.ExperimentalProcessingApi",
         "androidx.tv.foundation.ExperimentalTvFoundationApi",

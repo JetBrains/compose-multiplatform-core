@@ -88,7 +88,8 @@ class StillCaptureRequestControlTest {
 
     private val fakeState3AControl: State3AControl =
         FakeState3AControlCreator.createState3AControl(
-            requestControl = FakeUseCaseCameraRequestControl()
+            requestControl = FakeUseCaseCameraRequestControl(),
+            threads = fakeUseCaseThreads,
         )
 
     private lateinit var useCaseCameraRequestControl: UseCaseCameraRequestControl

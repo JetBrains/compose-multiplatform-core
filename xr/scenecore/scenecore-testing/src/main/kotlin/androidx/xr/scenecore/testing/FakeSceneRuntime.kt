@@ -26,6 +26,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
+import androidx.xr.scenecore.runtime.BoundsComponent
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.GltfFeature
@@ -385,6 +386,8 @@ public class FakeSceneRuntime(
     override fun createSpatialPointerComponent(): SpatialPointerComponent =
         FakeSpatialPointerComponent()
 
+    override fun createBoundsComponent(): BoundsComponent = FakeBoundsComponent()
+
     // Assuming the subspaceNodeHolder contains a valid FakeSubspaceNode and a valid FakeNode.
     public fun createSubspaceNodeEntity(node: FakeNode, size: Dimensions): SubspaceNodeEntity =
         FakeSubspaceNodeEntity()
@@ -399,5 +402,55 @@ public class FakeSceneRuntime(
                 SpatialCapabilities.SPATIAL_CAPABILITY_APP_ENVIRONMENT or
                 SpatialCapabilities.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL or
                 SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY
+    }
+
+    private var _isBoundaryConsentGranted = false
+    override val isBoundaryConsentGranted: Boolean
+        get() = _isBoundaryConsentGranted
+
+    /**
+     * For test purposes only.
+     *
+     * A map tracking the listeners registered for boundary consent changes. The key is the
+     * [Consumer] listener ,and the value is the [Executor] on which the listener should be invoked.
+     *
+     * This map is populated by calls to [addOnBoundaryConsentChangedListener] and modified by
+     * [removeOnBoundaryConsentChangedListener]. Tests can inspect its contents to verify that the
+     * correct listeners are registered with their intended executors.
+     */
+    public val boundaryConsentChangedMap: Map<Consumer<Boolean>, Executor>
+        get() = _boundaryConsentChangedMap
+
+    private val _boundaryConsentChangedMap: MutableMap<Consumer<Boolean>, Executor> = mutableMapOf()
+
+    override fun addOnBoundaryConsentChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<Boolean>,
+    ) {
+        _boundaryConsentChangedMap[listener] = callbackExecutor
+    }
+
+    override fun removeOnBoundaryConsentChangedListener(listener: Consumer<Boolean>) {
+        _boundaryConsentChangedMap.remove(listener)
+    }
+
+    /**
+     * For test purposes only.
+     *
+     * Changes the internal state of boundary consent and triggers registered listeners if the
+     * effective consent state has changed.
+     *
+     * @param boundaryConsent The new value for boundary consent.
+     */
+    public fun onBoundaryConsentChanged(boundaryConsent: Boolean) {
+        val oldBoundaryConsent = _isBoundaryConsentGranted
+        val newBoundaryConsent = boundaryConsent
+        _isBoundaryConsentGranted = newBoundaryConsent
+
+        if (oldBoundaryConsent != newBoundaryConsent) {
+            _boundaryConsentChangedMap.forEach { (listener, executor) ->
+                executor.execute { listener.accept(newBoundaryConsent) }
+            }
+        }
     }
 }

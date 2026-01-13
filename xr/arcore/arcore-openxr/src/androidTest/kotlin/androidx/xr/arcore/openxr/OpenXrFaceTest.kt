@@ -98,9 +98,9 @@ class OpenXrFaceTest {
 
             // Configure twice because the stubs return false calibration the first time
             try {
-                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
             } catch (e: FaceTrackingNotCalibratedException) {
-                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+                openXrManager.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
             }
 
             testBody()

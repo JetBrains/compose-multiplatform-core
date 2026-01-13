@@ -291,6 +291,25 @@ class AnnotationToolbarTest {
         }
     }
 
+    @Test
+    fun testAnnotationToolbar_isConfigPopupVisible() {
+        var annotationToolbar: AnnotationToolbar? = null
+        setupAnnotationToolbar { annotationToolbar = it }
+
+        assertNotNull(annotationToolbar)
+        assertFalse(annotationToolbar.isConfigPopupVisible)
+
+        onView(withId(R.id.pen_button)).perform(click())
+        assertTrue(annotationToolbar.isConfigPopupVisible)
+        annotationToolbar.dismissPopups()
+        assertFalse(annotationToolbar.isConfigPopupVisible)
+
+        onView(withId(R.id.color_palette_button)).perform(click())
+        assertTrue(annotationToolbar.isConfigPopupVisible)
+        annotationToolbar.dismissPopups()
+        assertFalse(annotationToolbar.isConfigPopupVisible)
+    }
+
     private fun assertColorPaletteChecks() {
         onView(withId(R.id.color_palette_button)).check(matches(isEnabled()))
         // assert initially color palette is not visible

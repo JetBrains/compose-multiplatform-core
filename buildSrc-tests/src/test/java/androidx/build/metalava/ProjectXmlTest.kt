@@ -16,10 +16,13 @@
 
 package androidx.build.metalava
 
+import androidx.build.checkapi.SourceSetInputs
 import java.io.File
 import java.io.StringWriter
 import org.dom4j.DocumentHelper
 import org.dom4j.Element
+import org.gradle.api.Project
+import org.gradle.testfixtures.ProjectBuilder
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -191,6 +194,77 @@ class ProjectXmlTest {
                 </project>
             """
                 .trimIndent(),
+        )
+    }
+
+    private fun fakeSourceSetInputs(
+        sourceSetName: String,
+        dependsOnSourceSets: List<String>,
+        project: Project,
+    ): SourceSetInputs {
+        return SourceSetInputs(
+            sourceSetName = sourceSetName,
+            dependsOnSourceSets = dependsOnSourceSets,
+            sourcePaths = project.files(),
+            dependencyClasspath = project.files(),
+            kotlinPlatforms = emptySet(),
+        )
+    }
+
+    @Test
+    fun testFilterSourceSets() {
+        val project = ProjectBuilder.builder().build()
+        val sourceSets =
+            listOf(
+                fakeSourceSetInputs("commonMain", emptyList(), project),
+                fakeSourceSetInputs("jvmAndAndroidMain", listOf("commonMain"), project),
+                fakeSourceSetInputs("androidMain", listOf("jvmAndAndroidMain"), project),
+                fakeSourceSetInputs("jvmMain", listOf("jvmAndAndroidMain"), project),
+                fakeSourceSetInputs("nonJvmMain", listOf("commonMain"), project),
+                fakeSourceSetInputs("webMain", listOf("nonJvmMain"), project),
+                fakeSourceSetInputs("jsMain", listOf("webMain"), project),
+                fakeSourceSetInputs("wasmMain", listOf("webMain"), project),
+                fakeSourceSetInputs("nativeMain", listOf("nonJvmMain"), project),
+                fakeSourceSetInputs("linuxMain", listOf("nativeMain"), project),
+                fakeSourceSetInputs("appleMain", listOf("nativeMain"), project),
+                fakeSourceSetInputs("iosMain", listOf("appleMain"), project),
+                fakeSourceSetInputs("watchosMain", listOf("appleMain"), project),
+            )
+        val filteredSourceSets =
+            ProjectXml.filterSourceSets(
+                sourceSets,
+                mapOf(
+                    "commonMain" to listOf(File("fake.kt")),
+                    // Empty, but kept because androidMain depends on it
+                    "jvmAndAndroidMain" to emptyList(),
+                    "androidMain" to listOf(File("fake.kt")),
+                    // Will be filtered
+                    "jvmMain" to emptyList(),
+                    "nonJvmMain" to listOf(File("fake.kt")),
+                    "webMain" to listOf(File("fake.kt")),
+                    "jsMain" to listOf(File("fake.kt")),
+                    "wasmMain" to listOf(File("fake.kt")),
+                    "nativeMain" to listOf(File("fake.kt")),
+                    // Will be filtered
+                    "linuxMain" to emptyList(),
+                    // Will be filtered (first iosMain and watchosMain, and then appleMain)
+                    "appleMain" to emptyList(),
+                    "iosMain" to emptyList(),
+                    "watchosMain" to emptyList(),
+                ),
+            )
+        assertEquals(
+            filteredSourceSets.map { it.sourceSetName },
+            listOf(
+                "commonMain",
+                "jvmAndAndroidMain",
+                "androidMain",
+                "nonJvmMain",
+                "webMain",
+                "jsMain",
+                "wasmMain",
+                "nativeMain",
+            ),
         )
     }
 }

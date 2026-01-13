@@ -43,7 +43,7 @@ private const val TAG = "Camera2ExtExtender"
 @RequiresApi(31)
 public class Camera2ExtensionsVendorExtender(
     private val mode: Int,
-    private val camera2ExtensionsInfo: Camera2ExtensionsInfo,
+    private val camera2ExtensionsInfo: Camera2ExtensionsInfoProvider,
 ) : VendorExtender {
 
     private val extensionCharacteristicsAccessGuard = ExtensionCharacteristicsAccessGuard()

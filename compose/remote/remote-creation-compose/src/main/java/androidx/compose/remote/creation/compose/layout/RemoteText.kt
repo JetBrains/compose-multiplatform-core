@@ -31,8 +31,11 @@ import androidx.compose.remote.creation.compose.state.RemoteIntReference
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
+import androidx.compose.remote.creation.compose.v2.RemoteTextV2
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -120,6 +123,24 @@ public fun RemoteText(
     style: TextStyle = LocalTextStyle.current,
     fontVariationSettings: FontVariation.Settings? = null,
 ) {
+    if (currentComposer.applier is RemoteComposeApplierV2) {
+        RemoteTextV2(
+            remoteText = text,
+            modifier = modifier,
+            color = color,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            fontStyle = fontStyle,
+            fontFamily = fontFamily,
+            textAlign = textAlign,
+            overflow = overflow,
+            maxLines = maxLines,
+            textDecoration = style.textDecoration ?: TextDecoration.None,
+            fontVariationSettings = fontVariationSettings,
+        )
+        return
+    }
+
     val textColor = color ?: RemoteColor(style.color.takeOrElse { Color.Black })
 
     val style =

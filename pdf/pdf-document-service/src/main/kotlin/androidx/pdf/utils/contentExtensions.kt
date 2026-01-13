@@ -21,6 +21,7 @@ import android.graphics.Point
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RestrictTo
+import androidx.pdf.RenderParams
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -147,6 +148,18 @@ public fun FormEditInfo.toAndroidClass(): android.graphics.pdf.models.FormEditRe
                 builder.setSelectedIndices(selectedIndices)
             }
             else -> {}
+        }
+        builder.build()
+    }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+@SuppressLint("WrongConstant")
+public fun RenderParams.toAndroidClass(): android.graphics.pdf.RenderParams =
+    requireSdkExtensionVersion {
+        val builder = android.graphics.pdf.RenderParams.Builder(renderMode)
+        builder.setRenderFlags(renderFlags)
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 19) {
+            builder.setRenderFormContentMode(renderFormContentMode)
         }
         builder.build()
     }

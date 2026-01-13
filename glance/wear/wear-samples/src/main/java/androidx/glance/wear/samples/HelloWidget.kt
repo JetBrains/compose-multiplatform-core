@@ -24,7 +24,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -39,20 +38,17 @@ class HelloWidgetService : GlanceWearWidgetService() {
     override val widget: GlanceWearWidget = HelloWidget()
 }
 
-class HelloWidget : GlanceWearWidget() {
+private class HelloWidget : GlanceWearWidget() {
     override suspend fun provideWidgetData(
         context: Context,
         params: WearWidgetParams,
-    ): WearWidgetData =
-        WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Red)) {
-            HelloWidgetContent()
-        }
+    ): WearWidgetData = WearWidgetDocument(backgroundColor = Color.Red) { HelloWidgetContent() }
 }
 
 @RemoteComposable
 @Composable
 @Suppress("RestrictedApiAndroidX")
-fun HelloWidgetContent() {
+private fun HelloWidgetContent() {
     RemoteBox(
         modifier = RemoteModifier.fillMaxSize(),
         horizontalAlignment = RemoteAlignment.CenterHorizontally,

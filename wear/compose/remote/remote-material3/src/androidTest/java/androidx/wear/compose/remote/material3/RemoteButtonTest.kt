@@ -19,6 +19,7 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -33,6 +34,7 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -281,10 +283,10 @@ class RemoteButtonTest {
     }
 
     @Test
-    fun button_enabled_click_modifier_is_added() {
+    fun button_enabled_and_has_action_click_modifier_is_added() {
         val expectedContent =
             """
-DATA_TEXT<42> = "button_enabled"
+DATA_TEXT<43> = "button_enabled"
 ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
   ROW [-3:-1] = [0.0, 0.0, 73.5, 31.5] VISIBLE
     MODIFIERS
@@ -292,9 +294,10 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
       WIDTH_IN = [12.0, 3.4028235E38]
       DRAW_CONTENT
       CLICK_MODIFIER
+        HOST_NAMED_ACTION = 45 : 42
       SEMANTICS = SEMANTICS BUTTON
       PADDING = [36.75, 15.75, 36.75, 15.75]
-    TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+    TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (43:"null")
       MODIFIERS"""
                 .trimIndent()
         runBlocking {
@@ -302,6 +305,7 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 remoteComposeTestRule.captureDocument(context = context) {
                     RemoteButton(
                         modifier = RemoteModifier.buttonSizeModifier(),
+                        onClick = arrayOf(HostAction("TestAction".rs, 0f.rf)),
                         enabled = true.rb,
                     ) {
                         RemoteText("button_enabled".rs)

@@ -195,7 +195,7 @@ internal fun List(
             modifier
                 .then(state.remeasurementModifier)
                 .then(state.awaitLayoutModifier)
-                .autoFocus(state.autoFocusBehaviour)
+                .autoFocus(state.autoFocusState)
                 .lazyLayoutSemantics(
                     itemProviderLambda = itemProvider,
                     state = semanticState,
@@ -203,7 +203,7 @@ internal fun List(
                     userScrollEnabled = scrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
-                // TODO: b/433235501 - Behaviour conflicts between the AutoFocus and BeyondBounds.
+                // TODO: b/433235501 - Behavior conflicts between the AutoFocus and BeyondBounds.
                 .then(beyondBoundsModifier)
                 .edgeScrim(
                     state = state,

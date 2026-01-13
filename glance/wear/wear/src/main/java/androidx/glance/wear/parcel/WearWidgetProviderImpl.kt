@@ -22,6 +22,8 @@ import android.util.Log
 import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetParams
+import androidx.glance.wear.cache.WearWidgetCache
+import androidx.glance.wear.cache.WidgetContainerSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -40,6 +42,8 @@ internal class WearWidgetProviderImpl(
     private val widget: GlanceWearWidget,
 ) : IWearWidgetProvider.Stub() {
 
+    private val widgetCache: WearWidgetCache by lazy { WearWidgetCache(context) }
+
     override fun getApiVersion(): Int = API_VERSION
 
     override fun onWidgetRequest(
@@ -51,6 +55,17 @@ internal class WearWidgetProviderImpl(
         mainScope.launch {
             // TODO: Report errors in the callback if any of the following steps fail.
             val params = WearWidgetParams.fromParcel(requestParcel)
+
+            launch {
+                widgetCache.update {
+                    setInstanceType(params.instanceId, params.containerType)
+                    setContainerSpec(
+                        params.containerType,
+                        WidgetContainerSpec(params.widthDp, params.heightDp),
+                    )
+                }
+            }
+
             val widgetContent = widget.provideWidgetData(context, params)
             val rawContent = widgetContent.captureRawContent(context, params)
             callback.updateWidgetContent(rawContent.toParcel())

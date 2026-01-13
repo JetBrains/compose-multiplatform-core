@@ -88,9 +88,9 @@ class OpenXrManagerTest {
         // Configure twice because the first attempt will throw an exception during testing due to
         // calibration being read as false the first time the OpenXR stub is called.
         try {
-            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
         } catch (e: FaceTrackingNotCalibratedException) {
-            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
         }
 
         assertThat(perceptionManager.xrResources.updatables)
@@ -101,9 +101,9 @@ class OpenXrManagerTest {
     fun configure_faceTrackingDisabled_removesFaceFromUpdatables() = initOpenXrManagerAndRunTest {
         underTest.create()
         try {
-            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
         } catch (e: FaceTrackingNotCalibratedException) {
-            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
         }
         check(
             perceptionManager.xrResources.updatables.contains(
@@ -123,7 +123,7 @@ class OpenXrManagerTest {
             underTest.create()
 
             assertFailsWith<FaceTrackingNotCalibratedException> {
-                underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+                underTest.configure(Config(faceTracking = Config.FaceTrackingMode.BLEND_SHAPES))
             }
         }
 

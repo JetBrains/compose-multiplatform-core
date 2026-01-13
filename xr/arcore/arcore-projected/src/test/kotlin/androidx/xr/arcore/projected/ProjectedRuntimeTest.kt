@@ -67,7 +67,7 @@ class ProjectedRuntimeTest {
                 Config.DepthEstimationMode.SMOOTH_ONLY,
                 Config.DepthEstimationMode.SMOOTH_AND_RAW,
                 Config.AnchorPersistenceMode.LOCAL,
-                Config.FaceTrackingMode.USER,
+                Config.FaceTrackingMode.BLEND_SHAPES,
                 Config.EyeTrackingMode.COARSE_TRACKING,
                 Config.EyeTrackingMode.FINE_TRACKING,
             )

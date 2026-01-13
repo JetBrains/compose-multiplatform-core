@@ -21,9 +21,13 @@ import android.hardware.camera2.CameraExtensionSession
 import android.os.Build
 import android.view.Surface
 import androidx.annotation.GuardedBy
+import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.GraphState
+import androidx.camera.camera2.pipe.OutputId
+import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
@@ -68,6 +72,7 @@ internal class CaptureSessionState(
     private val timeSource: TimeSource,
     private val cameraGraphFlags: CameraGraph.Flags,
     private val concurrentSessionSequencer: ConcurrentSessionSequencer?,
+    private val streamGraph: StreamGraph,
     private val threads: Threads,
     private val scope: CoroutineScope,
 ) : CameraCaptureSessionWrapper.StateCallback {
@@ -75,7 +80,9 @@ internal class CaptureSessionState(
     private val lock = Any()
     private val finalized = atomic<Boolean>(false)
 
-    private val activeSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
+    private val activeStreamSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
+    private val activeOutputSurfaceMap = synchronizedMap(HashMap<OutputId, Surface>())
+
     private var sessionCreatingTimestamp: TimestampNs? = null
     private val sessionSequencer = concurrentSessionSequencer?.let { SessionSequencer(it) }
 
@@ -172,6 +179,9 @@ internal class CaptureSessionState(
     override fun onConfigureFailed(session: CameraCaptureSessionWrapper) {
         Log.warn { "$this Configuration Failed" }
         Debug.traceStart { "$this#onConfigureFailed" }
+        graphListener.onGraphError(
+            GraphState.GraphStateError(CameraError.ERROR_GRAPH_CONFIG, willAttemptRetry = false)
+        )
         shutdown()
         captureSessionAttemptCompleted.countDown()
         sessionSequencer?.release()
@@ -231,7 +241,11 @@ internal class CaptureSessionState(
         synchronized(lock) {
             if (cameraCaptureSession == null && session != null) {
                 val captureSequenceProcessor =
-                    captureSequenceProcessorFactory.create(session, activeSurfaceMap)
+                    captureSequenceProcessorFactory.create(
+                        session,
+                        activeStreamSurfaceMap,
+                        activeOutputSurfaceMap,
+                    )
                 if (captureSequenceProcessor is Camera2CaptureSequenceProcessor) {
                     captureSession =
                         ConfiguredCameraCaptureSession(
@@ -500,7 +514,14 @@ internal class CaptureSessionState(
             var tryResubmit = false
             synchronized(lock) {
                 if (state == State.CREATED) {
-                    activeSurfaceMap.putAll(pendingSurfaces)
+                    activeStreamSurfaceMap.putAll(pendingSurfaces)
+                    for ((streamId, surface) in pendingSurfaces) {
+                        val cameraStream = checkNotNull(streamGraph[streamId])
+                        check(cameraStream.outputs.size == 1) {
+                            "Cannot finalize a multi-output stream!"
+                        }
+                        activeOutputSurfaceMap[cameraStream.outputs.single().id] = surface
+                    }
                     Log.info {
                         val finalizationTime = Timestamps.now(timeSource) - finalizedStartTime
                         "Finalized ${pendingOutputs.map { it.key }} for $this in " +
@@ -549,10 +570,14 @@ internal class CaptureSessionState(
         Log.info {
             "Creating CameraCaptureSession from ${device?.cameraId} using $this with $surfaces"
         }
-        val deferred =
+        val result =
             Debug.trace("CameraDevice-${device?.cameraId?.value}#createCaptureSession") {
                 captureSessionFactory.create(device!!, surfaces!!, this)
             }
+        if (result !is CaptureSessionFactory.Result.Success) {
+            Log.error { "Failed to create capture session for $this!" }
+            return
+        }
 
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
@@ -562,7 +587,10 @@ internal class CaptureSessionState(
             check(state == State.CREATING) { "Unexpected state: $state" }
             state = State.CREATED
 
-            activeSurfaceMap.putAll(surfaces!!)
+            activeStreamSurfaceMap.putAll(surfaces!!)
+            activeOutputSurfaceMap.putAll(result.outputSurfaceMap)
+
+            val deferred = result.deferred
             if (deferred.isNotEmpty()) {
                 Log.info {
                     "Created $this with ${surfaces.keys.toList()}. " +

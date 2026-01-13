@@ -652,7 +652,13 @@ private constructor(
     ): GltfEntity {
         // TODO(b/458779328): Fix incorrect use of !! on a nullable return value.
         val feature =
-            GltfFeatureImpl(loadedGltf as GltfModel, impressApi, subspaceManager, extensions)
+            GltfFeatureImpl(
+                loadedGltf as GltfModel,
+                impressApi,
+                subspaceManager,
+                extensions,
+                renderer,
+            )
         return renderingEntityFactory.createGltfEntity(feature, pose, parentEntity)
     }
 

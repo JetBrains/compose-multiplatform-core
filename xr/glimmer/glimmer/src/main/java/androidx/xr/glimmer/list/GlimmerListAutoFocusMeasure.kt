@@ -59,7 +59,7 @@ internal fun ListLayoutProperties.applyMeasureResult(
                 density = density,
                 layout = layout,
             )
-        state.autoFocusBehaviour.applyAutoFocusProperties(null)
+        state.autoFocusState.applyAutoFocusProperties(null)
         state.applyMeasureResult(
             result = measureResult,
             consumedScroll = 0f,
@@ -81,12 +81,12 @@ private fun ListLayoutProperties.applyScrollableMeasureResult(
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
 ): MeasureResult {
     val expectedContentScrollDelta =
-        if (state.autoFocusBehaviour.isAutoFocusEnabled) {
+        if (state.autoFocusState.isAutoFocusEnabled) {
             // The user-dispatched scroll (ΔSu) is shared between the scroll of the content (ΔSc)
             // and the moving focus line (ΔSf). The proportion is not constant and depends on the
             // state of the list. This method calculates a proper share of `ΔSu = ΔSc + ΔSf`.
             convertUserScrollDeltaToContentScrollDelta(
-                properties = state.autoFocusBehaviour.properties,
+                properties = state.autoFocusState.properties,
                 userScrollToBeConsumed = state.scrollToBeConsumed,
             )
         } else {
@@ -136,7 +136,7 @@ private fun ListLayoutProperties.applyScrollableMeasureResult(
         calculateAutoFocusProperties(layoutProperties = this, measureResult = measureResult)
 
     // Save auto focus measure result for the next pass.
-    state.autoFocusBehaviour.applyAutoFocusProperties(autoFocusProperties)
+    state.autoFocusState.applyAutoFocusProperties(autoFocusProperties)
 
     state.applyMeasureResult(
         result = measureResult,

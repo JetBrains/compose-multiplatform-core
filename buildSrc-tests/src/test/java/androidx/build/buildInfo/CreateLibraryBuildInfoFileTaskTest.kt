@@ -261,7 +261,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                             null,
                             project.provider { artifactId },
                             project.provider { "fakeSha" },
-                            false,
+                            project.provider { false },
                             false,
                             "androidx",
                             ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
@@ -326,7 +326,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                         null,
                         project.provider { artifactId },
                         project.provider { "fakeSha" },
-                        false,
+                        project.provider { false },
                         false,
                         "androidx",
                         ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
@@ -387,7 +387,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                             null,
                             project.provider { artifactId },
                             project.provider { "fakeSha" },
-                            false,
+                            project.provider { false },
                             false,
                             "androidx",
                             [].toSet(),
@@ -454,7 +454,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                             null,
                             project.provider { artifactId },
                             project.provider { "fakeSha" },
-                            false, // shouldPublishDocs
+                            project.provider { false }, // shouldPublishDocs
                             true, // isKmp
                             "androidx",
                             ["android", "jvm"].toSet(),

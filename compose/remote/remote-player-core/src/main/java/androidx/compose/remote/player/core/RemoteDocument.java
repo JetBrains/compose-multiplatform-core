@@ -77,7 +77,7 @@ public class RemoteDocument {
      */
     @RestrictTo(LIBRARY_GROUP)
     public void initializeContext(@NonNull RemoteContext context) {
-        mDocument.initializeContext(context, null);
+        mDocument.initializeContext(context);
     }
 
     /**
@@ -88,6 +88,14 @@ public class RemoteDocument {
     public void initializeContext(@NonNull RemoteContext context,
                                   @Nullable Map<Integer, Object> map) {
         mDocument.initializeContext(context, map);
+    }
+
+    /**
+     * Apply operations in data mode. Used in the initialization phase.
+     * @param context
+     */
+    public void applyDataOperations(@NonNull RemoteContext context) {
+        mDocument.applyDataOperations(context);
     }
 
     /**

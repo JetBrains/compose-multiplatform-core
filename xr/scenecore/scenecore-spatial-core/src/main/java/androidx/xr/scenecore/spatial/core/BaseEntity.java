@@ -317,19 +317,8 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
     }
 
     @Override
-    public void setAlpha(float alpha, @SpaceValue int relativeTo) {
-        alpha = max(0.0f, min(1.0f, alpha));
-        switch (relativeTo) {
-            case Space.PARENT:
-                mAlpha = alpha;
-                break;
-            case Space.ACTIVITY:
-            case Space.REAL_WORLD:
-                mAlpha = alpha / getActivitySpaceAlpha();
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
-        }
+    public void setAlpha(float alpha) {
+        mAlpha = max(0.0f, min(1.0f, alpha));
     }
 
     private float getActivitySpaceAlpha() {

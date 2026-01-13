@@ -20,6 +20,7 @@ package androidx.compose.remote.creation.compose.shaders
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.compose.layout.RemoteSize
+import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Size
@@ -56,6 +57,14 @@ public abstract class RemoteBrush {
                     println("RemoteBrush.fromComposeUi not implemented for $brush")
                     RemoteBrush.solidColor(Color.Transparent)
                 }
+            }
+        }
+
+        internal fun resolve(value: RemoteFloat, infinityValue: RemoteFloat): RemoteFloat {
+            return if (value.constantValue == Float.POSITIVE_INFINITY) {
+                infinityValue
+            } else {
+                value
             }
         }
     }

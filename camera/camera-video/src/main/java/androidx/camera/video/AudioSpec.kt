@@ -33,6 +33,7 @@ constructor(
     @get:Source public val source: Int = SOURCE_AUTO,
     public val sampleRate: Int = SAMPLE_RATE_AUTO,
     @get:ChannelCount public val channelCount: Int = CHANNEL_COUNT_AUTO,
+    public val mimeType: String = MIME_TYPE_AUTO,
 ) {
     /** Returns a [Builder] instance with the same property values as this instance. */
     public fun toBuilder(): Builder {
@@ -42,6 +43,7 @@ constructor(
             .setChannelCount(channelCount)
             .setSource(source)
             .setSourceFormat(sourceFormat)
+            .setMimeType(mimeType)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -51,7 +53,8 @@ constructor(
             source == other.source &&
             channelCount == other.channelCount &&
             bitrate == other.bitrate &&
-            sampleRate == other.sampleRate
+            sampleRate == other.sampleRate &&
+            mimeType == other.mimeType
     }
 
     override fun hashCode(): Int {
@@ -64,7 +67,8 @@ constructor(
             "sourceFormat=$sourceFormat, " +
             "source=$source, " +
             "sampleRate=$sampleRate, " +
-            "channelCount=$channelCount" +
+            "channelCount=$channelCount, " +
+            "mimeType=$mimeType" +
             '}'
     }
 
@@ -76,6 +80,7 @@ constructor(
         private var source: Int = SOURCE_AUTO
         private var sampleRate: Int = SAMPLE_RATE_AUTO
         private var channelCount: Int = CHANNEL_COUNT_AUTO
+        private var mimeType: String = MIME_TYPE_AUTO
 
         /**
          * Sets the desired bitrate to be used by the encoder.
@@ -129,9 +134,16 @@ constructor(
             this.channelCount = channelCount
         }
 
+        /**
+         * Sets the desired MIME type to be used by the encoder.
+         *
+         * If not set, defaults to [MIME_TYPE_AUTO].
+         */
+        public fun setMimeType(mimeType: String): Builder = apply { this.mimeType = mimeType }
+
         /** Builds the AudioSpec instance. */
         public fun build(): AudioSpec {
-            return AudioSpec(bitrate, sourceFormat, source, sampleRate, channelCount)
+            return AudioSpec(bitrate, sourceFormat, source, sampleRate, channelCount, mimeType)
         }
     }
 
@@ -256,6 +268,9 @@ constructor(
          * choose any appropriate sample rate given the device and codec constraints.
          */
         public const val SAMPLE_RATE_AUTO: Int = 0
+
+        /** No preference for MIME type. */
+        public const val MIME_TYPE_AUTO: String = "audio/*"
 
         /**
          * An audio specification that corresponds to no audio.

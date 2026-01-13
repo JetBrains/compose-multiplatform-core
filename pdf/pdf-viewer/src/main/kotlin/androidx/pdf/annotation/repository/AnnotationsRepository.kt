@@ -16,10 +16,13 @@
 
 package androidx.pdf.annotation.repository
 
+import androidx.annotation.RestrictTo
+import androidx.pdf.PdfDocument
 import androidx.pdf.annotation.KeyedPdfAnnotation
 
 /** The single source of truth for fetching persisted annotation data. */
-internal interface AnnotationsRepository {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface AnnotationsRepository {
     /**
      * Retrieves the persisted [KeyedPdfAnnotation] for the specified page and id.
      *
@@ -27,7 +30,7 @@ internal interface AnnotationsRepository {
      * @param annotationId The id of the annotation.
      * @return The [KeyedPdfAnnotation] object if found else null.
      */
-    suspend fun getAnnotation(pageNum: Int, annotationId: String): KeyedPdfAnnotation?
+    public suspend fun getAnnotation(pageNum: Int, annotationId: String): KeyedPdfAnnotation?
 
     /**
      * Retrieves the list of persisted annotations for a specific page.
@@ -36,5 +39,11 @@ internal interface AnnotationsRepository {
      * @return A list of [KeyedPdfAnnotation] objects found on the page. Returns an empty list if no
      *   annotations exist.
      */
-    suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation>
+    public suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation>
+
+    public companion object {
+        public fun create(document: PdfDocument): AnnotationsRepository {
+            return PdfDocumentAnnotationsRepository(document)
+        }
+    }
 }

@@ -50,7 +50,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.test.core.app.ApplicationProvider
@@ -89,6 +89,8 @@ class RemoteComposeScreenshotTestRule(
 
     private lateinit var testDescription: Description
 
+    val clickEvents: MutableList<Pair<String, Any?>> = mutableListOf()
+
     private val testName =
         object : TestWatcher() {
 
@@ -124,7 +126,7 @@ class RemoteComposeScreenshotTestRule(
     ): CoreDocument {
         val document: ByteArray =
             withContext(Dispatchers.Main) {
-                captureSingleRemoteDocument(context, content = content)
+                captureSingleRemoteDocument(context, content = content).bytes
             }
 
         val remoteComposeDocument =
@@ -153,12 +155,14 @@ class RemoteComposeScreenshotTestRule(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color? = null,
         deviceConfigurationOverride: DeviceConfigurationOverride? = null,
+        profile: Profile? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         setContent(
             creationDisplayInfo = creationDisplayInfo,
             backgroundColor = backgroundColor,
             deviceConfigurationOverride = deviceConfigurationOverride,
+            profile = profile,
             content = content,
         )
         composeTestRule.verifyScreenshot(screenshotName, screenshotRule)
@@ -206,6 +210,7 @@ class RemoteComposeScreenshotTestRule(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color?,
         deviceConfigurationOverride: DeviceConfigurationOverride? = null,
+        profile: Profile? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         composeTestRule.setContent {
@@ -227,7 +232,7 @@ class RemoteComposeScreenshotTestRule(
                         rememberRemoteDocument(
                             content = content,
                             creationDisplayInfo = creationDisplayInfo,
-                            profile = profile,
+                            profile = profile ?: this@RemoteComposeScreenshotTestRule.profile,
                         )
                     document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
                 }
@@ -259,6 +264,7 @@ class RemoteComposeScreenshotTestRule(
             creationDisplayInfo.height,
             debugMode = 1,
             bitmapLoader = bitmapLoader,
+            onNamedAction = { name, value, _ -> clickEvents.add(Pair(name, value)) },
         )
     }
 
