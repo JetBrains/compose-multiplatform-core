@@ -61,18 +61,6 @@ kotlin {
         }
         binaries.executable()
     }
-    macosX64() {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal"
-                )
-                // TODO: the current release binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
-            }
-        }
-    }
     macosArm64() {
         binaries {
             executable() {
@@ -81,20 +69,6 @@ kotlin {
                     "-linker-option", "-framework", "-linker-option", "Metal"
                 )
                 // TODO: the current release binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
-            }
-        }
-    }
-    iosX64("iosX64") {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal",
-                    "-linker-option", "-framework", "-linker-option", "CoreText",
-                    "-linker-option", "-framework", "-linker-option", "CoreGraphics"
-                )
-                // TODO: the current compose binary surprises LLVM, so disable checks for now.
                 freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
             }
         }
@@ -204,7 +178,6 @@ kotlin {
 }
 
 enum class Target(val simulator: Boolean, val key: String) {
-    IOS_X64(true, "iosX64"),
     IOS_ARM64(false, "iosArm64"),
     IOS_SIM_ARM64(true, "iosSimArm64"),
 }
@@ -216,15 +189,8 @@ if (System.getProperty("os.name") == "Mac OS X") {
     val target = sdkName.orEmpty().let {
         when {
             it.startsWith("iphoneos") -> Target.IOS_ARM64
-            it.startsWith("iphonesimulator") -> {
-                if (System.getProperty("os.arch") == "aarch64") {
-                    Target.IOS_SIM_ARM64
-                } else {
-                    Target.IOS_X64
-                }
-            }
-
-            else -> Target.IOS_X64
+            it.startsWith("iphonesimulator") -> Target.IOS_SIM_ARM64
+            else -> Target.IOS_ARM64
         }
     }
 
