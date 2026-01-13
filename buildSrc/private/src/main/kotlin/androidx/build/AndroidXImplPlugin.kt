@@ -724,7 +724,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             @Suppress("UnstableApiUsage")
             variant.configureJavaCompileTask { compile ->
                 val defaultTargetJavaVersion =
-                    getDefaultTargetJavaVersion(androidXExtension.type, project.name).toString()
+                    getDefaultTargetJavaVersion(androidXExtension.type.get(), project.name).toString()
                 compile.sourceCompatibility = defaultTargetJavaVersion
                 compile.targetCompatibility = defaultTargetJavaVersion
             }
