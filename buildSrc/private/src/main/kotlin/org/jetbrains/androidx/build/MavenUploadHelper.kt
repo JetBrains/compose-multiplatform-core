@@ -487,9 +487,9 @@ private fun removePreviouslyUploadedArchives(projectArchiveDir: File) {
 
 private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: MavenPom) {
     pom.name.set(extension.name)
-    extension.description?.let { pom.description.set(provider { it }) }
+    pom.description.set(extension.description)
     pom.url.set("https://github.com/JetBrains/compose-multiplatform")
-    extension.inceptionYear?.let { pom.inceptionYear.set(provider { it }) }
+    pom.inceptionYear.set(extension.inceptionYear)
     pom.licenses { licenses ->
         licenses.license { license ->
             license.name.set("The Apache Software License, Version 2.0")
