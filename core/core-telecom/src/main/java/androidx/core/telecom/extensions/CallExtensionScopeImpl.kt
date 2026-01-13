@@ -180,7 +180,7 @@ internal class CallExtensionScopeImpl(
 
     override fun addLocalCallSilenceExtension(
         onIsLocallySilencedUpdated: suspend (Boolean) -> Unit,
-        onCanUserUpdateSilence: suspend (Boolean) -> Unit,
+        onCanUserUpdateSilence: (suspend (Boolean) -> Unit),
     ): LocalCallSilenceExtensionRemoteImpl {
         val extension =
             LocalCallSilenceExtensionRemoteImpl(

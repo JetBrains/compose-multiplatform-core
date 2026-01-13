@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 /**
  * Composable function that displays an icon using an [RemoteImageVector].
  *
+ * @sample androidx.wear.compose.remote.material3.samples.RemoteIconSimpleSample
+ *
  * This function provides a way to display icons consistently across both local and remote Compose
  * environments.
  *

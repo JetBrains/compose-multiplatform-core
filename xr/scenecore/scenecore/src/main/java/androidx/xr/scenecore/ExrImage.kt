@@ -89,7 +89,7 @@ internal constructor(internal val session: Session?, internal val image: RtExrIm
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(session, renderingRuntime.loadExrImageByAssetNameAsync(name))
+            return createExrImage(session, renderingRuntime.loadExrImageByAssetName(name))
         }
 
         @SuppressWarnings("RestrictTo")
@@ -101,7 +101,7 @@ internal constructor(internal val session: Session?, internal val image: RtExrIm
         ): ExrImage {
             return createExrImage(
                 session,
-                renderingRuntime.loadExrImageByByteArrayAsync(byteArray, assetKey),
+                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
             )
         }
 

@@ -33,7 +33,10 @@ import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.wear.compose.remote.material3.R
 import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
@@ -43,7 +46,22 @@ private fun RemoteIconPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) =
     RemotePreview(profile = profile) {
-        Container { RemoteIcon(imageVector = VolumeUp, contentDescription = null) }
+        Container { RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null) }
+    }
+
+@WearPreviewDevices
+@Composable
+private fun RemoteIconFromResourcePreview(
+    @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
+) =
+    RemotePreview(profile = profile) {
+        Container {
+            RemoteIcon(
+                imageVector =
+                    ImageVector.vectorResource(R.drawable.gs_map_wght500rond100_vd_theme_24),
+                contentDescription = null,
+            )
+        }
     }
 
 @WearPreviewDevices

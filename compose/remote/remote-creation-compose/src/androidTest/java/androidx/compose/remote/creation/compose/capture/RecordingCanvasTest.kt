@@ -24,20 +24,26 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Operation
+import androidx.compose.remote.core.PaintContext
 import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.RecordingRemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.core.operations.PaintData
+import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.capture.shaders.RemoteLinearShader
+import androidx.compose.remote.creation.compose.capture.shaders.RemoteSweepShader
 import androidx.compose.remote.creation.compose.state.RemoteBlendModeColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
@@ -63,6 +69,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 private const val WIDTH = 400
 private const val HEIGHT = 400
@@ -504,6 +513,66 @@ class RecordingCanvasTest {
 
         val document = constructDocument()
         assertScreenshot(document, "offscreenBitmap_nested")
+    }
+
+    @Test
+    fun setShaderMatrixCalledOnce() {
+        val remoteShader =
+            RemoteSweepShader(100f, 100f, intArrayOf(Color.RED, Color.GREEN, Color.BLUE), null)
+                .apply { remoteMatrix3x3 = RemoteMatrix3x3.createRotate(RemoteFloat(90f)) }
+        val paintWithShader = RemotePaint().apply { shader = remoteShader }
+        val paintWithShader2 =
+            RemotePaint().apply {
+                shader =
+                    RemoteLinearShader(
+                        10f,
+                        100f,
+                        200f,
+                        200f,
+                        intArrayOf(Color.RED, Color.GREEN, Color.BLUE),
+                        null,
+                        Shader.TileMode.REPEAT,
+                    )
+            }
+        val paintWithShader3 =
+            RemotePaint().apply {
+                shader =
+                    RemoteLinearShader(
+                        10f,
+                        100f,
+                        100f,
+                        200f,
+                        intArrayOf(Color.RED, Color.BLUE),
+                        null,
+                        Shader.TileMode.REPEAT,
+                    )
+            }
+        recordingCanvas.usePaint(paintWithShader)
+        recordingCanvas.usePaint(paintWithShader2)
+        recordingCanvas.usePaint(paintWithShader3)
+        val operations = inflateOperations()
+
+        val shaderMatricies =
+            operations
+                .filter { it is PaintData }
+                .map {
+                    val mockPaintContext = mock<PaintContext>()
+                    val captor = argumentCaptor<PaintBundle>()
+                    (it as PaintData).paint(mockPaintContext)
+                    verify(mockPaintContext).applyPaint(captor.capture())
+
+                    captor.lastValue
+                        .toString()
+                        .split("\n")
+                        .filter { it.contains("ShaderMatrix") }
+                        .map {
+                            val trimmed = it.trim()
+                            trimmed.subSequence(0, trimmed.length - 1)
+                        }
+                }
+
+        assertThat(shaderMatricies.joinToString(","))
+            .isEqualTo("[ShaderMatrix([43])],[ShaderMatrix(0.0)],[]")
     }
 
     private fun constructDocument() =

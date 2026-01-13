@@ -34,6 +34,10 @@ import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.androidxr.splitengine.SubspaceNode
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 internal class SpatialEnvironmentFeatureImpl(
     private val activity: Activity,
@@ -62,6 +66,7 @@ internal class SpatialEnvironmentFeatureImpl(
     private lateinit var overriddenNodeName: String
     private var onBeforeNodeAttachedListener: Consumer<Node>? = null
     private var isDisposed = false
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     init {
         // Use node from parent BaseRenderingFeature
@@ -79,7 +84,7 @@ internal class SpatialEnvironmentFeatureImpl(
         }
     }
 
-    private fun applyGeometry(
+    private suspend fun applyGeometry(
         geometry: GltfModelResource?,
         material: MaterialResource?,
         nodeName: String?,
@@ -125,8 +130,7 @@ internal class SpatialEnvironmentFeatureImpl(
                 )
             }
             if (animationName != null) {
-                @Suppress("UNUSED_VARIABLE")
-                val unused = impressApi.animateGltfModel(geometryImpressNode, animationName, true)
+                impressApi.animateGltfModel(geometryImpressNode, animationName, true)
             }
             impressApi.setImpressNodeParent(geometryImpressNode, subspaceNode)
         }
@@ -156,7 +160,9 @@ internal class SpatialEnvironmentFeatureImpl(
             val newAnimationName = newPreference?.geometryAnimationName
 
             if (newGeometry != prevGeometry) {
-                applyGeometry(newGeometry, newMaterial, newNodeName, newAnimationName)
+                coroutineScope.launch {
+                    applyGeometry(newGeometry, newMaterial, newNodeName, newAnimationName)
+                }
             }
 
             // TODO: b/392948759 - Fix StrictMode violations triggered whenever skybox is

@@ -153,7 +153,7 @@ public interface CallExtensionScope {
      */
     public fun addLocalCallSilenceExtension(
         onIsLocallySilencedUpdated: suspend (Boolean) -> Unit,
-        onCanUserUpdateSilence: suspend (Boolean) -> Unit,
+        onCanUserUpdateSilence: (suspend (Boolean) -> Unit) = { _ -> },
     ): LocalCallSilenceExtensionRemote
 
     /**

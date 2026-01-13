@@ -103,7 +103,7 @@ internal class GltfFeatureImpl(
                 // (which is where executor put you), the native code looks for the context, doesn't
                 // find it (or finds a mismatch), and fails or crashes
                 withContext(Dispatchers.Main) {
-                    impressApi.animateGltfModelTemp(modelImpressNode, animationName, loop)
+                    impressApi.animateGltfModel(modelImpressNode, animationName, loop)
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

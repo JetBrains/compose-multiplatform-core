@@ -37,7 +37,8 @@ android {
     compileSdk = 35
     namespace = "androidx.xr.glimmer.benchmark"
     defaultConfig {
-        minSdk = 35
+        // TODO: b/448363874 - Revert to 35 once API 35 devices are available for microbenchmarking.
+        minSdk = 34
     }
 }
 

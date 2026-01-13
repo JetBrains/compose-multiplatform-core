@@ -62,7 +62,7 @@ internal constructor(
     public companion object {
 
         private suspend fun create(renderingRuntime: RenderingRuntime, name: String): GltfModel {
-            return createModel(renderingRuntime, renderingRuntime.loadGltfByAssetNameAsync(name))
+            return createModel(renderingRuntime, renderingRuntime.loadGltfByAssetName(name))
         }
 
         private suspend fun create(
@@ -72,7 +72,7 @@ internal constructor(
         ): GltfModel {
             return createModel(
                 renderingRuntime,
-                renderingRuntime.loadGltfByByteArrayAsync(assetData, assetKey),
+                renderingRuntime.loadGltfByByteArray(assetData, assetKey),
             )
         }
 

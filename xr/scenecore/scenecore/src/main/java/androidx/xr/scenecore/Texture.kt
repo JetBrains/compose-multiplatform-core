@@ -54,7 +54,7 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
             name: String,
             session: Session,
         ): Texture {
-            val textureResource = renderingRuntime.loadTextureAsync(name)
+            val textureResource = renderingRuntime.loadTexture(name)
             return Texture(textureResource, session)
         }
 

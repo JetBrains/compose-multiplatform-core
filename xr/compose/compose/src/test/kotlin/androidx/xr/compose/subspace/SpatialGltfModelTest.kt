@@ -60,7 +60,6 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testing.FakeGltfEntity
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.SettableFuture
 import java.nio.file.Paths
 import kotlin.test.assertIs
@@ -87,11 +86,9 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource {
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
                         loadedAssets.add(assetName)
-                        return it.loadGltfByAssetNameAsync(assetName)
+                        return it.loadGltfByAssetName(assetName)
                     }
                 }
             }
@@ -122,13 +119,13 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByByteArrayAsync(
+                    override suspend fun loadGltfByByteArray(
                         assetData: ByteArray,
                         assetKey: String,
                     ): GltfModelResource {
                         loadedAssetData.add(assetData)
                         loadedAssetKeys.add(assetKey)
-                        return it.loadGltfByByteArray(assetData, assetKey).await()
+                        return it.loadGltfByByteArray(assetData, assetKey)
                     }
                 }
             }
@@ -167,11 +164,9 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource {
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
                         loadedAssets.add(assetName)
-                        return it.loadGltfByAssetNameAsync(assetName)
+                        return it.loadGltfByAssetName(assetName)
                     }
                 }
             }
@@ -204,11 +199,8 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource =
-                        Futures.immediateFailedFuture<GltfModelResource>(IllegalStateException())
-                            .await()
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource =
+                        throw IllegalStateException()
                 }
             }
         )
@@ -239,12 +231,10 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource {
-                        val result = it.loadGltfByAssetNameAsync(assetName)
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
+                        val result = it.loadGltfByAssetName(assetName)
                         createdAssets[assetName] = result
-                        return Futures.immediateFuture(result).await()
+                        return result
                     }
 
                     override fun createGltfEntity(
@@ -303,19 +293,14 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource {
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
                         if (assetName == "invalid.glb") {
-                            return Futures.immediateFailedFuture<GltfModelResource>(
-                                    IllegalStateException()
-                                )
-                                .await()
+                            throw IllegalStateException()
                         }
 
-                        val asset = it.loadGltfByAssetNameAsync(assetName)
+                        val asset = it.loadGltfByAssetName(assetName)
                         createdAssets[assetName] = asset
-                        return Futures.immediateFuture(asset).await()
+                        return asset
                     }
 
                     override fun createGltfEntity(
@@ -374,19 +359,14 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource {
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource {
                         if (assetName == "invalid.glb") {
-                            return Futures.immediateFailedFuture<GltfModelResource>(
-                                    IllegalStateException()
-                                )
-                                .await()
+                            throw IllegalStateException()
                         }
 
-                        val asset = it.loadGltfByAssetNameAsync(assetName)
+                        val asset = it.loadGltfByAssetName(assetName)
                         createdAssets[assetName] = asset
-                        return Futures.immediateFuture(asset).await()
+                        return asset
                     }
 
                     override fun createGltfEntity(
@@ -494,9 +474,8 @@ class SpatialGltfModelTest {
             defaultDpPerMeter = 1000f,
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource = settableFuture.await()
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource =
+                        settableFuture.await()
 
                     override fun createGltfEntity(
                         pose: Pose,
@@ -893,9 +872,8 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource = settableFuture.await()
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource =
+                        settableFuture.await()
                 }
             }
         )
@@ -936,9 +914,8 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource = assertNotNull(assets[assetName]).await()
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource =
+                        assertNotNull(assets[assetName]).await()
                 }
             }
         )
@@ -1272,9 +1249,8 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(
             renderingRuntime = {
                 object : RenderingRuntime by it {
-                    override suspend fun loadGltfByAssetNameAsync(
-                        assetName: String
-                    ): GltfModelResource = settableFuture.await()
+                    override suspend fun loadGltfByAssetName(assetName: String): GltfModelResource =
+                        settableFuture.await()
                 }
             }
         )

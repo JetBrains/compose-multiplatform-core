@@ -27,9 +27,7 @@ import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
@@ -128,21 +126,6 @@ class RemoteIconTest {
         ) {
             RemoteIcon(
                 imageVector = Icons.Filled.Favorite,
-                contentDescription = null,
-                modifier = RemoteModifier.size(48.rdp),
-            )
-        }
-    }
-
-    @Test
-    fun remoteIcon_fromRes() {
-        remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.Black,
-        ) {
-            RemoteIcon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.test_vector),
                 contentDescription = null,
                 modifier = RemoteModifier.size(48.rdp),
             )

@@ -75,7 +75,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         state: ListState = rememberListState(),
         listOrientation: Orientation = orientation,
         userScrollEnabled: Boolean = true,
-        flingBehavior: FlingBehavior = rememberSnapFlingBehavior(state),
+        flingBehavior: FlingBehavior = VerticalListDefaults.flingBehavior(state),
         horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
         horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
         verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
@@ -99,6 +99,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
                 flingBehavior = flingBehavior,
                 modifier = modifier.testTag(LIST_TEST_TAG),
                 contentPadding = contentPadding,
+                reverseLayout = false,
             ) {
                 items(itemsCount, key = keyProvider) { index -> itemContent(index) }
             }

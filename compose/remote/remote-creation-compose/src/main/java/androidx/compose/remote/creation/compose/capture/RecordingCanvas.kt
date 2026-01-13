@@ -341,9 +341,15 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
                 shader.apply(paintBundle)
                 if (usingShaderMatrix || shader.remoteMatrix3x3 != null) {
                     usingShaderMatrix = true
-                    paintBundle.setShaderMatrix(
-                        shader.remoteMatrix3x3?.getFloatIdForCreationState(creationState) ?: 0f
-                    )
+                    val remoteMatrix3x3 = shader.remoteMatrix3x3
+                    if (remoteMatrix3x3 != null) {
+                        paintBundle.setShaderMatrix(
+                            remoteMatrix3x3.getFloatIdForCreationState(creationState)
+                        )
+                    } else {
+                        paintBundle.setShaderMatrix(0f)
+                        usingShaderMatrix = false
+                    }
                 }
             } else {
                 paintBundle.setShader(0)
