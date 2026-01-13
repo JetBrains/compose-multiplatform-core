@@ -39,6 +39,7 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 /** Generate API signature text files using previously built .jar/.aar artifacts. */
 @CacheableTask
@@ -218,6 +219,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
                     dependsOnSourceSets = emptyList(),
                     sourcePaths = sources,
                     dependencyClasspath = jars,
+                    kotlinPlatforms = setOf(KotlinPlatformType.androidJvm),
                 )
             )
     }

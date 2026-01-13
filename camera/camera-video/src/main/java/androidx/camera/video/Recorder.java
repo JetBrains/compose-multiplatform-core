@@ -668,9 +668,15 @@ public final class Recorder implements VideoOutput {
      * devices.
      * @see FileDescriptorOutputOptions
      */
+    @SuppressLint("ObsoleteSdkInt")
     @RequiresApi(26)
     public @NonNull PendingRecording prepareRecording(@NonNull Context context,
             @NonNull FileDescriptorOutputOptions fileDescriptorOutputOptions) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            throw new UnsupportedOperationException(
+                    "File descriptors as output destinations are not supported on pre-Android O "
+                            + "(API 26) devices.");
+        }
         return prepareRecordingInternal(context, fileDescriptorOutputOptions);
     }
 

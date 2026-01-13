@@ -75,4 +75,12 @@ public open class ViewModelStore {
         }
         map.clear()
     }
+
+    override fun toString(): String {
+        // Ensure subclasses report their correct name.
+        val className = this::class.simpleName ?: "ViewModelStore"
+        // Discourage relying on the string output.
+        val identity = hashCode().toString(radix = 16)
+        return "$className#$identity(keys=${map.keys})"
+    }
 }

@@ -1089,7 +1089,7 @@ public final class ProtoLayoutInflater {
         }
     }
 
-    @VisibleForTesting()
+    @VisibleForTesting
     static int getFrameLayoutGravity(
             HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment) {
         return horizontalAlignmentToGravity(horizontalAlignment)

@@ -42,6 +42,8 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
      * The [Texture] can be explicitly closed at anytime or garbage collected. In both cases, its
      * resources are freed and an exception will be thrown if the [Texture] is used after being
      * closed.
+     *
+     * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
     override public open fun close() {

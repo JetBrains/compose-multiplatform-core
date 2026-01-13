@@ -21,7 +21,6 @@ import android.graphics.Bitmap
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
@@ -53,6 +52,7 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.getFloatIdForCreationState
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * This provides a recording canvas implementation. This is the main way we intercept the output of
@@ -688,7 +688,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         // println("NRO drawBitmap 2")
         usePaint(paint!!)
         document.drawBitmap(
-            bitmap.id,
+            bitmap.getIdForCreationState(creationState),
             left.getFloatIdForCreationState(creationState),
             top.getFloatIdForCreationState(creationState),
             "",
@@ -712,7 +712,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         // println("NRO drawBitmap 3 ")
         usePaint(paint!!)
         document.drawBitmap(
-            bitmap.id,
+            bitmap.getIdForCreationState(creationState),
             dst.left.toFloat(),
             dst.top.toFloat(),
             dst.right.toFloat(),
@@ -1483,28 +1483,14 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
     }
 
     /**
-     * Instructs the player to draw [drawCommands] into an offscreen [RemoteBitmap] created with the
-     * specified [width] & [height]. The offscreen bitmap will be cleared with [clearColor] before
-     * any [drawCommands] are processed.
+     * Instructs the player to draw [drawCommands] into [bitmap].
      *
-     * @param width The width in pixels for the created offscreen bitmap.
-     * @param height The height in pixels for the created offscreen bitmap.
-     * @param clearColor If non-null the color the created offecreen bitmap will be cleared with.
+     * @param bitmap The [RemoteBitmap] to draw to.
      * @param drawCommands The commands the player will execute in the offscreen buffer.
-     * @return The [RemoteBitmap] the [drawCommands] were drawn into.
      */
-    public fun drawToOffscreenBitmap(
-        width: Int,
-        height: Int,
-        @ColorInt clearColor: Int,
-        drawCommands: () -> Unit,
-    ): RemoteBitmap {
-        val bitmapId = document.createBitmap(width, height)
-        if (clearColor != Color.BLACK) {
-            document.drawOnBitmap(bitmapId, 0, clearColor)
-        } else {
-            document.drawOnBitmap(bitmapId, 1, 0)
-        }
+    public fun drawToOffscreenBitmap(bitmap: RemoteBitmap, drawCommands: () -> Unit) {
+        val bitmapId = bitmap.getIdForCreationState(creationState)
+        document.drawOnBitmap(bitmapId, 1, 0)
 
         forceSendingPaint(true)
         val lastDrawToBitmapId = currentDrawToBitmapId
@@ -1514,11 +1500,32 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         forceSendingPaint(true)
         // Switch back to the previous canvas without clearing it.
         document.drawOnBitmap(lastDrawToBitmapId, 1, 0)
+    }
 
-        return object : RemoteBitmap(creationState, null) {
-            public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
-                bitmapId
-        }
+    /**
+     * Instructs the player to draw [drawCommands] into [bitmap] which will be cleared with
+     * [clearColor] before any [drawCommands] are processed.
+     *
+     * @param bitmap The [RemoteBitmap] to draw to.
+     * @param clearColor The color the created offscreen bitmap will be cleared with.
+     * @param drawCommands The commands the player will execute in the offscreen buffer.
+     */
+    public fun drawToOffscreenBitmap(
+        bitmap: RemoteBitmap,
+        @ColorInt clearColor: Int,
+        drawCommands: () -> Unit,
+    ) {
+        val bitmapId = bitmap.getIdForCreationState(creationState)
+        document.drawOnBitmap(bitmapId, 0, clearColor)
+
+        forceSendingPaint(true)
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        currentDrawToBitmapId = bitmapId
+        drawCommands()
+        currentDrawToBitmapId = lastDrawToBitmapId
+        forceSendingPaint(true)
+        // Switch back to the previous canvas without clearing it.
+        document.drawOnBitmap(lastDrawToBitmapId, 1, 0)
     }
 
     public companion object {

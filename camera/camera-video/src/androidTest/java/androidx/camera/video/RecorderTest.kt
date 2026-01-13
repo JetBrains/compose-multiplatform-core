@@ -224,23 +224,11 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         val candidates =
             mutableSetOf<Size>().apply {
                 if (testName.methodName == "setFileSizeLimit") {
-                    videoCapabilities
-                        .getProfiles(Quality.FHD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
-                    videoCapabilities
-                        .getProfiles(Quality.HD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
-                    videoCapabilities
-                        .getProfiles(Quality.SD, DynamicRange.SDR)
-                        ?.defaultVideoProfile
-                        ?.let { add(it.resolution) }
+                    videoCapabilities.getResolution(Quality.FHD, DynamicRange.SDR)?.let { add(it) }
+                    videoCapabilities.getResolution(Quality.HD, DynamicRange.SDR)?.let { add(it) }
+                    videoCapabilities.getResolution(Quality.SD, DynamicRange.SDR)?.let { add(it) }
                 }
-                videoCapabilities
-                    .getProfiles(Quality.LOWEST, DynamicRange.SDR)
-                    ?.defaultVideoProfile
-                    ?.let { add(it.resolution) }
+                videoCapabilities.getResolution(Quality.LOWEST, DynamicRange.SDR)?.let { add(it) }
             }
         assumeTrue(candidates.isNotEmpty())
 

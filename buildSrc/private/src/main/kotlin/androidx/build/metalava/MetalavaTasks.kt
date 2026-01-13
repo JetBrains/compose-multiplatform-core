@@ -34,6 +34,7 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 internal object MetalavaTasks {
 
@@ -232,6 +233,7 @@ internal object MetalavaTasks {
                         dependsOnSourceSets = emptyList(),
                         sourcePaths = inputs.sourcePaths,
                         dependencyClasspath = inputs.dependencyClasspath,
+                        kotlinPlatforms = setOf(KotlinPlatformType.androidJvm),
                     )
                 )
             )

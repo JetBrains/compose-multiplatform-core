@@ -24,26 +24,34 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import java.util.function.Consumer;
+
 /** Parent class for common bindings resource operations. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class BindingsResource {
     private final String mTAG = getClass().getSimpleName();
     private final long mNativeHandle;
-    private final AtomicBoolean mIsDestroyed = new AtomicBoolean(false);
+    private final AtomicBoolean mIsDestroyed;
 
     protected BindingsResource(
-            @NonNull BindingsResourceManager resourceManager, long nativeHandle) {
+            @NonNull BindingsResourceManager resourceManager,
+            long nativeHandle,
+            @NonNull Consumer<Long> destroyer) {
+
         this.mNativeHandle = nativeHandle;
+
+        AtomicBoolean sharedDestroyedState = new AtomicBoolean(false);
+        this.mIsDestroyed = sharedDestroyedState;
 
         Runnable cleanupCallback =
                 () -> {
-                    if (mIsDestroyed.compareAndSet(false, true)) {
-                        Log.d(
-                                mTAG,
-                                "Bindings resource with handle "
-                                        + nativeHandle
-                                        + " is destroyed via GC");
-                        releaseBindingsResource(nativeHandle);
+                    if (sharedDestroyedState.compareAndSet(false, true)) {
+                        // Not using mTAG to avoid holding a reference of the class in the callback.
+                        Log.d("BindingsResource", "Bindings resource with handle "
+                                + nativeHandle
+                                + " is destroyed via GC");
+
+                        destroyer.accept(nativeHandle);
                     }
                 };
         resourceManager.register(this, cleanupCallback);
@@ -51,7 +59,11 @@ public abstract class BindingsResource {
 
     /** Destroys the bindings resource. */
     public final void destroy() {
+        throwIfDestroyed();
         if (mIsDestroyed.compareAndSet(false, true)) {
+            Log.d(mTAG, "Bindings resource with handle "
+                    + mNativeHandle
+                    + " is explicitly destroyed");
             releaseBindingsResource(mNativeHandle);
         }
     }

@@ -333,9 +333,7 @@ abstract class VideoRecordingTestBase(
         val recorder = Recorder.Builder().setQualitySelector(QualitySelector.from(quality)).build()
         val videoCapture = VideoCapture.withOutput(recorder)
         // Arbitrary cropping
-        val profile =
-            videoCapabilities.getProfiles(quality, defaultDynamicRange)!!.defaultVideoProfile
-        val targetResolution = profile.resolution
+        val targetResolution = videoCapabilities.getResolution(quality, defaultDynamicRange)!!
         val cropRect = Rect(6, 6, targetResolution.width - 7, targetResolution.height - 7)
         videoCapture.setViewPortCropRect(cropRect)
 

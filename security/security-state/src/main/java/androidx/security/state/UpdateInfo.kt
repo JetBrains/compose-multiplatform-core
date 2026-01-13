@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.security.state.provider
+package androidx.security.state
 
-import androidx.security.state.SecurityPatchState
+import androidx.annotation.RestrictTo
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Objects
@@ -40,14 +40,15 @@ private object DateSerializer : KSerializer<Date> {
     override fun deserialize(decoder: Decoder): Date = dateFormat.parse(decoder.decodeString())!!
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Serializable
-internal class SerializableUpdateInfo(
+public class SerializableUpdateInfo(
     private val uri: String,
     private val component: String,
     private val securityPatchLevel: String,
     @Serializable(with = DateSerializer::class) private val publishedDate: Date,
 ) {
-    internal fun toUpdateInfo(): UpdateInfo =
+    public fun toUpdateInfo(): UpdateInfo =
         UpdateInfo(uri, component, securityPatchLevel, publishedDate)
 }
 
@@ -66,7 +67,8 @@ public class UpdateInfo(
     public val publishedDate: Date,
 ) {
 
-    internal fun toSerializableUpdateInfo(): SerializableUpdateInfo =
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toSerializableUpdateInfo(): SerializableUpdateInfo =
         SerializableUpdateInfo(uri, component, securityPatchLevel, publishedDate)
 
     /**

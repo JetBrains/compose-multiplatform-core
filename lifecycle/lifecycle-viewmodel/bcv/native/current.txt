@@ -108,6 +108,7 @@ open class androidx.lifecycle/ViewModelStore { // androidx.lifecycle/ViewModelSt
     final fun get(kotlin/String): androidx.lifecycle/ViewModel? // androidx.lifecycle/ViewModelStore.get|get(kotlin.String){}[0]
     final fun keys(): kotlin.collections/Set<kotlin/String> // androidx.lifecycle/ViewModelStore.keys|keys(){}[0]
     final fun put(kotlin/String, androidx.lifecycle/ViewModel) // androidx.lifecycle/ViewModelStore.put|put(kotlin.String;androidx.lifecycle.ViewModel){}[0]
+    open fun toString(): kotlin/String // androidx.lifecycle/ViewModelStore.toString|toString(){}[0]
 }
 
 final val androidx.lifecycle/viewModelScope // androidx.lifecycle/viewModelScope|@androidx.lifecycle.ViewModel{}viewModelScope[0]

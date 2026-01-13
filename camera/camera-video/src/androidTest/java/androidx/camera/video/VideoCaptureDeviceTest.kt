@@ -215,9 +215,7 @@ class VideoCaptureDeviceTest(
             // Arrange.
             val qualityList = videoCapabilities.getSupportedQualities(dynamicRange)
             qualityList.forEach loop@{ quality ->
-                val profile =
-                    videoCapabilities.getProfiles(quality, dynamicRange)!!.defaultVideoProfile
-                val targetResolution = profile.resolution
+                val targetResolution = videoCapabilities.getResolution(quality, dynamicRange)!!
                 val videoOutput =
                     createTestVideoOutput(
                         mediaSpec =

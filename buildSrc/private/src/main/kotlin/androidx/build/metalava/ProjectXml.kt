@@ -25,6 +25,7 @@ import org.dom4j.Element
 import org.dom4j.io.OutputFormat
 import org.dom4j.io.XMLWriter
 import org.gradle.api.file.FileCollection
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 internal object ProjectXml {
     /**
@@ -40,12 +41,25 @@ internal object ProjectXml {
     ) {
         val sourceSetElements =
             sourceSets.map { sourceSet ->
+                val sourceSetDependencies = sourceSet.dependencyClasspath.files
+                // Include Android jars only for JVM and Android source sets (they are needed for
+                // JVM because they provide the java standard libraries).
+                val allDependencies =
+                    if (
+                        KotlinPlatformType.jvm in sourceSet.kotlinPlatforms ||
+                            KotlinPlatformType.androidJvm in sourceSet.kotlinPlatforms
+                    ) {
+                        sourceSetDependencies + bootClasspath
+                    } else {
+                        sourceSetDependencies
+                    }
                 createSourceSetElement(
                     sourceSet.sourceSetName,
                     sourceSet.dependsOnSourceSets,
                     sourceFiles(sourceSet.sourcePaths),
-                    (sourceSet.dependencyClasspath + bootClasspath),
+                    allDependencies,
                     compiledSourceJar,
+                    sourceSet.kotlinPlatforms,
                 )
             }
         val projectElement = createProjectElement(sourceSetElements)
@@ -87,16 +101,35 @@ internal object ProjectXml {
         sourceFiles: Collection<File>,
         allDependencies: Collection<File>,
         compiledSourceJar: File,
+        kotlinPlatforms: Set<KotlinPlatformType>,
     ): Element {
         val moduleElement = DocumentHelper.createElement("module")
         moduleElement.addAttribute("name", sourceSetName)
         if (sourceSetName == "androidMain") {
             moduleElement.addAttribute("android", "true")
         }
-        // Currently, we only process JVM compilations in metalava, so it works to set just the JVM
-        // platform for all modules (a common module should list all platforms it is used by).
-        // TODO(b/407737495): use all platforms for non-JVM targets, don't hardcode the java version
-        moduleElement.addAttribute("kotlinPlatforms", "JVM [1.8]")
+        // Create the /-separated string listing all Kotlin platform types that this source set can
+        // be part of. The serializations are from the commented-out Kotlin compiler classes. The
+        // compiler is a compile only dependency for this project, so to generate the strings
+        // instead of hardcoding them it would need to be a runtime dependency as well.
+        val kotlinPlatformStrings =
+            kotlinPlatforms
+                .mapNotNull {
+                    when (it) {
+                        // JvmPlatforms.defaultJvmPlatform
+                        KotlinPlatformType.jvm,
+                        KotlinPlatformType.androidJvm -> "JVM [1.8]"
+                        // NativePlatforms.unspecifiedNativePlatform
+                        KotlinPlatformType.native -> "Native []/Native [general]"
+                        // JsPlatforms.defaultJsPlatform
+                        KotlinPlatformType.js -> "JS []"
+                        // WasmPlatforms.unspecifiedWasmPlatform
+                        KotlinPlatformType.wasm -> "Wasm [general]"
+                        else -> null
+                    }
+                }
+                .toSet()
+        moduleElement.addAttribute("kotlinPlatforms", kotlinPlatformStrings.joinToString("/"))
 
         for (dependsOn in dependsOnSourceSets) {
             val depElement = DocumentHelper.createElement("dep")

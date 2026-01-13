@@ -47,11 +47,10 @@ internal constructor(
      * Closes the given [GltfModel].
      *
      * The [GltfModel] can be explicitly closed at any time or garbage collected. When either
-     * happens, its resources are freed. An [IllegalStateException] will be thrown if the
-     * [GltfModel] is used after being closed.
+     * happens, its resources are freed. If close() is not explicitly invoked by the client, the
+     * [GltfModel] will be automatically closed when the [GltfModel] is garbage collected.
      *
-     * If close() is not explicitly invoked by the client, the [GltfModel] will be automatically
-     * closed when the [GltfModel] is garbage collected.
+     * @throws IllegalStateException if the resource has already been closed.
      */
     @MainThread
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

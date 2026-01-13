@@ -2635,6 +2635,13 @@ class VideoCaptureTest {
                     return false
                 }
 
+                override fun getResolution(quality: Quality, dynamicRange: DynamicRange): Size? {
+                    return videoCapabilitiesMap[dynamicRange]
+                        ?.getProfiles(quality)
+                        ?.defaultVideoProfile
+                        ?.resolution
+                }
+
                 override fun getProfiles(
                     quality: Quality,
                     dynamicRange: DynamicRange,

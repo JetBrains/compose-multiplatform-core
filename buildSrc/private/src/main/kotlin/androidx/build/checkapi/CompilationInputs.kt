@@ -27,9 +27,13 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
+import org.gradle.kotlin.dsl.listProperty
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
+import org.jetbrains.kotlin.utils.addToStdlib.foldMap
 
 /**
  * [CompilationInputs] contains the information required to compile Java/Kotlin code. This can be
@@ -93,6 +97,7 @@ internal sealed interface CompilationInputs {
 
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
+                kmpExtension = kmpExtension,
                 mainCompilationProvider = jvmCompilation,
                 bootClasspath = project.getAndroidJar(),
             )
@@ -127,6 +132,7 @@ internal sealed interface CompilationInputs {
                 )
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
+                kmpExtension = kmpExtension,
                 mainCompilationProvider = compilation,
                 bootClasspath = bootClasspath,
             )
@@ -209,6 +215,8 @@ internal data class SourceSetInputs(
     val sourcePaths: FileCollection,
     /** Compile dependencies for this source set */
     val dependencyClasspath: FileCollection,
+    /** The platforms which this source set can be a part of a compilation for. */
+    val kotlinPlatforms: Set<KotlinPlatformType>,
 )
 
 /** Inputs for a single compilation of a multiplatform project (just the android or jvm target) */
@@ -242,12 +250,21 @@ internal class MultiplatformCompilationInputs(
         )
 
     companion object {
-        /** Creates inputs based on one compilation of a multiplatform project. */
+        /**
+         * Creates inputs based on a multiplatform project.
+         *
+         * The [mainCompilationProvider] is used for the
+         * [MultiplatformCompilationInputs.dependencyClasspath] and
+         * [MultiplatformCompilationInputs.sourcePaths], but all compilations from the
+         * [kmpExtension] are included in the [MultiplatformCompilationInputs.sourceSets].
+         */
         fun fromCompilation(
             project: Project,
+            kmpExtension: KotlinMultiplatformExtension,
             mainCompilationProvider: Provider<KotlinCompilation<*>>,
             bootClasspath: FileCollection,
         ): MultiplatformCompilationInputs {
+            // Find the sources and dependencies just from the main compilation.
             val compileDependencies = mainCompilationProvider.map { it.compileDependencyFiles }
             val sourcePaths =
                 project.files(
@@ -258,17 +275,47 @@ internal class MultiplatformCompilationInputs(
                     }
                 )
 
+            // List all main compilations.
+            val allCompilations = project.objects.listProperty<KotlinCompilation<*>>()
+            kmpExtension.targets.configureEach { target ->
+                val mainCompilation =
+                    target.compilations.named(KotlinCompilation.MAIN_COMPILATION_NAME)
+                allCompilations.add(mainCompilation)
+            }
+
+            // Only include main source sets, not test.
+            val allKotlinSourceSets = project.objects.listProperty<KotlinSourceSet>()
+            kmpExtension.sourceSets.configureEach {
+                if (it.name.lowercase().contains("test")) return@configureEach
+                allKotlinSourceSets.add(it)
+            }
+
             val sourceSets =
-                mainCompilationProvider.map { compilation ->
-                    compilation.allKotlinSourceSets.map { sourceSet ->
+                allKotlinSourceSets.zip(allCompilations) { sourceSets, allCompilations ->
+                    sourceSets.map { sourceSet ->
+                        // Find the compilations that this source set is part of.
+                        val allAssociatedCompilations =
+                            allCompilations.filter { it.allKotlinSourceSets.contains(sourceSet) }
+                        allAssociatedCompilations.map { it.compileDependencyFiles }
+                        // Include dependencies from all compilations which this source set is
+                        // associated with.
+                        val sourceSetDependencies =
+                            allAssociatedCompilations.foldMap(
+                                { it.compileDependencyFiles },
+                                { fc1, fc2 -> fc1 + fc2 },
+                            )
+                        val kotlinPlatforms =
+                            allAssociatedCompilations.map { it.platformType }.toSet()
                         SourceSetInputs(
                             sourceSet.name,
                             sourceSet.dependsOn.map { it.name },
                             sourceSet.kotlin.sourceDirectories,
-                            project.files(compileDependencies),
+                            sourceSetDependencies,
+                            kotlinPlatforms,
                         )
                     }
                 }
+
             return MultiplatformCompilationInputs(
                 project,
                 sourceSets,

@@ -44,6 +44,8 @@ import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
 import java.nio.file.Paths
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n")
@@ -105,10 +107,15 @@ class GltfModelMaterialTexture : AppCompatActivity() {
                 patternTexture = Texture.create(session!!, Paths.get("textures", "pattern.png"))
             }
         }
-        // Dispose Texture
+        // Dispose Texture via GC
         findViewById<Button>(R.id.gltf_model_button1_2).setOnClickListener {
-            patternTexture?.close()
             patternTexture = null
+            // Make GC likely to run
+            requestGargabeCollection()
+        }
+        // Dispose Texture explicitly
+        findViewById<Button>(R.id.gltf_model_button1_3).setOnClickListener {
+            patternTexture?.close()
         }
         // Create Khronos PBR Material
         findViewById<Button>(R.id.gltf_model_button2_1).setOnClickListener {
@@ -116,10 +123,14 @@ class GltfModelMaterialTexture : AppCompatActivity() {
                 khronosPbrMaterial = KhronosPbrMaterial.create(session!!, AlphaMode.BLEND)
             }
         }
-        // Dispose Khronos PBR Material
+        // Dispose Khronos PBR Material via GC
         findViewById<Button>(R.id.gltf_model_button2_2).setOnClickListener {
-            khronosPbrMaterial?.close()
             khronosPbrMaterial = null
+            requestGargabeCollection()
+        }
+        // Dispose Khronos PBR Material explicitly
+        findViewById<Button>(R.id.gltf_model_button2_3).setOnClickListener {
+            khronosPbrMaterial?.close()
         }
         // Set Base Color Texture
         findViewById<Button>(R.id.gltf_model_button3_1).setOnClickListener {
@@ -201,6 +212,17 @@ class GltfModelMaterialTexture : AppCompatActivity() {
                 session!!.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM
                 return getString(R.string.switch_to_hsm_button_text)
+            }
+        }
+    }
+
+    private fun requestGargabeCollection() {
+        // Make GC likely to run
+        lifecycleScope.launch(Dispatchers.Default) {
+            repeat(10) {
+                System.gc()
+                System.runFinalization()
+                delay(300)
             }
         }
     }

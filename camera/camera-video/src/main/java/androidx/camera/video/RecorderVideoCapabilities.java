@@ -163,6 +163,13 @@ public class RecorderVideoCapabilities implements VideoCapabilities {
     }
 
     @Override
+    public @Nullable Size getResolution(@NonNull Quality quality,
+            @NonNull DynamicRange dynamicRange) {
+        CapabilitiesByQuality capabilities = getCapabilities(dynamicRange);
+        return capabilities == null ? null : capabilities.getResolution(quality);
+    }
+
+    @Override
     public @Nullable VideoValidatedEncoderProfilesProxy getProfiles(@NonNull Quality quality,
             @NonNull DynamicRange dynamicRange) {
         CapabilitiesByQuality capabilities = getCapabilities(dynamicRange);

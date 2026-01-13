@@ -369,15 +369,15 @@ public final class Flags {
     /**
      * Whether to enable skipping the unnecessary schema type equality check.
      */
-    public static final String ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK =
+    public static final String FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK =
             FLAG_PREFIX + "enable_skip_set_schema_type_equality_check";
 
     /**
      * Whether to enable the query optimization to rewrite AND'd embedding queries.
      */
-    public static final String ENABLE_EMBED_QUERY_OPTIMIZATION =
+    public static final String FLAG_ENABLE_EMBED_QUERY_OPTIMIZATION =
             FLAG_PREFIX + "enable_embed_query_optimization";
-    
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.

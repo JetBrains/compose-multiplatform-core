@@ -100,8 +100,7 @@ private constructor(
 
     @Override
     override fun destroyGltfModel(gltfModel: GltfModelResource) {
-        val gltfModelResource: GltfModel = gltfModel as GltfModel
-        impressApi.releaseGltfAsset(gltfModelResource.nativeHandle)
+        (gltfModel as GltfModel).destroy()
     }
 
     @SuppressWarnings("RestrictTo")
@@ -119,8 +118,7 @@ private constructor(
 
     @Override
     override fun destroyExrImage(exrImage: ExrImageResource) {
-        val exrImageResource: ExrImage = exrImage as ExrImage
-        impressApi.releaseImageBasedLightingAsset(exrImageResource.nativeHandle)
+        (exrImage as ExrImage).destroy()
     }
 
     @SuppressWarnings("RestrictTo")
@@ -146,8 +144,7 @@ private constructor(
     }
 
     override fun destroyTexture(texture: TextureResource) {
-        val textureResource = texture as Texture
-        impressApi.destroyNativeObject(textureResource.nativeHandle)
+        (texture as Texture).destroy()
     }
 
     override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? {

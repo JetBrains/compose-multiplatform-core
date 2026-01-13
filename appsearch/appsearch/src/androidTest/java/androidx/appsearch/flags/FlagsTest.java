@@ -361,14 +361,14 @@ public class FlagsTest {
 
     @Test
     public void testFlagValue_enableSkipSetSchemaTypeEqualityCheck() {
-        assertThat(Flags.ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK)
+        assertThat(Flags.FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK)
                 .isEqualTo(
                         "com.android.appsearch.flags.enable_skip_set_schema_type_equality_check");
     }
 
     @Test
     public void testFlagValue_enableEmbedQueryOptimization() {
-        assertThat(Flags.ENABLE_EMBED_QUERY_OPTIMIZATION)
+        assertThat(Flags.FLAG_ENABLE_EMBED_QUERY_OPTIMIZATION)
                 .isEqualTo("com.android.appsearch.flags.enable_embed_query_optimization");
     }
 }

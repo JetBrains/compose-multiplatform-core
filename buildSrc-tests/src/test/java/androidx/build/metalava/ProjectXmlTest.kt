@@ -20,6 +20,7 @@ import java.io.File
 import java.io.StringWriter
 import org.dom4j.DocumentHelper
 import org.dom4j.Element
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -51,6 +52,7 @@ class ProjectXmlTest {
                 emptyList(),
                 emptyList(),
                 compiledSources,
+                setOf(KotlinPlatformType.androidJvm),
             )
 
         checkElementXml(
@@ -60,7 +62,7 @@ class ProjectXmlTest {
                   <src jar="/fake/path/root/compiledSources.jar"/>
                 </module>
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 
@@ -73,6 +75,7 @@ class ProjectXmlTest {
                 emptyList(),
                 emptyList(),
                 compiledSources,
+                setOf(KotlinPlatformType.common, KotlinPlatformType.jvm),
             )
 
         checkElementXml(
@@ -82,7 +85,7 @@ class ProjectXmlTest {
                   <src jar="/fake/path/root/compiledSources.jar"/>
                 </module>
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 
@@ -95,15 +98,16 @@ class ProjectXmlTest {
                 listOf(
                     File(sourceDir, "Foo.kt"),
                     File(sourceDir, "Bar.kt"),
-                    File(sourceDir, "Baz.java")
+                    File(sourceDir, "Baz.java"),
                 ),
                 listOf(
                     File(classpathDir, "jarDependency.jar"),
                     File(classpathDir, "androidDependency.aar"),
                     File(classpathDir, "klibDependency.klib"),
-                    File(classpathDir, "directoryDependency")
+                    File(classpathDir, "directoryDependency"),
                 ),
                 compiledSources,
+                setOf(KotlinPlatformType.androidJvm),
             )
         checkElementXml(
             element,
@@ -121,7 +125,36 @@ class ProjectXmlTest {
                   <src jar="/fake/path/root/compiledSources.jar"/>
                 </module>
             """
-                .trimIndent()
+                .trimIndent(),
+        )
+    }
+
+    @Test
+    fun testKotlinPlatformTypes() {
+        val element =
+            ProjectXml.createSourceSetElement(
+                "commonMain",
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                compiledSources,
+                setOf(
+                    KotlinPlatformType.common,
+                    KotlinPlatformType.jvm,
+                    KotlinPlatformType.androidJvm,
+                    KotlinPlatformType.native,
+                    KotlinPlatformType.wasm,
+                    KotlinPlatformType.js,
+                ),
+            )
+        checkElementXml(
+            element,
+            """
+                <module name="commonMain" kotlinPlatforms="JVM [1.8]/Native []/Native [general]/Wasm [general]/JS []">
+                  <src jar="/fake/path/root/compiledSources.jar"/>
+                </module>
+            """
+                .trimIndent(),
         )
     }
 
@@ -135,7 +168,7 @@ class ProjectXmlTest {
                   <root dir="."/>
                 </project>
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 
@@ -145,7 +178,7 @@ class ProjectXmlTest {
             ProjectXml.createProjectElement(
                 listOf(
                     DocumentHelper.createElement("someElement"),
-                    DocumentHelper.createElement("anotherElement")
+                    DocumentHelper.createElement("anotherElement"),
                 )
             )
         checkElementXml(
@@ -157,7 +190,7 @@ class ProjectXmlTest {
                   <anotherElement/>
                 </project>
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 }
