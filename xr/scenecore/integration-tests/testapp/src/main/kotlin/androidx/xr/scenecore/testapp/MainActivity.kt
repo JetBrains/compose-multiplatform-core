@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
                 finish()
             } else {
                 session = createdSession
+                session?.scene?.keyEntity = session?.scene?.mainPanelEntity
                 setUpMainPanelMovable()
             }
         }

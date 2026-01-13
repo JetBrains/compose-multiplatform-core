@@ -137,6 +137,13 @@ class MutableVecTest {
     }
 
     @Test
+    fun computeOrthogonal_worksWithAliasedArgument() {
+        val vec = MutableVec(3f, 1f)
+        vec.computeOrthogonal(vec)
+        assertThat(vec).isEqualTo(ImmutableVec(-1f, 3f))
+    }
+
+    @Test
     fun computeNegation_returnsCorrectValue() {
         assertThat(MutableVec(3f, 1f).computeNegation()).isEqualTo(MutableVec(-3f, -1f))
         assertThat(MutableVec(-395f, .005f).computeNegation()).isEqualTo(MutableVec(395f, -.005f))
@@ -176,6 +183,13 @@ class MutableVecTest {
         inputVec.y = -.001f
         inputVec.computeNegation(outputVec)
         assertThat(outputVec).isEqualTo(MutableVec(9956f, .001f))
+    }
+
+    @Test
+    fun computeNegation_worksWithAliasedArgument() {
+        val vec = MutableVec(3f, 1f)
+        vec.computeNegation(vec)
+        assertThat(vec).isEqualTo(MutableVec(-3f, -1f))
     }
 
     @Test
@@ -230,6 +244,13 @@ class MutableVecTest {
     }
 
     @Test
+    fun computeUnitVec_worksWithAliasedArgument() {
+        val vec = MutableVec(4f, 0f)
+        vec.computeUnitVec(vec)
+        assertThat(vec).isEqualTo(ImmutableVec(1f, 0f))
+    }
+
+    @Test
     fun add_whenGivenAMutableVecAsBothInputAndOutput_populatesCorrectValue() {
         val a = MutableVec(3f, 0f)
         val b = MutableVec(-1f, .3f)
@@ -243,6 +264,22 @@ class MutableVecTest {
 
         Vec.add(c, c, c)
         assertThat(c.isAlmostEqual(ImmutableVec(5.4f, 8f))).isTrue()
+    }
+
+    @Test
+    fun subtract_whenGivenAMutableVecAsBothInputAndOutput_populatesCorrectValue() {
+        val a = MutableVec(3f, 0f)
+        val b = MutableVec(-1f, .3f)
+        val c = MutableVec(2.7f, 4f)
+
+        Vec.subtract(a, b, a)
+        assertThat(a.isAlmostEqual(ImmutableVec(4f, -.3f))).isTrue()
+
+        Vec.subtract(b, c, b)
+        assertThat(b.isAlmostEqual(ImmutableVec(-3.7f, -3.7f))).isTrue()
+
+        Vec.subtract(c, c, c)
+        assertThat(c.isAlmostEqual(ImmutableVec(0f, 0f))).isTrue()
     }
 
     @Test

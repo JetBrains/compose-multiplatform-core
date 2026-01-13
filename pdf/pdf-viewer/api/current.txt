@@ -183,6 +183,46 @@ package androidx.pdf.content {
 
 }
 
+package androidx.pdf.models {
+
+  public final class FormEditInfo implements android.os.Parcelable {
+    method public static androidx.pdf.models.FormEditInfo createClick(@IntRange(from=0L) int widgetIndex, androidx.pdf.PdfPoint clickPoint);
+    method public static androidx.pdf.models.FormEditInfo createSetIndices(@IntRange(from=0L) int pageNumber, @IntRange(from=0L) int widgetIndex, int[] selectedIndices);
+    method public static androidx.pdf.models.FormEditInfo createSetText(@IntRange(from=0L) int pageNumber, @IntRange(from=0L) int widgetIndex, String text);
+    method public int describeContents();
+    method @InaccessibleFromKotlin public androidx.pdf.PdfPoint? getClickPoint();
+    method @InaccessibleFromKotlin public int getPageNumber();
+    method public int getSelectedIndexAt(int index);
+    method @InaccessibleFromKotlin public int getSelectedIndexCount();
+    method @InaccessibleFromKotlin public String? getText();
+    method @InaccessibleFromKotlin public int getType();
+    method @InaccessibleFromKotlin public int getWidgetIndex();
+    method public void writeToParcel(android.os.Parcel dest, int flags);
+    property public androidx.pdf.PdfPoint? clickPoint;
+    property public int pageNumber;
+    property public int selectedIndexCount;
+    property public String? text;
+    property public int type;
+    property public int widgetIndex;
+    field public static final android.os.Parcelable.Creator<androidx.pdf.models.FormEditInfo> CREATOR;
+    field public static final androidx.pdf.models.FormEditInfo.Companion Companion;
+    field public static final int EDIT_TYPE_CLICK = 0; // 0x0
+    field public static final int EDIT_TYPE_SET_INDICES = 1; // 0x1
+    field public static final int EDIT_TYPE_SET_TEXT = 2; // 0x2
+  }
+
+  public static final class FormEditInfo.Companion {
+    method public androidx.pdf.models.FormEditInfo createClick(@IntRange(from=0L) int widgetIndex, androidx.pdf.PdfPoint clickPoint);
+    method public androidx.pdf.models.FormEditInfo createSetIndices(@IntRange(from=0L) int pageNumber, @IntRange(from=0L) int widgetIndex, int[] selectedIndices);
+    method public androidx.pdf.models.FormEditInfo createSetText(@IntRange(from=0L) int pageNumber, @IntRange(from=0L) int widgetIndex, String text);
+    property public android.os.Parcelable.Creator<androidx.pdf.models.FormEditInfo> CREATOR;
+    property public static int EDIT_TYPE_CLICK;
+    property public static int EDIT_TYPE_SET_INDICES;
+    property public static int EDIT_TYPE_SET_TEXT;
+  }
+
+}
+
 package androidx.pdf.selection {
 
   public abstract class ContextMenuComponent {
@@ -290,6 +330,7 @@ package androidx.pdf.view {
     ctor public PdfView(android.content.Context context, optional android.util.AttributeSet? attrs, optional int defStyle);
     ctor @BytecodeOnly public PdfView(android.content.Context!, android.util.AttributeSet!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public final void addOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
+    method public final void addOnFormWidgetInfoUpdatedListener(androidx.pdf.view.PdfView.OnFormWidgetInfoUpdatedListener listener);
     method public final void addOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void addOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void addOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
@@ -311,8 +352,10 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final int getVerticalPageSpacing();
     method @InaccessibleFromKotlin public final int getVisiblePagesCount();
     method @InaccessibleFromKotlin public final float getZoom();
+    method @InaccessibleFromKotlin public final boolean isFormFillingEnabled();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
     method public final void removeOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
+    method public final void removeOnFormWidgetInfoUpdatedListener(androidx.pdf.view.PdfView.OnFormWidgetInfoUpdatedListener listener);
     method public final void removeOnGestureStateChangedListener(androidx.pdf.view.PdfView.OnGestureStateChangedListener listener);
     method public final void removeOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void removeOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
@@ -323,6 +366,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final void setFastScrollPageIndicatorMarginEnd(int);
     method @InaccessibleFromKotlin public final void setFastScrollVerticalThumbDrawable(android.graphics.drawable.Drawable);
     method @InaccessibleFromKotlin public final void setFastScrollVerticalThumbMarginEnd(int);
+    method @InaccessibleFromKotlin public final void setFormFillingEnabled(boolean);
     method public final void setHighlights(java.util.List<androidx.pdf.view.Highlight> highlights);
     method @InaccessibleFromKotlin public final void setHorizontalPageSpacing(int);
     method public final void setLinkClickListener(androidx.pdf.view.PdfView.LinkClickListener? listener);
@@ -343,6 +387,7 @@ package androidx.pdf.view {
     property public final int firstVisiblePage;
     property public final int gestureState;
     property public final int horizontalPageSpacing;
+    property public final boolean isFormFillingEnabled;
     property @FloatRange(from=0.5, to=25.0) public final float maxZoom;
     property @FloatRange(from=0.5, to=25.0) public final float minZoom;
     property public final int pagesPerRow;
@@ -373,6 +418,10 @@ package androidx.pdf.view {
 
   public static fun interface PdfView.OnFirstContentLoadListener {
     method @MainThread public void onFirstContentLoad();
+  }
+
+  public static interface PdfView.OnFormWidgetInfoUpdatedListener {
+    method public void onFormWidgetInfoUpdated(androidx.pdf.models.FormEditInfo formEditInfo);
   }
 
   public static interface PdfView.OnGestureStateChangedListener {

@@ -29,15 +29,15 @@ import androidx.input.motionprediction.MotionEventPredictor
  * touch events received by a view. To cancel a shape for a specific pointer, call
  * [InProgressShapesView.cancelShape] with the relevant [MotionEvent] and pointer id. To cancel all
  * pending shapes, call [InProgressShapesView.cancelUnfinishedShapes]. Pointers whose shapes are
- * canceled (or not started) will be ignored on subsequent calls to [ShapeGestureListener.onTouch].
+ * canceled (or not started) will be ignored on subsequent calls to [ShapeGestureCallback.onTouch].
  *
  * Properties that govern the creation of new shapes should be updated some time before the relevant
- * call to [ShapeGestureListener.onTouch]. For example, this could occur when the user switches to a
+ * call to [ShapeGestureCallback.onTouch]. For example, this could occur when the user switches to a
  * new shape spec, or it could wait until [onTouch]:
  * ```
  * fun onTouch(view: View, event: MotionEvent): Boolean {
- *   shapeGestureListener.shapeSpecForNewShapes = currentShapeSpec
- *   shapeGestureListener.onTouch(view, event)
+ *   shapeGestureCallback.shapeSpecForNewShapes = currentShapeSpec
+ *   shapeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -48,7 +48,7 @@ import androidx.input.motionprediction.MotionEventPredictor
  *   if (event.actionMasked == MotionEvent.ACTION_DOWN && shouldSkipShape(event)) {
  *     return true;
  *   }
- *   return shapeGestureListener.onTouch(view, event)
+ *   return shapeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -61,7 +61,7 @@ import androidx.input.motionprediction.MotionEventPredictor
  *     handled = true
  *     inProgressShapesView.cancelShape(event, pointerId)
  *   }
- *   if (shapeGestureListener.onTouch(view, event)) {
+ *   if (shapeGestureCallback.onTouch(view, event)) {
  *     handled = true
  *   }
  *   return handled
@@ -76,7 +76,7 @@ import androidx.input.motionprediction.MotionEventPredictor
  *     inProgressShapesView.cancelUnfinishedShapes()
  *     return true
  *   }
- *   return shapeGestureListener.onTouch(view, event)
+ *   return shapeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -88,7 +88,7 @@ import androidx.input.motionprediction.MotionEventPredictor
  *   object : View.OnTouchListener {
  *     override fun onTouch(view: View, event: MotionEvent): Boolean {
  *       ...
- *       return shapeGestureListener.onTouch(view, event)
+ *       return shapeGestureCallback.onTouch(view, event)
  *     }
  *   }
  * )
@@ -100,24 +100,25 @@ import androidx.input.motionprediction.MotionEventPredictor
  *   world coordinates for new shapes.
  * @param shapeToWorldTransformForNewShapes A mutable [Matrix] to transform shapes into world
  *   coordinates.
- * @param restrictToSingleShape If `true`, then only the first pointer should be treated as a shape.
+ * @param isRestrictedToSingleShape If `true`, then only the first pointer should be treated as a
+ *   shape.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 @ExperimentalCustomShapeWorkflowApi
-public class ShapeGestureListener<ShapeSpecT : Any>(
+public class ShapeGestureCallback<ShapeSpecT : Any>(
     private val inProgressShapesView: InProgressShapesView<ShapeSpecT, *, *>,
     public var shapeSpecForNewShapes: ShapeSpecT,
     public val motionEventToWorldTransformForNewShapes: Matrix = Matrix(),
     public val shapeToWorldTransformForNewShapes: Matrix = Matrix(),
-    restrictToSingleShape: Boolean = false,
+    isRestrictedToSingleShape: Boolean = false,
 ) : View.OnTouchListener {
     private val delegate =
         object :
-            GestureListener(
+            GestureCallback(
                 view = inProgressShapesView,
                 motionEventToWorldTransformForNewShapes = motionEventToWorldTransformForNewShapes,
                 shapeToWorldTransformForNewShapes = shapeToWorldTransformForNewShapes,
-                restrictToSingleShape = restrictToSingleShape,
+                isRestrictedToSingleShape = isRestrictedToSingleShape,
             ) {
             override fun onStartShape(
                 event: MotionEvent,
@@ -152,10 +153,10 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
                 inProgressShapesView.cancelShape(event = event, pointerId = pointerId)
         }
 
-    public var restrictToSingleShape: Boolean by delegate::restrictToSingleShape
+    public var isRestrictedToSingleShape: Boolean by delegate::isRestrictedToSingleShape
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouch(v: View, event: MotionEvent): Boolean = delegate.onTouch(v, event)
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean = delegate.onTouch(v, event)
 }
 
 /**
@@ -164,15 +165,15 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  * [InProgressStrokesView.cancelStroke] with the relevant [MotionEvent] and pointer id. To cancel
  * all pending strokes, call [InProgressStrokesView.cancelUnfinishedStrokes]. Pointers whose strokes
  * are canceled (or not started) will be ignored on subsequent calls to
- * [StrokeGestureListener.onTouch].
+ * [StrokeGestureCallback.onTouch].
  *
  * Properties that govern the creation of new strokes should be updated some time before the
- * relevant call to [StrokeGestureListener.onTouch]. For example, this could occur when the user
+ * relevant call to [StrokeGestureCallback.onTouch]. For example, this could occur when the user
  * switches to a new brush type, or it could wait until [onTouch]:
  * ```
  * fun onTouch(view: View, event: MotionEvent): Boolean {
- *   strokeGestureListener.brushForNewStrokes = currentBrush
- *   strokeGestureListener.onTouch(view, event)
+ *   strokeGestureCallback.brushForNewStrokes = currentBrush
+ *   strokeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -183,7 +184,7 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  *   if (event.actionMasked == MotionEvent.ACTION_DOWN && shouldSkipStroke(event)) {
  *     return true;
  *   }
- *   return strokeGestureListener.onTouch(view, event)
+ *   return strokeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -196,7 +197,7 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  *     handled = true
  *     inProgressStrokesView.cancelStroke(event, pointerId)
  *   }
- *   if (strokeGestureListener.onTouch(view, event)) {
+ *   if (strokeGestureCallback.onTouch(view, event)) {
  *     handled = true
  *   }
  *   return handled
@@ -211,7 +212,7 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  *     inProgressStrokesView.cancelUnfinishedStrokes()
  *     return true
  *   }
- *   return strokeGestureListener.onTouch(view, event)
+ *   return strokeGestureCallback.onTouch(view, event)
  * }
  * ```
  *
@@ -223,7 +224,7 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  *   object : View.OnTouchListener {
  *     override fun onTouch(view: View, event: MotionEvent): Boolean {
  *       ...
- *       return strokeGestureListener.onTouch(view, event)
+ *       return strokeGestureCallback.onTouch(view, event)
  *     }
  *   }
  * )
@@ -235,24 +236,24 @@ public class ShapeGestureListener<ShapeSpecT : Any>(
  *   into world coordinates for new strokes.
  * @param strokeToWorldTransformForNewStrokes A mutable [Matrix] to transform strokes into world
  *   coordinates.
- * @param restrictToSingleStroke If `true`, then only the first pointer should be treated as a
+ * @param isRestrictedToSingleStroke If `true`, then only the first pointer should be treated as a
  *   stroke.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-public class StrokeGestureListener(
+public class StrokeGestureCallback(
     private val inProgressStrokesView: InProgressStrokesView,
     public var brushForNewStrokes: Brush,
     public val motionEventToWorldTransformForNewStrokes: Matrix = Matrix(),
     public val strokeToWorldTransformForNewStrokes: Matrix = Matrix(),
-    restrictToSingleStroke: Boolean = false,
+    isRestrictedToSingleStroke: Boolean = false,
 ) : View.OnTouchListener {
     private val delegate =
         object :
-            GestureListener(
+            GestureCallback(
                 view = inProgressStrokesView,
                 motionEventToWorldTransformForNewShapes = motionEventToWorldTransformForNewStrokes,
                 shapeToWorldTransformForNewShapes = strokeToWorldTransformForNewStrokes,
-                restrictToSingleShape = restrictToSingleStroke,
+                isRestrictedToSingleShape = isRestrictedToSingleStroke,
             ) {
             override fun onStartShape(
                 event: MotionEvent,
@@ -287,18 +288,18 @@ public class StrokeGestureListener(
                 inProgressStrokesView.cancelStroke(event = event, pointerId = pointerId)
         }
 
-    public var restrictToSingleStroke: Boolean by delegate::restrictToSingleShape
+    public var isRestrictedToSingleStroke: Boolean by delegate::isRestrictedToSingleShape
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouch(v: View, event: MotionEvent): Boolean = delegate.onTouch(v, event)
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean = delegate.onTouch(v, event)
 }
 
-/** Common touch logic between [StrokeGestureListener] and [ShapeGestureListener]. */
-private abstract class GestureListener(
+/** Common touch logic between [StrokeGestureCallback] and [ShapeGestureCallback]. */
+private abstract class GestureCallback(
     view: View,
-    public val motionEventToWorldTransformForNewShapes: Matrix = Matrix(),
-    public val shapeToWorldTransformForNewShapes: Matrix = Matrix(),
-    public var restrictToSingleShape: Boolean = false,
+    val motionEventToWorldTransformForNewShapes: Matrix = Matrix(),
+    val shapeToWorldTransformForNewShapes: Matrix = Matrix(),
+    var isRestrictedToSingleShape: Boolean = false,
 ) : View.OnTouchListener {
     private val motionEventPredictor = MotionEventPredictor.newInstance(view)
 
@@ -331,14 +332,16 @@ private abstract class GestureListener(
      * @param event [MotionEvent] to be processed.
      */
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouch(view: View, event: MotionEvent): Boolean {
+    override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+        if (view == null || event == null) return false
         motionEventPredictor.record(event)
         val primaryPointerId = event.getPointerId(event.actionIndex)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN,
             MotionEvent.ACTION_POINTER_DOWN -> {
                 if (
-                    restrictToSingleShape && event.actionMasked == MotionEvent.ACTION_POINTER_DOWN
+                    isRestrictedToSingleShape &&
+                        event.actionMasked == MotionEvent.ACTION_POINTER_DOWN
                 ) {
                     return false
                 }

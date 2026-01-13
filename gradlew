@@ -307,24 +307,49 @@ if [[ " ${@} " =~ " --profile " ]]; then
   mkdir -p reports
 fi
 
-raiseMemory=false
-if [[ " ${@} " =~ " -Pandroidx.highMemory " ]]; then
-    raiseMemory=true
+# automatically raise memory if machine memory is more than 32GB
+HIGH_MEM_THRESHOLD_KB=$(( 64 * 1024 * 1024 ))  # 64 GB in KB
+MEDIUM_MEM_THRESHOLD_KB=$(( 32 * 1024 * 1024 ))  # 32 GB in KB
+
+OS_NAME=$(uname -s)
+TOTAL_MEM_KB=0
+
+if [[ "${OS_NAME}" == "Linux" ]]; then
+  # Get total memory in KB on the machine
+  TOTAL_MEM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+elif [[ "${OS_NAME}" == "Darwin" ]]; then
+  # Get total memory in bytes on macOS using sysctl, then convert to KB
+  TOTAL_MEM_BYTES=$(sysctl -n hw.memsize)
+  TOTAL_MEM_KB=$(( TOTAL_MEM_BYTES / 1024 ))
 fi
+
+if [[ " ${@} " =~ " -Pandroidx.highMemory " ]]; then
+  MAX_MEMORY_OVERRIDE=38g
+else
+  # determine the memory total
+  if (( TOTAL_MEM_KB >= MEDIUM_MEM_THRESHOLD_KB && TOTAL_MEM_KB < HIGH_MEM_THRESHOLD_KB )); then
+    MAX_MEMORY_OVERRIDE=19g
+  elif (( TOTAL_MEM_KB >= LARGE_MEM_THRESHOLD_KB )); then
+    MAX_MEMORY_OVERRIDE=38g
+  fi
+fi
+
 if [[ " ${@} " =~ " -Pandroidx.lowMemory " ]]; then
   if [ "$raiseMemory" == "true" ]; then
     echo "androidx.lowMemory overriding androidx.highMemory"
     echo
   fi
-  raiseMemory=false
+  unset MAX_MEMORY_OVERRIDE
 fi
 
-if [ "$raiseMemory" == "true" ]; then
+# checking if the MAX_MEMORY_OVERRIDE variable is set using -v doesn't work on a lot of mac
+# machines, this is a workaround for that
+if [[ -n "${MAX_MEMORY_OVERRIDE+x}" ]]; then
   # Set the initial heap size to match the max heap size,
   # by replacing a string like "-Xmx1g" with one like "-Xms1g -Xmx1g"
-  MAX_MEM=38g
+
   # First sed command replaces Gradle daemon -Xmx and second replaces Kotlin compliler deamon -Xmx
-  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEM -Xmx$MAX_MEM/" | sed "s/,-Xmx\([^ ]*\)/,-Xms$MAX_MEM,-Xmx$MAX_MEM/")"
+  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEMORY_OVERRIDE -Xmx$MAX_MEMORY_OVERRIDE/" | sed "s/,-Xmx\([^ ]*\)/,-Xms$MAX_MEMORY_OVERRIDE,-Xmx$MAX_MEMORY_OVERRIDE/")"
 
   # Increase the compiler cache size: b/260643754 . Remove when updating to JDK 20 ( https://bugs.openjdk.org/browse/JDK-8295724 )
   ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s|$| -XX:ReservedCodeCacheSize=576M|")"

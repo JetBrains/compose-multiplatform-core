@@ -27,15 +27,15 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Tests that drive [InProgressStrokesView] with a [StrokeGestureListener]. */
+/** Tests that drive [InProgressStrokesView] with a [StrokeGestureCallback]. */
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 @OptIn(ExperimentalInkCustomBrushApi::class)
-class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
+class StrokeGestureCallbackTest() : InProgressStrokesViewTestBase() {
 
     @Test
-    fun strokeGestureListener_withRestrictToSingleStroke_doesNotAllowMultipleStrokes() {
+    fun strokeGestureCallback_withRestrictToSingleStroke_doesNotAllowMultipleStrokes() {
         val greenBrush = basicBrush(TestColors.AVOCADO_GREEN)
         var eventTime = 0L
 
@@ -63,12 +63,12 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                     .also { eventTime += 1000L }
             }
         activityScenarioRule.scenario.onActivity { activity ->
-            var strokeGestureListener: StrokeGestureListener? =
-                StrokeGestureListener(
+            var strokeGestureCallback: StrokeGestureCallback? =
+                StrokeGestureCallback(
                     inProgressStrokesView = activity.inProgressStrokesView,
                     // Used for first stroke
                     brushForNewStrokes = greenBrush,
-                    restrictToSingleStroke = true,
+                    isRestrictedToSingleStroke = true,
                 )
             val firstTDown =
                 getMotionEvent(
@@ -100,15 +100,15 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                         },
                     ),
                 )
-            assertThat(strokeGestureListener!!.onTouch(activity.inProgressStrokesView, firstTDown))
+            assertThat(strokeGestureCallback!!.onTouch(activity.inProgressStrokesView, firstTDown))
                 .isTrue()
-            assertThat(strokeGestureListener!!.onTouch(activity.inProgressStrokesView, secondTDown))
+            assertThat(strokeGestureCallback!!.onTouch(activity.inProgressStrokesView, secondTDown))
                 .isFalse()
         }
     }
 
     @Test
-    fun strokeGestureListener_showsStrokesAndSendsCallbacks() {
+    fun strokeGestureCallback_showsStrokesAndSendsCallbacks() {
         var eventTime = 0L
         val getMotionEvent =
             {
@@ -137,17 +137,17 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
         val blueBrush = basicBrush(TestColors.COBALT_BLUE)
         val yellowBrush = basicBrush(TestColors.YELLOW)
         val redBrush = basicBrush(TestColors.RED)
-        var strokeGestureListener: StrokeGestureListener? = null
+        var strokeGestureCallback: StrokeGestureCallback? = null
         activityScenarioRule.scenario.onActivity { activity ->
-            strokeGestureListener =
-                StrokeGestureListener(
+            strokeGestureCallback =
+                StrokeGestureCallback(
                     inProgressStrokesView = activity.inProgressStrokesView,
                     // Used for first stroke
                     brushForNewStrokes = greenBrush,
                 )
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isFalse()
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_DOWN or
@@ -165,9 +165,9 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 .isTrue()
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             // Used for second stroke
-            strokeGestureListener!!.brushForNewStrokes = blueBrush
+            strokeGestureCallback!!.brushForNewStrokes = blueBrush
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_POINTER_DOWN or
@@ -191,9 +191,9 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 )
                 .isTrue()
             // Used for third (cancelled early) stroke
-            strokeGestureListener!!.brushForNewStrokes = yellowBrush
+            strokeGestureCallback!!.brushForNewStrokes = yellowBrush
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_POINTER_DOWN or
@@ -222,9 +222,9 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 )
                 .isTrue()
             // Used for forth stroke (canceled later)
-            strokeGestureListener!!.brushForNewStrokes = redBrush
+            strokeGestureCallback!!.brushForNewStrokes = redBrush
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_POINTER_DOWN or
@@ -262,7 +262,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
 
         activityScenarioRule.scenario.onActivity { activity ->
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_CANCEL or
@@ -285,7 +285,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 .isTrue()
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_MOVE,
@@ -324,7 +324,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
 
         activityScenarioRule.scenario.onActivity { activity ->
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_CANCEL or
@@ -347,7 +347,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 .isTrue()
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_POINTER_UP or
@@ -378,7 +378,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 .isFalse()
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_POINTER_UP or
@@ -403,7 +403,7 @@ class StrokeGestureListenerTest() : InProgressStrokesViewTestBase() {
                 .isTrue()
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             assertThat(
-                    strokeGestureListener!!.onTouch(
+                    strokeGestureCallback!!.onTouch(
                         activity.inProgressStrokesView,
                         getMotionEvent(
                             MotionEvent.ACTION_UP,

@@ -44,7 +44,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlin.math.roundToInt
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume.assumeFalse
@@ -139,13 +138,10 @@ class PdfViewFormFillingTest {
         }
 
         pdfClickPoint = requireNotNull(pdfClickPoint)
-        val formWidgetClickPoint = Point(pdfClickPoint.x.roundToInt(), pdfClickPoint.y.roundToInt())
         // Confirm that fakePdfDocument.applyEdit is called.
         assertThat(formEditInfos).hasSize(1)
         assertThat(formEditInfos[0])
-            .isEqualTo(
-                FormEditInfo(pageNumber = 0, widgetIndex = 0, clickPoint = formWidgetClickPoint)
-            )
+            .isEqualTo(FormEditInfo.createClick(widgetIndex = 0, clickPoint = pdfClickPoint))
     }
 
     @Test
@@ -181,7 +177,11 @@ class PdfViewFormFillingTest {
         assertThat(formEditInfos).hasSize(1)
         assertThat(formEditInfos[0])
             .isEqualTo(
-                FormEditInfo(pageNumber = 0, widgetIndex = 0, selectedIndices = IntArray(1) { 0 })
+                FormEditInfo.createSetIndices(
+                    pageNumber = 0,
+                    widgetIndex = 0,
+                    selectedIndices = IntArray(1) { 0 },
+                )
             )
     }
 
@@ -222,7 +222,11 @@ class PdfViewFormFillingTest {
         assertThat(formEditInfos).hasSize(1)
         assertThat(formEditInfos[0])
             .isEqualTo(
-                FormEditInfo(pageNumber = 0, widgetIndex = 0, selectedIndices = intArrayOf(0, 2))
+                FormEditInfo.createSetIndices(
+                    pageNumber = 0,
+                    widgetIndex = 0,
+                    selectedIndices = intArrayOf(0, 2),
+                )
             )
     }
 
@@ -278,7 +282,7 @@ class PdfViewFormFillingTest {
             close()
         }
         assertThat(formEditInfos).hasSize(1)
-        assertThat(formEditInfos[0]).isEqualTo(FormEditInfo(0, 0, finalText))
+        assertThat(formEditInfos[0]).isEqualTo(FormEditInfo.createSetText(0, 0, finalText))
     }
 
     @Test

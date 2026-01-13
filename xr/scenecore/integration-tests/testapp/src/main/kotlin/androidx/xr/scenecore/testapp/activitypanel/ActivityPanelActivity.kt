@@ -60,6 +60,7 @@ class ActivityPanelActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set toolbar
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {

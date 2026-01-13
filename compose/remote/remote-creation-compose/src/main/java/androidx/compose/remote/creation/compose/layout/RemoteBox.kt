@@ -18,9 +18,7 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.modifier.BackgroundModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.DrawModifier
@@ -62,16 +60,11 @@ public fun RemoteBox(
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable () -> Unit,
 ) {
-    val background = modifier.find<BackgroundModifier>()
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
     androidx.compose.foundation.layout.Box(
         RemoteComposeBoxModifier(modifier, horizontalAlignment, verticalArrangement)
             .then(modifier.toComposeUiLayout())
     ) {
-        if (background?.brush?.hasShader == true) {
-            RemoteCanvas(RemoteModifier.fillMaxSize()) { drawRect(background.brush) }
-        }
-
         content()
     }
 }

@@ -38,12 +38,14 @@ dependencies {
 
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
+    implementation(project(":xr:projected:projected-binding"))
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":kruth:kruth"))
     testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation(project(":xr:runtime:runtime-testing"))

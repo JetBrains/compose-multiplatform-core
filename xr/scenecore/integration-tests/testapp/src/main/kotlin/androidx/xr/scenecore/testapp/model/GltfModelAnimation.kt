@@ -32,6 +32,7 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Paths
@@ -69,12 +70,18 @@ class GltfModelAnimation : AppCompatActivity() {
     private var isGltfModelLoopAnimation: Boolean = false
     private var animationState: AnimationState = AnimationState.STOPPED
 
-    private val session by lazy { (Session.Companion.create(this) as SessionCreateSuccess).session }
+    @Suppress("DEPRECATION")
+    private val session by lazy {
+        (Session.create(this, unscaledGravityAlignedActivitySpace = true) as SessionCreateSuccess)
+            .session
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_gltf_model_animation)
+
+        session.scene.keyEntity = session.scene.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_animation_topAppBar).also {
             setSupportActionBar(it)
@@ -178,7 +185,7 @@ class GltfModelAnimation : AppCompatActivity() {
 
         fun initGltfEntity(@NonNull gltfModel: GltfModel) {
             gltfModelEntity =
-                GltfModelEntity.Companion.create(
+                GltfModelEntity.create(
                     session,
                     gltfModel,
                     Pose(Vector3(3.0f, 0.0f, -2.0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -203,8 +210,7 @@ class GltfModelAnimation : AppCompatActivity() {
     }
 
     suspend fun createGltfModel() {
-        gltfModel =
-            GltfModel.Companion.create(session, Paths.get("models", "InterpolationTest.glb"))
+        gltfModel = GltfModel.create(session, Paths.get("models", "InterpolationTest.glb"))
 
         setAnimationState(AnimationState.STOPPED)
 

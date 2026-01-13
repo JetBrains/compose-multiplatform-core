@@ -47,6 +47,7 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -151,11 +152,13 @@ class RemoteComposeScreenshotTestRule(
         screenshotName: Description = testDescription,
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color? = null,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         setContent(
             creationDisplayInfo = creationDisplayInfo,
             backgroundColor = backgroundColor,
+            deviceConfigurationOverride = deviceConfigurationOverride,
             content = content,
         )
         composeTestRule.verifyScreenshot(screenshotName, screenshotRule)
@@ -166,30 +169,33 @@ class RemoteComposeScreenshotTestRule(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color? = null,
         document: CoreDocument,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         outerContent: (@Composable (content: @Composable @RemoteComposable () -> Unit) -> Unit)? =
             null,
     ) {
         composeTestRule.setContent {
-            val boxModifier =
-                Modifier.width(creationDisplayInfo.widthDp)
-                    .height(creationDisplayInfo.heightDp)
-                    .then(
-                        if (backgroundColor != null) {
-                            Modifier.background(backgroundColor)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag("playerRoot")
+            WithOverride(deviceConfigurationOverride) {
+                val boxModifier =
+                    Modifier.width(creationDisplayInfo.widthDp)
+                        .height(creationDisplayInfo.heightDp)
+                        .then(
+                            if (backgroundColor != null) {
+                                Modifier.background(backgroundColor)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .testTag("playerRoot")
 
-            val content: @Composable @RemoteComposable () -> Unit = {
-                RemoteDocumentPlayer(document, creationDisplayInfo)
-            }
-            Box(modifier = boxModifier) {
-                if (outerContent != null) {
-                    outerContent(content)
-                } else {
-                    content()
+                val content: @Composable @RemoteComposable () -> Unit = {
+                    RemoteDocumentPlayer(document, creationDisplayInfo)
+                }
+                Box(modifier = boxModifier) {
+                    if (outerContent != null) {
+                        outerContent(content)
+                    } else {
+                        content()
+                    }
                 }
             }
         }
@@ -199,30 +205,46 @@ class RemoteComposeScreenshotTestRule(
     private fun setContent(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color?,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         composeTestRule.setContent {
-            val boxModifier =
-                Modifier.width(creationDisplayInfo.widthDp)
-                    .height(creationDisplayInfo.heightDp)
-                    .then(
-                        if (backgroundColor != null) {
-                            Modifier.background(backgroundColor)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag(ROOT_TEST_TAG)
+            WithOverride(deviceConfigurationOverride) {
+                val boxModifier =
+                    Modifier.width(creationDisplayInfo.widthDp)
+                        .height(creationDisplayInfo.heightDp)
+                        .then(
+                            if (backgroundColor != null) {
+                                Modifier.background(backgroundColor)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .testTag(ROOT_TEST_TAG)
 
-            Box(modifier = boxModifier) {
-                val document: CoreDocument? by
-                    rememberRemoteDocument(
-                        content = content,
-                        creationDisplayInfo = creationDisplayInfo,
-                        profile = profile,
-                    )
-                document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                Box(modifier = boxModifier) {
+                    val document: CoreDocument? by
+                        rememberRemoteDocument(
+                            content = content,
+                            creationDisplayInfo = creationDisplayInfo,
+                            profile = profile,
+                        )
+                    document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                }
             }
+        }
+    }
+
+    @Composable
+    private fun WithOverride(
+        deviceConfigurationOverride: DeviceConfigurationOverride?,
+        content: @Composable () -> Unit,
+    ) {
+        if (deviceConfigurationOverride != null) {
+
+            DeviceConfigurationOverride(deviceConfigurationOverride, content)
+        } else {
+            content()
         }
     }
 

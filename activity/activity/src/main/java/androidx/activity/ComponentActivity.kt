@@ -22,6 +22,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.IntentSender.SendIntentException
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -61,7 +62,6 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.app.OnMultiWindowModeChangedProvider
 import androidx.core.app.OnNewIntentProvider
-import androidx.core.app.OnUserLeaveHintProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
 import androidx.core.app.PictureInPictureParamsCompat
 import androidx.core.app.PictureInPictureProvider
@@ -127,7 +127,6 @@ open class ComponentActivity() :
     OnNewIntentProvider,
     OnMultiWindowModeChangedProvider,
     PictureInPictureProvider,
-    OnUserLeaveHintProvider,
     MenuHost,
     FullyDrawnReporterOwner {
     internal class NonConfigurationInstances {
@@ -254,6 +253,8 @@ open class ComponentActivity() :
         input
     }
 
+    private var hasPictureInPictureSystemFeature: Boolean = false
+
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
      * API 27 and lower devices or when using the default [android.app.AppComponentFactory].
@@ -344,6 +345,8 @@ open class ComponentActivity() :
         if (contentLayoutId != 0) {
             setContentView(contentLayoutId)
         }
+        hasPictureInPictureSystemFeature =
+            packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
 
     @CallSuper
@@ -1029,7 +1032,7 @@ open class ComponentActivity() :
     }
 
     final override fun enterPictureInPictureMode(params: PictureInPictureParamsCompat) {
-        if (params.isEnabled) {
+        if (hasPictureInPictureSystemFeature && params.isEnabled) {
             if (Build.VERSION.SDK_INT >= 26) {
                 enterPictureInPictureMode(params.toPictureInPictureParams())
             } else if (Build.VERSION.SDK_INT >= 24) {
@@ -1039,7 +1042,7 @@ open class ComponentActivity() :
     }
 
     final override fun setPictureInPictureParams(params: PictureInPictureParamsCompat) {
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (hasPictureInPictureSystemFeature && Build.VERSION.SDK_INT >= 26) {
             setPictureInPictureParams(params.toPictureInPictureParams())
         }
     }

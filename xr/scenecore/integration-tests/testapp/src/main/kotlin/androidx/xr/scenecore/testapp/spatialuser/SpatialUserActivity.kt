@@ -87,6 +87,7 @@ class SpatialUserActivity : AppCompatActivity() {
                 deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
             )
         )
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
         device = ArDevice.getInstance(session!!)
         cameraLeft = RenderViewpoint.left(session!!)
         cameraRight = RenderViewpoint.right(session!!)

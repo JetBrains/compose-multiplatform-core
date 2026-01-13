@@ -18,42 +18,44 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteSolidColor
-import androidx.compose.remote.creation.compose.capture.shaders.solidColor
-import androidx.compose.remote.creation.compose.layout.RemoteSize
-import androidx.compose.remote.creation.compose.layout.remoteComponentHeight
-import androidx.compose.remote.creation.compose.layout.remoteComponentWidth
-import androidx.compose.remote.creation.compose.state.FallbackCreationState
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.modifiers.RecordingModifier
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class BackgroundModifier(val brush: RemoteBrush) : RemoteModifier.Element {
+public data class BackgroundModifier(val color: RemoteColor) : RemoteModifier.Element {
     override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return if (brush is RemoteSolidColor) {
-            val r = brush.color.red.id
-            val g = brush.color.green.id
-            val b = brush.color.blue.id
-            val a = brush.color.alpha.id
-            androidx.compose.remote.creation.modifiers.SolidBackgroundModifier(r, g, b, a)
-        } else {
-            val width = remoteComponentWidth(FallbackCreationState.state)
-            val height = remoteComponentHeight(FallbackCreationState.state)
-            androidx.compose.remote.creation.modifiers.BackgroundModifier(
-                brush.createShader(RemoteSize(width, height)),
-                0,
-            )
-        }
+        val r = color.red.id
+        val g = color.green.id
+        val b = color.blue.id
+        val a = color.alpha.id
+        return androidx.compose.remote.creation.modifiers.SolidBackgroundModifier(r, g, b, a)
     }
 }
 
 public fun RemoteModifier.background(color: Color): RemoteModifier =
-    this.then(BackgroundModifier(RemoteBrush.solidColor(color)))
+    this.then(BackgroundModifier(color.rc))
 
 public fun RemoteModifier.background(color: RemoteColor): RemoteModifier =
-    this.then(BackgroundModifier(RemoteBrush.solidColor(color)))
+    this.then(BackgroundModifier(color))
 
+@RemoteComposable
+@Composable
 public fun RemoteModifier.background(brush: RemoteBrush): RemoteModifier =
-    this.then(BackgroundModifier(brush))
+    this.drawWithContent {
+        drawRect(brush)
+        drawContent()
+    }
+
+@RemoteComposable
+@Composable
+public fun RemoteModifier.background(remotePainter: RemotePainter): RemoteModifier =
+    this.drawWithContent {
+        with(remotePainter) { onDraw() }
+        drawContent()
+    }

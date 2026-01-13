@@ -111,6 +111,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     private var controlPanelEntity: PanelEntity? = null
     private var alphaMaskTexture: Texture? = null
     private var movieParent: GroupEntity? = null
+
     // This is a custom move listener which moves the movieParent instead of the surfaceEntity
     // directly. This allows for the SurfaceEntity to be independently rotated without impacting
     // the player controls which are attached to the movieParent.
@@ -188,6 +189,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         val session = (Session.create(this) as SessionCreateSuccess).session
         session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        session.scene.keyEntity = session.scene.mainPanelEntity
 
         checkExternalStoragePermission()
 
@@ -195,7 +197,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         // video canvases which appear behind it.
         if (movableComponentMP == null) {
             movableComponentMP = MovableComponent.createSystemMovable(session)
-            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
+            session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
         }
 
         // This will be re-used throughout the life of the Activity.
@@ -322,10 +324,13 @@ class SurfaceEntityImageActivity : ComponentActivity() {
             SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
                 FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
                 FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                 FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -520,6 +525,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                             SurfaceEntity.Shape.Quad(
                                 FloatSize2d(shapeDimensions.width, shapeDimensions.height)
                             )
+
                         ShapeMode.HEMISPHERE -> SurfaceEntity.Shape.Hemisphere(1.0f)
                         ShapeMode.SPHERE -> SurfaceEntity.Shape.Sphere(1.0f)
                     }
@@ -581,7 +587,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                     movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
                     if (canvasShape is SurfaceEntity.Shape.Quad) {
-                        val unused = surfaceEntity!!.addComponent(movableComponent!!)
+                        surfaceEntity!!.addComponent(movableComponent!!)
                     }
 
                     imageShowing = true
@@ -616,7 +622,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/2d_Flats_sbs_downsampled.jpg".
             bitmapUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/2d_Flats_sbs_downsampled.jpg",
             shapeMode = ShapeMode.QUAD,
             stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
@@ -636,7 +642,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/VR180_CANON_downsampled.png".
             bitmapUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/VR180_CANON_downsampled.png",
             shapeMode = ShapeMode.HEMISPHERE,
             stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
@@ -656,7 +662,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/360Flats_downsampled.jpg".
             bitmapUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/360Flats_downsampled.jpg",
             shapeMode = ShapeMode.SPHERE,
             stereoMode = SurfaceEntity.StereoMode.MONO,
@@ -670,7 +676,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
 
     @Composable
     fun SurfaceEntityImageActivityUI(session: Session, activity: SurfaceEntityImageActivity) {
-        val videoPaused = remember { mutableStateOf(false) }
+        remember { mutableStateOf(false) }
         val alphaMaskEnabled = remember { mutableStateOf(false) }
 
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -687,10 +693,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 }
                 Button(onClick = { activity.toggleColorCorrectionMode() }) {
                     val buttonTextToDisplay =
-                        if (
-                            activity.colorCorrectionMode ==
-                                SurfaceEntityImageActivity.ColorCorrectionMode.BEST_EFFORT
-                        ) {
+                        if (activity.colorCorrectionMode == ColorCorrectionMode.BEST_EFFORT) {
                             "CC: Best Effort (Tap to User Managed)"
                         } else {
                             "CC: User Managed (Tap to Best Effort)"
@@ -699,10 +702,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 }
                 Button(onClick = { activity.toggleSuperSamplingMode() }) {
                     val buttonTextToDisplay =
-                        if (
-                            activity.superSamplingMode ==
-                                SurfaceEntityImageActivity.SuperSamplingMode.DEFAULT
-                        ) {
+                        if (activity.superSamplingMode == SuperSamplingMode.DEFAULT) {
                             "SuperSampling: Enabled (Tap to disable)"
                         } else {
                             "SuperSampling: Disabled (Tap to enable)"

@@ -54,6 +54,7 @@ class AnchorEntityActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // View
         setContentView(R.layout.common_test_panel)

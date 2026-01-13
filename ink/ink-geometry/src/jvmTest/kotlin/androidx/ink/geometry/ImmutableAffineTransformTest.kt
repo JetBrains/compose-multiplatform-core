@@ -212,10 +212,26 @@ class ImmutableAffineTransformTest {
     @Test
     fun populateInverse_whenAppliedToItself_correctlyModifiesItself() {
         // This is equivalent to ImmutableAffineTransform.scale(4f, 10f)
-        val testTransform = MutableAffineTransform(4f, 0f, 0f, 0f, 10f, 0f)
+        var testTransform = MutableAffineTransform(4f, 0f, 0f, 0f, 10f, 0f)
 
         testTransform.computeInverse(testTransform)
         assertThat(testTransform).isEqualTo(ImmutableAffineTransform.scale(0.25f, 0.1f))
+
+        // Verify that an aliased argument with values at all indices can be correctly handled
+        testTransform = MutableAffineTransform(4f, 1f, 2f, 3f, 10f, 5f)
+
+        testTransform.computeInverse(testTransform)
+        assertThat(testTransform)
+            .isEqualTo(
+                ImmutableAffineTransform(
+                    .27027027f,
+                    -.027027027f,
+                    -.405405405f,
+                    -.08108108f,
+                    .108108108f,
+                    -.378378378f,
+                )
+            )
     }
 
     @Test
@@ -1061,6 +1077,25 @@ class ImmutableAffineTransformTest {
         AffineTransform.multiply(transform_lhs, transform_rhs, output)
 
         assertThat(output).isEqualTo(expected_result)
+    }
+
+    @Test
+    fun multiply_worksWithAliasedArgument() {
+        var transform_lhs = MutableAffineTransform(2.0f, -5.0f, 4.0f, 3.0f, 9.0f, -6.0f)
+        var transform_rhs = MutableAffineTransform(11.0f, 17.0f, -7.0f, -8.0f, 14.0f, 19.0f)
+        val expected_result =
+            ImmutableAffineTransform(62.0f, -36.0f, -105.0f, -39.0f, 177.0f, 144.0f)
+
+        AffineTransform.multiply(transform_lhs, transform_rhs, transform_lhs)
+
+        assertThat(transform_lhs).isEqualTo(expected_result)
+
+        transform_lhs = MutableAffineTransform(2.0f, -5.0f, 4.0f, 3.0f, 9.0f, -6.0f)
+        transform_rhs = MutableAffineTransform(11.0f, 17.0f, -7.0f, -8.0f, 14.0f, 19.0f)
+
+        AffineTransform.multiply(transform_lhs, transform_rhs, transform_rhs)
+
+        assertThat(transform_rhs).isEqualTo(expected_result)
     }
 
     @Test

@@ -16,6 +16,7 @@
 
 package androidx.datastore.preferences.core
 
+import androidx.kruth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -375,6 +376,81 @@ class PreferencesTest {
         val mutableToPrefs = mutablePreferences.toMutablePreferences()
         mutableToPrefs[intKey1] = 12903819
         assertEquals(1, prefs[intKey1])
+    }
+
+    @Test
+    fun clearPreferencesWithinCopyBlock() {
+        // Arrange.
+        val key = intPreferencesKey("key")
+        val prefsWithInt = preferencesOf(key to 123)
+
+        // Act.
+        val resultingPrefs = prefsWithInt.copy { it.clear() }
+
+        // Assert.
+        assertThat(resultingPrefs.asMap()).isEmpty()
+    }
+
+    @Test
+    fun removeItemWithinCopyBlock() {
+        // Arrange.
+        val key1 = intPreferencesKey("key1")
+        val key2 = intPreferencesKey("key2")
+        val key3 = intPreferencesKey("key3")
+        val preferences = preferencesOf(key1 to 123, key2 to 456, key3 to 789)
+
+        // Act.
+        val copiedPreferences = preferences.copy { it.remove(key2) }
+
+        // Assert.
+        assertThat(copiedPreferences.asMap()).containsExactly(Pair(key1, 123), Pair(key3, 789))
+    }
+
+    @Test
+    fun removeOnlyItemWithinCopyBlock() {
+        // Arrange.
+        val intKey = intPreferencesKey("key")
+        val prefsWithInt = preferencesOf(intKey to 123)
+
+        // Act.
+        val copiedPreferences = prefsWithInt.copy { it.remove(intKey) }
+
+        // Assert.
+        assertThat(copiedPreferences.asMap()).isEmpty()
+    }
+
+    @Test
+    fun copyRetainsAllKeys() {
+        // Arrange.
+        val key1 = intPreferencesKey("key1")
+        val key2 = intPreferencesKey("key2")
+        val key3 = intPreferencesKey("key3")
+        val preferences = preferencesOf(key1 to 123, key2 to 456, key3 to 789)
+
+        // Act.
+        val copiedPreferences = preferences.copy {}
+
+        // Assert.
+        assertThat(copiedPreferences.asMap())
+            .containsExactly(Pair(key1, 123), Pair(key2, 456), Pair(key3, 789))
+    }
+
+    @Test
+    fun copyPreferences_doesNotMutateOriginal() {
+        // Arrange.
+        val key1 = intPreferencesKey("key1")
+        val key2 = intPreferencesKey("key2")
+        val key3 = intPreferencesKey("key3")
+        val preferences = preferencesOf(key1 to 123, key2 to 456, key3 to 789)
+
+        // Act.
+        val copiedPreferences = preferences.copy { pref -> pref[key2] = 100 }
+
+        // Assert.
+        assertThat(preferences.asMap())
+            .containsExactly(Pair(key1, 123), Pair(key2, 456), Pair(key3, 789))
+        assertThat(copiedPreferences.asMap())
+            .containsExactly(Pair(key1, 123), Pair(key2, 100), Pair(key3, 789))
     }
 
     @Test

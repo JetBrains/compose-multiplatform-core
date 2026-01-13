@@ -105,7 +105,11 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             insets
         }
 
-        session = (Session.create(this) as SessionCreateSuccess).session
+        @Suppress("DEPRECATION")
+        session =
+            (Session.create(this, unscaledGravityAlignedActivitySpace = true)
+                    as SessionCreateSuccess)
+                .session
         scene = session.scene
         scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.configure(
@@ -114,6 +118,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                 handTracking = Config.HandTrackingMode.BOTH,
             )
         )
+        session.scene.keyEntity = session.scene.mainPanelEntity
         device = ArDevice.getInstance(session)
 
         surfaceParent = GroupEntity.create(session, "SurfaceParent", Pose.Identity)
@@ -554,10 +559,13 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                 SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
                 SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
                     FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
                 SurfaceEntity.StereoMode.TOP_BOTTOM ->
                     FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
                 SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                     FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
                 else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
             }
         }

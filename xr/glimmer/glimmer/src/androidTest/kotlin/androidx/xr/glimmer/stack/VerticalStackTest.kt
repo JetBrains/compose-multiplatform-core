@@ -23,6 +23,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,6 +38,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
@@ -48,6 +51,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -1123,6 +1127,50 @@ class VerticalStackTest {
                 .that(nextNextItemColor.blue)
                 .isGreaterThan(0.3f)
         }
+    }
+
+    @Test
+    fun initialFocus_largerSecondItem_focusesOnFirstItem() {
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                item { Box(Modifier.focusable().size(10.dp).testTag("Item 0")) }
+                item { Box(Modifier.fillMaxSize().focusable().testTag("Item 1")) }
+            }
+        }
+
+        rule.onNodeWithTag("Item 0").assertIsFocused()
+        rule.onNodeWithTag("Item 1").assertIsNotFocused()
+    }
+
+    @Test
+    fun focusReenter_afterFocusMove_focusesOnTopItem() = runTest {
+        val state = StackState()
+        val anotherFocusTargetRequester = FocusRequester()
+        lateinit var focusManager: FocusManager
+        rule.setContent {
+            focusManager = LocalFocusManager.current
+            Column {
+                VerticalStack(state = state) {
+                    item { StackItem("Item 0") }
+                    item { StackItem("Item 1") }
+                }
+                Box(Modifier.size(100.dp).focusRequester(anotherFocusTargetRequester).focusable())
+            }
+        }
+        runOnUiThread { state.scrollToItem(1) }
+        rule.onNodeWithTag("Item 0").assertIsNotFocused()
+        rule.onNodeWithTag("Item 1").assertIsFocused()
+
+        rule.runOnIdle { anotherFocusTargetRequester.requestFocus() }
+
+        rule.onNodeWithTag("Item 0").assertIsNotFocused()
+        rule.onNodeWithTag("Item 1").assertIsNotFocused()
+
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Previous) }
+
+        rule.onNodeWithTag("Item 0").assertIsNotFocused()
+        rule.onNodeWithTag("Item 1").assertIsFocused()
     }
 
     @Test

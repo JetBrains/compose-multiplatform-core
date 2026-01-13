@@ -88,7 +88,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     public constructor() : super()
 
-    public constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
+    protected constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
     /**
      * If `true`, the fragment is in edit mode, allowing for annotating or editing. If `false`, the
@@ -167,6 +167,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
      * The host should override this method to perform the write operation. The provided
      * [PdfWriteHandle] allows writing the document changes to a [android.os.ParcelFileDescriptor].
      * The handle **must** be closed after writing to ensure proper resource cleanup.
+     *
+     * After the write operation is complete, the host is responsible for exiting the edit mode by
+     * setting [isEditModeEnabled] to `false`.
      *
      * @param handle A [PdfWriteHandle] to be used for writing the changes to a file.
      * @see applyDraftEdits

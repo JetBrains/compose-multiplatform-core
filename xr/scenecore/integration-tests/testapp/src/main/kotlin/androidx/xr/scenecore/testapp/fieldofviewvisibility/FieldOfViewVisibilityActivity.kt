@@ -77,6 +77,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar).also {

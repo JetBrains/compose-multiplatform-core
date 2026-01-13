@@ -27,7 +27,10 @@ public fun RemoteModifier.size(width: RemoteDp, height: RemoteDp): RemoteModifie
 
 public fun RemoteModifier.size(size: RemoteDp): RemoteModifier = width(size).height(size)
 
-public fun RemoteModifier.fillMaxSize(fraction: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
+public fun RemoteModifier.fillMaxSize(fraction: Float = 1f): RemoteModifier =
+    fillMaxWidth(fraction).fillMaxHeight(fraction)
+
+public fun RemoteModifier.fillMaxSize(fraction: RemoteFloat): RemoteModifier =
     fillMaxWidth(fraction).fillMaxHeight(fraction)
 
 public fun RemoteModifier.wrapContentSize(): RemoteModifier =

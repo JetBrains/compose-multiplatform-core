@@ -17,6 +17,7 @@
 package androidx.pdf.utils
 
 import android.annotation.SuppressLint
+import android.graphics.Point
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RestrictTo
@@ -30,6 +31,7 @@ import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
+import kotlin.math.roundToInt
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public fun android.graphics.pdf.models.PageMatchBounds.toContentClass(): PageMatchBounds =
@@ -131,9 +133,19 @@ public fun FormEditInfo.toAndroidClass(): android.graphics.pdf.models.FormEditRe
         val builder =
             android.graphics.pdf.models.FormEditRecord.Builder(type, pageNumber, widgetIndex)
         when (type) {
-            FormEditInfo.EDIT_TYPE_CLICK -> builder.setClickPoint(clickPoint)
+            FormEditInfo.EDIT_TYPE_CLICK -> {
+                clickPoint?.let {
+                    builder.setClickPoint(Point(it.x.roundToInt(), it.y.roundToInt()))
+                }
+            }
             FormEditInfo.EDIT_TYPE_SET_TEXT -> builder.setText(text)
-            FormEditInfo.EDIT_TYPE_SET_INDICES -> builder.setSelectedIndices(selectedIndices)
+            FormEditInfo.EDIT_TYPE_SET_INDICES -> {
+                val selectedIndices = IntArray(selectedIndexCount)
+                for (i in 0 until selectedIndexCount) {
+                    selectedIndices[i] = getSelectedIndexAt(i)
+                }
+                builder.setSelectedIndices(selectedIndices)
+            }
             else -> {}
         }
         builder.build()

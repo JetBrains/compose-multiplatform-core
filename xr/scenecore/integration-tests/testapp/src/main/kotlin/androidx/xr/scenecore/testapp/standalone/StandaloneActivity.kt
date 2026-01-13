@@ -55,6 +55,7 @@ class StandaloneActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Set toolbar
         val toolbar: Toolbar = findViewById(R.id.top_app_bar_activity_panel)

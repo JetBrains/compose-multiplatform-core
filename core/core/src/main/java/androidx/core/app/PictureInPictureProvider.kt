@@ -20,7 +20,9 @@ import android.app.PictureInPictureParams
 
 /** Provider interface to support PiP (Picture-in-Picture) functionalities. */
 public interface PictureInPictureProvider :
-    OnPictureInPictureModeChangedProvider, OnPictureInPictureUiStateChangedProvider {
+    OnPictureInPictureModeChangedProvider,
+    OnPictureInPictureUiStateChangedProvider,
+    OnUserLeaveHintProvider {
     /**
      * Available since API 24 in the framework Activity class, puts the activity in
      * picture-in-picture mode if possible in the current system state. Any prior calls to

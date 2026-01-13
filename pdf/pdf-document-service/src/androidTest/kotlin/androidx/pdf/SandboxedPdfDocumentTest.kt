@@ -19,7 +19,6 @@ package androidx.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
@@ -361,13 +360,13 @@ class SandboxedPdfDocumentTest {
         assertThat(editableFormWidget.textValue).isEqualTo("false")
 
         val editRecord =
-            FormEditInfo(
-                pageNumber = pageNum,
+            FormEditInfo.createClick(
                 widgetIndex = editableFormWidget.widgetIndex,
                 clickPoint =
-                    Point(
-                        editableFormWidget.widgetRect.centerX(),
-                        editableFormWidget.widgetRect.centerY(),
+                    PdfPoint(
+                        pageNum,
+                        editableFormWidget.widgetRect.centerX().toFloat(),
+                        editableFormWidget.widgetRect.centerY().toFloat(),
                     ),
             )
 

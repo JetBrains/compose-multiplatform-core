@@ -58,6 +58,7 @@ dependencies {
     androidTestImplementation(project(":test:screenshot:screenshot"))
     androidTestImplementation("androidx.activity:activity:1.7.2")
     androidTestImplementation("androidx.compose.material:material-icons-core:1.7.8")
+    androidTestImplementation(project(":compose:ui:ui-test"))
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
@@ -66,4 +67,5 @@ dependencies {
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.testParameterInjector)
 }

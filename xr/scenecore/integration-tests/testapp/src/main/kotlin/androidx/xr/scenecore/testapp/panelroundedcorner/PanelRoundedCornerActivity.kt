@@ -62,6 +62,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
             tryToCreateActivityPanel(capabilities)
         }
         tryToCreateActivityPanel(session!!.scene.spatialCapabilities)
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         @SuppressLint("InflateParams")
         val panelEntityView = layoutInflater.inflate(R.layout.rounded_corner_panel_entity, null)

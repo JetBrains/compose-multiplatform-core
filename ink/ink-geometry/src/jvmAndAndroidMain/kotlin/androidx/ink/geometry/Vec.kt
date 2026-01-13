@@ -69,9 +69,10 @@ public abstract class Vec internal constructor() {
     public fun computeUnitVec(): ImmutableVec = VecNative.unitVec(this.x, this.y)
 
     /**
-     * Modifies [outVec] into a vector with the same direction as this one, but with a magnitude of
-     * `1`. Returns [outVec]. This is equivalent to (but faster than) calling
-     * [MutableVec.fromDirectionInDegreesAndMagnitude] with [computeDirectionDegrees] and `1`.
+     * Modifies [outVec], which may be [this], into a vector with the same direction as this one,
+     * but with a magnitude of `1`. Returns [outVec]. This is equivalent to (but faster than)
+     * calling [MutableVec.fromDirectionInDegreesAndMagnitude] with [computeDirectionDegrees] and
+     * `1`.
      *
      * In keeping with the above equivalence, this will return <±1, ±0> for the zero vector,
      * depending on the signs of the zeros.
@@ -89,12 +90,13 @@ public abstract class Vec internal constructor() {
     public fun computeOrthogonal(): ImmutableVec = ImmutableVec(-y, x)
 
     /**
-     * Modifies [outVec] into a vector with the same magnitude as this one, but rotated by
-     * (positive) 90 degrees. Returns [outVec].
+     * Modifies [outVec], which may be [this], into a vector with the same magnitude as this one,
+     * but rotated by (positive) 90 degrees. Returns [outVec].
      */
     public fun computeOrthogonal(outVec: MutableVec): MutableVec {
+        val oldX = this.x // Saves x, in case [outVec] is [this]
         outVec.x = -y
-        outVec.y = x
+        outVec.y = oldX
         return outVec
     }
 
@@ -106,8 +108,8 @@ public abstract class Vec internal constructor() {
     public fun computeNegation(): ImmutableVec = ImmutableVec(-x, -y)
 
     /**
-     * Modifies [outVec] into a vector with the same magnitude, but pointing in the opposite
-     * direction. Returns [outVec].
+     * Modifies [outVec], which may be [this], into a vector with the same magnitude, but pointing
+     * in the opposite direction. Returns [outVec].
      */
     public fun computeNegation(outVec: MutableVec): MutableVec {
         outVec.x = -x
@@ -159,7 +161,10 @@ public abstract class Vec internal constructor() {
         /** The origin of the coordinate system, i.e. (0, 0). */
         @JvmField public val ORIGIN: ImmutableVec = ImmutableVec(0f, 0f)
 
-        /** Adds the x and y values of both [Vec] objects and stores the result in [output]. */
+        /**
+         * Adds the x and y values of both [Vec] objects and stores the result in [output], which
+         * may be [lhs] or [rhs].
+         */
         @JvmStatic
         public fun add(lhs: Vec, rhs: Vec, output: MutableVec) {
             output.x = lhs.x + rhs.x
@@ -168,7 +173,7 @@ public abstract class Vec internal constructor() {
 
         /**
          * Subtracts the x and y values of [rhs] from the x and y values of [lhs] and stores the
-         * result in [output].
+         * result in [output], which may be [lhs] or [rhs].
          */
         @JvmStatic
         public fun subtract(lhs: Vec, rhs: Vec, output: MutableVec) {
@@ -178,7 +183,7 @@ public abstract class Vec internal constructor() {
 
         /**
          * Multiplies the x and y values of the [Vec] by the Float and stores the result in
-         * [output].
+         * [output], which may be [lhs].
          */
         @JvmStatic
         public fun multiply(lhs: Vec, rhs: Float, output: MutableVec) {
@@ -188,7 +193,7 @@ public abstract class Vec internal constructor() {
 
         /**
          * Multiplies the x and y values of the [Vec] by the Float and stores the result in
-         * [output].
+         * [output], which may be [rhs].
          */
         @JvmStatic
         public fun multiply(lhs: Float, rhs: Vec, output: MutableVec) {
@@ -196,7 +201,8 @@ public abstract class Vec internal constructor() {
         }
 
         /**
-         * Divides the x and y values of the [Vec] by the Float and stores the result in [output].
+         * Divides the x and y values of the [Vec] by the Float and stores the result in [output],
+         * which may be [lhs].
          */
         @JvmStatic
         public fun divide(lhs: Vec, rhs: Float, output: MutableVec) {

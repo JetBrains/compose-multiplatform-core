@@ -50,6 +50,7 @@ class MemoryLeakActivity : AppCompatActivity() {
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         val weakActivity = WeakReference(this@MemoryLeakActivity)
         // toolbar

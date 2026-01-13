@@ -79,6 +79,7 @@ class MovableActivity : AppCompatActivity() {
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {

@@ -17,7 +17,6 @@
 package androidx.pdf.view
 
 import android.content.Context
-import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import androidx.pdf.PdfPoint
@@ -81,10 +80,9 @@ class FormWidgetInteractionHandlerTest {
             )
 
         val expectedEditRecord =
-            FormEditInfo(
-                pageNumber = pageNum,
+            FormEditInfo.createClick(
                 widgetIndex = widgetIndex,
-                clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
+                clickPoint = PdfPoint(pageNum, pdfCoordinates.x, pdfCoordinates.y),
             )
 
         handler.handleInteraction(touchPoint, formWidgetInfo)
@@ -112,10 +110,9 @@ class FormWidgetInteractionHandlerTest {
                 readOnly = false,
             )
         val expectedEditRecord =
-            FormEditInfo(
-                pageNumber = pageNum,
+            FormEditInfo.createClick(
                 widgetIndex = widgetIndex,
-                clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
+                clickPoint = PdfPoint(pageNum, pdfCoordinates.x, pdfCoordinates.y),
             )
 
         handler.handleInteraction(touchPoint, formWidgetInfo)
@@ -142,10 +139,9 @@ class FormWidgetInteractionHandlerTest {
                 readOnly = false,
             )
         val expectedEditRecord =
-            FormEditInfo(
-                pageNumber = pageNum,
+            FormEditInfo.createClick(
                 widgetIndex = widgetIndex,
-                clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
+                clickPoint = PdfPoint(pageNum, pdfCoordinates.x, pdfCoordinates.y),
             )
 
         handler.handleInteraction(touchPoint, formWidgetInfo)

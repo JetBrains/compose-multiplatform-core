@@ -94,7 +94,7 @@ public fun VerticalStack(
         state = state.pagerState,
         modifier =
             modifier
-                .onFocusChanged(state::onTopLevelFocusChanged)
+                .then(StackInitialFocusElement(state))
                 .stackScrim()
                 .nestedScroll(singleItemScrollConstraintConnection),
         contentPadding = PaddingValues(bottom = RevealAreaSize),

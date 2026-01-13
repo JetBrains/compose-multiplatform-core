@@ -18,6 +18,7 @@
 
 package androidx.lifecycle
 
+import androidx.annotation.EmptySuper
 import androidx.annotation.MainThread
 import androidx.lifecycle.viewmodel.internal.ViewModelImpl
 import java.io.Closeable
@@ -60,7 +61,7 @@ public actual abstract class ViewModel {
         impl = ViewModelImpl(*closeables)
     }
 
-    protected actual open fun onCleared() {}
+    @EmptySuper protected actual open fun onCleared() {}
 
     @MainThread
     internal actual fun clear() {

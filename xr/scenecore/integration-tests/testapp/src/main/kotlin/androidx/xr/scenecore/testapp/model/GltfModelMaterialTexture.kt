@@ -74,6 +74,7 @@ class GltfModelMaterialTexture : AppCompatActivity() {
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
         session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
             setSupportActionBar(it)
@@ -195,6 +196,7 @@ class GltfModelMaterialTexture : AppCompatActivity() {
                 spatialMode = SpatialMode.HSM
                 return getString(R.string.switch_to_fsm_button_text)
             }
+
             SpatialMode.HSM -> {
                 session!!.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM

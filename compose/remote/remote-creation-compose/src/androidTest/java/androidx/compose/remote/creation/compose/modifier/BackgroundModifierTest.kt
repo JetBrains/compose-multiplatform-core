@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.capture.shaders.horizontalGradient
 import androidx.compose.remote.creation.compose.capture.shaders.radialGradient
@@ -168,6 +169,23 @@ class BackgroundModifierTest {
 
             DemoBox("background(RemoteColor.fromARGB(alpha, red, green, blue))") {
                 RemoteBox(modifier = RemoteModifier.fillMaxSize().background(color))
+            }
+        }
+    }
+
+    @SuppressLint("UnrememberedMutableState")
+    @Test
+    fun backgroundRemotePainter() {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
+            DemoBox("background(painterRemoteColor(Color.Blue))") {
+                RemoteBox(
+                    modifier =
+                        RemoteModifier.fillMaxSize()
+                            .background(remotePainter = painterRemoteColor(Color.Blue))
+                )
             }
         }
     }

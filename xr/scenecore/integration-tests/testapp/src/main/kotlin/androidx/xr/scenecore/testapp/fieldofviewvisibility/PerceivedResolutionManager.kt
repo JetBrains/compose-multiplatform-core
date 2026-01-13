@@ -229,13 +229,16 @@ class PerceivedResolutionManager(
                 mStopLoop = false
                 mHandler.post(mUpdatePerceivedResolutionRunnable)
             }
+
             Lifecycle.Event.ON_STOP -> {
                 mStopLoop = true
                 mHandler.removeCallbacks(mUpdatePerceivedResolutionRunnable)
             }
+
             Lifecycle.Event.ON_DESTROY -> {
                 destroyPerceivedResolutionPanel()
             }
+
             else -> {
                 // Do nothing
             }

@@ -1116,16 +1116,10 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
             """
 DATA_TEXT<42> = "Green"
 ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-  ComponentValue value 43 set to WIDTH of Component -2
-  ComponentValue value 44 set to HEIGHT of Component -2
   BOX [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-    CANVAS [-5:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-      MODIFIERS
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-        ComponentValue value 48 set to WIDTH of Component -7
-        ComponentValue value 49 set to HEIGHT of Component -7
-    TEXT_LAYOUT [-8:-1] = [250.0, 364.0, 215.0, 97.0] VISIBLE (42:"Green")
+      DRAW_CONTENT
+    TEXT_LAYOUT [-5:-1] = [250.0, 364.0, 215.0, 97.0] VISIBLE (42:"Green")
       MODIFIERS
 """
         testLayout(result) {
@@ -1172,23 +1166,17 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
         val result =
             """
 ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-  ComponentValue value 42 set to WIDTH of Component -2
-  ComponentValue value 43 set to HEIGHT of Component -2
   BOX [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-    CANVAS [-5:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-      MODIFIERS
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
-        ComponentValue value 47 set to WIDTH of Component -7
-        ComponentValue value 48 set to HEIGHT of Component -7
-    ROW [-8:-1] = [313.5, 368.5, 88.0, 88.0] VISIBLE
+      DRAW_CONTENT
+    ROW [-5:-1] = [313.5, 368.5, 88.0, 88.0] VISIBLE
       MODIFIERS
         BACKGROUND = [0.0, 0.0, 88.0, 88.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
-      CANVAS [-10:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
+      CANVAS [-7:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
         MODIFIERS
           WIDTH = 32.0 dp
           HEIGHT = 32.0 dp
-        CANVAS_CONTENT [-12:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
+        CANVAS_CONTENT [-9:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
 """
         testLayout(result) {
             val colors =

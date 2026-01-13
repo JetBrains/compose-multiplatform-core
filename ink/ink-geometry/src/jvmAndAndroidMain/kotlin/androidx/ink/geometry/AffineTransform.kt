@@ -415,9 +415,12 @@ public abstract class AffineTransform internal constructor() {
 
         /**
          * Multiplies the [lhs] transform by the [rhs] transform as matrices, and stores the result
-         * in [output]. Note that, when performing matrix multiplication, the [lhs] transform is
-         * applied after the [rhs] transform; i.e., after calling this method, [output] contains a
-         * transform equivalent to applying [rhs], then [lhs].
+         * in [output], which may be the same [MutableAffineTransform] instance as [lhs] or [rhs] to
+         * avoid additional allocations.
+         *
+         * Note that, when performing matrix multiplication, the [lhs] transform is applied after
+         * the [rhs] transform; i.e., after calling this method, [output] contains a transform
+         * equivalent to applying [rhs], then [lhs].
          */
         @JvmStatic
         public fun multiply(
@@ -425,12 +428,13 @@ public abstract class AffineTransform internal constructor() {
             rhs: AffineTransform,
             output: MutableAffineTransform,
         ) {
-            output.m00 = lhs.m00 * rhs.m00 + lhs.m10 * rhs.m01
-            output.m10 = lhs.m00 * rhs.m10 + lhs.m10 * rhs.m11
-            output.m20 = lhs.m00 * rhs.m20 + lhs.m10 * rhs.m21 + lhs.m20
-            output.m01 = lhs.m01 * rhs.m00 + lhs.m11 * rhs.m01
-            output.m11 = lhs.m01 * rhs.m10 + lhs.m11 * rhs.m11
-            output.m21 = lhs.m01 * rhs.m20 + lhs.m11 * rhs.m21 + lhs.m21
+            val newM00 = lhs.m00 * rhs.m00 + lhs.m10 * rhs.m01
+            val newM10 = lhs.m00 * rhs.m10 + lhs.m10 * rhs.m11
+            val newM20 = lhs.m00 * rhs.m20 + lhs.m10 * rhs.m21 + lhs.m20
+            val newM01 = lhs.m01 * rhs.m00 + lhs.m11 * rhs.m01
+            val newM11 = lhs.m01 * rhs.m10 + lhs.m11 * rhs.m11
+            val newM21 = lhs.m01 * rhs.m20 + lhs.m11 * rhs.m21 + lhs.m21
+            output.setValues(newM00, newM10, newM20, newM01, newM11, newM21)
         }
     }
 }

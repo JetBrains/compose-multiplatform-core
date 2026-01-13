@@ -90,6 +90,7 @@ dependencies {
     docs(project(":compose:remote:remote-player-core"))
     docs(project(":compose:remote:remote-player-view"))
     docs(project(":compose:remote:remote-tooling-preview"))
+    docs(project(":core:core-pip"))
     docs(project(":wear:compose:remote:remote-material3"))
     kmpDocs(project(":compose:runtime:runtime"))
     kmpDocs(project(":compose:runtime:runtime-annotation"))

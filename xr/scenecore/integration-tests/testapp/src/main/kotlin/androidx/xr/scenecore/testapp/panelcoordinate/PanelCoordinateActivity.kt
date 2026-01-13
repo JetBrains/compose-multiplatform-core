@@ -104,6 +104,7 @@ class PanelCoordinateActivity : AppCompatActivity() {
                 session = sessionResult.session
                 setupSecondaryPanelAndGltfEntity(session!!)
                 session!!.scene.mainPanelEntity.size = FloatSize2d(1.2f, 0.8f)
+                session?.scene?.keyEntity = session?.scene?.mainPanelEntity
             } else {
                 this@PanelCoordinateActivity.finish()
             }

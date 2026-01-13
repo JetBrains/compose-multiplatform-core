@@ -127,6 +127,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     private var controlPanelEntity: PanelEntity? = null
     private var alphaMaskTexture: Texture? = null
     private var movieParent: GroupEntity? = null
+
     // This is a custom move listener which moves the movieParent instead of the surfaceEntity
     // directly. This allows for the SurfaceEntity to be independently rotated without impacting
     // the player controls which are attached to the movieParent.
@@ -185,6 +186,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
 
     private var currentPoseForVideo: Pose? = null
     private var currentVideoSize: VideoSize? = null
+
     // When the video is recorded using a rotated phone, the encoded video
     // bitstream may have a different orientation than the device's display.
     // To correct the orientation, we need to rotate the video content by
@@ -195,9 +197,14 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val session = (Session.create(this) as SessionCreateSuccess).session
+        @Suppress("DEPRECATION")
+        val session =
+            (Session.create(this, unscaledGravityAlignedActivitySpace = true)
+                    as SessionCreateSuccess)
+                .session
         session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        session.scene.keyEntity = session.scene.mainPanelEntity
 
         checkExternalStoragePermission()
 
@@ -205,7 +212,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         // video canvases which appear behind it.
         if (movableComponentMP == null) {
             movableComponentMP = MovableComponent.createSystemMovable(session)
-            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
+            session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
         }
 
         // This will be re-used throughout the life of the Activity.
@@ -351,10 +358,13 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
                 FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
                 FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                 FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
+
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -605,7 +615,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                     movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
                     if (shape is SurfaceEntity.Shape.Quad) {
-                        val unused = surfaceEntity!!.addComponent(movableComponent!!)
+                        surfaceEntity!!.addComponent(movableComponent!!)
                     }
                 }
                 currentPoseForVideo = actualPose
@@ -730,7 +740,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                     }
                 )
                 if (loop) {
-                    player.setRepeatMode(Player.REPEAT_MODE_ALL)
+                    player.repeatMode = Player.REPEAT_MODE_ALL
                 }
                 player.playWhenReady = true
                 player.prepare()
@@ -756,8 +766,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/vid_bigbuckbunny.mp4".
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/vid_bigbuckbunny.mp4",
+                Environment.getExternalStorageDirectory().path + "/Download/vid_bigbuckbunny.mp4",
             stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
             shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
@@ -781,7 +790,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_left_primary_1080.mov".
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/mvhevc_flat_left_primary_1080.mov",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -807,7 +816,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_right_primary_1080.mov".
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/mvhevc_flat_right_primary_1080.mov",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -826,8 +835,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             session = session,
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Naver180.mp4".
-            videoUri =
-                Environment.getExternalStorageDirectory().getPath() + "/Download/Naver180.mp4",
+            videoUri = Environment.getExternalStorageDirectory().path + "/Download/Naver180.mp4",
             stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
             pose = Pose.Identity, // will be head pose
             shape = SurfaceEntity.Shape.Hemisphere(1.0f),
@@ -845,8 +853,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Galaxy11_VR_3D360.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/Galaxy11_VR_3D360.mp4",
+                Environment.getExternalStorageDirectory().path + "/Download/Galaxy11_VR_3D360.mp4",
             stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
             pose = Pose.Identity, // will be head pose
             shape = SurfaceEntity.Shape.Sphere(1.0f),
@@ -864,8 +871,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             activity = activity,
             // For Testers: Note that this translates to "/sdcard/Download/Naver180_MV-HEVC.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
-                    "/Download/Naver180_MV-HEVC.mp4",
+                Environment.getExternalStorageDirectory().path + "/Download/Naver180_MV-HEVC.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose.Identity, // will be head pose
             shape = SurfaceEntity.Shape.Hemisphere(1.0f),
@@ -884,7 +890,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/Galaxy11_VR_3D360_MV-HEVC.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/Galaxy11_VR_3D360_MV-HEVC.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose.Identity, // will be head pose
@@ -909,7 +915,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/sdr_singleview_protected.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/sdr_singleview_protected.mp4",
             stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -935,7 +941,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_flat_left_primary_1080_protected.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/mvhevc_flat_left_primary_1080_protected.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -961,7 +967,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/hdr_pq_1000nits_1080p.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/hdr_pq_1000nits_1080p.mp4",
             stereoMode = SurfaceEntity.StereoMode.MONO,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -987,7 +993,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/single_view_rotated_270_half_width.mp4"
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/single_view_rotated_270_half_width.mp4",
             stereoMode = SurfaceEntity.StereoMode.MONO,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -1013,7 +1019,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
             // For Testers: Note that this translates to
             // "/sdcard/Download/mvhevc_left_primary_rotated_180.mp4".
             videoUri =
-                Environment.getExternalStorageDirectory().getPath() +
+                Environment.getExternalStorageDirectory().path +
                     "/Download/mvhevc_left_primary_rotated_180.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
@@ -1045,10 +1051,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 }
                 Button(onClick = { activity.toggleColorCorrectionMode() }) {
                     val buttonTextToDisplay =
-                        if (
-                            activity.colorCorrectionMode ==
-                                SurfaceEntityPlaybackActivity.ColorCorrectionMode.BEST_EFFORT
-                        ) {
+                        if (activity.colorCorrectionMode == ColorCorrectionMode.BEST_EFFORT) {
                             "CC: Best Effort (Tap to User Managed)"
                         } else {
                             "CC: User Managed (Tap to Best Effort)"
@@ -1057,10 +1060,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 }
                 Button(onClick = { activity.toggleSuperSamplingMode() }) {
                     val buttonTextToDisplay =
-                        if (
-                            activity.superSamplingMode ==
-                                SurfaceEntityPlaybackActivity.SuperSamplingMode.DEFAULT
-                        ) {
+                        if (activity.superSamplingMode == SuperSamplingMode.DEFAULT) {
                             "SuperSampling: Enabled (Tap to disable)"
                         } else {
                             "SuperSampling: Disabled (Tap to enable)"
@@ -1125,7 +1125,7 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
         }
     }
 
-    public companion object {
+    companion object {
         @Suppress("UnsafeOptInUsageError")
         fun parseMaxCLLFromHdrStaticInfo(hdrStaticInfoByteArray: ByteArray?): Int {
             // HdrStaticInfo follows CTA-861.3 standard, in which maxCLL, if available, is encoded
@@ -1160,13 +1160,16 @@ class SurfaceEntityPlaybackActivity : ComponentActivity() {
                 when (colorInfo.colorTransfer) {
                     C.COLOR_TRANSFER_GAMMA_2_2 ->
                         SurfaceEntity.ContentColorMetadata.ColorTransfer.GAMMA_2_2
+
                     C.COLOR_TRANSFER_HLG -> SurfaceEntity.ContentColorMetadata.ColorTransfer.HLG
                     C.COLOR_TRANSFER_LINEAR ->
                         SurfaceEntity.ContentColorMetadata.ColorTransfer.LINEAR
+
                     C.COLOR_TRANSFER_SDR -> SurfaceEntity.ContentColorMetadata.ColorTransfer.SDR
                     C.COLOR_TRANSFER_SRGB -> SurfaceEntity.ContentColorMetadata.ColorTransfer.SRGB
                     C.COLOR_TRANSFER_ST2084 ->
                         SurfaceEntity.ContentColorMetadata.ColorTransfer.ST2084
+
                     else -> error("Unknown color transfer: " + colorInfo.colorTransfer)
                 }
             Log.d(TAG, "colorTransfer: $colorTransfer")

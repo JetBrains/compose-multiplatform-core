@@ -52,5 +52,6 @@ dependencies {
     implementation(project(":compose:remote:remote-player-core"))
     implementation(project(":compose:remote:remote-player-view"))
     implementation(project(":compose:remote:remote-player-compose"))
+    implementation(project(":compose:ui:ui-test"))
     implementation(project(":test:screenshot:screenshot"))
 }
