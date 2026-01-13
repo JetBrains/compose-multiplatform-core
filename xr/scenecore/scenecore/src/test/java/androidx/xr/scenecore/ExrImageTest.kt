@@ -18,19 +18,17 @@ package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrRuntime
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeExrImageResource
-import androidx.xr.scenecore.testing.FakeRenderingRuntimeFactory
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Paths
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,9 +37,8 @@ import org.robolectric.Robolectric
 @RunWith(AndroidJUnit4::class)
 class ExrImageTest {
 
-    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
-    private lateinit var fakeSceneRuntime: SceneRuntime
-    private lateinit var fakeRenderingRuntime: RenderingRuntime
+    private lateinit var sceneRuntime: SceneRuntime
+    private lateinit var renderingRuntime: RenderingRuntime
     private lateinit var session: Session
 
     private val activity =
@@ -49,24 +46,14 @@ class ExrImageTest {
 
     @Before
     fun setUp() {
-        val runtimes = mutableListOf<JxrRuntime>()
-        val fakeRuntimeFactory = FakeSceneRuntimeFactory()
-        fakeSceneRuntime = fakeRuntimeFactory.create(activity)
-        runtimes.add(fakeSceneRuntime)
-        val fakeRenderingRuntimeFactory = FakeRenderingRuntimeFactory()
-        fakeRenderingRuntime = fakeRenderingRuntimeFactory.create(runtimes, activity)
-        runtimes.add(fakeRenderingRuntime)
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
 
-        session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        fakeSceneRuntime,
-                        fakeRenderingRuntime,
-                    ),
-            )
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
+        renderingRuntime = session.renderingRuntime
     }
 
     @Test

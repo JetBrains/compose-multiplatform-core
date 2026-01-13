@@ -18,18 +18,18 @@ package androidx.xr.scenecore
 
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.InputEvent as RtInputEvent
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeInteractableComponent
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,24 +39,22 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class InteractableComponentTest {
-    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private lateinit var fakeSceneRuntime: SceneRuntime
+    private lateinit var sceneRuntime: SceneRuntime
 
     private lateinit var session: Session
     private val entity by lazy { GroupEntity.create(session, "test") }
 
     @Before
     fun setUp() {
-        val fakeRuntimeFactory = FakeSceneRuntimeFactory()
-        fakeSceneRuntime = fakeRuntimeFactory.create(activity)
-        session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(mFakePerceptionRuntimeFactory.createRuntime(activity), fakeSceneRuntime),
-            )
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
     }
 
     @Test

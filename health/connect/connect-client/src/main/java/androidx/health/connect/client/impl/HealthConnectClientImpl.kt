@@ -19,7 +19,6 @@ import android.content.Context
 import android.os.DeadObjectException
 import android.os.RemoteException
 import android.os.TransactionTooLargeException
-import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import androidx.health.connect.client.ExperimentalDeduplicationApi
 import androidx.health.connect.client.HealthConnectClient
@@ -197,27 +196,16 @@ internal constructor(
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
-        return getChanges(
-            RequestProto.GetChangesRequest.newBuilder().setChangesToken(changesToken).build()
-        )
-    }
-
-    // At the moment limit argument supported only on Android 34+.
-    override suspend fun getChanges(
-        changesToken: String,
-        @IntRange(from = 1, to = 5000) limit: Int,
-    ): ChangesResponse {
-        require(limit in 1..5000) {
-            "Received illegal value of change logs limit = ${limit} getChanges, expected to be" +
-                "within [1, 5000]"
+        val proto = wrapRemoteException {
+            delegate
+                .getChanges(
+                    RequestProto.GetChangesRequest.newBuilder()
+                        .setChangesToken(changesToken)
+                        .build()
+                )
+                .await()
         }
-        Logger.debug(HEALTH_CONNECT_CLIENT_TAG, "Passing getChanges request with limit = ${limit}")
-        return getChanges(
-            RequestProto.GetChangesRequest.newBuilder()
-                .setChangesToken(changesToken)
-                .setPageSize(limit)
-                .build()
-        )
+        return toChangesResponse(proto)
     }
 
     @OptIn(ExperimentalDeduplicationApi::class)
@@ -284,13 +272,5 @@ internal constructor(
             wrapper.initCause(e)
             throw wrapper
         }
-    }
-
-    private suspend fun getChanges(
-        getChangesRequest: RequestProto.GetChangesRequest
-    ): ChangesResponse {
-        return toChangesResponse(
-            wrapRemoteException { delegate.getChanges(getChangesRequest).await() }
-        )
     }
 }

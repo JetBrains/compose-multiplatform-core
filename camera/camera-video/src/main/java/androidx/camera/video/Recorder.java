@@ -354,7 +354,7 @@ public final class Recorder implements VideoOutput {
                     .setOutputFormat(MediaSpec.OUTPUT_FORMAT_AUTO)
                     .setVideoSpec(VIDEO_SPEC_DEFAULT)
                     .build();
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "RedundantSuppression"})
     private static final String MEDIA_COLUMN = MediaStore.Video.Media.DATA;
     private static final Exception PENDING_RECORDING_ERROR_CAUSE_SOURCE_INACTIVE =
             new RuntimeException("The video frame producer became inactive before any "
@@ -671,11 +671,6 @@ public final class Recorder implements VideoOutput {
     @RequiresApi(26)
     public @NonNull PendingRecording prepareRecording(@NonNull Context context,
             @NonNull FileDescriptorOutputOptions fileDescriptorOutputOptions) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            throw new UnsupportedOperationException(
-                    "File descriptors as output destinations are not supported on pre-Android O "
-                            + "(API 26) devices.");
-        }
         return prepareRecordingInternal(context, fileDescriptorOutputOptions);
     }
 
@@ -1192,6 +1187,7 @@ public final class Recorder implements VideoOutput {
      * <p>The Recorder is expected to be reset when there's no active surface. Otherwise, wait for
      * the surface request complete callback first.
      */
+    @SuppressWarnings("SameParameterValue")
     @ExecutedBy("mSequentialExecutor")
     void requestReset(@VideoRecordError int errorCode, @Nullable Throwable errorCause,
             boolean videoOnly) {
@@ -1604,7 +1600,7 @@ public final class Recorder implements VideoOutput {
     private @NonNull AudioSource setupAudioSource(@NonNull RecordingRecord recordingToStart,
             @NonNull AudioSettings audioSettings)
             throws AudioSourceAccessException {
-        return recordingToStart.performOneTimeAudioSourceCreation(audioSettings, AUDIO_EXECUTOR);
+        return recordingToStart.performOneTimeAudioSourceCreation(audioSettings);
     }
 
     private void releaseCurrentAudioSource() {
@@ -2244,7 +2240,7 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
-        long newRecordingDurationNs = 0L;
+        long newRecordingDurationNs;
         long currentPresentationTimeUs = encodedData.getPresentationTimeUs();
         if (mFirstRecordingAudioDataTimeUs == Long.MAX_VALUE) {
             mFirstRecordingAudioDataTimeUs = currentPresentationTimeUs;
@@ -2396,7 +2392,7 @@ public final class Recorder implements VideoOutput {
     @ExecutedBy("mSequentialExecutor")
     private void clearPendingAudioRingBuffer() {
         while (!mPendingAudioRingBuffer.isEmpty()) {
-            mPendingAudioRingBuffer.dequeue();
+            mPendingAudioRingBuffer.dequeue().close();
         }
     }
 
@@ -3041,7 +3037,8 @@ public final class Recorder implements VideoOutput {
     }
 
     private static @NonNull ScheduledFuture<?> scheduleTask(@NonNull Runnable task,
-            @NonNull Executor executor, long delay, TimeUnit timeUnit) {
+            @NonNull Executor executor, long delay,
+            @SuppressWarnings("SameParameterValue") TimeUnit timeUnit) {
         return CameraXExecutors.mainThreadExecutor().schedule(() -> executor.execute(task), delay,
                 timeUnit);
     }
@@ -3198,6 +3195,7 @@ public final class Recorder implements VideoOutput {
         return true;
     }
 
+    @SuppressWarnings("unused") // Use as a key class, which methods are not called directly.
     @AutoValue
     abstract static class VideoCapabilitiesCacheKey {
         static VideoCapabilitiesCacheKey create(@NonNull String cameraId,
@@ -3282,6 +3280,7 @@ public final class Recorder implements VideoOutput {
             if (outputOptions instanceof FileDescriptorOutputOptions) {
                 // Duplicate ParcelFileDescriptor to make input descriptor can be safely closed,
                 // or throw an IOException if it fails.
+                //noinspection resource
                 dupedParcelFileDescriptor =
                         ((FileDescriptorOutputOptions) outputOptions)
                                 .getParcelFileDescriptor().dup();
@@ -3314,14 +3313,8 @@ public final class Recorder implements VideoOutput {
                             MediaStoreOutputOptions mediaStoreOutputOptions =
                                     (MediaStoreOutputOptions) outputOptions;
 
-                            ContentValues contentValues =
-                                    new ContentValues(mediaStoreOutputOptions.getContentValues());
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                                    && !muxer.isInterruptionResilient()) {
-                                // Toggle on pending status for the video file. The saved file
-                                // will be hidden until the pending flag is changed to NOT_PENDING.
-                                contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
-                            }
+                            ContentValues contentValues = resolveContentValues(
+                                    mediaStoreOutputOptions, muxer);
                             try {
                                 outputUri = mediaStoreOutputOptions.getContentResolver().insert(
                                         mediaStoreOutputOptions.getCollectionUri(), contentValues);
@@ -3374,38 +3367,7 @@ public final class Recorder implements VideoOutput {
 
             Consumer<Uri> recordingFinalizer = null;
             if (hasAudioEnabled()) {
-                if (Build.VERSION.SDK_INT >= 31) {
-                    // Use anonymous inner class instead of lambda since we need to propagate
-                    // permission requirements
-                    @SuppressWarnings("Convert2Lambda")
-                    AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
-                        @Override
-                        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-                        public @NonNull AudioSource get(@NonNull AudioSettings settings,
-                                @NonNull Executor executor)
-                                throws AudioSourceAccessException {
-                            // Context will only be held in local scope of the supplier so it will
-                            // not be retained after performOneTimeAudioSourceCreation() is called.
-                            return new AudioSource(settings, executor, context);
-                        }
-                    };
-                    mAudioSourceSupplier.set(audioSourceSupplier);
-                } else {
-                    // Use anonymous inner class instead of lambda since we need to propagate
-                    // permission requirements
-                    @SuppressWarnings("Convert2Lambda")
-                    AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
-                        @Override
-                        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-                        public @NonNull AudioSource get(@NonNull AudioSettings settings,
-                                @NonNull Executor executor)
-                                throws AudioSourceAccessException {
-                            // Do not set (or retain) context on other API levels
-                            return new AudioSource(settings, executor, null);
-                        }
-                    };
-                    mAudioSourceSupplier.set(audioSourceSupplier);
-                }
+                mAudioSourceSupplier.set(getAudioSourceSupplier(context));
             }
 
             if (outputOptions instanceof MediaStoreOutputOptions) {
@@ -3461,6 +3423,48 @@ public final class Recorder implements VideoOutput {
             if (recordingFinalizer != null) {
                 mRecordingFinalizer.set(recordingFinalizer);
             }
+        }
+
+        @NonNull
+        private ContentValues resolveContentValues(
+                @NonNull MediaStoreOutputOptions mediaStoreOutputOptions, @NonNull Muxer muxer) {
+            ContentValues contentValues =
+                    new ContentValues(mediaStoreOutputOptions.getContentValues());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    && !muxer.isInterruptionResilient()) {
+                // Toggle on pending status for the video file. The saved file
+                // will be hidden until the pending flag is changed to NOT_PENDING.
+                contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
+            }
+            return contentValues;
+        }
+
+        @NonNull
+        private static AudioSourceSupplier getAudioSourceSupplier(@NonNull Context context) {
+            Context attributionContext;
+            if (Build.VERSION.SDK_INT >= 31) {
+                // Context will only be held in local scope of the supplier so it will
+                // not be retained after performOneTimeAudioSourceCreation() is called.
+                attributionContext = context;
+            } else {
+                // Do not set (or retain) context on other API levels
+                attributionContext = null;
+            }
+
+            // Use anonymous inner class instead of lambda since we need to propagate
+            // permission requirements
+            @SuppressWarnings("Convert2Lambda")
+            AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
+                @Override
+                @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+                public @NonNull AudioSource get(@NonNull AudioSettings settings,
+                        @NonNull Executor executor)
+                        throws AudioSourceAccessException {
+                    return new AudioSource(settings, executor, attributionContext);
+                }
+            };
+
+            return audioSourceSupplier;
         }
 
         /** Updates the recording status and callback to users. */
@@ -3525,8 +3529,7 @@ public final class Recorder implements VideoOutput {
          * {@link AssertionError}.
          */
         @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-        @NonNull AudioSource performOneTimeAudioSourceCreation(
-                @NonNull AudioSettings settings, @NonNull Executor audioSourceExecutor)
+        @NonNull AudioSource performOneTimeAudioSourceCreation(@NonNull AudioSettings settings)
                 throws AudioSourceAccessException {
             if (!hasAudioEnabled()) {
                 throw new AssertionError("Recording does not have audio enabled. Unable to create"
@@ -3539,7 +3542,7 @@ public final class Recorder implements VideoOutput {
                         + " recording " + this);
             }
 
-            return audioSourceSupplier.get(settings, audioSourceExecutor);
+            return audioSourceSupplier.get(settings, AUDIO_EXECUTOR);
         }
 
         /**

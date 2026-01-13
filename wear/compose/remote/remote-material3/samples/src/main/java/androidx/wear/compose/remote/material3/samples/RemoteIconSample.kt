@@ -29,7 +29,6 @@ import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.wear.compose.remote.material3.R
 import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 

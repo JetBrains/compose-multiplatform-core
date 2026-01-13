@@ -16,7 +16,6 @@
 
 package androidx.health.connect.client.testing
 
-import androidx.annotation.IntRange
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
@@ -86,7 +85,7 @@ public class FakeHealthConnectClient(
      * This is typically used with a low number (such as 2) so that a low number of inserted records
      * (such as 3) generate multiple pages. Use it to test token expiration as well.
      */
-    public var limitGetChanges: Int = 1000
+    public var pageSizeGetChanges: Int = 1000
 
     /**
      * Used to override or intercept responses to emulate scenarios that this fake doesn't support.
@@ -370,13 +369,6 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
-        return getChanges(changesToken, limitGetChanges)
-    }
-
-    override suspend fun getChanges(
-        changesToken: String,
-        @IntRange(from = 1, to = 5000) limit: Int,
-    ): ChangesResponse {
         // Stubs
         overrides.getChanges?.next(changesToken)?.let {
             return it
@@ -405,21 +397,21 @@ public class FakeHealthConnectClient(
                     }
                 }
                 .values
-        val hasMoreChanges = changes.size > limit
+        val hasMoreChanges = changes.size > pageSizeGetChanges
         val nextChangesToken =
             if (hasMoreChanges) {
                 // Next page token
-                generateNewToken(timeInToken + limit, recordTypes)
+                generateNewToken(timeInToken + pageSizeGetChanges, recordTypes)
             } else {
                 // Future changes token
                 generateNewToken(timeToChangesLastKey + 1, recordTypes)
             }
 
         // Store metadata for new token
-        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + limit)
+        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSizeGetChanges)
 
         return ChangesResponse(
-            changes.take(limit).toList(),
+            changes.take(pageSizeGetChanges).toList(),
             hasMore = hasMoreChanges,
             changesTokenExpired = tokenInfo.expired,
             nextChangesToken = nextChangesToken,

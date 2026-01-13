@@ -71,30 +71,7 @@ import java.util.concurrent.ExecutionException
  * bound [Preview] and [ImageCapture]. The following sample code describes how to enable an
  * extension mode for use cases.
  *
- * ```kotlin
- * suspend fun bindUseCasesWithBokehMode(context: Context, lifecycleOwner: LifecycleOwner) {
- *     // Create a camera provider.
- *     val cameraProvider = ProcessCameraProvider.awaitInstance(context)
- *
- *     // Retrieve the ExtensionsManager instance.
- *     val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
- *
- *     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
- *     // Query if extension is available.
- *     if (extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)) {
- *         // Create an ExtensionSessionConfig.
- *         val imageCapture = ImageCapture.Builder().build()
- *         val preview = Preview.Builder().build()
- *         ExtensionSessionConfig sessionConfig = ExtensionSessionConfig(
- *                 ExtensionMode.BOKEH,
- *                 extensionsManager,
- *                 imageCapture,
- *                 preview
- *         )
- *         cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, sessionConfig)
- *     }
- * }
- * ```
+ * @sample androidx.camera.extensions.samples.bindUseCasesWithBokehMode
  *
  * Without enabling `CameraX Extensions`, any device should be able to support the use cases
  * combination of [ImageCapture], [Preview] and [ImageAnalysis]. To support the `CameraX Extensions`

@@ -2007,6 +2007,29 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * This returns a color that is lightId if light theme and dark id if dark theme
+     *
+     * @param lightId the id of the light color
+     * @param darkId  the id of the dark color
+     * @return the id of the color that auto switches
+     */
+    public short addThemedColor(@NonNull String group,
+            short lightId,
+            short darkId,
+            int lightFallback,
+            int darkFallback) {
+        int retId = mState.createNextAvailableId();
+        int groupId = mState.dataGetId(group);
+        if (groupId == -1) {
+            groupId = mState.cacheData(group);
+            mBuffer.addText(groupId, group);
+        }
+        mBuffer.addThemedColor(retId, groupId, lightId, darkId, lightFallback, darkFallback);
+
+        return (short) retId;
+    }
+
+    /**
      * Create an animated float based on a reverse-Polish notation expression
      *
      * @param value Combination

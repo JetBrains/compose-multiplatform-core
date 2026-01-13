@@ -23,7 +23,6 @@ import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -43,8 +42,6 @@ import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeActivitySpace
 import androidx.xr.scenecore.testing.FakeMovableComponent
 import androidx.xr.scenecore.testing.FakeScenePose
-import androidx.xr.scenecore.testing.FakeSceneRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import kotlin.test.assertFailsWith
@@ -156,12 +153,9 @@ internal class FakeEntityMoveListener : EntityMoveListener {
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class MovableComponentTest {
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
-    private val fakeSceneRuntimeFactory = FakeSceneRuntimeFactory()
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity
-    private lateinit var fakeSceneRuntime: SceneRuntime
-    private lateinit var mSceneRuntime: FakeSceneRuntime
+    private lateinit var sceneRuntime: SceneRuntime
     private lateinit var session: Session
     private lateinit var mFakeRuntime: FakePerceptionRuntime
     private lateinit var mFakeLifecycleManager: FakeLifecycleManager
@@ -184,7 +178,7 @@ class MovableComponentTest {
         mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager
-        mSceneRuntime = session.runtimes.filterIsInstance<FakeSceneRuntime>().first()
+        sceneRuntime = session.sceneRuntime
         timeSource = mFakeLifecycleManager.timeSource
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis)
     }
@@ -193,14 +187,12 @@ class MovableComponentTest {
         testDispatcher = StandardTestDispatcher()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
-        fakeSceneRuntime = fakeSceneRuntimeFactory.create(activity)
-        fakeActivitySpace = fakeSceneRuntime.activitySpace
-        session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), fakeSceneRuntime),
-            )
+
+        val result = Session.create(activity, testDispatcher)
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
+        fakeActivitySpace = sceneRuntime.activitySpace
         session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
@@ -444,7 +436,7 @@ class MovableComponentTest {
         assertThat(moveListener.onMoveUpdatedCount).isEqualTo(1)
         assertThat(moveListener.stateMatchesEvent(entity, expectedEvent)).isTrue()
 
-        val fakeAnchorEntity = fakeSceneRuntime.createAnchorEntity()
+        val fakeAnchorEntity = sceneRuntime.createAnchorEntity()
         rtMoveEvent =
             RtMoveEvent(
                 MoveEvent.MOVE_STATE_END,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle
+package androidx.compose.runtime.internal
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-1286
-internal actual class WeakReference<T : Any> actual constructor(private val reference: T) {
-    actual fun get(): T? = reference
+import kotlin.js.unsafeCast
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef
+private external class WeakRef {
+    constructor(target: Any)
+
+    fun deref(): Any?
+}
+
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private var weakRef: WeakRef? = WeakRef(reference)
+
+    actual fun get(): T? = weakRef?.deref()?.unsafeCast<T>()
 }

@@ -93,6 +93,7 @@ import androidx.compose.remote.integration.view.demos.examples.RcTextDemo5
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo6
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo7
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo8
+import androidx.compose.remote.integration.view.demos.examples.RcTicker
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
@@ -309,6 +310,7 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getpc("Stock") { RcTicker(applicationContext) },
                     getpc("2 VText") { RcCanvasComponents5() },
                     getpc("Canvas + HText") { RcCanvasComponents4() },
                     getpc("Canvas + VText") { RcCanvasComponents3() },
@@ -960,33 +962,35 @@ fun DisplayMain(
         }
         println("launching $func")
         if (fileReady && showOrigami) {
-            Box(modifier = Modifier.background(Color(0xFFFFFFFF)).fillMaxHeight(0.5f)) {
-                // Button(onClick = { /*TODO*/}) { Text(text = "hello world") }
-                val currentDocument = func.getDoc() // remember(func) {  }
+            Row {
+                Box(modifier = Modifier.background(Color(0xFF0FFFFF))) { // .fillMaxHeight(0.5f)) {
+                    // Button(onClick = { /*TODO*/}) { Text(text = "hello world") }
+                    val currentDocument = func.getDoc() // remember(func) {  }
 
-                AndroidView(
-                    modifier = Modifier.size(documentWidth.dp, documentHeight.dp),
-                    factory = {
-                        val player = RemoteComposePlayer(it)
-                        if (currentDocument.value != null) {
-                            player.setDocument(RemoteDocument(currentDocument.value!!))
-                        }
-                        player.setShaderControl(shaderControl)
-                        player.addIdActionListener { _id, _metadata ->
-                            id = _id
-                            metadata = _metadata ?: "empty"
-                        }
+                    AndroidView(
+                        modifier = Modifier, // .size(documentWidth.dp, documentHeight.dp),
+                        factory = {
+                            val player = RemoteComposePlayer(it)
+                            if (currentDocument.value != null) {
+                                player.setDocument(RemoteDocument(currentDocument.value!!))
+                            }
+                            player.setShaderControl(shaderControl)
+                            player.addIdActionListener { _id, _metadata ->
+                                id = _id
+                                metadata = _metadata ?: "empty"
+                            }
 
-                        player
-                    },
-                    update = {
-                        it.setTheme(playbackTheme)
-                        if (currentDocument.value != null) {
-                            it.setDocument(RemoteDocument(currentDocument.value!!))
-                        }
-                        it.setDebug(debugMode)
-                    },
-                )
+                            player
+                        },
+                        update = {
+                            it.setTheme(playbackTheme)
+                            if (currentDocument.value != null) {
+                                it.setDocument(RemoteDocument(currentDocument.value!!))
+                            }
+                            it.setDebug(debugMode)
+                        },
+                    )
+                }
             }
         } else {
             Text(if (showOrigami) "Waiting for file..." else "RC not shown")

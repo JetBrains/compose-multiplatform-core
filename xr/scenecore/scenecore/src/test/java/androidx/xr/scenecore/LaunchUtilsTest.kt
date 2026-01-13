@@ -18,11 +18,11 @@ package androidx.xr.scenecore
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.runtime.SceneRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,21 +32,20 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LaunchUtilsTest {
-    private val fakeRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity: ComponentActivity = activityController.create().start().get()
-    private lateinit var fakeSceneRuntime: SceneRuntime
+    private lateinit var sceneRuntime: SceneRuntime
     private lateinit var session: Session
 
     @Before
     fun setUp() {
-        val fakeSceneRuntimeFactory = FakeSceneRuntimeFactory()
-        fakeSceneRuntime = fakeSceneRuntimeFactory.create(activity)
-        session =
-            Session(
-                activity,
-                runtimes = listOf(fakeRuntimeFactory.createRuntime(activity), fakeSceneRuntime),
-            )
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
     }
 
     @Test

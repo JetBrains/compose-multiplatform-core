@@ -681,6 +681,9 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
 
     private void textLayout(@NonNull PaintContext context, float maxWidth, float maxHeight,
             float @NonNull [] bounds, boolean forceComplex, boolean inAutosize) {
+        if (maxWidth < 0 || maxHeight < 0) {
+            return;
+        }
         int flags = PaintContext.TEXT_MEASURE_FONT_HEIGHT | PaintContext.TEXT_MEASURE_SPACES;
         if (forceComplex) {
             flags |= PaintContext.TEXT_COMPLEX;

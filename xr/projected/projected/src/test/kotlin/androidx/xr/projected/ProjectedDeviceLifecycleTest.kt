@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.xr.runtime
+package androidx.xr.projected
 
 import android.app.Application
 import android.content.ComponentName

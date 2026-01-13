@@ -102,6 +102,7 @@
             android:label="RC Player"
             android:icon="@drawable/viewer"
             android:roundIcon="@drawable/viewer"
+            android:resizeableActivity="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -114,7 +115,7 @@
 
         <activity
             android:name=".ExperimentRecyclerActivity"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|assetsPaths"
             android:exported="true"
             android:label="RC View"
             android:icon="@drawable/recycler"

@@ -95,6 +95,7 @@ android {
 androidx {
     name = "Camera Extensions"
     type = SoftwareType.PUBLISHED_LIBRARY
+    samples(project(":camera:camera-extensions:camera-extensions-samples"))
     inceptionYear = "2019"
     description = "OEM Extensions for the Jetpack Camera Library, a library providing interfaces" +
             " to integrate with OEM specific camera features."

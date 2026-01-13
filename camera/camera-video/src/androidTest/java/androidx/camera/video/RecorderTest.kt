@@ -331,6 +331,13 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
+    fun canSetTargetVideoEncodingBitrate() {
+        val recorder = createRecorder(targetBitrate = 6_000_000)
+
+        assertThat(recorder.targetVideoEncodingBitRate).isEqualTo(6_000_000)
+    }
+
+    @Test
     fun recordingWithSetTargetVideoEncodingBitRate() {
         testRecorderIsConfiguredBasedOnTargetVideoEncodingBitrate(6_000_000)
     }

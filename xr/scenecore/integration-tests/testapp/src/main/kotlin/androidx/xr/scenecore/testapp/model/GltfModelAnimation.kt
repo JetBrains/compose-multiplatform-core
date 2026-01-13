@@ -86,7 +86,7 @@ class GltfModelAnimation : AppCompatActivity() {
         findViewById<Toolbar>(R.id.gltf_model_animation_topAppBar).also {
             setSupportActionBar(it)
             it.setNavigationOnClickListener { this@GltfModelAnimation.finish() }
-            it.setTitle(getString(R.string.cuj_gltf_model_material_texture_test))
+            it.setTitle(getString(R.string.cuj_gltf_model_animation_test))
         }
 
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {

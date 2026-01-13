@@ -804,10 +804,10 @@ class IndirectPointerGestureTest {
 
         eventTime += 10L
 
-        val repeatCount = 30
+        val repeatCount = 100
         val eachDragMovement = (touchSlop * 1.4f) / repeatCount
         var lastEvent = p0Down
-        // The resulting X velocity is 76, which is below the 100f threshold.
+        // The resulting X velocity is 23, which is below the 34f threshold.
         repeat(repeatCount) {
             eventTime += 10
             p0Coords.x += eachDragMovement

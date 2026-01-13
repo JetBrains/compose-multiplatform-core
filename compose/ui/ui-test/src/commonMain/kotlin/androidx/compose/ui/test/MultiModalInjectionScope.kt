@@ -44,6 +44,7 @@ import kotlin.math.roundToInt
  * @see MouseInjectionScope
  * @see KeyInjectionScope
  * @see RotaryInjectionScope
+ * @see TrackpadInjectionScope
  */
 // TODO(fresen): add better multi modal example when we have key input support
 sealed interface MultiModalInjectionScope : InjectionScope {
@@ -58,6 +59,9 @@ sealed interface MultiModalInjectionScope : InjectionScope {
 
     /** Injects all rotary events sent by the given [block] */
     fun rotary(block: RotaryInjectionScope.() -> Unit)
+
+    /** Injects all trackpad events sent by the given [block] */
+    fun trackpad(block: TrackpadInjectionScope.() -> Unit)
 }
 
 internal class MultiModalInjectionScopeImpl(node: SemanticsNode, testContext: TestContext) :
@@ -153,6 +157,8 @@ internal class MultiModalInjectionScopeImpl(node: SemanticsNode, testContext: Te
 
     private val rotaryScope: RotaryInjectionScope = RotaryInjectionScopeImpl(this)
 
+    private val trackpadScope: TrackpadInjectionScope = TrackpadInjectionScopeImpl(this)
+
     override fun touch(block: TouchInjectionScope.() -> Unit) {
         block.invoke(touchScope)
     }
@@ -167,5 +173,9 @@ internal class MultiModalInjectionScopeImpl(node: SemanticsNode, testContext: Te
 
     override fun rotary(block: RotaryInjectionScope.() -> Unit) {
         block.invoke(rotaryScope)
+    }
+
+    override fun trackpad(block: TrackpadInjectionScope.() -> Unit) {
+        block.invoke(trackpadScope)
     }
 }

@@ -33,10 +33,26 @@ import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.RoundedRectShape
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
+import androidx.compose.remote.creation.random
 import androidx.compose.remote.integration.view.demos.R
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import java.util.Random
+import kotlin.math.cos
+import kotlin.math.exp
+import kotlin.math.ln
+import kotlin.math.sqrt
 
 private lateinit var color: RcTickerColorPack
+
+@Preview
+@Composable
+@Preview
+fun RcTickerPreview() {
+    val context = LocalContext.current
+    RemoteDocPreview(RcTicker(context))
+}
 
 @Suppress("RestrictedApiAndroidX")
 fun RcTicker(context: Context): RemoteComposeContext {
@@ -188,7 +204,8 @@ private fun RemoteComposeContextAndroid.graph() {
         val cy = (h / 2f).flush()
         val rad = min(cx, cy).flush()
 
-        val data = fillRandom(101, 10f, 1000f, 10f)
+        // val data = fillRandom(101, 10f, 1000f, 10f)
+        val data = generateStockDataArray(101, 100f, 8000f, 2000f, 0.01f)
         //        for (i in 0 until data.size) {
         //            val s = i / data.size.toFloat()
         //            data[i] = (100 + Math.random() * 1000 * s + 1000 * s * s).toFloat()
@@ -399,4 +416,54 @@ fun RemoteComposeContextAndroid.refreshPath(): Int {
     val pdata = RemotePath(refreshStr)
 
     return addPathData(pdata)
+}
+
+/**
+ * Generate realistic stock price data using Geometric Brownian Motion
+ *
+ * The Geometric Brownian Motion formula is: S(t+1) = S(t) * exp((μ - σ²/2)dt + σ*√dt*Z)
+ *
+ * Where:
+ * - μ (mu) is the drift (expected return rate)
+ * - σ (sigma) is the volatility (standard deviation of returns)
+ * - dt is the time step
+ * - Z is a random variable from standard normal distribution
+ *
+ * @param numPoints Number of data points to generate
+ * @param startPrice Starting price of the stock (e.g., 100.0)
+ * @param annualDrift Annual drift/return as percentage (e.g., 8.0 for 8%)
+ * @param annualVolatility Annual volatility as percentage (e.g., 25.0 for 25%)
+ * @param daysPerPoint Trading days represented by each point (default: 1.0 for daily)
+ * @return List of stock prices as doubles
+ */
+fun generateStockDataArray(
+    numPoints: Int,
+    startPrice: Float,
+    annualDrift: Float,
+    annualVolatility: Float,
+    daysPerPoint: Float,
+): FloatArray {
+    val random = Random()
+    val prices = FloatArray(numPoints)
+    prices[0] = startPrice
+
+    val dt = daysPerPoint / 252.0
+    val drift = annualDrift / 100.0
+    val volatility = annualVolatility / 100.0
+
+    for (i in 1..<numPoints) {
+        val randNormal = generateRandomNormal(random)
+        val driftTerm = (drift - volatility * volatility / 2.0) * dt
+        val randomTerm = volatility * sqrt(dt) * randNormal
+
+        prices[i] = prices[i - 1] * exp(driftTerm + randomTerm).toFloat()
+    }
+
+    return prices
+}
+
+private fun generateRandomNormal(random: Random): Float {
+    val u1: Float = random.nextFloat()
+    val u2: Float = random.nextFloat()
+    return (sqrt(-2.0 * ln(u1)) * cos(2.0 * Math.PI * u2)).toFloat()
 }

@@ -25,7 +25,7 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrRuntime
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
@@ -42,8 +42,6 @@ import androidx.xr.scenecore.testing.FakeAnchorEntity
 import androidx.xr.scenecore.testing.FakeGltfEntity
 import androidx.xr.scenecore.testing.FakeGltfModelResource
 import androidx.xr.scenecore.testing.FakePanelEntity
-import androidx.xr.scenecore.testing.FakeRenderingRuntimeFactory
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import androidx.xr.scenecore.testing.FakeSurfaceEntity
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Paths
@@ -51,6 +49,7 @@ import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
@@ -66,8 +65,8 @@ class EntityTest {
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private lateinit var fakeSceneRuntime: SceneRuntime
-    private lateinit var fakeRenderingRuntime: RenderingRuntime
+    private lateinit var sceneRuntime: SceneRuntime
+    private lateinit var renderingRuntime: RenderingRuntime
     private lateinit var entityManager: EntityManager
     private lateinit var session: Session
 
@@ -121,24 +120,14 @@ class EntityTest {
     @RequiresApi(Build.VERSION_CODES.O)
     @Before
     fun setUp() = runBlocking {
-        val runtimes = mutableListOf<JxrRuntime>()
-        val fakeRuntimeFactory = FakeSceneRuntimeFactory()
-        fakeSceneRuntime = fakeRuntimeFactory.create(activity)
-        runtimes.add(fakeSceneRuntime)
-        val fakeRenderingRuntimeFactory = FakeRenderingRuntimeFactory()
-        fakeRenderingRuntime = fakeRenderingRuntimeFactory.create(runtimes, activity)
-        runtimes.add(fakeRenderingRuntime)
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
 
-        session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        fakeSceneRuntime,
-                        fakeRenderingRuntime,
-                    ),
-            )
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
+        renderingRuntime = session.renderingRuntime
         lifecycleManager = session.perceptionRuntime.lifecycleManager
         session.configure(
             Config(
@@ -147,10 +136,10 @@ class EntityTest {
             )
         )
         entityManager = session.scene.entityManager
-        activitySpace = ActivitySpace.create(fakeSceneRuntime, entityManager)
+        activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
         gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
-            GltfModelEntity.create(fakeSceneRuntime, fakeRenderingRuntime, entityManager, gltfModel)
+            GltfModelEntity.create(sceneRuntime, renderingRuntime, entityManager, gltfModel)
         panelEntity =
             PanelEntity.create(
                 session,
@@ -189,8 +178,8 @@ class EntityTest {
             ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
         gltfModelEntity =
             GltfModelEntity.create(
-                fakeSceneRuntime,
-                fakeRenderingRuntime,
+                sceneRuntime,
+                renderingRuntime,
                 entityManager,
                 gltfModel,
                 parent = null,
@@ -243,8 +232,8 @@ class EntityTest {
             ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
         gltfModelEntity =
             GltfModelEntity.create(
-                fakeSceneRuntime,
-                fakeRenderingRuntime,
+                sceneRuntime,
+                renderingRuntime,
                 entityManager,
                 gltfModel,
                 parent = null,
@@ -286,8 +275,8 @@ class EntityTest {
             ActivityPanelEntity.create(session, IntSize2d(640, 480), "test", parent = null)
         gltfModelEntity =
             GltfModelEntity.create(
-                fakeSceneRuntime,
-                fakeRenderingRuntime,
+                sceneRuntime,
+                renderingRuntime,
                 entityManager,
                 gltfModel,
                 parent = null,
@@ -1091,7 +1080,7 @@ class EntityTest {
 
     @Test
     fun createAnchorEntity_callsRuntimeCreateAnchorEntity() {
-        val anchorEntity = fakeSceneRuntime.createAnchorEntity()
+        val anchorEntity = sceneRuntime.createAnchorEntity()
 
         assertThat(anchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
     }

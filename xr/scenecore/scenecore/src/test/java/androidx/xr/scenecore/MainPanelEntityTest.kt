@@ -17,21 +17,22 @@
 package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakePanelEntity
 import androidx.xr.scenecore.testing.FakeSceneRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,24 +42,21 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class MainPanelEntityTest {
-    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity = activityController.create().start().get()
-    private lateinit var fakeSceneRuntime: FakeSceneRuntime
+    private lateinit var sceneRuntime: SceneRuntime
 
     lateinit var session: Session
 
     @Before
     fun setUp() {
-        val fakeSceneRuntimeFactory = FakeSceneRuntimeFactory()
-        fakeSceneRuntime = fakeSceneRuntimeFactory.create(activity)
-        session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), fakeSceneRuntime),
-            )
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
+        val testDispatcher = StandardTestDispatcher()
+        val result = Session.create(activity, testDispatcher)
+
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+
+        session = (result as SessionCreateSuccess).session
+        sceneRuntime = session.sceneRuntime
     }
 
     @Test
@@ -66,6 +64,7 @@ class MainPanelEntityTest {
         val listener = Consumer<IntSize2d> {}
         val executor = directExecutor()
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap.values.toList()[0])
@@ -76,6 +75,7 @@ class MainPanelEntityTest {
     fun addPerceivedResolutionChangedListener_withNoExecutor_callsRuntimeWithMainThreadExecutor() {
         val listener = Consumer<IntSize2d> {}
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(listener)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap.values.toList()[0])
@@ -106,6 +106,7 @@ class MainPanelEntityTest {
             directExecutor(),
             listener,
         )
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
 
@@ -121,6 +122,7 @@ class MainPanelEntityTest {
         val executor = directExecutor()
 
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
 
@@ -149,6 +151,7 @@ class MainPanelEntityTest {
 
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener1)
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener2)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(2)
 
@@ -174,6 +177,7 @@ class MainPanelEntityTest {
         val mainPanelEntity = session.scene.mainPanelEntity
 
         mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
+        val fakeSceneRuntime = sceneRuntime as FakeSceneRuntime
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
 

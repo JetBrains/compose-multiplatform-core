@@ -35,6 +35,7 @@ import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performTrackpadInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
@@ -47,7 +48,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
+internal class SelectionContainerPointerTest : AbstractSelectionContainerTest() {
 
     @Test
     fun mouseSelectionContinuesToBelowText() {
@@ -110,7 +111,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
     }
 
     @Test
-    fun doubleClickSelectsAWord() =
+    fun mouseDoubleClickSelectsAWord() =
         with(rule.density) {
             // Setup.
             createSelectionContainer()
@@ -127,7 +128,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
         }
 
     @Test
-    fun primaryClickOnSelectedTextClearsSelection() =
+    fun mousePrimaryClickOnSelectedTextClearsSelection() =
         with(rule.density) {
             // Setup.
             createSelectionContainer()
@@ -148,7 +149,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
         }
 
     @Test
-    fun buttonWithTextClickInsideSelectionContainer() {
+    fun mouseButtonWithTextClickInsideSelectionContainer() {
         var clickCounter = 0
         createSelectionContainer {
             Box(Modifier.clickable { clickCounter++ }) {
@@ -163,7 +164,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
     }
 
     @Test
-    fun buttonClickClearsSelection() =
+    fun mouseButtonClickClearsSelection() =
         with(rule.density) {
             var clickCounter = 0
             createSelectionContainer {
@@ -189,7 +190,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
         }
 
     @Test
-    fun buttonClickInsideDisableSelectionClearsSelection() =
+    fun mouseButtonClickInsideDisableSelectionClearsSelection() =
         with(rule.density) {
             var clickCounter = 0
             createSelectionContainer {
@@ -219,7 +220,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
         }
 
     @Test
-    fun loseFocusClearsSelection() =
+    fun mouseLoseFocusClearsSelection() =
         with(rule.density) {
             var clickCounter = 0
             rule.setContent {
@@ -257,7 +258,7 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
         }
 
     @Test
-    fun selectButtonTextInsideSelectionContainer() =
+    fun mouseSelectButtonTextInsideSelectionContainer() =
         with(rule.density) {
             var clickCounter = 0
 
@@ -277,6 +278,240 @@ internal class SelectionContainerMouseTest : AbstractSelectionContainerTest() {
 
             // Act. Click on the same place, and selection should be cleared.
             rule.onSelectionContainer().performMouseInput { click() }
+
+            // Assert.
+            // TODO(b/384750891) Cleared selection should be null
+            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+        }
+
+    @Test
+    fun trackpadSelectionContinuesToBelowText() {
+        createSelectionContainer {
+            Column {
+                BasicText(
+                    AnnotatedString(textContent),
+                    Modifier.fillMaxWidth().testTag(tag1),
+                    style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
+                )
+                BasicText(
+                    AnnotatedString(textContent),
+                    Modifier.fillMaxWidth().testTag(tag2),
+                    style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
+                )
+            }
+        }
+
+        val from = characterBox(tag1, offset = 0)
+        val to = characterBox(tag2, offset = 3)
+        rule.onRoot().performTrackpadInput {
+            moveTo(from.centerLeft)
+            press()
+            moveTo(to.centerRight)
+            release()
+        }
+
+        assertAnchorInfo(selection.value?.start, offset = 0, selectableId = 1)
+        assertAnchorInfo(selection.value?.end, offset = 4, selectableId = 2)
+    }
+
+    @Test
+    fun trackpadSelectionContinuesToAboveText() {
+        createSelectionContainer {
+            Column {
+                BasicText(
+                    AnnotatedString(textContent),
+                    Modifier.fillMaxWidth().testTag(tag1),
+                    style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
+                )
+                BasicText(
+                    AnnotatedString(textContent),
+                    Modifier.fillMaxWidth().testTag(tag2),
+                    style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
+                )
+            }
+        }
+
+        val from = characterBox(tag2, offset = 6) // second word should be selected
+        val to = characterBox(tag1, offset = 5)
+        rule.onRoot().performTrackpadInput {
+            moveTo(from.centerRight)
+            press()
+            moveTo(to.centerLeft)
+            release()
+        }
+
+        assertAnchorInfo(selection.value?.start, offset = 7, selectableId = 2)
+        assertAnchorInfo(selection.value?.end, offset = 5, selectableId = 1)
+    }
+
+    @Test
+    fun trackpadDoubleClickSelectsAWord() =
+        with(rule.density) {
+            // Setup.
+            createSelectionContainer()
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+
+            // Assert. Should select "Demo".
+            assertThat(selection.value!!.start.offset).isEqualTo(textContent.indexOf('D'))
+            assertThat(selection.value!!.end.offset).isEqualTo(textContent.indexOf('o') + 1)
+        }
+
+    @Test
+    fun trackpadPrimaryClickOnSelectedTextClearsSelection() =
+        with(rule.density) {
+            // Setup.
+            createSelectionContainer()
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+
+            // Act. Click on the same place, and selection should be cleared.
+            rule.onSelectionContainer().performTrackpadInput { click() }
+
+            // Assert.
+            // TODO(b/384750891) Cleared selection should be null
+            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(14.collapsed) }
+        }
+
+    @Test
+    fun trackpadButtonWithTextClickInsideSelectionContainer() {
+        var clickCounter = 0
+        createSelectionContainer {
+            Box(Modifier.clickable { clickCounter++ }) {
+                BasicText(
+                    text = "Button",
+                    modifier = Modifier.align(Alignment.Center).testTag(tag1),
+                )
+            }
+        }
+        rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
+        rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
+    }
+
+    @Test
+    fun trackpadButtonClickClearsSelection() =
+        with(rule.density) {
+            var clickCounter = 0
+            createSelectionContainer {
+                Column {
+                    TestText(textContent)
+                    TestButton(Modifier.size(50.dp).testTag(tag1), onClick = { clickCounter++ }) {
+                        TestText("Button")
+                    }
+                }
+            }
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+            rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
+
+            // Assert.
+            // TODO(b/384750891) Cleared selection should be null
+            rule.runOnIdle { assertThat(selection.value!!.toTextRange()).isEqualTo(3.collapsed) }
+            rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
+        }
+
+    @Test
+    fun trackpadButtonClickInsideDisableSelectionClearsSelection() =
+        with(rule.density) {
+            var clickCounter = 0
+            createSelectionContainer {
+                Column {
+                    TestText(textContent)
+                    DisableSelection {
+                        TestButton(
+                            Modifier.size(50.dp).testTag(tag1),
+                            onClick = { clickCounter++ },
+                        ) {
+                            TestText("Button")
+                        }
+                    }
+                }
+            }
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+            rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
+
+            // Assert.
+            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
+        }
+
+    @Test
+    fun trackpadLoseFocusClearsSelection() =
+        with(rule.density) {
+            var clickCounter = 0
+            rule.setContent {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    TestParent(Modifier.testTag("selectionContainer")) {
+                        Column {
+                            TestButton(
+                                Modifier.size(50.dp).testTag(tag1),
+                                onClick = { clickCounter++ },
+                            ) {
+                                TestText("Button")
+                            }
+                            SelectionContainer(
+                                selection = selection.value,
+                                onSelectionChange = { selection.value = it },
+                            ) {
+                                TestText(textContent, Modifier.fillMaxSize())
+                            }
+                        }
+                    }
+                }
+            }
+            rule.waitForIdle()
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+            rule.onNodeWithTag(tag1, useUnmergedTree = true).performTrackpadInput { click() }
+
+            // Assert.
+            rule.runOnIdle { assertThat(selection.value).isNull() }
+            rule.runOnIdle { assertThat(clickCounter).isEqualTo(1) }
+        }
+
+    @Test
+    fun trackpadSelectButtonTextInsideSelectionContainer() =
+        with(rule.density) {
+            var clickCounter = 0
+
+            // Setup.
+            createSelectionContainer {
+                TestButton(onClick = { clickCounter++ }) {
+                    TestText(textContent, Modifier.fillMaxSize())
+                }
+            }
+            val characterSize = fontSize.toPx()
+
+            // Act. Double click "m" in "Demo", and "Demo" should be selected.
+            rule.onSelectionContainer().performTrackpadInput {
+                doubleClick(Offset(textContent.indexOf('m') * characterSize, 0.5f * characterSize))
+            }
+            rule.runOnIdle { assertThat(selection.value).isNotNull() }
+
+            // Act. Click on the same place, and selection should be cleared.
+            rule.onSelectionContainer().performTrackpadInput { click() }
 
             // Assert.
             // TODO(b/384750891) Cleared selection should be null
