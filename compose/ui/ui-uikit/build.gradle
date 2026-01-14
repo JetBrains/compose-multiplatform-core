@@ -29,9 +29,6 @@ plugins {
 kotlin {
     applyDefaultHierarchyTemplate()
 
-    iosX64("iosX64") {
-        configure(it, false, "x86_64", "iosX64Test")
-    }
     iosArm64("iosArm64") {
         configure(it, true, "arm64", null /*"iosArm64Test"*/)
     }
