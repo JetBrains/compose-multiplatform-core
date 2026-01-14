@@ -21,7 +21,6 @@ import androidx.annotation.RestrictTo
 import androidx.pdf.models.FormEditInfo
 
 /** Represents a PDF document that allows for editing. */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class EditablePdfDocument : PdfDocument {
 
     /**
@@ -34,7 +33,7 @@ public abstract class EditablePdfDocument : PdfDocument {
      * document so they can be saved and restored across destructive events like low memory kills or
      * configuration changes.
      *
-     * @property record The [androidx.pdf.models.FormEditInfo] to apply to the form.
+     * @param record The [androidx.pdf.models.FormEditInfo] to apply to the form.
      * @throws IllegalArgumentException if the provided [record] cannot be applied to the widget
      *   indicated by the index, or if the index does not correspond to a widget on the page.
      */
@@ -47,6 +46,8 @@ public abstract class EditablePdfDocument : PdfDocument {
      * @return List of annotationId for each operation in sequence of the order they were enqueued.
      * @throws [PdfEditApplyException] if any of the edit failed to be applied.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Suppress("HiddenAbstractMethod")
     public abstract suspend fun applyEdits(editsDraft: EditsDraft): List<String>
 
     /**

@@ -263,13 +263,13 @@ public interface RotarySnapLayoutInfoProvider {
 public object RotaryScrollableDefaults {
 
     /**
-     * Default snap sensitivity: The standard setting, intended for general use when the user is
+     * Low snap sensitivity: the standard setting, intended for general use when the user is
      * performing typical UI navigation.
      */
-    public const val SnapSensitivity: Float = 0.4f
+    public const val LowSnapSensitivity: Float = 0.4f
 
     /**
-     * High snap sensitivity. Recommended for contexts where even a light or minimal gesture should
+     * High snap sensitivity: recommended for contexts where even a light or minimal gesture should
      * trigger movement, such as navigating a long list (e.g. at least 10 items) where quick
      * scrolling is desired.
      */
@@ -322,7 +322,7 @@ public object RotaryScrollableDefaults {
      *   scrolling (true by default). It's recommended to keep the default value of true for premium
      *   scrolling experience.
      * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
-     *   [RotaryScrollableDefaults.SnapSensitivity].
+     *   [RotaryScrollableDefaults.LowSnapSensitivity].
      */
     @Composable
     public fun snapBehavior(
@@ -330,7 +330,7 @@ public object RotaryScrollableDefaults {
         layoutInfoProvider: RotarySnapLayoutInfoProvider,
         snapOffset: Dp = 0.dp,
         hapticFeedbackEnabled: Boolean = true,
-        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = SnapSensitivity,
+        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = LowSnapSensitivity,
     ): RotaryScrollableBehavior =
         snapBehavior(
             scrollableState = scrollableState,
@@ -384,14 +384,14 @@ public object RotaryScrollableDefaults {
      *   scrolling (true by default). It's recommended to keep the default value of true for premium
      *   scrolling experience.
      * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
-     *   [RotaryScrollableDefaults.SnapSensitivity].
+     *   [RotaryScrollableDefaults.LowSnapSensitivity].
      */
     @Composable
     public fun snapBehavior(
         scrollableState: ScalingLazyListState,
         snapOffset: Dp = 0.dp,
         hapticFeedbackEnabled: Boolean = true,
-        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = SnapSensitivity,
+        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = LowSnapSensitivity,
     ): RotaryScrollableBehavior =
         snapBehavior(
             scrollableState = scrollableState,
@@ -451,14 +451,14 @@ public object RotaryScrollableDefaults {
      *   scrolling (true by default). It's recommended to keep the default value of true for premium
      *   scrolling experience.
      * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
-     *   [SnapSensitivity].
+     *   [LowSnapSensitivity].
      */
     @Composable
     public fun snapBehavior(
         scrollableState: TransformingLazyColumnState,
         snapOffset: Dp = 0.dp,
         hapticFeedbackEnabled: Boolean = true,
-        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = SnapSensitivity,
+        @FloatRange(from = 0.0, to = 1.0) snapSensitivity: Float = LowSnapSensitivity,
     ): RotaryScrollableBehavior =
         snapBehavior(
             scrollableState = scrollableState,
@@ -483,8 +483,8 @@ public object RotaryScrollableDefaults {
      *   scrolling experience.
      * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
      *   [RotaryScrollableDefaults.HighSnapSensitivity] which is suitable for Pagers with at least
-     *   10 pages. See also [RotaryScrollableDefaults.SnapSensitivity] for context where there are
-     *   fewer pages.
+     *   10 pages. See also [RotaryScrollableDefaults.LowSnapSensitivity] for context where there
+     *   are fewer pages.
      */
     @Composable
     public fun snapBehavior(
@@ -949,7 +949,11 @@ internal class RotaryScrollHandler(private val scrollableState: ScrollableState)
             debugLog { "ScrollAnimation value before start: ${scrollAnimation.value}" }
 
             val animationSpec =
-                if (scrollableState.atTheEdge) spring(visibilityThreshold = 0.3f) else spring()
+                if (scrollableState.atTheEdge) {
+                    spring(visibilityThreshold = EdgeVisibilityThreshold)
+                } else {
+                    spring()
+                }
 
             scrollAnimation.animateTo(
                 targetValue,
@@ -1065,10 +1069,20 @@ internal class RotarySnapHandler(
 
                     continueFirstScroll = false
                     var prevPosition = anim.value
+
+                    val animationSpec =
+                        if (scrollableState.atTheEdge) {
+                            spring(visibilityThreshold = EdgeVisibilityThreshold)
+                        } else {
+                            spring(
+                                stiffness = defaultStiffness,
+                                visibilityThreshold = SnapVisibilityThreshold,
+                            )
+                        }
+
                     anim.animateTo(
                         prevPosition + expectedDistance,
-                        animationSpec =
-                            spring(stiffness = defaultStiffness, visibilityThreshold = 0.1f),
+                        animationSpec = animationSpec,
                         sequentialAnimation = (anim.velocity != 0f),
                     ) {
                         // Exit animation if snap target was updated
@@ -1101,15 +1115,22 @@ internal class RotarySnapHandler(
                         }
                     }
                 }
-                // Exit animation if snap target was updated
-                if (snapTargetUpdated) continue
+
+                // Exit animation if snap target was updated.
+                // If we are at the edge, we also skip the second part of the animation.
+                // This allows us to immediately trigger fling(0f), handing control to the
+                // OverscrollEffect for a smooth bounce-back.
+                if (snapTargetUpdated || scrollableState.atTheEdge) continue
 
                 // Second part of Animation - animating to the centre of target element.
                 var prevPosition = anim.value
                 anim.animateTo(
                     prevPosition + expectedDistance,
                     animationSpec =
-                        SpringSpec(stiffness = defaultStiffness, visibilityThreshold = 0.1f),
+                        SpringSpec(
+                            stiffness = defaultStiffness,
+                            visibilityThreshold = SnapVisibilityThreshold,
+                        ),
                     sequentialAnimation = (anim.velocity != 0f),
                 ) {
                     // Exit animation if snap target was updated
@@ -1826,9 +1847,9 @@ internal constructor(
 internal fun RotarySnapSensitivityValues(sensitivity: Float): RotarySnapSensitivityValues {
     // Calculate fraction of this sensitivity value, with reference to the two recommended values.
     val fraction =
-        (sensitivity - RotaryScrollableDefaults.SnapSensitivity) /
+        (sensitivity - RotaryScrollableDefaults.LowSnapSensitivity) /
             (RotaryScrollableDefaults.HighSnapSensitivity -
-                RotaryScrollableDefaults.SnapSensitivity)
+                RotaryScrollableDefaults.LowSnapSensitivity)
     val defaultValues = RotarySnapSensitivityValues.Default
     val highValues = RotarySnapSensitivityValues.High
 
@@ -1854,6 +1875,9 @@ private val ScrollableState.atTheEdge
 private const val AxisScroll = MotionEvent.AXIS_SCROLL
 
 private const val RotaryInputSource = InputDevice.SOURCE_ROTARY_ENCODER
+
+private const val EdgeVisibilityThreshold = 0.3f
+private const val SnapVisibilityThreshold = 0.1f
 
 /** Debug logging that can be enabled. */
 private const val DEBUG = false

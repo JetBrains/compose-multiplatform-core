@@ -107,15 +107,10 @@ internal class PdfContentLayoutTouchListener(
         // If we receive a MOVE but haven't initialized state (because DOWN was consumed elsewhere),
         // we essentially treat this first MOVE as our "Start".
         if (primaryPointerId == MotionEvent.INVALID_POINTER_ID) {
-            val fakeDown =
-                MotionEvent.obtain(
-                    event.downTime,
-                    event.eventTime,
-                    MotionEvent.ACTION_DOWN,
-                    event.x,
-                    event.y,
-                    event.metaState,
-                )
+            val fakeDown = MotionEvent.obtain(event)
+            // Change the action to DOWN while keeping all other data intact
+            fakeDown.action = MotionEvent.ACTION_DOWN
+
             handleDown(fakeDown)
             fakeDown.recycle()
             // If the user has already dragged past touch slop in this single event history,
@@ -124,36 +119,19 @@ internal class PdfContentLayoutTouchListener(
         }
 
         val primaryPointerIndex = event.findPointerIndex(primaryPointerId)
-        if (isSingleTouchCommitted && currentDispatcher == annotationsTouchEventDispatcher) {
-            if (primaryPointerIndex != -1) {
-                val x = event.getX(primaryPointerIndex)
-                val y = event.getY(primaryPointerIndex)
-                val singlePointerMove =
-                    MotionEvent.obtain(
-                        event.downTime,
-                        event.eventTime,
-                        event.action,
-                        x,
-                        y,
-                        event.metaState,
-                    )
-                currentDispatcher?.dispatchTouchEvent(singlePointerMove)
-                singlePointerMove.recycle()
-            }
-        } else {
-            if (
-                currentDispatcher == annotationsTouchEventDispatcher &&
-                    !isSingleTouchCommitted &&
-                    primaryPointerIndex != -1
-            ) {
-                val dx = event.getX(primaryPointerIndex) - downX
-                val dy = event.getY(primaryPointerIndex) - downY
-                if (dx * dx + dy * dy > touchSlop * touchSlop) {
-                    isSingleTouchCommitted = true
-                }
-            }
-            currentDispatcher?.dispatchTouchEvent(event)
+        if (primaryPointerIndex == MotionEvent.INVALID_POINTER_ID) {
+            return
         }
+
+        if (currentDispatcher == annotationsTouchEventDispatcher && !isSingleTouchCommitted) {
+            val dx = event.getX(primaryPointerIndex) - downX
+            val dy = event.getY(primaryPointerIndex) - downY
+            if (dx * dx + dy * dy > touchSlop * touchSlop) {
+                isSingleTouchCommitted = true
+            }
+        }
+
+        currentDispatcher?.dispatchTouchEvent(event)
     }
 
     private fun handlePointerUp(event: MotionEvent) {

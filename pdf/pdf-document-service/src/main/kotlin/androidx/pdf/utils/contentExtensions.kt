@@ -105,20 +105,81 @@ public fun android.graphics.pdf.content.PdfPageLinkContent.toContentClass(): Pdf
 @SuppressLint("WrongConstant")
 public fun android.graphics.pdf.models.FormWidgetInfo.toContentClass(): FormWidgetInfo =
     requireSdkExtensionVersion {
-        FormWidgetInfo(
-            widgetType,
-            widgetIndex,
-            widgetRect,
-            textValue,
-            accessibilityLabel,
-            isReadOnly,
-            isEditableText,
-            isMultiSelect,
-            isMultiLineText,
-            maxLength = maxLength.takeIf { it != -1 },
-            fontSize = fontSize.takeIf { it.toDouble() != 0.0 },
-            listItems.map { item -> item.toContentClass() }.takeIf { it.isNotEmpty() },
-        )
+        return when (widgetType) {
+            FormWidgetInfo.WIDGET_TYPE_CHECKBOX ->
+                FormWidgetInfo.createCheckbox(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON ->
+                FormWidgetInfo.createPushButton(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON ->
+                FormWidgetInfo.createRadioButton(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_SIGNATURE ->
+                FormWidgetInfo.createSignature(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_COMBOBOX ->
+                FormWidgetInfo.createComboBox(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                    isEditableText,
+                    fontSize,
+                    listItems.map { item -> item.toContentClass() },
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_TEXTFIELD ->
+                FormWidgetInfo.createTextField(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                    isEditableText,
+                    isMultiLineText,
+                    maxLength.takeIf { it != -1 } ?: 0,
+                    fontSize,
+                )
+
+            FormWidgetInfo.WIDGET_TYPE_LISTBOX ->
+                FormWidgetInfo.createListBox(
+                    widgetIndex,
+                    widgetRect,
+                    textValue,
+                    accessibilityLabel,
+                    isReadOnly,
+                    isMultiSelect,
+                    listItems.map { item -> item.toContentClass() },
+                )
+
+            else -> throw IllegalArgumentException("Unknown widget type")
+        }
     }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)

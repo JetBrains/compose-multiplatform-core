@@ -48,15 +48,14 @@ import androidx.build.uptodatedness.TaskUpToDateValidator
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
-import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.TestBuildType
 import com.android.build.api.dsl.TestExtension
+import com.android.build.api.variant.AarMetadata
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasDeviceTests
@@ -65,12 +64,10 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtensi
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.LibraryVariantBuilder
-import com.android.build.api.variant.Variant
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.TestPlugin
 import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
-import com.android.build.gradle.api.PrivacySandboxSdkPlugin
 import com.google.devtools.ksp.gradle.KspExtension
 import com.google.devtools.ksp.gradle.KspGradleSubplugin
 import com.google.protobuf.gradle.ProtobufExtension
@@ -105,7 +102,6 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.AbstractTestTask
-import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.build.event.BuildEventsListenerRegistry
@@ -180,8 +176,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         plugin,
                         androidXKmpExtension,
                     )
-                is @Suppress("UnstableApiUsage") PrivacySandboxSdkPlugin -> // b/397703898
-                configureWithPrivacySandboxSdkPlugin(project)
                 is ProtobufPlugin -> configureProtobufPlugin(project)
             }
         }
@@ -231,7 +225,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
             project.registerValidateMultiplatformSourceSetNamingTask()
             project.validateLintVersionTestExists(androidXExtension)
-            project.addTestLintK1Task(androidXExtension)
         }
         TaskUpToDateValidator.setup(project, registry)
 
@@ -602,10 +595,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 // Remove the cast when we upgrade to AGP 9.0.0
                 (variant as HasUnitTestBuilder).enableUnitTest = false
             }
-            onVariants {
-                it.configureTests(project.getKeystore())
-                it.configureLocalAsbSigning(project.getKeystore())
-            }
+            onVariants { it.configureTests(project.getKeystore()) }
         }
 
         project.configureJavaCompilationWarnings(
@@ -632,10 +622,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             )
             project.addAppApkToTestConfigGeneration(androidXExtension)
             excludeVersionFiles(packaging.resources)
-        }
-
-        project.extensions.getByType(AndroidComponentsExtension::class.java).apply {
-            onVariants { it.configureLocalAsbSigning(project.getKeystore()) }
         }
         project.configureJavaCompilationWarnings(androidXExtension)
     }
@@ -666,29 +652,22 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
         name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
-    private fun AarMetadata.configure(compileSdk: Int?) {
-        // Taken from
-        // https://developer.android.com/build/releases/gradle-plugin#api-level-support
-        fun mapToMinAgpVersion(compileSdk: Int): String {
-            return when (compileSdk) {
-                33 -> "7.2.0"
-                34 -> "8.1.1"
-                35 -> "8.6.0"
-                36 -> "8.9.1"
-                else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+    private fun AarMetadata.configureMinAgpVersion() {
+        @Suppress("UnstableApiUsage") // usage of minAgpVersion
+        minAgpVersion.set(
+            minCompileSdk.map { value ->
+                // Taken from
+                // https://developer.android.com/build/releases/gradle-plugin#api-level-support
+                when (value) {
+                    1 -> "7.2.0"
+                    33 -> "7.2.0"
+                    34 -> "8.1.1"
+                    35 -> "8.6.0"
+                    36 -> "8.9.1"
+                    else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+                }
             }
-        }
-
-        // Propagate the compileSdk value into minCompileSdk. Don't propagate
-        // compileSdkExtension, since only one library actually depends on the extension
-        // APIs and they can explicitly declare that in their build.gradle. Note that when
-        // we're using a preview SDK, the value for compileSdk will be null and the
-        // resulting AAR metadata won't have a minCompileSdk --
-        // this is okay because AGP automatically embeds forceCompileSdkPreview in the AAR
-        // metadata and uses it instead of minCompileSdk.
-        if (compileSdk == null) return
-        minCompileSdk = compileSdk
-        minAgpVersion = mapToMinAgpVersion(compileSdk)
+        )
     }
 
     private fun configureWithKotlinMultiplatformAndroidPlugin(
@@ -710,7 +689,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         )
         kotlinMultiplatformAndroidComponentsExtension.apply {
             finalizeDsl {
-                it.aarMetadata.configure(it.compileSdk)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 project.setUpBlankProguardFileForKmpAarIfNeeded(
                     kotlinMultiplatformAndroidTarget.optimization.consumerKeepRules
@@ -737,6 +715,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             )
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
+            variant.aarMetadata.configureMinAgpVersion()
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -790,39 +769,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
     }
 
-    @Suppress("UnstableApiUsage") // usage of PrivacySandboxSdkExtension b/397703898
-    private fun configureWithPrivacySandboxSdkPlugin(project: Project) {
-        project.tasks.register("check")
-        project.extensions.getByType<PrivacySandboxSdkExtension>().apply {
-            configureLocalAsbSigning(experimentalProperties, project.getKeystore())
-            compileSdk = project.defaultAndroidConfig.compileSdk
-            minSdk = project.defaultAndroidConfig.minSdk
-            buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
-            bundle { setVersion(1, 0, 0) }
-        }
-        // Workaround for b/389890488
-        project.configurations.configureEach { configuration ->
-            if (configuration.isCanBeResolved) {
-                configuration.attributes { attributeContainer ->
-                    attributeContainer.attribute(
-                        BuildTypeAttr.ATTRIBUTE,
-                        project.objects.named(BuildTypeAttr::class.java, "release"),
-                    )
-                }
-            }
-        }
-    }
-
-    private fun configureLocalAsbSigning(
-        experimentalProperties: MutableMap<String, Any>,
-        keyStore: File,
-    ) {
-        experimentalProperties[ASB_SIGNING_CONFIG_PROPERTY_NAME] = keyStore.absolutePath
-    }
-
-    private val ASB_SIGNING_CONFIG_PROPERTY_NAME =
-        "android.privacy_sandbox.local_deployment_signing_store_file"
-
     /**
      * Excludes files telling which versions of androidx libraries were used in test apks, to avoid
      * invalidating caches as often
@@ -867,11 +813,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
     }
 
-    @Suppress("UnstableApiUsage") // usage of experimentalProperties b/397703898
-    private fun Variant.configureLocalAsbSigning(keyStore: File) {
-        experimentalProperties.put(ASB_SIGNING_CONFIG_PROPERTY_NAME, keyStore.absolutePath)
-    }
-
     private fun configureWithLibraryPlugin(project: Project, androidXExtension: AndroidXExtension) {
         val buildTypeForTests = "release"
         val libraryExtension = project.extensions.getByType<LibraryExtension>()
@@ -900,7 +841,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
-                it.defaultConfig.aarMetadata.configure(it.compileSdk)
                 project.setUpBlankProguardFileForAarIfNeeded(it.defaultConfig)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 it.testOptions.targetSdk = project.defaultAndroidConfig.targetSdk
@@ -952,6 +892,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     task.cacheEvenIfNoOutputs()
                 }
             project.addToBuildOnServer(verifyELFRegionAlignmentTaskProvider)
+            variant.aarMetadata.configureMinAgpVersion()
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
@@ -1072,12 +1013,12 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Suppress output of android:compileSdkVersion and related attributes (b/277836549).
         androidResources.additionalParameters += "--no-compile-sdk-metadata"
 
-        compileSdk = project.defaultAndroidConfig.compileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
 
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
 
         defaultConfig.ndk.abiFilters.addAll(SUPPORTED_BUILD_ABIS)
-        defaultConfig.minSdk = defaultMinSdk
+        defaultConfig.minSdk { version = release(defaultMinSdk) }
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testOptions.animationsDisabled = !project.isMacrobenchmark()
@@ -1142,12 +1083,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
-        val defaultCompileSdk = project.defaultAndroidConfig.compileSdk
-
-        compileSdk = defaultCompileSdk
+        compileSdk { version = release(project.defaultAndroidConfig.compileSdk) }
         buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
-
-        minSdk = defaultMinSdkVersion
+        minSdk { version = release(defaultMinSdkVersion) }
 
         lint.targetSdk = project.defaultAndroidConfig.targetSdk
         compilations
@@ -1465,34 +1403,6 @@ internal fun getDefaultTargetJavaVersion(
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
         else -> VERSION_1_8
     }
-}
-
-/** Must be called from a `project.afterEvaluate` block. */
-private fun Project.addTestLintK1Task(androidXExt: AndroidXExtension) {
-    if (!androidXExt.type.get().isLint()) {
-        return
-    }
-
-    // Make the default ":test" task use lint.use.fir.uast=true, which forces Lint tests to run
-    // using K2.
-    project.tasks.withType<Test>().named("test") { task ->
-        task.systemProperty("lint.use.fir.uast", "true")
-    }
-
-    // Add an additional test task, ":testLintK1", to run Lint tests using K1.
-    //
-    // This task is automatically included in allHostTests and configured (by JavaBasePlugin to run
-    // the Kotlin/Java tests) just by being of type `Test`; no additional code is needed, and the
-    // order (of when we register this task vs., say, allHostTests) does not matter.
-    //
-    // All AndroidX libraries target the Kotlin 2.0 language version, so AndroidX lint checks
-    // invoked via AGP will use K2. However, K1 may still be used: (a) When Lint runs in Android
-    // Studio and IntelliJ, the user can choose K1/K2 mode. (b) The developer can force AGP Lint to
-    // run via K1 for specific modules, which they might do if there are problems with K2.
-    project.tasks.register("testLintK1", Test::class.java).configure { task ->
-        task.systemProperty("lint.use.fir.uast", "false")
-    }
-    project.tasks.named("check") { task -> task.dependsOn("testLintK1") }
 }
 
 private fun Project.validateLintVersionTestExists(androidXExtension: AndroidXExtension) {

@@ -87,28 +87,15 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         return array
     }
 
-    /**
-     * Deprecated property to get the ID of the remote float. It\'s recommended to use
-     * [getFloatIdForCreationState] directly for clarity and to pass the correct
-     * [RemoteComposeCreationState].
-     */
-    // TODO: re-enable asap
-    // @Deprecated("Use getIdForCreationState directly")
-    public open val id: Float
-        get() {
-            // FallbackCreationState.state.platform.log(
-            //     Platform.LogCategory.TODO,
-            //     "Use RemoteFloat.getIdForCreationState directly"
-            // )
-            return getFloatIdForCreationState(FallbackCreationState.state)
+    override fun getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float {
+        constantValue?.let {
+            return it
         }
-
-    public fun internalAsFloat(): Float {
-        return id
-    }
-
-    public fun toFloat(): Float {
-        return id
+        val array = arrayForCreationState(creationState)
+        if (array.size == 1) {
+            return array[0]
+        }
+        return super.getFloatIdForCreationState(creationState)
     }
 
     /**
@@ -1065,16 +1052,6 @@ internal constructor(
             return Utils.idFromNan(creationState.document.floatExpression(*array))
         }
     }
-
-    public override val id: Float
-        get(): Float {
-            // Some of the callers expect RemoteFloat(123) to return 123 from this method.
-            val array = arrayForCreationState(FallbackCreationState.state)
-            if (array.size == 1) {
-                return array[0]
-            }
-            return getFloatIdForCreationState(FallbackCreationState.state)
-        }
 }
 
 /**
@@ -1321,7 +1298,7 @@ public fun rememberRemoteFloat(
  * @return The created [RemoteFloat].
  */
 public fun remoteFloat(
-    state: RemoteComposeCreationState,
+    state: RemoteStateScope,
     content: RemoteFloatContext.() -> RemoteFloat,
 ): RemoteFloat {
     val context = RemoteFloatContext(state)

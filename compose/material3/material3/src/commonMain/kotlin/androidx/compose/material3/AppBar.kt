@@ -3287,12 +3287,13 @@ private class TopAppBarMeasurePolicy(
                 .measure(constraints.copy(minWidth = 0))
         val startPaddingPx = contentPadding.calculateStartPadding(layoutDirection)
         val endPaddingPx = contentPadding.calculateEndPadding(layoutDirection)
+        val titleStartSpace = max(TopAppBarTitleInset.roundToPx(), navigationIconPlaceable.width)
         val maxTitleWidth =
             if (constraints.maxWidth == Constraints.Infinity) {
                 constraints.maxWidth
             } else {
                 (constraints.maxWidth -
-                        navigationIconPlaceable.width -
+                        titleStartSpace -
                         actionIconsPlaceable.width -
                         startPaddingPx.roundToPx() -
                         endPaddingPx.roundToPx())

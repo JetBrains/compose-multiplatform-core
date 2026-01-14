@@ -904,9 +904,9 @@ class RotaryScrollTest {
 
     @Test
     fun rotaryScrollable_snap_sensitivity_avoids_divide_by_zero() {
-        val defaultSensitivity = RotaryScrollableDefaults.SnapSensitivity
+        val lowSensitivity = RotaryScrollableDefaults.LowSnapSensitivity
         val highSensitivity = RotaryScrollableDefaults.HighSnapSensitivity
-        val sensitivityRange = highSensitivity - defaultSensitivity
+        val sensitivityRange = highSensitivity - lowSensitivity
         val defaultSensitivityValues = RotarySnapSensitivityValues.Default
         val highSensitivityValues = RotarySnapSensitivityValues.High
 
@@ -927,9 +927,9 @@ class RotaryScrollTest {
 
     @Test
     fun rotaryScrollable_snap_sensitivity_extrapolates_lower() {
-        val defaultSensitivity = RotaryScrollableDefaults.SnapSensitivity
+        val lowSensitivity = RotaryScrollableDefaults.LowSnapSensitivity
 
-        val values = RotarySnapSensitivityValues(defaultSensitivity * 0.9f)
+        val values = RotarySnapSensitivityValues(lowSensitivity * 0.9f)
 
         assertThat(values.minThresholdDivider)
             .isLessThan(RotarySnapSensitivityValues.Default.minThresholdDivider)

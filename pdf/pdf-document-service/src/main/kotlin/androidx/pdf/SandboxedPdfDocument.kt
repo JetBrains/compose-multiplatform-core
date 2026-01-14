@@ -31,10 +31,10 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
 import androidx.pdf.PdfDocument.BitmapSource
-import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
@@ -45,6 +45,7 @@ import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
@@ -101,7 +102,7 @@ public class SandboxedPdfDocument(
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
 
     private val onPdfContentInvalidatedListeners:
-        CopyOnWriteArrayList<PdfDocument.OnPdfContentInvalidatedListener> =
+        CopyOnWriteArrayList<Pair<Executor, PdfDocument.OnPdfContentInvalidatedListener>> =
         CopyOnWriteArrayList()
 
     /**
@@ -112,14 +113,12 @@ public class SandboxedPdfDocument(
      */
     private var isDocumentClosedExplicitly = false
 
+    @Suppress("WrongConstant")
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
-        return getPageInfo(pageNumber, PdfDocument.PageInfoFlags.of(0))
+        return getPageInfo(pageNumber, PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS)
     }
 
-    override suspend fun getPageInfo(
-        pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
-    ): PdfDocument.PageInfo {
+    override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
         return withDocument { document ->
             // TODO(b/407777410): Update the logic so that callers can refetch the information in
             // case
@@ -128,10 +127,10 @@ public class SandboxedPdfDocument(
 
             // Check if the INCLUDE_FORM_WIDGET_INFO flag is set
             val formWidgetInfo =
-                if (pageInfoFlags.value and INCLUDE_FORM_WIDGET_INFO != 0L) {
+                if (pageInfoFlags and PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET != 0L) {
                     document.getFormWidgetInfos(pageNumber).map { it.toContentClass() }
                 } else {
-                    null
+                    emptyList()
                 }
 
             if (dimensions == null || dimensions.height <= 0 || dimensions.width <= 0) {
@@ -153,7 +152,7 @@ public class SandboxedPdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
+        pageInfoFlags: Long,
     ): List<PdfDocument.PageInfo> {
         return pageRange.map { getPageInfo(pageNumber = it, pageInfoFlags = pageInfoFlags) }
     }
@@ -223,34 +222,40 @@ public class SandboxedPdfDocument(
 
     override fun getPageBitmapSource(pageNumber: Int): BitmapSource = PageBitmapSource(pageNumber)
 
-    override suspend fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo> {
-        return getFormWidgetInfos(pageNum, intArrayOf())
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
+        return withDocument { document ->
+            document.getFormWidgetInfosOfType(pageNum, getFormWidgetTypesArray(types)).map {
+                it.toContentClass()
+            }
+        }
     }
 
-    override suspend fun getFormWidgetInfos(pageNum: Int, types: IntArray): List<FormWidgetInfo> {
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return withDocument { document ->
-            document.getFormWidgetInfosOfType(pageNum, types).map { it.toContentClass() }
+            document.getTopPageObjectAtPosition(pageNum, point, intArrayOf())
         }
     }
 
     override fun addOnPdfContentInvalidatedListener(
-        listener: PdfDocument.OnPdfContentInvalidatedListener
+        executor: Executor,
+        listener: PdfDocument.OnPdfContentInvalidatedListener,
     ) {
-        onPdfContentInvalidatedListeners.add(listener)
+        onPdfContentInvalidatedListeners.add(Pair(executor, listener))
     }
 
     override fun removeOnPdfContentInvalidatedListener(
         listener: PdfDocument.OnPdfContentInvalidatedListener
     ) {
-        onPdfContentInvalidatedListeners.remove(listener)
+        onPdfContentInvalidatedListeners.removeIf { it.second == listener }
     }
 
     override suspend fun applyEdit(record: FormEditInfo) {
         val dirtyAreas = withDocument { document ->
             document.applyEdit(record.pageNumber, record.toAndroidClass())
         }
-        onPdfContentInvalidatedListeners.forEach {
-            it.onPdfContentInvalidated(record.pageNumber, dirtyAreas)
+        onPdfContentInvalidatedListeners.forEach { (executor, listener) ->
+            executor.execute { listener.onPdfContentInvalidated(record.pageNumber, dirtyAreas) }
         }
     }
 
@@ -436,6 +441,28 @@ public class SandboxedPdfDocument(
             val remainingAnnotations = deferredRemainingBatches.awaitAll().flatten()
             firstAnnotations + remainingAnnotations
         }
+    }
+
+    private fun getFormWidgetTypesArray(types: Long): IntArray {
+        if (types == PdfDocument.FORM_WIDGET_INCLUDE_ALL_TYPES) return intArrayOf()
+
+        return buildList {
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_TEXTFIELD)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_PUSHBUTTON_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_RADIOBUTTON_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_CHECKBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_CHECKBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_COMBOBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_COMBOBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_LISTBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_LISTBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_SIGNATURE_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_SIGNATURE)
+            }
+            .toIntArray()
     }
 
     private companion object {

@@ -98,10 +98,10 @@ internal constructor(
         color: Color
     ) : this(
         constantValue = color,
-        alpha = color.alpha()?.rf,
-        red = color.red()?.rf,
-        green = color.green()?.rf,
-        blue = color.blue()?.rf,
+        alpha = color.alpha().rf,
+        red = color.red().rf,
+        green = color.green().rf,
+        blue = color.blue().rf,
         idProvider = { creationState -> creationState.document.addColor(color.toArgb()) },
     )
 
@@ -125,17 +125,6 @@ internal constructor(
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         idProvider(creationState)
-
-    // @Deprecated("Use getIdForCreationState directly")
-    // TODO: re-enable this asap
-    public val id: Int
-        get() {
-            // FallbackCreationState.state.platform.log(
-            //     Platform.LogCategory.TODO,
-            //     "Use RemoteColor.getIdForCreationState directly"
-            // )
-            return getIdForCreationState(FallbackCreationState.state)
-        }
 
     /**
      * Computes the pairwise product of this [RemoteColor] with [other].

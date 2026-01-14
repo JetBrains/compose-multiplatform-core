@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,7 @@ import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -41,6 +42,7 @@ import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import java.util.UUID
+import java.util.concurrent.Executor
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -91,17 +93,22 @@ internal open class FakeEditablePdfDocument(
         return FakeBitmapSource(pageNumber)
     }
 
-    override suspend fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo> {
-        logFormWidgetRequest(pageNum)
-        return pageFormWidgetInfos[pageNum] ?: emptyList()
-    }
-
     private fun logFormWidgetRequest(pageNum: Int) {
         _formWidgetRequests.add(pageNum)
     }
 
-    override suspend fun getFormWidgetInfos(pageNum: Int, types: IntArray): List<FormWidgetInfo> {
-        return pageFormWidgetInfos[pageNum]?.filter { it.widgetType in types } ?: emptyList()
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
+        logFormWidgetRequest(pageNum)
+        if (types == PdfDocument.FORM_WIDGET_INCLUDE_ALL_TYPES)
+            return pageFormWidgetInfos[pageNum] ?: emptyList()
+
+        return pageFormWidgetInfos[pageNum]?.filter {
+            (1 shl it.widgetType).toLong() and types != 0L
+        } ?: emptyList()
+    }
+
+    override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
+        return null
     }
 
     override suspend fun applyEdit(record: FormEditInfo) {
@@ -206,25 +213,22 @@ internal open class FakeEditablePdfDocument(
 
     override suspend fun getPageInfos(
         pageRange: IntRange,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
+        pageInfoFlags: Long,
     ): List<PdfDocument.PageInfo> {
         return listOf()
     }
 
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
-        return getPageInfo(pageNumber, PdfDocument.PageInfoFlags.of(0))
+        return getPageInfo(pageNumber, PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS)
     }
 
-    override suspend fun getPageInfo(
-        pageNumber: Int,
-        pageInfoFlags: PdfDocument.PageInfoFlags,
-    ): PdfDocument.PageInfo {
+    override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
         if (size == null) {
             throw kotlinx.coroutines.CancellationException()
         }
-        if (pageInfoFlags.value and PdfDocument.INCLUDE_FORM_WIDGET_INFO != 0L) {
+        if (pageInfoFlags and PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET != 0L) {
             return PdfDocument.PageInfo(
                 pageNum = pageNumber,
                 height = size.y,
@@ -277,7 +281,8 @@ internal open class FakeEditablePdfDocument(
     }
 
     override fun addOnPdfContentInvalidatedListener(
-        listener: PdfDocument.OnPdfContentInvalidatedListener
+        executor: Executor,
+        listener: PdfDocument.OnPdfContentInvalidatedListener,
     ) {}
 
     override fun removeOnPdfContentInvalidatedListener(
@@ -337,26 +342,25 @@ internal open class FakeEditablePdfDocument(
                     mapOf(
                         0 to
                             listOf(
-                                FormWidgetInfo(
-                                    widgetType = FormWidgetInfo.Companion.WIDGET_TYPE_RADIOBUTTON,
+                                FormWidgetInfo.createRadioButton(
                                     widgetIndex = 0,
                                     widgetRect = Rect(50, 500, 100, 600),
                                     textValue = "false",
                                     accessibilityLabel = "Radio",
+                                    isReadOnly = false,
                                 )
                             ),
                         1 to
                             listOf(
-                                FormWidgetInfo(
-                                    widgetType = FormWidgetInfo.Companion.WIDGET_TYPE_LISTBOX,
+                                FormWidgetInfo.createListBox(
                                     widgetIndex = 0,
                                     widgetRect = Rect(50, 400, 100, 550),
                                     textValue = "Banana",
                                     accessibilityLabel = "ListBox",
                                     listItems =
                                         listOf(ListItem("Apple", false), ListItem("Banana", false)),
-                                    multiSelect = true,
-                                    readOnly = true,
+                                    isMultiSelect = true,
+                                    isReadOnly = true,
                                 )
                             ),
                     ),
