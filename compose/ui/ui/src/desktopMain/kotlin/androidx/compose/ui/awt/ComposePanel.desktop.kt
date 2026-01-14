@@ -90,7 +90,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
                 " (use SwingUtilities.invokeLater).\n" +
                 "Creating from another thread isn't supported."
         }
-        background = Color.white
         layout = null
         focusTraversalPolicy = object : FocusTraversalPolicy() {
             override fun getComponentAfter(
@@ -140,8 +139,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      *
      * If it is set to false, it is developer's responsibility to call [dispose] function
      * when Compose state and all related to [ComposePanel] resources are no longer needed.
-     * It can be useful for cases when [ComposePanel] can be attached/detached to Swing hierarchy multiple times,
-     * so with [isDisposeOnRemove] = `false` state will be preserved.
+     * It can be useful for cases when [ComposePanel] can be attached/detached to Swing hierarchy
+     * multiple times, so with [isDisposeOnRemove] = `false` state will be preserved.
      *
      * On the other hand, [isDisposeOnRemove] = `true` can be useful for stateless components,
      * that can be recreated for each attaching to Swing hierarchy.
@@ -150,6 +149,29 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      */
     @ExperimentalComposeUiApi
     var isDisposeOnRemove: Boolean = true
+
+    /**
+     * Determines whether unconsumed mouse wheel events will be propagated to the parent component.
+     *
+     * When set to `true`, mouse wheel events that are not consumed by the Compose UI will be passed
+     * to Swing for further processing. This is useful when placing [ComposePanel] inside a
+     * scrollable Swing container (i.e. [javax.swing.JScrollPane]).
+     *
+     * When set to `false`, [ComposePanel] will behave like [javax.swing.JScrollPane], consuming all
+     * mouse wheel events that occur over it.
+     *
+     * To configure this behavior globally, set
+     * [ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents].
+     *
+     * @see ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents
+     */
+    @ExperimentalComposeUiApi
+    var redispatchUnconsumedMouseWheelEvents: Boolean =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
+        set(value) {
+            field = value
+            _composeContainer?.redispatchUnconsumedMouseWheelEvents = value
+        }
 
     /**
      * Saves the current UI state into a [SavedState] object. The returned state can be used
@@ -187,6 +209,12 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         super.getPreferredSize()
     } else {
         _composeContainer?.preferredSize ?: Dimension(0, 0)
+    }
+
+    override fun setBackground(bg: Color?) {
+        // Note that unless `setOpaque(true)` is called, JLayeredPane will not paint the background
+        super.setBackground(bg)
+        _composeContainer?.contentComponent?.background = bg
     }
 
     /**
@@ -254,6 +282,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it
+            it.redispatchUnconsumedMouseWheelEvents = redispatchUnconsumedMouseWheelEvents
             @OptIn(InternalCoreApi::class)
             it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
@@ -268,6 +297,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private fun createComposeContainer(): ComposeContainer {
         return ComposeContainer(
             container = this,
+            isWindowLevel = false,
             skiaLayerAnalytics = skiaLayerAnalytics,
             savedState = savedState,
             windowContainer = windowContainer,
@@ -276,6 +306,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
             setBounds(0, 0, width, height)
             contentComponent.isFocusable = isFocusable
             contentComponent.isRequestFocusEnabled = isRequestFocusEnabled
+            contentComponent.background = background
             exceptionHandler = this@ComposePanel.exceptionHandler
 
             _focusListeners.forEach(contentComponent::addFocusListener)

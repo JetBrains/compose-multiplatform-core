@@ -234,6 +234,7 @@ internal class ComposeContainer(
 
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
+            isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
             architectureComponentsOwner = architectureComponentsOwner,
@@ -318,8 +319,7 @@ internal class ComposeContainer(
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
                     initialLayoutDirection = layoutDirection,
-                    onFocusBehavior = configuration.onFocusBehavior,
-                    endEdgeGestureBehavior = configuration.endEdgePanGestureBehavior,
+                    configuration = configuration,
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList.childFocusedViewsList() else null,
                     parentCoroutineContext = compositionContext.effectCoroutineContext,

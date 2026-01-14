@@ -30,6 +30,9 @@ import androidx.compose.ui.semantics.SemanticsProperties.InvisibleToUser
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.findClosestParentNode
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.sortByGeometryGroupings
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
 import platform.UIKit.UIAccessibilityScrollDirection
@@ -236,6 +239,53 @@ internal fun SemanticsNode.isScreenReaderFocusable(): Boolean {
     return !isTransparent && canBeAccessibilityElement()
 }
 
+internal fun SemanticsNode.linkText(): String? {
+    val (text, annotation) = this.findCorrespondingLinkAnnotations() ?: return null
+
+    return text.substring(annotation.start, annotation.end).takeIf { it.isNotBlank() }
+}
+
+internal fun SemanticsNode.linkTag(): String? {
+    val (_, annotation) = this.findCorrespondingLinkAnnotations() ?: return null
+
+    return annotation.item.getTag()
+}
+
+private fun SemanticsNode.findCorrespondingLinkAnnotations():
+    Pair<AnnotatedString, AnnotatedString.Range<LinkAnnotation>>? {
+    if (!isLink()) {
+        return null
+    }
+    val parentNode = parent ?: return null
+
+    // See [SemanticsNodeInteraction.performFirstLinkClick] for the logic of finding the
+    // corresponding link annotation to the child node
+    var linkIndex = parentNode.children
+        .asSequence()
+        .filter { it.isLink() }
+        .indexOfFirst { it.id == id }
+        .takeIf { it >= 0 } ?: return null
+    val texts = parentNode.config.getOrNull(SemanticsProperties.Text) ?: return null
+    for (text in texts) {
+        val annotations = text.getLinkAnnotations(0, text.length)
+        if (linkIndex < annotations.count()) {
+            return text to annotations[linkIndex]
+        } else {
+            linkIndex -= annotations.count()
+        }
+    }
+    return null
+}
+
+private fun SemanticsNode.isLink(): Boolean =
+    config.getOrNull(SemanticsProperties.LinkTestMarker) != null
+
+private fun LinkAnnotation.getTag(): String? =
+    when (this) {
+        is LinkAnnotation.Clickable -> this.tag
+        else -> null
+    }
+
 internal fun SemanticsNode.canBeAccessibilityElement(): Boolean {
     return !isHiddenFromAccessibility &&
         (unmergedConfig.isMergingSemanticsOfDescendants ||
@@ -293,4 +343,26 @@ internal val SemanticsNode.contentDescription: String? get() {
     } else {
         config.getOrNull(SemanticsProperties.Text)?.joinToString(", ") { it.text }
     }
+}
+
+internal fun SemanticsNode.sortFlattenChildren(children: List<SemanticsNode>): List<SemanticsNode> {
+    val sortedChildren = sortByGeometryGroupings(children) as MutableList<SemanticsNode>
+
+    // Fix the specifics of nodes sorting where a parent node may go after a child in the sorted list.
+    // Swapping them if the order is not specified by other criteria as TraversalIndex.
+    // In case of other sort issues, consider copy and re-implementing the `sortByGeometryGroupings`
+    // method to match TalkBack application traversal order.
+    repeat(sortedChildren.count() - 1) { index ->
+        val first = sortedChildren[index]
+        val second = sortedChildren[index + 1]
+        if (!first.unmergedConfig.contains(SemanticsProperties.TraversalIndex) &&
+            !second.unmergedConfig.contains(SemanticsProperties.TraversalIndex) &&
+            first.layoutNode.parent != second.layoutNode.parent &&
+            first.layoutNode.findClosestParentNode({ it == second.layoutNode }) != null
+        ) {
+            sortedChildren[index] = second
+            sortedChildren[index + 1] = first
+        }
+    }
+    return sortedChildren
 }

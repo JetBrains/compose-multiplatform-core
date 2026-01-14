@@ -116,6 +116,7 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  */
 internal class ComposeSceneMediator(
     private val container: JComponent,
+    private val isWindowLevel: Boolean,
     private val windowContext: PlatformWindowContext,
     private var exceptionHandler: WindowExceptionHandler?,
     eventListener: AwtEventListener? = null,
@@ -138,6 +139,7 @@ internal class ComposeSceneMediator(
     private val semanticsOwnerManager = DesktopSemanticsOwnerManager()
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
     val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
+        isWindowLevel = isWindowLevel,
         parent = { skiaLayerComponent.sceneAccessibleParent },
         accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
     )
@@ -335,6 +337,8 @@ internal class ComposeSceneMediator(
             scene.showLayoutBounds = value
         }
 
+    var redispatchUnconsumedMouseWheelEvents: Boolean =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
 
     /**
      * Provides the size of ComposeScene content inside infinity constraints
@@ -497,7 +501,7 @@ internal class ComposeSceneMediator(
         processMouseEvent {
             val processingResult = scene.onMouseWheelEvent(event.position, event)
             if (!processingResult.anyChangeConsumed) {
-                if (ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value) {
+                if (redispatchUnconsumedMouseWheelEvents) {
                     redispatchUnconsumedMouseEvent(event)
                 }
             }
@@ -517,7 +521,7 @@ internal class ComposeSceneMediator(
     }
 
     /**
-     * (Re)Dispatches the given mouse event to the component that would have received it had
+     * (Re)dispatches the given mouse event to the component that would have received it had
      * this [ComposeSceneMediator] not been listening to the corresponding type of mouse events.
      *
      * The problem this attempts to solve is that [ComposeSceneMediator] has to register listeners

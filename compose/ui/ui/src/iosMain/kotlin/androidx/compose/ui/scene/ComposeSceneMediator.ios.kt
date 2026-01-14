@@ -129,7 +129,6 @@ private class SemanticsOwnerListenerImpl(
     private val view: UIView,
     private val coroutineContext: CoroutineContext,
     private val performEscape: () -> Boolean,
-    private val onKeyboardPresses: (Set<*>) -> Unit,
     private val onScreenReaderActive: (Boolean) -> Unit,
 ) : PlatformContext.SemanticsOwnerListener {
 
@@ -148,7 +147,6 @@ private class SemanticsOwnerListenerImpl(
                 semanticsOwner,
                 coroutineContext,
                 performEscape,
-                onKeyboardPresses,
                 onScreenReaderActive
             ).also {
                 it.isEnabled = isEnabled
@@ -186,6 +184,7 @@ private class SemanticsOwnerListenerImpl(
 
 internal class ComposeSceneMediator(
     private val onFocusBehavior: OnFocusBehavior,
+    private val isClearFocusOnMouseDownEnabled: Boolean,
     focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
@@ -345,7 +344,6 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onKeyboardPresses = ::onKeyboardPresses,
             onScreenReaderActive = { platformScreenReader.isActive = it }
         )
     }
@@ -727,6 +725,8 @@ internal class ComposeSceneMediator(
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
+        override val isClearFocusOnMouseDownEnabled: Boolean
+            get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
         override var isKeepScreenOnEnabled: Boolean
             get() = UIKitIdleTimerManager.isIdleTimerDisabled

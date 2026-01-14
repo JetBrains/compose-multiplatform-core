@@ -31,8 +31,11 @@ import androidx.compose.ui.platform.accessibility.canScroll
 import androidx.compose.ui.platform.accessibility.contentDescription
 import androidx.compose.ui.platform.accessibility.isRTL
 import androidx.compose.ui.platform.accessibility.isScreenReaderFocusable
+import androidx.compose.ui.platform.accessibility.linkTag
+import androidx.compose.ui.platform.accessibility.linkText
 import androidx.compose.ui.platform.accessibility.scrollIfPossible
 import androidx.compose.ui.platform.accessibility.scrollToCenterRectIfNeeded
+import androidx.compose.ui.platform.accessibility.sortFlattenChildren
 import androidx.compose.ui.platform.accessibility.unclippedBoundsInWindow
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
@@ -223,6 +226,7 @@ private sealed interface AccessibilityNode {
 
         override val accessibilityIdentifier: String?
             get() = cachedConfig.getOrNull(SemanticsProperties.TestTag)
+                ?: semanticsNode.linkTag()
 
         override val accessibilityHint: String?
             get() = cachedConfig.getOrNull(SemanticsActions.OnClick)?.label
@@ -425,7 +429,6 @@ private object CachedAccessibilityPropertyKeys {
 @ExportObjCClass
 private class AccessibilityRoot(
     val mediator: AccessibilityMediator,
-    var onKeyboardPresses: (Set<*>) -> Unit = {}
 ) : CMPAccessibilityElement(DUMMY_UI_ACCESSIBILITY_CONTAINER),
     UIFocusItemContainerProtocol {
     var element: AccessibilityElement? = null
@@ -466,16 +469,6 @@ private class AccessibilityRoot(
         } else {
             emptyList<Any>()
         }
-    }
-
-    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        onKeyboardPresses(presses)
-        super.pressesBegan(presses, withEvent)
-    }
-
-    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-        onKeyboardPresses(presses)
-        super.pressesEnded(presses, withEvent)
     }
 }
 
@@ -996,7 +989,6 @@ internal class AccessibilityMediator(
     val owner: SemanticsOwner,
     val coroutineContext: CoroutineContext,
     val performEscape: () -> Boolean,
-    onKeyboardPresses: (Set<*>) -> Unit,
     val onScreenReaderActive: (Boolean) -> Unit,
 ) {
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
@@ -1033,7 +1025,7 @@ internal class AccessibilityMediator(
      */
     private val coroutineScope = CoroutineScope(coroutineContext + job)
 
-    private val root = AccessibilityRoot(mediator = this, onKeyboardPresses = onKeyboardPresses)
+    private val root = AccessibilityRoot(mediator = this)
 
     /**
      * A map of all [AccessibilityElementKey] currently present in the tree to corresponding
@@ -1300,7 +1292,6 @@ internal class AccessibilityMediator(
 
         refocusKeyboardElementIfNeeded()
         view.accessibilityElements = listOf<NSObject>()
-        root.onKeyboardPresses = {}
 
         for (element in accessibilityElementsMap.values) {
             element.dispose()
@@ -1387,9 +1378,10 @@ internal class AccessibilityMediator(
     ): Pair<AccessibilityElement, AccessibilityElementKey?> {
         val presentIds = MutableIntSet()
         presentIds.add(rootNode.id)
-        val nodes = owner.getAllUncoveredSemanticsNodesToIntObjectMap(rootNode.id) {
-            it.config.contains(SemanticsProperties.LinkTestMarker)
-        }
+        val nodes = owner.getAllUncoveredSemanticsNodesToIntObjectMap(
+            customRootNodeId = rootNode.id,
+            shouldIgnoreNode = { false }
+        )
         keyboardFocusedElementKey?.id?.let {
             if (!nodes.contains(it)) {
                 // The keyboard-focused node is removed. It's important to trigger focus reload
@@ -1485,7 +1477,7 @@ internal class AccessibilityMediator(
                     flatten = flattenChildren
                 )
 
-                val sortedChildren = node.sortByGeometryGroupings(visibleChildren)
+                val sortedChildren = node.sortFlattenChildren(visibleChildren)
                 beforeChildren.sortWith(BeyondBoundsComparator(node.isRTL))
                 afterChildren.sortWith(BeyondBoundsComparator(node.isRTL))
 
@@ -1888,7 +1880,7 @@ private fun AccessibilityElement.makeAccessibilityLabel(): String? {
         null
     }
 
-    return contentDescription ?: node.contentDescription
+    return contentDescription ?: node.contentDescription ?: node.semanticsNode.linkText()
 }
 
 /**

@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Button
@@ -52,6 +53,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.state.ToggleableState
@@ -59,7 +61,11 @@ import androidx.compose.ui.test.assertAccessibilityTree
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withAnnotation
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -852,12 +858,12 @@ class ComponentsAccessibilitySemanticTest {
                     isAccessibilityElement = true
                 }
                 node {
-                    label = "Description 1"
-                    isAccessibilityElement = true
-                }
-                node {
                     identifier = "Tag 1"
                     isAccessibilityElement = false
+                }
+                node {
+                    label = "Description 1"
+                    isAccessibilityElement = true
                 }
                 node {
                     label = "Details 1"
@@ -917,11 +923,11 @@ class ComponentsAccessibilitySemanticTest {
 
         assertAccessibilityTree {
             node {
-                label = "Text"
+                label = "Description"
                 isAccessibilityElement = true
             }
             node {
-                label = "Description"
+                label = "Text"
                 isAccessibilityElement = true
             }
         }
@@ -943,6 +949,103 @@ class ComponentsAccessibilitySemanticTest {
             isAccessibilityElement = true
             node {
                 identifier = "Child"
+            }
+        }
+    }
+
+    @Test
+    fun testEnclosedSemanticsContainersOrder() = runUIKitInstrumentedTest {
+        setContent {
+            Box(modifier = Modifier.semantics { contentDescription = "Box 1" }) {
+                Box(modifier = Modifier.semantics { contentDescription = "Box 2" }) {
+                    Column(modifier = Modifier.padding(1.dp).semantics { contentDescription = "Column 3" }) {
+                        Text("Text 1")
+                        Text("Text 2")
+                    }
+                }
+            }
+        }
+
+        assertAccessibilityTree {
+            node {
+                label = "Box 1"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Box 2"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Column 3"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Text 1"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Text 2"
+                isAccessibilityElement = true
+            }
+        }
+    }
+
+    @Test
+    fun testMergedTextContentWithMergeDescendants() = runUIKitInstrumentedTest {
+        setContent {
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "Content description"
+                    stateDescription = "State description"
+                }
+            ) {
+                Text("Text 1")
+                Text("Text 2")
+            }
+        }
+
+        assertAccessibilityTree {
+            label = "Content description, Text 1, Text 2"
+            value = "State description"
+            isAccessibilityElement = true
+            node {
+                label = "Text 1"
+                isAccessibilityElement = false
+            }
+            node {
+                label = "Text 2"
+                isAccessibilityElement = false
+            }
+        }
+    }
+
+    @Test
+    fun testMergedTextContentWithoutMergeDescendants() = runUIKitInstrumentedTest {
+        setContent {
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = false) {
+                    contentDescription = "Content description"
+                    stateDescription = "State description"
+                }
+            ) {
+                Text("Text 1")
+                Text("Text 2")
+            }
+        }
+
+        assertAccessibilityTree {
+            node {
+                label = "Content description"
+                value = "State description"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Text 1"
+                isAccessibilityElement = true
+            }
+            node {
+                label = "Text 2"
+                isAccessibilityElement = true
             }
         }
     }
@@ -974,14 +1077,6 @@ class ComponentsAccessibilitySemanticTest {
 
         assertAccessibilityTree {
             node {
-                isAccessibilityElement = true
-                label = "Label"
-                node {
-                    label = "Label"
-                    isAccessibilityElement = false
-                }
-            }
-            node {
                 label = "Description, Inner, Text"
                 isAccessibilityElement = true
                 node {
@@ -990,6 +1085,14 @@ class ComponentsAccessibilitySemanticTest {
                 }
                 node {
                     label = "Text"
+                    isAccessibilityElement = false
+                }
+            }
+            node {
+                isAccessibilityElement = true
+                label = "Label"
+                node {
+                    label = "Label"
                     isAccessibilityElement = false
                 }
             }
@@ -1004,6 +1107,63 @@ class ComponentsAccessibilitySemanticTest {
                     label = "Second Text"
                     isAccessibilityElement = false
                 }
+            }
+        }
+    }
+
+    @Test
+    fun testTextLinks() = runUIKitInstrumentedTest {
+        setContent {
+            Text(text = buildAnnotatedString {
+                append("Text ")
+                withAnnotation(
+                    tag = "annotation tag",
+                    annotation = "annotation"
+                ) {
+                    append("annotation")
+                }
+                append(" ")
+                withLink(
+                    link = LinkAnnotation.Clickable(
+                        tag = "clickable tag",
+                        linkInteractionListener = object : LinkInteractionListener {
+                            override fun onClick(link: LinkAnnotation) {}
+                        }
+                    )
+                ) {
+                    append("clickable")
+                }
+                append(" ")
+                withLink(
+                    link = LinkAnnotation.Url(
+                        url = "https://example.com",
+                        linkInteractionListener = object : LinkInteractionListener {
+                            override fun onClick(link: LinkAnnotation) {}
+                        }
+                    )
+                ) {
+                    append("link")
+                }
+                append(".")
+            })
+        }
+
+        assertAccessibilityTree {
+            node {
+                isAccessibilityElement = true
+                label = "Text annotation clickable link."
+                traits = listOf(UIAccessibilityTraitStaticText)
+            }
+            node {
+                isAccessibilityElement = true
+                label = "clickable"
+                identifier = "clickable tag"
+                traits = listOf(UIAccessibilityTraitButton)
+            }
+            node {
+                isAccessibilityElement = true
+                label = "link"
+                traits = listOf(UIAccessibilityTraitButton)
             }
         }
     }
