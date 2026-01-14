@@ -94,13 +94,13 @@ fun HorizontalPagerScaffoldWithLowSensitivitySample(navigateBack: () -> Unit) {
                     PagerDefaults.snapFlingBehavior(
                         state = pagerState,
                         maxFlingPages = 0,
-                        snapPositionalThreshold = PagerScaffoldDefaults.SnapPositionalThreshold,
+                        snapPositionalThreshold = PagerScaffoldDefaults.LowSnapPositionalThreshold,
                         snapAnimationSpec = PagerDefaults.SnapAnimationSpec,
                     ),
                 rotaryScrollableBehavior =
                     RotaryScrollableDefaults.snapBehavior(
                         pagerState = pagerState,
-                        snapSensitivity = RotaryScrollableDefaults.SnapSensitivity,
+                        snapSensitivity = RotaryScrollableDefaults.LowSnapSensitivity,
                     ),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
@@ -174,13 +174,13 @@ fun VerticalPagerScaffoldWithLowSensitivitySample() {
                     PagerDefaults.snapFlingBehavior(
                         state = pagerState,
                         maxFlingPages = 0,
-                        snapPositionalThreshold = PagerScaffoldDefaults.SnapPositionalThreshold,
+                        snapPositionalThreshold = PagerScaffoldDefaults.LowSnapPositionalThreshold,
                         snapAnimationSpec = PagerDefaults.SnapAnimationSpec,
                     ),
                 rotaryScrollableBehavior =
                     RotaryScrollableDefaults.snapBehavior(
                         pagerState = pagerState,
-                        snapSensitivity = RotaryScrollableDefaults.SnapSensitivity,
+                        snapSensitivity = RotaryScrollableDefaults.LowSnapSensitivity,
                     ),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {

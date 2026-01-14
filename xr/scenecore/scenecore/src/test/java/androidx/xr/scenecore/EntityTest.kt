@@ -996,6 +996,45 @@ class EntityTest {
     }
 
     @Test
+    fun surfaceEntity_setShapeWithCornerRadius() {
+        val quad = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f), 0.5f)
+        surfaceEntity.shape = quad
+
+        val rtSurfaceEntity = surfaceEntity.rtEntity as FakeSurfaceEntity
+        assertThat(rtSurfaceEntity.shape).isInstanceOf(RtSurfaceEntity.Shape.Quad::class.java)
+
+        val rtShape = rtSurfaceEntity.shape as RtSurfaceEntity.Shape.Quad
+        assertThat(rtShape.cornerRadius).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun surfaceEntity_setShapeWithInvalidCornerRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f), -0.5f)
+        }
+    }
+
+    @Test
+    fun surfaceEntity_createQuadWithInvalidExtents_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(-1.0f, 1.0f))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, -1.0f))
+        }
+    }
+
+    @Test
+    fun surfaceEntity_createSphereWithInvalidRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) { SurfaceEntity.Shape.Sphere(-1.0f) }
+    }
+
+    @Test
+    fun surfaceEntity_createHemisphereWithInvalidRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) { SurfaceEntity.Shape.Hemisphere(-1.0f) }
+    }
+
+    @Test
     fun setCornerRadius() {
         val radius = 2.0f
         panelEntity.cornerRadius = radius

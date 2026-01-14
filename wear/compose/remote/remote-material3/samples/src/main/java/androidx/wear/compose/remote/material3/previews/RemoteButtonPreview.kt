@@ -17,6 +17,7 @@
 
 package androidx.wear.compose.remote.material3.previews
 
+import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -28,6 +29,7 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.tooling.preview.RemotePreview
@@ -46,6 +48,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 @RemoteComposable
 fun RemoteButtonEnabled() {
     RemoteButton(
+        onClick = testAction,
         modifier = RemoteModifier.buttonSizeModifier(),
         enabled = true.rb,
         content = { RemoteText("button_enabled".rs) },
@@ -62,6 +65,7 @@ private fun RemoteButtonEnabledPreview(
 @RemoteComposable
 fun RemoteButtonWithBorder() {
     RemoteButton(
+        onClick = testAction,
         modifier = RemoteModifier.buttonSizeModifier(),
         border = 8.rdp,
         borderColor = RemoteColor(Color.Green),
@@ -80,6 +84,7 @@ private fun RemoteButtonWithBorderPreview(
 @RemoteComposable
 fun RemoteButtonWithSecondaryLabel() {
     RemoteButton(
+        onClick = testAction,
         modifier = RemoteModifier.buttonSizeModifier(),
         secondaryLabel = { RemoteText(RemoteString("secondaryLabel")) },
         label = { RemoteText(RemoteString("label")) },
@@ -90,6 +95,7 @@ fun RemoteButtonWithSecondaryLabel() {
 @RemoteComposable
 fun RemoteButtonWithIcon() {
     RemoteButton(
+        onClick = testAction,
         modifier = RemoteModifier.buttonSizeModifier(),
         icon = {
             RemoteIcon(
@@ -112,6 +118,7 @@ private fun RemoteButtonWithIconPreview(
 @RemoteComposable
 fun RemoteButtonWithIconAndSecondaryLabel() {
     RemoteButton(
+        onClick = testAction,
         modifier = RemoteModifier.buttonSizeModifier(),
         icon = {
             RemoteIcon(
@@ -135,6 +142,7 @@ private fun RemoteButtonWithIconAndSecondaryLabelPreview(
 @RemoteComposable
 fun RemoteCompactButtonWithIcon() {
     RemoteCompactButton(
+        onClick = testAction,
         modifier = RemoteModifier,
         icon = {
             RemoteIcon(
@@ -157,7 +165,11 @@ private fun RemoteCompactButtonWithIconPreview(
 @Composable
 @RemoteComposable
 fun RemoteCompactButtonWithLabel() {
-    RemoteCompactButton(modifier = RemoteModifier, label = { RemoteText("label".rs) })
+    RemoteCompactButton(
+        onClick = testAction,
+        modifier = RemoteModifier,
+        label = { RemoteText("label".rs) },
+    )
 }
 
 @WearPreviewDevices
@@ -170,6 +182,7 @@ private fun RemoteCompactButtonWithLabelPreview(
 @RemoteComposable
 fun RemoteCompactButtonWithIconAndLabel() {
     RemoteCompactButton(
+        onClick = testAction,
         modifier = RemoteModifier,
         icon = {
             RemoteIcon(
@@ -202,3 +215,5 @@ private fun Container(
         content = content,
     )
 }
+
+private val testAction = HostAction("testAction".rs, 1.rf)

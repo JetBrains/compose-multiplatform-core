@@ -17,6 +17,7 @@
 package androidx.pdf.service
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.pdf.content.PdfPageGotoLinkContent
 import android.graphics.pdf.content.PdfPageImageContent
@@ -34,6 +35,7 @@ import androidx.pdf.PdfDocumentRemote
 import androidx.pdf.RenderParams
 import androidx.pdf.TestDraftEditOperation
 import androidx.pdf.annotation.models.PaginatedAnnotations
+import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.models.Dimensions
 
 class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
@@ -159,5 +161,13 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
         }
         // Return next behavior, or reuse last one if we run out (or throw)
         return if (behaviors.size > 1) behaviors.removeFirst() else behaviors.first()
+    }
+
+    override fun getTopPageObjectAtPosition(
+        pageNum: Int,
+        point: PointF?,
+        types: IntArray?,
+    ): PdfObject? {
+        TODO("Not yet implemented")
     }
 }

@@ -253,7 +253,7 @@ public object PagerScaffoldDefaults {
      *
      * @sample androidx.wear.compose.material3.samples.HorizontalPagerScaffoldWithLowSensitivitySample
      */
-    public val SnapPositionalThreshold: Float = 0.1f
+    public val LowSnapPositionalThreshold: Float = 0.1f
 
     /**
      * Recommended fling behavior for pagers on Wear when using Material3, snaps at most one page at
@@ -276,7 +276,7 @@ public object PagerScaffoldDefaults {
             state = state,
             maxFlingPages = 1,
             snapAnimationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-            snapPositionalThreshold = 0.35f,
+            snapPositionalThreshold = HighSnapPositionalThreshold,
         )
     }
 

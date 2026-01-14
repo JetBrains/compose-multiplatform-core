@@ -209,6 +209,19 @@ public value class OutputStatus internal constructor(public val value: Int) {
          */
         public val ERROR_OUTPUT_DROPPED: OutputStatus = OutputStatus(13)
     }
+
+    override fun toString(): String {
+        return when (value) {
+            0 -> "PENDING"
+            1 -> "AVAILABLE"
+            2 -> "UNAVAILABLE"
+            10 -> "ERROR_OUTPUT_FAILED"
+            11 -> "ERROR_OUTPUT_ABORTED"
+            12 -> "ERROR_OUTPUT_MISSING"
+            13 -> "ERROR_OUTPUT_DROPPED"
+            else -> "OutputStatus(value=$value)"
+        }
+    }
 }
 
 /**

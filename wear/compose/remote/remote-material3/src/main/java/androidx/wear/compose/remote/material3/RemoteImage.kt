@@ -46,10 +46,10 @@ internal class RemoteComposeImageModifier(
     override fun ContentDrawScope.draw() {
         drawIntoRemoteCanvas { canvas ->
             canvas.document.image(
-                modifier.toRemoteCompose(),
+                with(modifier) { canvas.toRecordingModifier() },
                 bitmapId,
                 contentScale.toRemoteCompose(),
-                alpha.internalAsFloat(),
+                with(canvas) { alpha.floatId },
             )
         }
     }
@@ -103,6 +103,15 @@ public fun RemoteImage(
     contentScale: ContentScale = ContentScale.Fit,
     alpha: RemoteFloat = DefaultAlpha.rf,
 ) {
+    val creationState = LocalRemoteComposeCreationState.current
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-    Box(modifier = RemoteComposeImageModifier(modifier, remoteBitmap.id, contentScale, alpha))
+    Box(
+        modifier =
+            RemoteComposeImageModifier(
+                modifier,
+                with(creationState) { remoteBitmap.id },
+                contentScale,
+                alpha,
+            )
+    )
 }

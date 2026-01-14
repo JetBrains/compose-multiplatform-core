@@ -605,7 +605,8 @@ class RemoteFloatTest {
 
         val constantStringId = constantFloatString.getIdForCreationState(creationState)
 
-        val variableFloat = MutableRemoteFloat { state -> value.getFloatIdForCreationState(state) }
+        // ensure we have an id to look up
+        val variableFloat = value.createReference()
         val variableFloatId = variableFloat.getIdForCreationState(creationState)
         val variableFloatString = variableFloat.toRemoteString(before, after, flags)
         val variableStringId = variableFloatString.getIdForCreationState(creationState)
@@ -642,7 +643,8 @@ class RemoteFloatTest {
 
         val constantStringId = constantFloatString.getIdForCreationState(creationState)
 
-        val variableFloat = MutableRemoteFloat { state -> value.getFloatIdForCreationState(state) }
+        // ensure we have an id to look up
+        val variableFloat = value.createReference()
         val variableFloatId = variableFloat.getIdForCreationState(creationState)
         val variableFloatString = variableFloat.toRemoteString(formatter)
         val variableStringId = variableFloatString.getIdForCreationState(creationState)

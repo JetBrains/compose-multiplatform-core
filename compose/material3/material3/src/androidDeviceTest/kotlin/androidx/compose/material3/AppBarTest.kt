@@ -450,6 +450,31 @@ class AppBarTest {
     }
 
     @Test
+    fun smallTopAppBar_longTitle_doesNotOverlapActions() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TopAppBar(
+                modifier = Modifier.testTag(TopAppBarTestTag),
+                title = {
+                    Text(
+                        "This is a very long title that should be truncated",
+                        modifier = Modifier.testTag(TitleTestTag),
+                        maxLines = 1,
+                    )
+                },
+                actions = { Row(Modifier.testTag(ActionsTestTag)) { Text("Action") } },
+            )
+        }
+
+        val topAppBarBounds = rule.onNodeWithTag(TopAppBarTestTag).getBoundsInRoot()
+        val titleBounds = rule.onNodeWithTag(TitleTestTag).getBoundsInRoot()
+        val actionsBounds = rule.onNodeWithTag(ActionsTestTag).getBoundsInRoot()
+
+        assertThat(titleBounds.right.value).isAtMost(actionsBounds.left.value)
+        // Check if the title's width is less than the TopAppBar's full width.
+        assertThat(titleBounds.width).isLessThan(topAppBarBounds.width)
+    }
+
+    @Test
     fun centerAlignedTopAppBar_expandsToScreen() {
         rule
             .setMaterialContentForSizeAssertions {

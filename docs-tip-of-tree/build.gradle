@@ -40,6 +40,7 @@ dependencies {
     kmpDocs(project(":benchmark:benchmark-traceprocessor"))
     docs(project(":biometric:biometric"))
     docs(project(":biometric:biometric-compose"))
+    stubs(project(":biometric:biometric-stubs"))
     docs(project(":browser:browser"))
     docs(project(":camera:camera-camera2"))
     docs(project(":camera:camera-compose"))

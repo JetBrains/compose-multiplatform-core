@@ -56,4 +56,5 @@ interface PdfDocumentRemote {
   androidx.pdf.annotation.models.PaginatedAnnotations getPageAnnotations(int pageNum);
   androidx.pdf.annotation.models.PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
   androidx.pdf.DraftEditResult applyDraftEdits(in List<androidx.pdf.DraftEditOperation> operations);
+  androidx.pdf.annotation.models.PdfObject getTopPageObjectAtPosition(int pageNum, in android.graphics.PointF point, in int[] types);
 }

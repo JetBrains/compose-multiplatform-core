@@ -47,13 +47,15 @@ public class AnnotationsView
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
 
-    private val onAnnotationHitListeners = mutableListOf<OnAnnotationHitListener>()
-    private val annotationHitTouchHandler =
-        AnnotationHitTouchHandler().apply {
+    private val onAnnotationSelectedListeners = mutableListOf<OnAnnotationSelectedListener>()
+    private val annotationSelectionTouchHandler =
+        AnnotationSelectionTouchHandler().apply {
             setListener(
-                object : OnAnnotationHitListener {
-                    override fun onAnnotationHit(annotation: PdfAnnotation) {
-                        onAnnotationHitListeners.forEach { it.onAnnotationHit(annotation) }
+                object : OnAnnotationSelectedListener {
+                    override fun onAnnotationSelected(keyedPdfAnnotation: KeyedPdfAnnotation) {
+                        onAnnotationSelectedListeners.forEach {
+                            it.onAnnotationSelected(keyedPdfAnnotation)
+                        }
                     }
                 }
             )
@@ -115,9 +117,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     /** Adds a listener for annotation hit events. */
-    public fun addOnAnnotationHitListener(listener: OnAnnotationHitListener) {
-        if (!onAnnotationHitListeners.contains(listener)) {
-            onAnnotationHitListeners.add(listener)
+    public fun addOnAnnotationSelectedListener(listener: OnAnnotationSelectedListener) {
+        if (!onAnnotationSelectedListeners.contains(listener)) {
+            onAnnotationSelectedListeners.add(listener)
         }
     }
 
@@ -126,9 +128,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         inProgressHighlightsView.removeInProgressTextHighlightsListener(listener)
     }
 
-    /** Removes a listener that was previously added via [addOnAnnotationHitListener]. */
-    public fun removeOnAnnotationHitListener(listener: OnAnnotationHitListener) {
-        onAnnotationHitListeners.remove(listener)
+    /** Removes a listener that was previously added via [addOnAnnotationSelectedListener]. */
+    public fun removeOnAnnotationSelectedListener(listener: OnAnnotationSelectedListener) {
+        onAnnotationSelectedListeners.remove(listener)
     }
 
     private var pdfObjectDrawerFactory: PdfObjectDrawerFactory = DefaultPdfObjectDrawerFactoryImpl
@@ -162,7 +164,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return when (interactionMode) {
             is AnnotationMode.Select -> {
-                annotationHitTouchHandler.handleTouch(this, event)
+                annotationSelectionTouchHandler.handleTouch(this, event)
             }
             is AnnotationMode.Highlight -> {
                 if (inProgressHighlightsView.visibility == VISIBLE) {
@@ -177,11 +179,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     /**
      * Holds all annotations for a single PDF page and their transformation matrix.
      *
-     * @property annotations List of [PdfAnnotation]s on the page.
+     * @property keyedAnnotations List of [PdfAnnotation]s on the page.
      * @property transform [Matrix] to apply when drawing these annotations.
      */
     public data class PageAnnotationsData(
-        val annotations: List<PdfAnnotation>,
+        val keyedAnnotations: List<KeyedPdfAnnotation>,
         val transform: Matrix,
     )
 
@@ -216,6 +218,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
 /** Callback interface for annotation hit events. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public interface OnAnnotationHitListener {
-    public fun onAnnotationHit(annotation: PdfAnnotation)
+public interface OnAnnotationSelectedListener {
+    public fun onAnnotationSelected(keyedPdfAnnotation: KeyedPdfAnnotation)
 }

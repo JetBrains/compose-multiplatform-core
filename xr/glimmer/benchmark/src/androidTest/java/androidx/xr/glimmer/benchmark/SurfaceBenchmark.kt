@@ -16,6 +16,9 @@
 
 package androidx.xr.glimmer.benchmark
 
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -25,11 +28,14 @@ import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.doFramesUntilNoChangesPending
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.surface
+import androidx.xr.glimmer.testutils.createGlimmerRule
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,8 +44,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SurfaceBenchmark {
 
-    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
-    @get:Rule val glimmerRule = GlimmerRule()
+    @get:Rule(0) val benchmarkRule = ComposeBenchmarkRule()
+
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     /**
      * Measures the time to do composition, measure, layout and draw to render the first frame
@@ -48,7 +55,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_firstFrame() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -68,7 +75,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_firstDraw() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -101,7 +108,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_secondFrameFocusAnimation() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -128,7 +135,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_secondDrawFocusAnimation() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -164,7 +171,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_thirdFrameFocusAnimation() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -194,7 +201,7 @@ class SurfaceBenchmark {
     @Test
     fun surface_thirdDrawFocusAnimation() {
         with(benchmarkRule) {
-            runBenchmarkFor({ SurfaceTestCase() }) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = false) }) {
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
                         doFramesUntilNoChangesPending()
@@ -225,23 +232,111 @@ class SurfaceBenchmark {
             }
         }
     }
+
+    /**
+     * Measures the time to draw the first frame after emitting a [PressInteraction.Press]. This is
+     * benchmarked on an already-focused surface to isolate the press state change.
+     */
+    @Test
+    fun surface_firstFrame_afterPressInteraction() {
+        with(benchmarkRule) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = true) }) {
+                runOnUiThread {
+                    // Complete the focus animation frames. (288 frame ~= 2 second in 144fps)
+                    doFramesUntilNoChangesPending(maxAmountOfFrames = 288)
+                }
+
+                val press = PressInteraction.Press(Offset.Zero)
+                measureRepeatedOnUiThread {
+                    runWithMeasurementDisabled {
+                        runBlocking { getTestCase().emitInteraction(press) }
+                    }
+
+                    doFrame()
+
+                    runWithMeasurementDisabled {
+                        // Don't dispose the content to re-use for the next press interaction.
+                        // Content will be disposed after `runBenchmarkFor` is completed.
+
+                        runBlocking {
+                            // We should reset the press state in surface for the next repeated
+                            // measure.
+                            getTestCase().emitInteraction(PressInteraction.Cancel(press))
+                        }
+
+                        // Run the release animation.
+                        doFramesUntilNoChangesPending()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Measures the time to draw the first frame after emitting a [PressInteraction.Release]. This
+     * is benchmarked on an already-focused and pressed surface to isolate the release state change.
+     */
+    @Test
+    fun surface_firstFrame_afterReleaseInteraction() {
+        with(benchmarkRule) {
+            runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = true) }) {
+                runOnUiThread {
+                    // Complete the focus animation frames. (288 frame ~= 2 second in 144fps)
+                    doFramesUntilNoChangesPending(maxAmountOfFrames = 288)
+                }
+
+                val press = PressInteraction.Press(Offset.Zero)
+                measureRepeatedOnUiThread {
+                    runWithMeasurementDisabled {
+                        runBlocking {
+                            // Emit interaction to start press animation.
+                            getTestCase().emitInteraction(press)
+
+                            doFramesUntilNoChangesPending()
+
+                            // Emit interaction to trigger release animation
+                            getTestCase().emitInteraction(PressInteraction.Release(press))
+                        }
+                    }
+
+                    doFrame()
+
+                    runWithMeasurementDisabled {
+                        // Don't dispose the content to re-use for the next release interaction.
+                        // Content will be disposed after `runBenchmarkFor` is completed.
+                        doFramesUntilNoChangesPending()
+                    }
+                }
+            }
+        }
+    }
 }
 
-private class SurfaceTestCase : LayeredComposeTestCase(), ToggleableTestCase {
+private class SurfaceTestCase(addSurfaceModifierEnabledByDefault: Boolean) :
+    LayeredComposeTestCase(), ToggleableTestCase {
 
-    private val addSurfaceModifier = mutableStateOf(false)
+    private val addSurfaceModifier = mutableStateOf(addSurfaceModifierEnabledByDefault)
+    private val interactionSource = MutableInteractionSource()
 
     @Composable
     override fun MeasuredContent() {
         Box(
             modifier =
                 Modifier.size(100.dp)
-                    .then(if (addSurfaceModifier.value) Modifier.surface() else Modifier)
+                    .then(
+                        if (addSurfaceModifier.value) {
+                            Modifier.surface(interactionSource = interactionSource)
+                        } else Modifier
+                    )
         )
     }
 
     override fun toggleState() {
         addSurfaceModifier.value = !addSurfaceModifier.value
+    }
+
+    suspend fun emitInteraction(interaction: Interaction) {
+        interactionSource.emit(interaction)
     }
 
     @Composable

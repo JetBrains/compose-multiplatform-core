@@ -507,8 +507,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     /**
-     * Adds the specified listener to the list of listeners that is notified when any form widget is
-     * updated due to an edit action on the widget e.g. click on a radio button.
+     * Removes the specified listener from the list of listeners that is notified when any form
+     * widget is updated due to an edit action on the widget e.g. click on a radio button.
      *
      * @param listener The listener to remove
      */
@@ -1828,7 +1828,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 this.formFillingEditText = formFillingEditText
             }
 
-        localPdfDocument.addOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
+        localPdfDocument.addOnPdfContentInvalidatedListener(
+            context.mainExecutor,
+            onPdfContentInvalidatedListener,
+        )
 
         val fastScrollCalculator = FastScrollCalculator(context)
         val fastScrollDrawer =
@@ -2222,7 +2225,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         visiblePageAreas.keyIterator().forEach { pageNum ->
             val editableFormWidgetsInPage =
-                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.readOnly }
+                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.isReadOnly }
 
             editableFormWidgetsInPage?.forEach { widget ->
                 if (visiblePageAreas.get(pageNum).contains(widget.widgetRect.toRectF())) {

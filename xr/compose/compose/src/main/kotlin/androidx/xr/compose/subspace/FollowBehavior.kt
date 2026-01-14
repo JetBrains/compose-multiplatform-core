@@ -59,7 +59,9 @@ public sealed class FollowBehavior protected constructor() {
     )
 
     public companion object {
+        /** The default duration, in milliseconds, for a soft follow animation. */
         public const val DEFAULT_SOFT_DURATION_MS: Int = 1500
+        /** The minimum allowable duration in milliseconds for a soft follow animation. */
         public const val MIN_SOFT_DURATION_MS: Int = 100
 
         /**

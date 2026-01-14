@@ -165,10 +165,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.maxTextLength
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -1131,6 +1133,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
             )
 
         val a11yServicesEnabled by rememberAccessibilityServiceState()
+        val errorHandler = rememberTimeInputErrorHandler(a11yServicesEnabled)
 
         CompositionLocalProvider(
             LocalTextStyle provides textStyle,
@@ -1162,6 +1165,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                             prevValue = hourValue,
                             a11yServicesEnabled = a11yServicesEnabled,
                             userOverride = userOverride,
+                            errorHandler = errorHandler,
                         ) {
                             hourValue = it
                         }
@@ -1193,9 +1197,9 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                             prevValue = minuteValue,
                             userOverride = userOverride,
                             a11yServicesEnabled = a11yServicesEnabled,
-                        ) {
-                            minuteValue = it
-                        }
+                            errorHandler = errorHandler,
+                            { minuteValue = it },
+                        )
                     },
                     state = state,
                     selection = TimePickerSelectionMode.Minute,
@@ -1501,6 +1505,8 @@ private fun TimeSelector(
     colors: TimePickerColors,
     isValid: Boolean,
 ) {
+    LaunchedEffect(isValid) { if (!isValid) {} }
+
     val selected = state.selection == selection
     val selectorContentDescription =
         getString(
@@ -1942,6 +1948,7 @@ private fun timeInputOnChange(
     prevValue: TextFieldValue,
     userOverride: Ref<Boolean>,
     a11yServicesEnabled: Boolean,
+    errorHandler: TimeInputErrorHandler,
     onNewValue: (value: TextFieldValue) -> Unit,
 ) {
     userOverride.value = false
@@ -1993,9 +2000,11 @@ private fun timeInputOnChange(
                     value.copy(text = value.text[0].toString())
                 }
             )
+        } else {
+            errorHandler.onError()
         }
     } catch (_: NumberFormatException) {} catch (_: IllegalArgumentException) {
-        // do nothing no state update
+        errorHandler.onError()
     }
 }
 
@@ -2082,7 +2091,7 @@ private fun TimePickerTextField(
                 state = state,
                 selection = selection,
                 colors = colors,
-                isValid,
+                isValid = isValid,
             )
         }
 
@@ -2147,7 +2156,7 @@ private fun TimePickerTextField(
         }
 
         SupportingText(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
             selection = selection,
             state = state,
             isValid = isValid,
@@ -2347,3 +2356,12 @@ internal class ClockFaceSizeModifier : LayoutModifier {
         return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }
+
+internal interface TimeInputErrorHandler {
+    fun onError()
+}
+
+@Composable
+internal expect fun rememberTimeInputErrorHandler(
+    isTouchExplorationEnabled: Boolean
+): TimeInputErrorHandler

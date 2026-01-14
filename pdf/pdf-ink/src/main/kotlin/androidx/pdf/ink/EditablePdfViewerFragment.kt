@@ -30,6 +30,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -44,6 +45,8 @@ import androidx.pdf.PdfDocument
 import androidx.pdf.PdfWriteHandle
 import androidx.pdf.annotation.AnnotationsView
 import androidx.pdf.annotation.AnnotationsView.PageAnnotationsData
+import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.OnAnnotationSelectedListener
 import androidx.pdf.annotation.highlights.InProgressTextHighlightsListener
 import androidx.pdf.annotation.highlights.models.InProgressHighlightId
 import androidx.pdf.annotation.models.AnnotationsDisplayState
@@ -57,6 +60,7 @@ import androidx.pdf.ink.util.PageTransformCalculator
 import androidx.pdf.ink.util.toHighlighterConfig
 import androidx.pdf.ink.util.toInkBrush
 import androidx.pdf.ink.view.AnnotationToolbar
+import androidx.pdf.ink.view.draganddrop.ToolbarCoordinator
 import androidx.pdf.ink.view.tool.AnnotationToolInfo
 import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
@@ -200,6 +204,25 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     private lateinit var wetStrokesViewTouchHandler: WetStrokesViewTouchHandler
     private lateinit var pdfContentLayoutTouchListener: PdfContentLayoutTouchListener
     private lateinit var annotationToolbar: AnnotationToolbar
+
+    private lateinit var toolbarCoordinator: ToolbarCoordinator
+
+    private val toolbarLayoutChangeListener =
+        View.OnLayoutChangeListener {
+            v,
+            left,
+            top,
+            right,
+            bottom,
+            oldLeft,
+            oldTop,
+            oldRight,
+            oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+                wetStrokesView.maskPath = createToolbarMaskPath()
+            }
+        }
+
     private lateinit var pageInfoProvider: PageInfoProviderImpl
 
     private val annotationsViewDispatcher = AnnotationsViewTouchEventDispatcher()
@@ -234,6 +257,15 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
             }
         }
 
+    private val onAnnotationSelectedListener =
+        object : OnAnnotationSelectedListener {
+            override fun onAnnotationSelected(keyedPdfAnnotation: KeyedPdfAnnotation) {
+                if (documentViewModel.drawingMode.value == AnnotationDrawingMode.EraserMode) {
+                    documentViewModel.removeAnnotation(keyedPdfAnnotation.key)
+                }
+            }
+        }
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val documentViewModel: EditableDocumentViewModel by viewModels {
         EditableDocumentViewModel.Factory
@@ -249,6 +281,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
         wetStrokesView =
             InProgressStrokesView(requireContext()).apply {
+                id = R.id.pdf_wet_strokes_view
                 layoutParams =
                     ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -266,9 +299,12 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
             }
-
-        inflater.inflate(R.layout.annotation_toolbar_layout, rootView, true)
-        annotationToolbar = rootView.findViewById(R.id.annotationToolbar)
+        annotationToolbar =
+            inflater.inflate(R.layout.annotation_toolbar_layout, null, false) as AnnotationToolbar
+        toolbarCoordinator =
+            ToolbarCoordinator(requireContext()).apply {
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
 
         val pdfContentLayout =
             rootView.findViewById<PdfContentLayout>(
@@ -276,6 +312,8 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
             )
         pdfContentLayout.addView(annotationView)
         pdfContentLayout.addView(wetStrokesView)
+
+        rootView.addView(toolbarCoordinator)
 
         return rootView
     }
@@ -305,8 +343,15 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         setupUiStateCollectors()
         setupTouchListeners()
         setupPdfViewListeners()
-        setupTextHighlights()
+        setupAnnotationViewListeners()
         setupAnnotationToolbar()
+        setupToolbarCoordinator(annotationToolbar)
+    }
+
+    private fun setupAnnotationViewListeners() {
+        annotationView.pageInfoProvider = pageInfoProvider
+        annotationView.addOnAnnotationSelectedListener(onAnnotationSelectedListener)
+        annotationView.addInProgressTextHighlightsListener(inProgressTextHighlightsListener)
     }
 
     private fun setupUiStateCollectors() {
@@ -333,6 +378,10 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                 pdfContentLayoutTouchListener.isAnnotationInteractionEnabled = isEnabled
             }
         }
+    }
+
+    private fun setupToolbarCoordinator(toolbar: AnnotationToolbar) {
+        toolbarCoordinator.apply { attachToolbar(toolbar) }
     }
 
     /**
@@ -365,6 +414,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         wetStrokesView.removeFinishedStrokesListener(wetStrokesOnFinishedListener)
         annotationToolbar.setAnnotationToolbarListener(null)
         pdfContainer.setOnTouchListener(null)
+        if (::annotationToolbar.isInitialized) {
+            annotationToolbar.removeOnLayoutChangeListener(toolbarLayoutChangeListener)
+        }
     }
 
     private fun updateUiForEditMode(isEnabled: Boolean) {
@@ -379,8 +431,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         } else {
             annotationToolbar.apply {
                 reset()
-                post { wetStrokesView.maskPath = null }
+                wetStrokesView.maskPath = null
             }
+            toolbarCoordinator.updateLayout()
         }
     }
 
@@ -429,11 +482,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         pdfContainer.isAnnotationInteractionEnabled = true
     }
 
-    private fun setupTextHighlights() {
-        annotationView.pageInfoProvider = pageInfoProvider
-        annotationView.addInProgressTextHighlightsListener(inProgressTextHighlightsListener)
-    }
-
     private fun updateAnnotationsView(displayState: AnnotationsDisplayState) {
         val pageRenderDataArray = SparseArray<PageAnnotationsData>()
         val firstVisiblePage = pdfView.firstVisiblePage
@@ -455,8 +503,8 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         visiblePageAnnotations: VisiblePdfAnnotations,
         transformationMatrices: Map<Int, Matrix>,
     ): PageAnnotationsData {
-        val annotationsForPage: List<PdfAnnotation> =
-            visiblePageAnnotations.getKeyedAnnotationsForPage(pageNum).map { it.annotation }
+        val annotationsForPage: List<KeyedPdfAnnotation> =
+            visiblePageAnnotations.getKeyedAnnotationsForPage(pageNum)
         val transformMatrix = transformationMatrices[pageNum]
 
         if (transformMatrix == null) {
@@ -558,6 +606,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     }
 
     private fun setupAnnotationToolbar() {
+        annotationToolbar.addOnLayoutChangeListener(toolbarLayoutChangeListener)
         annotationToolbar.setAnnotationToolbarListener(
             object : AnnotationToolbar.AnnotationToolbarListener {
                 override fun onToolChanged(toolInfo: AnnotationToolInfo) {
@@ -607,10 +656,8 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                 annotationView.interactionMode =
                     AnnotationsView.AnnotationMode.Highlight(drawingMode.toHighlighterConfig())
             }
-            else -> {
-                wetStrokesView.setOnTouchListener(null)
-                annotationView.interactionMode = null
-                // TODO: Add handling for other drawing modes
+            is AnnotationDrawingMode.EraserMode -> {
+                annotationView.interactionMode = AnnotationsView.AnnotationMode.Select()
             }
         }
     }

@@ -969,10 +969,10 @@ package androidx.wear.compose.foundation.rotary {
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior! snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.ScalingLazyListState!, float, boolean, androidx.compose.runtime.Composer!, int, int);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior! snapBehavior-uFdPcIQ(androidx.wear.compose.foundation.pager.PagerState!, float, boolean, androidx.compose.runtime.Composer!, int, int);
     property public static float HighSnapSensitivity;
-    property public static float SnapSensitivity;
+    property public static float LowSnapSensitivity;
     field public static final float HighSnapSensitivity = 0.8f;
     field public static final androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults INSTANCE;
-    field public static final float SnapSensitivity = 0.4f;
+    field public static final float LowSnapSensitivity = 0.4f;
   }
 
   public final class RotaryScrollableKt {

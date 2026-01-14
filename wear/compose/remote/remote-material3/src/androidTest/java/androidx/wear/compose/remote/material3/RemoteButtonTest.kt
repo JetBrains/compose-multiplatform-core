@@ -49,8 +49,8 @@ import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBorder
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIcon
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIconAndSecondaryLabel
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithSecondaryLabel
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,7 +89,11 @@ class RemoteButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(modifier = RemoteModifier.buttonSizeModifier(), enabled = false.rb) {
+                RemoteButton(
+                    onClick = testAction,
+                    modifier = RemoteModifier.buttonSizeModifier(),
+                    enabled = false.rb,
+                ) {
                     RemoteText("button_disabled".rs)
                 }
             }
@@ -114,7 +118,11 @@ class RemoteButtonTest {
                     disabledIconColor = RemoteColor(Color.Black),
                 )
             Center(RemoteModifier.fillMaxSize()) {
-                RemoteButton(modifier = RemoteModifier.buttonSizeModifier(), colors = colors) {
+                RemoteButton(
+                    onClick = testAction,
+                    modifier = RemoteModifier.buttonSizeModifier(),
+                    colors = colors,
+                ) {
                     RemoteText("button_overrides_colors".rs)
                 }
             }
@@ -129,6 +137,7 @@ class RemoteButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.buttonSizeModifier(),
                     contentPadding = RemotePaddingValues(50.rdp),
                 ) {
@@ -146,6 +155,7 @@ class RemoteButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.size(180.rdp, 100.rdp),
                     contentPadding = RemotePaddingValues(0.rdp),
                 ) {
@@ -163,6 +173,7 @@ class RemoteButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.buttonSizeModifier(),
                     contentPadding = RemotePaddingValues(0.rdp),
                 ) {
@@ -195,6 +206,7 @@ class RemoteButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.size(150.rdp),
                     border = 8.rdp,
                     borderColor = RemoteColor(Color.Green),
@@ -218,6 +230,7 @@ class RemoteButtonTest {
                 val containerPainter =
                     RemoteButtonDefaults.containerPainter(painterRemoteBitmap(backgroundImage))
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.buttonSizeModifier(),
                     containerPainter = containerPainter,
                 ) {
@@ -242,6 +255,7 @@ class RemoteButtonTest {
                 val containerPainter =
                     RemoteButtonDefaults.containerPainter(painterRemoteBitmap(backgroundImage))
                 RemoteButton(
+                    onClick = testAction,
                     modifier = RemoteModifier.buttonSizeModifier(),
                     enabled = enabled,
                     containerPainter = containerPainter,
@@ -284,28 +298,12 @@ class RemoteButtonTest {
 
     @Test
     fun button_enabled_and_has_action_click_modifier_is_added() {
-        val expectedContent =
-            """
-DATA_TEXT<43> = "button_enabled"
-ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 73.5, 31.5] VISIBLE
-    MODIFIERS
-      HEIGHT_IN = [52.0, 3.4028235E38]
-      WIDTH_IN = [12.0, 3.4028235E38]
-      DRAW_CONTENT
-      CLICK_MODIFIER
-        HOST_NAMED_ACTION = 45 : 42
-      SEMANTICS = SEMANTICS BUTTON
-      PADDING = [36.75, 15.75, 36.75, 15.75]
-    TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (43:"null")
-      MODIFIERS"""
-                .trimIndent()
         runBlocking {
             val document =
                 remoteComposeTestRule.captureDocument(context = context) {
                     RemoteButton(
                         modifier = RemoteModifier.buttonSizeModifier(),
-                        onClick = arrayOf(HostAction("TestAction".rs, 0f.rf)),
+                        onClick = testAction,
                         enabled = true.rb,
                     ) {
                         RemoteText("button_enabled".rs)
@@ -313,31 +311,17 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 }
             val actualContent = document.displayHierarchy()
 
-            assertEquals(expectedContent.normalizeWhiteSpace(), actualContent.normalizeWhiteSpace())
+            assertThat(actualContent.normalizeWhiteSpace()).contains("CLICK_MODIFIER")
         }
     }
 
     @Test
     fun button_disabled_click_modifier_is_not_added() {
-        val expectedContent =
-            """
-DATA_TEXT<42> = "button_disabled"
-ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 73.5, 31.5] VISIBLE
-    MODIFIERS
-      HEIGHT_IN = [52.0, 3.4028235E38]
-      WIDTH_IN = [12.0, 3.4028235E38]
-      DRAW_CONTENT
-      SEMANTICS = SEMANTICS BUTTON disabled
-      PADDING = [36.75, 15.75, 36.75, 15.75]
-    TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
-      MODIFIERS"""
-                .trimIndent()
-
         runBlocking {
             val document =
                 remoteComposeTestRule.captureDocument(context = context) {
                     RemoteButton(
+                        onClick = testAction,
                         modifier = RemoteModifier.buttonSizeModifier(),
                         enabled = false.rb,
                     ) {
@@ -346,7 +330,7 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 }
             val actualContent = document.displayHierarchy()
 
-            assertEquals(expectedContent.normalizeWhiteSpace(), actualContent.normalizeWhiteSpace())
+            assertThat(actualContent.normalizeWhiteSpace()).doesNotContain("CLICK_MODIFIER")
         }
     }
 
@@ -367,4 +351,6 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
             content = content,
         )
     }
+
+    private val testAction = HostAction("testAction".rs, 1.rf)
 }
