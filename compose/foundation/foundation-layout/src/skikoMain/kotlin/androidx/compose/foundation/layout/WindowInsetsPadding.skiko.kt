@@ -235,7 +235,11 @@ private class PlatformInsetsPaddingModifierElement(
     override fun create(): PlatformInsetsPaddingModifierNode = PlatformInsetsPaddingModifierNode()
     override fun update(node: PlatformInsetsPaddingModifierNode) {}
     override fun hashCode(): Int = 0
-    override fun equals(other: Any?): Boolean = this === other
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PlatformInsetsPaddingModifierElement) return false
+        return inspectorInfo === other.inspectorInfo
+    }
     override fun InspectorInfo.inspectableProperties() = inspectorInfo()
 }
 
