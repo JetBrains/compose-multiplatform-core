@@ -497,8 +497,7 @@ internal fun NavHost(
     (@JvmSuppressWildcards
     AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?,
     drawOnBottomEntryDuringAnimation:
-    (@Composable BoxScope.(isBackAnimation: Boolean, progress: Float) -> Unit)?,
-    limitBackGestureSwipeEdge: Int?
+    (@Composable BoxScope.(isBackAnimation: Boolean, progress: Float) -> Unit)?
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -533,18 +532,9 @@ internal fun NavHost(
         }
         try {
             backEvent.collect {
-                val goodEdge =
-                    limitBackGestureSwipeEdge == null || it.swipeEdge == limitBackGestureSwipeEdge
-
                 if (currentBackStack.size > 1) {
                     inPredictiveBack = true
-                    if (goodEdge) {
-                        progress = it.progress
-                    } else {
-                        throw CancellationException(
-                            "The current edge is not allowed to perform back gesture."
-                        )
-                    }
+                    progress = it.progress
                 }
             }
             if (currentBackStack.size > 1) {

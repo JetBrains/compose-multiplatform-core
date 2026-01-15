@@ -67,10 +67,6 @@ public actual fun NavHost(
             )
         }
 
-        val backEventEdge = when (LocalLayoutDirection.current) {
-            LayoutDirection.Ltr -> BackEventCompat.EDGE_LEFT
-            LayoutDirection.Rtl -> BackEventCompat.EDGE_RIGHT
-        }
         NavHost(
             navController,
             graph,
@@ -81,8 +77,7 @@ public actual fun NavHost(
             DefaultNavTransitions.popEnterTransition,
             DefaultNavTransitions.popExitTransition,
             sizeTransform,
-            drawOnBottomEntryDuringAnimation = iosBlackout,
-            limitBackGestureSwipeEdge = backEventEdge
+            drawOnBottomEntryDuringAnimation = iosBlackout
         )
     } else {
         NavHost(
@@ -96,7 +91,6 @@ public actual fun NavHost(
             popExitTransition,
             sizeTransform,
             null,
-            null
         )
     }
 }
