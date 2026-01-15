@@ -134,6 +134,9 @@ androidXMultiplatform {
 
         desktopMain {
             dependsOn(skikoMain)
+            dependencies {
+                implementation(libs.jbrApi)
+            }
         }
 
         desktopTest {
