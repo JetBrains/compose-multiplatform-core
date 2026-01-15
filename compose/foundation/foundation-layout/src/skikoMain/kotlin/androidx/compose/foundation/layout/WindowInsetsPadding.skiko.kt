@@ -23,10 +23,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
-import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.traverseAncestors
-import androidx.compose.ui.node.traverseDescendants
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
