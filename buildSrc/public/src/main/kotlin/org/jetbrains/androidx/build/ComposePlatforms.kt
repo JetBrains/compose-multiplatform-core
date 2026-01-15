@@ -17,17 +17,13 @@ enum class ComposePlatforms(vararg val alternativeNames: String) {
     Android("Android"),
     Js("Web"),
     WasmJs("Web"),
-    MacosX64("Macos"),
     MacosArm64("Macos"),
-    IosX64("Ios"),
     IosArm64("Ios"),
     IosSimulatorArm64("Ios"),
     TvosArm64("TvOs"),
-    TvosX64("TvOs"),
     TvosSimulatorArm64("TvOs"),
     WatchosArm64("WatchOs"),
     WatchosArm32("WatchOs"),
-    WatchosX64("WatchOs"),
     WatchosSimulatorArm64("WatchOs"),
     LinuxX64("Linux"),
     LinuxArm64("Linux"),
@@ -53,21 +49,18 @@ enum class ComposePlatforms(vararg val alternativeNames: String) {
         )
 
         val IOS = EnumSet.of(
-            IosX64,
             IosArm64,
             IosSimulatorArm64
         )
 
         val TV_OS = EnumSet.of(
             TvosArm64,
-            TvosX64,
             TvosSimulatorArm64
         )
 
         val WATCH_OS = EnumSet.of(
             WatchosArm64,
             WatchosArm32,
-            WatchosX64,
             WatchosSimulatorArm64
         )
 
@@ -85,7 +78,6 @@ enum class ComposePlatforms(vararg val alternativeNames: String) {
         )
 
         val MACOS_NATIVE = EnumSet.of(
-            MacosX64,
             MacosArm64
         )
 

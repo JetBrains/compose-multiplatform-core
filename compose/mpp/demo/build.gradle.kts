@@ -189,8 +189,15 @@ if (System.getProperty("os.name") == "Mac OS X") {
     val target = sdkName.orEmpty().let {
         when {
             it.startsWith("iphoneos") -> Target.IOS_ARM64
-            it.startsWith("iphonesimulator") -> Target.IOS_SIM_ARM64
-            else -> Target.IOS_ARM64
+            it.startsWith("iphonesimulator") -> {
+                if (System.getProperty("os.arch") == "aarch64") {
+                    Target.IOS_SIM_ARM64
+                } else {
+                    error("x64 host is not supported anymore!")
+                }
+            }
+
+            else -> Target.IOS_SIM_ARM64
         }
     }
 
