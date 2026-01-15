@@ -273,7 +273,7 @@ internal class ParagraphBuilder(
     var drawStyle: DrawStyle? = null,
     var blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
-    private val defaultStyle = ComputedStyle()
+    private var defaultStyle = ComputedStyle()
     private lateinit var initialStyle: SpanStyle
     private lateinit var ops: List<Op>
 
@@ -281,7 +281,7 @@ internal class ParagraphBuilder(
         initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
             drawStyle = drawStyle
         )
-        defaultStyle.set(
+        defaultStyle = ComputedStyle(
             density = density,
             spanStyle = initialStyle,
             brushSize = brushSize,
