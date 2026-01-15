@@ -49,7 +49,7 @@ class ComposeLayersViewControllerTest {
     @Test
     fun testOrientationAndStatusBarValues() {
         val appDelegate = MockAppDelegate()
-        val viewController = TextComposeContainerViewController { Dialog(onDismissRequest = {}) {} }
+        val viewController = TestComposeContainerViewController { Dialog(onDismissRequest = {}) {} }
         appDelegate.setUpWindow(viewController = viewController)
         viewController.waitForIdle()
 
