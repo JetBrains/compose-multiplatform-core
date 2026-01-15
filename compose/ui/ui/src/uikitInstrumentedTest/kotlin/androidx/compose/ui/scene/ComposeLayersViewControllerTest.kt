@@ -118,7 +118,7 @@ class ComposeLayersViewControllerTest {
     }
 }
 
-private class TextComposeContainerViewController(
+private class TestComposeContainerViewController(
     private val content: @Composable () -> Unit
 ): CMPViewController(lifecycleDelegate = TestComposeContainerLifecycleDelegate()) {
     var overrideShouldAutorotate: Boolean = true
