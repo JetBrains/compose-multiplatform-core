@@ -117,6 +117,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -1011,8 +1012,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = VERSION_1_8
-            targetCompatibility = VERSION_1_8
+            sourceCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
+            targetCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk
