@@ -66,7 +66,7 @@ val `PlainTooltip Story` by story {
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
             tooltip = {
                 PlainTooltip(
-                    caretSize = if (showCaret) DpSize(16.dp, 8.dp) else DpSize.Unspecified
+                    caretShape = if (showCaret) TooltipDefaults.caretShape() else null,
                 ) {
                     Text(tooltipText)
                 }
@@ -104,7 +104,7 @@ val `TooltipBox Story` by story {
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
             tooltip = {
                 PlainTooltip(
-                    caretSize = if (showCaret) DpSize(16.dp, 8.dp) else DpSize.Unspecified
+                    caretShape = if (showCaret) TooltipDefaults.caretShape() else null,
                 ) {
                     Text(tooltipText)
                 }
@@ -151,7 +151,7 @@ val `RichTooltip Story` by story {
             tooltip = {
                 RichTooltip(
                     title = { Text(tooltipTitle) },
-                    caretSize = if (showCaret) TooltipDefaults.caretSize else DpSize.Unspecified
+                    caretShape = if (showCaret) TooltipDefaults.caretShape() else null,
                 ) {
                     Text(tooltipText)
                 }

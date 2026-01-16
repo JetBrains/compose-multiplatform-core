@@ -10,7 +10,7 @@ plugins {
     // It's very close to a user project, and AndroidX plugins cause interference with Storytale gradle plugin.
     // Therefore, we apply the "user-project-friendly" plugin:
     kotlin("multiplatform")
-    id("org.jetbrains.compose") version "1.8.0" // Needed for Storytale gradle plugin
+    id("org.jetbrains.compose") version "1.10.0" // Needed for Storytale gradle plugin
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.storytale)
 }
@@ -18,7 +18,7 @@ plugins {
 kotlin {
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "composeApp"
+        outputModuleName.set("composeApp")
         browser {
             commonWebpackConfig {
                 outputFileName = "composeApp.js"

@@ -27,7 +27,7 @@ dependencies {
 
 dokka {
     moduleName.set("Compose Multiplatform")
-    moduleVersion.set("1.8.0")
+    moduleVersion.set("1.10.0")
 
     pluginsConfiguration.html {
         customStyleSheets.from(file("material3-api-storytale-style.css"))
