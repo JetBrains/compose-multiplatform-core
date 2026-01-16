@@ -63,5 +63,6 @@ jobs:
             - Verify that the code changes corresponding the PR title and description.
             - Verify any grammar mistakes in the diff. Don't highlight grammar mistakes outside the pull request's diff.
             - Use deep knowledge about algorithms and data structures to find potential issues in the code.
+            - Deeply analise logic of algorithms that are changed in the PR and find inconsistencies between the implementation and expected behaviour. 
             - Check for common typos in the code logic, like == vs !=.
             - Any other issues that crucial for the code review.
