@@ -24,15 +24,12 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.utils.forEachPixel
-import androidx.compose.ui.uikit.embedSubview
-import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIColor
 import platform.UIKit.UIGraphicsImageRenderer
-import platform.UIKit.UIViewController
 
 class ComposeLaunchTest {
     @OptIn(ExperimentalForeignApi::class)
@@ -93,36 +90,38 @@ class ComposeLaunchTest {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun runViewRenderFirstFrameTest(parallelRenderingEnabled: Boolean) {
-        val appDelegate = MockAppDelegate()
-        var drawsCount = 0
+// ComposeUIView Is not supported in 1.10
 
-        val view = ComposeUIView({
-            enforceStrictPlistSanityCheck = false
-            parallelRendering = parallelRenderingEnabled
-        }) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Blue).drawWithContent {
-                drawsCount++
-                this.drawContent()
-            })
-        }
-
-        val controller = UIViewController()
-        appDelegate.setUpWindow(controller)
-        val window = appDelegate.window!!
-        controller.view.backgroundColor = UIColor.redColor
-        window.backgroundColor = UIColor.yellowColor
-
-        controller.view.embedSubview(view)
-
-        val renderer = UIGraphicsImageRenderer(bounds = window.bounds)
-        val image = renderer.imageWithActions {
-            window.drawViewHierarchyInRect(window.bounds, afterScreenUpdates = true)
-        }
-
-        assertEquals(1, drawsCount, "Expected to draw only one frame on startup")
-
-        image.forEachPixel { _, _, color ->
-            assertEquals(Color.Blue, color, "Expected to draw blue background")
-        }
+//        val appDelegate = MockAppDelegate()
+//        var drawsCount = 0
+//
+//        val view = ComposeUIView({
+//            enforceStrictPlistSanityCheck = false
+//            parallelRendering = parallelRenderingEnabled
+//        }) {
+//            Box(modifier = Modifier.fillMaxSize().background(Color.Blue).drawWithContent {
+//                drawsCount++
+//                this.drawContent()
+//            })
+//        }
+//
+//        val controller = UIViewController()
+//        appDelegate.setUpWindow(controller)
+//        val window = appDelegate.window!!
+//        controller.view.backgroundColor = UIColor.redColor
+//        window.backgroundColor = UIColor.yellowColor
+//
+//        controller.view.embedSubview(view)
+//
+//        val renderer = UIGraphicsImageRenderer(bounds = window.bounds)
+//        val image = renderer.imageWithActions {
+//            window.drawViewHierarchyInRect(window.bounds, afterScreenUpdates = true)
+//        }
+//
+//        assertEquals(1, drawsCount, "Expected to draw only one frame on startup")
+//
+//        image.forEachPixel { _, _, color ->
+//            assertEquals(Color.Blue, color, "Expected to draw blue background")
+//        }
     }
 }
