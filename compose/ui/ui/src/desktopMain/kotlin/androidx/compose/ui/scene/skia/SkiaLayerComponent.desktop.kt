@@ -47,7 +47,6 @@ internal interface SkiaLayerComponent {
     val windowHandle: Long
 
     fun dispose()
-    fun requestNativeFocusOnAccessible(accessible: Accessible?)
 
     fun onComposeInvalidation()
     fun renderImmediately()

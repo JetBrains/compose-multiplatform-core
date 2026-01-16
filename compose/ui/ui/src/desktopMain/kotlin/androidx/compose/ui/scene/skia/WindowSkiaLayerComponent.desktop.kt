@@ -52,11 +52,7 @@ internal class WindowSkiaLayerComponent(
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
      */
     override val contentComponent: SkiaLayer = object : SkiaLayer(
-        externalAccessibleFactory = {
-            // It depends on initialization order, so explicitly
-            // apply `checkNotNull` for "non-null" field.
-            checkNotNull(mediator.accessible)
-        },
+        accessibleContextProvider = mediator::provideAccessibleContext,
         properties = run {
             val defaultProperties = SkiaLayerProperties()
 
@@ -161,10 +157,6 @@ internal class WindowSkiaLayerComponent(
 
     override fun dispose() {
         contentComponent.dispose()
-    }
-
-    override fun requestNativeFocusOnAccessible(accessible: Accessible?) {
-        contentComponent.requestNativeFocusOnAccessible(accessible)
     }
 
     override fun onComposeInvalidation() {

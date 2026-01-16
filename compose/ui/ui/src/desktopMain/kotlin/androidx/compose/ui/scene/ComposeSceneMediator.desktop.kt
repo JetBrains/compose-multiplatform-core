@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.AccessibilityController
+import androidx.compose.ui.platform.a11y.AccessibleFocusHelper
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -93,6 +94,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
+import javax.accessibility.AccessibleContext
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
@@ -143,6 +145,16 @@ internal class ComposeSceneMediator(
         parent = { skiaLayerComponent.sceneAccessibleParent },
         accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
     )
+
+    private var accessibleFocusHelper: AccessibleFocusHelper? = null
+
+    fun provideAccessibleContext(component: Component): AccessibleContext {
+        val helper = accessibleFocusHelper ?:
+            AccessibleFocusHelper(component, accessible).also {
+                accessibleFocusHelper = it
+            }
+        return helper.accessibleContext
+    }
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -770,7 +782,7 @@ internal class ComposeSceneMediator(
 
         val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
-        private var requestingNativeFocus = false
+        private var requestingFocus = false
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
             check(semanticsOwner !in _accessibilityControllers)
@@ -779,15 +791,15 @@ internal class ComposeSceneMediator(
                 desktopComponent = platformComponent,
                 parentAccessible = accessible,
                 onFocusReceived = {
-                    // requestNativeFocusOnAccessible fires focusGained events, which in turn
+                    // requestFocusOnAccessible fires focusGained events, which in turn
                     // can call this method themselves, so we need to prevent infinite recursion
-                    if (requestingNativeFocus) return@AccessibilityController
-                    requestingNativeFocus = true
+                    if (requestingFocus) return@AccessibilityController
+                    requestingFocus = true
                     try {
                         val target = it ?: accessible.defaultAccessibilityFocusTarget()
-                        skiaLayerComponent.requestNativeFocusOnAccessible(target)
+                        accessibleFocusHelper?.requestNativeFocusOnAccessible(target)
                     } finally {
-                        requestingNativeFocus = false
+                        requestingFocus = false
                     }
                 },
             ).also {

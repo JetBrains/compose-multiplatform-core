@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene.skia
 
 import androidx.compose.ui.scene.ComposeSceneMediator
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.event.FocusEvent
@@ -47,11 +48,7 @@ internal class SwingSkiaLayerComponent(
         object : SkiaSwingLayer(
             renderDelegate = renderDelegate,
             analytics = skiaLayerAnalytics,
-            externalAccessibleFactory = {
-                // It depends on initialization order, so explicitly
-                // apply `checkNotNull` for "non-null" field.
-                checkNotNull(mediator.accessible)
-            }
+            accessibleContextProvider = mediator::provideAccessibleContext,
         ) {
             private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
 
@@ -131,10 +128,6 @@ internal class SwingSkiaLayerComponent(
 
     override fun dispose() {
         contentComponent.dispose()
-    }
-
-    override fun requestNativeFocusOnAccessible(accessible: Accessible?) {
-        contentComponent.requestNativeFocusOnAccessible(accessible)
     }
 
     override fun onComposeInvalidation() {
