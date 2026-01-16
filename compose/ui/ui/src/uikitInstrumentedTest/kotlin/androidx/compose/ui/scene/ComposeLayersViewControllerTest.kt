@@ -16,14 +16,19 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.uikit.utils.CMPComposeContainerLifecycleDelegateProtocol
 import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.Popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -50,6 +55,73 @@ class ComposeLayersViewControllerTest {
     fun testOrientationAndStatusBarValues() {
         val appDelegate = MockAppDelegate()
         val viewController = TestComposeContainerViewController { Dialog(onDismissRequest = {}) {} }
+        appDelegate.setUpWindow(viewController = viewController)
+        viewController.waitForIdle()
+
+        viewController.overrideShouldAutorotate = true
+        viewController.overridePreferredInterfaceOrientationForPresentation =
+            UIInterfaceOrientationPortrait
+        viewController.overrideSupportedInterfaceOrientations = UIInterfaceOrientationMaskAll
+
+        viewController.overridePreferredStatusBarStyle = UIStatusBarStyleDefault
+        viewController.overridePrefersStatusBarHidden = false
+
+        val layersWindow = appDelegate.findLayersWindow()
+
+        assertEquals(true, layersWindow.rootViewController?.shouldAutorotate)
+        assertEquals(
+            UIInterfaceOrientationPortrait,
+            layersWindow.rootViewController?.preferredInterfaceOrientationForPresentation
+        )
+        assertEquals(
+            UIInterfaceOrientationMaskAll,
+            layersWindow.rootViewController?.supportedInterfaceOrientations
+        )
+        assertEquals(
+            UIStatusBarStyleDefault,
+            layersWindow.rootViewController?.childViewControllerForStatusBarStyle?.preferredStatusBarStyle
+        )
+        assertEquals(
+            false,
+            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden
+        )
+
+        viewController.overrideShouldAutorotate = false
+        viewController.overridePreferredInterfaceOrientationForPresentation =
+            UIInterfaceOrientationLandscapeRight
+        viewController.overrideSupportedInterfaceOrientations =
+            UIInterfaceOrientationMaskPortraitUpsideDown
+        viewController.overridePreferredStatusBarStyle = UIStatusBarStyleDarkContent
+        viewController.overridePrefersStatusBarHidden = true
+
+        assertEquals(false, layersWindow.rootViewController?.shouldAutorotate)
+        assertEquals(
+            UIInterfaceOrientationLandscapeRight,
+            layersWindow.rootViewController?.preferredInterfaceOrientationForPresentation
+        )
+        assertEquals(
+            UIInterfaceOrientationMaskPortraitUpsideDown,
+            layersWindow.rootViewController?.supportedInterfaceOrientations
+        )
+
+        assertEquals(
+            UIStatusBarStyleDarkContent,
+            layersWindow.rootViewController?.childViewControllerForStatusBarStyle?.preferredStatusBarStyle
+        )
+        assertEquals(
+            true,
+            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden
+        )
+    }
+
+    @Test
+    fun testPopupOrientationAndStatusBarValues() {
+        val appDelegate = MockAppDelegate()
+        val viewController = TestComposeContainerViewController {
+            Popup {
+                Box(Modifier.size(10.dp))
+            }
+        }
         appDelegate.setUpWindow(viewController = viewController)
         viewController.waitForIdle()
 
