@@ -143,6 +143,6 @@ private class NativeKeyboardVisibilityListener : NSObject() {
     private val NSNotification.animationOptions: UIViewAnimationOptions
         get() {
             val value = userInfo?.get(UIKeyboardAnimationCurveUserInfoKey) as? NSNumber
-            return value?.unsignedIntegerValue() as UIViewAnimationOptions
+            return (value?.unsignedIntegerValue() ?: 0UL) as UIViewAnimationOptions
         }
 }
