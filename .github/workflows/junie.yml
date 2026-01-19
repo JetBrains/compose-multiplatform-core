@@ -31,38 +31,3 @@ jobs:
         uses: JetBrains/junie-github-action@v0
         with:
           junie_api_key: ${{ secrets.JUNIE_API_KEY }}
-          use_single_comment: "false"
-          prompt: |
-            ## Your Task
-            
-            1. Download the Pull Request diff using:
-              gh pr diff ${{ github.event.pull_request.head.ref }}
-              
-            2. Review **only**:
-              - the code changed in the diff
-              - code that is **directly or closely connected** to the changed code
-              Do **not** explore other parts of the repository.
-            3. Perform the review according to the criteria below.
-            4. Write GitHub comment for every issue you found.
-            
-            You are **not expected** to:
-              - run the code
-              - build the project
-              - execute tests
-              - explore the repository beyond the files included in the diff.
-            
-            ## Review Scope
-            
-            ### 1. Comments
-            - Use professional and polite language
-            - Write comment if you absolutely sure about the issue found in the code, otherwise skip it.
-            - Do not write comments if you are not sure about the issue found in the code.
-            - Don't write any summary about the code review. Only write about the specific issue found.
-            
-            ### 2. Check criteria
-            - Verify that the code changes corresponding the PR title and description.
-            - Verify any grammar mistakes in the diff. Don't highlight grammar mistakes outside the pull request's diff.
-            - Use deep knowledge about algorithms and data structures to find potential issues in the code.
-            - Deeply analise logic of algorithms that are changed in the PR and find inconsistencies between the implementation and expected behaviour. 
-            - Check for common typos in the code logic, like == vs !=.
-            - Any other issues that crucial for the code review.
