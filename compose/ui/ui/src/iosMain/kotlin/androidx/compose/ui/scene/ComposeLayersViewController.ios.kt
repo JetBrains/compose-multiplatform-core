@@ -176,7 +176,7 @@ internal class ComposeLayersViewController(
         val transaction = layer.retrieveInteropTransaction()
 
         if (this.layers.isEmpty()) {
-            // It was the last layer, remove the view and executed the actions immediately
+            // It was the last layer, remove the view and execute the actions immediately
             hide()
 
             transaction.actions.fastForEach { it.invoke() }
@@ -224,7 +224,7 @@ internal class ComposeLayersViewController(
 
     /**
      * Iterate through existing layers and merge their interop transactions to be consumed by the
-     * [MetalView], also include transactions of the layers that were removed and are not
+     * [MetalView], also including transactions of the layers that were removed and are not
      * present in [layers] anymore.
      */
     private fun retrieveAndMergeInteropTransactions(): UIKitInteropTransaction {
@@ -371,7 +371,7 @@ internal class ComposeLayersViewController(
 
 internal class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        // Hit-testing only the Compose view or any view that located on top of it.
+        // Hit-testing only the Compose view or any view that is located on top of it.
         for (subview in subviews.reversed()) {
             subview as UIView
             val isDescendantOfComposeView = rootViewController?.view?.isDescendantOfView(subview)
