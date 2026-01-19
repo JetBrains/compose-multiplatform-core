@@ -40,7 +40,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinCoroutinesCore)
-                implementation("androidx.annotation:annotation:1.9.1")
+                implementation(project(":annotation:annotation"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
             }
@@ -62,7 +62,8 @@ androidXMultiplatform {
         jbMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(project(":navigationevent:navigationevent"))
+                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
             }
         }
 

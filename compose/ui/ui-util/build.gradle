@@ -51,8 +51,7 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("androidx.collection:collection:1.5.0")
-            implementation(project(":compose:runtime:runtime"))
+            implementation(project(":collection:collection"))
         }
 
         commonTest.dependencies {
@@ -83,6 +82,13 @@ androidXMultiplatform {
         iosMain {
             dependencies {
                 implementation(project(":compose:ui:ui-uikit"))
+            }
+        }
+
+        desktopTest {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.truth)
             }
         }
     }
