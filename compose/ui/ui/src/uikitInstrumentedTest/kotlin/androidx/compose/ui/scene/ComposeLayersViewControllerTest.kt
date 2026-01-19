@@ -112,6 +112,8 @@ class ComposeLayersViewControllerTest {
             true,
             layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden
         )
+
+        appDelegate.cleanUp()
     }
 
     @Test
@@ -135,7 +137,11 @@ class ComposeLayersViewControllerTest {
 
         val layersWindow = appDelegate.findLayersWindow()
 
-        assertEquals(true, layersWindow.rootViewController?.shouldAutorotate)
+        assertEquals(
+            true,
+            layersWindow.rootViewController?.shouldAutorotate,
+            "Autorotation must be enabled"
+        )
         assertEquals(
             UIInterfaceOrientationPortrait,
             layersWindow.rootViewController?.preferredInterfaceOrientationForPresentation
@@ -150,7 +156,8 @@ class ComposeLayersViewControllerTest {
         )
         assertEquals(
             false,
-            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden
+            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden,
+            "Status bar should not be hidden"
         )
 
         viewController.overrideShouldAutorotate = false
@@ -161,7 +168,11 @@ class ComposeLayersViewControllerTest {
         viewController.overridePreferredStatusBarStyle = UIStatusBarStyleDarkContent
         viewController.overridePrefersStatusBarHidden = true
 
-        assertEquals(false, layersWindow.rootViewController?.shouldAutorotate)
+        assertEquals(
+            false,
+            layersWindow.rootViewController?.shouldAutorotate,
+            "Autorotation must be disabled"
+        )
         assertEquals(
             UIInterfaceOrientationLandscapeRight,
             layersWindow.rootViewController?.preferredInterfaceOrientationForPresentation
@@ -177,14 +188,18 @@ class ComposeLayersViewControllerTest {
         )
         assertEquals(
             true,
-            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden
+            layersWindow.rootViewController?.childViewControllerForStatusBarHidden?.prefersStatusBarHidden,
+            "Status bar should be hidden"
         )
+
+        appDelegate.cleanUp()
     }
 
     private fun MockAppDelegate.findLayersWindow(): LayersWindow {
-        val window = this@findLayersWindow.window?.windowScene?.windows?.firstNotNullOfOrNull {
+        val window = this@findLayersWindow.window?.windowScene?.windows?.mapNotNull {
             it as? LayersWindow
-        }
+        }?.single()
+
         assertNotNull(window, "${LayersWindow::class} not found in scene")
         return window
     }

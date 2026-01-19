@@ -449,7 +449,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
-        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        val scene = window?.windowScene ?: UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
