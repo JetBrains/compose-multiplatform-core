@@ -250,7 +250,7 @@ internal class MetalRedrawer(
 
     var isActive: Boolean = true
         set(newValue) {
-            if (field == newValue) {
+            if (field != newValue) {
                 field = newValue
                 setNeedsRedraw()
 
@@ -277,6 +277,14 @@ internal class MetalRedrawer(
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
+
+        // Wait until all scheduled rendering tasks are completed to eliminate race conditions
+        // when clearing the resources
+        if (useSeparateRenderThreadWhenPossible) {
+            trace("MetalRedrawer:dispose:waitForAsyncRenderingTasks") {
+                dispatch_sync(renderingDispatchQueue) {}
+            }
+        }
 
         pictureRecorder.close()
         context.close()
