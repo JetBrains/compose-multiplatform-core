@@ -89,13 +89,11 @@ jobs:
         shell: bash
         working-directory: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils
         run: |
-          set -o pipefail
           xcodebuild test \
             -resultBundlePath TestResults.xcresult \
             -scheme CMPUIKitUtilsTests \
             -project CMPUIKitUtils.xcodeproj \
             -destination 'platform=iOS Simulator,name=iPhone 16'
-          | xcpretty --verbose
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
