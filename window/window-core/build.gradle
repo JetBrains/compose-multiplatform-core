@@ -79,5 +79,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
-    samples(project(":window:window-core-samples"))
+    //samples(project(":window:window-core-samples"))
 }

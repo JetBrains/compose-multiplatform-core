@@ -60,9 +60,9 @@ androidXMultiplatform {
         }
 
         androidDeviceTest.dependencies {
-            implementation(project(":compose:material3:material3"))
-            implementation(project(":compose:test-utils"))
-            implementation(project(":window:window-testing"))
+            //implementation(project(":compose:material3:material3"))
+            //implementation(project(":compose:test-utils"))
+            //implementation(project(":window:window-testing"))
             implementation(libs.junit)
             implementation(libs.testRunner)
             implementation(libs.truth)

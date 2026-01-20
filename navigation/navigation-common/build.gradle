@@ -83,15 +83,15 @@ androidXMultiplatform {
         desktopTest.dependsOn(nonAndroidTest)
 
         androidMain.dependencies {
-            api(project(":lifecycle:lifecycle-runtime"))
-            api(project(":lifecycle:lifecycle-viewmodel"))
-            api(project(":savedstate:savedstate-ktx"))
+            //api(project(":lifecycle:lifecycle-runtime"))
+            //api(project(":lifecycle:lifecycle-viewmodel"))
+            //api(project(":savedstate:savedstate-ktx"))
             implementation("androidx.core:core-ktx:1.1.0")
             implementation("androidx.profileinstaller:profileinstaller:1.4.0")
         }
 
         androidHostTest.dependencies {
-            implementation(project(":navigation:navigation-testing"))
+            //implementation(project(":navigation:navigation-testing"))
             implementation("androidx.arch.core:core-testing:2.2.0")
             implementation(libs.junit)
             implementation(libs.mockitoCore4)
@@ -120,7 +120,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":navigation:navigation-common-lint"))
+    //lintPublish(project(":navigation:navigation-common-lint"))
 }
 
 androidx {

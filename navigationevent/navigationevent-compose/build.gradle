@@ -69,9 +69,9 @@ androidXMultiplatform {
 
         androidDeviceTest.dependencies {
             implementation("androidx.compose.material:material:1.9.2")
-            implementation(project(":compose:ui:ui-test"))
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":compose:ui:ui-test-manifest"))
+            //implementation(project(":compose:ui:ui-test"))
+            //implementation(project(":compose:ui:ui-test-junit4"))
+            //implementation(project(":compose:ui:ui-test-manifest"))
             implementation(libs.testExtJunit)
             implementation(libs.testCore)
             implementation(libs.testRunner)
@@ -116,7 +116,7 @@ androidXMultiplatform {
 androidx {
     name = "NavigationEvent Compose"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
-    samples(project(":navigationevent:navigationevent-samples"))
+    //samples(project(":navigationevent:navigationevent-samples"))
     inceptionYear = "2025"
     description = "Compose integration with NavigationEvent"
 }

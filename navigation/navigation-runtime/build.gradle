@@ -94,8 +94,8 @@ androidXMultiplatform {
             implementation("androidx.lifecycle:lifecycle-common:2.8.7")
             implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
             implementation("androidx.lifecycle:lifecycle-runtime-testing:2.8.7")
-            implementation(project(":internal-testutils-navigation"))
-            implementation(project(":internal-testutils-runtime"))
+            //implementation(project(":internal-testutils-navigation"))
+            //implementation(project(":internal-testutils-runtime"))
             implementation(libs.hamcrestCore)
             implementation(libs.junit)
             implementation(libs.kotlinTest)
@@ -132,7 +132,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":navigation:navigation-runtime-lint"))
+    //lintPublish(project(":navigation:navigation-runtime-lint"))
 }
 
 androidx {

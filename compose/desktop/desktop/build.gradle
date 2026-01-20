@@ -46,7 +46,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:ui:ui-test-junit4"))
+                //implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(libs.junit)
                 implementation(libs.truth)
             }

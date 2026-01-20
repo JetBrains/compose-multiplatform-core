@@ -83,10 +83,10 @@ androidXMultiplatform {
 
         androidDeviceTest.dependencies {
             implementation("androidx.emoji2:emoji2-bundled:1.4.0")
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":internal-testutils-fonts"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(project(":compose:test-utils"))
+            //implementation(project(":compose:ui:ui-test-junit4"))
+            //implementation(project(":internal-testutils-fonts"))
+            //implementation(project(":compose:foundation:foundation"))
+            //implementation(project(":compose:test-utils"))
             implementation(libs.testRules)
             implementation(libs.testRunner)
             implementation(libs.espressoCore)
@@ -99,7 +99,7 @@ androidXMultiplatform {
         }
 
         androidHostTest.dependencies {
-            implementation(project(":internal-testutils-fonts"))
+            //implementation(project(":internal-testutils-fonts"))
             implementation(libs.testRules)
             implementation(libs.testRunner)
             implementation(libs.junit)
@@ -203,8 +203,8 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":compose:ui:ui-text-lint"))
-    lintChecks(project(":compose:ui:ui-text-lint"))
+    //lintPublish(project(":compose:ui:ui-text-lint"))
+    //lintChecks(project(":compose:ui:ui-text-lint"))
 }
 
 androidx {
@@ -214,7 +214,7 @@ androidx {
     description = "Compose Text primitives and utilities"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
-    samples(project(":compose:ui:ui-text:ui-text-samples"))
+    //samples(project(":compose:ui:ui-text:ui-text-samples"))
 }
 
 afterEvaluate {

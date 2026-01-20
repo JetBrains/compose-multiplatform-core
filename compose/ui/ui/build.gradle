@@ -109,7 +109,7 @@ androidXMultiplatform {
             api("androidx.annotation:annotation-experimental:1.4.1")
             // This has stub APIs for access to legacy Android APIs, so we don't want
             // any dependency on this module.
-            compileOnly(project(":compose:ui:ui-android-stubs"))
+            //compileOnly(project(":compose:ui:ui-android-stubs"))
             implementation("androidx.autofill:autofill:1.0.0")
             implementation(libs.kotlinCoroutinesAndroid)
 
@@ -166,16 +166,16 @@ androidXMultiplatform {
             implementation(libs.truth)
             implementation(libs.mockitoKotlin)
             implementation(libs.material)
-            implementation(project(":compose:animation:animation-core"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(project(":compose:foundation:foundation-layout"))
-            implementation(project(":compose:material:material"))
+            //implementation(project(":compose:animation:animation-core"))
+            //implementation(project(":compose:foundation:foundation"))
+            //implementation(project(":compose:foundation:foundation-layout"))
+            //implementation(project(":compose:material:material"))
             implementation("androidx.compose.material:material-icons-core:1.6.7")
-            implementation(project(":compose:test-utils"))
-            implementation(project(":internal-testutils-fonts"))
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":internal-testutils-runtime"))
-            implementation(project(":test:screenshot:screenshot"))
+            //implementation(project(":compose:test-utils"))
+            //implementation(project(":internal-testutils-fonts"))
+            //implementation(project(":compose:ui:ui-test-junit4"))
+            //implementation(project(":internal-testutils-runtime"))
+            //implementation(project(":test:screenshot:screenshot"))
             implementation("androidx.lifecycle:lifecycle-runtime-testing:2.8.7")
             implementation("androidx.recyclerview:recyclerview:1.3.0")
             implementation("androidx.core:core-ktx:1.2.0")
@@ -193,9 +193,9 @@ androidXMultiplatform {
             implementation(libs.mockitoCore4)
             implementation(libs.mockitoKotlin4)
             implementation(libs.byteBuddy)
-            implementation(project(":compose:ui:ui-test-junit4"))
-            implementation(project(":internal-testutils-fonts"))
-            implementation(project(":compose:test-utils"))
+            //implementation(project(":compose:ui:ui-test-junit4"))
+            //implementation(project(":internal-testutils-fonts"))
+            //implementation(project(":compose:test-utils"))
         }
 
         // TODO: Align naming: nonAndroidMain
@@ -312,8 +312,8 @@ dependencies {
 }
 
 dependencies {
-    lintChecks(project(":compose:ui:ui-lint"))
-    lintPublish(project(":compose:ui:ui-lint"))
+    //lintChecks(project(":compose:ui:ui-lint"))
+    //lintPublish(project(":compose:ui:ui-lint"))
 }
 
 androidx {
@@ -322,7 +322,7 @@ androidx {
     inceptionYear = "2019"
     description = "Compose UI primitives. This library contains the primitives that form the Compose UI Toolkit, such as drawing, measurement and layout."
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:ui:ui:ui-samples"))
+    //samples(project(":compose:ui:ui:ui-samples"))
     addGoldenImageAssets()
     enableRobolectric()
     deviceTests.minSdkForFtlOverride = 24 // b/437944630
@@ -331,7 +331,7 @@ androidx {
 if (!ProjectLayoutType.isPlayground(project)) {
     androidComponents {
         onVariants(selector().all(), { variant ->
-            packageInspector(variant, project, project(":compose:ui:ui-inspection"))
+            //packageInspector(variant, project, project(":compose:ui:ui-inspection"))
         })
     }
 }

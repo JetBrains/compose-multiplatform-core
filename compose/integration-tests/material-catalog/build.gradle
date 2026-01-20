@@ -53,12 +53,12 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.9.0")
     implementation("androidx.compose.foundation:foundation-layout:1.9.0")
     implementation("androidx.compose.material:material-icons-core:1.7.8")
-    implementation(project(":compose:material:material"))
-    implementation(project(":compose:material3:material3"))
-    implementation(project(":compose:material:material:integration-tests:material-catalog"))
-    implementation(project(":compose:material3:material3:integration-tests:material3-catalog"))
+    //implementation(project(":compose:material:material"))
+    //implementation(project(":compose:material3:material3"))
+    //implementation(project(":compose:material:material:integration-tests:material-catalog"))
+    //implementation(project(":compose:material3:material3:integration-tests:material3-catalog"))
     implementation "androidx.activity:activity-compose:1.10.1"
-    implementation(project(":navigation:navigation-compose"))
+    //implementation(project(":navigation:navigation-compose"))
     // old version of common-java8 conflicts with newer version, because both have
     // DefaultLifecycleEventObserver.
     // Outside of androidx this is resolved via constraint added to lifecycle-common,

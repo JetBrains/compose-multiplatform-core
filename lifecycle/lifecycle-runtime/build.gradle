@@ -98,7 +98,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
+    //lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
 
     constraints {
         // Prevents symbols duplication with old versions of JetBrains' fork.

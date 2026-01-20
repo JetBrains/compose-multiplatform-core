@@ -55,9 +55,9 @@ androidXMultiplatform {
 
         androidDeviceTest {
             dependencies {
-                implementation(project(":compose:test-utils"))
+                //implementation(project(":compose:test-utils"))
                 implementation("androidx.navigation:navigation-testing:2.7.7")
-                implementation(project(":compose:ui:ui-test-junit4"))
+                //implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
@@ -109,5 +109,5 @@ androidx {
     inceptionYear = "2024"
     description = "Compose Material integration with Navigation"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:material:material-navigation-samples"))
+    //samples(project(":compose:material:material-navigation-samples"))
 }

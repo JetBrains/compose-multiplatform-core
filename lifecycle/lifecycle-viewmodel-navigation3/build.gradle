@@ -77,11 +77,11 @@ androidXMultiplatform {
             implementation(libs.junit)
             implementation(libs.testExtJunitKtx)
             implementation(libs.truth)
-            implementation(project(":navigation3:navigation3-ui"))
-            implementation(project(":compose:test-utils"))
+            //implementation(project(":navigation3:navigation3-ui"))
+            //implementation(project(":compose:test-utils"))
             implementation("androidx.compose.animation:animation:1.9.0")
-            implementation(project(":compose:ui:ui-test"))
-            implementation(project(":compose:ui:ui-test-junit4"))
+            //implementation(project(":compose:ui:ui-test"))
+            //implementation(project(":compose:ui:ui-test-junit4"))
         }
 
         nonAndroidMain.dependsOn(commonMain)

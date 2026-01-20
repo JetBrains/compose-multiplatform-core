@@ -74,7 +74,7 @@ androidXMultiplatform {
             implementation(libs.truth)
             implementation("androidx.compose.foundation:foundation:1.2.1")
             implementation("androidx.compose.ui:ui-test-junit4:1.2.1")
-            implementation(project(":compose:test-utils"))
+            //implementation(project(":compose:test-utils"))
         }
 
         androidHostTest.dependencies {
@@ -90,5 +90,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose Animation Graphics Library for using animated-vector resources in Compose"
-    samples(project(":compose:animation:animation-graphics:animation-graphics-samples"))
+    //samples(project(":compose:animation:animation-graphics:animation-graphics-samples"))
 }

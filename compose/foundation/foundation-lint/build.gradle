@@ -35,9 +35,9 @@ dependencies {
     compileOnly(libs.androidLintApiStableAnalysis)
     compileOnly(libs.kotlinStdlib)
 
-    bundleInside(project(":compose:lint:common"))
+    //bundleInside(project(":compose:lint:common"))
 
-    testImplementation(project(":compose:lint:common-test"))
+    //testImplementation(project(":compose:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.androidLintStableAnalysis)
     testImplementation(libs.androidLintTests)

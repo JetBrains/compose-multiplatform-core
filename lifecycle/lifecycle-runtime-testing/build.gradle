@@ -73,7 +73,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":lifecycle:lifecycle-runtime-testing-lint"))
+    //lintPublish(project(":lifecycle:lifecycle-runtime-testing-lint"))
 }
 
 androidx {

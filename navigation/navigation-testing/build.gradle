@@ -75,9 +75,9 @@ androidXMultiplatform {
         }
 
         androidMain.dependencies {
-            api(project(":lifecycle:lifecycle-runtime"))
-            api(project(":lifecycle:lifecycle-viewmodel"))
-            api(project(":savedstate:savedstate-ktx"))
+            //api(project(":lifecycle:lifecycle-runtime"))
+            //api(project(":lifecycle:lifecycle-viewmodel"))
+            //api(project(":savedstate:savedstate-ktx"))
             implementation("androidx.core:core-ktx:1.1.0")
             implementation("androidx.profileinstaller:profileinstaller:1.4.0")
         }
@@ -90,7 +90,7 @@ androidXMultiplatform {
         }
 
         androidDeviceTest.dependencies {
-            implementation(project(":internal-testutils-navigation"))
+            //implementation(project(":internal-testutils-navigation"))
             implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
             implementation(libs.testExtJunit)
             implementation(libs.testExtTruth)

@@ -68,17 +68,17 @@ androidXMultiplatform {
             // `lifecycle-runtime-compose` also updates `lifecycle-runtime-ktx`
             // in cases where our constraints fail (e.g., internally in AndroidX
             // when using project dependencies).
-            api(project(":lifecycle:lifecycle-runtime-ktx"))
+            //api(project(":lifecycle:lifecycle-runtime-ktx"))
         }
 
         androidDeviceTest.dependencies {
-            implementation(project(":lifecycle:lifecycle-runtime-testing"))
-            implementation(project(":compose:ui:ui-test"))
-            implementation(project(":compose:test-utils"))
+            //implementation(project(":lifecycle:lifecycle-runtime-testing"))
+            //implementation(project(":compose:ui:ui-test"))
+            //implementation(project(":compose:test-utils"))
             implementation(libs.testRules)
             implementation(libs.testRunner)
             implementation(libs.kotlinTest)
-            implementation(project(":kruth:kruth"))
+            //implementation(project(":kruth:kruth"))
         }
 
         nonAndroidMain.dependsOn(commonMain)
@@ -93,7 +93,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintPublish(project(":lifecycle:lifecycle-runtime-compose-lint"))
+    //lintPublish(project(":lifecycle:lifecycle-runtime-compose-lint"))
 
     constraints {
         // Prevents symbols duplication with old versions of JetBrains' fork.
@@ -110,5 +110,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose integration with Lifecycle"
-    samples(project(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples"))
+    //samples(project(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples"))
 }

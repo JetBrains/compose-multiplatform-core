@@ -34,15 +34,15 @@ plugins {
 
 dependencies {
 
-    implementation(project(":compose:ui:ui"))
-    implementation(project(":compose:ui:ui-util"))
+    //implementation(project(":compose:ui:ui"))
+    //implementation(project(":compose:ui:ui-util"))
     implementation(libs.viewBinding)
     // Required to ensure that Fragments inflated by AndroidViewBinding
     // actually appear after configuration changes
     implementation("androidx.fragment:fragment-ktx:1.3.2")
 
-    androidTestImplementation(project(":compose:foundation:foundation"))
-    androidTestImplementation(project(":compose:test-utils"))
+    //androidTestImplementation(project(":compose:foundation:foundation"))
+    //androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
@@ -54,7 +54,7 @@ androidx {
     inceptionYear = "2020"
     description = "Compose integration with ViewBinding"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:ui:ui-viewbinding:ui-viewbinding-samples"))
+    //samples(project(":compose:ui:ui-viewbinding:ui-viewbinding-samples"))
 }
 
 android {

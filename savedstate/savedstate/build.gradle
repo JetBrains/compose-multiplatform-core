@@ -107,7 +107,7 @@ dependencies {
 androidx {
     name = "Saved State"
     type = SoftwareType.PUBLISHED_LIBRARY
-    samples(project(":savedstate:savedstate-samples"))
+    //samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
     enableRobolectric()

@@ -69,9 +69,9 @@ androidXMultiplatform {
         }
 
         androidDeviceTest.dependencies {
-            implementation(project(":compose:animation:animation"))
-            implementation(project(":compose:test-utils"))
-            implementation(project(":compose:material:material"))
+            //implementation(project(":compose:animation:animation"))
+            //implementation(project(":compose:test-utils"))
+            //implementation(project(":compose:material:material"))
             implementation("androidx.fragment:fragment-testing:1.4.1")
             implementation(libs.testRules)
             implementation(libs.testRunner)
@@ -92,9 +92,9 @@ androidXMultiplatform {
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.byteBuddy)
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(project(":internal-testutils-fonts"))
-                implementation(project(":compose:test-utils"))
+                //implementation(project(":compose:ui:ui-test-junit4"))
+                //implementation(project(":internal-testutils-fonts"))
+                //implementation(project(":compose:test-utils"))
             }
         }
 
