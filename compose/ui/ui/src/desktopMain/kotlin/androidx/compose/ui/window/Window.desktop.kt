@@ -434,7 +434,6 @@ fun singleWindowApplication(
  * (when the last window is closed, and all [LaunchedEffect]s are complete).
  * @param content Composable content of the window.
  */
-@ExperimentalComposeUiApi
 @JvmName("singleWindowApplicationWithAppScope")
 fun singleWindowApplication(
     state: WindowState = WindowState(),
