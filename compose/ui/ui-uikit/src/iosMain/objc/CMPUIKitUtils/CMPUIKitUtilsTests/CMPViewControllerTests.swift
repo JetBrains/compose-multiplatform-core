@@ -80,7 +80,7 @@ final class CMPViewControllerTests: XCTestCase {
         function: StaticString = #function,
         line: Int = #line,
         message: () -> String = { "" }
-    ) async  {
+    ) async {
         await expect(viewControllersToBeInHierarchy: viewControllers.map {
             ($0, inHierarchy)
         }, function: function, line: line, message: message)
@@ -282,7 +282,7 @@ final class CMPViewControllerTests: XCTestCase {
             (viewController3, false),
         ]) {
             """
-            Modal view controller and child view controller must present in window hierarchy, but actually:
+            Modal view controller and child view controller must be present in window hierarchy, but actually:
             - viewController0 should be in window hierarchy, but given: \(viewController0.viewIsInWindowHierarchy)
             - viewController1 should be in window hierarchy, but given: \(viewController1.viewIsInWindowHierarchy)
             - viewController2 should be in window hierarchy, but given: \(viewController2.viewIsInWindowHierarchy)

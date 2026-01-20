@@ -19,7 +19,7 @@ import XCTest
 extension XCTestCase {
     /// Awaits for expectation without blocking UI thread.
     @MainActor
-    func expect(        
+    func expect(
         timeout: TimeInterval = 5.0,
         function: StaticString = #function,
         line: Int = #line,
