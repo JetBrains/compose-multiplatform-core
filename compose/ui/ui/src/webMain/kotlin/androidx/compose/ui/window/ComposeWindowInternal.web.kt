@@ -347,8 +347,10 @@ internal class ComposeWindow(
         }
     }
 
+    private val isMacOS = hostOs.isMacOS
+
     private fun processClipKeyDown(keyEvent: KeyEvent) {
-        val mod = keyEvent.isMetaPressed && hostOs.isMacOS || keyEvent.isCtrlPressed
+        val mod = if (isMacOS) keyEvent.isMetaPressed else keyEvent.isCtrlPressed
         if (!mod) return
         if (keyEvent.key == Key.C || keyEvent.key == Key.V || keyEvent.key == Key.X) {
             // A browser is about to dispatch a Clipboard Event.
