@@ -30,13 +30,13 @@ extension XCTestCase {
         var isExpectationMet = expectation()
         
         while !isExpectationMet && Date().timeIntervalSince(start) < timeout {
-            try? await Task.sleep(nanoseconds: 100_000) // 100ms
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
             isExpectationMet = expectation()
         }
         
         if !isExpectationMet {
             print("Timeout failed at \(function), line: \(line). \(message())")
-            XCTFail("Timeout at line \(line)")
+            XCTFail("Timeout at line \(line). \(message())")
         }
     }
 }

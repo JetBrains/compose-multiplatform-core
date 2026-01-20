@@ -267,10 +267,10 @@ final class CMPViewControllerTests: XCTestCase {
         ]) {
             """
             Only the root view controller must be in the window hierarchy
-            - viewController0 should be in window hierarhy, but given: \(viewController0.viewIsInWindowHierarchy)
-            - viewController1 should not be in window hierarhy, but given: \(viewController1.viewIsInWindowHierarchy)
-            - viewController2 should not be in window hierarhy, but given: \(viewController2.viewIsInWindowHierarchy)
-            - viewController3 should not be in window hierarhy, but given: \(viewController3.viewIsInWindowHierarchy)
+            - viewController0 should be in window hierarchy, but given: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1 should not be in window hierarchy, but given: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2 should not be in window hierarchy, but given: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3 should not be in window hierarchy, but given: \(viewController3.viewIsInWindowHierarchy)
             """
         }
         
@@ -283,10 +283,10 @@ final class CMPViewControllerTests: XCTestCase {
         ]) {
             """
             Modal view controller and child view controller must present in window hierarchy, but actually:
-            - viewController0 should be in window hierarhy, but given: \(viewController0.viewIsInWindowHierarchy)
-            - viewController1 should be in window hierarhy, but given: \(viewController1.viewIsInWindowHierarchy)
-            - viewController2 should be in window hierarhy, but given: \(viewController2.viewIsInWindowHierarchy)
-            - viewController3 should not be in window hierarhy, but given: \(viewController3.viewIsInWindowHierarchy)
+            - viewController0 should be in window hierarchy, but given: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1 should be in window hierarchy, but given: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2 should be in window hierarchy, but given: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3 should not be in window hierarchy, but given: \(viewController3.viewIsInWindowHierarchy)
             """
         }
         
