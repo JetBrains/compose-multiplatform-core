@@ -30,6 +30,7 @@ extension XCTestCase {
         var isExpectationMet = expectation()
         
         while !isExpectationMet && Date().timeIntervalSince(start) < timeout {
+            print("-----")
             try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
             isExpectationMet = expectation()
         }
