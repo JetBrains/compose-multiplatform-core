@@ -90,7 +90,7 @@ jobs:
         working-directory: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils
         run: |
           set -o pipefail
-          xcodebuild test \
+          stdbuf -oL xcodebuild test \
             -resultBundlePath TestResults.xcresult \
             -scheme CMPUIKitUtilsTests \
             -project CMPUIKitUtils.xcodeproj \
