@@ -426,8 +426,8 @@ internal class UIKitInstrumentedTest(
 
     val UITouch.location: DpOffset
         get() {
-        return locationInView(viewController.view).asDpOffset()
-    }
+            return locationInView(viewController.view).asDpOffset()
+        }
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -453,12 +453,11 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         allWindows.forEach {
             (it as UIWindow).setHidden(true)
-            it.windowScene = null
         }
     }
 
     fun cleanUp() {
-        val scene = _window?.windowScene ?: UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
@@ -478,7 +477,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         allWindows.forEach {
             (it as UIWindow).setHidden(true)
-            it.windowScene = null
         }
     }
 

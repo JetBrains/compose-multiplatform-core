@@ -197,7 +197,7 @@ class ComposeLayersViewControllerTest {
 
     private fun MockAppDelegate.findLayersWindow(): LayersWindow {
         val window = this@findLayersWindow.window?.windowScene?.windows?.mapNotNull {
-            it as? LayersWindow
+            it is LayersWindow &&!it.isHidden()
         }?.single()
 
         assertNotNull(window, "${LayersWindow::class} not found in scene")
