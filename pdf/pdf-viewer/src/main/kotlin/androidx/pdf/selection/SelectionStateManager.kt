@@ -60,6 +60,7 @@ internal class SelectionStateManager(
     private val errorFlow: MutableSharedFlow<Throwable>,
     private val pageLayoutManager: PageLayoutManager?,
     private val pageManager: PageManager?,
+    internal var isImageSelectionEnabled: Boolean = false,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */

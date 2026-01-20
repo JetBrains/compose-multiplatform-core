@@ -69,7 +69,7 @@ jobs:
           # Gradle flags match those used in presubmit.yml, plus:
           # * disabling validating integration patches as a patch file may already be applied
           # * disabling klibs cross compilation because it is not supported with cinterops
-          # * disabling non-Jvm tests to avoid memory exhaustion
+          # * setting max workers to 2 to avoid memory exhaustion
           gradle-flags: >
             --max-workers=2
             -Pkotlin.native.enableKlibsCrossCompilation=false
@@ -81,8 +81,5 @@ jobs:
             --stacktrace
             -x validateIntegrationPatches
             -x checkKotlinApiTarget
-            -x linuxX64Test
-            -x wasmJsBrowserTest
-            -x jsBrowserTest
           # Disable the cache since this is the only build using the latest KSP.
           gradle-cache-disabled: true

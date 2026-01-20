@@ -37,7 +37,7 @@ configurations {
 
 dependencies {
     api(gradleApi())
-    compileOnly(libs.androidGradlePlugin)
+    compileOnly(libs.androidGradlePluginApi)
     implementation(libs.asm)
     implementation(libs.asmCommons)
     implementation(libs.asmUtil)
@@ -45,13 +45,13 @@ dependencies {
     // Eventually we need to figure out a way to version the annotations and this library together.
     // implementation(files("libs/keepanno-toolslib.jar"))
     testImplementation(project(":internal-testutils-gradle-plugin"))
-    testImplementation(libs.androidGradlePlugin)
+    testImplementation(libs.androidGradlePluginApi)
     testImplementation(gradleTestKit())
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.truth)
     // Bootstrap Plugin test classpath
-    testPlugin(libs.androidGradlePlugin)
+    testPlugin(libs.androidGradlePluginApi)
     testPlugin(libs.kotlinGradlePlugin)
 }
 

@@ -18,6 +18,8 @@ package androidx.xr.scenecore.impl.impress
 
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape
+import androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel
+import androidx.xr.scenecore.impl.impress.ImpressApi.MediaBlendingMode
 import androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
@@ -309,6 +311,24 @@ class FakeImpressApiImplTest {
         assertThat(stereoMode).isEqualTo(stereoMode2)
         val surface = stereoSurfaceData.surface
         assertThat(surface).isNotNull()
+    }
+
+    @Test
+    fun createStereoSurface_withBlendingMode_createsStereoSurface() {
+        val stereoMode = StereoMode.MONO
+        val blendingMode = MediaBlendingMode.OPAQUE
+        val contentSecurityLevel = ContentSecurityLevel.NONE
+        val stereoSurfaceNode =
+            fakeImpressApi.createStereoSurface(
+                stereoMode,
+                blendingMode,
+                contentSecurityLevel,
+                useSuperSampling = false,
+            )
+        val stereoSurface = fakeImpressApi.getStereoSurfaceEntities()
+        val stereoSurfaceData = stereoSurface[stereoSurfaceNode]
+        assertNotNull(stereoSurfaceData)
+        assertThat(stereoSurfaceData.mediaBlendingMode).isEqualTo(blendingMode)
     }
 
     @Test

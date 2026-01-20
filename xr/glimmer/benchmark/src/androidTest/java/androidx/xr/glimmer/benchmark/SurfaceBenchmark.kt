@@ -234,11 +234,12 @@ class SurfaceBenchmark {
     }
 
     /**
-     * Measures the time to draw the first frame after emitting a [PressInteraction.Press]. This is
-     * benchmarked on an already-focused surface to isolate the press state change.
+     * Measures the time to process [PressInteraction.Press] and perform composition, measurement,
+     * layout, and drawing to render the first frame. This is benchmarked on an already-focused
+     * surface to isolate the press state change.
      */
     @Test
-    fun surface_firstFrame_afterPressInteraction() {
+    fun surface_firstFramePressAnimation() {
         with(benchmarkRule) {
             runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = true) }) {
                 runOnUiThread {
@@ -248,9 +249,7 @@ class SurfaceBenchmark {
 
                 val press = PressInteraction.Press(Offset.Zero)
                 measureRepeatedOnUiThread {
-                    runWithMeasurementDisabled {
-                        runBlocking { getTestCase().emitInteraction(press) }
-                    }
+                    runBlocking { getTestCase().emitInteraction(press) }
 
                     doFrame()
 
@@ -273,11 +272,12 @@ class SurfaceBenchmark {
     }
 
     /**
-     * Measures the time to draw the first frame after emitting a [PressInteraction.Release]. This
-     * is benchmarked on an already-focused and pressed surface to isolate the release state change.
+     * Measures the time to process [PressInteraction.Release] and perform composition, measurement,
+     * layout, and draw to render the first frame. This is benchmarked on an already-focused and
+     * pressed surface to isolate the press state change.
      */
     @Test
-    fun surface_firstFrame_afterReleaseInteraction() {
+    fun surface_firstFrameReleaseAnimation() {
         with(benchmarkRule) {
             runBenchmarkFor({ SurfaceTestCase(addSurfaceModifierEnabledByDefault = true) }) {
                 runOnUiThread {
@@ -288,16 +288,14 @@ class SurfaceBenchmark {
                 val press = PressInteraction.Press(Offset.Zero)
                 measureRepeatedOnUiThread {
                     runWithMeasurementDisabled {
-                        runBlocking {
-                            // Emit interaction to start press animation.
-                            getTestCase().emitInteraction(press)
+                        // Emit interaction to start press animation.
+                        runBlocking { getTestCase().emitInteraction(press) }
 
-                            doFramesUntilNoChangesPending()
-
-                            // Emit interaction to trigger release animation
-                            getTestCase().emitInteraction(PressInteraction.Release(press))
-                        }
+                        doFramesUntilNoChangesPending()
                     }
+
+                    // Emit interaction to trigger release animation
+                    runBlocking { getTestCase().emitInteraction(PressInteraction.Release(press)) }
 
                     doFrame()
 

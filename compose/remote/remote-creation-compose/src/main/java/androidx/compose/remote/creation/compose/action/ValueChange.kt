@@ -59,7 +59,7 @@ public class ValueChangeAction<T>(
             ValueFloatExpressionChange(remoteValue.id, updatedValue.id)
         } else if (remoteValue is RemoteString) {
             updatedValue as RemoteString
-            ValueStringChange(remoteValue.id, updatedValue.constantValue!!)
+            ValueStringChange(remoteValue.id, updatedValue.constantValue)
         } else {
             TODO("println unsupported type in ValueChange $remoteValue")
         }

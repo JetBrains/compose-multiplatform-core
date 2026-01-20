@@ -18,6 +18,7 @@ package androidx.camera.integration.extensions
 
 import android.Manifest
 import android.content.Context
+import android.graphics.SurfaceTexture
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -88,6 +89,7 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
     private lateinit var camera: Camera
     private lateinit var preview: Preview
     private lateinit var imageCapture: ImageCapture
+    private val frameAvailableCountDownLatch = CountDownLatch(1)
 
     @Before
     fun setup() {
@@ -110,7 +112,12 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
         instrumentation.runOnMainSync {
             fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
             preview = Preview.Builder().build()
-            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+            preview.surfaceProvider =
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+                    SurfaceTexture.OnFrameAvailableListener {
+                        frameAvailableCountDownLatch.countDown()
+                    }
+                }
             imageCapture = ImageCapture.Builder().build()
             camera =
                 cameraProvider.bindToLifecycle(
@@ -140,9 +147,11 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
     @Test
     fun canSetExtensionStrength() {
         assumeTrue(cameraExtensionsInfo.isExtensionStrengthAvailable)
+        // Wait for the frame be available before setting the extension strength.
+        frameAvailableCountDownLatch.await(3, TimeUnit.SECONDS)
+
         val oldStrength = cameraExtensionsInfo.extensionStrength!!.value!!
         val newStrength = (oldStrength + 50) % 100
-        cameraExtensionsControl.setExtensionStrength(newStrength)
         val countDownLatch = CountDownLatch(1)
 
         instrumentation.runOnMainSync {
@@ -153,6 +162,8 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
             }
         }
 
-        assertThat(countDownLatch.await(1, TimeUnit.SECONDS)).isTrue()
+        cameraExtensionsControl.setExtensionStrength(newStrength)
+        // It might take some time to reach the new strength value.
+        assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue()
     }
 }

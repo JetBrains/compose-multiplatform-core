@@ -19,6 +19,8 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.modifiers.ShapeType
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
@@ -32,6 +34,8 @@ import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.modifiers.BorderModifier as CreationBorderModifier
 import androidx.compose.remote.creation.modifiers.DynamicBorderModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.toArgb
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BorderModifier(
@@ -52,10 +56,10 @@ public class BorderModifier(
             shapeType = ShapeType.ROUNDED_RECTANGLE
 
             val remoteSize = RemoteSize(context.componentWidth(), context.componentHeight())
-            roundedCorner = shape.topStart.toPx(remoteSize).floatId
+            roundedCorner = shape.topStart.toPx(remoteSize, remoteDensity).floatId
         }
 
-        val constantColor = color.constantValue
+        val constantColor = color.constantValueOrNull
         return if (constantColor != null) {
             CreationBorderModifier(width.floatId, roundedCorner, constantColor.toArgb(), shapeType)
         } else {
@@ -74,8 +78,13 @@ public class BorderModifier(
  *   corners.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+@RemoteComposable
 public fun RemoteModifier.border(
     width: RemoteDp,
     color: RemoteColor,
     shape: RemoteShape = RemoteRectangleShape,
-): RemoteModifier = then(BorderModifier(width.toPx(), color, shape))
+): RemoteModifier {
+    val remoteDensity = LocalRemoteComposeCreationState.current.remoteDensity
+    return then(BorderModifier(width.toPx(remoteDensity), color, shape))
+}

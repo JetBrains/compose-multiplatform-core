@@ -152,33 +152,6 @@ class EditableDocumentViewModelTest {
             .isEqualTo(newDocUri)
     }
 
-    @Test
-    fun maybeInitialiseForDocument_doesNotResetState_whenDocumentUriIsTheSame() = runTest {
-        val docUri = Uri.parse("content://test/same.pdf")
-        savedStateHandle[EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY] = docUri
-
-        // Initialize first time
-        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = docUri))
-
-        val initialAnnotation = createAnnotation(pageNum = 0)
-        annotationsViewModel.addDraftAnnotation(initialAnnotation)
-        val initialEdits =
-            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
-                .pageAnnotations
-
-        // Call again with same URI
-        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = docUri))
-
-        // State should remain
-        assertThat(
-                annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
-                    .pageAnnotations
-            )
-            .isEqualTo(initialEdits)
-        assertThat(savedStateHandle.get<Uri>(EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY))
-            .isEqualTo(docUri)
-    }
-
     // --- Annotation Editing Tests ---
 
     @Test

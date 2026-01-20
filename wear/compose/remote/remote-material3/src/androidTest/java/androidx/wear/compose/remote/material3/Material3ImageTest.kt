@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.state.rememberRemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -58,7 +59,9 @@ class Material3ImageTest {
                 CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             val avatarImage =
-                rememberRemoteBitmapValue(name = "avatarImage") { createImage(size, size) }
+                rememberRemoteBitmapValue(name = "avatarImage") {
+                    createImage(size, size).asImageBitmap()
+                }
             RemoteAvatarImage(
                 avatarImage,
                 contentDescription = rememberRemoteString { "background" },
@@ -76,7 +79,9 @@ class Material3ImageTest {
                 CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             val backgroundImage =
-                rememberRemoteBitmapValue(name = "backgroundImage") { createImage(size, size) }
+                rememberRemoteBitmapValue(name = "backgroundImage") {
+                    createImage(size, size).asImageBitmap()
+                }
             RemoteBackgroundImage(
                 background = backgroundImage,
                 contentDescription = rememberRemoteString { "background" },

@@ -83,6 +83,7 @@ internal open class FakePdfDocument(
     private val textContents: List<PdfPageTextContent> = emptyList(),
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     private val annotationsPerPage: Map<Int, List<KeyedPdfAnnotation>> = mapOf(),
+    private val exceptionToThrow: Exception? = null,
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -170,6 +171,7 @@ internal open class FakePdfDocument(
         start: PointF,
         stop: PointF,
     ): PageSelection {
+        if (exceptionToThrow != null) throw exceptionToThrow
         val selectionRect = RectF(start.x, start.y, stop.x, stop.y).apply { sort() }
 
         val selectedTextContents =

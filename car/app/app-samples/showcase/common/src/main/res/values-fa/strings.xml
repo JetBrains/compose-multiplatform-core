@@ -19,7 +19,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="back_caps_action_title" msgid="6392829425035919422">"برگشتن"</string>
     <string name="home_caps_action_title" msgid="4853167242566949502">"خانه"</string>
-    <string name="exit_action_title" msgid="9086586388884500731">"خروج"</string>
+    <string name="exit_action_title" msgid="9086586388884500731">"خارج شدن"</string>
     <string name="refresh_action_title" msgid="3674260822403151377">"بازآوری"</string>
     <string name="close_action_title" msgid="2661907510124308560">"بستن"</string>
     <string name="grant_access_action_title" msgid="4033140828804350723">"اعطای دسترسی"</string>

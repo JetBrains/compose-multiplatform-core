@@ -181,29 +181,20 @@ class ProjectCreatorTaskTest {
 
     @Test
     fun validateName_valid() {
-        ProjectSpec(
-            "androidx.foo",
-            "foo-bar",
-            ProjectType.ANDROID_LIBRARY,
-            "",
-            projectSetup.rootDir,
-        )
+        assertTrue(isGroupIdValid("androidx.foo"))
+        assertTrue(isArtifactIdValid("androidx.foo", "foo-bar"))
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun validateName_invalidGroupId() {
-        ProjectSpec("com.example", "foo-bar", ProjectType.ANDROID_LIBRARY, "", projectSetup.rootDir)
+        assertFalse(isGroupIdValid("foo"))
+        assertFalse(isGroupIdValid("com.example"))
+        assertFalse(isGroupIdValid("androidx.compose"))
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun validateName_invalidArtifactId() {
-        ProjectSpec(
-            "androidx.foo",
-            "baz-bar",
-            ProjectType.ANDROID_LIBRARY,
-            "",
-            projectSetup.rootDir,
-        )
+        assertFalse(isArtifactIdValid("androidx.foo", "bar"))
     }
 
     @Test

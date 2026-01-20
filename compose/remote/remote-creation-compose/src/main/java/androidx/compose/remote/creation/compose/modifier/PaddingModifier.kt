@@ -37,10 +37,10 @@ public class PaddingModifier(
 ) : RemoteModifier.Element {
     init {
         require(
-            (!left.hasConstantValue || left.constantValue!! >= 0f) and
-                (!top.hasConstantValue || top.constantValue!! >= 0f) and
-                (!right.hasConstantValue || right.constantValue!! >= 0f) and
-                (!bottom.hasConstantValue || bottom.constantValue!! >= 0f)
+            (!left.hasConstantValue || left.constantValue >= 0f) and
+                (!top.hasConstantValue || top.constantValue >= 0f) and
+                (!right.hasConstantValue || right.constantValue >= 0f) and
+                (!bottom.hasConstantValue || bottom.constantValue >= 0f)
         ) {
             "Padding must be non-negative"
         }

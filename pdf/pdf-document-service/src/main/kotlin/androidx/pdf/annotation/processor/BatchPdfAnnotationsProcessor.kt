@@ -49,7 +49,7 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
      *   contains details about which operations succeeded before the failure.
      */
     public fun process(editsDraft: EditsDraft): List<String> =
-        processInBatches(operations = editsDraft.operations)
+        processInBatches(operations = editsDraft.getOperationsSortedByPage())
 
     private fun processInBatches(operations: List<DraftEditOperation>): List<String> {
         val annotationIds = mutableListOf<String>()

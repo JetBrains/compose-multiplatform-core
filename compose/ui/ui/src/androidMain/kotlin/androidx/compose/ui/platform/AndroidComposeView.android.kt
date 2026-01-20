@@ -1849,10 +1849,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             setMeasuredDimension(root.width, root.height)
 
             if (_androidViewsHandler != null) {
-                androidViewsHandler.measure(
-                    MeasureSpec.makeMeasureSpec(root.width, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(root.height, MeasureSpec.EXACTLY),
-                )
+                trace("AndroidOwner:androidViewMeasure") {
+                    androidViewsHandler.measure(
+                        MeasureSpec.makeMeasureSpec(root.width, MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(root.height, MeasureSpec.EXACTLY),
+                    )
+                }
             }
         }
     }
@@ -1877,24 +1879,28 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-        lastMatrixRecalculationAnimationTime = 0L // reset it so that we're sure to have a new value
-        measureAndLayoutDelegate.measureAndLayout(resendMotionEventOnLayout)
-        onMeasureConstraints = null
-        // we postpone onPositioned callbacks until onLayout as LayoutCoordinates
-        // are currently wrong if you try to get the global(activity) coordinates -
-        // View is not yet laid out.
-        updatePositionCacheAndDispatch()
-        if (_androidViewsHandler != null) {
-            // Even if we laid out during onMeasure, we want to set the bounds of the
-            // AndroidViewsHandler for accessibility and for Views making assumptions based on
-            // the size of their ancestors. Usually the Views in the hierarchy will not
-            // be relaid out, as they have not requested layout in the meantime.
-            // However, there is also chance for the AndroidViewsHandler and the children to be
-            // isLayoutRequested at this point, in case the Views hierarchy receives forceLayout().
-            // In case of a forceLayout(), calling layout here will traverse the entire subtree
-            // and replace the Views at the same position, which is needed to clean up their
-            // layout state, which otherwise might cause further requestLayout()s to be blocked.
-            androidViewsHandler.layout(0, 0, r - l, b - t)
+        trace("AndroidOwner:onLayout") {
+            lastMatrixRecalculationAnimationTime =
+                0L // reset it so that we're sure to have a new value
+            measureAndLayoutDelegate.measureAndLayout(resendMotionEventOnLayout)
+            onMeasureConstraints = null
+            // we postpone onPositioned callbacks until onLayout as LayoutCoordinates
+            // are currently wrong if you try to get the global(activity) coordinates -
+            // View is not yet laid out.
+            updatePositionCacheAndDispatch()
+            if (_androidViewsHandler != null) {
+                // Even if we laid out during onMeasure, we want to set the bounds of the
+                // AndroidViewsHandler for accessibility and for Views making assumptions based on
+                // the size of their ancestors. Usually the Views in the hierarchy will not
+                // be relaid out, as they have not requested layout in the meantime.
+                // However, there is also chance for the AndroidViewsHandler and the children to be
+                // isLayoutRequested at this point, in case the Views hierarchy receives
+                // forceLayout().
+                // In case of a forceLayout(), calling layout here will traverse the entire subtree
+                // and replace the Views at the same position, which is needed to clean up their
+                // layout state, which otherwise might cause further requestLayout()s to be blocked.
+                trace("AndroidOwner:viewLayout") { androidViewsHandler.layout(0, 0, r - l, b - t) }
+            }
         }
     }
 
@@ -2069,33 +2075,35 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         // that will observe all children. The AndroidComposeView has only the
         // root, so it doesn't have to invalidate itself based on model changes.
         try {
-            canvasHolder.drawInto(canvas) {
-                root.draw(
-                    canvas = this,
-                    graphicsLayer = null, // the root node will provide the root graphics layer
-                )
-            }
-
-            if (dirtyLayers.isNotEmpty()) {
-                for (i in 0 until dirtyLayers.size) {
-                    val layer = dirtyLayers[i]
-                    layer.updateDisplayList()
+            trace("AndroidOwner:draw") {
+                canvasHolder.drawInto(canvas) {
+                    root.draw(
+                        canvas = this,
+                        graphicsLayer = null, // the root node will provide the root graphics layer
+                    )
                 }
+
+                if (dirtyLayers.isNotEmpty()) {
+                    for (i in 0 until dirtyLayers.size) {
+                        val layer = dirtyLayers[i]
+                        layer.updateDisplayList()
+                    }
+                }
+
+                if (ViewLayer.shouldUseDispatchDraw) {
+                    // We must update the display list of all children using dispatchDraw()
+                    // instead of updateDisplayList(). But since we don't want to actually draw
+                    // the contents, we will clip out everything from the canvas.
+                    val saveCount = canvas.save()
+                    canvas.clipRect(0f, 0f, 0f, 0f)
+
+                    super.dispatchDraw(canvas)
+                    canvas.restoreToCount(saveCount)
+                }
+
+                dirtyLayers.clear()
+                isDrawingContent = false
             }
-
-            if (ViewLayer.shouldUseDispatchDraw) {
-                // We must update the display list of all children using dispatchDraw()
-                // instead of updateDisplayList(). But since we don't want to actually draw
-                // the contents, we will clip out everything from the canvas.
-                val saveCount = canvas.save()
-                canvas.clipRect(0f, 0f, 0f, 0f)
-
-                super.dispatchDraw(canvas)
-                canvas.restoreToCount(saveCount)
-            }
-
-            dirtyLayers.clear()
-            isDrawingContent = false
         } catch (t: Throwable) {
             uncaughtExceptionHandler?.onUncaughtException(t) ?: throw t
         }

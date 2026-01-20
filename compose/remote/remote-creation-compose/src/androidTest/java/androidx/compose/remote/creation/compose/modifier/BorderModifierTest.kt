@@ -59,7 +59,7 @@ class BorderModifierTest {
     fun grid() =
         composeTestRule.runScreenshotTest {
             val borders =
-                listOf<RemoteModifier.() -> RemoteModifier>(
+                listOf<@Composable RemoteModifier.() -> RemoteModifier>(
                     { this },
                     { border(1.rdp, Color.Red.rc) },
                     { border(2.rdp, Color.Red.rc) },

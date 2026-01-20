@@ -249,11 +249,12 @@ public fun RemoteText(
                     modifier = captureMode.toRecordingModifier(modifier),
                     id = RemoteIntReference(text.getIdForCreationState(captureMode)),
                     color =
-                        color.constantValue?.toArgb() ?: color.getIdForCreationState(captureMode),
+                        color.constantValueOrNull?.toArgb()
+                            ?: color.getIdForCreationState(captureMode),
                     isColorConstant = color.hasConstantValue,
                     fontSize = with(LocalRemoteComposeCreationState.current) { fontSize.floatId },
                     fontStyle = fontStyle.encode(),
-                    fontWeight = fontWeight.constantValue ?: 400f,
+                    fontWeight = fontWeight.constantValueOrNull ?: 400f,
                     fontFamily = fontFamily,
                     textAlign = textAlign.encode(),
                     overflow = overflow.encode(),
@@ -380,7 +381,7 @@ public class RemoteComposeCoreTextComponentModifier(
             canvas.document.startTextComponent(
                 modifier,
                 id.getIdForCreationState(canvas.creationState),
-                color.constantValue?.toArgb() ?: Color.Black.toArgb(),
+                color.constantValueOrNull?.toArgb() ?: Color.Black.toArgb(),
                 if (color.hasConstantValue) -1
                 else color.getIdForCreationState(canvas.creationState),
                 fontSize.getFloatIdForCreationState(canvas.creationState),

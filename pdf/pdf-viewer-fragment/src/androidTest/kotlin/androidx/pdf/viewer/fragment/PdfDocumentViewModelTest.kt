@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -397,8 +398,51 @@ class PdfDocumentViewModelTest {
         }
     }
 
+    @Test
+    fun test_pdfDocumentViewModel_forceLoadDocument_reloadsSuccessfully() = runTest {
+        val documentUri = openFileAsUri(appContext, "sample.pdf")
+        val savedState = SavedStateHandle()
+        val testViewModel =
+            TestPdfDocumentViewModel(savedState, SandboxedPdfLoader(appContext, dispatcher))
+
+        testViewModel.loadDocument(uri = documentUri, password = null)
+
+        testViewModel.fragmentUiScreenState.first { it is PdfFragmentUiState.DocumentLoaded }
+        assertTrue(testViewModel.fragmentUiScreenState.value is PdfFragmentUiState.DocumentLoaded)
+
+        val uiStates = mutableListOf<PdfFragmentUiState>()
+        val reloadJob = launch {
+            testViewModel.fragmentUiScreenState.collectTill(uiStates) { state ->
+                state is PdfFragmentUiState.DocumentLoaded &&
+                    uiStates.any { it is PdfFragmentUiState.Loading }
+            }
+        }
+
+        // force load document without current state
+        testViewModel.forceLoadDocument()
+        reloadJob.join()
+
+        // Should contain Loading followed by DocumentLoaded
+        assertTrue(uiStates.any { it is PdfFragmentUiState.Loading })
+        assertTrue(uiStates.last() is PdfFragmentUiState.DocumentLoaded)
+        // Assert states get reset
+        assertFalse(testViewModel.isTextSearchActiveFromState)
+        assertFalse(testViewModel.isImmersiveModeDesired)
+        assertFalse(savedState.contains("formEditInfos"))
+    }
+
     private fun fullyContains(innerRects: List<Rect>, outerRects: List<Rect>): Boolean {
         return innerRects.all { inner -> outerRects.any { outer -> outer.contains(inner) } }
+    }
+
+    /** A test-only subclass to expose protected methods for verification. */
+    private class TestPdfDocumentViewModel(
+        savedStateHandle: SavedStateHandle,
+        pdfLoader: SandboxedPdfLoader,
+    ) : PdfDocumentViewModel(savedStateHandle, pdfLoader) {
+        public override fun forceLoadDocument() {
+            super.forceLoadDocument()
+        }
     }
 
     companion object {

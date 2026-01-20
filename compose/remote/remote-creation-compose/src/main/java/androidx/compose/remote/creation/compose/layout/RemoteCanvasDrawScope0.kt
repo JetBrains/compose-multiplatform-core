@@ -32,6 +32,7 @@ import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteDensity
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope0
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.state.AnimatedRemoteFloat
@@ -85,6 +86,9 @@ public open class RemoteCanvasDrawScope0(
 
     override val creationState: RemoteComposeCreationState
         get() = remoteComposeCreationState
+
+    override val remoteDensity: RemoteDensity
+        get() = creationState.remoteDensity
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class RemoteAccess(

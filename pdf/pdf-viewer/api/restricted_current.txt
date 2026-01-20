@@ -492,6 +492,14 @@ package androidx.pdf.selection.model {
     property public CharSequence linkText;
   }
 
+  public final class ImageSelection implements java.lang.AutoCloseable androidx.pdf.selection.Selection {
+    method public void close();
+    method @InaccessibleFromKotlin public android.graphics.Bitmap getBitmap();
+    method @InaccessibleFromKotlin public java.util.List<androidx.pdf.PdfRect> getBounds();
+    property public android.graphics.Bitmap bitmap;
+    property public java.util.List<androidx.pdf.PdfRect> bounds;
+  }
+
   public final class TextSelection implements androidx.pdf.selection.Selection {
     ctor public TextSelection(CharSequence text, java.util.List<androidx.pdf.PdfRect> bounds);
     method @InaccessibleFromKotlin public java.util.List<androidx.pdf.PdfRect> getBounds();
@@ -541,6 +549,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final int getVisiblePagesCount();
     method @InaccessibleFromKotlin public final float getZoom();
     method @InaccessibleFromKotlin public final boolean isFormFillingEnabled();
+    method @InaccessibleFromKotlin public final boolean isImageSelectionEnabled();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
     method public final void removeOnFirstContentLoadListener(androidx.pdf.view.PdfView.OnFirstContentLoadListener listener);
     method public final void removeOnFormWidgetInfoUpdatedListener(androidx.pdf.view.PdfView.OnFormWidgetInfoUpdatedListener listener);
@@ -557,6 +566,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final void setFormFillingEnabled(boolean);
     method public final void setHighlights(java.util.List<androidx.pdf.view.Highlight> highlights);
     method @InaccessibleFromKotlin public final void setHorizontalPageSpacing(int);
+    method @InaccessibleFromKotlin public final void setImageSelectionEnabled(boolean);
     method public final void setLinkClickListener(androidx.pdf.view.PdfView.LinkClickListener? listener);
     method @InaccessibleFromKotlin public final void setMaxZoom(@FloatRange(from=0.5, to=25.0) float);
     method @InaccessibleFromKotlin public final void setMinZoom(@FloatRange(from=0.5, to=25.0) float);
@@ -576,6 +586,7 @@ package androidx.pdf.view {
     property public final int gestureState;
     property public final int horizontalPageSpacing;
     property public final boolean isFormFillingEnabled;
+    property public final boolean isImageSelectionEnabled;
     property @FloatRange(from=0.5, to=25.0) public final float maxZoom;
     property @FloatRange(from=0.5, to=25.0) public final float minZoom;
     property public final int pagesPerRow;

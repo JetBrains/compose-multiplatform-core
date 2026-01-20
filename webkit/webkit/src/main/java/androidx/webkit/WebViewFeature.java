@@ -760,7 +760,6 @@ public class WebViewFeature {
      * This feature covers:
      * {@link WebViewBuilder#applyTo(WebView)}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @WebViewBuilder.Experimental
     public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V2 =
             "WEBVIEW_BUILDER_EXPERIMENTAL_V2";

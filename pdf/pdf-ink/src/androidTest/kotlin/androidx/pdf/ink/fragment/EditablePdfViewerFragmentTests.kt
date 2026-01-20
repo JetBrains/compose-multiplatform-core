@@ -46,6 +46,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
 import org.junit.Before
@@ -212,8 +213,35 @@ class EditablePdfViewerFragmentTests {
         onView(withId(R.id.annotationToolbar)).check(matches(withDockState(DOCK_STATE_BOTTOM)))
     }
 
+    @Test
+    fun test_editablePdfFragment_restoresViewportChanged_onForceReload() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        scenario.onFragment { fragment ->
+            val pdfView = fragment.getPdfViewInstance()
+            assertNotNull(pdfView)
+            // scroll to a different page
+            pdfView.scrollToPage(2)
+
+            onIdle()
+
+            val expectedFirstVisiblePage = 1
+
+            // Exit edit mode to perform a force refresh
+            fragment.isEditModeEnabled = false
+
+            // Let force reload complete interaction
+            onIdle()
+            // After reload, assert we move to the 1st page
+            assertThat(pdfView.firstVisiblePage).isEqualTo(expectedFirstVisiblePage)
+        }
+    }
+
     companion object {
-        private const val TEST_DOCUMENT_FILE = "sample_form.pdf"
+        private const val TEST_DOCUMENT_FILE = "sample.pdf"
         private const val REQUIRED_EXTENSION_VERSION = 18
 
         fun isRequiredSdkExtensionAvailable(): Boolean {

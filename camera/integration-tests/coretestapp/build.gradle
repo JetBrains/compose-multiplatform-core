@@ -115,6 +115,7 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
     androidTestImplementation("androidx.exifinterface:exifinterface:1.4.2")
+    androidTestImplementation("androidx.core:core-backported-fixes:1.0.0")
 
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)

@@ -19,6 +19,7 @@ package androidx.compose.remote.creation.compose.vector
 import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -158,7 +159,12 @@ private fun LoadFromImageVector(
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {
-        val painter = painterRemoteVector(imageVector, tint)
+        val painter =
+            painterRemoteVector(
+                imageVector,
+                tint,
+                LocalRemoteComposeCreationState.current.remoteDensity,
+            )
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { with(painter) { onDraw() } }
     }
 }
@@ -171,7 +177,12 @@ private fun LoadFromRes(
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {
-        val painter = painterRemoteVector(ImageVector.vectorResource(res), tint)
+        val painter =
+            painterRemoteVector(
+                ImageVector.vectorResource(res),
+                tint,
+                LocalRemoteComposeCreationState.current.remoteDensity,
+            )
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { with(painter) { onDraw() } }
     }
 }

@@ -30,7 +30,7 @@ plugins {
     id("com.android.library")
     id("AndroidXComposePlugin")
     id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
 }
 
 dependencies {

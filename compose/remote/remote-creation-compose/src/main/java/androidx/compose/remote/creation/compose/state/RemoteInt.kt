@@ -78,7 +78,7 @@ public value class RemoteIntReference(private val v: Int) {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RemoteInt
 internal constructor(
-    public override val constantValue: Int?,
+    public override val constantValueOrNull: Int?,
     internal val arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
 ) : BaseRemoteState<Int>() {
 
@@ -108,10 +108,10 @@ internal constructor(
      * @return A [RemoteFloatExpression] representing this integer as a float.
      */
     public fun toRemoteFloat(): RemoteFloat {
-        constantValue?.let {
+        constantValueOrNull?.let {
             return RemoteFloat(it.toFloat())
         }
-        return RemoteFloatExpression(constantValue = null) { creationState ->
+        return RemoteFloatExpression(constantValueOrNull = null) { creationState ->
             floatArrayOf(getFloatIdForCreationState(creationState))
         }
     }
@@ -124,19 +124,21 @@ internal constructor(
      * @param flags The flags that control how the number is formatted. See [TextFromFloat].
      */
     public fun toRemoteString(before: Int, flags: Int = TextFromFloat.PAD_PRE_SPACE): RemoteString {
-        constantValue?.let {
+        constantValueOrNull?.let {
             return RemoteString(floatToString(it.toFloat(), before, 0, flags))
         }
 
         return MutableRemoteString(
-            constantValue = null,
+            constantValueOrNull = null,
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
-                    return creationState.document.createTextFromFloat(
-                        getFloatIdForCreationState(creationState),
-                        before,
-                        0,
-                        flags,
+                    return creationState.createTextFromFloat(
+                        RemoteComposeCreationState.TextFromFloatParams(
+                            getIdForCreationState(creationState),
+                            before,
+                            0,
+                            flags,
+                        )
                     )
                 }
 
@@ -162,7 +164,7 @@ internal constructor(
     // TODO: Remove the need for this.
     public fun createReference(): RemoteInt {
         return RemoteIntExpression(
-            constantValue,
+            constantValueOrNull,
             { creationState -> longArrayOf(getLongIdForCreationState(creationState)) },
         )
     }
@@ -176,10 +178,10 @@ internal constructor(
      *   result directly.
      */
     private fun unaryOp(opCode: Long, directEval: (Int) -> Int): RemoteInt {
-        constantValue?.let {
+        constantValueOrNull?.let {
             return RemoteInt(directEval(it))
         }
-        return RemoteIntExpression(constantValue = null) { creationState ->
+        return RemoteIntExpression(constantValueOrNull = null) { creationState ->
             combineToLongArray(creationState, arrayOf(this), opCode)
         }
     }
@@ -202,7 +204,7 @@ internal constructor(
         if (v == 1) {
             return this
         }
-        if (constantValue != null && constantValue == 1) {
+        if (constantValueOrNull != null && constantValueOrNull == 1) {
             return RemoteInt(v)
         }
         return binaryOp(this, v, OP_MUL) { a, b -> a * b }
@@ -218,34 +220,34 @@ internal constructor(
     public operator fun rem(v: Int): RemoteInt = binaryOp(this, v, OP_MOD) { a, b -> a % b }
 
     public operator fun plus(v: RemoteInt): RemoteInt {
-        if (v.constantValue != null && v.constantValue == 0) {
+        if (v.constantValueOrNull != null && v.constantValueOrNull == 0) {
             return this
         }
-        if (constantValue != null && constantValue == 0) {
+        if (constantValueOrNull != null && constantValueOrNull == 0) {
             return v
         }
         return binaryOp(this, v, OP_ADD) { a, b -> a + b }
     }
 
     public operator fun minus(v: RemoteInt): RemoteInt {
-        if (v.constantValue != null && v.constantValue == 0) {
+        if (v.constantValueOrNull != null && v.constantValueOrNull == 0) {
             return this
         }
         return binaryOp(this, v, OP_SUB) { a, b -> a - b }
     }
 
     public operator fun times(v: RemoteInt): RemoteInt {
-        if (v.constantValue != null && v.constantValue == 1) {
+        if (v.constantValueOrNull != null && v.constantValueOrNull == 1) {
             return this
         }
-        if (constantValue != null && constantValue == 1) {
+        if (constantValueOrNull != null && constantValueOrNull == 1) {
             return v
         }
         return binaryOp(this, v, OP_MUL) { a, b -> a * b }
     }
 
     public operator fun div(v: RemoteInt): RemoteInt {
-        if (v.constantValue != null && v.constantValue == 1) {
+        if (v.constantValueOrNull != null && v.constantValueOrNull == 1) {
             return this
         }
         return binaryOp(this, v, OP_DIV) { a, b -> a / b }
@@ -316,7 +318,10 @@ internal constructor(
             if (isConstant(v)) {
                 return RemoteIntExpression(v.toInt(), { creationState -> longArrayOf(v) })
             }
-            return RemoteIntExpression(constantValue = null, { creationState -> longArrayOf(v) })
+            return RemoteIntExpression(
+                constantValueOrNull = null,
+                { creationState -> longArrayOf(v) },
+            )
         }
 
         /**
@@ -329,7 +334,7 @@ internal constructor(
          */
         @JvmStatic
         public fun createNamedRemoteInt(name: String, initialValue: Int): RemoteInt {
-            return RemoteIntExpression(constantValue = null) { creationState ->
+            return RemoteIntExpression(constantValueOrNull = null) { creationState ->
                 // TODO: check what happens if the initial value for this is the same as a
                 //  subsequent non-named variable.
                 longArrayOf(creationState.document.addNamedInt(name, initialValue))
@@ -485,11 +490,11 @@ public fun LongArray.isLiteral(): Boolean = size == 1 && RemoteInt.isLiteral(get
  *   result directly.
  */
 private fun binaryOp(a: RemoteInt, b: Int, opCode: Long, directEval: (Int, Int) -> Int): RemoteInt {
-    val aConst = a.constantValue
+    val aConst = a.constantValueOrNull
     if (aConst != null) {
         return RemoteInt(directEval(aConst, b))
     }
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(a), b.toLong(), opCode)
     }
 }
@@ -510,12 +515,12 @@ private fun binaryOp(
     opCode: Long,
     directEval: (Int, Int) -> Int,
 ): RemoteInt {
-    val aConst = a.constantValue
-    val bConst = b.constantValue
+    val aConst = a.constantValueOrNull
+    val bConst = b.constantValueOrNull
     if (aConst != null && bConst != null) {
         return RemoteInt(directEval(aConst, bConst))
     }
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(a, b), opCode)
     }
 }
@@ -536,14 +541,14 @@ internal fun comparisonOp(
     expressionGenerator: (LongArray, LongArray) -> LongArray,
     directEval: (Int, Int) -> Int,
 ): RemoteBoolean {
-    val aConst = a.constantValue
-    val bConst = b.constantValue
+    val aConst = a.constantValueOrNull
+    val bConst = b.constantValueOrNull
     if (aConst != null && bConst != null) {
         return RemoteBoolean(RemoteInt(directEval(aConst, bConst)))
     }
 
     return RemoteBoolean(
-        RemoteIntExpression(constantValue = null) { creationState ->
+        RemoteIntExpression(constantValueOrNull = null) { creationState ->
             val aArray = a.arrayForCreationState(creationState)
             val bArray = b.arrayForCreationState(creationState)
             // A comparisonOp adds five op codes
@@ -598,9 +603,9 @@ public fun max(a: RemoteInt, b: RemoteInt): RemoteInt = binaryOp(a, b, OP_MAX) {
  * @return A [RemoteInt] representing the clamped value.
  */
 public fun clamp(min: RemoteInt, max: RemoteInt, value: RemoteInt): RemoteInt {
-    val minConst = min.constantValue
-    val maxConst = max.constantValue
-    val valueConst = value.constantValue
+    val minConst = min.constantValueOrNull
+    val maxConst = max.constantValueOrNull
+    val valueConst = value.constantValueOrNull
     if (minConst != null && maxConst != null && valueConst != null) {
         return if (valueConst < minConst) {
             min
@@ -611,7 +616,7 @@ public fun clamp(min: RemoteInt, max: RemoteInt, value: RemoteInt): RemoteInt {
         }
     }
 
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(min, max, value), OP_CLAMP)
     }
 }
@@ -624,11 +629,11 @@ public fun clamp(min: RemoteInt, max: RemoteInt, value: RemoteInt): RemoteInt {
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MutableRemoteInt(
-    constantValue: Int? = null,
+    constantValueOrNull: Int? = null,
     public val idProvider: (creationState: RemoteComposeCreationState) -> Long,
 ) :
     RemoteInt(
-        constantValue = constantValue,
+        constantValueOrNull = constantValueOrNull,
         arrayProvider = { creationState -> longArrayOf(idProvider(creationState)) },
     ),
     MutableRemoteState<Int> {
@@ -638,7 +643,9 @@ public class MutableRemoteInt(
      *
      * @param id An explicit ID for this mutable integer.
      */
-    public constructor(id: Long) : this(constantValue = null, idProvider = { creationState -> id })
+    public constructor(
+        id: Long
+    ) : this(constantValueOrNull = null, idProvider = { creationState -> id })
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         Utils.idFromLong(idProvider(creationState)).toInt()
@@ -667,8 +674,8 @@ public fun selectIfLT(
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
 ): RemoteInt {
-    val constA = a.constantValue
-    val constB = b.constantValue
+    val constA = a.constantValueOrNull
+    val constB = b.constantValueOrNull
     if (constA != null && constB != null) {
         return if (constA < constB) {
             ifTrue
@@ -677,7 +684,7 @@ public fun selectIfLT(
         }
     }
 
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifFalse, ifTrue, b, a), OP_SUB, OP_IFELSE)
     }
 }
@@ -697,8 +704,8 @@ public fun selectIfLE(
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
 ): RemoteInt {
-    val constA = a.constantValue
-    val constB = b.constantValue
+    val constA = a.constantValueOrNull
+    val constB = b.constantValueOrNull
     if (constA != null && constB != null) {
         return if (constA <= constB) {
             ifTrue
@@ -707,7 +714,7 @@ public fun selectIfLE(
         }
     }
 
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifTrue, ifFalse, a, b), OP_SUB, OP_IFELSE)
     }
 }
@@ -727,8 +734,8 @@ public fun selectIfGT(
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
 ): RemoteInt {
-    val constA = a.constantValue
-    val constB = b.constantValue
+    val constA = a.constantValueOrNull
+    val constB = b.constantValueOrNull
     if (constA != null && constB != null) {
         return if (constA > constB) {
             ifTrue
@@ -737,7 +744,7 @@ public fun selectIfGT(
         }
     }
 
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifFalse, ifTrue, a, b), OP_SUB, OP_IFELSE)
     }
 }
@@ -757,8 +764,8 @@ public fun selectIfGE(
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
 ): RemoteInt {
-    val constA = a.constantValue
-    val constB = b.constantValue
+    val constA = a.constantValueOrNull
+    val constB = b.constantValueOrNull
     if (constA != null && constB != null) {
         return if (constA >= constB) {
             ifTrue
@@ -767,7 +774,7 @@ public fun selectIfGE(
         }
     }
 
-    return RemoteIntExpression(constantValue = null) { creationState ->
+    return RemoteIntExpression(constantValueOrNull = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifTrue, ifFalse, b, a), OP_SUB, OP_IFELSE)
     }
 }
@@ -781,9 +788,9 @@ public fun selectIfGE(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteIntExpression
 internal constructor(
-    constantValue: Int?,
+    constantValueOrNull: Int?,
     arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
-) : RemoteInt(constantValue, arrayProvider) {
+) : RemoteInt(constantValueOrNull, arrayProvider) {
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
         val array = arrayForCreationState(creationState)
@@ -891,7 +898,7 @@ public fun rememberRemoteInt(
     return rememberNamedState(name, domain) {
 
         // Since this is named, its value can be change, so it's not const.
-        RemoteIntExpression(constantValue = null) { creationState ->
+        RemoteIntExpression(constantValueOrNull = null) { creationState ->
             val remoteInt = content()
             state.document.setStringName(remoteInt.getIdForCreationState(state), "$domain:$name")
 

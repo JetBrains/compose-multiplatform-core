@@ -64,7 +64,7 @@ public abstract class RemoteBrush {
         }
 
         internal fun resolve(value: RemoteFloat, infinityValue: RemoteFloat): RemoteFloat {
-            return if (value.constantValue == Float.POSITIVE_INFINITY) {
+            return if (value.constantValueOrNull == Float.POSITIVE_INFINITY) {
                 infinityValue
             } else {
                 value

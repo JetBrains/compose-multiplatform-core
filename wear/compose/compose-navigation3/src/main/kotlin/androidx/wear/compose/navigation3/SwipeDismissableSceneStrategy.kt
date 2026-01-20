@@ -19,7 +19,6 @@ package androidx.wear.compose.navigation3
 import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
@@ -34,7 +33,7 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  *
  * @param swipeToDismissBoxState State for [BasicSwipeToDismissBox], which is used to support the
  *   swipe-to-dismiss gesture in [SwipeDismissableSceneStrategy] for devices running API 35 or
- *   under. Defaults to null for devices running API 36+.
+ *   under. For devices running API 36+, this parameter defaults to null and is ignored.
  */
 @Composable
 public fun rememberSwipeDismissableSceneStrategyState(
@@ -50,27 +49,27 @@ public fun rememberSwipeDismissableSceneStrategyState(
  * alternating between list and detail entries:
  *
  * @sample androidx.wear.compose.navigation3.samples.ListDetailNavDisplaySample
- * @param [T] the KType of the backstack key
+ * @param [T] the type of the backstack keys
+ *
+ * Example of a [androidx.navigation3.ui.NavDisplay] with [SwipeDismissableSceneStrategy] and on
+ * back behavior:
+ *
+ * @param [T] the type of the backstack key
  * @param swipeDismissableSceneStrategyState State containing information about ongoing swipe and
  *   animation. This parameter is unused API level 36 onwards, because the platform supports
  *   predictive back and [SwipeDismissableSceneStrategy] uses platform gestures to detect the back
  *   gestures.
- * @param modifier The modifier to be applied to the layout
  * @param isUserSwipeEnabled [Boolean] Whether swipe-to-dismiss gesture is enabled.
+ * @sample androidx.wear.compose.navigation3.samples.NavDisplayWithOnBackBehaviorSample
  */
 @Composable
 public fun <T : Any> rememberSwipeDismissableSceneStrategy(
     swipeDismissableSceneStrategyState: SwipeDismissableSceneStrategyState =
         rememberSwipeDismissableSceneStrategyState(),
-    modifier: Modifier = Modifier,
     isUserSwipeEnabled: Boolean = true,
 ): SwipeDismissableSceneStrategy<T> =
-    remember(swipeDismissableSceneStrategyState) {
-        SwipeDismissableSceneStrategy(
-            swipeDismissableSceneStrategyState,
-            modifier,
-            isUserSwipeEnabled,
-        )
+    remember(swipeDismissableSceneStrategyState, isUserSwipeEnabled) {
+        SwipeDismissableSceneStrategy(swipeDismissableSceneStrategyState, isUserSwipeEnabled)
     }
 
 /**
@@ -98,16 +97,14 @@ public class SwipeDismissableSceneStrategyState(
  * alternating between list and detail entries:
  *
  * @sample androidx.wear.compose.navigation3.samples.ListDetailNavDisplaySample
- * @param [T] the KType of the backstack key
+ * @param [T] the type of the backstack keys
  * @param state State containing information about ongoing swipe and animation. This parameter is
  *   unused API level 36 onwards, because the platform supports predictive back and
  *   [SwipeDismissableSceneStrategy] uses platform gestures to detect the back gestures.
- * @param modifier The modifier to be applied to the layout
  * @param isUserSwipeEnabled [Boolean] Whether swipe-to-dismiss gesture is enabled.
  */
 public class SwipeDismissableSceneStrategy<T : Any>(
     public val state: SwipeDismissableSceneStrategyState,
-    public val modifier: Modifier = Modifier,
     public val isUserSwipeEnabled: Boolean = true,
 ) : SceneStrategy<T> {
 
@@ -121,7 +118,6 @@ public class SwipeDismissableSceneStrategy<T : Any>(
         return if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             // api 36+, support predictive back
             PredictiveBackScene(
-                modifier = modifier,
                 currentEntry = currentEntry,
                 previousEntries = previousEntries,
                 backEnabled = isUserSwipeEnabled,
@@ -133,7 +129,6 @@ public class SwipeDismissableSceneStrategy<T : Any>(
             // api < 35, delegates to BasicSwipeToDismissBox
             return SwipeToDismissScene(
                 onBack = onBack,
-                modifier = modifier,
                 currentEntry = currentEntry,
                 background = background,
                 currentBackStack = entries,

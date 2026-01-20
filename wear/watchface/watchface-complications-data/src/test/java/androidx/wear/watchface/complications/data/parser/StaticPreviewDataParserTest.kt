@@ -34,12 +34,14 @@ import androidx.wear.watchface.complications.data.SharedRobolectricTestRunner
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.data.SmallImageComplicationData
 import androidx.wear.watchface.complications.data.SmallImageType
+import androidx.wear.watchface.complications.data.WeightedElementsComplicationData
 import androidx.wear.watchface.complications.data.test.R
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Expect
 import java.time.Instant
 import java.util.Locale
 import kotlin.use
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
@@ -56,6 +58,7 @@ import org.mockito.kotlin.whenever
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @SuppressLint("NewApi")
 class StaticPreviewDataParserTest {
+    @Rule @JvmField val expect = Expect.create()
     @Mock private lateinit var packageManager: PackageManager
 
     @Before
@@ -89,10 +92,11 @@ class StaticPreviewDataParserTest {
 
             val previewData = StaticPreviewDataParser.parsePreviewData(context, provider)
 
-            assertThat(previewData).isNotNull()
+            expect.that(previewData).isNotNull()
             val complicationData =
                 previewData!![ComplicationType.SHORT_TEXT] as ShortTextComplicationData
-            assertThat(complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0)))
+            expect
+                .that(complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0)))
                 .isEqualTo("Short")
         }
     }
@@ -131,14 +135,14 @@ class StaticPreviewDataParserTest {
             val extendedDataDictionary =
                 complicationData.extras.getPersistableBundle("dictionary_key")
 
-            assertThat(text).isEqualTo("Progress: 20%")
-            assertThat(value).isEqualTo(20)
-            assertThat(minValue).isEqualTo(10)
-            assertThat(maxValue).isEqualTo(30)
-            assertThat(extendedData).isEqualTo("GiAKDgoCNTAiCG1pblZhbHVlEg4KAjcwIghtYXhWYWx1ZQ==")
-            assertThat(extendedDataDictionary?.size()).isEqualTo(2)
-            assertThat(extendedDataDictionary?.getString("minValue")).isEqualTo("Progress: 10%")
-            assertThat(extendedDataDictionary?.getString("maxValue")).isEqualTo("Progress: 30%")
+            expect.that(text).isEqualTo("Progress: 20%")
+            expect.that(value).isEqualTo(20)
+            expect.that(minValue).isEqualTo(10)
+            expect.that(maxValue).isEqualTo(30)
+            expect.that(extendedData).isEqualTo("GiAKDgoCNTAiCG1pblZhbHVlEg4KAjcwIghtYXhWYWx1ZQ==")
+            expect.that(extendedDataDictionary?.size()).isEqualTo(2)
+            expect.that(extendedDataDictionary?.getString("minValue")).isEqualTo("Progress: 10%")
+            expect.that(extendedDataDictionary?.getString("maxValue")).isEqualTo("Progress: 30%")
         }
     }
 
@@ -168,11 +172,11 @@ class StaticPreviewDataParserTest {
 
             val previewData = StaticPreviewDataParser.parsePreviewData(context, provider)
 
-            assertThat(previewData).isNotNull()
+            expect.that(previewData).isNotNull()
             val complicationData =
                 previewData!![ComplicationType.SHORT_TEXT] as ShortTextComplicationData
             val text = complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-            assertThat(text).isEqualTo("Steps: 343, Time: 02:40")
+            expect.that(text).isEqualTo("Steps: 343, Time: 02:40")
         }
     }
 
@@ -184,20 +188,22 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
-                assertThat(
+                expect
+                    .that(
                         complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
                     )
                     .isEqualTo("Short")
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("Title")
-                assertThat(complicationData.monochromaticImage).isNotNull()
-                assertThat(complicationData.smallImage).isNotNull()
-                assertThat(complicationData.smallImage!!.type).isEqualTo(SmallImageType.ICON)
+                expect.that(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.smallImage).isNotNull()
+                expect.that(complicationData.smallImage!!.type).isEqualTo(SmallImageType.ICON)
             }
         }
     }
@@ -210,20 +216,22 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.LONG_TEXT] as LongTextComplicationData
-                assertThat(
+                expect
+                    .that(
                         complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
                     )
                     .isEqualTo("Long Text")
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("Long Title")
-                assertThat(complicationData.monochromaticImage).isNotNull()
-                assertThat(complicationData.smallImage).isNotNull()
-                assertThat(complicationData.smallImage!!.type).isEqualTo(SmallImageType.PHOTO)
+                expect.that(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.smallImage).isNotNull()
+                expect.that(complicationData.smallImage!!.type).isEqualTo(SmallImageType.PHOTO)
             }
         }
     }
@@ -236,29 +244,32 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.RANGED_VALUE] as RangedValueComplicationData
-                assertThat(complicationData.value).isEqualTo(75f)
-                assertThat(complicationData.min).isEqualTo(0f)
-                assertThat(complicationData.max).isEqualTo(100f)
-                assertThat(
+                expect.that(complicationData.value).isEqualTo(75f)
+                expect.that(complicationData.min).isEqualTo(0f)
+                expect.that(complicationData.max).isEqualTo(100f)
+                expect
+                    .that(
                         complicationData.text!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("75")
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("Level")
-                assertThat(complicationData.monochromaticImage).isNotNull()
-                assertThat(complicationData.smallImage).isNull()
-                assertThat(complicationData.colorRamp).isNotNull()
-                assertThat(complicationData.colorRamp!!.colors)
+                expect.that(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.smallImage).isNull()
+                expect.that(complicationData.colorRamp).isNotNull()
+                expect
+                    .that(complicationData.colorRamp!!.colors)
                     .isEqualTo(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                assertThat(complicationData.colorRamp.interpolated).isTrue()
+                expect.that(complicationData.colorRamp.interpolated).isTrue()
             }
         }
     }
@@ -271,28 +282,31 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.GOAL_PROGRESS] as GoalProgressComplicationData
-                assertThat(complicationData.value).isEqualTo(1200f)
-                assertThat(complicationData.targetValue).isEqualTo(10000f)
-                assertThat(
+                expect.that(complicationData.value).isEqualTo(1200f)
+                expect.that(complicationData.targetValue).isEqualTo(10000f)
+                expect
+                    .that(
                         complicationData.text!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("1.2k")
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
                         )
                     )
                     .isEqualTo("Steps")
-                assertThat(complicationData.monochromaticImage).isNotNull()
-                assertThat(complicationData.smallImage).isNull()
-                assertThat(complicationData.colorRamp).isNotNull()
-                assertThat(complicationData.colorRamp!!.colors)
+                expect.that(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.smallImage).isNull()
+                expect.that(complicationData.colorRamp).isNotNull()
+                expect
+                    .that(complicationData.colorRamp!!.colors)
                     .isEqualTo(intArrayOf(Color.YELLOW, Color.MAGENTA))
-                assertThat(complicationData.colorRamp.interpolated).isFalse()
+                expect.that(complicationData.colorRamp.interpolated).isFalse()
             }
         }
     }
@@ -306,7 +320,7 @@ class StaticPreviewDataParserTest {
                 val complicationData =
                     previewData[ComplicationType.MONOCHROMATIC_IMAGE]
                         as MonochromaticImageComplicationData
-                assertThat(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.monochromaticImage).isNotNull()
             }
         }
     }
@@ -319,8 +333,8 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.SMALL_IMAGE] as SmallImageComplicationData
-                assertThat(complicationData.smallImage).isNotNull()
-                assertThat(complicationData.smallImage.type).isEqualTo(SmallImageType.PHOTO)
+                expect.that(complicationData.smallImage).isNotNull()
+                expect.that(complicationData.smallImage.type).isEqualTo(SmallImageType.PHOTO)
             }
         }
     }
@@ -335,7 +349,7 @@ class StaticPreviewDataParserTest {
                 val complicationData =
                     previewData[ComplicationType.MONOCHROMATIC_IMAGE]
                         as MonochromaticImageComplicationData
-                assertThat(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.monochromaticImage).isNotNull()
             }
         }
     }
@@ -350,7 +364,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("4d")
+                expect.that(text).isEqualTo("4d")
             }
         }
         runTestForLocale(Locale.GERMANY) { context ->
@@ -360,7 +374,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("4 Tage")
+                expect.that(text).isEqualTo("4 Tage")
             }
         }
     }
@@ -375,7 +389,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("Steps: 343, Time: 2:40AM")
+                expect.that(text).isEqualTo("Steps: 343, Time: 2:40AM")
             }
         }
         runTestForLocale(Locale.GERMANY) { context ->
@@ -385,7 +399,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("Steps: 343, Time: 02:40")
+                expect.that(text).isEqualTo("Steps: 343, Time: 02:40")
             }
         }
     }
@@ -400,7 +414,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.LONG_TEXT] as LongTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("Steps: 343, Time: 2:40AM, Progress: 10%")
+                expect.that(text).isEqualTo("Steps: 343, Time: 2:40AM, Progress: 10%")
             }
         }
         runTestForLocale(Locale.GERMANY) { context ->
@@ -410,7 +424,7 @@ class StaticPreviewDataParserTest {
                     previewData[ComplicationType.LONG_TEXT] as LongTextComplicationData
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(text).isEqualTo("Steps: 343, Time: 02:40, Progress: 10%")
+                expect.that(text).isEqualTo("Steps: 343, Time: 02:40, Progress: 10%")
             }
         }
     }
@@ -423,7 +437,8 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.RANGED_VALUE] as RangedValueComplicationData
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
@@ -442,7 +457,8 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.RANGED_VALUE] as RangedValueComplicationData
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
@@ -461,7 +477,8 @@ class StaticPreviewDataParserTest {
                 val previewData = PreviewData.inflate(context, context, parser)
                 val complicationData =
                     previewData[ComplicationType.RANGED_VALUE] as RangedValueComplicationData
-                assertThat(
+                expect
+                    .that(
                         complicationData.title!!.getTextAt(
                             context.resources,
                             Instant.ofEpochMilli(0),
@@ -485,8 +502,8 @@ class StaticPreviewDataParserTest {
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
                 val timeText =
                     complicationData.title!!.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(dateText).isEqualTo("Jan 1")
-                assertThat(timeText).isEqualTo("1:01AM")
+                expect.that(dateText).isEqualTo("Jan 1")
+                expect.that(timeText).isEqualTo("1:01AM")
             }
         }
         runTestForLocale(Locale.GERMANY) { context ->
@@ -499,8 +516,8 @@ class StaticPreviewDataParserTest {
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
                 val timeText =
                     complicationData.title!!.getTextAt(context.resources, Instant.ofEpochMilli(0))
-                assertThat(dateText).isEqualTo("01.01.")
-                assertThat(timeText).isEqualTo("01:01")
+                expect.that(dateText).isEqualTo("01.01.")
+                expect.that(timeText).isEqualTo("01:01")
             }
         }
     }
@@ -527,8 +544,8 @@ class StaticPreviewDataParserTest {
                         Instant.ofEpochMilli(0),
                     )
 
-                assertThat(text.toString()).isEqualTo("4d")
-                assertThat(previewData).isNotNull()
+                expect.that(text.toString()).isEqualTo("4d")
+                expect.that(previewData).isNotNull()
             }
         }
     }
@@ -563,8 +580,9 @@ class StaticPreviewDataParserTest {
 
             val previewData = StaticPreviewDataParser.parsePreviewData(parserContext, provider)
 
-            assertThat(previewData).isNotNull()
-            assertThat(previewData!![ComplicationType.SHORT_TEXT])
+            expect.that(previewData).isNotNull()
+            expect
+                .that(previewData!![ComplicationType.SHORT_TEXT])
                 .isInstanceOf(ShortTextComplicationData::class.java)
         }
     }
@@ -595,7 +613,47 @@ class StaticPreviewDataParserTest {
                 val text =
                     complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
 
-                assertThat(text.toString()).isEqualTo("4d")
+                expect.that(text.toString()).isEqualTo("4d")
+            }
+        }
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun weightedElementsComplication() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_weighted_element).use { parser ->
+                val previewData = PreviewData.inflate(context, context, parser)
+                val complicationData =
+                    previewData[ComplicationType.WEIGHTED_ELEMENTS]
+                        as WeightedElementsComplicationData
+
+                expect.that(complicationData.elements).hasSize(3)
+                expect.that(complicationData.elements[0].weight).isEqualTo(1f)
+                expect.that(complicationData.elements[0].color).isEqualTo(Color.RED)
+                expect.that(complicationData.elements[1].weight).isEqualTo(2f)
+                expect.that(complicationData.elements[1].color).isEqualTo(Color.GREEN)
+                expect.that(complicationData.elements[2].weight).isEqualTo(3f)
+                expect.that(complicationData.elements[2].color).isEqualTo(Color.BLUE)
+                expect.that(complicationData.elementBackgroundColor).isEqualTo(Color.YELLOW)
+                expect
+                    .that(
+                        complicationData.text!!.getTextAt(
+                            context.resources,
+                            Instant.ofEpochMilli(0),
+                        )
+                    )
+                    .isEqualTo("Text")
+                expect
+                    .that(
+                        complicationData.title!!.getTextAt(
+                            context.resources,
+                            Instant.ofEpochMilli(0),
+                        )
+                    )
+                    .isEqualTo("Title")
+                expect.that(complicationData.monochromaticImage).isNotNull()
+                expect.that(complicationData.smallImage).isNull()
             }
         }
     }

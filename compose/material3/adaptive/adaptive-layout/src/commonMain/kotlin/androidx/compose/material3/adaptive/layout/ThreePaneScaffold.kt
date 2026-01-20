@@ -216,8 +216,10 @@ internal fun ThreePaneScaffold(
                 )
                 .ThreePaneScaffold()
 
-            LaunchedEffect(scaffoldValue.currentDestination) {
-                scaffoldScope.focusRequesters[scaffoldValue.currentDestination]?.requestFocus()
+            if (scaffoldDirective.shouldAutoFocusCurrentDestination) {
+                LaunchedEffect(scaffoldValue.currentDestination) {
+                    scaffoldScope.focusRequesters[scaffoldValue.currentDestination]?.requestFocus()
+                }
             }
         }
     }

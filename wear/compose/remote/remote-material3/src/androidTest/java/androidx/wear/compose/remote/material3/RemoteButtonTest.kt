@@ -40,6 +40,7 @@ import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -225,7 +226,9 @@ class RemoteButtonTest {
             creationDisplayInfo = creationDisplayInfo,
         ) {
             val backgroundImage =
-                rememberRemoteBitmapValue(name = "backgroundImage") { createImage(200, 200) }
+                rememberRemoteBitmapValue(name = "backgroundImage") {
+                    createImage(200, 200).asImageBitmap()
+                }
             Center(RemoteModifier.fillMaxSize()) {
                 val containerPainter =
                     RemoteButtonDefaults.containerPainter(painterRemoteBitmap(backgroundImage))
@@ -248,7 +251,7 @@ class RemoteButtonTest {
         ) {
             val backgroundImage =
                 rememberRemoteBitmapValue(name = "button_disabled_container_background_image") {
-                    createImage(200, 200)
+                    createImage(200, 200).asImageBitmap()
                 }
             Center(RemoteModifier.fillMaxSize()) {
                 val enabled = false.rb

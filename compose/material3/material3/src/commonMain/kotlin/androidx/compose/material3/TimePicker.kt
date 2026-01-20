@@ -1122,10 +1122,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
         userOverride.value = true
     }
 
-    Row(
-        modifier = modifier.padding(bottom = TimeInputBottomPadding),
-        verticalAlignment = Alignment.Top,
-    ) {
+    Row(modifier = modifier, verticalAlignment = Alignment.Top) {
         val textStyle =
             TimeInputTokens.TimeFieldLabelTextFont.value.copy(
                 textAlign = TextAlign.Center,
@@ -2033,7 +2030,7 @@ private fun SupportingText(
         else TimeInputTokens.TimeFieldSupportingTextColor.value
 
     Text(
-        modifier = modifier.offset(y = SupportLabelTop).clearAndSetSemantics {},
+        modifier = modifier.padding(top = SupportLabelTop).clearAndSetSemantics {},
         text = text,
         color = color,
         minLines = 2,
@@ -2285,7 +2282,6 @@ private val ClockFaceBottomMargin = 24.dp
 private val DisplaySeparatorWidth = 24.dp
 
 private val SupportLabelTop = 7.dp
-private val TimeInputBottomPadding = 8.dp
 private val MaxDistance = 74.dp
 private val MinimumInteractiveSize = 48.dp
 private val Minutes = intListOf(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)

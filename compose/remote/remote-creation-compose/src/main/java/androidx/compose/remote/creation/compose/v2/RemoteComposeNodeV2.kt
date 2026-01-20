@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.Updater
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -176,7 +177,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
         if (useCoreTextComponent) {
             val textIdValue = text.getIdForCreationState(creationState)
 
-            val colorInt = color?.constantValue?.toArgb() ?: android.graphics.Color.BLACK
+            val colorInt = color?.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
             val colorId =
                 if (color?.hasConstantValue == false) {
                     color!!.getIdForCreationState(creationState)
@@ -220,7 +221,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
         } else {
             val textId = text.getIdForCreationState(creationState)
 
-            val colorInt = color?.constantValue?.toArgb() ?: android.graphics.Color.BLACK
+            val colorInt = color?.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
             val colorId =
                 if (color?.hasConstantValue == false) {
                     color!!.getIdForCreationState(creationState)
@@ -229,7 +230,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
                 }
 
             val colorValue =
-                color?.constantValue?.toArgb()
+                color?.constantValueOrNull?.toArgb()
                     ?: (if (color?.hasConstantValue == false) {
                         color!!.getIdForCreationState(creationState)
                     } else {
@@ -249,7 +250,7 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
                 colorValue,
                 fontSizePx,
                 fontStyle.encode(),
-                fontWeight.constantValue ?: 400f,
+                fontWeight.constantValueOrNull ?: 400f,
                 fontFamily,
                 flags,
                 textAlign.encode().toShort(),

@@ -266,6 +266,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             invalidate()
         }
 
+    /** Enable or disable the image-selection feature surface. */
+    public var isImageSelectionEnabled: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            selectionStateManager?.isImageSelectionEnabled = value
+        }
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     /**
@@ -355,6 +363,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (typedArray.hasValue(R.styleable.PdfView_isFormFillingEnabled)) {
             isFormFillingEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isFormFillingEnabled, false)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_isImageSelectionEnabled)) {
+            isImageSelectionEnabled =
+                typedArray.getBoolean(R.styleable.PdfView_isImageSelectionEnabled, false)
         }
         if (typedArray.hasValue(R.styleable.PdfView_minZoom)) {
             minZoom = typedArray.getFloat(R.styleable.PdfView_minZoom, minZoom)
@@ -812,7 +824,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     @VisibleForTesting internal var pdfViewAccessibilityManager: PdfViewAccessibilityManager? = null
-    @VisibleForTesting
+
     internal var isAccessibilityEnabled: Boolean =
         Accessibility.get().isAccessibilityEnabled(context)
         set(value) {
@@ -1472,6 +1484,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         state.isFormFillingEnabled = isFormFillingEnabled
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
+        state.isImageSelectionEnabled = isImageSelectionEnabled
         state.pagesPerRow = pagesPerRow
         state.horizontalPageSpacing = horizontalPageSpacing
         state.verticalPageSpacing = verticalPageSpacing
@@ -1614,6 +1627,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 pageLayoutManager = pageLayoutManager,
                 pageManager = pageManager,
                 initialSelection = localStateToRestore.selectionModel,
+                isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled,
             )
 
         val positionToRestore =
@@ -1629,6 +1643,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
         isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
+        isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled
         setAccessibility()
 
         restoreFormFillingEditText()
@@ -1884,6 +1899,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     errorFlow = errorFlow,
                     pageLayoutManager = pageLayoutManager,
                     pageManager = pageManager,
+                    isImageSelectionEnabled = isImageSelectionEnabled,
                 )
             setAccessibility()
         }

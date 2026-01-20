@@ -61,7 +61,7 @@ internal fun RemoteRoundButton(
                     )
                     drawContent()
                 }
-                .clickable(onClick, enabled = enabled.constantValue ?: false),
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false),
         content = content,
     )
 }

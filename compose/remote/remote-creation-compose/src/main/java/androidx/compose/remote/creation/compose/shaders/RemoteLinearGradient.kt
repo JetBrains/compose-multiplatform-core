@@ -273,7 +273,7 @@ public class RemoteLinearShader(
         val colorsArray =
             IntArray(colors.size) { i ->
                 val color = colors[i]
-                val constantValue = color.constantValue
+                val constantValue = color.constantValueOrNull
                 if (constantValue != null) {
                     constantValue.toArgb()
                 } else {

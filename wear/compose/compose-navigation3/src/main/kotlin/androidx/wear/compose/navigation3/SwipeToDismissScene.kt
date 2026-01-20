@@ -47,7 +47,6 @@ import androidx.wear.compose.material3.SwipeToDismissBox
 /** A scene to display content for API <= 35 */
 internal class SwipeToDismissScene<T : Any>(
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
     val currentEntry: NavEntry<T>,
     background: NavEntry<T>?,
     // a list of entries that users can back into
@@ -106,10 +105,10 @@ internal class SwipeToDismissScene<T : Any>(
                 if (isBackground || onDismissedCalled) background else currentEntry,
                 modifier =
                     if (isBackground) {
-                        modifier
+                        Modifier
                     } else {
                         // define transition for both popEnter and enter
-                        modifier.graphicsLayer {
+                        Modifier.graphicsLayer {
                             val scaleProgression =
                                 NAV_HOST_ENTER_TRANSITION_EASING_STANDARD.transform(
                                     (animationProgress.value / 0.75f)

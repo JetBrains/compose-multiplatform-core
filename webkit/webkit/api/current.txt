@@ -545,6 +545,7 @@ package androidx.webkit {
   @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public final class WebViewBuilder {
     ctor public WebViewBuilder(int);
     method public androidx.webkit.WebViewBuilder addAllowlist(androidx.webkit.RestrictionAllowlist);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V2, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public <T extends android.webkit.WebView> T applyTo(T);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V1, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public android.webkit.WebView build(android.content.Context);
     method public androidx.webkit.WebViewBuilder restrictJavaScriptInterfaces();
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public androidx.webkit.WebViewBuilder setProfile(String);
@@ -692,6 +693,7 @@ package androidx.webkit {
     field public static final String VISUAL_STATE_CALLBACK = "VISUAL_STATE_CALLBACK";
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalWarmUpRendererProcess public static final String WARM_UP_RENDERER_PROCESS = "WARM_UP_RENDERER_PROCESS";
     field @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
+    field @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V2 = "WEBVIEW_BUILDER_EXPERIMENTAL_V2";
     field public static final String WEBVIEW_MEDIA_INTEGRITY_API_STATUS = "WEBVIEW_MEDIA_INTEGRITY_API_STATUS";
     field public static final String WEB_AUTHENTICATION = "WEB_AUTHENTICATION";
     field public static final String WEB_MESSAGE_ARRAY_BUFFER = "WEB_MESSAGE_ARRAY_BUFFER";

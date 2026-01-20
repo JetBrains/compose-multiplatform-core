@@ -54,20 +54,34 @@ abstract class ProjectCreatorTask : DefaultTask() {
     }
 
     private fun promptForProjectSpec(): ProjectSpec {
+        // This println here is intentional, it allows any error messages from groupIdIsValid() and
+        // artifactIdIsValid() to be shown right after the respective prompt. For some reason,
+        // without this empty println, those printlns in the validation functions don't get flushed
+        // until after the user tries the prompt for the second time.
+        println()
         val userInput = services.get(UserInputHandler::class.java)
 
-        val groupId =
-            userInput
-                .askUser { interaction: UserQuestions ->
-                    interaction.askQuestion("Enter group id (e.g. androidx.core)", "none")
-                }
-                .get()
-        val artifactId =
-            userInput
-                .askUser { interaction: UserQuestions ->
-                    interaction.askQuestion("Enter artifact id (e.g. core-telecom)", "none")
-                }
-                .get()
+        var groupId = ""
+        do {
+            groupId =
+                userInput
+                    .askUser { interaction: UserQuestions ->
+                        interaction.askQuestion(
+                            "Enter group id (must start with 'androidx', e.g. androidx.core)",
+                            "none",
+                        )
+                    }
+                    .get()
+        } while (!isGroupIdValid(groupId))
+        var artifactId = ""
+        do {
+            artifactId =
+                userInput
+                    .askUser { interaction: UserQuestions ->
+                        interaction.askQuestion("Enter artifact id (e.g. core-telecom)", "none")
+                    }
+                    .get()
+        } while (!isArtifactIdValid(groupId, artifactId))
 
         val projectTypeName =
             userInput
@@ -82,7 +96,7 @@ abstract class ProjectCreatorTask : DefaultTask() {
         val projectDescription =
             userInput
                 .askUser { interaction: UserQuestions ->
-                    interaction.askQuestion("Enter project description", "")
+                    interaction.askQuestion("Enter project description", "none")
                 }
                 .get()
 
@@ -96,7 +110,6 @@ abstract class ProjectCreatorTask : DefaultTask() {
     }
 
     private fun printTodoList(projectSpec: ProjectSpec) {
-        projectSpec.fullArtifactPath
         val buildGradlePath = projectSpec.fullArtifactPath.resolve("build.gradle")
         val ownersFilePath = projectSpec.fullArtifactPath.resolve("OWNERS")
         val packageDocsPath =
@@ -123,6 +136,8 @@ abstract class ProjectCreatorTask : DefaultTask() {
                ${buildGradlePath.path}
             5. Update the project/module package documentation:
                ${packageDocsPath.path}
+            6. Check the libraryversions.toml file:
+               ${supportDir.resolve("libraryversions.toml").path}
             """
                 .trimIndent()
         )
@@ -353,11 +368,11 @@ internal class ProjectGenerator {
         val basePath = if (spec.projectType == ProjectType.KMP) "src/commonMain" else "src/main"
         val fullPath =
             "$basePath/${spec.projectType.getLanguage()}/androidx/${
-            spec.groupId.replace(
-                ".",
-                "/",
-            )
-        }"
+                spec.groupId.replace(
+                    ".",
+                    "/",
+                )
+            }"
 
         val docFile =
             File(
@@ -388,7 +403,7 @@ internal class ProjectGenerator {
         return """
             ${getAOSPHeader()}
 
-            package androidx.${groupId}.${artifactId.replace("-", ".")}
+            package androidx.${groupId}.${artifactId.removePrefix(groupId.split(".").last()).removePrefix("-").replace("-", ".")}
         """
             .trimIndent()
     }
@@ -452,7 +467,7 @@ internal class ProjectGenerator {
 
             plugins {
                 id("AndroidXPlugin")
-                ${projectType.getGradlePlugin()}
+                ${getGradlePlugin()}
             }
 
             dependencies {
@@ -463,25 +478,7 @@ internal class ProjectGenerator {
             when (projectType) {
                 ProjectType.KMP -> """
             androidXMultiplatform {
-                ios()
-                js()
-                jvm()
-                linux()
-                mac()
-                mingwX64()
-                tvos()
-                wasmJs()
-                watchos()
-
-                defaultPlatform(PlatformIdentifier.JVM)
-
-                sourceSets {
-                    commonMain.dependencies {
-                    }
-
-                    commonTest.dependencies {
-                    }
-                }
+                ${getMultiplatformBuildGradleText()}
             }
                     """
                 ProjectType.ANDROID_LIBRARY -> """
@@ -496,7 +493,7 @@ internal class ProjectGenerator {
             }
                     """
             }
-            }
+        }
 
             androidx {
                 name = "${groupId}:${artifactId}"
@@ -509,8 +506,60 @@ internal class ProjectGenerator {
             .trimIndent()
     }
 
-    private fun ProjectType.getGradlePlugin(): String {
-        return when (this) {
+    private fun ProjectSpec.getMultiplatformBuildGradleText(): String {
+        return """
+            ${
+            if (isComposeProject(groupId, artifactId)) {
+                """
+                androidLibrary {
+                    namespace = "androidx.compose.${artifactId.removePrefix("compose-").replace("-", ".")}"
+                    compileSdk { version = release(35) }
+                }
+                jvmStubs()
+                linuxX64Stubs()
+
+                defaultPlatform(PlatformIdentifier.ANDROID)
+                """
+            } else {
+                """
+                ios()
+                js()
+                jvm()
+                linux()
+                mac()
+                mingwX64()
+                tvos()
+                wasmJs()
+                watchos()
+
+                defaultPlatform(PlatformIdentifier.JVM)
+                """
+            }
+        }
+
+                sourceSets {
+                    commonMain.dependencies {
+                    }
+
+                    commonTest.dependencies {
+                    }
+                    ${if (isComposeProject(groupId, artifactId)) {
+            """
+
+                    commonStubsMain.dependsOn(commonMain)
+                    jvmStubsMain.dependsOn(commonStubsMain)
+                    linuxx64StubsMain.dependsOn(commonStubsMain)
+                    """
+        } else { "" }}
+                }
+            """
+    }
+
+    private fun ProjectSpec.getGradlePlugin(): String {
+        if (isComposeProject(groupId, artifactId)) {
+            return """id("AndroidXComposePlugin")"""
+        }
+        return when (this.projectType) {
             ProjectType.ANDROID_LIBRARY -> """id("com.android.library")"""
             ProjectType.KMP -> ""
             ProjectType.JAVA -> """id("java-library")"""
@@ -561,17 +610,36 @@ internal data class ProjectSpec(
 ) {
     val groupId = groupIdWithPrefix.removePrefix("androidx.")
 
-    val fullArtifactPath = File(supportRoot, groupId.replace('.', '/')).resolve(artifactId)
+    val fullArtifactPath =
+        File(supportRoot, groupId.replace('.', '/')).resolve(artifactId.removePrefix("compose-"))
+}
 
-    init {
-        require(groupIdWithPrefix.startsWith("androidx.")) {
-            "Group ID must start with 'androidx.'"
-        }
-        val finalGroupWord = groupIdWithPrefix.substringAfterLast('.')
-        require(artifactId.startsWith(finalGroupWord)) {
-            "Artifact ID must start with the last segment of the Group ID ($finalGroupWord)."
-        }
+@VisibleForTesting
+internal fun isGroupIdValid(groupId: String): Boolean {
+    if (!groupId.startsWith("androidx.")) {
+        println("Group ID must start with 'androidx'.")
+        return false
+    } else if (
+        listOf("compose", "wear", "xr").any { it == groupId.split(".")[1] } &&
+            groupId.split(".").size == 2
+    ) {
+        println(
+            "New ${groupId.split(".")[1]} projects must be nested inside an existing sub-project"
+        )
+        return false
+    } else {
+        return true
     }
+}
+
+@VisibleForTesting
+internal fun isArtifactIdValid(groupId: String, artifactId: String): Boolean {
+    val finalGroupWord = groupId.substringAfterLast('.')
+    if (!artifactId.startsWith(finalGroupWord)) {
+        println("Artifact ID must start with the last segment of the Group ID ($finalGroupWord).")
+        return false
+    }
+    return true
 }
 
 private fun isComposeProject(groupId: String, artifactId: String): Boolean =
@@ -590,7 +658,7 @@ internal fun getGroupIdVersionMacro(groupId: String): String {
 }
 
 internal fun getGradleProjectCoordinates(groupId: String, artifactId: String): String {
-    return ":${groupId.removePrefix("androidx.").replace(".", ":")}:$artifactId"
+    return ":${groupId.removePrefix("androidx.").replace(".", ":")}:${artifactId.removePrefix("compose-")}"
 }
 
 internal fun getLibraryType(artifactId: String): String =

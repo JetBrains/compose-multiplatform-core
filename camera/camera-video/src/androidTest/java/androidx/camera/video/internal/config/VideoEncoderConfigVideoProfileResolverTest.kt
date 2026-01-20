@@ -31,9 +31,9 @@ import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.video.EncoderProfilesResolver
+import androidx.camera.video.EncoderProfilesResolverFactory
 import androidx.camera.video.Quality
-import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapabilities
 import androidx.camera.video.VideoSpec
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace
 import androidx.test.core.app.ApplicationProvider
@@ -80,7 +80,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
 
     private lateinit var dynamicRanges: Set<DynamicRange>
     private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
-    private lateinit var videoCapabilities: VideoCapabilities
+    private lateinit var profilesResolver: EncoderProfilesResolver
 
     @Before
     fun setUp() {
@@ -95,10 +95,10 @@ class VideoEncoderConfigVideoProfileResolverTest(
         CameraXUtil.initialize(context, cameraConfig).get()
 
         val cameraInfo = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
-        videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
-        dynamicRanges = videoCapabilities.supportedDynamicRanges
+        profilesResolver = EncoderProfilesResolverFactory.getResolver(cameraInfo)
+        dynamicRanges = profilesResolver.supportedDynamicRanges
         dynamicRanges.forEach {
-            Assume.assumeTrue(videoCapabilities.getSupportedQualities(it).isNotEmpty())
+            Assume.assumeTrue(profilesResolver.getSupportedQualities(it).isNotEmpty())
         }
     }
 
@@ -117,8 +117,8 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun defaultVideoSpecProducesValidSettings_forSurfaceSizeEquivalentToQuality() {
         dynamicRanges.forEach { dynamicRange ->
             val supportedProfiles =
-                videoCapabilities.getSupportedQualities(dynamicRange).map {
-                    videoCapabilities.getProfiles(it, dynamicRange)!!
+                profilesResolver.getSupportedQualities(dynamicRange).map {
+                    profilesResolver.getProfiles(it, dynamicRange)!!
                 }
 
             supportedProfiles.forEach {
@@ -148,7 +148,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun bitrateIncreasesOrDecreasesWithIncreaseOrDecreaseInSurfaceSize() {
         dynamicRanges.forEach { dynamicRange ->
             val profile =
-                videoCapabilities.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
+                profilesResolver.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
             val surfaceSize = profile.resolution
             val profileFrameRate = Range(profile.frameRate, profile.frameRate)
 
@@ -204,7 +204,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun frameRateIsDefault_whenNoExpectedRangeProvided() {
         dynamicRanges.forEach { dynamicRange ->
             val profile =
-                videoCapabilities.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
+                profilesResolver.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
             val surfaceSize = profile.resolution
 
             assertThat(
@@ -228,7 +228,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun frameRateIsChosenFromUpperOfExpectedRange_whenProvided() {
         dynamicRanges.forEach { dynamicRange ->
             val profile =
-                videoCapabilities.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
+                profilesResolver.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
             val surfaceSize = profile.resolution
 
             val expectedCaptureFrameRateRange = Range(FRAME_RATE_30, FRAME_RATE_45)
@@ -254,7 +254,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun bitrateScalesWithFrameRateOperatingRange() {
         dynamicRanges.forEach { dynamicRange ->
             val profile =
-                videoCapabilities.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
+                profilesResolver.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
             val surfaceSize = profile.resolution
 
             // Construct a range which is constant and half the profile FPS
@@ -285,8 +285,8 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun codecProfileLevel_isResolvedFromVideoProfile() {
         dynamicRanges.forEach { dynamicRange ->
             val supportedProfiles =
-                videoCapabilities.getSupportedQualities(dynamicRange).flatMap {
-                    videoCapabilities.getProfiles(it, dynamicRange)!!.videoProfiles
+                profilesResolver.getSupportedQualities(dynamicRange).flatMap {
+                    profilesResolver.getProfiles(it, dynamicRange)!!.videoProfiles
                 }
 
             supportedProfiles.forEach { videoProfile ->
@@ -314,9 +314,9 @@ class VideoEncoderConfigVideoProfileResolverTest(
     fun supportedHdrDynamicRanges_mapToSpecifiedVideoEncoderDataSpace() {
         dynamicRanges.forEach { dynamicRange ->
             val supportedProfiles =
-                videoCapabilities
+                profilesResolver
                     .getSupportedQualities(dynamicRange)
-                    .flatMap { videoCapabilities.getProfiles(it, dynamicRange)!!.videoProfiles }
+                    .flatMap { profilesResolver.getProfiles(it, dynamicRange)!!.videoProfiles }
                     .toSet()
 
             supportedProfiles.forEach { videoProfile ->

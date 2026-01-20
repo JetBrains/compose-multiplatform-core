@@ -46,6 +46,7 @@ import androidx.pdf.ink.view.tool.Eraser
 import androidx.pdf.ink.view.tool.Highlighter
 import androidx.pdf.ink.view.tool.Pen
 import androidx.pdf.viewer.fragment.PdfDocumentViewModel
+import androidx.pdf.viewer.fragment.model.PdfFragmentUiState
 import java.util.concurrent.Executors
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -83,9 +84,14 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
     internal var isEditModeEnabled: Boolean
         get() = state[EDIT_MODE_ENABLED_KEY] ?: false
         set(value) {
+            if (isEditModeEnabled == value) return
+
             state[EDIT_MODE_ENABLED_KEY] = value
-            // Discard any draft changes when exiting edit mode
-            if (!value) discardUnsavedChanges()
+            if (!value) {
+                // Discard any draft changes when exiting edit mode
+                discardUnsavedChanges()
+                forceLoadDocument()
+            }
         }
 
     internal var areAnnotationsVisible: Boolean
@@ -134,27 +140,38 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
             }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    private var didApplyEdits: Boolean = false
+
+    init {
+        viewModelScope.launch {
+            _fragmentUiScreenState.collect { state ->
+                if (state is PdfFragmentUiState.DocumentLoaded) {
+                    maybeInitialiseForDocument(state.pdfDocument)
+                }
+            }
+        }
+    }
+
+    public override fun forceLoadDocument() {
+        if (didApplyEdits) {
+            resetState()
+            super.forceLoadDocument()
+        }
+    }
+
     @VisibleForTesting
     public override fun resetState() {
         super.resetState()
         isEditModeEnabled = false
         editablePdfDocument = null
         _annotationDisplayStateFlow.value = AnnotationsDisplayState.EMPTY
+        didApplyEdits = false
     }
 
-    internal fun maybeInitialiseForDocument(
-        document: PdfDocument,
-        initialMatrices: Map<Int, Matrix>? = null,
-    ) {
+    internal fun maybeInitialiseForDocument(document: PdfDocument) {
         if (document is EditablePdfDocument) {
             val documentUri = document.uri
-
-            // If the document has changed, reset the edit states
-            if (documentUri != state.get<Uri>(LOADED_DOCUMENT_URI_KEY)) {
-                setupManagersAndHandlers(documentUri, document, initialMatrices ?: emptyMap())
-            } else if (editablePdfDocument == null) {
-                editablePdfDocument = document
-            }
+            setupManagersAndHandlers(documentUri, document)
         } else {
             editablePdfDocument = null
         }
@@ -223,6 +240,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         }
 
         _applyEditsStatus.value = ApplyEditsState.InProgress
+        if (hasUnsavedChanges()) didApplyEdits = true
 
         viewModelScope.launch {
             try {
@@ -231,6 +249,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
                 val handle = document.createWriteHandle()
 
                 recordsHistoryManager?.clear()
+                annotationsManager?.discardChanges()
                 _applyEditsStatus.value = ApplyEditsState.Success(handle)
             } catch (e: Exception) {
                 _applyEditsStatus.value = ApplyEditsState.Failure(e)

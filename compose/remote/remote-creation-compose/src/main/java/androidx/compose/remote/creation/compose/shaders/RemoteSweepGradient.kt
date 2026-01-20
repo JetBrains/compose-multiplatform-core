@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.util.fastMap
 
 /**
@@ -120,7 +121,7 @@ public class RemoteSweepShader(
         val colorsArray =
             IntArray(colors.size) { i ->
                 val color = colors[i]
-                val constantValue = color.constantValue
+                val constantValue = color.constantValueOrNull
                 if (constantValue != null) {
                     constantValue.toArgb()
                 } else {

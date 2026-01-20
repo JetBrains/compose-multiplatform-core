@@ -32,6 +32,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.ListHeader
@@ -47,6 +48,10 @@ import kotlinx.serialization.Serializable
 @Serializable object NotificationList : NavKey
 
 @Serializable data class NotificationDetail(val id: Int) : NavKey
+
+@Serializable object First : NavKey
+
+@Serializable object Second : NavKey
 
 data class NotificationItem(val id: Int, val title: String, val body: String)
 
@@ -139,6 +144,39 @@ fun ListDetailNavDisplaySample(onExit: () -> Unit = {}) {
                         ) {
                             TitleCard(title = { Text(item.title) }, content = { Text(item.body) })
                         }
+                    }
+                }
+            },
+    )
+}
+
+@Sampled
+@Composable
+fun NavDisplayWithOnBackBehaviorSample(logger: (String) -> Unit = {}) {
+    // Example of using a NavDisplay with SwipeDismissableSceneStrategy and on back behavior.
+
+    // Strongly-typed, serializable navigation destinations are defined at global scope as follows:
+    // @Serializable object First: NavKey
+    // @Serializable object Second: NavKey
+    val backStack = rememberNavBackStack(First)
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = {
+            logger("Back Action is triggered.")
+            backStack.removeLastOrNull()
+        },
+        sceneStrategy = rememberSwipeDismissableSceneStrategy(),
+        entryProvider =
+            entryProvider {
+                entry<First> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Button(onClick = { backStack.add(Second) }) { Text("Next") }
+                    }
+                }
+                entry<Second> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Second")
                     }
                 }
             },

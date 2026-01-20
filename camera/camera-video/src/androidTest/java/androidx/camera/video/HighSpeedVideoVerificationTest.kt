@@ -143,9 +143,7 @@ class HighSpeedVideoVerificationTest(
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val audioStreamAvailable by lazy {
-        AudioChecker.canAudioStreamBeStarted(videoCapabilities, Recorder.DEFAULT_QUALITY_SELECTOR)
-    }
+    private val audioStreamAvailable by lazy { AudioChecker.canAudioStreamBeStarted() }
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var cameraInfo: CameraInfo
