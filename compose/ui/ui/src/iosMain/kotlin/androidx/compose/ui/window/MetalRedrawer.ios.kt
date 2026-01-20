@@ -229,7 +229,10 @@ internal class MetalRedrawer(
 
                 displayLinkConditions.isActive = newValue
                 if (!newValue) {
-                    // If an application goes background, synchronously schedule all inflightCommandBuffers, as per
+                    if (useSeparateRenderThreadWhenPossible) {
+                        dispatch_sync(renderingDispatchQueue) {}
+                    }
+                    // If an application goes background, synchronously wait for inflightCommandBuffersGroup, as per
                     // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
                     // Set the expiration time to 1 second to ensure that the main thread does not get stuck when the app is suspended.
                     dispatch_group_wait(inflightCommandBuffersGroup, dispatch_time(DISPATCH_TIME_NOW, 1L * NSEC_PER_SEC.toLong()))
