@@ -164,7 +164,6 @@ internal class WindowSkiaLayerComponent(
     }
 
     override fun requestNativeFocusOnAccessible(accessible: Accessible?) {
-        println("Requesting native focus on accessible: $accessible")
         contentComponent.requestNativeFocusOnAccessible(accessible)
     }
 
