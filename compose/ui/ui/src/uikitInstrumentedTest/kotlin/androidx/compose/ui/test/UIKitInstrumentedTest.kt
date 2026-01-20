@@ -440,16 +440,25 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
 
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+                ?: error("No window scene found")
+        val allWindows = scene.windows
+
         _window = UIWindow(frame = UIScreen.mainScreen.bounds)
         _window?.backgroundColor = UIColor.systemBackgroundColor
-        _window?.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        _window?.windowScene = scene
 
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
+
+        allWindows.forEach {
+            (it as UIWindow).setHidden(true)
+            it.windowScene = null
+        }
     }
 
     fun cleanUp() {
-        val scene = window?.windowScene ?: UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        val scene = _window?.windowScene ?: UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
@@ -469,6 +478,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         allWindows.forEach {
             (it as UIWindow).setHidden(true)
+            it.windowScene = null
         }
     }
 
