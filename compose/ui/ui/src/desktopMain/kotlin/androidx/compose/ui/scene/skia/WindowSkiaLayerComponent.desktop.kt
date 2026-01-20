@@ -42,17 +42,17 @@ import org.jetbrains.skiko.SkikoRenderDelegate
  * which is created when using [RenderSettings.SwingGraphics].
  */
 internal class WindowSkiaLayerComponent(
-    private val mediator: ComposeSceneMediator,
+    mediator: ComposeSceneMediator,
     private val windowContext: PlatformWindowContext,
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
     private val renderSettings: RenderSettings.SkiaSurface,
-) : SkiaLayerComponent {
+) : BaseSkiaLayerComponent(mediator) {
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
      */
     override val contentComponent: SkiaLayer = object : SkiaLayer(
-        accessibleContextProvider = mediator::provideAccessibleContext,
+        accessibleContextProvider = ::provideAccessibleContext,
         properties = run {
             val defaultProperties = SkiaLayerProperties()
 

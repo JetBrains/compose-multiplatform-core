@@ -59,7 +59,6 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.AccessibilityController
-import androidx.compose.ui.platform.a11y.AccessibleFocusHelper
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -94,7 +93,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
-import javax.accessibility.AccessibleContext
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
@@ -145,16 +143,6 @@ internal class ComposeSceneMediator(
         parent = { skiaLayerComponent.sceneAccessibleParent },
         accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
     )
-
-    private var accessibleFocusHelper: AccessibleFocusHelper? = null
-
-    fun provideAccessibleContext(component: Component): AccessibleContext {
-        val helper = accessibleFocusHelper ?:
-            AccessibleFocusHelper(component, accessible).also {
-                accessibleFocusHelper = it
-            }
-        return helper.accessibleContext
-    }
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -797,7 +785,7 @@ internal class ComposeSceneMediator(
                     requestingFocus = true
                     try {
                         val target = it ?: accessible.defaultAccessibilityFocusTarget()
-                        accessibleFocusHelper?.requestNativeFocusOnAccessible(target)
+                        skiaLayerComponent.requestNativeFocusOnAccessible(target)
                     } finally {
                         requestingFocus = false
                     }

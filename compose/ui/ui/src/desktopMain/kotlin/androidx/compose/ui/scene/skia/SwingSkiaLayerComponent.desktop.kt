@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene.skia
 
 import androidx.compose.ui.scene.ComposeSceneMediator
-import java.awt.Component
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.event.FocusEvent
@@ -37,10 +36,10 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  */
 @OptIn(ExperimentalSkikoApi::class)
 internal class SwingSkiaLayerComponent(
-    private val mediator: ComposeSceneMediator,
+    mediator: ComposeSceneMediator,
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
-) : SkiaLayerComponent {
+) : BaseSkiaLayerComponent(mediator) {
     /**
      * See also backendLayer for standalone Compose in [WindowSkiaLayerComponent]
      */
@@ -48,7 +47,7 @@ internal class SwingSkiaLayerComponent(
         object : SkiaSwingLayer(
             renderDelegate = renderDelegate,
             analytics = skiaLayerAnalytics,
-            accessibleContextProvider = mediator::provideAccessibleContext,
+            accessibleContextProvider = ::provideAccessibleContext,
         ) {
             private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
 
