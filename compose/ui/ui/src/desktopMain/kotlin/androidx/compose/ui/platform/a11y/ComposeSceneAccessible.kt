@@ -109,7 +109,7 @@ internal class ComposeSceneAccessible(
             val childCount = context.accessibleChildrenCount
             for (index in 0 until childCount) {
                 val child = context.getAccessibleChild(index)
-                queue.addFirst(child as ComposeAccessible)
+                queue.addFirst(child)
             }
         }
 
