@@ -57,6 +57,7 @@ internal object ToolbarInitializer {
                     selectedColorIndex = defaultHighlighterColorIndex,
                     paletteItem = highlightPaletteItems[defaultHighlighterColorIndex],
                 ),
+            isExpanded = true,
         )
     }
 }

@@ -43,12 +43,11 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
     namespace = "androidx.xr.projected.testapp"
 
     defaultConfig {
         minSdk = 36
-        targetSdk = 36
     }
 
     buildTypes {

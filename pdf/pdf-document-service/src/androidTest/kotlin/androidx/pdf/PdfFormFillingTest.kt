@@ -115,32 +115,32 @@ class PdfFormFillingTest {
 
         val combo1Choices: List<ListItem> =
             listOf(
-                ListItem(label = "Apple", selected = false),
-                ListItem(label = "Banana", selected = true),
-                ListItem(label = "Cherry", selected = false),
-                ListItem(label = "Date", selected = false),
-                ListItem(label = "Elderberry", selected = false),
-                ListItem(label = "Fig", selected = false),
-                ListItem(label = "Guava", selected = false),
-                ListItem(label = "Honeydew", selected = false),
-                ListItem(label = "Indian Fig", selected = false),
-                ListItem(label = "Jackfruit", selected = false),
-                ListItem(label = "Kiwi", selected = false),
-                ListItem(label = "Lemon", selected = false),
-                ListItem(label = "Mango", selected = false),
-                ListItem(label = "Nectarine", selected = false),
-                ListItem(label = "Orange", selected = false),
-                ListItem(label = "Persimmon", selected = false),
-                ListItem(label = "Quince", selected = false),
-                ListItem(label = "Raspberry", selected = false),
-                ListItem(label = "Strawberry", selected = false),
-                ListItem(label = "Tamarind", selected = false),
-                ListItem(label = "Ugli Fruit", selected = false),
-                ListItem(label = "Voavanga", selected = false),
-                ListItem(label = "Wolfberry", selected = false),
-                ListItem(label = "Xigua", selected = false),
-                ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false),
+                ListItem(label = "Apple", isSelected = false),
+                ListItem(label = "Banana", isSelected = true),
+                ListItem(label = "Cherry", isSelected = false),
+                ListItem(label = "Date", isSelected = false),
+                ListItem(label = "Elderberry", isSelected = false),
+                ListItem(label = "Fig", isSelected = false),
+                ListItem(label = "Guava", isSelected = false),
+                ListItem(label = "Honeydew", isSelected = false),
+                ListItem(label = "Indian Fig", isSelected = false),
+                ListItem(label = "Jackfruit", isSelected = false),
+                ListItem(label = "Kiwi", isSelected = false),
+                ListItem(label = "Lemon", isSelected = false),
+                ListItem(label = "Mango", isSelected = false),
+                ListItem(label = "Nectarine", isSelected = false),
+                ListItem(label = "Orange", isSelected = false),
+                ListItem(label = "Persimmon", isSelected = false),
+                ListItem(label = "Quince", isSelected = false),
+                ListItem(label = "Raspberry", isSelected = false),
+                ListItem(label = "Strawberry", isSelected = false),
+                ListItem(label = "Tamarind", isSelected = false),
+                ListItem(label = "Ugli Fruit", isSelected = false),
+                ListItem(label = "Voavanga", isSelected = false),
+                ListItem(label = "Wolfberry", isSelected = false),
+                ListItem(label = "Xigua", isSelected = false),
+                ListItem(label = "Yangmei", isSelected = false),
+                ListItem(label = "Zucchini", isSelected = false),
             )
 
         val comboBox1 =
@@ -157,9 +157,9 @@ class PdfFormFillingTest {
 
         val editableChoices =
             listOf(
-                ListItem(label = "Foo", selected = false),
-                ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false),
+                ListItem(label = "Foo", isSelected = false),
+                ListItem(label = "Bar", isSelected = false),
+                ListItem(label = "Qux", isSelected = false),
             )
 
         val editableComboBox =
@@ -268,9 +268,9 @@ class PdfFormFillingTest {
         val comboboxArea = Rect(100, 220, 200, 250)
         val choicesBefore =
             listOf(
-                ListItem(label = "Foo", selected = false),
-                ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false),
+                ListItem(label = "Foo", isSelected = false),
+                ListItem(label = "Bar", isSelected = false),
+                ListItem(label = "Qux", isSelected = false),
             )
         val widgetBefore =
             makeComboBox(
@@ -291,9 +291,9 @@ class PdfFormFillingTest {
             )
         val choicesAfter =
             listOf(
-                ListItem(label = "Foo", selected = false),
-                ListItem(label = "Bar", selected = true),
-                ListItem(label = "Qux", selected = false),
+                ListItem(label = "Foo", isSelected = false),
+                ListItem(label = "Bar", isSelected = true),
+                ListItem(label = "Qux", isSelected = false),
             )
         val widgetAfter =
             makeComboBox(
@@ -322,9 +322,9 @@ class PdfFormFillingTest {
         val comboboxArea = Rect(100, 220, 200, 250)
         val choicesBefore =
             listOf(
-                ListItem(label = "Foo", selected = false),
-                ListItem(label = "Bar", selected = false),
-                ListItem(label = "Qux", selected = false),
+                ListItem(label = "Foo", isSelected = false),
+                ListItem(label = "Bar", isSelected = false),
+                ListItem(label = "Qux", isSelected = false),
             )
         val widgetBefore =
             makeComboBox(
@@ -360,16 +360,16 @@ class PdfFormFillingTest {
         val widgetArea = Rect(100, 470, 200, 500)
         val choicesBefore =
             listOf(
-                ListItem(label = "Alberta", selected = false),
-                ListItem(label = "British Columbia", selected = false),
-                ListItem(label = "Manitoba", selected = false),
-                ListItem(label = "New Brunswick", selected = false),
-                ListItem(label = "Newfoundland and Labrador", selected = false),
-                ListItem(label = "Nova Scotia", selected = false),
-                ListItem(label = "Ontario", selected = false),
-                ListItem(label = "Prince Edward Island", selected = false),
-                ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = true),
+                ListItem(label = "Alberta", isSelected = false),
+                ListItem(label = "British Columbia", isSelected = false),
+                ListItem(label = "Manitoba", isSelected = false),
+                ListItem(label = "New Brunswick", isSelected = false),
+                ListItem(label = "Newfoundland and Labrador", isSelected = false),
+                ListItem(label = "Nova Scotia", isSelected = false),
+                ListItem(label = "Ontario", isSelected = false),
+                ListItem(label = "Prince Edward Island", isSelected = false),
+                ListItem(label = "Quebec", isSelected = false),
+                ListItem(label = "Saskatchewan", isSelected = true),
             )
         val widgetBefore =
             makeListbox(
@@ -389,16 +389,16 @@ class PdfFormFillingTest {
             )
         val choicesAfter =
             listOf(
-                ListItem(label = "Alberta", selected = true),
-                ListItem(label = "British Columbia", selected = false),
-                ListItem(label = "Manitoba", selected = false),
-                ListItem(label = "New Brunswick", selected = false),
-                ListItem(label = "Newfoundland and Labrador", selected = false),
-                ListItem(label = "Nova Scotia", selected = false),
-                ListItem(label = "Ontario", selected = false),
-                ListItem(label = "Prince Edward Island", selected = false),
-                ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = false),
+                ListItem(label = "Alberta", isSelected = true),
+                ListItem(label = "British Columbia", isSelected = false),
+                ListItem(label = "Manitoba", isSelected = false),
+                ListItem(label = "New Brunswick", isSelected = false),
+                ListItem(label = "Newfoundland and Labrador", isSelected = false),
+                ListItem(label = "Nova Scotia", isSelected = false),
+                ListItem(label = "Ontario", isSelected = false),
+                ListItem(label = "Prince Edward Island", isSelected = false),
+                ListItem(label = "Quebec", isSelected = false),
+                ListItem(label = "Saskatchewan", isSelected = false),
             )
         val widgetAfter =
             makeListbox(
@@ -461,32 +461,32 @@ class PdfFormFillingTest {
         val widgetArea = Rect(100, 170, 200, 200)
         val choicesBefore =
             listOf(
-                ListItem(label = "Apple", selected = false),
-                ListItem(label = "Banana", selected = true),
-                ListItem(label = "Cherry", selected = false),
-                ListItem(label = "Date", selected = false),
-                ListItem(label = "Elderberry", selected = false),
-                ListItem(label = "Fig", selected = false),
-                ListItem(label = "Guava", selected = false),
-                ListItem(label = "Honeydew", selected = false),
-                ListItem(label = "Indian Fig", selected = false),
-                ListItem(label = "Jackfruit", selected = false),
-                ListItem(label = "Kiwi", selected = false),
-                ListItem(label = "Lemon", selected = false),
-                ListItem(label = "Mango", selected = false),
-                ListItem(label = "Nectarine", selected = false),
-                ListItem(label = "Orange", selected = false),
-                ListItem(label = "Persimmon", selected = false),
-                ListItem(label = "Quince", selected = false),
-                ListItem(label = "Raspberry", selected = false),
-                ListItem(label = "Strawberry", selected = false),
-                ListItem(label = "Tamarind", selected = false),
-                ListItem(label = "Ugli Fruit", selected = false),
-                ListItem(label = "Voavanga", selected = false),
-                ListItem(label = "Wolfberry", selected = false),
-                ListItem(label = "Xigua", selected = false),
-                ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false),
+                ListItem(label = "Apple", isSelected = false),
+                ListItem(label = "Banana", isSelected = true),
+                ListItem(label = "Cherry", isSelected = false),
+                ListItem(label = "Date", isSelected = false),
+                ListItem(label = "Elderberry", isSelected = false),
+                ListItem(label = "Fig", isSelected = false),
+                ListItem(label = "Guava", isSelected = false),
+                ListItem(label = "Honeydew", isSelected = false),
+                ListItem(label = "Indian Fig", isSelected = false),
+                ListItem(label = "Jackfruit", isSelected = false),
+                ListItem(label = "Kiwi", isSelected = false),
+                ListItem(label = "Lemon", isSelected = false),
+                ListItem(label = "Mango", isSelected = false),
+                ListItem(label = "Nectarine", isSelected = false),
+                ListItem(label = "Orange", isSelected = false),
+                ListItem(label = "Persimmon", isSelected = false),
+                ListItem(label = "Quince", isSelected = false),
+                ListItem(label = "Raspberry", isSelected = false),
+                ListItem(label = "Strawberry", isSelected = false),
+                ListItem(label = "Tamarind", isSelected = false),
+                ListItem(label = "Ugli Fruit", isSelected = false),
+                ListItem(label = "Voavanga", isSelected = false),
+                ListItem(label = "Wolfberry", isSelected = false),
+                ListItem(label = "Xigua", isSelected = false),
+                ListItem(label = "Yangmei", isSelected = false),
+                ListItem(label = "Zucchini", isSelected = false),
             )
         val widgetBefore =
             makeListbox(
@@ -506,32 +506,32 @@ class PdfFormFillingTest {
             )
         val choicesAfter =
             listOf(
-                ListItem(label = "Apple", selected = false),
-                ListItem(label = "Banana", selected = true),
-                ListItem(label = "Cherry", selected = true),
-                ListItem(label = "Date", selected = true),
-                ListItem(label = "Elderberry", selected = false),
-                ListItem(label = "Fig", selected = false),
-                ListItem(label = "Guava", selected = false),
-                ListItem(label = "Honeydew", selected = false),
-                ListItem(label = "Indian Fig", selected = false),
-                ListItem(label = "Jackfruit", selected = false),
-                ListItem(label = "Kiwi", selected = false),
-                ListItem(label = "Lemon", selected = false),
-                ListItem(label = "Mango", selected = false),
-                ListItem(label = "Nectarine", selected = false),
-                ListItem(label = "Orange", selected = false),
-                ListItem(label = "Persimmon", selected = false),
-                ListItem(label = "Quince", selected = false),
-                ListItem(label = "Raspberry", selected = false),
-                ListItem(label = "Strawberry", selected = false),
-                ListItem(label = "Tamarind", selected = false),
-                ListItem(label = "Ugli Fruit", selected = false),
-                ListItem(label = "Voavanga", selected = false),
-                ListItem(label = "Wolfberry", selected = false),
-                ListItem(label = "Xigua", selected = false),
-                ListItem(label = "Yangmei", selected = false),
-                ListItem(label = "Zucchini", selected = false),
+                ListItem(label = "Apple", isSelected = false),
+                ListItem(label = "Banana", isSelected = true),
+                ListItem(label = "Cherry", isSelected = true),
+                ListItem(label = "Date", isSelected = true),
+                ListItem(label = "Elderberry", isSelected = false),
+                ListItem(label = "Fig", isSelected = false),
+                ListItem(label = "Guava", isSelected = false),
+                ListItem(label = "Honeydew", isSelected = false),
+                ListItem(label = "Indian Fig", isSelected = false),
+                ListItem(label = "Jackfruit", isSelected = false),
+                ListItem(label = "Kiwi", isSelected = false),
+                ListItem(label = "Lemon", isSelected = false),
+                ListItem(label = "Mango", isSelected = false),
+                ListItem(label = "Nectarine", isSelected = false),
+                ListItem(label = "Orange", isSelected = false),
+                ListItem(label = "Persimmon", isSelected = false),
+                ListItem(label = "Quince", isSelected = false),
+                ListItem(label = "Raspberry", isSelected = false),
+                ListItem(label = "Strawberry", isSelected = false),
+                ListItem(label = "Tamarind", isSelected = false),
+                ListItem(label = "Ugli Fruit", isSelected = false),
+                ListItem(label = "Voavanga", isSelected = false),
+                ListItem(label = "Wolfberry", isSelected = false),
+                ListItem(label = "Xigua", isSelected = false),
+                ListItem(label = "Yangmei", isSelected = false),
+                ListItem(label = "Zucchini", isSelected = false),
             )
         val widgetAfter =
             makeListbox(
@@ -559,16 +559,16 @@ class PdfFormFillingTest {
         val widgetArea = Rect(100, 470, 200, 500)
         val choicesBefore =
             listOf(
-                ListItem(label = "Alberta", selected = false),
-                ListItem(label = "British Columbia", selected = false),
-                ListItem(label = "Manitoba", selected = false),
-                ListItem(label = "New Brunswick", selected = false),
-                ListItem(label = "Newfoundland and Labrador", selected = false),
-                ListItem(label = "Nova Scotia", selected = false),
-                ListItem(label = "Ontario", selected = false),
-                ListItem(label = "Prince Edward Island", selected = false),
-                ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = true),
+                ListItem(label = "Alberta", isSelected = false),
+                ListItem(label = "British Columbia", isSelected = false),
+                ListItem(label = "Manitoba", isSelected = false),
+                ListItem(label = "New Brunswick", isSelected = false),
+                ListItem(label = "Newfoundland and Labrador", isSelected = false),
+                ListItem(label = "Nova Scotia", isSelected = false),
+                ListItem(label = "Ontario", isSelected = false),
+                ListItem(label = "Prince Edward Island", isSelected = false),
+                ListItem(label = "Quebec", isSelected = false),
+                ListItem(label = "Saskatchewan", isSelected = true),
             )
         val widgetBefore =
             makeListbox(
@@ -588,16 +588,16 @@ class PdfFormFillingTest {
             )
         val choicesAfter =
             listOf(
-                ListItem(label = "Alberta", selected = false),
-                ListItem(label = "British Columbia", selected = false),
-                ListItem(label = "Manitoba", selected = false),
-                ListItem(label = "New Brunswick", selected = false),
-                ListItem(label = "Newfoundland and Labrador", selected = false),
-                ListItem(label = "Nova Scotia", selected = false),
-                ListItem(label = "Ontario", selected = false),
-                ListItem(label = "Prince Edward Island", selected = false),
-                ListItem(label = "Quebec", selected = false),
-                ListItem(label = "Saskatchewan", selected = false),
+                ListItem(label = "Alberta", isSelected = false),
+                ListItem(label = "British Columbia", isSelected = false),
+                ListItem(label = "Manitoba", isSelected = false),
+                ListItem(label = "New Brunswick", isSelected = false),
+                ListItem(label = "Newfoundland and Labrador", isSelected = false),
+                ListItem(label = "Nova Scotia", isSelected = false),
+                ListItem(label = "Ontario", isSelected = false),
+                ListItem(label = "Prince Edward Island", isSelected = false),
+                ListItem(label = "Quebec", isSelected = false),
+                ListItem(label = "Saskatchewan", isSelected = false),
             )
         val widgetAfter =
             makeListbox(

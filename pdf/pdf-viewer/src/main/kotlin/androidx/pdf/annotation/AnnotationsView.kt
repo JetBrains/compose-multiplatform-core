@@ -177,11 +177,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     /**
      * Holds all annotations for a single PDF page and their transformation matrix.
      *
-     * @property annotations List of [PdfAnnotation]s on the page.
+     * @property keyedAnnotations List of [PdfAnnotation]s on the page.
      * @property transform [Matrix] to apply when drawing these annotations.
      */
     public data class PageAnnotationsData(
-        val annotations: List<PdfAnnotation>,
+        val keyedAnnotations: List<KeyedPdfAnnotation>,
         val transform: Matrix,
     )
 

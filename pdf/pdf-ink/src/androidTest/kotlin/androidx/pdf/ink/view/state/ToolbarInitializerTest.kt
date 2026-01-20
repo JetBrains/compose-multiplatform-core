@@ -66,5 +66,7 @@ class ToolbarInitializerTest {
             .isEqualTo(defaultHighlighterColorIndex)
         assertThat(initialState.highlighterState.paletteItem)
             .isEqualTo(highlightPaletteItems[defaultHighlighterColorIndex])
+
+        assertThat(initialState.isExpanded).isTrue()
     }
 }

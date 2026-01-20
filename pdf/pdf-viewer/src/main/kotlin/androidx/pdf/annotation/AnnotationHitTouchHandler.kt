@@ -90,7 +90,9 @@ internal class AnnotationHitTouchHandler() {
         val touchRegion = touchRectPdf.toRegion()
 
         val annotations =
-            annotationsView.annotations.get(pageInfo.pageNum)?.annotations ?: return null
+            annotationsView.annotations.get(pageInfo.pageNum)?.keyedAnnotations?.map {
+                it.annotation
+            } ?: return null
 
         // Iterate in reverse Z-order to find the top-most annotation.
         return annotations.asReversed().firstOrNull { annotation ->

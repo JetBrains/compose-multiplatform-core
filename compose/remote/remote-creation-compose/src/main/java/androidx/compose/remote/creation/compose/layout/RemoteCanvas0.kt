@@ -24,7 +24,6 @@ import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposePath
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope0.Companion.DefaultBlendMode
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope0.Companion.DefaultFilterQuality
@@ -37,12 +36,9 @@ import androidx.compose.remote.creation.compose.state.FallbackCreationState
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -54,25 +50,11 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.DrawTransform
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-
-/** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeCanvasModifier(public val modifier: RecordingModifier) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startCanvas(modifier)
-            this@draw.drawContent()
-            canvas.document.endCanvas()
-        }
-    }
-}
 
 /**
  * RemoteCanvas implements a Canvas layout, delegating to the foundation Canvas layout as needed.
@@ -672,14 +654,3 @@ internal fun toPaint(
         if (this.blendMode != blendMode) this.blendMode = blendMode
         if (this.filterQuality != filterQuality) this.filterQuality = filterQuality
     }
-
-internal typealias ROffset = Offset
-
-internal typealias RSize = Size
-
-public inline fun DrawScope.drawIntoRemoteCanvas(block: (RecordingCanvas) -> Unit): Unit {
-    val canvas = drawContext.canvas.nativeCanvas as? RecordingCanvas
-    if (canvas != null) {
-        block(canvas)
-    }
-}

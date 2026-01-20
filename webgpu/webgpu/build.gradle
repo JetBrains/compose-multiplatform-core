@@ -50,6 +50,7 @@ androidComponents {
                         AndroidXConfig.getPrebuiltsRoot(project),
                         "androidx/webgpu/jni").absolutePath
         )
+        variant.sources.assets.addStaticSourceDirectory('meta')
     }
 }
 

@@ -479,7 +479,7 @@ private fun RemoteButtonImpl(
         modifier =
             modifier
                 .drawWithContent {
-                    drawScope.drawShapedBackground(
+                    drawShapedBackground(
                         shape = shape,
                         color = colors.containerColor(enabled),
                         enabled = enabled,

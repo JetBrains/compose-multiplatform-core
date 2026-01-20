@@ -55,7 +55,7 @@ public abstract class BaseRemoteState<T> : RemoteState<T> {
      * @param creationState The [RemoteComposeCreationState] for which the ID will be generated
      * @return The ID of this remote value, for the given [creationState]
      */
-    public fun getIdForCreationState(creationState: RemoteComposeCreationState): Int {
+    public open fun getIdForCreationState(creationState: RemoteComposeCreationState): Int {
         return creationState.remoteVariableToId.getOrPut(this) { writeToDocument(creationState) }
     }
 
@@ -63,7 +63,7 @@ public abstract class BaseRemoteState<T> : RemoteState<T> {
      * @param creationState The [RemoteComposeCreationState] for which the ID will be generated
      * @return The ID of this remote value, for the given [creationState] as a long
      */
-    public fun getLongIdForCreationState(creationState: RemoteComposeCreationState): Long {
+    public open fun getLongIdForCreationState(creationState: RemoteComposeCreationState): Long {
         return getIdForCreationState(creationState).toLong() + 0x100000000L
     }
 
@@ -71,7 +71,7 @@ public abstract class BaseRemoteState<T> : RemoteState<T> {
      * @param creationState The [RemoteComposeCreationState] for which the ID will be generated
      * @return The ID of this remote value encoded in a Float NaN, for the given [creationState]
      */
-    public fun getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float =
+    public open fun getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float =
         Utils.asNan(getIdForCreationState(creationState))
 
     /**

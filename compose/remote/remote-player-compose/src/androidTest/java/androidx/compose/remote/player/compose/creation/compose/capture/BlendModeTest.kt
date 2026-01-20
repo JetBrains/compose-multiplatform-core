@@ -26,13 +26,13 @@ import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteCanvas0
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteRow
+import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.layout.RemoteText
-import androidx.compose.remote.creation.compose.layout.remoteComponentHeight
-import androidx.compose.remote.creation.compose.layout.remoteComponentWidth
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.padding
@@ -128,9 +128,9 @@ class BlendModeTest {
             horizontalAlignment = RemoteAlignment.Start,
             verticalArrangement = RemoteArrangement.Top,
         ) {
-            RemoteCanvas0(RemoteModifier.size(100.rdp)) {
-                val w = remoteComponentWidth(remoteComposeCreationState)
-                val h = remoteComponentHeight(remoteComposeCreationState)
+            RemoteCanvas(RemoteModifier.size(100.rdp)) {
+                val w = remoteWidth
+                val h = remoteHeight
 
                 val paint =
                     RemotePaint().apply {
@@ -139,17 +139,20 @@ class BlendModeTest {
                     }
 
                 // Draw dst
-                canvas.drawCircle(
-                    (w * 2f / 3f).toFloat(),
-                    (h * 1f / 3f).toFloat(),
-                    (w / 3f).toFloat(),
-                    paint,
+                drawCircle(
+                    paint = paint,
+                    center = RemoteOffset(w * 2f / 3f, h * 1f / 3f),
+                    radius = w / 3f,
                 )
 
                 // Draw src
                 paint.color = Color.BLUE
                 paint.blendMode = blendMode
-                canvas.drawRect(0f.rf, (h * 1f / 3f), (w * 2f / 3f), h, paint)
+                drawRect(
+                    paint = paint,
+                    topLeft = RemoteOffset(0f.rf, h * 1f / 3f),
+                    size = RemoteSize(w * 2f / 3f, h * 2f / 3f),
+                )
             }
             RemoteText(name, fontSize = 12f.sp)
         }

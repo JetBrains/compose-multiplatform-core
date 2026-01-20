@@ -50,6 +50,7 @@ class AnnotationToolbarViewModelTest {
             canRedo = false,
             highlighterState = ToolAttributes(1, 2, Color(123, 4, 5, "blue color")),
             penState = ToolAttributes(2, 3, Color(123, 4, 5, "red color")),
+            isExpanded = true,
         )
 
     private fun createViewModel(initialState: AnnotationToolbarState = createInitialState()) =
@@ -324,6 +325,7 @@ class AnnotationToolbarViewModelTest {
                 canRedo = false,
                 highlighterState = ToolAttributes(1, 2, Color(123, 4, 5, "blue color")),
                 penState = ToolAttributes(2, 3, Color(123, 4, 5, "red color")),
+                isExpanded = true,
             )
         val collectedEffects = mutableListOf<ToolbarEffect>()
         val collectionJob = collectInto(viewmodel.effects, collectedEffects)
@@ -336,6 +338,36 @@ class AnnotationToolbarViewModelTest {
         assertThat(collectedEffects[1]).isEqualTo(ToolbarEffect.AnnotationVisibilityChanged(false))
 
         collectionJob.cancel()
+    }
+
+    @Test
+    fun onAction_ExpandOrCollapse_whenExpanded_collapsesToolbar() {
+        val initState = createInitialState().copy(isExpanded = true)
+        val viewmodel = createViewModel(initState)
+
+        viewmodel.onAction(ToolbarIntent.CollapseToolbar)
+
+        assertThat(viewmodel.state.value.isExpanded).isFalse()
+
+        // Assert brush slider and color palette are dismissed
+        // while expanding or collapsing
+        assertThat(viewmodel.state.value.isColorPaletteVisible).isFalse()
+        assertThat(viewmodel.state.value.isBrushSizeSliderVisible).isFalse()
+    }
+
+    @Test
+    fun onAction_ExpandOrCollapse_whenCollapsed_expandsToolbar() {
+        val initState = createInitialState().copy(isExpanded = false)
+        val viewmodel = createViewModel(initState)
+
+        viewmodel.onAction(ToolbarIntent.ExpandToolbar)
+
+        assertThat(viewmodel.state.value.isExpanded).isTrue()
+
+        // Assert brush slider and color palette are dismissed
+        // while expanding or collapsing
+        assertThat(viewmodel.state.value.isColorPaletteVisible).isFalse()
+        assertThat(viewmodel.state.value.isBrushSizeSliderVisible).isFalse()
     }
 
     private fun <T> CoroutineScope.collectInto(flow: Flow<T>, destination: MutableList<T>): Job {

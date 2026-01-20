@@ -237,7 +237,8 @@ class AnnotationsViewTest {
 
     private fun setFakeAnnotations(): SparseArray<PageAnnotationsData> {
         val annotation = createStampAnnotation(RectF(50f, 50f, 100f, 100f))
-        val data = PageAnnotationsData(listOf(annotation), Matrix())
+        val keyedAnnotation = KeyedPdfAnnotation(key = UUID.randomUUID().toString(), annotation)
+        val data = PageAnnotationsData(listOf(keyedAnnotation), Matrix())
         val sparseArray = SparseArray<PageAnnotationsData>()
         sparseArray.put(0, data)
         return sparseArray

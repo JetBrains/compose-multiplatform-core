@@ -313,7 +313,7 @@ class RecordingCanvasTest {
 
         val operations = inflateOperations()
         val paintOp = operations[operations.size - 1] as PaintData
-        assertThat(paintOp.mPaintData.toString()).contains("ColorId([45])")
+        assertThat(paintOp.mPaintData.toString()).containsMatch("ColorId\\(\\[\\d+]\\)")
     }
 
     @Test
@@ -357,7 +357,7 @@ class RecordingCanvasTest {
         val operations = inflateOperations()
         val paintOp = operations[operations.size - 1] as PaintData
         assertThat(paintOp.mPaintData.toString())
-            .contains("ColorFilterID(color=[45], mode=MULTIPLY)")
+            .containsMatch("ColorFilterID\\(color=\\[\\d+], mode=MULTIPLY\\)")
     }
 
     @Test
@@ -619,7 +619,7 @@ class RecordingCanvasTest {
                 }
 
         assertThat(shaderMatricies.joinToString(","))
-            .isEqualTo("[ShaderMatrix([43])],[ShaderMatrix(0.0)],[]")
+            .matches("\\[ShaderMatrix\\(\\[\\d+]\\)],\\[ShaderMatrix\\(0.0\\)],\\[]")
     }
 
     private fun constructDocument() =

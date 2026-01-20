@@ -103,6 +103,10 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
             return getFloatIdForCreationState(FallbackCreationState.state)
         }
 
+    override fun getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float {
+        return constantValue ?: super.getFloatIdForCreationState(creationState)
+    }
+
     public fun internalAsFloat(): Float {
         return id
     }

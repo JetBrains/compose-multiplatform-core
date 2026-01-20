@@ -144,7 +144,7 @@ internal class FormWidgetInteractionHandler(
     }
 
     private fun showSingleChoiceSelectMenu(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
-        var selectedItemIndex: Int = formWidgetInfo.listItems.indexOfFirst { it.selected }
+        var selectedItemIndex: Int = formWidgetInfo.listItems.indexOfFirst { it.isSelected }
         val listItemValues: List<String> = formWidgetInfo.listItems.map { it.label }
 
         MaterialAlertDialogBuilder(context)
@@ -162,7 +162,7 @@ internal class FormWidgetInteractionHandler(
     private fun showMultiChoiceSelectMenu(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
         val selectedItems =
             BooleanArray(formWidgetInfo.listItems.size) { i ->
-                formWidgetInfo.listItems[i].selected
+                formWidgetInfo.listItems[i].isSelected
             }
         val listItemValues: List<String> = formWidgetInfo.listItems.map { it.label }
 

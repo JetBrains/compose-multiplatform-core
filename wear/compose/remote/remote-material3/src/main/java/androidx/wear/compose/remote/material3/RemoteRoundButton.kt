@@ -50,7 +50,7 @@ internal fun RemoteRoundButton(
         modifier =
             modifier
                 .drawWithContent {
-                    drawScope.drawShapedBackground(
+                    drawShapedBackground(
                         shape = shape,
                         color = backgroundColor,
                         enabled = enabled,

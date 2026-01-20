@@ -48,5 +48,5 @@ androidx {
 
 android {
     namespace = "androidx.transition.ktx"
-    compileSdk = 35
+    compileSdk { version = release(35) }
 }

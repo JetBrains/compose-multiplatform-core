@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.materialcore.SelectionStage
 import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sin
 
 // Forked from materialcore package in order to specialise for material3
@@ -66,7 +67,19 @@ private fun DrawScope.drawTick(
     val tickProgressPx = tickProgress * tickTotalLength
     val startXOffsetPx = startXOffset.toPx()
     val center = Offset(12.dp.toPx() + startXOffsetPx, 12.dp.toPx())
-    val angle = TICK_ROTATION - TICK_ROTATION / tickTotalLength * tickProgressPx
+
+    // Normalized progress for angle calculation (0 to 1)
+    val normalizedProgress = tickProgress.coerceIn(0f, 1f)
+
+    // Apply a Cubic Ease-In function (progress^3) to the normalized progress.
+    // This creates an "eased" progress value that increases slowly at the beginning
+    val rotationEasedProgress = normalizedProgress.pow(3)
+
+    // Angle decays from TICK_ROTATION to 0.
+    // We use (1f - rotationEasedProgress) such that the *change* in angle is slower at the start
+    // Meaning the angle stays larger for longer.
+    // Ensuring the tick is more visible while undergoing the most significant part of its rotation.
+    val angle = TICK_ROTATION * (1f - rotationEasedProgress)
     val angleRadians = angle.toRadians()
 
     // Animate the base of the tick.

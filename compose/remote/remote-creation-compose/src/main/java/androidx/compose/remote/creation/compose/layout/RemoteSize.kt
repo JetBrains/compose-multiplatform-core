@@ -51,4 +51,8 @@ public class RemoteSize {
 
     public val center: RemoteOffset
         get() = RemoteOffset(width / 2f, height / 2f)
+
+    public companion object {
+        public val Zero: RemoteSize = RemoteSize(0f.rf, 0f.rf)
+    }
 }

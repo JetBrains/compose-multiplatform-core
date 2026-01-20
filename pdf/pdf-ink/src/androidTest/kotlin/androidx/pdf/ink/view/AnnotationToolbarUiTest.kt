@@ -17,6 +17,7 @@
 package androidx.pdf.ink.view
 
 import ANNOTATION_TOOLBAR
+import ANNOTATION_TOOLBAR_COLLAPSED
 import ANNOTATION_TOOLBAR_IN_DARK_MODE
 import ANNOTATION_TOOLBAR_IN_LIGHT_MODE
 import ANNOTATION_TOOLBAR_WITH_COLOR_PALETTE_VISIBLE
@@ -142,6 +143,20 @@ class AnnotationToolbarUiTest {
             screenshotRule,
             ANNOTATION_TOOLBAR_IN_DARK_MODE,
         )
+    }
+
+    @Test
+    fun test_annotationToolbar_expanded_after_collapsed() {
+        var annotationToolbar: AnnotationToolbar? = null
+        setupAnnotationToolbar { annotationToolbar = it }
+
+        if (annotationToolbar == null) return
+
+        onView(withId(R.id.color_palette_button)).perform(click())
+
+        annotationToolbar.collapseToolbar()
+
+        assertScreenshot(ANNOTATION_TOOLBAR_VIEW_ID, screenshotRule, ANNOTATION_TOOLBAR_COLLAPSED)
     }
 
     private fun setupAnnotationToolbar(

@@ -162,6 +162,33 @@ class AnnotationsTouchEventDispatcherTest {
     }
 
     @Test
+    fun dispatchTouchEvent_inEraserMode_sendsEventsToAnnotationDispatcherOnly() {
+        annotationsTouchEventDispatcher.drawingMode = eraserMode
+
+        // Dispatch DOWN, MOVE, UP events
+        val downEvent = createMotionEvent(MotionEvent.ACTION_DOWN, 10f, 10f)
+        annotationsTouchEventDispatcher.dispatchTouchEvent(downEvent)
+
+        val moveEvent = createMotionEvent(MotionEvent.ACTION_MOVE, 20f, 20f)
+        annotationsTouchEventDispatcher.dispatchTouchEvent(moveEvent)
+
+        val upEvent = createMotionEvent(MotionEvent.ACTION_UP, 20f, 20f)
+        annotationsTouchEventDispatcher.dispatchTouchEvent(upEvent)
+
+        // Verify annotation dispatcher received all events
+        assertThat(annotationsViewDispatcher.callCount()).isEqualTo(3)
+        assertThat(annotationsViewDispatcher.receivedEvents[0].actionMasked)
+            .isEqualTo(MotionEvent.ACTION_DOWN)
+        assertThat(annotationsViewDispatcher.receivedEvents[1].actionMasked)
+            .isEqualTo(MotionEvent.ACTION_MOVE)
+        assertThat(annotationsViewDispatcher.receivedEvents[2].actionMasked)
+            .isEqualTo(MotionEvent.ACTION_UP)
+
+        // Verify ink dispatcher received no events
+        assertThat(inkViewDispatcher.wasCalled()).isFalse()
+    }
+
+    @Test
     fun switchToActiveDispatcher_sendsCancelAndForwardsEvents() {
         annotationsTouchEventDispatcher.drawingMode = highlighterMode
 
@@ -236,7 +263,7 @@ class AnnotationsTouchEventDispatcherTest {
     }
 
     companion object {
-
+        private val eraserMode = AnnotationDrawingMode.EraserMode
         private val penMode = AnnotationDrawingMode.PenMode(5f, Color.BLACK)
         private val highlighterMode =
             AnnotationDrawingMode.HighlighterMode(10f, Color.YELLOW, FakeEditablePdfDocument())

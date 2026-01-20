@@ -33,6 +33,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import java.util.UUID
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -171,7 +172,9 @@ class AnnotationHitTouchHandlerTest {
 
     // Updated helper to support multiple annotations
     private fun setupAnnotationsOnView(annotations: List<PdfAnnotation>) {
-        val data = PageAnnotationsData(annotations, Matrix())
+        val keyedAnnotations =
+            annotations.map { KeyedPdfAnnotation(key = UUID.randomUUID().toString(), it) }
+        val data = PageAnnotationsData(keyedAnnotations, Matrix())
         val sparseArray = SparseArray<PageAnnotationsData>()
         sparseArray.put(0, data)
         annotationsView.annotations = sparseArray

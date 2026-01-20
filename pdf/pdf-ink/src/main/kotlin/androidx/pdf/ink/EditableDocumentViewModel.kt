@@ -33,7 +33,6 @@ import androidx.pdf.PdfLoader
 import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.annotation.PdfAnnotationsEditor
 import androidx.pdf.annotation.history.AnnotationRecordsHistoryManager
-import androidx.pdf.annotation.manager.AnnotationsManager
 import androidx.pdf.annotation.manager.PdfAnnotationsManager
 import androidx.pdf.annotation.models.AnnotationsDisplayState
 import androidx.pdf.annotation.models.PdfAnnotation
@@ -195,7 +194,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
     }
 
     /**
-     * Fetches annotations from the [AnnotationsManager] for the defined page range.
+     * Fetches annotations from the [PdfAnnotationsManager] for the defined page range.
      *
      * @param startPage The starting page number (inclusive).
      * @param endPage The ending page number (inclusive).

@@ -56,6 +56,9 @@ internal class AnnotationsTouchEventDispatcher(
                         annotationsViewDispatcher.dispatchTouchEvent(event)
                     }
                 }
+                is AnnotationDrawingMode.EraserMode -> {
+                    annotationsViewDispatcher.dispatchTouchEvent(event)
+                }
                 else -> {
                     return false
                 }
