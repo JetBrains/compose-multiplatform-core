@@ -267,10 +267,10 @@ final class CMPViewControllerTests: XCTestCase {
         ]) {
             """
             Only the root view controller must be in the window hierarchy
-            - viewController0 should be in window hierarchy, but given: \(viewController0.viewIsInWindowHierarchy)
-            - viewController1 should not be in window hierarchy, but given: \(viewController1.viewIsInWindowHierarchy)
-            - viewController2 should not be in window hierarchy, but given: \(viewController2.viewIsInWindowHierarchy)
-            - viewController3 should not be in window hierarchy, but given: \(viewController3.viewIsInWindowHierarchy)
+            - viewController0.viewIsInWindowHierarchy : \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy : \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy : \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy : \(viewController3.viewIsInWindowHierarchy)
             """
         }
         
@@ -282,16 +282,25 @@ final class CMPViewControllerTests: XCTestCase {
             (viewController3, false),
         ]) {
             """
-            Modal view controller and child view controller must be present in window hierarchy, but actually:
-            - viewController0 should be in window hierarchy, but given: \(viewController0.viewIsInWindowHierarchy)
-            - viewController1 should be in window hierarchy, but given: \(viewController1.viewIsInWindowHierarchy)
-            - viewController2 should be in window hierarchy, but given: \(viewController2.viewIsInWindowHierarchy)
-            - viewController3 should not be in window hierarchy, but given: \(viewController3.viewIsInWindowHierarchy)
+            Modal view controller and child view controller must be present in window hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
             """
         }
         
         viewController1.present(viewController3, animated: false)
-        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true)
+        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true) {
+            """
+            All view controller should be in view hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
+            
+            """
+        }
                         
         viewController0.dismiss(animated: false)
         await expect(viewControllersToBeInHierarchy: [
@@ -299,7 +308,15 @@ final class CMPViewControllerTests: XCTestCase {
             (viewController1, false),
             (viewController2, false),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Only the root view controller should stay in view hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)            
+            """
+        }
         rootViewController = UIViewController()
         await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
