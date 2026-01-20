@@ -82,6 +82,7 @@
     self = [super initWithNibName:nil bundle:nil];
     
     if (self) {
+        NSLog(@"CMPViewController - init");
         _lifecycleDelegate = delegate;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
         
