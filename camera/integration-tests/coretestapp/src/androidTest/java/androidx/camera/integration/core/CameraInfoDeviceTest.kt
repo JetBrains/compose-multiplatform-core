@@ -17,6 +17,7 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.os.Build
@@ -44,6 +45,8 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.concurrent.futures.await
+import androidx.core.backported.fixes.BackportedFixManager
+import androidx.core.backported.fixes.KnownIssues
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -335,8 +338,16 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         val cameraCharacteristics =
             CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)!!
         val streamConfigurationMap = cameraCharacteristics.get(SCALER_STREAM_CONFIGURATION_MAP)!!
+        var expectedFormats = streamConfigurationMap.outputFormats.toList()
 
-        assertThat(formats).containsExactlyElementsIn(streamConfigurationMap.outputFormats.toSet())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val isColorToneIssueFixed = BackportedFixManager().isFixed(KnownIssues.KI_398591036)
+            if (!isColorToneIssueFixed) {
+                expectedFormats = expectedFormats.filter { it != ImageFormat.JPEG_R }
+            }
+        }
+
+        assertThat(formats).containsExactlyElementsIn(expectedFormats)
     }
 
     @Test

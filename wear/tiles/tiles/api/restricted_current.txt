@@ -1073,6 +1073,8 @@ package androidx.wear.tiles {
     field public static final String EXTRA_CLICKABLE_ID = "androidx.wear.tiles.extra.CLICKABLE_ID";
     field public static final String METADATA_GROUP_KEY = "androidx.wear.tiles.GROUP";
     field public static final String METADATA_PREVIEW_KEY = "androidx.wear.tiles.PREVIEW";
+    field public static final String METADATA_SCHEMA_MAJOR_VERSION_KEY = "tiles_schema_major_version";
+    field public static final String METADATA_SCHEMA_MINOR_VERSION_KEY = "tiles_schema_minor_version";
   }
 
   public interface TileUpdateRequester {

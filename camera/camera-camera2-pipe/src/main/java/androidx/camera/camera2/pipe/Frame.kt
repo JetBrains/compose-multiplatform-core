@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe
 
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.FrameReference.Companion.acquire
+import androidx.camera.camera2.pipe.OutputStatus.Companion.UNAVAILABLE
 import androidx.camera.camera2.pipe.core.AutoCloseables
 import androidx.camera.camera2.pipe.core.AutoCloseables.useEachIndexedAsync
 import androidx.camera.camera2.pipe.media.OutputImage
@@ -97,8 +98,10 @@ public interface Frame : FrameReference, AutoCloseable {
      * If an image is not available, [imageStatus] can be used to understand the reason this image
      * was not produced by the camera. Each call produces a unique [OutputImage] that *must* be
      * closed to avoid memory leaks.
+     *
+     * TODO: b/474658963 - Deprecate this API once the new await/get image APIs are implemented.
      */
-    public suspend fun awaitImage(streamId: StreamId): OutputImage?
+    public suspend fun awaitImage(streamId: StreamId): OutputImage? = null
 
     /**
      * Return the [OutputImage] for this [streamId], if available.
@@ -107,8 +110,60 @@ public interface Frame : FrameReference, AutoCloseable {
      * If an image is not available, [imageStatus] can be used to understand the reason this image
      * was not produced by the camera. Each call produces a unique [OutputImage] that *must* be
      * closed to avoid memory leaks.
+     *
+     * TODO: b/474658963 - Deprecate this API once the new await/get image APIs are implemented.
      */
-    public fun getImage(streamId: StreamId): OutputImage?
+    public fun getImage(streamId: StreamId): OutputImage? = null
+
+    /**
+     * Return the [OutputImage] for this [outputId], if available or suspend until the output for
+     * stream has been resolved.
+     *
+     * Returns null if the image could not be produced for any reason, or if this frame is closed.
+     * If an image is not available, [imageStatus] can be used to understand the reason this image
+     * was not produced by the camera. Each call produces a unique [OutputImage] that *must* be
+     * closed to avoid memory leaks.
+     */
+    public suspend fun awaitImage(outputId: OutputId): OutputImage? {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Return the [OutputImage] for this [outputId], if available.
+     *
+     * Returns null if the image could not be produced for any reason, or if this frame is closed.
+     * If an image is not available, [imageStatus] can be used to understand the reason this image
+     * was not produced by the camera. Each call produces a unique [OutputImage] that *must* be
+     * closed to avoid memory leaks.
+     */
+    public fun getImage(outputId: OutputId): OutputImage? {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Returns the [OutputImage]s for this [streamId], if available or suspend until the output for
+     * this stream has been resolved.
+     *
+     * May return an empty list or a subset of available output images if some images could not be
+     * produced for any reason, or if this frame is closed. If an image is not available,
+     * [imageStatus] can be used to understand the reason a particular image was not produced by the
+     * camera. Each call produces unique [OutputImage]s that *must* be closed to avoid memory leaks.
+     */
+    public suspend fun awaitImages(streamId: StreamId): List<OutputImage> {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Returns the [OutputImage]s for this [streamId], if available.
+     *
+     * May return an empty list or a subset of available output images if some images could not be
+     * produced for any reason, or if this frame is closed. If an image is not available,
+     * [imageStatus] can be used to understand the reason a particular image was not produced by the
+     * camera. Each call produces unique [OutputImage]s that *must* be closed to avoid memory leaks.
+     */
+    public fun getImages(streamId: StreamId): List<OutputImage> {
+        TODO("Not yet implemented")
+    }
 
     /**
      * Listener for non-coroutine based applications that may need to be notified when the state of
@@ -130,8 +185,12 @@ public interface Frame : FrameReference, AutoCloseable {
         /** Invoked after [FrameInfo] is available, or has failed to be produced. */
         public fun onFrameInfoAvailable()
 
-        /** Invoked after the output for a given [StreamId] has been produced. */
-        public fun onImageAvailable(streamId: StreamId)
+        /**
+         * Invoked after the output for a given [StreamId] has been produced.
+         *
+         * TODO: b/474658963 - Deprecate this API once the new await/get image APIs are implemented.
+         */
+        public fun onImageAvailable(streamId: StreamId) {}
 
         /**
          * Invoked after *all* outputs for this [Frame] have been produced. This method will be
@@ -402,8 +461,17 @@ public interface FrameReference {
     /** Get the current [OutputStatus] for the FrameInfo of this Frame. */
     public val frameInfoStatus: OutputStatus
 
-    /** Get the current [OutputStatus] of the output for a given [streamId]. */
+    /**
+     * Get the current [OutputStatus] of the output for a given [streamId].
+     *
+     * TODO: b/474658963 - Deprecate this API once the new await/get image APIs are implemented.
+     */
     public fun imageStatus(streamId: StreamId): OutputStatus
+
+    /** Get the current [OutputStatus] of the output for a given [outputId]. */
+    public fun imageStatus(outputId: OutputId): OutputStatus {
+        TODO("Not yet implemented")
+    }
 
     /**
      * [StreamId]'s that can be used to access [OutputImage]s from this [Frame] via [Frame.getImage]

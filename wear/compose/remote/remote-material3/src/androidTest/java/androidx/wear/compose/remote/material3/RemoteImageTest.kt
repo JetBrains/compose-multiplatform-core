@@ -68,7 +68,9 @@ class RemoteImageTest {
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
         ) {
             val avatarImage =
-                rememberRemoteBitmapValue(name = "avatarImage") { createImage(size, size) }
+                rememberRemoteBitmapValue(name = "avatarImage") {
+                    createImage(size, size).asImageBitmap()
+                }
             RemoteImage(
                 avatarImage,
                 contentDescription = rememberRemoteString { "background" },
@@ -86,7 +88,9 @@ class RemoteImageTest {
             backgroundColor = androidx.compose.ui.graphics.Color.Black,
         ) {
             val backgroundImage =
-                rememberRemoteBitmapValue(name = "backgroundImage") { createImage(size, size) }
+                rememberRemoteBitmapValue(name = "backgroundImage") {
+                    createImage(size, size).asImageBitmap()
+                }
             RemoteImage(
                 remoteBitmap = backgroundImage,
                 alpha = 0.6f.rf,

@@ -316,10 +316,8 @@ package androidx.xr.compose.subspace {
   public final class SpatialColumnKt {
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static inline void SpatialColumn(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.xr.compose.subspace.layout.SpatialArrangement.Vertical verticalArrangement, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialColumnScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialColumn(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialAlignment?, androidx.xr.compose.subspace.layout.SpatialArrangement.Vertical?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialColumnScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy getDefaultSpatialColumnMeasurePolicy();
     method @KotlinOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy spatialColumnMeasurePolicy(androidx.xr.compose.subspace.layout.SpatialAlignment alignment, androidx.xr.compose.subspace.layout.SpatialArrangement.Vertical verticalArrangement);
     method @BytecodeOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy spatialColumnMeasurePolicy(androidx.xr.compose.subspace.layout.SpatialAlignment, androidx.xr.compose.subspace.layout.SpatialArrangement.Vertical, androidx.compose.runtime.Composer?, int);
-    property @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy DefaultSpatialColumnMeasurePolicy;
   }
 
   @androidx.compose.foundation.layout.LayoutScopeMarker public interface SpatialColumnScope {
@@ -381,10 +379,12 @@ package androidx.xr.compose.subspace {
   }
 
   public final class SpatialRowKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialCurvedRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal horizontalArrangement, optional androidx.compose.ui.unit.Dp curveRadius, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static inline void SpatialCurvedRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal horizontalArrangement, optional androidx.compose.ui.unit.Dp curveRadius, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialCurvedRow-hGBTI10(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialAlignment?, androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal?, float, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialRowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static inline void SpatialRow(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.layout.SpatialAlignment alignment, optional androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialRowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.xr.compose.subspace.SubspaceComposable public static void SpatialRow(androidx.xr.compose.subspace.layout.SubspaceModifier?, androidx.xr.compose.subspace.layout.SpatialAlignment?, androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal?, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialRowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy spatialRowMeasurePolicy(androidx.compose.ui.unit.Dp curveRadius, androidx.xr.compose.subspace.layout.SpatialAlignment alignment, androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal horizontalArrangement);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy spatialRowMeasurePolicy--orJrPs(float, androidx.xr.compose.subspace.layout.SpatialAlignment, androidx.xr.compose.subspace.layout.SpatialArrangement.Horizontal, androidx.compose.runtime.Composer?, int);
   }
 
   @androidx.compose.foundation.layout.LayoutScopeMarker public interface SpatialRowScope {
@@ -392,6 +392,12 @@ package androidx.xr.compose.subspace {
     method public androidx.xr.compose.subspace.layout.SubspaceModifier align(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical alignment);
     method public androidx.xr.compose.subspace.layout.SubspaceModifier weight(androidx.xr.compose.subspace.layout.SubspaceModifier, @FloatRange(from=0.0, fromInclusive=false) float weight, optional boolean fill);
     method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! weight$default(androidx.xr.compose.subspace.SpatialRowScope!, androidx.xr.compose.subspace.layout.SubspaceModifier!, float, boolean, int, Object!);
+  }
+
+  @kotlin.PublishedApi internal final class SpatialRowScopeInstance implements androidx.xr.compose.subspace.SpatialRowScope {
+    method public androidx.xr.compose.subspace.layout.SubspaceModifier align(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.subspace.layout.SpatialAlignment.Depth alignment);
+    method public androidx.xr.compose.subspace.layout.SubspaceModifier align(androidx.xr.compose.subspace.layout.SubspaceModifier, androidx.xr.compose.subspace.layout.SpatialAlignment.Vertical alignment);
+    method public androidx.xr.compose.subspace.layout.SubspaceModifier weight(androidx.xr.compose.subspace.layout.SubspaceModifier, float weight, boolean fill);
   }
 
   public final class SpatialSpacerKt {

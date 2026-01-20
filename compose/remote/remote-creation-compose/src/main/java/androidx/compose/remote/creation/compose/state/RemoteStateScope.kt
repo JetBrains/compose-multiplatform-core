@@ -20,12 +20,16 @@ package androidx.compose.remote.creation.compose.state
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteDensity
 
 /** Scope for accessing remote state IDs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RemoteStateScope {
     /** The [RemoteComposeCreationState] associated with the document being drawn into. */
     public val creationState: RemoteComposeCreationState
+
+    /** The [RemoteDensity] associated with the document being drawn into. */
+    public val remoteDensity: RemoteDensity
 
     /** The [RemoteComposeWriter] associated with the document being drawn into. */
     public val document: RemoteComposeWriter

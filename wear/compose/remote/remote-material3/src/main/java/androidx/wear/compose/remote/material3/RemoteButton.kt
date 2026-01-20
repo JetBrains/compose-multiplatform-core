@@ -386,7 +386,7 @@ public fun RemoteCompactButton(
             modifier
                 .compactButtonModifier()
                 .padding(tapPadding)
-                .clickable(onClick, enabled = enabled.constantValue ?: false)
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
     ) {
         if (label != null) {
             RemoteButtonImpl(
@@ -471,7 +471,7 @@ private fun RemoteButtonImpl(
     val containerModifier =
         RemoteModifier.clickable(
                 actions = buildList { onClick?.let { add(it) } },
-                enabled = enabled.constantValue ?: false && onClick != null,
+                enabled = enabled.constantValueOrNull ?: false && onClick != null,
             )
             .padding(contentPadding)
 
@@ -911,7 +911,7 @@ private fun RemoteDrawScope.drawBorder(
     w: RemoteFloat,
     h: RemoteFloat,
 ) {
-    with(shape.createOutline(RemoteSize(w, h), layoutDirection)) {
+    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
             RemotePaint().apply {
                 remoteColor = borderColor
@@ -930,7 +930,7 @@ private fun RemoteDrawScope.drawSolidColorShape(
     h: RemoteFloat,
     color: RemoteColor? = null,
 ) {
-    with(shape.createOutline(RemoteSize(w, h), layoutDirection)) {
+    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
             RemotePaint().apply {
                 style = Paint.Style.FILL

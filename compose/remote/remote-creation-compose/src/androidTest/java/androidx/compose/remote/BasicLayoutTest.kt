@@ -29,6 +29,7 @@ import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.action.ValueChange
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.rememberAsyncRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.layout.CaptureAsBitmap
@@ -1159,7 +1160,12 @@ ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
         modifier: RemoteModifier = RemoteModifier,
         tint: Color = Color.White,
     ) {
-        val painter = painterRemoteVector(image = icon, tintColor = tint.rc)
+        val painter =
+            painterRemoteVector(
+                image = icon,
+                tintColor = tint.rc,
+                density = LocalRemoteComposeCreationState.current.remoteDensity,
+            )
         RemoteCanvas(modifier = modifier.size(size)) { with(painter) { onDraw() } }
     }
 

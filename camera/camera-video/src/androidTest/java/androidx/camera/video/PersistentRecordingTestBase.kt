@@ -160,9 +160,7 @@ abstract class PersistentRecordingTestBase(
         camera
     }
 
-    private val audioStreamAvailable by lazy {
-        AudioChecker.canAudioStreamBeStarted(videoCapabilities, Recorder.DEFAULT_QUALITY_SELECTOR)
-    }
+    private val audioStreamAvailable by lazy { AudioChecker.canAudioStreamBeStarted() }
 
     @Before
     fun setUp() {

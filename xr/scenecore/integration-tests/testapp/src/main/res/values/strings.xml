@@ -106,6 +106,14 @@
     <string name="horizontal" description="Checkbox label for the Horizontal plane Type option. [CHAR_LIMIT=30]">Horizontal</string>
     <string name="vertical" description="Checkbox label for the Vertical plane Type option. [CHAR_LIMIT=30]">Vertical</string>
     <string name="movable_panel_test" description="Label for the main panel. [CHAR_LIMIT=30]">Movable Panel Test</string>
+    <string name="enable_movable_component" description="Label for the master switch that enables or disables the MovableComponent functionality on the panel. [CHAR_LIMIT=30]">Enable MovableComponent</string>
+    <string name="movable_type_anchorable" description="Radio button label for selecting the Anchorable type of MovableComponent. [CHAR_LIMIT=30]">Anchorable</string>
+    <string name="movable_type_system" description="Radio button label for selecting the System Movable type of MovableComponent. [CHAR_LIMIT=30]">System Movable</string>
+    <string name="movable_type_custom" description="Radio button label for selecting the Custom Movable type of MovableComponent. [CHAR_LIMIT=30]">Custom Movable</string>
+    <string name="custom_behavior" description="Header text for the options that configure the custom behavior of the MovableComponent. [CHAR_LIMIT=30]">Custom Behavior</string>
+    <string name="custom_behavior_translation_only" description="Radio button label for the custom behavior that only updates the entity's translation (position). [CHAR_LIMIT=40]">Only update translation</string>
+    <string name="custom_behavior_rotation_only" description="Radio button label for the custom behavior that only updates the entity's rotation. [CHAR_LIMIT=40]">Only update rotation</string>
+
 
     <!-- inputmoveresize -->
     <string name="movable_label" description="Label for switch that enables main panel move [CHAR_LIMIT=30]">Movable</string>

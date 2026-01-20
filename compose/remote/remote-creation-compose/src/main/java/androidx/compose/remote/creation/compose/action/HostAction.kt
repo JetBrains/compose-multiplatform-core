@@ -53,7 +53,7 @@ public class HostAction(
     override fun RemoteStateScope.toRemoteAction():
         androidx.compose.remote.creation.actions.Action {
         val valueId = value?.id ?: -1
-        val constantValue = name.constantValue
+        val constantValue = name.constantValueOrNull
         return if (constantValue != null) {
             HostAction(constantValue, type.ordinal, valueId)
         } else {

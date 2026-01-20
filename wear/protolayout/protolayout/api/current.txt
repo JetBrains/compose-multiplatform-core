@@ -1289,7 +1289,6 @@ package androidx.wear.protolayout {
     ctor public ProtoLayoutScope();
     ctor public ProtoLayoutScope(optional androidx.wear.protolayout.expression.VersionBuilders.VersionInfo rendererVersionInfo);
     ctor @BytecodeOnly public ProtoLayoutScope(androidx.wear.protolayout.expression.VersionBuilders.VersionInfo!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method public void clearAll();
     method public android.os.Bundle collectPendingIntents();
     method public androidx.wear.protolayout.ResourceBuilders.Resources collectResources();
     method public boolean hasCapability(androidx.wear.protolayout.ProtoLayoutScope.RendererCapability capability);

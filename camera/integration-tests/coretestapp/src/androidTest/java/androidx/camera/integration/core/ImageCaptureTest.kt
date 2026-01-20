@@ -81,7 +81,6 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.CountdownDeferred
 import androidx.camera.testing.impl.ExtensionsUtil
-import androidx.camera.testing.impl.InternalTestConvenience.ignoreTestForCameraPipe
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.UltraHdrImageVerification.assertImageFileIsUltraHdr
@@ -1003,11 +1002,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     @SdkSuppress(minSdkVersion = 28)
     @Test(expected = IllegalArgumentException::class)
     fun constructor_withBufferFormatAndSessionProcessorIsSet_throwsException(): Unit = runBlocking {
-        val sessionProcessor =
-            FakeSessionProcessor(
-                inputFormatPreview = null, // null means using the same output surface
-                inputFormatCapture = ImageFormat.YUV_420_888,
-            )
+        val sessionProcessor = FakeSessionProcessor()
 
         val imageCapture = ImageCapture.Builder().setBufferFormat(ImageFormat.RAW_SENSOR).build()
         val preview = Preview.Builder().build()
@@ -1728,111 +1723,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         assertThat(imageProperties.format).isEqualTo(ImageFormat.YUV_420_888)
     }
 
-    @Test
-    @SdkSuppress(minSdkVersion = 28)
-    fun returnJpegImage_whenSessionProcessorIsSet() = runBlocking {
-        implName.ignoreTestForCameraPipe(
-            "TODO(b/275493663): Enable when camera-pipe has extensions support"
-        )
-
-        val builder = ImageCapture.Builder()
-        val sessionProcessor =
-            FakeSessionProcessor(
-                inputFormatPreview = null, // null means using the same output surface
-                inputFormatCapture = ImageFormat.YUV_420_888,
-            )
-
-        val imageCapture = builder.build()
-        val preview = Preview.Builder().build()
-
-        var camera: Camera
-        withContext(Dispatchers.Main) {
-            preview.setSurfaceProvider(SurfaceTextureProvider.createSurfaceTextureProvider())
-            val cameraSelector =
-                ExtensionsUtil.getCameraSelectorWithSessionProcessor(
-                    cameraProvider,
-                    BACK_SELECTOR,
-                    sessionProcessor,
-                    outputYuvformatInCapture = true,
-                )
-            camera =
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    imageCapture,
-                    preview,
-                )
-        }
-
-        val callback = FakeOnImageCapturedCallback(captureCount = 1)
-        imageCapture.takePicture(mainExecutor, callback)
-
-        // Wait for the signal that the image has been captured.
-        callback.awaitCapturesAndAssert(capturedImagesCount = 1)
-
-        val imageProperties = callback.results.first().properties
-
-        // Check the output image rotation degrees value is correct.
-        assertThat(imageProperties.rotationDegrees)
-            .isEqualTo(camera.cameraInfo.getSensorRotationDegrees(imageCapture.targetRotation))
-        // Check the output format is correct.
-        assertThat(imageProperties.format).isEqualTo(ImageFormat.JPEG)
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 28)
-    fun returnJpegImage_whenSessionProcessorIsSet_outputFormatJpeg() = runBlocking {
-        implName.ignoreTestForCameraPipe(
-            "TODO(b/275493663): Enable when camera-pipe has extensions support"
-        )
-
-        assumeFalse(
-            "Cuttlefish does not correctly handle Jpeg exif. Unable to test.",
-            Build.MODEL.contains("Cuttlefish"),
-        )
-
-        val sessionProcessor =
-            FakeSessionProcessor(
-                inputFormatPreview = null, // null means using the same output surface
-                inputFormatCapture = null,
-            )
-
-        val imageCapture = ImageCapture.Builder().build()
-        val preview = Preview.Builder().build()
-
-        withContext(Dispatchers.Main) {
-            preview.setSurfaceProvider(SurfaceTextureProvider.createSurfaceTextureProvider())
-            val cameraSelector =
-                ExtensionsUtil.getCameraSelectorWithSessionProcessor(
-                    cameraProvider,
-                    BACK_SELECTOR,
-                    sessionProcessor,
-                )
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                cameraSelector,
-                imageCapture,
-                preview,
-            )
-        }
-
-        val callback = FakeOnImageCapturedCallback(captureCount = 1)
-        imageCapture.takePicture(mainExecutor, callback)
-
-        // Wait for the signal that the image has been captured.
-        callback.awaitCapturesAndAssert(capturedImagesCount = 1)
-
-        val imageProperties = callback.results.first().properties
-
-        // Check the output image rotation degrees value is correct.
-        if (isRotationOptionSupportedDevice()) {
-            assertThat(imageProperties.rotationDegrees).isEqualTo(imageProperties.exif!!.rotation)
-        }
-
-        // Check the output format is correct.
-        assertThat(imageProperties.format).isEqualTo(ImageFormat.JPEG)
-    }
-
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun returnJpegrImageWithGainmap_whenOutputFormatIsUltraHdr() = runBlocking {
@@ -1990,11 +1880,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
             val expectedCaptureLatencyMillis = 1000L
             val expectedProcessingLatencyMillis = 100L
             val sessionProcessor =
-                object :
-                    SessionProcessor by FakeSessionProcessor(
-                        inputFormatPreview = null, // null means using the same output surface
-                        inputFormatCapture = null,
-                    ) {
+                object : SessionProcessor by FakeSessionProcessor() {
                     override fun getRealtimeCaptureLatency(): Pair<Long, Long> =
                         Pair(expectedCaptureLatencyMillis, expectedProcessingLatencyMillis)
                 }
@@ -2030,11 +1916,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     fun getRealtimeCaptureLatencyEstimate_whenSessionProcessorNotSupportsRealtimeLatencyEstimate() =
         runBlocking {
             val sessionProcessor =
-                object :
-                    SessionProcessor by FakeSessionProcessor(
-                        inputFormatPreview = null, // null means using the same output surface
-                        inputFormatCapture = null,
-                    ) {
+                object : SessionProcessor by FakeSessionProcessor() {
                     override fun getRealtimeCaptureLatency(): Pair<Long, Long>? = null
                 }
 

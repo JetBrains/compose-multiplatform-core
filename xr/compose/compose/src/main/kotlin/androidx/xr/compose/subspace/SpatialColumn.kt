@@ -66,7 +66,6 @@ public inline fun SpatialColumn(
     )
 }
 
-@PublishedApi
 internal val DefaultSpatialColumnMeasurePolicy: SubspaceMeasurePolicy =
     SpatialColumnMeasurePolicy(
         alignment = SpatialAlignment.Center,

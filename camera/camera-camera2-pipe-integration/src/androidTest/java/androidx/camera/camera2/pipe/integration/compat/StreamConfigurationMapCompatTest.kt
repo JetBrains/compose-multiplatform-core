@@ -17,11 +17,14 @@
 package androidx.camera.camera2.pipe.integration.compat
 
 import android.content.Context
+import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.hardware.camera2.params.StreamConfigurationMap
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.PixelJpegRSupportedQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.core.CameraSelector
 import androidx.camera.testing.impl.CameraUtil
@@ -71,6 +74,13 @@ class StreamConfigurationMapCompatTest {
     @Test
     fun canGetOutputFormats() {
         val formats = streamConfigurationMapCompat.getOutputFormats()!!.toList()
-        assertThat(formats).containsExactlyElementsIn(streamConfigurationMap.outputFormats.toList())
+        var expectedFormats = streamConfigurationMap.outputFormats.toList()
+
+        val quirk = DeviceQuirks[PixelJpegRSupportedQuirk::class.java]
+        if (quirk != null) {
+            expectedFormats = expectedFormats.filter { it != ImageFormat.JPEG_R }
+        }
+
+        assertThat(formats).containsExactlyElementsIn(expectedFormats)
     }
 }

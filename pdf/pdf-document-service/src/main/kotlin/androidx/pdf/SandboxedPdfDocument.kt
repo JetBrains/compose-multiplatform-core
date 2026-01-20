@@ -102,7 +102,7 @@ public class SandboxedPdfDocument(
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
 
     private val onPdfContentInvalidatedListeners:
-        CopyOnWriteArrayList<Pair<Executor, PdfDocument.OnPdfContentInvalidatedListener>> =
+        CopyOnWriteArrayList<PdfContentInvalidationEntry> =
         CopyOnWriteArrayList()
 
     /**
@@ -241,13 +241,18 @@ public class SandboxedPdfDocument(
         executor: Executor,
         listener: PdfDocument.OnPdfContentInvalidatedListener,
     ) {
-        onPdfContentInvalidatedListeners.add(Pair(executor, listener))
+        onPdfContentInvalidatedListeners.add(PdfContentInvalidationEntry(executor, listener))
     }
 
     override fun removeOnPdfContentInvalidatedListener(
         listener: PdfDocument.OnPdfContentInvalidatedListener
     ) {
-        onPdfContentInvalidatedListeners.removeIf { it.second == listener }
+        for (pdfContentInvalidationEntry in onPdfContentInvalidatedListeners) {
+            if (pdfContentInvalidationEntry.listener == listener) {
+                onPdfContentInvalidatedListeners.remove(pdfContentInvalidationEntry)
+                break
+            }
+        }
     }
 
     override suspend fun applyEdit(record: FormEditInfo) {
@@ -464,6 +469,11 @@ public class SandboxedPdfDocument(
             }
             .toIntArray()
     }
+
+    private data class PdfContentInvalidationEntry(
+        val executor: Executor,
+        val listener: PdfDocument.OnPdfContentInvalidatedListener,
+    )
 
     private companion object {
         private const val DEFAULT_PAGE = 400

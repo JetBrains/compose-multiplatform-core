@@ -51,7 +51,7 @@ public abstract class RemoteLong : BaseRemoteState<Long>() {
          */
         @JvmStatic
         public fun createNamedRemoteLong(name: String, initialValue: Long): RemoteLong {
-            return MutableRemoteLong(constantValue = null) { creationState ->
+            return MutableRemoteLong(constantValueOrNull = null) { creationState ->
                 creationState.document.addNamedLong(name, initialValue)
             }
         }
@@ -68,7 +68,7 @@ public abstract class RemoteLong : BaseRemoteState<Long>() {
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MutableRemoteLong(
-    public override val constantValue: Long?,
+    public override val constantValueOrNull: Long?,
     private val idProvider: (creationState: RemoteComposeCreationState) -> Int,
 ) : RemoteLong(), MutableRemoteState<Long> {
 
@@ -78,13 +78,13 @@ public class MutableRemoteLong(
      *
      * @param id An optional explicit ID for this mutable long. If `null`, a new ID is reserved.
      */
-    public constructor(id: Int) : this(constantValue = null, { creationState -> id })
+    public constructor(id: Int) : this(constantValueOrNull = null, { creationState -> id })
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         idProvider(creationState)
 
     public override fun toString(): String {
-        return "MutableRemoteLong@${this.hashCode()} =" + constantValue
+        return "MutableRemoteLong@${this.hashCode()} =" + constantValueOrNull
     }
 }
 
@@ -105,7 +105,7 @@ public fun rememberRemoteLongValue(
 ): MutableRemoteLong {
     return rememberNamedState(name, domain) {
         val initial = value()
-        MutableRemoteLong(constantValue = null) { creationState ->
+        MutableRemoteLong(constantValueOrNull = null) { creationState ->
             val id = creationState.document.addNamedLong(name, initial)
             creationState.document.setStringName(id, "$domain:$name")
             id

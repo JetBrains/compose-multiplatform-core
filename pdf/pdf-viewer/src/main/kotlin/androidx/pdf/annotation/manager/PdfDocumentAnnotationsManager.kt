@@ -73,13 +73,16 @@ internal class PdfDocumentAnnotationsManager(
     }
 
     override fun addAnnotation(keyedAnnotation: KeyedPdfAnnotation): String {
-        val draftId = draftState.addDraftAnnotation(keyedAnnotation)
+        var handleId = keyedAnnotation.key
+        if (handleRegistry.getSourceId(handleId) == null) {
+            handleId = draftState.addDraftAnnotation(keyedAnnotation)
+        }
         operationsTracker.addEntry(
             operationType = KeyedAnnotationOperation.OperationType.ADD,
-            key = draftId,
+            key = handleId,
             keyedAnnotation.annotation,
         )
-        return draftId
+        return handleId
     }
 
     override suspend fun removeAnnotation(annotationId: String): PdfAnnotation? {
@@ -144,7 +147,9 @@ internal class PdfDocumentAnnotationsManager(
 
     override fun discardChanges() {
         draftState.clear()
+        handleRegistry.clear()
         operationsTracker.clear()
+        annotationsRepository.clear()
     }
 
     /**

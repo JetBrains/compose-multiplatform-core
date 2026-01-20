@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.DrawTransform
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 
 /**
  * RemoteCanvas implements a Canvas layout, delegating to the foundation Canvas layout as needed.
@@ -640,7 +641,7 @@ internal fun RemoteStateScope.toPaint(
         this.alpha = alpha.floatId
         when (brush) {
             is RemoteSolidColor -> {
-                val constantValue = brush.color.constantValue
+                val constantValue = brush.color.constantValueOrNull
                 color =
                     if (constantValue != null) {
                         Color(constantValue.toArgb())

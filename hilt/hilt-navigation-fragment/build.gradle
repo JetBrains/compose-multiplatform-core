@@ -29,7 +29,7 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
 }
 
 android {

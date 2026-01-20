@@ -46,6 +46,8 @@ import kotlin.random.Random
  * @param state the state object used to observe and control content position
  * @param modifier the [Modifier] to be applied to this PDF viewer
  * @param isFormFillingEnabled boolean flag to enable / disable the form-filling feature surface.
+ * @param isImageSelectionEnabled boolean flag to enable / disable the image-selection feature
+ *   surface.
  * @param minZoom the minimum zoom / scaling factor that can be applied to the PDF viewer
  * @param maxZoom the maximum zoom / scaling factor that can be applied to the PDF viewer
  * @param verticalAlignment the alignment of the top page within the view
@@ -70,6 +72,7 @@ public fun PdfViewer(
     state: PdfViewerState,
     modifier: Modifier = Modifier,
     isFormFillingEnabled: Boolean = false,
+    isImageSelectionEnabled: Boolean = false,
     minZoom: Float = PdfView.MIN_PERMISSIBLE_ZOOM,
     maxZoom: Float = PdfView.MAX_PERMISSIBLE_ZOOM,
     verticalAlignment: Int = PdfView.VERTICAL_ALIGNMENT_CENTER,
@@ -140,6 +143,7 @@ public fun PdfViewer(
             view.pagesPerRow = pagesPerRow
             view.horizontalPageSpacing = horizontalPageSpacingPx
             view.verticalPageSpacing = verticalPageSpacingPx
+            view.isImageSelectionEnabled = isImageSelectionEnabled
         },
     )
 }

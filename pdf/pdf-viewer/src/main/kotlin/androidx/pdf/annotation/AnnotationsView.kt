@@ -47,21 +47,12 @@ public class AnnotationsView
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
 
-    private val onAnnotationSelectedListeners = mutableListOf<OnAnnotationSelectedListener>()
-    private val annotationSelectionTouchHandler =
-        AnnotationSelectionTouchHandler().apply {
-            setListener(
-                object : OnAnnotationSelectedListener {
-                    override fun onAnnotationSelected(keyedPdfAnnotation: KeyedPdfAnnotation) {
-                        onAnnotationSelectedListeners.forEach {
-                            it.onAnnotationSelected(keyedPdfAnnotation)
-                        }
-                    }
-                }
-            )
-        }
+    private val onAnnotationLocatedListeners = mutableListOf<OnAnnotationLocatedListener>()
+
     /** The view for displaying in-progress annotations (e.g., wet highlights). */
     private val inProgressHighlightsView: InProgressHighlightsView
+
+    private var annotationsLocator: AnnotationsLocator? = null
 
     init {
         setWillNotDraw(false)
@@ -109,6 +100,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         set(value) {
             field = value
             inProgressHighlightsView.pageInfoProvider = value
+
+            if (value != null) {
+                annotationsLocator = AnnotationsLocator(context, pageInfoProvider = value)
+            }
         }
 
     /** Adds a listener for highlight gesture events. */
@@ -117,9 +112,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     /** Adds a listener for annotation hit events. */
-    public fun addOnAnnotationSelectedListener(listener: OnAnnotationSelectedListener) {
-        if (!onAnnotationSelectedListeners.contains(listener)) {
-            onAnnotationSelectedListeners.add(listener)
+    public fun addOnAnnotationLocatedListener(listener: OnAnnotationLocatedListener) {
+        if (!onAnnotationLocatedListeners.contains(listener)) {
+            onAnnotationLocatedListeners.add(listener)
         }
     }
 
@@ -128,9 +123,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         inProgressHighlightsView.removeInProgressTextHighlightsListener(listener)
     }
 
-    /** Removes a listener that was previously added via [addOnAnnotationSelectedListener]. */
-    public fun removeOnAnnotationSelectedListener(listener: OnAnnotationSelectedListener) {
-        onAnnotationSelectedListeners.remove(listener)
+    /** Removes a listener that was previously added via [addOnAnnotationLocatedListener]. */
+    public fun removeOnAnnotationLocatedListener(listener: OnAnnotationLocatedListener) {
+        onAnnotationLocatedListeners.remove(listener)
     }
 
     private var pdfObjectDrawerFactory: PdfObjectDrawerFactory = DefaultPdfObjectDrawerFactoryImpl
@@ -164,7 +159,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return when (interactionMode) {
             is AnnotationMode.Select -> {
-                annotationSelectionTouchHandler.handleTouch(this, event)
+                val localAnnotationsLocator = annotationsLocator
+                if (localAnnotationsLocator != null) {
+                    val foundAnnotations =
+                        localAnnotationsLocator.findAnnotations(annotations, event)
+                    if (foundAnnotations.isNotEmpty()) {
+                        onAnnotationLocatedListeners.forEach {
+                            val event =
+                                LocatedAnnotations(x = event.x, y = event.y, foundAnnotations)
+                            it.onAnnotationsLocated(event)
+                        }
+                        return true
+                    }
+                }
+                false
             }
             is AnnotationMode.Highlight -> {
                 if (inProgressHighlightsView.visibility == VISIBLE) {
@@ -218,6 +226,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
 /** Callback interface for annotation hit events. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public interface OnAnnotationSelectedListener {
-    public fun onAnnotationSelected(keyedPdfAnnotation: KeyedPdfAnnotation)
+public interface OnAnnotationLocatedListener {
+    public fun onAnnotationsLocated(locatedAnnotations: LocatedAnnotations)
 }

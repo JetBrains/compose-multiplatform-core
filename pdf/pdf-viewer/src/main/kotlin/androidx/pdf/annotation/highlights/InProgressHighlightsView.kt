@@ -35,6 +35,7 @@ import androidx.pdf.annotation.highlights.utils.calculateHighlightRects
 import androidx.pdf.annotation.highlights.utils.computeBoundingBox
 import androidx.pdf.annotation.highlights.utils.toPathPdfObjects
 import androidx.pdf.annotation.models.StampAnnotation
+import androidx.pdf.exceptions.RequestFailedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -124,7 +125,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         activeHighlights[id] =
             HighlightState(pageNum, highlightColor, pageToViewTransform, startPdfPoint, emptyList())
 
-        viewScope?.launch {
+        tryHighlighting {
             val pageRects = doc.calculateHighlightRects(pageNum, startPdfPoint, startPdfPoint)
 
             if (pageRects.isNotEmpty()) {
@@ -144,7 +145,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             } else {
                 activeHighlights.remove(id)
                 inProgressTextHighlightsListeners.forEach {
-                    it.onTextHighlightFailed(startViewPoint)
+                    it.onTextHighlightRejected(startViewPoint)
                 }
             }
         }
@@ -154,7 +155,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun addToTextHighlight(id: InProgressHighlightId, currentPdfPoint: PointF) {
         val doc = pdfDocument ?: return
         activeHighlights[id]?.let { currentState ->
-            viewScope?.launch {
+            tryHighlighting {
                 val pageRects =
                     doc.calculateHighlightRects(
                         currentState.pageNum,
@@ -179,7 +180,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun finishTextHighlight(id: InProgressHighlightId, finalPdfPoint: PointF) {
         val doc = pdfDocument ?: return
         activeHighlights.remove(id)?.let { currentState ->
-            viewScope?.launch {
+            tryHighlighting {
                 val pageRects =
                     doc.calculateHighlightRects(
                         currentState.pageNum,
@@ -198,19 +199,25 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                     inProgressTextHighlightsListeners.forEach {
                         it.onTextHighlightFinished(mapOf(id to annotation))
                     }
-                } else {
-                    inProgressTextHighlightsListeners.forEach {
-                        it.onTextHighlightFailed(currentState.startPdfPoint)
-                    }
                 }
-                invalidate()
             }
+            invalidate()
         }
     }
 
     internal fun cancelTextHighlight(id: InProgressHighlightId) {
         if (activeHighlights.remove(id) != null) {
             invalidate()
+        }
+    }
+
+    private fun tryHighlighting(block: suspend () -> Unit) {
+        viewScope?.launch {
+            try {
+                block()
+            } catch (e: RequestFailedException) {
+                inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
+            }
         }
     }
 }

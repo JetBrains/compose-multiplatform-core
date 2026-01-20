@@ -29,11 +29,24 @@ import androidx.compose.runtime.Stable
 
 /** Common base interface for all Remote types. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class BaseRemoteState<T> : RemoteState<T> {
+public abstract class BaseRemoteState<T> internal constructor() : RemoteState<T> {
+    /** The constant value or null if there isn't one. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override abstract val constantValueOrNull: T?
 
     /** Whether or not this remote value always evaluates to the same result. */
     public open val hasConstantValue: Boolean
-        get() = constantValue != null
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) get() = constantValueOrNull != null
+
+    /**
+     * The constant value or throws if null or unknown. Use should be checked by hasConstant value
+     * first.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public override val constantValue: T
+        get() =
+            checkNotNull(constantValueOrNull) {
+                "constantValue should only be accessed if hasConstantValue is true"
+            }
 
     /**
      * Returns a new or cached id for this [RemoteState] within the RemoteComposeCreationState.
@@ -80,8 +93,11 @@ public abstract class BaseRemoteState<T> : RemoteState<T> {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Stable
 public interface RemoteState<T> {
+    /** The constant value or throws if null or unknown. */
+    public val constantValue: T
+
     /** The constant value or null if there isn't one. */
-    public val constantValue: T?
+    public val constantValueOrNull: T?
 }
 
 /**

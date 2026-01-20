@@ -73,6 +73,7 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
+import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.MutableStateObservable;
 import androidx.camera.core.impl.Observable;
 import androidx.camera.core.impl.StateObservable;
@@ -105,6 +106,7 @@ import androidx.camera.video.internal.encoder.InvalidConfigException;
 import androidx.camera.video.internal.encoder.OutputConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
+import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl;
 import androidx.camera.video.internal.muxer.MediaMuxerImpl;
 import androidx.camera.video.internal.muxer.Muxer;
 import androidx.camera.video.internal.muxer.MuxerException;
@@ -368,6 +370,8 @@ public final class Recorder implements VideoOutput {
     private static final long RETRY_SETUP_VIDEO_DELAY_MS = 1000L;
     @VisibleForTesting
     static final EncoderFactory DEFAULT_ENCODER_FACTORY = EncoderImpl::new;
+    private static final VideoEncoderInfo.Finder DEFAULT_VIDEO_ENCODER_INFO_FINDER =
+            VideoEncoderInfoImpl.FINDER;
     private static final MuxerFactory DEFAULT_MUXER_FACTORY = MediaMuxerImpl::new;
     private static final OutputStorage.Factory OUTPUT_STORAGE_FACTORY_DEFAULT =
             OutputStorageImpl::new;
@@ -1264,15 +1268,15 @@ public final class Recorder implements VideoOutput {
         Size surfaceSize = surfaceRequest.getResolution();
         // Fetch and cache nearest encoder profiles, if one exists.
         DynamicRange dynamicRange = surfaceRequest.getDynamicRange();
-        VideoCapabilities capabilities = getMediaCapabilities(
+        EncoderProfilesResolver profilesResolver = getEncoderProfilesResolver(
                 surfaceRequest.getCamera().getCameraInfo(),
                 surfaceRequest.getSessionType());
-        Quality highestSupportedQuality = capabilities.findNearestHigherSupportedQualityFor(
+        Quality highestSupportedQuality = profilesResolver.findNearestHigherSupportedQualityFor(
                 surfaceSize, dynamicRange);
         Logger.d(TAG, "Using supported quality of " + highestSupportedQuality
                 + " for surface size " + surfaceSize);
         if (highestSupportedQuality != Quality.NONE) {
-            mResolvedEncoderProfiles = capabilities.getProfiles(highestSupportedQuality,
+            mResolvedEncoderProfiles = profilesResolver.getProfiles(highestSupportedQuality,
                     dynamicRange);
             if (mResolvedEncoderProfiles == null) {
                 throw new AssertionError("Camera advertised available quality but did not "
@@ -3166,8 +3170,30 @@ public final class Recorder implements VideoOutput {
             @VideoRecordingType int videoRecordingType,
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
-        return RecorderVideoCapabilitiesFactory.getCapabilities(cameraInfo, videoRecordingType,
-                videoCapabilitiesSource);
+        CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) cameraInfo;
+        EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
+                videoRecordingType, cameraInfo, videoCapabilitiesSource);
+        return new RecorderVideoCapabilities(profilesResolver, cameraInfoInternal);
+    }
+
+    /** Gets the {@link EncoderProfilesResolver} for the given camera info. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Override
+    public @NonNull EncoderProfilesResolver getEncoderProfilesResolver(
+            @NonNull CameraInfo cameraInfo, int sessionType) {
+        int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
+                ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
+
+        return getEncoderProfilesResolverInternal(videoCaptureType, cameraInfo,
+                mVideoCapabilitiesSource);
+    }
+
+    private static @NonNull EncoderProfilesResolver getEncoderProfilesResolverInternal(
+            @VideoRecordingType int videoRecordingType,
+            @NonNull CameraInfo cameraInfo,
+            @VideoCapabilitiesSource int videoCapabilitiesSource) {
+        return EncoderProfilesResolverFactory.getResolver(cameraInfo, videoRecordingType,
+                videoCapabilitiesSource, DEFAULT_VIDEO_ENCODER_INFO_FINDER);
     }
 
     @AutoValue

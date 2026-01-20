@@ -31,6 +31,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.pdf.PdfDocument
 import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.pdf.util.PdfIdlingResource
+import androidx.pdf.view.PdfView
 import java.util.UUID
 
 /**
@@ -48,6 +49,8 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
     var documentLoaded = false
     var documentError: Throwable? = null
     private var hostView: FrameLayout? = null
+
+    fun getPdfViewInstance(): PdfView = pdfView
 
     override fun onCreateView(
         inflater: LayoutInflater,

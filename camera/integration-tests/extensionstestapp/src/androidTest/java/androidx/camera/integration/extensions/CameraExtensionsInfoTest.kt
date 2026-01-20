@@ -27,6 +27,7 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.impl.utils.ContextUtil
 import androidx.camera.extensions.CameraExtensionsInfo
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.extensions.internal.Camera2ExtensionsUtil
@@ -87,7 +88,8 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val context =
+        ContextUtil.getPersistentApplicationContext(ApplicationProvider.getApplicationContext())
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var extensionsManager: ExtensionsManager
     private lateinit var cameraExtensionsInfo: CameraExtensionsInfo

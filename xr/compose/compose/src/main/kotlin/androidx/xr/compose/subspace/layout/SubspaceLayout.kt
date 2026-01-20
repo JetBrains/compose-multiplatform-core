@@ -127,7 +127,7 @@ public inline fun SubspaceLayout(
                 set(coreEntity, SetCoreEntity)
                 set(modifier, SetModifier)
             },
-            content = { content() },
+            content = content,
         )
     }
 }
@@ -289,7 +289,7 @@ internal inline fun SubspaceLayout(
                 set(coreGroupEntity, SetCoreEntity)
                 set(modifier, SetModifier)
             },
-            content = { content() },
+            content = content,
         )
     }
 }

@@ -156,9 +156,7 @@ class UseCaseCombinationTest(
     private lateinit var cameraInfo: CameraInfo
     private lateinit var videoCapabilities: VideoCapabilities
 
-    private val audioStreamAvailable by lazy {
-        AudioChecker.canAudioStreamBeStarted(videoCapabilities, Recorder.DEFAULT_QUALITY_SELECTOR)
-    }
+    private val audioStreamAvailable by lazy { AudioChecker.canAudioStreamBeStarted() }
 
     @Before
     fun initializeCameraX() {
