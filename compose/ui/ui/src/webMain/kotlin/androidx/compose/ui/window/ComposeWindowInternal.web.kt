@@ -675,8 +675,8 @@ internal fun onDomReady(block: () -> Unit) {
 private fun touchForce(touch: Touch): Double = js("touch.force || 0.0")
 
 /**
- * The purpose of the clipTarget element is to briefly steal the focus to let a browser dispatch
- * ClipboardEvent to it. Then it returns the focus to canvas.
+ * The purpose of the clipTarget element is to briefly steal the focus to let the browser dispatch
+ * ClipboardEvent to it. Then it returns the focus to the canvas.
  */
 private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
     val clipTarget = (document.createElement("textarea") as HTMLTextAreaElement).apply {
