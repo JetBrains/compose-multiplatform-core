@@ -21,7 +21,9 @@ extension XCTestCase {
     @MainActor
     func expect(        
         timeout: TimeInterval = 5.0,
+        function: StaticString = #function,
         line: Int = #line,
+        message: () -> String = { "" },
         expectation: @escaping () -> Bool
     ) async {
         let start = Date()
@@ -29,10 +31,11 @@ extension XCTestCase {
         
         while !isExpectationMet && Date().timeIntervalSince(start) < timeout {
             try? await Task.sleep(nanoseconds: 100_000) // 100ms
-            isExpectationMet = expectation()            
+            isExpectationMet = expectation()
         }
         
         if !isExpectationMet {
+            print("Timeout failed at \(function), line: \(line). \(message())")
             XCTFail("Timeout at line \(line)")
         }
     }

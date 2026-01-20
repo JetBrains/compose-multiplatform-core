@@ -48,9 +48,11 @@ final class CMPViewControllerTests: XCTestCase {
     private func expect(
         viewController: TestViewController,
         toBeInHierarchy inHierarchy: Bool,
-        line: Int = #line
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
     ) async {
-        await expect(timeout: 5.0, line: line) {
+        await expect(timeout: 5.0, function: function, line: line, message: message) {
             viewController.viewIsInWindowHierarchy == inHierarchy
         }
     }
@@ -58,9 +60,11 @@ final class CMPViewControllerTests: XCTestCase {
     @MainActor
     private func expect(
         viewControllersToBeInHierarchy: [(TestViewController, Bool)],
-        line: Int = #line
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
     ) async {
-        await expect(timeout: 5.0, line: line) {
+        await expect(timeout: 5.0, function: function, line: line, message: message) {
             viewControllersToBeInHierarchy.reduce(true) { partialResult, pair in
                 let (viewController, inHierarchy) = pair
                 
@@ -73,11 +77,13 @@ final class CMPViewControllerTests: XCTestCase {
     private func expect(
         viewControllers: [TestViewController],
         toBeInHierarchy inHierarchy: Bool,
-        line: Int = #line
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
     ) async  {
         await expect(viewControllersToBeInHierarchy: viewControllers.map {
             ($0, inHierarchy)
-        }, line: line)
+        }, function: function, line: line, message: message)
     }
     
     @MainActor
@@ -258,7 +264,15 @@ final class CMPViewControllerTests: XCTestCase {
             (viewController1, false),
             (viewController2, false),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Only the root view controller must be in the window hierarchy
+            - viewController0 should be in window hierarhy, but given: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1 should not be in window hierarhy, but given: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2 should not be in window hierarhy, but given: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3 should not be in window hierarhy, but given: \(viewController3.viewIsInWindowHierarchy)
+            """
+        }
         
         viewController0.present(viewController1, animated: false)
         await expect(viewControllersToBeInHierarchy: [
@@ -266,7 +280,15 @@ final class CMPViewControllerTests: XCTestCase {
             (viewController1, true),
             (viewController2, true),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Modal view controller and child view controller must present in window hierarchy, but actually:
+            - viewController0 should be in window hierarhy, but given: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1 should be in window hierarhy, but given: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2 should be in window hierarhy, but given: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3 should not be in window hierarhy, but given: \(viewController3.viewIsInWindowHierarchy)
+            """
+        }
         
         viewController1.present(viewController3, animated: false)
         await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true)
