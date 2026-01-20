@@ -53,6 +53,11 @@
 }
 
 - (BOOL)cmp_isInWindowHierarchy {
+    NSLog(@"cmp_isInWindowHierarchy:vc: %@ \n  window: %d, parentViewController: %d, is root: %d",
+          self,
+          self.view.window != nil,
+          self.parentViewController != nil,
+          [self cmp_isRootViewController]);
     if (self.view.window != nil) {
         return YES;
     } else if (self.parentViewController != nil) {
@@ -140,6 +145,7 @@
     double delayInSeconds = 0.5;
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSLog(@".    %ld", self->_lifecycleState);
         switch (self->_lifecycleState) {
             case CMPComposeContainerLifecycleStateInitialized:
                 NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
