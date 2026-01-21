@@ -53,7 +53,6 @@
 }
 
 - (BOOL)cmp_isInWindowHierarchy {
-    NSLog(@"cmp_isInWindowHierarchy:vc: %@ \n  window: %d, parentViewController: %d, is root: %d",
           self,
           self.view.window != nil,
           self.parentViewController != nil,
