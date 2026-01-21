@@ -142,7 +142,6 @@
 
 - (void)scheduleHierarchyContainmentCheck {
     double delayInSeconds = 0.5;
-    NSLog(@"scheduleHierarchyContainmentCheck - Scheduled!");
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         NSLog(@".    %ld", self->_lifecycleState);
