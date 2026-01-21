@@ -38,7 +38,7 @@ android {
         //       Address API calls that require higher versions.
         minSdk = 34
     }
-    compileSdk = 35
+    compileSdk { version = release(35) }
     buildFeatures { viewBinding = true }
     namespace = "androidx.xr.scenecore.samples.videoplayerdrmtest"
 

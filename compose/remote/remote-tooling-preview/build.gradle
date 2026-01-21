@@ -31,7 +31,7 @@ androidx {
 
 android {
     namespace = "androidx.compose.remote.tooling.preview"
-    compileSdk = 35
+    compileSdk { version = release(35) }
     defaultConfig {
         minSdk = 26
     }

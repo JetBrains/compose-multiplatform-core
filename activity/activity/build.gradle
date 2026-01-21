@@ -14,7 +14,7 @@ plugins {
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
     namespace = "androidx.activity"
 }
 

@@ -111,3 +111,8 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material:material-navigation-samples"))
 }
+
+android {
+    compileSdk { version = release(35) }
+    namespace = "androidx.compose.material.navigation"
+}

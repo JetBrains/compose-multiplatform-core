@@ -49,7 +49,7 @@ android {
     }
 
     namespace = "androidx.core.uwb.rxjava3"
-    compileSdk = 36
+    compileSdk { version = release(36) }
 }
 
 androidx {

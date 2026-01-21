@@ -25,7 +25,7 @@ plugins {
 
 android {
     namespace = "androidx.wear.tiles.samples"
-    compileSdk = 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
         applicationId = "androidx.wear.tiles.samples"

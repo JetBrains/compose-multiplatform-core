@@ -30,10 +30,9 @@ plugins {
 
 android {
     namespace = "androidx.pdf.ink"
+    compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
         minSdk = 31
-        compileSdk = 36
-        compileSdkExtension = 19
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
