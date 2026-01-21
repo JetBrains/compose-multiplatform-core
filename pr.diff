@@ -1,0 +1,734 @@
+diff --git a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.h b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.h
+index 646b6d22ae463..bbbe93557dbd3 100644
+--- a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.h
++++ b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.h
+@@ -42,6 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
+ - (nullable UIViewController *)childViewControllerForStatusBarStyle;
+ - (nullable UIViewController *)childViewControllerForStatusBarHidden;
+ 
++- (void)testmethod_remove_mesdfsd;
+ @end
+ 
+ NS_ASSUME_NONNULL_END
+diff --git a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.m b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.m
+index a97438372a6a8..3bbe5520fc6d4 100644
+--- a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.m
++++ b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtils/CMPViewController.m
+@@ -53,6 +53,11 @@ - (BOOL)cmp_isRootViewController {
+ }
+ 
+ - (BOOL)cmp_isInWindowHierarchy {
++    NSLog(@"cmp_isInWindowHierarchy:vc: %@ \n  window: %d, parentViewController: %d, is root: %d",
++          self,
++          self.view.window != nil,
++          self.parentViewController != nil,
++          [self cmp_isRootViewController]);
+     if (self.view.window != nil) {
+         return YES;
+     } else if (self.parentViewController != nil) {
+@@ -77,6 +82,7 @@ - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delega
+     self = [super initWithNibName:nil bundle:nil];
+     
+     if (self) {
++        NSLog(@"CMPViewController - init");
+         _lifecycleDelegate = delegate;
+         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
+         
+@@ -138,8 +144,10 @@ - (void)transitLifecycleToStarted {
+ 
+ - (void)scheduleHierarchyContainmentCheck {
+     double delayInSeconds = 0.5;
+-    
++    NSLog(@"scheduleHierarchyContainmentCheck - Scheduled!");
++
+     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
++        NSLog(@".    %ld", self->_lifecycleState);
+         switch (self->_lifecycleState) {
+             case CMPComposeContainerLifecycleStateInitialized:
+                 NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
+diff --git a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewControllerTests.swift b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewControllerTests.swift
+index 49c5a98ed5de2..536a052dc20bd 100644
+--- a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewControllerTests.swift
++++ b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewControllerTests.swift
+@@ -44,23 +44,25 @@ final class CMPViewControllerTests: XCTestCase {
+         appDelegate = nil
+     }
+         
+-    @MainActor
+     private func expect(
+         viewController: TestViewController,
+         toBeInHierarchy inHierarchy: Bool,
+-        line: Int = #line
+-    ) async {
+-        await expect(timeout: 5.0, line: line) {
++        function: StaticString = #function,
++        line: Int = #line,
++        message: () -> String = { "" }
++    ) {
++        expect(timeout: 5.0, function: function, line: line, message: message) {
+             viewController.viewIsInWindowHierarchy == inHierarchy
+         }
+     }
+     
+-    @MainActor
+     private func expect(
+         viewControllersToBeInHierarchy: [(TestViewController, Bool)],
+-        line: Int = #line
+-    ) async {
+-        await expect(timeout: 5.0, line: line) {
++        function: StaticString = #function,
++        line: Int = #line,
++        message: () -> String = { "" }
++    ) {
++        expect(timeout: 5.0, function: function, line: line, message: message) {
+             viewControllersToBeInHierarchy.reduce(true) { partialResult, pair in
+                 let (viewController, inHierarchy) = pair
+                 
+@@ -69,53 +71,50 @@ final class CMPViewControllerTests: XCTestCase {
+         }
+     }
+     
+-    @MainActor
+     private func expect(
+         viewControllers: [TestViewController],
+         toBeInHierarchy inHierarchy: Bool,
+-        line: Int = #line
+-    ) async  {
+-        await expect(viewControllersToBeInHierarchy: viewControllers.map {
++        function: StaticString = #function,
++        line: Int = #line,
++        message: () -> String = { "" }
++    ) {
++        expect(viewControllersToBeInHierarchy: viewControllers.map {
+             ($0, inHierarchy)
+-        }, line: line)
++        }, function: function, line: line, message: message)
+     }
+     
+-    @MainActor
+-    public func testNotAttached() async {
++    public func testNotAttached() {
+         let viewController = TestViewController()
+-        await expect(viewController: viewController, toBeInHierarchy: false)
++        expect(viewController: viewController, toBeInHierarchy: false)
+     }
+     
+-    @MainActor
+-    public func testRootViewController() async {
++    public func testRootViewController() {
+         let viewController = TestViewController()
+         rootViewController = viewController
+-        await expect(viewController: viewController, toBeInHierarchy: true)
++        expect(viewController: viewController, toBeInHierarchy: true)
+         
+         rootViewController = UIViewController()
+-        await expect(viewController: viewController, toBeInHierarchy: false)
++        expect(viewController: viewController, toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testPresentAndDismiss() async {
++    public func testPresentAndDismiss() {
+         let viewController = TestViewController()
+ 
+         rootViewController.present(viewController, animated: true)
+-        await expect(viewController: viewController, toBeInHierarchy: true)
++        expect(viewController: viewController, toBeInHierarchy: true)
+ 
+         rootViewController.dismiss(animated: true)
+         
+-        await expect(viewController: viewController, toBeInHierarchy: false)
++        expect(viewController: viewController, toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testChildController() async {
++    public func testChildController() {
+         let viewController1 = TestViewController()
+         let viewController2 = TestViewController()
+-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
+ 
+         rootViewController.present(viewController1, animated: true)
+-        await expect(viewControllersToBeInHierarchy: [
++        expect(viewControllersToBeInHierarchy: [
+             (viewController1, true),
+             (viewController2, false)
+         ])
+@@ -123,27 +122,26 @@ final class CMPViewControllerTests: XCTestCase {
+         viewController1.addChild(viewController2)
+         viewController2.didMove(toParent: viewController1)
+         viewController1.view.addSubview(viewController2.view)
+-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
++        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+ 
+         viewController2.willMove(toParent: nil)
+         viewController2.removeFromParent()
+         viewController2.view.removeFromSuperview()
+-        await expect(viewControllersToBeInHierarchy: [
++        expect(viewControllersToBeInHierarchy: [
+             (viewController1, true),
+             (viewController2, false)
+         ])
+ 
+         rootViewController.dismiss(animated: true)
+-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testNavigationControllerPresentAndPush() async {
++    public func testNavigationControllerPresentAndPush() {
+         let viewController1 = TestViewController()
+         let viewController2 = TestViewController()
+         let viewController3 = TestViewController()
+         
+-        await expect(viewControllers: [
++        expect(viewControllers: [
+             viewController1,
+             viewController2,
+             viewController3
+@@ -153,27 +151,26 @@ final class CMPViewControllerTests: XCTestCase {
+ 
+         rootViewController.present(navigationController, animated: false)
+ 
+-        await expect(viewController: viewController1, toBeInHierarchy: true)
+-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewController: viewController1, toBeInHierarchy: true)
++        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+ 
+         navigationController.pushViewController(viewController2, animated: false)
+-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+-        await expect(viewController: viewController3, toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
++        expect(viewController: viewController3, toBeInHierarchy: false)
+ 
+         navigationController.present(viewController3, animated: false)
+-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: true)
++        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: true)
+ 
+         viewController3.dismiss(animated: false)
+-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+-        await expect(viewController: viewController3, toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
++        expect(viewController: viewController3, toBeInHierarchy: false)
+ 
+         navigationController.dismiss(animated: false)
+         
+-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+     }
+     
+-    @MainActor
+-    public func testNavigationControllerPresentAndPush2() async {
++    public func testNavigationControllerPresentAndPush2() {
+         let viewController1 = TestViewController()
+         let viewController2 = TestViewController()
+         let viewController3 = TestViewController()
+@@ -186,11 +183,10 @@ final class CMPViewControllerTests: XCTestCase {
+ 
+         navigationController.dismiss(animated: false)
+         
+-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testTabBarControllerPresentAndPush() async {
++    public func testTabBarControllerPresentAndPush() {
+         let viewController1 = TestViewController()
+         let viewController2 = TestViewController()
+         let viewController3 = TestViewController()
+@@ -200,27 +196,26 @@ final class CMPViewControllerTests: XCTestCase {
+ 
+         rootViewController.present(tabBarController, animated: true)
+ 
+-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+-        await expect(viewController: viewController1, toBeInHierarchy: true)
++        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewController: viewController1, toBeInHierarchy: true)
+ 
+         tabBarController.present(viewController3, animated: true)
+-        await expect(viewControllers: [viewController1, viewController3], toBeInHierarchy: true)
++        expect(viewControllers: [viewController1, viewController3], toBeInHierarchy: true)
+         
+         viewController3.dismiss(animated: true)
+-        await expect(viewController: viewController1, toBeInHierarchy: true)
+-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewController: viewController1, toBeInHierarchy: true)
++        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+ 
+         tabBarController.dismiss(animated: true)
+ 
+-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+     }
+     
+-    @MainActor
+-    public func testFullscreenPresentationOnTop() async throws {
++    public func testFullscreenPresentationOnTop() throws {
+         let viewController = TestViewController()
+         rootViewController = viewController
+         
+-        await expect(viewController: viewController, toBeInHierarchy: true)
++        expect(viewController: viewController, toBeInHierarchy: true)
+         
+         let urlStr = "https://nonexisting"
+         let url = URL(string: urlStr)!
+@@ -229,15 +224,14 @@ final class CMPViewControllerTests: XCTestCase {
+         playerController.player = player
+         
+         viewController.present(playerController, animated: false)
+-        await expect(viewController: viewController, toBeInHierarchy: true)
++        expect(viewController: viewController, toBeInHierarchy: true)
+         playerController.dismiss(animated: false)
+         
+         rootViewController = UIViewController()
+-        await expect(viewController: viewController, toBeInHierarchy: false)
++        expect(viewController: viewController, toBeInHierarchy: false)
+     }
+     
+-    @MainActor
+-    public func testFullScreenPresentationSandwich() async {
++    public func testFullScreenPresentationSandwich() {
+         let viewController0 = TestViewController()
+         
+         rootViewController = viewController0
+@@ -253,37 +247,69 @@ final class CMPViewControllerTests: XCTestCase {
+         let viewController3 = TestViewController()
+         viewController3.modalPresentationStyle = .fullScreen
+         
+-        await expect(viewControllersToBeInHierarchy: [
++        expect(viewControllersToBeInHierarchy: [
+             (viewController0, true),
+             (viewController1, false),
+             (viewController2, false),
+             (viewController3, false),
+-        ])
++        ]) {
++            """
++            Only the root view controller must be in the window hierarchy
++            - viewController0.viewIsInWindowHierarchy : \(viewController0.viewIsInWindowHierarchy)
++            - viewController1.viewIsInWindowHierarchy : \(viewController1.viewIsInWindowHierarchy)
++            - viewController2.viewIsInWindowHierarchy : \(viewController2.viewIsInWindowHierarchy)
++            - viewController3.viewIsInWindowHierarchy : \(viewController3.viewIsInWindowHierarchy)
++            """
++        }
+         
+         viewController0.present(viewController1, animated: false)
+-        await expect(viewControllersToBeInHierarchy: [
++        expect(viewControllersToBeInHierarchy: [
+             (viewController0, true),
+             (viewController1, true),
+             (viewController2, true),
+             (viewController3, false),
+-        ])
++        ]) {
++            """
++            Modal view controller and child view controller must be present in window hierarchy
++            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
++            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
++            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
++            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
++            """
++        }
+         
+         viewController1.present(viewController3, animated: false)
+-        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true)
++        expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true) {
++            """
++            All view controller should be in view hierarchy
++            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
++            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
++            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
++            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
++            
++            """
++        }
+                         
+         viewController0.dismiss(animated: false)
+-        await expect(viewControllersToBeInHierarchy: [
++        expect(viewControllersToBeInHierarchy: [
+             (viewController0, true),
+             (viewController1, false),
+             (viewController2, false),
+             (viewController3, false),
+-        ])
++        ]) {
++            """
++            Only the root view controller should stay in view hierarchy
++            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
++            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
++            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
++            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)            
++            """
++        }
+         rootViewController = UIViewController()
+-        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: false)
++        expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testMultipleHierarchyReEntrance() async {
++    public func testMultipleHierarchyReEntrance() {
+         let viewController = TestViewController()
+         
+         let navigationController = UINavigationController(rootViewController: UIViewController())
+@@ -291,19 +317,18 @@ final class CMPViewControllerTests: XCTestCase {
+         rootViewController = navigationController
+         navigationController.pushViewController(viewController, animated: false)
+ 
+-        await expect(viewControllers: [viewController], toBeInHierarchy: true)
++        expect(viewControllers: [viewController], toBeInHierarchy: true)
+ 
+         navigationController.popViewController(animated: false)
+ 
+-        await expect(viewControllers: [viewController], toBeInHierarchy: false)
++        expect(viewControllers: [viewController], toBeInHierarchy: false)
+ 
+         navigationController.pushViewController(viewController, animated: false)
+ 
+-        await expect(viewControllers: [viewController], toBeInHierarchy: true)
++        expect(viewControllers: [viewController], toBeInHierarchy: true)
+     }
+     
+-    @MainActor
+-    public func testLifecycleDelegate() async {
++    public func testLifecycleDelegate() {
+         let delegate = LifecycleDelegate()
+ 
+         autoreleasepool {
+@@ -311,13 +336,15 @@ final class CMPViewControllerTests: XCTestCase {
+             rootViewController = viewController
+         }
+         
+-        await expect { delegate.containerWillAppearCallsCount == 1 }
+-        
+-        rootViewController = UIViewController()
++        expect { delegate.containerWillAppearCallsCount == 1 }
++
++        autoreleasepool {
++            rootViewController = UIViewController()
++        }
+ 
+-        await expect { delegate.containerWillAppearCallsCount == 1 }
+-        await expect { delegate.containerDidDisappearCallsCount == 1 }
+-        await expect { delegate.containerWillDeallocCallsCount == 1 }
++        expect { delegate.containerWillAppearCallsCount == 1 }
++        expect { delegate.containerDidDisappearCallsCount == 1 }
++        expect { delegate.containerWillDeallocCallsCount == 1 }
+     }
+ }
+ 
+diff --git a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewTests.swift b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewTests.swift
+index 1dfac136f8155..e36f13a5d8186 100644
+--- a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewTests.swift
++++ b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/CMPViewTests.swift
+@@ -50,62 +50,56 @@ final class CMPViewTests: XCTestCase {
+         appDelegate = nil
+     }
+         
+-    @MainActor
+     private func expect(
+         view: TestView,
+         toBeInHierarchy inHierarchy: Bool,
+         line: Int = #line
+-    ) async {
+-        await expect(timeout: 5.0, line: line) {
++    ) {
++        expect(timeout: 5.0, line: line) {
+             view.viewIsInWindowHierarchy == inHierarchy
+         }
+     }
+ 
+-    @MainActor
+     private func expect(
+         view: TestView,
+         toBeAppeared isAppeared: Bool,
+         line: Int = #line
+-    ) async {
+-        await expect(timeout: 5.0, line: line) {
++    ) {
++        expect(timeout: 5.0, line: line) {
+             view.isViewAppeared == isAppeared
+         }
+     }
+     
+-    @MainActor
+-    public func testNotAttached() async {
++    public func testNotAttached() {
+         let view = TestView()
+-        await expect(view: view, toBeInHierarchy: false)
++        expect(view: view, toBeInHierarchy: false)
+     }
+     
+-    @MainActor
+-    public func testViewAttach() async {
++    public func testViewAttach() {
+         let view = TestView()
+         rootView = view
+-        await expect(view: view, toBeInHierarchy: true)
++        expect(view: view, toBeInHierarchy: true)
+         
+         rootView = nil
+-        await expect(view: view, toBeInHierarchy: false)
++        expect(view: view, toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testViewThroughSuperviewAttach() async {
++    public func testViewThroughSuperviewAttach() {
+         let view = TestView()
+         view.frame = .init(x: 0, y: 0, width: 100, height: 100)
+         let superview = UIView()
+         superview.addSubview(view)
+         
+-        await expect(view: view, toBeInHierarchy: false)
++        expect(view: view, toBeInHierarchy: false)
+ 
+         rootView = superview
+-        await expect(view: view, toBeInHierarchy: true)
++        expect(view: view, toBeInHierarchy: true)
+         
+         rootView = nil
+-        await expect(view: view, toBeInHierarchy: false)
++        expect(view: view, toBeInHierarchy: false)
+     }
+ 
+-    @MainActor
+-    public func testLifecycleDelegate() async {
++    public func testLifecycleDelegate() {
+         let delegate = LifecycleDelegate()
+ 
+         autoreleasepool {
+@@ -113,23 +107,24 @@ final class CMPViewTests: XCTestCase {
+             rootView = view
+         }
+         
+-        await expect { delegate.containerWillAppearCallsCount == 1 }
++        expect { delegate.containerWillAppearCallsCount == 1 }
+         
+-        rootView = nil
++        autoreleasepool {
++            rootView = nil
++        }
+ 
+-        await expect { delegate.containerWillAppearCallsCount == 1 }
+-        await expect { delegate.containerDidDisappearCallsCount == 1 }
+-        await expect { delegate.containerWillDeallocCallsCount == 1 }
++        expect { delegate.containerWillAppearCallsCount == 1 }
++        expect { delegate.containerDidDisappearCallsCount == 1 }
++        expect { delegate.containerWillDeallocCallsCount == 1 }
+     }
+     
+-    @MainActor
+-    public func testViewAppeared() async {
++    public func testViewAppeared() {
+         let view = TestView()
+         rootView = view
+-        await expect(view: view, toBeAppeared: true)
++        expect(view: view, toBeAppeared: true)
+         
+         rootView = nil
+-        await expect(view: view, toBeAppeared: false)
++        expect(view: view, toBeAppeared: false)
+     }
+ }
+ 
+diff --git a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/Utils/XCTestCase.swift b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/Utils/XCTestCase.swift
+index edfcf6960dd74..03ad39f61f283 100644
+--- a/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/Utils/XCTestCase.swift
++++ b/compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/CMPUIKitUtilsTests/Utils/XCTestCase.swift
+@@ -18,22 +18,26 @@ import XCTest
+ 
+ extension XCTestCase {
+     /// Awaits for expectation without blocking UI thread.
+-    @MainActor
+-    func expect(        
++    func expect(
+         timeout: TimeInterval = 5.0,
++        function: StaticString = #function,
+         line: Int = #line,
++        message: () -> String = { "" },
+         expectation: @escaping () -> Bool
+-    ) async {
++    ) {
+         let start = Date()
+         var isExpectationMet = expectation()
+         
+-        while !isExpectationMet && Date().timeIntervalSince(start) < timeout {
+-            try? await Task.sleep(nanoseconds: 100_000) // 100ms
+-            isExpectationMet = expectation()            
++        while !isExpectationMet && -start.timeIntervalSinceNow < timeout {
++            print("-----||")
++            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
++            // try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
++            isExpectationMet = expectation()
+         }
+         
+         if !isExpectationMet {
+-            XCTFail("Timeout at line \(line)")
++            print("Timeout failed at \(function), line: \(line). \(message())")
++            XCTFail("Timeout at line \(line). \(message())")
+         }
+     }
+ }
+diff --git a/compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/leaks/MemoryLeaksTest.kt b/compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/leaks/MemoryLeaksTest.kt
+index 5b35e740cd1a0..f858c390cedc8 100644
+--- a/compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/leaks/MemoryLeaksTest.kt
++++ b/compose/ui/ui/src/uikitInstrumentedTest/kotlin/androidx/compose/ui/leaks/MemoryLeaksTest.kt
+@@ -44,7 +44,9 @@ import kotlin.test.assertTrue
+ import kotlin.time.Duration
+ import kotlin.time.Duration.Companion.milliseconds
+ import kotlin.time.DurationUnit
++import kotlinx.cinterop.BetaInteropApi
+ import kotlinx.cinterop.ExperimentalForeignApi
++import kotlinx.cinterop.autoreleasepool
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.delay
+ import kotlinx.coroutines.runBlocking
+@@ -57,6 +59,7 @@ import platform.UIKit.UIApplication
+ import platform.UIKit.UIView
+ import platform.UIKit.UIViewController
+ 
++@OptIn(BetaInteropApi::class)
+ class MemoryLeaksTest {
+     companion object {
+         private val KeyboardAnimationDelay = 600.milliseconds
+@@ -87,7 +90,9 @@ class MemoryLeaksTest {
+         assertTrue(composeLoaded)
+         assertNotNull(composeViewControllerRef?.get())
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertNull(composeViewControllerRef.get())
+@@ -126,7 +131,9 @@ class MemoryLeaksTest {
+                 }"
+         )
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+@@ -161,7 +168,9 @@ class MemoryLeaksTest {
+ 
+         assertNotNull(composeViewControllerRef?.get())
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertNull(composeViewControllerRef.get())
+@@ -210,12 +219,13 @@ class MemoryLeaksTest {
+                     }"
+             )
+ 
+-            appDelegate.cleanUp()
+-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+-            // strong references on this view. For test purposes, staring another text input session
+-            // to let UIKit release reference to the previous text input view.
+-            startFakeTextInputSession()
+-
++            autoreleasepool {
++                appDelegate.cleanUp()
++                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
++                // strong references on this view. For test purposes, staring another text input session
++                // to let UIKit release reference to the previous text input view.
++                startFakeTextInputSession()
++            }
+             cleanupMemory()
+ 
+             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+@@ -264,12 +274,13 @@ class MemoryLeaksTest {
+                     }"
+             )
+ 
+-            appDelegate.cleanUp()
+-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+-            // strong references on this view. For test purposes, staring another text input session
+-            // to let UIKit release reference to the previous text input view.
+-            startFakeTextInputSession()
+-
++            autoreleasepool {
++                appDelegate.cleanUp()
++                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
++                // strong references on this view. For test purposes, staring another text input session
++                // to let UIKit release reference to the previous text input view.
++                startFakeTextInputSession()
++            }
+             cleanupMemory()
+ 
+             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+@@ -302,7 +313,9 @@ class MemoryLeaksTest {
+         assertTrue(composeLoaded)
+         assertNotNull(composeViewRef?.get())
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertNull(composeViewRef.get())
+@@ -343,7 +356,9 @@ class MemoryLeaksTest {
+                 }"
+         )
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+@@ -379,7 +394,9 @@ class MemoryLeaksTest {
+ 
+         assertNotNull(composeViewRef?.get())
+ 
+-        appDelegate.cleanUp()
++        autoreleasepool {
++            appDelegate.cleanUp()
++        }
+         cleanupMemory()
+ 
+         assertNull(composeViewRef.get())
+@@ -429,13 +446,14 @@ class MemoryLeaksTest {
+                     }"
+             )
+ 
+-            appDelegate.cleanUp()
+-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+-            // strong references on this view. For test purposes, staring another text input session
+-            // to let UIKit release reference to the previous text input view.
+-            startFakeTextInputSession()
+-
+-            cleanupMemory()
++            autoreleasepool {
++                appDelegate.cleanUp()
++                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
++                // strong references on this view. For test purposes, staring another text input session
++                // to let UIKit release reference to the previous text input view.
++                startFakeTextInputSession()
++            }
++                cleanupMemory()
+ 
+             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+         }
+@@ -469,7 +487,7 @@ class MemoryLeaksTest {
+     }
+ 
+     @OptIn(ExperimentalForeignApi::class)
+-    private suspend fun startFakeTextInputSession() {
++    private fun startFakeTextInputSession() {
+         val input = IntermediateTextInputUIView(0)
+         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
+         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
