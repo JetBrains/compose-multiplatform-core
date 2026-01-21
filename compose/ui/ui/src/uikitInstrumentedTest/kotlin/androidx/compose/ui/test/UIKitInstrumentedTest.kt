@@ -460,6 +460,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
+        UIApplication.sharedApplication().setDelegate(null)
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
