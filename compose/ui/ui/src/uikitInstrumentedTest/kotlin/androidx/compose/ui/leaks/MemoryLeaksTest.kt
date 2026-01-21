@@ -449,7 +449,7 @@ class MemoryLeaksTest {
             autoreleasepool {
                 appDelegate.cleanUp()
                 // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-                // strong references on this view. For test purposes, staring another text input session
+                // strong references on this view. For test purposes, starting another text input session
                 // to let UIKit release reference to the previous text input view.
                 startFakeTextInputSession()
             }
