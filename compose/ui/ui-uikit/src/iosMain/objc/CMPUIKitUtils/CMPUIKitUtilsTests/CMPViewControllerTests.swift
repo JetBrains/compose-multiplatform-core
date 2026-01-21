@@ -44,23 +44,25 @@ final class CMPViewControllerTests: XCTestCase {
         appDelegate = nil
     }
         
-    @MainActor
     private func expect(
         viewController: TestViewController,
         toBeInHierarchy inHierarchy: Bool,
-        line: Int = #line
-    ) async {
-        await expect(timeout: 5.0, line: line) {
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
+    ) {
+        expect(timeout: 5.0, function: function, line: line, message: message) {
             viewController.viewIsInWindowHierarchy == inHierarchy
         }
     }
     
-    @MainActor
     private func expect(
         viewControllersToBeInHierarchy: [(TestViewController, Bool)],
-        line: Int = #line
-    ) async {
-        await expect(timeout: 5.0, line: line) {
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
+    ) {
+        expect(timeout: 5.0, function: function, line: line, message: message) {
             viewControllersToBeInHierarchy.reduce(true) { partialResult, pair in
                 let (viewController, inHierarchy) = pair
                 
@@ -69,53 +71,50 @@ final class CMPViewControllerTests: XCTestCase {
         }
     }
     
-    @MainActor
     private func expect(
         viewControllers: [TestViewController],
         toBeInHierarchy inHierarchy: Bool,
-        line: Int = #line
-    ) async  {
-        await expect(viewControllersToBeInHierarchy: viewControllers.map {
+        function: StaticString = #function,
+        line: Int = #line,
+        message: () -> String = { "" }
+    ) {
+        expect(viewControllersToBeInHierarchy: viewControllers.map {
             ($0, inHierarchy)
-        }, line: line)
+        }, function: function, line: line, message: message)
     }
     
-    @MainActor
-    public func testNotAttached() async {
+    public func testNotAttached() {
         let viewController = TestViewController()
-        await expect(viewController: viewController, toBeInHierarchy: false)
+        expect(viewController: viewController, toBeInHierarchy: false)
     }
     
-    @MainActor
-    public func testRootViewController() async {
+    public func testRootViewController() {
         let viewController = TestViewController()
         rootViewController = viewController
-        await expect(viewController: viewController, toBeInHierarchy: true)
+        expect(viewController: viewController, toBeInHierarchy: true)
         
         rootViewController = UIViewController()
-        await expect(viewController: viewController, toBeInHierarchy: false)
+        expect(viewController: viewController, toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testPresentAndDismiss() async {
+    public func testPresentAndDismiss() {
         let viewController = TestViewController()
 
         rootViewController.present(viewController, animated: true)
-        await expect(viewController: viewController, toBeInHierarchy: true)
+        expect(viewController: viewController, toBeInHierarchy: true)
 
         rootViewController.dismiss(animated: true)
         
-        await expect(viewController: viewController, toBeInHierarchy: false)
+        expect(viewController: viewController, toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testChildController() async {
+    public func testChildController() {
         let viewController1 = TestViewController()
         let viewController2 = TestViewController()
-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
 
         rootViewController.present(viewController1, animated: true)
-        await expect(viewControllersToBeInHierarchy: [
+        expect(viewControllersToBeInHierarchy: [
             (viewController1, true),
             (viewController2, false)
         ])
@@ -123,27 +122,26 @@ final class CMPViewControllerTests: XCTestCase {
         viewController1.addChild(viewController2)
         viewController2.didMove(toParent: viewController1)
         viewController1.view.addSubview(viewController2.view)
-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
 
         viewController2.willMove(toParent: nil)
         viewController2.removeFromParent()
         viewController2.view.removeFromSuperview()
-        await expect(viewControllersToBeInHierarchy: [
+        expect(viewControllersToBeInHierarchy: [
             (viewController1, true),
             (viewController2, false)
         ])
 
         rootViewController.dismiss(animated: true)
-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testNavigationControllerPresentAndPush() async {
+    public func testNavigationControllerPresentAndPush() {
         let viewController1 = TestViewController()
         let viewController2 = TestViewController()
         let viewController3 = TestViewController()
         
-        await expect(viewControllers: [
+        expect(viewControllers: [
             viewController1,
             viewController2,
             viewController3
@@ -153,27 +151,26 @@ final class CMPViewControllerTests: XCTestCase {
 
         rootViewController.present(navigationController, animated: false)
 
-        await expect(viewController: viewController1, toBeInHierarchy: true)
-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewController: viewController1, toBeInHierarchy: true)
+        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
 
         navigationController.pushViewController(viewController2, animated: false)
-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
-        await expect(viewController: viewController3, toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+        expect(viewController: viewController3, toBeInHierarchy: false)
 
         navigationController.present(viewController3, animated: false)
-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: true)
+        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: true)
 
         viewController3.dismiss(animated: false)
-        await expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
-        await expect(viewController: viewController3, toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
+        expect(viewController: viewController3, toBeInHierarchy: false)
 
         navigationController.dismiss(animated: false)
         
-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
     
-    @MainActor
-    public func testNavigationControllerPresentAndPush2() async {
+    public func testNavigationControllerPresentAndPush2() {
         let viewController1 = TestViewController()
         let viewController2 = TestViewController()
         let viewController3 = TestViewController()
@@ -186,11 +183,10 @@ final class CMPViewControllerTests: XCTestCase {
 
         navigationController.dismiss(animated: false)
         
-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testTabBarControllerPresentAndPush() async {
+    public func testTabBarControllerPresentAndPush() {
         let viewController1 = TestViewController()
         let viewController2 = TestViewController()
         let viewController3 = TestViewController()
@@ -200,27 +196,26 @@ final class CMPViewControllerTests: XCTestCase {
 
         rootViewController.present(tabBarController, animated: true)
 
-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
-        await expect(viewController: viewController1, toBeInHierarchy: true)
+        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewController: viewController1, toBeInHierarchy: true)
 
         tabBarController.present(viewController3, animated: true)
-        await expect(viewControllers: [viewController1, viewController3], toBeInHierarchy: true)
+        expect(viewControllers: [viewController1, viewController3], toBeInHierarchy: true)
         
         viewController3.dismiss(animated: true)
-        await expect(viewController: viewController1, toBeInHierarchy: true)
-        await expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewController: viewController1, toBeInHierarchy: true)
+        expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
 
         tabBarController.dismiss(animated: true)
 
-        await expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
     
-    @MainActor
-    public func testFullscreenPresentationOnTop() async throws {
+    public func testFullscreenPresentationOnTop() throws {
         let viewController = TestViewController()
         rootViewController = viewController
         
-        await expect(viewController: viewController, toBeInHierarchy: true)
+        expect(viewController: viewController, toBeInHierarchy: true)
         
         let urlStr = "https://nonexisting"
         let url = URL(string: urlStr)!
@@ -229,15 +224,14 @@ final class CMPViewControllerTests: XCTestCase {
         playerController.player = player
         
         viewController.present(playerController, animated: false)
-        await expect(viewController: viewController, toBeInHierarchy: true)
+        expect(viewController: viewController, toBeInHierarchy: true)
         playerController.dismiss(animated: false)
         
         rootViewController = UIViewController()
-        await expect(viewController: viewController, toBeInHierarchy: false)
+        expect(viewController: viewController, toBeInHierarchy: false)
     }
     
-    @MainActor
-    public func testFullScreenPresentationSandwich() async {
+    public func testFullScreenPresentationSandwich() {
         let viewController0 = TestViewController()
         
         rootViewController = viewController0
@@ -253,37 +247,69 @@ final class CMPViewControllerTests: XCTestCase {
         let viewController3 = TestViewController()
         viewController3.modalPresentationStyle = .fullScreen
         
-        await expect(viewControllersToBeInHierarchy: [
+        expect(viewControllersToBeInHierarchy: [
             (viewController0, true),
             (viewController1, false),
             (viewController2, false),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Only the root view controller must be in the window hierarchy
+            - viewController0.viewIsInWindowHierarchy : \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy : \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy : \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy : \(viewController3.viewIsInWindowHierarchy)
+            """
+        }
         
         viewController0.present(viewController1, animated: false)
-        await expect(viewControllersToBeInHierarchy: [
+        expect(viewControllersToBeInHierarchy: [
             (viewController0, true),
             (viewController1, true),
             (viewController2, true),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Modal view controller and child view controller must be present in window hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
+            """
+        }
         
         viewController1.present(viewController3, animated: false)
-        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true)
+        expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true) {
+            """
+            All view controller should be in view hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)
+            
+            """
+        }
                         
         viewController0.dismiss(animated: false)
-        await expect(viewControllersToBeInHierarchy: [
+        expect(viewControllersToBeInHierarchy: [
             (viewController0, true),
             (viewController1, false),
             (viewController2, false),
             (viewController3, false),
-        ])
+        ]) {
+            """
+            Only the root view controller should stay in view hierarchy
+            - viewController0.viewIsInWindowHierarchy: \(viewController0.viewIsInWindowHierarchy)
+            - viewController1.viewIsInWindowHierarchy: \(viewController1.viewIsInWindowHierarchy)
+            - viewController2.viewIsInWindowHierarchy: \(viewController2.viewIsInWindowHierarchy)
+            - viewController3.viewIsInWindowHierarchy: \(viewController3.viewIsInWindowHierarchy)            
+            """
+        }
         rootViewController = UIViewController()
-        await expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: false)
+        expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testMultipleHierarchyReEntrance() async {
+    public func testMultipleHierarchyReEntrance() {
         let viewController = TestViewController()
         
         let navigationController = UINavigationController(rootViewController: UIViewController())
@@ -291,19 +317,18 @@ final class CMPViewControllerTests: XCTestCase {
         rootViewController = navigationController
         navigationController.pushViewController(viewController, animated: false)
 
-        await expect(viewControllers: [viewController], toBeInHierarchy: true)
+        expect(viewControllers: [viewController], toBeInHierarchy: true)
 
         navigationController.popViewController(animated: false)
 
-        await expect(viewControllers: [viewController], toBeInHierarchy: false)
+        expect(viewControllers: [viewController], toBeInHierarchy: false)
 
         navigationController.pushViewController(viewController, animated: false)
 
-        await expect(viewControllers: [viewController], toBeInHierarchy: true)
+        expect(viewControllers: [viewController], toBeInHierarchy: true)
     }
     
-    @MainActor
-    public func testLifecycleDelegate() async {
+    public func testLifecycleDelegate() {
         let delegate = LifecycleDelegate()
 
         autoreleasepool {
@@ -311,13 +336,15 @@ final class CMPViewControllerTests: XCTestCase {
             rootViewController = viewController
         }
         
-        await expect { delegate.containerWillAppearCallsCount == 1 }
-        
-        rootViewController = UIViewController()
+        expect { delegate.containerWillAppearCallsCount == 1 }
 
-        await expect { delegate.containerWillAppearCallsCount == 1 }
-        await expect { delegate.containerDidDisappearCallsCount == 1 }
-        await expect { delegate.containerWillDeallocCallsCount == 1 }
+        autoreleasepool {
+            rootViewController = UIViewController()
+        }
+
+        expect { delegate.containerWillAppearCallsCount == 1 }
+        expect { delegate.containerDidDisappearCallsCount == 1 }
+        expect { delegate.containerWillDeallocCallsCount == 1 }
     }
 }
 

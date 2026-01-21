@@ -50,62 +50,56 @@ final class CMPViewTests: XCTestCase {
         appDelegate = nil
     }
         
-    @MainActor
     private func expect(
         view: TestView,
         toBeInHierarchy inHierarchy: Bool,
         line: Int = #line
-    ) async {
-        await expect(timeout: 5.0, line: line) {
+    ) {
+        expect(timeout: 5.0, line: line) {
             view.viewIsInWindowHierarchy == inHierarchy
         }
     }
 
-    @MainActor
     private func expect(
         view: TestView,
         toBeAppeared isAppeared: Bool,
         line: Int = #line
-    ) async {
-        await expect(timeout: 5.0, line: line) {
+    ) {
+        expect(timeout: 5.0, line: line) {
             view.isViewAppeared == isAppeared
         }
     }
     
-    @MainActor
-    public func testNotAttached() async {
+    public func testNotAttached() {
         let view = TestView()
-        await expect(view: view, toBeInHierarchy: false)
+        expect(view: view, toBeInHierarchy: false)
     }
     
-    @MainActor
-    public func testViewAttach() async {
+    public func testViewAttach() {
         let view = TestView()
         rootView = view
-        await expect(view: view, toBeInHierarchy: true)
+        expect(view: view, toBeInHierarchy: true)
         
         rootView = nil
-        await expect(view: view, toBeInHierarchy: false)
+        expect(view: view, toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testViewThroughSuperviewAttach() async {
+    public func testViewThroughSuperviewAttach() {
         let view = TestView()
         view.frame = .init(x: 0, y: 0, width: 100, height: 100)
         let superview = UIView()
         superview.addSubview(view)
         
-        await expect(view: view, toBeInHierarchy: false)
+        expect(view: view, toBeInHierarchy: false)
 
         rootView = superview
-        await expect(view: view, toBeInHierarchy: true)
+        expect(view: view, toBeInHierarchy: true)
         
         rootView = nil
-        await expect(view: view, toBeInHierarchy: false)
+        expect(view: view, toBeInHierarchy: false)
     }
 
-    @MainActor
-    public func testLifecycleDelegate() async {
+    public func testLifecycleDelegate() {
         let delegate = LifecycleDelegate()
 
         autoreleasepool {
@@ -113,23 +107,24 @@ final class CMPViewTests: XCTestCase {
             rootView = view
         }
         
-        await expect { delegate.containerWillAppearCallsCount == 1 }
+        expect { delegate.containerWillAppearCallsCount == 1 }
         
-        rootView = nil
+        autoreleasepool {
+            rootView = nil
+        }
 
-        await expect { delegate.containerWillAppearCallsCount == 1 }
-        await expect { delegate.containerDidDisappearCallsCount == 1 }
-        await expect { delegate.containerWillDeallocCallsCount == 1 }
+        expect { delegate.containerWillAppearCallsCount == 1 }
+        expect { delegate.containerDidDisappearCallsCount == 1 }
+        expect { delegate.containerWillDeallocCallsCount == 1 }
     }
     
-    @MainActor
-    public func testViewAppeared() async {
+    public func testViewAppeared() {
         let view = TestView()
         rootView = view
-        await expect(view: view, toBeAppeared: true)
+        expect(view: view, toBeAppeared: true)
         
         rootView = nil
-        await expect(view: view, toBeAppeared: false)
+        expect(view: view, toBeAppeared: false)
     }
 }
 
