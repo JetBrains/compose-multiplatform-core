@@ -101,10 +101,11 @@ final class CMPViewControllerTests: XCTestCase {
         let viewController = TestViewController()
 
         rootViewController.present(viewController, animated: true)
+        waitForCompletion()
         expect(viewController: viewController, toBeInHierarchy: true)
 
         rootViewController.dismiss(animated: true)
-        
+        waitForCompletion()
         expect(viewController: viewController, toBeInHierarchy: false)
     }
 
@@ -114,6 +115,7 @@ final class CMPViewControllerTests: XCTestCase {
         expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
 
         rootViewController.present(viewController1, animated: true)
+        waitForCompletion()
         expect(viewControllersToBeInHierarchy: [
             (viewController1, true),
             (viewController2, false)
@@ -133,6 +135,7 @@ final class CMPViewControllerTests: XCTestCase {
         ])
 
         rootViewController.dismiss(animated: true)
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: false)
     }
 
@@ -150,7 +153,8 @@ final class CMPViewControllerTests: XCTestCase {
         let navigationController = UINavigationController(rootViewController: viewController1)
 
         rootViewController.present(navigationController, animated: false)
-
+        waitForCompletion()
+        
         expect(viewController: viewController1, toBeInHierarchy: true)
         expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
 
@@ -159,14 +163,17 @@ final class CMPViewControllerTests: XCTestCase {
         expect(viewController: viewController3, toBeInHierarchy: false)
 
         navigationController.present(viewController3, animated: false)
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: true)
 
         viewController3.dismiss(animated: false)
+        waitForCompletion()
+        
         expect(viewControllers: [viewController1, viewController2], toBeInHierarchy: true)
         expect(viewController: viewController3, toBeInHierarchy: false)
 
         navigationController.dismiss(animated: false)
-        
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
     
@@ -178,11 +185,12 @@ final class CMPViewControllerTests: XCTestCase {
         let navigationController = UINavigationController(rootViewController: viewController1)
 
         rootViewController.present(navigationController, animated: false)
+        waitForCompletion()
         navigationController.pushViewController(viewController2, animated: false)
         navigationController.pushViewController(viewController3, animated: false)
 
         navigationController.dismiss(animated: false)
-        
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
 
@@ -195,19 +203,21 @@ final class CMPViewControllerTests: XCTestCase {
         tabBarController.viewControllers = [viewController1, viewController2]
 
         rootViewController.present(tabBarController, animated: true)
-
+        waitForCompletion()
         expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
         expect(viewController: viewController1, toBeInHierarchy: true)
 
         tabBarController.present(viewController3, animated: true)
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController3], toBeInHierarchy: true)
         
         viewController3.dismiss(animated: true)
+        waitForCompletion()
         expect(viewController: viewController1, toBeInHierarchy: true)
         expect(viewControllers: [viewController2, viewController3], toBeInHierarchy: false)
 
         tabBarController.dismiss(animated: true)
-
+        waitForCompletion()
         expect(viewControllers: [viewController1, viewController2, viewController3], toBeInHierarchy: false)
     }
     
@@ -224,6 +234,7 @@ final class CMPViewControllerTests: XCTestCase {
         playerController.player = player
         
         viewController.present(playerController, animated: false)
+        waitForCompletion()
         expect(viewController: viewController, toBeInHierarchy: true)
         playerController.dismiss(animated: false)
         
@@ -263,6 +274,7 @@ final class CMPViewControllerTests: XCTestCase {
         }
         
         viewController0.present(viewController1, animated: false)
+        waitForCompletion()
         expect(viewControllersToBeInHierarchy: [
             (viewController0, true),
             (viewController1, true),
@@ -279,6 +291,7 @@ final class CMPViewControllerTests: XCTestCase {
         }
         
         viewController1.present(viewController3, animated: false)
+        waitForCompletion()
         expect(viewControllers: [viewController0, viewController1, viewController2, viewController3], toBeInHierarchy: true) {
             """
             All view controller should be in view hierarchy
@@ -291,6 +304,7 @@ final class CMPViewControllerTests: XCTestCase {
         }
                         
         viewController0.dismiss(animated: false)
+        waitForCompletion()
         expect(viewControllersToBeInHierarchy: [
             (viewController0, true),
             (viewController1, false),
@@ -345,6 +359,11 @@ final class CMPViewControllerTests: XCTestCase {
         expect { delegate.containerWillAppearCallsCount == 1 }
         expect { delegate.containerDidDisappearCallsCount == 1 }
         expect { delegate.containerWillDeallocCallsCount == 1 }
+    }
+    
+    private func waitForCompletion() {
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
     }
 }
 
