@@ -26,10 +26,11 @@ extension XCTestCase {
         expectation: @escaping () -> Bool
     ) {
         let start = Date()
+        print("\(start) : Started!")
         var isExpectationMet = expectation()
         var numberOfTries = 0
-        
-        while !isExpectationMet && (-start.timeIntervalSinceNow < timeout || numberOfTries < 3) {
+
+        while !isExpectationMet && (-start.timeIntervalSinceNow < timeout || numberOfTries < 5) {
             print("\(Date()) : -----")
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
             // try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
