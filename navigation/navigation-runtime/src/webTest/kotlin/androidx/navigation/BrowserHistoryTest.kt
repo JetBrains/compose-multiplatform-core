@@ -357,6 +357,7 @@ class BrowserHistoryTest {
         with(window.history) {
             if (length > 1) {
                 val size = length - 1
+                println("QQQ " + size)
                 go(-size)
                 waitHistoryPopState()
             }
