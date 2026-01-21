@@ -510,6 +510,8 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         application: UIApplication,
         supportedInterfaceOrientationsForWindow: UIWindow?
     ): UIInterfaceOrientationMask {
+        println(">> Accessing application mask!!!!!")
+        println(">> $this")
         return supportedInterfaceOrientations
     }
 }
