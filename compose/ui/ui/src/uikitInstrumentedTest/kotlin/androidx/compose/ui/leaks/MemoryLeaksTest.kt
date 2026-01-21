@@ -44,7 +44,9 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.autoreleasepool
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -57,6 +59,7 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
+@OptIn(BetaInteropApi::class)
 class MemoryLeaksTest {
     companion object {
         private val KeyboardAnimationDelay = 600.milliseconds
@@ -87,7 +90,9 @@ class MemoryLeaksTest {
         assertTrue(composeLoaded)
         assertNotNull(composeViewControllerRef?.get())
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertNull(composeViewControllerRef.get())
@@ -126,7 +131,9 @@ class MemoryLeaksTest {
                 }"
         )
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
@@ -161,7 +168,9 @@ class MemoryLeaksTest {
 
         assertNotNull(composeViewControllerRef?.get())
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertNull(composeViewControllerRef.get())
@@ -210,12 +219,13 @@ class MemoryLeaksTest {
                     }"
             )
 
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
+            autoreleasepool {
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+            }
             cleanupMemory()
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
@@ -264,12 +274,13 @@ class MemoryLeaksTest {
                     }"
             )
 
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
+            autoreleasepool {
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+            }
             cleanupMemory()
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
@@ -302,7 +313,9 @@ class MemoryLeaksTest {
         assertTrue(composeLoaded)
         assertNotNull(composeViewRef?.get())
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertNull(composeViewRef.get())
@@ -343,7 +356,9 @@ class MemoryLeaksTest {
                 }"
         )
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
@@ -379,7 +394,9 @@ class MemoryLeaksTest {
 
         assertNotNull(composeViewRef?.get())
 
-        appDelegate.cleanUp()
+        autoreleasepool {
+            appDelegate.cleanUp()
+        }
         cleanupMemory()
 
         assertNull(composeViewRef.get())
@@ -429,13 +446,14 @@ class MemoryLeaksTest {
                     }"
             )
 
-            appDelegate.cleanUp()
-            // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
-            // strong references on this view. For test purposes, staring another text input session
-            // to let UIKit release reference to the previous text input view.
-            startFakeTextInputSession()
-
-            cleanupMemory()
+            autoreleasepool {
+                appDelegate.cleanUp()
+                // In Kotlin, when UITextInput view becomes a first responder, UIKit captures
+                // strong references on this view. For test purposes, staring another text input session
+                // to let UIKit release reference to the previous text input view.
+                startFakeTextInputSession()
+            }
+                cleanupMemory()
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
         }
