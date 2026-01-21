@@ -430,12 +430,18 @@ internal class UIKitInstrumentedTest(
         }
 }
 
+private var allAppDelegates = mutableListOf<MockAppDelegate>()
+
 @OptIn(ExperimentalForeignApi::class)
 internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
-    private var _supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
+    private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
+
+    init {
+        allAppDelegates.add(this)
+    }
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().delegate = this
@@ -492,7 +498,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         }
 
         if (requestedInterfaceOrientationMask != currentInterfaceOrientationMask) {
-            _supportedInterfaceOrientations = requestedInterfaceOrientationMask
+            supportedInterfaceOrientations = requestedInterfaceOrientationMask
             UIViewController.attemptRotationToDeviceOrientation()
             return true
         }
@@ -504,10 +510,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         application: UIApplication,
         supportedInterfaceOrientationsForWindow: UIWindow?
     ): UIInterfaceOrientationMask {
-        if (_window == null) {
-            return UIInterfaceOrientationMaskAll
-        }
-        return _supportedInterfaceOrientations
+        return supportedInterfaceOrientations
     }
 }
 
