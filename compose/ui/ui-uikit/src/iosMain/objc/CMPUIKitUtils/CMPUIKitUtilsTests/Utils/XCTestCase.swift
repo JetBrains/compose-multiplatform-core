@@ -36,8 +36,8 @@ extension XCTestCase {
         }
         
         if !isExpectationMet {
-            print("Timeout failed at \(function), line: \(line). \(message()) \n| start date: \(start) \n| duration: \(start.timeIntervalSinceNow)")
-            XCTFail("Timeout at line \(line). \(message()) \n| start date: \(start) \n| duration: \(start.timeIntervalSinceNow)")
+            print("Timeout failed at \(function), line: \(line). \(message())")
+            XCTFail("Timeout at line \(line). \(message())")
         }
     }
 }
