@@ -42,7 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable UIViewController *)childViewControllerForStatusBarStyle;
 - (nullable UIViewController *)childViewControllerForStatusBarHidden;
 
-- (void)testmethod_remove_mesdfsd;
 @end
 
 NS_ASSUME_NONNULL_END
