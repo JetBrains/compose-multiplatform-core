@@ -487,7 +487,7 @@ class MemoryLeaksTest {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun startFakeTextInputSession() {
+    private fun startFakeTextInputSession() {
         val input = IntermediateTextInputUIView(0)
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
