@@ -131,6 +131,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test"))
+                implementation(libs.skiko)
             }
         }
 

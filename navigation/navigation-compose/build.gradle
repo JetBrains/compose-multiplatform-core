@@ -116,8 +116,6 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-tooling"))
             implementation(project(":internal-testutils-navigation"))
         }
-        nonJvmMain.dependsOn(nonAndroidMain)
-        nonJvmTest.dependsOn(nonAndroidTest)
 
         desktopMain {
             dependsOn(nonAndroidMain)
@@ -131,11 +129,19 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmMain {
+        nativeMain {
             dependsOn(nonAndroidMain)
         }
 
-        nonJvmTest {
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
             dependsOn(nonAndroidTest)
         }
     }

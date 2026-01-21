@@ -266,7 +266,7 @@ androidXMultiplatform {
             }
         }
 
-        uikitInstrumentedTest {
+        iosInstrumentedTest {
             dependencies {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
