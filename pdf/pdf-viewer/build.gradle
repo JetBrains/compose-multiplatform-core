@@ -64,9 +64,11 @@ dependencies {
 
 android {
     namespace = "androidx.pdf"
-    compileSdk { version = release(36) { sdkExtension = 19 }}
+
     defaultConfig {
         minSdk = 31
+        compileSdk = 36
+        compileSdkExtension = 19
     }
 
     buildFeatures {

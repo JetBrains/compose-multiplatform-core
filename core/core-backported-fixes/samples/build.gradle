@@ -35,7 +35,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) } // ki452390376 requires VANILLA_ICE_CREAM
+    compileSdk = 35 // ki452390376 requires VANILLA_ICE_CREAM
     namespace = "androidx.core.backported.fixes.samples"
 }
 

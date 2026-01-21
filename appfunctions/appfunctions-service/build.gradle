@@ -69,7 +69,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk = 36
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions.service"
 }

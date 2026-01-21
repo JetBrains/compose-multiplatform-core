@@ -60,7 +60,7 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     buildFeatures {
         viewBinding = true
     }

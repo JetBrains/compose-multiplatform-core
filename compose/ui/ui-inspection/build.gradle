@@ -84,7 +84,7 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     defaultConfig {
         // layout inspection supported starting on Android Q
         minSdk = 29

@@ -102,9 +102,8 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             when (plugin) {
                 is LibraryPlugin -> {
                     val libraryExtension = project.extensions.getByType<LibraryExtension>()
-                    libraryExtension.compileSdk {
-                        version = release(project.defaultAndroidConfig.latestStableCompileSdk)
-                    }
+                    libraryExtension.compileSdk =
+                        project.defaultAndroidConfig.latestStableCompileSdk
                     libraryExtension.buildToolsVersion =
                         project.defaultAndroidConfig.buildToolsVersion
 

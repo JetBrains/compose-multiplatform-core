@@ -61,7 +61,7 @@ dependencies {
 
 android {
     namespace = "androidx.glance.appwidget.multiprocess"
-    compileSdk { version = release(35) }
+    compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

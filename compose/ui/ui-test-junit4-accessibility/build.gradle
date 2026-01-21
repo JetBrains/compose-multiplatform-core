@@ -34,7 +34,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.test.junit4.accessibility"
-        compileSdk { version = release(35) }
+        compileSdk = 35
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

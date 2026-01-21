@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":core:haptics:haptics"))
 }
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     namespace = "androidx.core.haptics.samples"
 }
 androidx {

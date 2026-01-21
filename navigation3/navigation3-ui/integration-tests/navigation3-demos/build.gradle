@@ -49,6 +49,6 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk = 36
     namespace = "androidx.navigation3.demos"
 }

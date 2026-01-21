@@ -46,7 +46,7 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     namespace = "androidx.xr.compose.samples"
     defaultConfig {
         minSdk = 34

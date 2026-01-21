@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -52,10 +51,7 @@ dependencies {
 
 android {
     namespace = "androidx.xr.glimmer"
-    compileSdk { version = release(35) }
-    defaultConfig {
-        testInstrumentationRunner "androidx.xr.glimmer.GlimmerTestRunner"
-    }
+    compileSdk = 35
 }
 
 androidx {

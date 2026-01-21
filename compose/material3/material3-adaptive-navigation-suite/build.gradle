@@ -36,7 +36,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.material3.adaptive.navigationsuite"
-        compileSdk { version = release(35) }
+        compileSdk = 35
     }
     desktop()
     mac()

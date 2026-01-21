@@ -97,7 +97,7 @@ android {
     }
     namespace = "androidx.glance.appwidget"
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
-    compileSdk { version = release(35) }
+    compileSdk = 35
 }
 
 androidx {

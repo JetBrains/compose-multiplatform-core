@@ -74,7 +74,8 @@ android {
         aidl = true
     }
     namespace = "androidx.health.connect.client"
-    compileSdk { version = release(36) { sdkExtension = 19 }}
+    compileSdk = 36
+    compileSdkExtension = 19
 }
 
 androidx {

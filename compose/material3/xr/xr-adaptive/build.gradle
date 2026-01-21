@@ -32,7 +32,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk = 35
         namespace = "androidx.compose.material3.xr.adaptive"
     }
     jvmStubs()

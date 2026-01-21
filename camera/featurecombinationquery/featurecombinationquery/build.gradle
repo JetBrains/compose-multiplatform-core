@@ -34,7 +34,7 @@ android {
         enable.add("CameraXQuirksClassDetector")
     }
 
-    compileSdk { version = release(35) }
+    compileSdk = 35
     namespace = "androidx.camera.featurecombinationquery"
 }
 

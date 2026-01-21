@@ -26,7 +26,7 @@ android {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk = 36
 }
 
 dependencies {

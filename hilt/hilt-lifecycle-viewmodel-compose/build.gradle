@@ -62,7 +62,7 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.lifecycle.viewmodel.compose.TestRunner"
     }

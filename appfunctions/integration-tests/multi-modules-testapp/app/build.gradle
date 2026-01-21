@@ -24,7 +24,7 @@ plugins {
 
 android {
     namespace = "androidx.appfunctions.integration.testapp"
-    compileSdk { version = release(36) }
+    compileSdk = 36
     defaultConfig {
         minSdk = 33
     }

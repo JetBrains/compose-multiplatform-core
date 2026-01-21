@@ -45,6 +45,6 @@ androidx {
     description = "Contains the sample code for the AndroidX Biometric Compose library"
 }
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     namespace = "androidx.biometric.compose.samples"
 }

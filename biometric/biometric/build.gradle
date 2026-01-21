@@ -29,6 +29,10 @@ plugins {
     id("com.android.experimental.built-in-kotlin")
 }
 
+android {
+    compileSdk = 35
+}
+
 dependencies {
     api(libs.jspecify)
     // Public API dependencies
@@ -83,7 +87,7 @@ android {
     }
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.biometric"
-    compileSdk { version = release(35) }
+    compileSdk = 35
 }
 
 androidx {

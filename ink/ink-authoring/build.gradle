@@ -24,7 +24,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary{
         namespace = "androidx.ink.authoring"
-        compileSdk { version = release(35) }
+        compileSdk = 35
         androidResources.enable = true
     }
 

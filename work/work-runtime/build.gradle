@@ -56,7 +56,7 @@ android {
             }
         }
     }
-    compileSdk { version = release(35) }
+    compileSdk = 35
     sourceSets {
         androidTest.assets.srcDirs += files("$projectDir/src/schemas".toString())
     }

@@ -34,7 +34,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.navigation.fragment.TestRunner"
     }

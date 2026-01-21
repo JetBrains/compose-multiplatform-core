@@ -49,7 +49,7 @@ dependencies {
 
 android {
     namespace = "androidx.compose.integration.hero.common.implementation"
-    compileSdk { version = release(35) }
+    compileSdk = 35
 }
 
 androidx {

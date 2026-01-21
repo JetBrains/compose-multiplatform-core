@@ -24,7 +24,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.ink.geometry.compose"
-        compileSdk { version = release(35) }
+        compileSdk = 35
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

@@ -52,7 +52,7 @@ androidx {
 
 android {
     defaultConfig {
-        compileSdk { version = release(35) }
+        compileSdk = 35
     }
     namespace = "androidx.glance.appwidget.testing.samples"
 }

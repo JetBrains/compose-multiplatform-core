@@ -56,7 +56,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk = 36
     namespace = "androidx.xr.arcore.projected.testapp"
 
     defaultConfig {

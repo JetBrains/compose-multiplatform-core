@@ -57,6 +57,6 @@ androidx {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk = 35
     namespace = "androidx.compose.material3.adaptive.navigationsuite.samples"
 }

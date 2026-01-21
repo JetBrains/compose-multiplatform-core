@@ -22,7 +22,7 @@ plugins {
 
 android {
     namespace = "androidx.fragment.testapp"
-    compileSdk { version = release(35) }
+    compileSdk = 35
 }
 
 dependencies {
