@@ -79,7 +79,7 @@ public operator fun SavedStateHandle.Companion.invoke(
                     type.parseAndPutFromUri(tempSavedState, argName, value)
                 } else {
                     val previousValue = type[tempSavedState, argName]
-                    type.parseAndPut(tempSavedState, argName, value, previousValue)
+                    type.parseAndPutFromUri(tempSavedState, argName, value, previousValue)
                 }
             } catch (e: IllegalArgumentException) {
                 // parse failed, ignored
