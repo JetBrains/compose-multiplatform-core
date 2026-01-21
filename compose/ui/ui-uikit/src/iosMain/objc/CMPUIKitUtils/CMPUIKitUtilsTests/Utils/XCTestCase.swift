@@ -27,12 +27,14 @@ extension XCTestCase {
     ) {
         let start = Date()
         var isExpectationMet = expectation()
+        var numberOfTries = 0
         
-        while !isExpectationMet && -start.timeIntervalSinceNow < timeout {
-            print("-----||")
+        while !isExpectationMet && (-start.timeIntervalSinceNow < timeout || numberOfTries < 3) {
+            print("\(Date()) : -----")
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
             // try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
             isExpectationMet = expectation()
+            numberOfTries += 1
         }
         
         if !isExpectationMet {
