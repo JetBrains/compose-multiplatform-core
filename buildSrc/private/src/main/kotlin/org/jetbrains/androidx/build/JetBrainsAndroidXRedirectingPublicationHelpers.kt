@@ -229,7 +229,7 @@ internal fun Project.originalToRedirectedDependency(
 
     fun mainConfiguration() =
         configurations.find { it.name == "${componentName}RuntimeClasspath" } ?:
-        configurations.find { it.name == "${componentName}CompileKlibraries" }!!
+        configurations.find { it.name == "${componentName}CompileKlibraries" }
 
     /**
      * Extract redirections for dependencies using heuristic method (for both project, and external)
@@ -246,8 +246,8 @@ internal fun Project.originalToRedirectedDependency(
      * After it is resolved, externalWithHeuristic shouldn't be needed.
      */
     val externalWithHeuristic = mainConfiguration()
-        .resolvedConfiguration
-        .firstLevelModuleDependencies
+        ?.resolvedConfiguration
+        ?.firstLevelModuleDependencies
         .orEmpty()
         .associateBy { DefaultModuleIdentifier.newId(it.moduleGroup, it.moduleName) }
         .mapValuesNotNull { it.value.findRedirectedDependencyHeuristically()?.module?.id }
