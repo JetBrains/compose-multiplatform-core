@@ -326,13 +326,13 @@ final class CMPViewControllerTests: XCTestCase {
 
 extension UIViewController {
     func presentAndWait(_ viewController: UIViewController) async {
-        try? await withCheckedThrowingContinuation { continuation in
+        await withCheckedContinuation { continuation in
             self.present(viewController, animated: false, completion: { continuation.resume() })
         }
     }
     
     func dismissAndWait() async {
-        try? await withCheckedThrowingContinuation { continuation in
+        await withCheckedContinuation { continuation in
             self.dismiss(animated: false, completion: { continuation.resume() })
         }
     }
