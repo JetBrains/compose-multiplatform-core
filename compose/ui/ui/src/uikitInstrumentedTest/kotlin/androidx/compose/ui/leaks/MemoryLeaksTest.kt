@@ -89,7 +89,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(composeViewControllerRef)
+        assertDeallocated(composeViewControllerRef)
     }
 
     @Test
@@ -127,7 +127,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(subviewsReferences)
+        assertDeallocated(subviewsReferences)
     }
 
     @Test
@@ -160,7 +160,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(composeViewControllerRef)
+        assertDeallocated(composeViewControllerRef)
     }
 
     @Test
@@ -211,7 +211,7 @@ class MemoryLeaksTest {
             // to let UIKit release reference to the previous text input view.
             startFakeTextInputSession()
 
-            assetDeallocated(subviewsReferences)
+            assertDeallocated(subviewsReferences)
         }
     }
 
@@ -263,7 +263,7 @@ class MemoryLeaksTest {
             // to let UIKit release reference to the previous text input view.
             startFakeTextInputSession()
 
-            assetDeallocated(subviewsReferences)
+            assertDeallocated(subviewsReferences)
         }
     }
 
@@ -295,7 +295,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(composeViewRef)
+        assertDeallocated(composeViewRef)
     }
 
     @Test
@@ -334,7 +334,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(subviewsReferences)
+        assertDeallocated(subviewsReferences)
     }
 
     @Test
@@ -368,7 +368,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(composeViewRef)
+        assertDeallocated(composeViewRef)
     }
 
     @Test
@@ -406,7 +406,7 @@ class MemoryLeaksTest {
             assertEquals(
                 expected = 7,
                 actual = subviewsReferences.count(),
-                message = "Expected 7 subviews: [UIView, ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, CMPEditMenuView, IntermediateTextInputUIView]" +
+                message = "Expected 7 subviews: [ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, CMPEditMenuView, IntermediateTextInputUIView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull { ref ->
                             ref.get()?.let { it::class.simpleName }
@@ -420,7 +420,7 @@ class MemoryLeaksTest {
             // to let UIKit release reference to the previous text input view.
             startFakeTextInputSession()
 
-            assetDeallocated(subviewsReferences)
+            assertDeallocated(subviewsReferences)
         }
     }
 
@@ -456,7 +456,7 @@ class MemoryLeaksTest {
 
         appDelegate.cleanUp()
 
-        assetDeallocated(layersViewControllerRef)
+        assertDeallocated(layersViewControllerRef)
     }
 
     @Test
@@ -498,12 +498,12 @@ class MemoryLeaksTest {
 
             appDelegate.cleanUp()
 
-            assetDeallocated(subviewsReferences)
+            assertDeallocated(subviewsReferences)
         }
     }
 
     @OptIn(NativeRuntimeApi::class)
-    internal suspend fun assetDeallocated(reference: List<WeakReference<*>>) {
+    internal suspend fun assertDeallocated(reference: List<WeakReference<*>>) {
         val duration = 100.milliseconds
         repeat((5.seconds / duration).toInt()) {
             runApplicationLoop(duration)
@@ -511,12 +511,12 @@ class MemoryLeaksTest {
             if (reference.all { it.get() == null }) return
         }
 
-        fail("Memory leak detected: references ${reference.mapNotNull { it.get() }} where not collected")
+        fail("Memory leak detected: references ${reference.mapNotNull { it.get() }} were not collected")
     }
 
     @OptIn(NativeRuntimeApi::class)
-    internal suspend fun assetDeallocated(reference: WeakReference<*>) {
-        assetDeallocated(listOf(reference))
+    internal suspend fun assertDeallocated(reference: WeakReference<*>) {
+        assertDeallocated(listOf(reference))
     }
 
     private fun collectComposeSubviewsRecursively(
