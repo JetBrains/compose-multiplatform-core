@@ -63,73 +63,77 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeUIViewControllerDisposal() = runRepeatingBlocking {
+    fun testComposeUIViewControllerDisposal() {
         val appDelegate = MockAppDelegate()
-        var composeViewControllerRef: WeakReference<UIViewController>? = null
-        var composeLoaded = false
+        runRepeatingBlocking {
+            var composeViewControllerRef: WeakReference<UIViewController>? = null
+            var composeLoaded = false
 
-        run {
-            val controller = ComposeUIViewController({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
-                SideEffect {
-                    composeLoaded = true
+            run {
+                val controller = ComposeUIViewController({
+                    enforceStrictPlistSanityCheck = false
+                }) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
+                    SideEffect {
+                        composeLoaded = true
+                    }
                 }
+                composeViewControllerRef = WeakReference(controller)
+                appDelegate.setUpWindow(controller)
             }
-            composeViewControllerRef = WeakReference(controller)
-            appDelegate.setUpWindow(controller)
+
+            // Allow run loop to start the application
+            runApplicationLoop(1.milliseconds)
+
+            assertTrue(composeLoaded)
+            assertNotNull(composeViewControllerRef?.get())
+
+            appDelegate.cleanUp()
+            cleanupMemory()
+
+            assertNull(composeViewControllerRef.get())
         }
-
-        // Allow run loop to start the application
-        runApplicationLoop(1.milliseconds)
-
-        assertTrue(composeLoaded)
-        assertNotNull(composeViewControllerRef?.get())
-
-        appDelegate.cleanUp()
-        cleanupMemory()
-
-        assertNull(composeViewControllerRef.get())
     }
 
     @Test
-    fun testComposeUIViewControllerSubviewsDisposal() = runRepeatingBlocking {
+    fun testComposeUIViewControllerSubviewsDisposal() {
         val appDelegate = MockAppDelegate()
-        val subviewsReferences = mutableListOf<WeakReference<UIView>>()
+        runRepeatingBlocking {
+            val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
-        run {
-            val controller = ComposeUIViewController({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
+            run {
+                val controller = ComposeUIViewController({
+                    enforceStrictPlistSanityCheck = false
+                }) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
+                }
+                appDelegate.setUpWindow(controller)
             }
-            appDelegate.setUpWindow(controller)
+
+            // Allow run loop to start the application
+            runApplicationLoop(1.milliseconds)
+
+            collectSubviewsRecursively(
+                appDelegate.window?.rootViewController?.view!!,
+                subviewsReferences
+            )
+
+            assertEquals(
+                expected = 4,
+                actual = subviewsReferences.count(),
+                message = "Expected 4 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+                    ", but given: ${
+                        subviewsReferences.mapNotNull {
+                            it.get()?.let { it::class.simpleName }
+                        }
+                    }"
+            )
+
+            appDelegate.cleanUp()
+            cleanupMemory()
+
+            assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
         }
-
-        // Allow run loop to start the application
-        runApplicationLoop(1.milliseconds)
-
-        collectSubviewsRecursively(
-            appDelegate.window?.rootViewController?.view!!,
-            subviewsReferences
-        )
-
-        assertEquals(
-            expected = 4,
-            actual = subviewsReferences.count(),
-            message = "Expected 4 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
-                ", but given: ${
-                    subviewsReferences.mapNotNull {
-                        it.get()?.let { it::class.simpleName }
-                    }
-                }"
-        )
-
-        appDelegate.cleanUp()
-        cleanupMemory()
-
-        assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
     }
 
     @Test
@@ -168,9 +172,10 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndOldContextMenu() =
+    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndOldContextMenu() {
+        val appDelegate = MockAppDelegate()
+
         runRepeatingBlocking(newContextMenuEnabled = false) {
-            val appDelegate = MockAppDelegate()
             val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
             run {
@@ -220,11 +225,13 @@ class MemoryLeaksTest {
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
         }
+    }
 
     @Test
-    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndNewContextMenu() =
+    fun testComposeUIViewControllerSubviewsWithTextInputDisposalAndNewContextMenu() {
+        val appDelegate = MockAppDelegate()
+
         runRepeatingBlocking(newContextMenuEnabled = true) {
-            val appDelegate = MockAppDelegate()
             val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
             run {
@@ -274,79 +281,84 @@ class MemoryLeaksTest {
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
         }
-
-    @Test
-    fun testComposeUIViewDisposal() = runRepeatingBlocking {
-        val appDelegate = MockAppDelegate()
-        var composeViewRef: WeakReference<UIView>? = null
-        var composeLoaded = false
-
-        run {
-            val view = ComposeUIView({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
-                SideEffect {
-                    composeLoaded = true
-                }
-            }
-            composeViewRef = WeakReference(view)
-            val controller = UIViewController()
-            controller.view.embedSubview(view)
-            appDelegate.setUpWindow(controller)
-        }
-
-        // Allow run loop to start the application
-        runApplicationLoop(1.milliseconds)
-
-        assertTrue(composeLoaded)
-        assertNotNull(composeViewRef?.get())
-
-        appDelegate.cleanUp()
-        cleanupMemory()
-
-        assertNull(composeViewRef.get())
     }
 
     @Test
-    fun testComposeUIViewSubviewsDisposal() = runRepeatingBlocking {
+    fun testComposeUIViewDisposal() {
         val appDelegate = MockAppDelegate()
-        val subviewsReferences = mutableListOf<WeakReference<UIView>>()
+        runRepeatingBlocking {
+            var composeViewRef: WeakReference<UIView>? = null
+            var composeLoaded = false
 
-        run {
-            val view = ComposeUIView({
-                enforceStrictPlistSanityCheck = false
-            }) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
-            }
-            val controller = UIViewController()
-            controller.view.embedSubview(view)
-            appDelegate.setUpWindow(controller)
-        }
-
-        // Allow run loop to start the application
-        runApplicationLoop(1.milliseconds)
-
-        collectSubviewsRecursively(
-            appDelegate.window?.rootViewController?.view!!,
-            subviewsReferences
-        )
-
-        assertEquals(
-            expected = 6,
-            actual = subviewsReferences.count(),
-            message = "Expected 6 subviews: [UIView, ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
-                ", but given: ${
-                    subviewsReferences.mapNotNull {
-                        it.get()?.let { it::class.simpleName }
+            run {
+                val view = ComposeUIView({
+                    enforceStrictPlistSanityCheck = false
+                }) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
+                    SideEffect {
+                        composeLoaded = true
                     }
-                }"
-        )
+                }
+                composeViewRef = WeakReference(view)
+                val controller = UIViewController()
+                controller.view.embedSubview(view)
+                appDelegate.setUpWindow(controller)
+            }
 
-        appDelegate.cleanUp()
-        cleanupMemory()
+            // Allow run loop to start the application
+            runApplicationLoop(1.milliseconds)
 
-        assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+            assertTrue(composeLoaded)
+            assertNotNull(composeViewRef?.get())
+
+            appDelegate.cleanUp()
+            cleanupMemory()
+
+            assertNull(composeViewRef.get())
+        }
+    }
+
+    @Test
+    fun testComposeUIViewSubviewsDisposal() {
+        val appDelegate = MockAppDelegate()
+        runRepeatingBlocking {
+            val subviewsReferences = mutableListOf<WeakReference<UIView>>()
+
+            run {
+                val view = ComposeUIView({
+                    enforceStrictPlistSanityCheck = false
+                }) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
+                }
+                val controller = UIViewController()
+                controller.view.embedSubview(view)
+                appDelegate.setUpWindow(controller)
+            }
+
+            // Allow run loop to start the application
+            runApplicationLoop(1.milliseconds)
+
+            collectSubviewsRecursively(
+                appDelegate.window?.rootViewController?.view!!,
+                subviewsReferences
+            )
+
+            assertEquals(
+                expected = 6,
+                actual = subviewsReferences.count(),
+                message = "Expected 6 subviews: [UIView, ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+                    ", but given: ${
+                        subviewsReferences.mapNotNull {
+                            it.get()?.let { it::class.simpleName }
+                        }
+                    }"
+            )
+
+            appDelegate.cleanUp()
+            cleanupMemory()
+
+            assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
+        }
     }
 
     @Test
@@ -386,9 +398,9 @@ class MemoryLeaksTest {
     }
 
     @Test
-    fun testComposeUIViewSubviewsWithTextInputDisposalAndNewContextMenu() =
+    fun testComposeUIViewSubviewsWithTextInputDisposalAndNewContextMenu() {
+        val appDelegate = MockAppDelegate()
         runRepeatingBlocking(newContextMenuEnabled = true) {
-            val appDelegate = MockAppDelegate()
             val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
             run {
@@ -439,6 +451,7 @@ class MemoryLeaksTest {
 
             assertEquals(emptyList(), subviewsReferences.mapNotNull { it.get() })
         }
+    }
 
     private fun collectSubviewsRecursively(
         view: UIView,
