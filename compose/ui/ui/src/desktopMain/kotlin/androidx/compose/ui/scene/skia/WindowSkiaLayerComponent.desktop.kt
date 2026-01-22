@@ -31,7 +31,7 @@ import org.jetbrains.skiko.SkiaLayerProperties
 import org.jetbrains.skiko.SkikoRenderDelegate
 
 /**
- * Provides a heavyweight AWT [contentComponent] used to render content
+ * Provides a heavyweight AWT [hierarchyRoot] used to render content
  * (provided by [SkikoRenderDelegate]) on-screen with Skia.
  *
  * This component renders content directly to a Skia surface for better performance,
@@ -51,7 +51,7 @@ internal class WindowSkiaLayerComponent(
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
      */
-    override val contentComponent: SkiaLayer = object : SkiaLayer(
+    override val hierarchyRoot: SkiaLayer = object : SkiaLayer(
         accessibleContextProvider = { mediator.getAccessibleContext() },
         properties = run {
             val defaultProperties = SkiaLayerProperties()
@@ -118,10 +118,10 @@ internal class WindowSkiaLayerComponent(
         }
     }
 
-    override val sceneRoot: Component
-        get() = contentComponent.canvas
+    override val contentRoot: Component
+        get() = hierarchyRoot.canvas
 
-    override val renderApi by contentComponent::renderApi
+    override val renderApi by hierarchyRoot::renderApi
 
     override val interopBlendingSupported
         get() = when(renderApi) {
@@ -129,13 +129,13 @@ internal class WindowSkiaLayerComponent(
             else -> false
         }
 
-    override val clipComponents by contentComponent::clipComponents
+    override val clipComponents by hierarchyRoot::clipComponents
 
     override var transparency
-        get() = contentComponent.transparency
+        get() = hierarchyRoot.transparency
         set(value) {
-            contentComponent.transparency = value
-            contentComponent.background = when {
+            hierarchyRoot.transparency = value
+            hierarchyRoot.background = when {
                 !value -> null  // This will use the parent's background
                 // In case of transparent Metal canvas on an opaque window, background values with
                 // alpha == 0 will make the result color black after clearing the canvas.
@@ -146,27 +146,27 @@ internal class WindowSkiaLayerComponent(
                 else -> java.awt.Color(0, 0, 0, 0)
             }
         }
-    override var fullscreen by contentComponent::fullscreen
+    override var fullscreen by hierarchyRoot::fullscreen
 
-    override val windowHandle by contentComponent::windowHandle
+    override val windowHandle by hierarchyRoot::windowHandle
 
     init {
-        contentComponent.renderDelegate = renderDelegate
+        hierarchyRoot.renderDelegate = renderDelegate
     }
 
     override fun dispose() {
-        contentComponent.dispose()
+        hierarchyRoot.dispose()
     }
 
     override fun onComposeInvalidation() {
-        contentComponent.needRender()
+        hierarchyRoot.needRender()
     }
 
     override fun renderImmediately() {
-        contentComponent.renderImmediately()
+        hierarchyRoot.renderImmediately()
     }
 
     override fun onRenderApiChanged(action: () -> Unit) {
-        contentComponent.onStateChanged(SkiaLayer.PropertyKind.Renderer) { action() }
+        hierarchyRoot.onStateChanged(SkiaLayer.PropertyKind.Renderer) { action() }
     }
 }

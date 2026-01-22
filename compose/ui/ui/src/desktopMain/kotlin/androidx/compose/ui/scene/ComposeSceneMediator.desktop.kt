@@ -149,7 +149,7 @@ internal class ComposeSceneMediator(
     val platformContext: PlatformContext get() = _platformContext
 
     private val skiaLayerComponent: SkiaLayerComponent by lazy { skiaLayerComponentFactory(this) }
-    val contentComponent by skiaLayerComponent::contentComponent
+    val contentComponent by skiaLayerComponent::hierarchyRoot
     var fullscreen by skiaLayerComponent::fullscreen
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
@@ -157,12 +157,12 @@ internal class ComposeSceneMediator(
 
     val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
         isWindowLevel = isWindowLevel,
-        sceneRoot = { skiaLayerComponent.sceneRoot },
+        sceneRoot = { skiaLayerComponent.contentRoot },
         accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
     )
 
     private val accessibleFocusHelper by lazy {
-        AccessibleFocusHelper(skiaLayerComponent.sceneRoot, accessible)
+        AccessibleFocusHelper(skiaLayerComponent.contentRoot, accessible)
     }
 
     fun getAccessibleContext() = accessibleFocusHelper.accessibleContext

@@ -35,11 +35,11 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  */
 internal interface SkiaLayerComponent {
     // The component that needs to be added to the AWT hierarchy
-    val contentComponent: JComponent
-    // The component that is actually the root of the scene.
-    // It may be the same contentComponent, or a descendant of it.
+    val hierarchyRoot: JComponent
+    // The component that is actually the root of the composable content.
+    // It may be the same hierarchyRoot, or a descendant of it.
     // Must implement Accessible
-    val sceneRoot: Component
+    val contentRoot: Component
     val interopBlendingSupported: Boolean
     val renderApi: GraphicsApi
     val clipComponents: MutableList<ClipRectangle>
