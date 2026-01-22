@@ -18,29 +18,23 @@ import XCTest
 
 extension XCTestCase {
     /// Awaits for expectation without blocking UI thread.
+    @MainActor
     func expect(
         timeout: TimeInterval = 5.0,
         function: StaticString = #function,
         line: Int = #line,
-        message: () -> String = { "" },
         expectation: @escaping () -> Bool
-    ) {
+    ) async {
         let start = Date()
-        print("\(start) : Started!")
         var isExpectationMet = expectation()
-        var numberOfTries = 0
 
-        while !isExpectationMet && (-start.timeIntervalSinceNow < timeout || numberOfTries < 5) {
-            print("\(Date()) : -----")
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
-            // try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        while !isExpectationMet && (-start.timeIntervalSinceNow < timeout) {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
             isExpectationMet = expectation()
-            numberOfTries += 1
         }
         
         if !isExpectationMet {
-            print("Timeout failed at \(function), line: \(line). \(message()) \n| start date: \(start) \n| duration: \(start.timeIntervalSinceNow)")
-            XCTFail("Timeout at line \(line). \(message()) \n| start date: \(start) \n| duration: \(start.timeIntervalSinceNow)")
+            XCTFail("Timeout at \(function):\(line)")
         }
     }
 }
