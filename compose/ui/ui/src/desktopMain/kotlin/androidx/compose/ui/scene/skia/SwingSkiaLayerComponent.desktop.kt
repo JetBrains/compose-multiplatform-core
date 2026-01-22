@@ -39,7 +39,7 @@ internal class SwingSkiaLayerComponent(
     mediator: ComposeSceneMediator,
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
-) : BaseSkiaLayerComponent(mediator) {
+) : SkiaLayerComponent {
     /**
      * See also backendLayer for standalone Compose in [WindowSkiaLayerComponent]
      */
@@ -47,7 +47,7 @@ internal class SwingSkiaLayerComponent(
         object : SkiaSwingLayer(
             renderDelegate = renderDelegate,
             analytics = skiaLayerAnalytics,
-            accessibleContextProvider = { getAccessibleContext() },
+            accessibleContextProvider = { mediator.getAccessibleContext() },
         ) {
             private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
 

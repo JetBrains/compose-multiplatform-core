@@ -47,12 +47,12 @@ internal class WindowSkiaLayerComponent(
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
     private val renderSettings: RenderSettings.SkiaSurface,
-) : BaseSkiaLayerComponent(mediator) {
+) : SkiaLayerComponent {
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
      */
     override val contentComponent: SkiaLayer = object : SkiaLayer(
-        accessibleContextProvider = { getAccessibleContext() },
+        accessibleContextProvider = { mediator.getAccessibleContext() },
         properties = run {
             val defaultProperties = SkiaLayerProperties()
 

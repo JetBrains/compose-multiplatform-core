@@ -18,11 +18,8 @@ package androidx.compose.ui.scene.skia
 
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.a11y.AccessibleFocusHelper
 import androidx.compose.ui.scene.ComposeSceneMediator
 import java.awt.Component
-import javax.accessibility.Accessible
-import javax.accessibility.AccessibleContext
 import javax.swing.JComponent
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.GraphicsApi
@@ -53,29 +50,9 @@ internal interface SkiaLayerComponent {
 
     fun dispose()
 
-    fun requestFocusOnAccessible(accessible: Accessible)
     fun onComposeInvalidation()
     fun renderImmediately()
     fun onRenderApiChanged(action: () -> Unit)
-}
-
-/**
- * A base implementation of [SkiaLayerComponent]
- */
-internal abstract class BaseSkiaLayerComponent(
-    protected val mediator: ComposeSceneMediator,
-): SkiaLayerComponent {
-    private val accessibleFocusHelper by lazy {
-        AccessibleFocusHelper(sceneRoot, mediator.accessible)
-    }
-
-    override fun requestFocusOnAccessible(accessible: Accessible) {
-        accessibleFocusHelper.requestFocusOnAccessible(accessible)
-    }
-
-    protected fun getAccessibleContext(): AccessibleContext {
-        return accessibleFocusHelper.accessibleContext
-    }
 }
 
 /**
