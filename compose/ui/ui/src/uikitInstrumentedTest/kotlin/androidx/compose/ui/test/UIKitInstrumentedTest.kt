@@ -21,6 +21,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
+import androidx.compose.ui.scene.LayersWindow
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.mouseDown
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -430,13 +432,12 @@ internal class UIKitInstrumentedTest(
         }
 }
 
-//private val orientationMaskForWindow = mutableMapOf<UIWindow, UIInterfaceOrientationMask>()
 @OptIn(ExperimentalForeignApi::class)
 internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
-    var orientationMask = UIInterfaceOrientationMaskAll
+    var supportedInterfaceOrientations = UIInterfaceOrientationMaskAll
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
@@ -501,10 +502,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         }
 
         if (requestedInterfaceOrientationMask != currentInterfaceOrientationMask) {
-//            _window?.let {
-//                orientationMarkForWindow[it] = requestedInterfaceOrientationMask
-//            }
-            orientationMask = requestedInterfaceOrientationMask
+            supportedInterfaceOrientations = requestedInterfaceOrientationMask
             UIViewController.attemptRotationToDeviceOrientation()
             return true
         }
@@ -516,10 +514,17 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         application: UIApplication,
         supportedInterfaceOrientationsForWindow: UIWindow?
     ): UIInterfaceOrientationMask {
-        return orientationMask
-//        return orientationMaskForWindow[supportedInterfaceOrientationsForWindow]
-//            ?: UIInterfaceOrientationMaskAll
+        return supportedInterfaceOrientations
     }
+}
+
+internal fun MockAppDelegate.findLayersWindow(): LayersWindow {
+    val window = this@findLayersWindow.window?.windowScene?.windows?.mapNotNull {
+        it as? LayersWindow
+    }?.single { !it.isHidden() }
+
+    assertNotNull(window, "${LayersWindow::class} not found in scene")
+    return window
 }
 
 internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol? {
@@ -541,4 +546,12 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     }.firstNotNullOfOrNull {
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
+}
+
+internal fun ComposeHostingViewController.waitForIdle() {
+    UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
+}
+
+internal fun ComposeHostingView.waitForIdle() {
+    UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
 }
