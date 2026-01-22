@@ -105,6 +105,8 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             project.configurePinnedKotlinLibraries(PlatformIdentifier.JS)
             browser {
                 testTask {
+                    it.testLogging.showStandardStreams = true
+                    it.testLogging.showExceptions = true
                     it.passTestFlagsToEnvironment()
 
                     it.useKarma {
