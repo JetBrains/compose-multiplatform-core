@@ -438,18 +438,11 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
-    private var supportedInterfaceOrientations: UIInterfaceOrientationMask
-        get() {
-            return orientationMarkForWindow[_window] ?: UIInterfaceOrientationMaskAll
-        }
-        set(value) {
-            _window?.let { orientationMarkForWindow[it] = value }
-        }
-
     fun setUpWindow(viewController: UIViewController) {
-        UIApplication.sharedApplication().delegate = this
+        UIApplication.sharedApplication().setDelegate(this)
 
-        val scene = UIApplication.sharedApplication().firstScene()
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+            ?: error("No window scene found")
         val allWindows = scene.windows
 
         _window = UIWindow(frame = UIScreen.mainScreen.bounds)
@@ -465,14 +458,21 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
-        val scene = UIApplication.sharedApplication().firstScene()
-        val allWindows = scene.windows
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
-        BlankAppDelegate().cleanupApplication()
+        UIApplication.sharedApplication().setDelegate(null)
+        val window = UIWindow(frame = UIScreen.mainScreen.bounds)
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        window.windowScene = scene
+        dispatch_async(dispatch_get_main_queue()) {
+            window.windowScene = null
+            window.resignKeyWindow()
+        }
 
         _window?.resetTouches()
         _window?.resignKeyWindow()
-        _window?.setHidden(true)
         _window?.windowScene = null
         _window?.rootViewController = UIViewController()
         _window = null
@@ -501,7 +501,9 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         }
 
         if (requestedInterfaceOrientationMask != currentInterfaceOrientationMask) {
-            supportedInterfaceOrientations = requestedInterfaceOrientationMask
+            _window?.let {
+                orientationMarkForWindow[it] = requestedInterfaceOrientationMask
+            }
             UIViewController.attemptRotationToDeviceOrientation()
             return true
         }
@@ -515,29 +517,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     ): UIInterfaceOrientationMask {
         return orientationMarkForWindow[supportedInterfaceOrientationsForWindow]
             ?: UIInterfaceOrientationMaskAll
-    }
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private class BlankAppDelegate: NSObject(), UIApplicationDelegateProtocol {
-    private var _window: UIWindow = UIWindow(frame = UIScreen.mainScreen.bounds).also {
-        it.windowScene = UIApplication.sharedApplication().firstScene()
-    }
-    override fun window(): UIWindow = _window
-
-    fun cleanupApplication() {
-        _window.rootViewController = UIViewController()
-        _window.makeKeyAndVisible()
-        UIApplication.sharedApplication().delegate = this
-
-        dispatch_async(dispatch_get_main_queue()) {
-            _window.windowScene = null
-            _window.resignKeyWindow()
-            _window.setHidden(true)
-            if (UIApplication.sharedApplication().delegate === this) {
-                UIApplication.sharedApplication().delegate = null
-            }
-        }
     }
 }
 
@@ -561,6 +540,3 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
 }
-
-private fun UIApplication.firstScene(): UIWindowScene = connectedScenes.first() as? UIWindowScene
-    ?: error("No window scene found")

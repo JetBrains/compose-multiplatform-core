@@ -53,11 +53,6 @@
 }
 
 - (BOOL)cmp_isInWindowHierarchy {
-    NSLog(@"cmp_isInWindowHierarchy:vc: %@ \n  window: %d, parentViewController: %d, is root: %d",
-          self,
-          self.view.window != nil,
-          self.parentViewController != nil,
-          [self cmp_isRootViewController]);
     if (self.view.window != nil) {
         return YES;
     } else if (self.parentViewController != nil) {
@@ -80,28 +75,27 @@
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
     self = [super initWithNibName:nil bundle:nil];
-    
+
     if (self) {
-        NSLog(@"CMPViewController - init");
         _lifecycleDelegate = delegate;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
-        
+
         [self addTraitCollectionObserverIfNeeded];
     }
-    
+
     return self;
 }
 
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    
+
     if (self) {
         _lifecycleDelegate = nil;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
 
         [self addTraitCollectionObserverIfNeeded];
     }
-    
+
     return self;
 }
 
@@ -125,7 +119,7 @@
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
-    
+
     [_lifecycleDelegate composeContainerDidDisappear];
 }
 
@@ -144,10 +138,8 @@
 
 - (void)scheduleHierarchyContainmentCheck {
     double delayInSeconds = 0.5;
-    NSLog(@"scheduleHierarchyContainmentCheck - Scheduled!");
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSLog(@".    %ld", self->_lifecycleState);
         switch (self->_lifecycleState) {
             case CMPComposeContainerLifecycleStateInitialized:
                 NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
