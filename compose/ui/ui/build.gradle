@@ -302,16 +302,6 @@ androidXMultiplatform {
 }
 
 dependencies {
-
-    constraints {
-        // keep ui and foundation the same version in the JetBrains fork
-        commonMainImplementation(project(":compose:foundation:foundation")) {
-            because 'prevents a regression in Overscroll'
-        }
-    }
-}
-
-dependencies {
     //lintChecks(project(":compose:ui:ui-lint"))
     //lintPublish(project(":compose:ui:ui-lint"))
 }
