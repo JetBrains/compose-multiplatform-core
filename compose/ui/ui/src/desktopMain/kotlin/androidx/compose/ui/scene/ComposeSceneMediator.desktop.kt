@@ -783,11 +783,14 @@ internal class ComposeSceneMediator(
                     // can call this method themselves, so we need to prevent infinite recursion
                     if (requestingFocus) return@AccessibilityController
                     requestingFocus = true
-                    try {
-                        val target = it ?: accessible.defaultAccessibilityFocusTarget()
-                        skiaLayerComponent.requestNativeFocusOnAccessible(target)
-                    } finally {
-                        requestingFocus = false
+
+                    val target = it ?: accessible.defaultAccessibilityFocusTarget()
+                    if (target != null) {
+                        try {
+                            skiaLayerComponent.requestFocusOnAccessible(target)
+                        } finally {
+                            requestingFocus = false
+                        }
                     }
                 },
             ).also {
