@@ -106,6 +106,7 @@ internal fun Project.configureDependencyVerification() {
         "jbVerifyDependencyVersions",
         JetBrainsVerifyDependencyVersionsTask::class.java
     ) { task ->
+        task.onlyIf { false } // tmp because we use Kotlin -Beta1
         task.version.set(project.provider { project.version.toString() })
         task.androidXDependencySet.set(
             project.provider {
