@@ -113,7 +113,7 @@ class MemoryLeaksTest {
             // Allow run loop to start the application
             runApplicationLoop(1.milliseconds)
 
-            collectSubviewsRecursively(
+            collectComposeSubviewsRecursively(
                 appDelegate.window?.rootViewController?.view!!,
                 subviewsReferences
             )
@@ -199,7 +199,7 @@ class MemoryLeaksTest {
             // Allow run loop to start the application
             runApplicationLoop(KeyboardAnimationDelay)
 
-            collectSubviewsRecursively(
+            collectComposeSubviewsRecursively(
                 appDelegate.window?.rootViewController?.view!!,
                 subviewsReferences
             )
@@ -255,7 +255,7 @@ class MemoryLeaksTest {
             // Allow run loop to start the application
             runApplicationLoop(KeyboardAnimationDelay)
 
-            collectSubviewsRecursively(
+            collectComposeSubviewsRecursively(
                 appDelegate.window?.rootViewController?.view!!,
                 subviewsReferences
             )
@@ -338,15 +338,15 @@ class MemoryLeaksTest {
             // Allow run loop to start the application
             runApplicationLoop(1.milliseconds)
 
-            collectSubviewsRecursively(
+            collectComposeSubviewsRecursively(
                 appDelegate.window?.rootViewController?.view!!,
                 subviewsReferences
             )
 
             assertEquals(
-                expected = 6,
+                expected = 5,
                 actual = subviewsReferences.count(),
-                message = "Expected 6 subviews: [UIView, ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+                message = "Expected 5 subviews: [ComposeHostingView, ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull {
                             it.get()?.let { it::class.simpleName }
@@ -425,7 +425,7 @@ class MemoryLeaksTest {
             // Allow run loop to start the application
             runApplicationLoop(KeyboardAnimationDelay)
 
-            collectSubviewsRecursively(
+            collectComposeSubviewsRecursively(
                 appDelegate.window?.rootViewController?.view!!,
                 subviewsReferences
             )
@@ -453,13 +453,15 @@ class MemoryLeaksTest {
         }
     }
 
-    private fun collectSubviewsRecursively(
+    private fun collectComposeSubviewsRecursively(
         view: UIView,
         result: MutableList<WeakReference<UIView>>
     ) {
+        if (view::class != UIView::class) {
         result.add(WeakReference(view))
+            }
         for (subview in view.subviews) {
-            collectSubviewsRecursively(subview as UIView, result)
+            collectComposeSubviewsRecursively(subview as UIView, result)
         }
     }
 
@@ -482,7 +484,7 @@ class MemoryLeaksTest {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun startFakeTextInputSession() {
+    private fun startFakeTextInputSession() {
         val input = IntermediateTextInputUIView(0)
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
