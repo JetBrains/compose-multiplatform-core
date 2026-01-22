@@ -17,10 +17,10 @@
 package androidx.compose.ui.scene.skia
 
 import androidx.compose.ui.scene.ComposeSceneMediator
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.event.FocusEvent
-import javax.accessibility.Accessible
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -47,7 +47,7 @@ internal class SwingSkiaLayerComponent(
         object : SkiaSwingLayer(
             renderDelegate = renderDelegate,
             analytics = skiaLayerAnalytics,
-            accessibleContextProvider = ::provideAccessibleContext,
+            accessibleContextProvider = { getAccessibleContext() },
         ) {
             private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
 
@@ -98,15 +98,8 @@ internal class SwingSkiaLayerComponent(
             }
         }
 
-    override val sceneAccessibleParent: Accessible?
-        get() = run {
-            var parent = contentComponent.parent
-            while (parent != null) {
-                if (parent is Accessible) return@run parent
-                parent = parent.parent
-            }
-            null
-        }
+    override val sceneRoot: Component
+        get() = contentComponent
 
     override val renderApi by contentComponent::renderApi
 

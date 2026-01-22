@@ -140,7 +140,7 @@ internal class ComposeSceneMediator(
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
     val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
         isWindowLevel = isWindowLevel,
-        parent = { skiaLayerComponent.sceneAccessibleParent },
+        sceneRoot = { skiaLayerComponent.sceneRoot },
         accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
     )
 

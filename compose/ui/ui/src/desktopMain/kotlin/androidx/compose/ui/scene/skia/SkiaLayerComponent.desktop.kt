@@ -37,10 +37,12 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  * It's implemented as adapter to [SkiaLayer] or [SkiaSwingLayer].
  */
 internal interface SkiaLayerComponent {
+    // The component that needs to be added to the AWT hierarchy
     val contentComponent: JComponent
-    // The Accessible that will be reported as the accessible parent of
-    // ComposeSceneMediator.accessible (ComposeSceneAccessible)
-    val sceneAccessibleParent: Accessible?
+    // The component that is actually the root of the scene.
+    // It may be the same contentComponent, or a descendant of it.
+    // Must implement Accessible
+    val sceneRoot: Component
     val interopBlendingSupported: Boolean
     val renderApi: GraphicsApi
     val clipComponents: MutableList<ClipRectangle>
@@ -63,25 +65,16 @@ internal interface SkiaLayerComponent {
 internal abstract class BaseSkiaLayerComponent(
     protected val mediator: ComposeSceneMediator,
 ): SkiaLayerComponent {
-    private var accessibleFocusHelper: AccessibleFocusHelper? = null
-
-    /**
-     * Returns the [AccessibleContext] for the component.
-     *
-     * This is called every time (but with the same [component]) the a11y system calls
-     * [Component.getAccessibleContext] on the underlying component where the scene is actually
-     * rendered.
-     */
-    protected fun provideAccessibleContext(component: Component): AccessibleContext {
-        val helper = accessibleFocusHelper ?:
-        AccessibleFocusHelper(component, mediator.accessible).also {
-            accessibleFocusHelper = it
-        }
-        return helper.accessibleContext
+    private val accessibleFocusHelper by lazy {
+        AccessibleFocusHelper(sceneRoot, mediator.accessible)
     }
 
     override fun requestFocusOnAccessible(accessible: Accessible) {
-        accessibleFocusHelper?.requestFocusOnAccessible(accessible)
+        accessibleFocusHelper.requestFocusOnAccessible(accessible)
+    }
+
+    protected fun getAccessibleContext(): AccessibleContext {
+        return accessibleFocusHelper.accessibleContext
     }
 }
 

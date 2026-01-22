@@ -19,11 +19,11 @@ package androidx.compose.ui.scene.skia
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
-import javax.accessibility.Accessible
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -52,7 +52,7 @@ internal class WindowSkiaLayerComponent(
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]
      */
     override val contentComponent: SkiaLayer = object : SkiaLayer(
-        accessibleContextProvider = ::provideAccessibleContext,
+        accessibleContextProvider = { getAccessibleContext() },
         properties = run {
             val defaultProperties = SkiaLayerProperties()
 
@@ -118,9 +118,8 @@ internal class WindowSkiaLayerComponent(
         }
     }
 
-    override val sceneAccessibleParent: Accessible
-        // SkiaLayer passes externalAccessibleFactory to a child component of itself.
-        get() = contentComponent
+    override val sceneRoot: Component
+        get() = contentComponent.canvas
 
     override val renderApi by contentComponent::renderApi
 
