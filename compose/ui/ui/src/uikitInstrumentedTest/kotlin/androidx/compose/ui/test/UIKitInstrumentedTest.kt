@@ -430,18 +430,21 @@ internal class UIKitInstrumentedTest(
         }
 }
 
-private var allAppDelegates = mutableListOf<MockAppDelegate>()
-
 @OptIn(ExperimentalForeignApi::class)
 internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
+    companion object {
+        private val orientationMarkForWindow = mutableMapOf<UIWindow, UIInterfaceOrientationMask>()
+    }
     private var _window: UIWindow? = null
     override fun window(): UIWindow? = _window
 
-    private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
-
-    init {
-        allAppDelegates.add(this)
-    }
+    private var supportedInterfaceOrientations: UIInterfaceOrientationMask
+        get() {
+            return orientationMarkForWindow[_window] ?: UIInterfaceOrientationMaskAll
+        }
+        set(value) {
+            _window?.let { orientationMarkForWindow[it] = value }
+        }
 
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().delegate = this
@@ -510,10 +513,8 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         application: UIApplication,
         supportedInterfaceOrientationsForWindow: UIWindow?
     ): UIInterfaceOrientationMask {
-         println("Works?")
-//        println(">>>> $this")
-
-        return supportedInterfaceOrientations
+        return orientationMarkForWindow[supportedInterfaceOrientationsForWindow]
+            ?: UIInterfaceOrientationMaskAll
     }
 }
 
