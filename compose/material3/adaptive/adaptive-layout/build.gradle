@@ -181,3 +181,7 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "vi", "zh_CN", "zh_HK", "zh_TW", "zu"
     ]
 }
+
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions.freeCompilerArgs += "-Xcontext-parameters"
+}

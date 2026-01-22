@@ -108,6 +108,10 @@ androidXMultiplatform {
     }
 }
 
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions.freeCompilerArgs += "-Xcontext-parameters"
+}
+
 androidx {
     name = "Material Adaptive"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
