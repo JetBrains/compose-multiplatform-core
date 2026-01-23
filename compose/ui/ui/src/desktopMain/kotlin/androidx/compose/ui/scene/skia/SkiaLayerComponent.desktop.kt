@@ -38,7 +38,7 @@ internal interface SkiaLayerComponent {
     val hierarchyRoot: JComponent
     // The component that is actually the root of the composable content.
     // It may be the same hierarchyRoot, or a descendant of it.
-    // Must implement Accessible
+    // For accessibility to work properly, this should implement `javax.accessibility.Accessible`
     val contentRoot: Component
     val interopBlendingSupported: Boolean
     val renderApi: GraphicsApi
