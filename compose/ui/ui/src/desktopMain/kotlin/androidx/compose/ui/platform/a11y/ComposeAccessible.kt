@@ -266,7 +266,9 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            val parentNode = semanticsNode.parent ?: return controller.parentAccessible
+            controller.accessibleParentOverride(this@ComposeAccessible)?.let { return it }
+
+            val parentNode = semanticsNode.parent ?: return controller.sceneAccessible()
             return controller.accessibleByNodeId(parentNode.id)!!
         }
 
@@ -279,47 +281,49 @@ internal class ComposeAccessible(
             return this
         }
 
-        // we have to store a reference to AccessibleAction, because AWT itself uses weak
-        // references and GC could delete an object which is, in fact, in use
-        private var accessibleAction: AccessibleAction? = null
+        private var accessibleActions: List<Pair<String, ActionKey>>? = null
 
-        override fun getAccessibleAction(): AccessibleAction? {
-            val actions = mutableListOf<Pair<String?, ActionKey>>()
+        private fun updateAccessibleActions() {
+            val actions = mutableListOf<Pair<String, ActionKey>>()
 
-            fun addActionIfExist(key: SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>) {
-                semanticsConfig.getOrNull(key)?.let {
-                    actions.add(Pair(it.label, key))
-                }
-            }
-            semanticsConfig.getOrNull(SemanticsActions.OnClick)?.let {
-                // AWT expects "click" label for click actions, at least on macOS...
-                actions.add(Pair("click", SemanticsActions.OnClick))
+            fun addActionIfExist(
+                key: SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>,
+                label: String? = null,
+            ) {
+                val action = semanticsConfig.getOrNull(key) ?: return
+                val label = label ?: action.label ?: return  // No point to add an action without a label
+                actions.add(Pair(label, key))
             }
 
+            // AWT expects a "click" label for click actions, at least on macOS...
+            addActionIfExist(SemanticsActions.OnClick, AccessibleAction.CLICK)
             addActionIfExist(SemanticsActions.OnLongClick)
             addActionIfExist(SemanticsActions.Expand)
             addActionIfExist(SemanticsActions.Collapse)
             addActionIfExist(SemanticsActions.Dismiss)
 
-            if (actions.isEmpty()) {
-                return null
-            }
-            accessibleAction = object : AccessibleAction {
-                override fun getAccessibleActionCount(): Int = actions.size
+            accessibleActions = actions.takeIf { it.isNotEmpty() }
+        }
 
-                override fun getAccessibleActionDescription(i: Int): String? {
-                    val (label, _) = actions[i]
-                    return label
-                }
+        override fun getAccessibleAction(): AccessibleAction? {
+            updateAccessibleActions()
+            return if (accessibleActions == null) null else this
+        }
 
-                override fun doAccessibleAction(i: Int): Boolean {
-                    val (_, actionKey) = actions[i]
-                    return semanticsConfig.getOrNull(actionKey)?.let {
-                        it.action?.invoke()
-                    } ?: false
-                }
-            }
-            return accessibleAction
+        override fun getAccessibleActionCount(): Int = accessibleActions?.size ?: 0
+
+        override fun getAccessibleActionDescription(i: Int): String? {
+            val actions = accessibleActions!!
+            val (label, _) = actions[i]
+            return label
+        }
+
+        override fun doAccessibleAction(i: Int): Boolean {
+            val actions = accessibleActions!!
+            val (_, actionKey) = actions[i]
+            return semanticsConfig.getOrNull(actionKey)?.let {
+                it.action?.invoke()
+            } ?: false
         }
 
         override fun getAccessibleValue(): AccessibleValue? {
@@ -882,20 +886,6 @@ internal class ComposeAccessible(
         override fun setVisible(b: Boolean) {
             println("Not implemented: setVisible")
             TODO("Not yet implemented")
-        }
-
-        // For some reasons JDK's CAccessibility does not call getAccessibleAction
-        // and performs actions on current component itself
-        override fun getAccessibleActionCount(): Int {
-            return accessibleAction?.accessibleActionCount ?: 0
-        }
-
-        override fun getAccessibleActionDescription(i: Int): String {
-            return accessibleAction?.getAccessibleActionDescription(i) ?: ""
-        }
-
-        override fun doAccessibleAction(i: Int): Boolean {
-            return accessibleAction?.doAccessibleAction(i) ?: false
         }
 
         private fun List<CharSequence>.mergeText() = joinToString(", ")

@@ -59,8 +59,7 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.a11y.AccessibilityController
-import androidx.compose.ui.platform.a11y.AccessibleFocusHelper
-import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
+import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
@@ -148,24 +147,18 @@ internal class ComposeSceneMediator(
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
 
+    val accessibility = ComposeSceneAccessibility(
+        isWindowLevel = isWindowLevel,
+        sceneRoot = { skiaLayerComponent.contentRoot },
+        accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
+    )
+
     private val skiaLayerComponent: SkiaLayerComponent by lazy { skiaLayerComponentFactory(this) }
     val contentComponent by skiaLayerComponent::hierarchyRoot
     var fullscreen by skiaLayerComponent::fullscreen
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
     val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
-
-    val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
-        isWindowLevel = isWindowLevel,
-        sceneRoot = { skiaLayerComponent.contentRoot },
-        accessibilityControllersProvider = { semanticsOwnerManager.accessibilityControllers }
-    )
-
-    private val accessibleFocusHelper by lazy {
-        AccessibleFocusHelper(skiaLayerComponent.contentRoot, accessible)
-    }
-
-    fun getAccessibleContext() = accessibleFocusHelper.accessibleContext
 
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -785,17 +778,17 @@ internal class ComposeSceneMediator(
             _accessibilityControllers[semanticsOwner] = AccessibilityController(
                 owner = semanticsOwner,
                 desktopComponent = platformComponent,
-                parentAccessible = accessible,
+                sceneAccessibility = accessibility,
                 onFocusReceived = {
                     // requestFocusOnAccessible fires focusGained events, which in turn
                     // can call this method themselves, so we need to prevent infinite recursion
                     if (requestingFocus) return@AccessibilityController
-                    requestingFocus = true
 
-                    val target = it ?: accessible.defaultAccessibilityFocusTarget()
+                    val target = it ?: accessibility.defaultAccessibilityFocusTarget()
                     if (target != null) {
+                        requestingFocus = true
                         try {
-                            accessibleFocusHelper.requestFocusOnAccessible(target)
+                            accessibility.requestFocusOnAccessible(target)
                         } finally {
                             requestingFocus = false
                         }

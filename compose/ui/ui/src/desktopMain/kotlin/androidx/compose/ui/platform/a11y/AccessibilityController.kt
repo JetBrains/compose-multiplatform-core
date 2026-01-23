@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.collection.mutableScatterMapOf
 import androidx.compose.ui.platform.PlatformComponent
+import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility.ComposeSceneAccessibleContext
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -50,13 +51,13 @@ import kotlinx.coroutines.launch
  * when a [SemanticsNode] from [owner] received a focus. `null` is passed when no nodes in the scene
  * are focused.
  *
- * @see ComposeSceneAccessible
+ * @see ComposeSceneAccessibleContext
  * @see ComposeAccessible
  */
 internal class AccessibilityController(
     val owner: SemanticsOwner,
     val desktopComponent: PlatformComponent,
-    val parentAccessible: ComposeSceneAccessible,
+    val sceneAccessibility: ComposeSceneAccessibility,
     private val onFocusReceived: (ComposeAccessible?) -> Unit,
 ) {
 
@@ -92,7 +93,22 @@ internal class AccessibilityController(
      * Returns the index of this [AccessibilityController]'s root node in the scene.
      */
     fun indexInScene(): Int {
-        return parentAccessible.indexOfChild(this)
+        return sceneAccessibility.indexOfChild(this)
+    }
+
+    /**
+     * Returns the scene's [Accessible].
+     */
+    fun sceneAccessible(): Accessible? {
+        return sceneAccessibility.accessible()
+    }
+
+    /**
+     * Returns an override of the given [Accessible]'s parent; `null` if there is no override and
+     * its parent should be reported as its normal parent from the node hierarchy.
+     */
+    fun accessibleParentOverride(accessible: ComposeAccessible): Accessible? {
+        return sceneAccessibility.accessibleParentOverride(accessible)
     }
 
     /**

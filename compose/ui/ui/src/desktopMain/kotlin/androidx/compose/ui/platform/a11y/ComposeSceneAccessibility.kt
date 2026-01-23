@@ -35,48 +35,46 @@ import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleStateSet
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
+import androidx.compose.ui.scene.ComposeSceneMediator
 
 /**
- * This is a root [Accessible] for a [ComposeScene]
- *
- * It provides [AccessibleContext] to Swing accessibility support.
- * This context has no parents and provides [ComposeAccessible] as its children.
- *
- * The main purpose of this class is to support screen readers that read text under the mouse (not only, but mostly).
- * To support it [_accessibleContext] provides custom [ComposeSceneAccessibleContext.getAccessibleAt] implementation.
- *
- * Note about a11y for focus-based tools (e.g. VoiceOver).
- * Now focus-based tools are supported on [org.jetbrains.skiko.HardwareLayer] side.
- * When Compose's [androidx.compose.ui.semantics.SemanticsNode] is focused
- * [AccessibilityController.onFocusReceived] is called and
- * [org.jetbrains.skiko.HardwareLayer] provides mapped [ComposeAccessible] to accessibility tool.
+ * Manages the accessibility aspects of the Compose scene for [ComposeSceneMediator].
  *
  * @see AccessibilityController
  * @see ComposeAccessible
  */
-internal class ComposeSceneAccessible(
+internal class ComposeSceneAccessibility(
     private val isWindowLevel: Boolean = false,
-    private val forceEnableA11y: Boolean = false,
     private val sceneRoot: () -> Component,
     private val accessibilityControllersProvider: () -> List<AccessibilityController>,
-) : Accessible {
-    private val a11yEnabled by lazy {
-        forceEnableA11y || (
-            (System.getProperty("compose.accessibility.enable") != "false") &&
-            (System.getenv("COMPOSE_DISABLE_ACCESSIBILITY") == null)
-        )
+) {
+    val enabled by lazy {
+        (System.getProperty("compose.accessibility.enable") != "false") &&
+        (System.getenv("COMPOSE_DISABLE_ACCESSIBILITY") == null)
     }
 
-    private val _accessibleContext by lazy {
+    // Exposed for the benefit of tests
+    val sceneAccessibleContext by lazy {
         ComposeSceneAccessibleContext()
     }
 
-    // Declare ComposeSceneAccessibleContext as the return type for the benefit of tests
-    override fun getAccessibleContext(): ComposeSceneAccessibleContext? {
-        if (!a11yEnabled) {
-            return null
-        }
-        return _accessibleContext
+    private val accessibleFocusHelper by lazy {
+        AccessibleFocusHelper(sceneRoot(), sceneAccessibleContext)
+    }
+
+    val accessibleContextProvider: ((Component) -> AccessibleContext)?
+        get() = if (enabled) { _ -> accessibleFocusHelper.accessibleContext } else null
+
+    fun requestFocusOnAccessible(accessible: Accessible) {
+        accessibleFocusHelper.requestFocusOnAccessible(accessible)
+    }
+
+    fun accessibleParentOverride(accessible: Accessible): Accessible? {
+        return accessibleFocusHelper.accessibleParentOverride(accessible)
+    }
+
+    fun accessible(): Accessible? {
+        return sceneRoot() as? Accessible
     }
 
     fun indexOfChild(controller: AccessibilityController): Int {
@@ -151,7 +149,7 @@ internal class ComposeSceneAccessible(
                 }
             }
 
-            return this@ComposeSceneAccessible
+            return sceneRoot() as Accessible
         }
 
         override fun contains(p: Point): Boolean = true
