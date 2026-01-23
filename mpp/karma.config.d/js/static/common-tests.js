@@ -48,3 +48,17 @@ beforeEach(function() {
     canvasAppContainer.setAttribute("id", "canvasApp");
     document.body.replaceChildren(canvasAppContainer);
 });
+
+
+async function flushAll() {
+    // microtasks
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    // one macrotask tick (timers/message channel)
+    await new Promise(r => setTimeout(r, 0));
+    // microtasks scheduled by that macrotask
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+}
+
+afterEach(async () => {
+    await flushAll();
+});
