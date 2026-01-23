@@ -17,6 +17,8 @@
 package androidx.compose.ui
 
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
 
@@ -29,12 +31,16 @@ class ATestToCheckWebGLContext {
         val webGl2 = canvas.getContext("webgl2")
         println("WebGl2 = " + webGl2 + "\n")
 
+        var hasWeglContext = webGl2 != null
         if (webGl2 == null) {
             println("WebGl2 is not supported")
             val webgl1 = canvas.getContext("webgl")
             println("WebGl1 = " + webgl1 + "\n")
+            hasWeglContext = webgl1 != null
         }
 
         canvas.remove()
+
+        assertTrue(hasWeglContext, "Expected hasWeglContext to be true, but was - $hasWeglContext")
     }
 }
