@@ -191,7 +191,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chrome: [ '122', 'stable' ]
+        chrome: [ '134', 'stable' ]
         task: [ 'Js', 'Wasm' ]
     steps:
       - name: Checkout Repository
