@@ -5,9 +5,10 @@ function configLaunchers(config) {
             base: "Chrome",
             flags: [
                 "--no-sandbox",
-                "--disable-setuid-sandbox",
                 "--disable-search-engine-choice-screen",
 
+                // "CI-stabilizer" :D - otherwise webgl2 context is null:
+                "--disable-setuid-sandbox",
                 "--enable-webgl",
                 "--ignore-gpu-blocklist",
                 "--in-process-gpu"

@@ -20,7 +20,7 @@ import kotlin.test.Test
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
 
-class ATest {
+class ATestToCheckWebGLContext {
 
     @Test
     fun test() {
