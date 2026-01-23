@@ -8,11 +8,9 @@ function configLaunchers(config) {
                 "--disable-setuid-sandbox",
                 "--disable-search-engine-choice-screen",
 
-                "--use-gl=swiftshader",
                 "--enable-webgl",
                 "--ignore-gpu-blocklist",
-                "--disable-gpu-sandbox",
-                "--disable-dev-shm-usage",
+                "--in-process-gpu"
             ]
         },
         ChromiumForComposeTests: {

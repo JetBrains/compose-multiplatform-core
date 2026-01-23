@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.a
+package androidx.compose.ui
 
 import kotlin.test.Test
 import kotlinx.browser.document
