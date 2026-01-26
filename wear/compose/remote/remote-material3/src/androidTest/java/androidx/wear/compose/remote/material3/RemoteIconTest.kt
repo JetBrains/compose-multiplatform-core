@@ -25,9 +25,7 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
@@ -94,11 +92,9 @@ class RemoteIconTest {
                     context.resources.displayMetrics.densityDpi,
                 ),
             backgroundColor = Color.Black,
+            layoutDirection = LayoutDirection.Rtl,
         ) {
-            val layoutDirection = LayoutDirection.Rtl
-            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
-            }
+            RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
         }
     }
 

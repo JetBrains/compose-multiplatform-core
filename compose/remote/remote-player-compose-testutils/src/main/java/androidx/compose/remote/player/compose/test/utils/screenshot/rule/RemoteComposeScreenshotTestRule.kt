@@ -48,11 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
@@ -153,6 +155,7 @@ class RemoteComposeScreenshotTestRule(
     fun runScreenshotTest(
         screenshotName: Description = testDescription,
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
+        layoutDirection: LayoutDirection? = null,
         backgroundColor: Color? = null,
         deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         profile: Profile? = null,
@@ -160,6 +163,7 @@ class RemoteComposeScreenshotTestRule(
     ) {
         setContent(
             creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = layoutDirection,
             backgroundColor = backgroundColor,
             deviceConfigurationOverride = deviceConfigurationOverride,
             profile = profile,
@@ -208,33 +212,36 @@ class RemoteComposeScreenshotTestRule(
 
     private fun setContent(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
+        layoutDirection: LayoutDirection? = null,
         backgroundColor: Color?,
         deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         profile: Profile? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         composeTestRule.setContent {
-            WithOverride(deviceConfigurationOverride) {
-                val boxModifier =
-                    Modifier.width(creationDisplayInfo.widthDp)
-                        .height(creationDisplayInfo.heightDp)
-                        .then(
-                            if (backgroundColor != null) {
-                                Modifier.background(backgroundColor)
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .testTag(ROOT_TEST_TAG)
+            WithOverride(layoutDirection?.let { DeviceConfigurationOverride.LayoutDirection(it) }) {
+                WithOverride(deviceConfigurationOverride) {
+                    val boxModifier =
+                        Modifier.width(creationDisplayInfo.widthDp)
+                            .height(creationDisplayInfo.heightDp)
+                            .then(
+                                if (backgroundColor != null) {
+                                    Modifier.background(backgroundColor)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .testTag(ROOT_TEST_TAG)
 
-                Box(modifier = boxModifier) {
-                    val document: CoreDocument? by
-                        rememberRemoteDocument(
-                            content = content,
-                            creationDisplayInfo = creationDisplayInfo,
-                            profile = profile ?: this@RemoteComposeScreenshotTestRule.profile,
-                        )
-                    document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                    Box(modifier = boxModifier) {
+                        val document: CoreDocument? by
+                            rememberRemoteDocument(
+                                content = content,
+                                creationDisplayInfo = creationDisplayInfo,
+                                profile = profile ?: this@RemoteComposeScreenshotTestRule.profile,
+                            )
+                        document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                    }
                 }
             }
         }

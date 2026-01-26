@@ -16,6 +16,8 @@
 package androidx.xr.runtime
 
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.LifecycleOwner
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntime
@@ -62,6 +64,21 @@ class XrDeviceTest {
 
         assertThat(XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode())
             .isEqualTo(DisplayBlendMode.ADDITIVE)
+    }
+
+    @OptIn(ExperimentalXrDeviceLifecycleApi::class)
+    @Test
+    fun lifecycle_returnsLifecycleFromSession() {
+        val session = createSession()
+        val xrDevice =
+            XrDevice.getCurrentDevice(
+                ApplicationProvider.getApplicationContext(),
+                session,
+                testDispatcher,
+            )
+
+        assertThat(xrDevice.getLifecycle())
+            .isEqualTo((session.activity as LifecycleOwner).lifecycle)
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

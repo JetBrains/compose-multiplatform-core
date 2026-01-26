@@ -22,7 +22,6 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -63,7 +62,6 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class EntityTest {
-    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private lateinit var sceneRuntime: SceneRuntime

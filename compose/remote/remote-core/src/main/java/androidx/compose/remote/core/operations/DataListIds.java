@@ -109,10 +109,10 @@ public class DataListIds extends Operation implements VariableSupport, ArrayAcce
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("a list of id's")
-                .field(DocumentedOperation.INT, "id", "id the array")
-                .field(INT, "length", "number of ids")
-                .field(INT_ARRAY, "ids[n]", "length", "ids of other variables");
+                .description("A list of IDs")
+                .field(DocumentedOperation.INT, "id", "The ID of the list")
+                .field(INT, "length", "Number of IDs")
+                .field(INT_ARRAY, "ids", "The array of IDs");
     }
 
     @NonNull

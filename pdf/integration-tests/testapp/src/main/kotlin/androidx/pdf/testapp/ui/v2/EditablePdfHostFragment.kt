@@ -23,6 +23,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.view.ActionMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,7 +40,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.pdf.PdfWriteHandle
 import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.pdf.ink.R
+import androidx.pdf.selection.Selection
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.testapp.R as testR
+import androidx.pdf.view.PdfView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import java.io.IOException
@@ -59,6 +63,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
     private val discardDialog: AlertDialog by lazy { createDiscardDialog(requireContext()) }
 
     private lateinit var loadingProgressBar: ProgressBar
+    private var imageSelectionActionMode: ActionMode? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -114,6 +119,41 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
                 }
             }
         }
+
+        pdfView.isImageSelectionEnabled = true
+        setupPdfViewListeners()
+    }
+
+    private fun setupPdfViewListeners() {
+        pdfView.addOnSelectionChangedListener(
+            object : PdfView.OnSelectionChangedListener {
+                override fun onSelectionChanged(newSelection: Selection?) {
+                    if (newSelection == null) {
+                        imageSelectionActionMode?.finish()
+                        imageSelectionActionMode = null
+                        return
+                    }
+
+                    isTextSearchActive = false
+                    when (newSelection) {
+                        is ImageSelection -> onImageSelected(newSelection)
+                    }
+                }
+            }
+        )
+    }
+
+    private fun onImageSelected(imageSelection: ImageSelection) {
+        val context = context ?: return
+        val callback =
+            ImageSelectionActionModeCallback(
+                requireContext(),
+                imageSelection,
+                lifecycleScope,
+                pdfView::pdfToViewPoint,
+            )
+        imageSelectionActionMode =
+            requireActivity().startActionMode(callback, ActionMode.TYPE_FLOATING)
     }
 
     override fun onApplyEditsSuccess(handle: PdfWriteHandle) {

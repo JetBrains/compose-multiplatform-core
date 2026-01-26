@@ -220,9 +220,9 @@ public suspend fun GlanceAppWidget.composeForPreview(
     }
     normalizeCompositionTree(
         root,
+        isRemoteComposeAvailable = false, // TODO, support remote compose in previews
         isPreviewComposition = true,
-        isRemoteCompose = false,
-    ) // TODO, we may have remote compose previews eventually
+    )
     val layoutConfig = LayoutConfiguration.create(context, appWidgetId = -1)
     val remoteViews =
         translateComposition(

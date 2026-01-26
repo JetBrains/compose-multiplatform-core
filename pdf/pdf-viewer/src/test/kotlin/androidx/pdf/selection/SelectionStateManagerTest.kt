@@ -16,20 +16,27 @@
 
 package androidx.pdf.selection
 
+import android.graphics.Bitmap
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
 import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import androidx.pdf.FakePdfDocument
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
+import androidx.pdf.annotation.models.ImagePdfObject
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
+import androidx.pdf.utils.isRequiredSdkExtensionAvailable
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.toList
@@ -45,6 +52,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -64,11 +72,13 @@ class SelectionStateManagerTest {
                     pageSelectionFor(invocation.getArgument(0), startPoint, endPoint)
                 }
         }
+    private val fakePdfDocument = FakePdfDocument()
 
     /** It's simpler to set the selection manually for tests concerning the draggable handles */
     private val initialSelectionForDragging = getInitialSelectionForDragging()
 
     private lateinit var selectionStateManager: SelectionStateManager
+    private lateinit var selectionStateManagerWithFakeDoc: SelectionStateManager
 
     @Before
     fun setup() {
@@ -81,6 +91,135 @@ class SelectionStateManagerTest {
                 pageLayoutManager = null,
                 pageManager = null,
             )
+        selectionStateManagerWithFakeDoc =
+            SelectionStateManager(
+                fakePdfDocument,
+                testScope,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+    }
+
+    @Test
+    fun maybeSelectImageAtPoint_imageSelectionDisabled() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        val pageNumber = 0
+        val selectionPoint = PointF(100F, 200F)
+        val selectionPdfPoint = PdfPoint(pageNumber, selectionPoint)
+
+        selectionStateManagerWithFakeDoc.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        val actualSelection =
+            selectionStateManagerWithFakeDoc._selectionModel.value?.documentSelection?.selection
+        assertNull(actualSelection)
+    }
+
+    @Test
+    fun maybeSelectImageAtPoint_imagePresent() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        val pageNumber = 0
+        val selectionPoint = PointF(100F, 200F)
+        val selectionPdfPoint = PdfPoint(pageNumber, selectionPoint)
+
+        val expectedImagePdfObject = FakePdfDocument.getSampleImagePdfObject()
+        val expectedBounds = expectedImagePdfObject.bounds
+        val expectedBitmap = expectedImagePdfObject.bitmap
+
+        selectionStateManagerWithFakeDoc.isImageSelectionEnabled = true
+        selectionStateManagerWithFakeDoc.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        val actualSelection =
+            selectionStateManagerWithFakeDoc._selectionModel.value?.documentSelection?.selection
+
+        assertThat(actualSelection is ImageSelection).isTrue()
+        (actualSelection as ImageSelection).let { imageSelection ->
+            assertThat(imageSelection.bitmap).isEqualTo(expectedBitmap)
+            assertThat(imageSelection.bounds.size).isEqualTo(1)
+            assertThat(imageSelection.bounds[0].left).isEqualTo(expectedBounds.left)
+            assertThat(imageSelection.bounds[0].top).isEqualTo(expectedBounds.top)
+            assertThat(imageSelection.bounds[0].right).isEqualTo(expectedBounds.right)
+            assertThat(imageSelection.bounds[0].bottom).isEqualTo(expectedBounds.bottom)
+        }
+    }
+
+    @Test
+    fun maybeSelectImageAtPoint_imageNotPresent() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        val pageNumber = -1
+        val selectionPoint = PointF(100F, 200F)
+        val selectionPdfPoint = PdfPoint(pageNumber, selectionPoint)
+
+        selectionStateManagerWithFakeDoc.isImageSelectionEnabled = true
+        selectionStateManagerWithFakeDoc.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        val actualSelection =
+            selectionStateManagerWithFakeDoc._selectionModel.value?.documentSelection?.selection
+        assertNull(actualSelection)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun maybeSelectImageAtPoint_imageAndTextBothPresent() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        val pageNumber = 10
+        val selectionPoint = PointF(150F, 265F)
+        val selectionPdfPoint = PdfPoint(pageNumber, selectionPoint)
+
+        selectionStateManagerWithFakeDoc.isImageSelectionEnabled = true
+        // check if text is selected if no image present at selectionPoint
+        selectionStateManagerWithFakeDoc.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        testDispatcher.scheduler.runCurrent()
+
+        val selectionModel = selectionStateManagerWithFakeDoc.selectionModel.value
+        assertThat(selectionModel).isNotNull()
+
+        // check selection is a text selection
+        assertThat(selectionModel?.documentSelection?.selection is TextSelection).isTrue()
+        (selectionModel?.documentSelection?.selection as TextSelection).let { selection ->
+            assertThat(selection.bounds.size).isEqualTo(1)
+            assertThat(selection.bounds[0].left).isEqualTo(selectionPoint.x)
+            assertThat(selection.bounds[0].top).isEqualTo(selectionPoint.y)
+            assertThat(selection.bounds[0].right).isEqualTo(selectionPoint.x)
+            assertThat(selection.bounds[0].bottom).isEqualTo(selectionPoint.y)
+            assertThat(selection.text)
+                .isEqualTo("This is all the text between $selectionPoint and $selectionPoint")
+        }
+
+        // recheck if image is selected, when image present and text both present on selectionPoint
+        val expectedBounds = RectF(0f, 100f, 0f, 100f)
+        val expectedBitmap = mock<Bitmap>()
+        val expectedImagePdfObject = ImagePdfObject(expectedBitmap, expectedBounds)
+
+        // mock image present at this point
+        whenever(pdfDocument.getTopPageObjectAtPosition(pageNumber, selectionPoint))
+            .thenReturn(expectedImagePdfObject)
+
+        selectionStateManager.maybeSelectContentAtPoint(selectionPdfPoint)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        val actualSelection =
+            selectionStateManager._selectionModel.value?.documentSelection?.selection
+
+        // check selection is an image selection
+        assertThat(actualSelection is ImageSelection).isTrue()
+        (actualSelection as ImageSelection).let { imageSelection ->
+            assertThat(imageSelection.bitmap).isEqualTo(expectedBitmap)
+            assertThat(imageSelection.bounds.size).isEqualTo(1)
+            assertThat(imageSelection.bounds[0].left).isEqualTo(expectedBounds.left)
+            assertThat(imageSelection.bounds[0].top).isEqualTo(expectedBounds.top)
+            assertThat(imageSelection.bounds[0].right).isEqualTo(expectedBounds.right)
+            assertThat(imageSelection.bounds[0].bottom).isEqualTo(expectedBounds.bottom)
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

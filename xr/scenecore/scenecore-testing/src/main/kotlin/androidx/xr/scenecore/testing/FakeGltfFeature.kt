@@ -21,6 +21,7 @@ import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
@@ -87,6 +88,15 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
 
     override fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>) {
         mockGltfFeature?.removeOnBoundsUpdateListener(listener)
+    }
+
+    override fun setReformAffordanceEnabled(
+        entity: GltfEntity,
+        enabled: Boolean,
+        executor: Executor,
+        systemMovable: Boolean,
+    ) {
+        mockGltfFeature?.setReformAffordanceEnabled(entity, enabled, executor, systemMovable)
     }
 
     override fun dispose() {

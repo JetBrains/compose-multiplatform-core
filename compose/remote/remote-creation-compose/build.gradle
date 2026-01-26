@@ -82,4 +82,5 @@ dependencies {
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }

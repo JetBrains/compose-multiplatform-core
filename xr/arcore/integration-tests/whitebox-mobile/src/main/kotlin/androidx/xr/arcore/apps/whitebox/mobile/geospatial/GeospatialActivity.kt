@@ -274,14 +274,14 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                 ) {
                     is CreateGeospatialPoseFromPoseSuccess ->
                         """
-            Localization Status:
-              Lat: ${"%.6f".format(result.pose.latitude)}
-              Lng: ${"%.6f".format(result.pose.longitude)}
-              Alt: ${"%.3f".format(result.pose.altitude)}
-              Horizontal Accuracy: ${"%.3f".format(result.horizontalAccuracy)}
-              Vertical Accuracy: ${"%.3f".format(result.verticalAccuracy)}
-              Yaw Accuracy: ${"%.3f".format(result.orientationYawAccuracy)}
-            """
+                        Localization Status:
+                          Lat: ${"%.6f".format(result.pose.latitude)}
+                          Lng: ${"%.6f".format(result.pose.longitude)}
+                          Alt: ${"%.3f".format(result.pose.altitude)}
+                          Horizontal Accuracy: ${"%.3f".format(result.horizontalAccuracy)}
+                          Vertical Accuracy: ${"%.3f".format(result.verticalAccuracy)}
+                          Yaw Accuracy: ${"%.3f".format(result.orientationYawAccuracy)}
+                        """
                             .trimIndent()
                     is CreateGeospatialPoseFromPoseNotTracking ->
                         "Localization Status: Not tracking"

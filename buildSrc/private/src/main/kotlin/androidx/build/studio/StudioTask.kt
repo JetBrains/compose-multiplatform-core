@@ -130,7 +130,7 @@ abstract class StudioTask : DefaultTask() {
      * https://plugins.jetbrains.com/plugin/14912-ktfmt/versions/stable and you'll see the number in
      * the redirection URL when hovering over the [studioKtfmtPluginVersion] you want downloaded
      */
-    private val studioKtfmtPluginId = "666004"
+    private val studioKtfmtPluginId = "923152"
 
     private val studioKtfmtPluginDownloadUrl =
         "https://downloads.marketplace.jetbrains.com/files/14912/$studioKtfmtPluginId/ktfmt_idea_plugin-$studioKtfmtPluginVersion.zip"
@@ -140,7 +140,7 @@ abstract class StudioTask : DefaultTask() {
 
     /** Download ktfmt plugin zip file and run `shasum -a 256 ./path/to/zip` to get checksum */
     private val studioKtfmtPluginChecksum =
-        "869ceba41f78adc27bd6afed1bf6ba51cbd286f97ac0f6b7b5cf0058417ed242"
+        "3280c1d7b6311f697f768ca80bd1c241ce0570fa76d43cd50055fee0808ac8fe"
 
     /** The idea.properties file that we want to tell Studio to use */
     @get:Internal protected abstract val ideaProperties: File

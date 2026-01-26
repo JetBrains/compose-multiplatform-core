@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
+import androidx.compose.remote.creation.compose.test.util.propertyName
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -68,24 +69,25 @@ class FitBoxTest {
                         for (arrangement in arrangements) {
                             for (alignment in alignments) {
                                 yield(
-                                    @RemoteComposable @Composable {
-                                        FitBox(
-                                            modifier = RemoteModifier.fillMaxSize(),
-                                            horizontalAlignment = alignment,
-                                            verticalArrangement = arrangement,
-                                        ) {
-                                            RemoteBox(
-                                                modifier =
-                                                    RemoteModifier.size(48.rdp)
-                                                        .background(Color(0xFF6200EE))
-                                            )
-                                            RemoteBox(
-                                                modifier =
-                                                    RemoteModifier.size(24.rdp)
-                                                        .background(Color(0xFF03DAC6))
-                                            )
+                                    "${arrangement.propertyName()} ${alignment.propertyName()}" to
+                                        @RemoteComposable @Composable {
+                                            FitBox(
+                                                modifier = RemoteModifier.fillMaxSize(),
+                                                horizontalAlignment = alignment,
+                                                verticalArrangement = arrangement,
+                                            ) {
+                                                RemoteBox(
+                                                    modifier =
+                                                        RemoteModifier.size(48.rdp)
+                                                            .background(Color(0xFF6200EE))
+                                                )
+                                                RemoteBox(
+                                                    modifier =
+                                                        RemoteModifier.size(24.rdp)
+                                                            .background(Color(0xFF03DAC6))
+                                                )
+                                            }
                                         }
-                                    }
                                 )
                             }
                         }

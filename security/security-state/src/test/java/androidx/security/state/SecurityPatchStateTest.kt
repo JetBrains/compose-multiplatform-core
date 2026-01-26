@@ -243,7 +243,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -287,7 +287,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -318,7 +318,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -348,7 +348,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -370,7 +370,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": { "2023-05-01": [ "5.4.123", "6.1.234.25" ] }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -410,7 +410,7 @@ class SecurityPatchStateTest {
                     "2024-06-21": ["5.10.210"]
                 }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -449,7 +449,7 @@ class SecurityPatchStateTest {
                     "2023-11-05": ["5.4.233"]
                 }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -480,7 +480,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -550,7 +550,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -587,7 +587,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -622,7 +622,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -832,7 +832,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": { "2023-05-01": [ "5.4.123", "6.1.234.25" ] }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -878,7 +878,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": { "2023-05-01": [ "5.4.123", "6.1.234.25" ] }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -924,7 +924,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": { "2023-05-01": [ "5.4.123", "6.1.234.25" ] }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -967,7 +967,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": { "2023-05-01": [ "5.4.123", "6.1.234.25" ] }
             }
-        """
+            """
                 .trimIndent()
 
         securityState.loadVulnerabilityReport(jsonInput)
@@ -1002,7 +1002,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -1048,7 +1048,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -1096,7 +1096,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -1145,7 +1145,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 
@@ -1192,7 +1192,7 @@ class SecurityPatchStateTest {
                 },
                 "kernel_lts_versions": {}
             }
-        """
+            """
                 .trimIndent()
         securityState.loadVulnerabilityReport(jsonInput)
 

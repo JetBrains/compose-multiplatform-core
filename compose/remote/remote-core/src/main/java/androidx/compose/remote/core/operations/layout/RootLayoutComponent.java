@@ -290,11 +290,11 @@ public class RootLayoutComponent extends Component {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Layout Operations", id(), name())
-                .field(INT, "COMPONENT_ID", "unique id for this component")
+                .field(INT, "componentId", "Unique ID for this component")
                 .description(
                         "Root element for a document. Other components / layout managers are"
                                 + " children in the component tree starting from"
-                                + "this Root component.");
+                                + " this Root component.");
     }
 
     @Override

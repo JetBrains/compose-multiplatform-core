@@ -39,10 +39,10 @@ internal object WearWidgetCapture {
     ): WearWidgetRawContent {
         val remoteDocument =
             captureSingleRemoteDocument(
-                context,
-                creationDisplayInfo,
-                RcPlatformProfiles.WEAR_WIDGETS,
-                content,
+                context = context,
+                creationDisplayInfo = creationDisplayInfo,
+                profile = RcPlatformProfiles.WEAR_WIDGETS,
+                content = content,
             )
         return WearWidgetRawContent(
             rcDocument = remoteDocument.bytes,

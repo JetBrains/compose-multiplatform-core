@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.geometry.Offset
@@ -104,8 +103,7 @@ suspend fun PointerInputScope.detectTapGestures(
     awaitEachGesture {
         val down = awaitFirstDown()
         down.consume()
-        var resetJob =
-            launch(start = coroutineStartForCurrentDispatchBehavior) { pressScope.reset() }
+        var resetJob = launch(start = CoroutineStart.UNDISPATCHED) { pressScope.reset() }
         if (onPress !== NoPressGesture)
             launchAwaitingReset(resetJob) { pressScope.onPress(down.position) }
         val upOrCancel: PointerInputChange?
@@ -124,6 +122,7 @@ suspend fun PointerInputScope.detectTapGestures(
                         // End the current gesture
                         return@awaitEachGesture
                     }
+
                     is LongPressResult.Released -> longPressResult.finalUpChange
                     is LongPressResult.Canceled -> null
                 }
@@ -153,7 +152,7 @@ suspend fun PointerInputScope.detectTapGestures(
                 } else {
                     // Second tap down detected
                     resetJob =
-                        launch(start = coroutineStartForCurrentDispatchBehavior) {
+                        launch(start = CoroutineStart.UNDISPATCHED) {
                             cancelOrReleaseJob.join()
                             pressScope.reset()
                         }
@@ -182,6 +181,7 @@ suspend fun PointerInputScope.detectTapGestures(
                                     launchAwaitingReset(resetJob) { pressScope.release() }
                                     return@awaitEachGesture
                                 }
+
                                 is LongPressResult.Released -> longPressResult.finalUpChange
                                 is LongPressResult.Canceled -> null
                             }
@@ -245,8 +245,7 @@ internal suspend fun PointerInputScope.detectTapAndPress(
     val pressScope = PressGestureScopeImpl(this)
     coroutineScope {
         awaitEachGesture {
-            val resetJob =
-                launch(start = coroutineStartForCurrentDispatchBehavior) { pressScope.reset() }
+            val resetJob = launch(start = CoroutineStart.UNDISPATCHED) { pressScope.reset() }
 
             val down = awaitFirstDown().also { it.consume() }
 
@@ -430,58 +429,9 @@ internal sealed class LongPressResult {
     object Canceled : LongPressResult()
 }
 
-@Deprecated(
-    "The flag for this opt-in marker has been moved to ComposeFoundationFlags and renamed" +
-        " to isDetectTapGesturesImmediateCoroutineDispatchEnabled. For compatibility, " +
-        " DetectTapGesturesEnableNewDispatchingBehavior controls the new flag" +
-        " (isDetectTapGesturesImmediateCoroutineDispatchEnabled). Please use " +
-        " isDetectTapGesturesImmediateCoroutineDispatchEnabled instead.",
-    ReplaceWith("ExperimentalFoundationApi", "androidx.compose.foundation"),
-)
-@Retention(AnnotationRetention.BINARY)
-@RequiresOptIn("This API feature-flags new behavior and will be removed in the future.")
-annotation class ExperimentalTapGestureDetectorBehaviorApi
-
 /**
- * Whether to use more immediate coroutine dispatching in [detectTapGestures] and
- * [detectTapAndPress], true by default. This might affect some implicit timing guarantees. Please
- * file a bug if this change is affecting your use case.
- */
-@Deprecated(
-    "This flag has been moved to ComposeFoundationFlags and renamed to" +
-        " isDetectTapGesturesImmediateCoroutineDispatchEnabled. For compatibility, " +
-        " DetectTapGesturesEnableNewDispatchingBehavior controls the new flag" +
-        " (isDetectTapGesturesImmediateCoroutineDispatchEnabled). Please use " +
-        " isDetectTapGesturesImmediateCoroutineDispatchEnabled instead.",
-    ReplaceWith(
-        "isDetectTapGesturesImmediateCoroutineDispatchEnabled",
-        "androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled",
-    ),
-)
-@OptIn(ExperimentalFoundationApi::class)
-@Suppress("DEPRECATION", "GetterSetterNames")
-@ExperimentalTapGestureDetectorBehaviorApi
-var DetectTapGesturesEnableNewDispatchingBehavior: Boolean
-    set(value) {
-        isDetectTapGesturesImmediateCoroutineDispatchEnabled = value
-    }
-    get() = isDetectTapGesturesImmediateCoroutineDispatchEnabled
-
-@OptIn(ExperimentalFoundationApi::class)
-private val coroutineStartForCurrentDispatchBehavior
-    get() =
-        if (isDetectTapGesturesImmediateCoroutineDispatchEnabled) {
-            CoroutineStart.UNDISPATCHED
-        } else {
-            CoroutineStart.DEFAULT
-        }
-
-/**
- * Launch a coroutine in [this] [CoroutineScope] with the specified [start]. If
- * [isDetectTapGesturesImmediateCoroutineDispatchEnabled] is true, await the [resetJob] and then
- * execute the [block]. If [isDetectTapGesturesImmediateCoroutineDispatchEnabled] is false, execute
- * the [block] straight away. If [isDetectTapGesturesImmediateCoroutineDispatchEnabled] is true,
- * [start] will be [CoroutineStart.UNDISPATCHED] by default, [CoroutineStart.DEFAULT] otherwise.
+ * Launch a coroutine in [this] [CoroutineScope] with the specified [start]. Await the [resetJob]
+ * and then execute the [block]. [start] will be [CoroutineStart.UNDISPATCHED].
  *
  * In some cases, coroutine cancellation of the reset job might still be processing when we are
  * already processing an up or cancel pointer event. We need to wait for the reset job to cancel and
@@ -490,13 +440,11 @@ private val coroutineStartForCurrentDispatchBehavior
 @OptIn(ExperimentalFoundationApi::class)
 private fun CoroutineScope.launchAwaitingReset(
     resetJob: Job,
-    start: CoroutineStart = coroutineStartForCurrentDispatchBehavior,
+    start: CoroutineStart = CoroutineStart.UNDISPATCHED,
     block: suspend CoroutineScope.() -> Unit,
 ): Job =
     launch(start = start) {
-        if (isDetectTapGesturesImmediateCoroutineDispatchEnabled) {
-            resetJob.join()
-        }
+        resetJob.join()
         block()
     }
 

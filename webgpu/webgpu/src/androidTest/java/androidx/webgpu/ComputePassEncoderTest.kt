@@ -48,8 +48,8 @@ class ComputePassEncoderTest {
                     shaderSourceWGSL =
                         GPUShaderSourceWGSL(
                             """
-                    @compute @workgroup_size(1) fn main() {}
-                    """
+                            @compute @workgroup_size(1) fn main() {}
+                            """
                                 .trimIndent()
                         )
                 )

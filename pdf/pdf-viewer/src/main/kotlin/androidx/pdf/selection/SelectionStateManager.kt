@@ -28,6 +28,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
+import androidx.pdf.annotation.models.ImagePdfObject
+import androidx.pdf.annotation.models.toImageSelection
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageContent
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -37,10 +39,12 @@ import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.selection.model.GoToLinkSelection
 import androidx.pdf.selection.model.HyperLinkSelection
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import androidx.pdf.view.PageManager
 import androidx.pdf.view.layout.PageLayoutManager
+import kotlin.collections.List
 import kotlin.collections.firstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -118,13 +122,39 @@ internal class SelectionStateManager(
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
-        // Check for a link at this point.
-        pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
-            if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
-            if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
+
+        val prevJob = setSelectionJob
+        setSelectionJob =
+            backgroundScope.launch {
+                prevJob?.cancelAndJoin()
+
+                // Check for an image at this point.
+                if (maybeSelectImageAtPoint(pdfPoint.pageNum, pdfPoint)) {
+                    return@launch
+                }
+
+                // Check for a link at this point.
+                pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+                    if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return@launch
+                    if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return@launch
+                }
+
+                // Check for a text at this point.
+                updateRangeSelectionAsync(pdfPoint, pdfPoint)
+            }
+    }
+
+    suspend fun maybeSelectImageAtPoint(pageNum: Int, point: PdfPoint): Boolean {
+        if (!isImageSelectionEnabled) return false
+
+        val imageObject = pdfDocument.getTopPageObjectAtPosition(pageNum, PointF(point.x, point.y))
+
+        if (imageObject != null && imageObject is ImagePdfObject) {
+            val imageSelection = imageObject.toImageSelection(pageNum)
+            updateImageSelection(pageNum = pageNum, imageSelection = imageSelection)
+            return true
         }
-        // Check for a text at this point.
-        updateRangeSelectionAsync(pdfPoint, pdfPoint)
+        return false
     }
 
     /**
@@ -394,6 +424,23 @@ internal class SelectionStateManager(
                 listOf(newPageSelection),
             )
         }
+    }
+
+    private fun updateImageSelection(pageNum: Int, imageSelection: ImageSelection) {
+
+        val selectedContents =
+            SparseArray<List<Selection>>().apply { put(pageNum, listOf(imageSelection)) }
+        val documentSelection = DocumentSelection(selectedContents = selectedContents)
+
+        val bounds = imageSelection.bounds.first()
+        _selectionModel.update {
+            SelectionModel(
+                documentSelection,
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.left, bounds.top), isRtl = false),
+                UiSelectionBoundary(PdfPoint(pageNum, bounds.right, bounds.bottom), isRtl = false),
+            )
+        }
+        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
     }
 
     private fun updateRangeSelectionAsync(fixedPoint: PdfPoint, draggedPoint: PdfPoint) {

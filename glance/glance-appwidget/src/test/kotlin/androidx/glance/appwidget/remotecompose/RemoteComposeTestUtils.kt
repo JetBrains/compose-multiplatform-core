@@ -105,7 +105,7 @@ object RemoteComposeTestUtils {
 
         val normalizedRoot: RemoteViewsRoot =
             (originalRoot.copy() as RemoteViewsRoot).also {
-                normalizeCompositionTree(isRemoteCompose = true, root = it)
+                normalizeCompositionTree(isRemoteComposeAvailable = true, root = it)
             }
         // ... or here?
         val rcContext: RemoteComposeContext =
@@ -148,10 +148,10 @@ internal suspend fun Context.runAndTranslateMultiRoot(
     content: @Composable () -> Unit
 ): List<Pair<DpSize, GlanceToRemoteComposeTranslation.Single>> {
     val originalRoot = runTestingComposition(content)
-    // TODO: could we put the sie box stuff here?
+    // TODO: could we put the size box stuff here?
     val normalizedRoot: RemoteViewsRoot =
         (originalRoot.copy() as RemoteViewsRoot).also {
-            normalizeCompositionTree(isRemoteCompose = true, root = it)
+            normalizeCompositionTree(isRemoteComposeAvailable = true, root = it)
         }
     // ... or here?
     val result: GlanceToRemoteComposeTranslation.SizeMap =

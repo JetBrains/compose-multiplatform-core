@@ -3,6 +3,8 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivityPanelEntity extends androidx.xr.scenecore.testing.FakePanelEntity implements androidx.xr.scenecore.runtime.ActivityPanelEntity {
     ctor public FakeActivityPanelEntity();
+    ctor public FakeActivityPanelEntity(optional String name);
+    ctor @BytecodeOnly public FakeActivityPanelEntity(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public android.os.Bundle? getLaunchBundle();
     method @InaccessibleFromKotlin public android.content.Intent getLaunchIntent();
     method @InaccessibleFromKotlin public android.app.Activity getMovedActivity();
@@ -96,6 +98,8 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeEntity extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.Entity {
     ctor public FakeEntity();
+    ctor public FakeEntity(optional String name);
+    ctor @BytecodeOnly public FakeEntity(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void addChild(androidx.xr.scenecore.runtime.Entity child);
     method public void addChildren(java.util.List<? extends androidx.xr.scenecore.runtime.Entity> children);
     method public boolean addComponent(androidx.xr.scenecore.runtime.Component component);
@@ -107,6 +111,7 @@ package androidx.xr.scenecore.testing {
     method public <T extends androidx.xr.scenecore.runtime.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
     method @InaccessibleFromKotlin public final java.util.Map<androidx.xr.scenecore.runtime.InputEventListener,java.util.concurrent.Executor> getInputEventListenerMap();
+    method @InaccessibleFromKotlin public final String getName();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
     method public androidx.xr.runtime.math.Vector3 getScale(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
@@ -123,6 +128,7 @@ package androidx.xr.scenecore.testing {
     property public java.util.List<androidx.xr.scenecore.runtime.Entity> children;
     property public CharSequence contentDescription;
     property public final java.util.Map<androidx.xr.scenecore.runtime.InputEventListener,java.util.concurrent.Executor> inputEventListenerMap;
+    property public final String name;
     property public androidx.xr.scenecore.runtime.Entity? parent;
   }
 
@@ -184,6 +190,7 @@ package androidx.xr.scenecore.testing {
     method public void resumeAnimation();
     method public void setColliderEnabled(boolean enableCollider);
     method public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
+    method public void setReformAffordanceEnabled(androidx.xr.scenecore.runtime.GltfEntity entity, boolean enabled, java.util.concurrent.Executor executor, boolean systemMovable);
     method public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
     method public void stopAnimation();
     property public int animationState;
@@ -257,12 +264,13 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakePanelEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.PanelEntity {
     ctor public FakePanelEntity();
-    ctor public FakePanelEntity(optional android.view.View? view);
-    ctor @BytecodeOnly public FakePanelEntity(android.view.View!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakePanelEntity(optional android.view.View? view, optional String name);
+    ctor @BytecodeOnly public FakePanelEntity(android.view.View!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public float getCornerRadius();
     method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution(androidx.xr.scenecore.runtime.ScenePose renderViewScenePose, androidx.xr.runtime.FieldOfView renderViewFov);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getSizeInPixels();
+    method @InaccessibleFromKotlin public final android.view.View? getView();
     method @InaccessibleFromKotlin public void setCornerRadius(float);
     method public final void setPerceivedResolution(androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolution);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
@@ -272,6 +280,7 @@ package androidx.xr.scenecore.testing {
     property public float cornerRadius;
     property public androidx.xr.scenecore.runtime.Dimensions size;
     property public androidx.xr.scenecore.runtime.PixelDimensions sizeInPixels;
+    property public final android.view.View? view;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePerceptionSpaceScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.PerceptionSpaceScenePose {
@@ -294,7 +303,7 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.TextureResource? borrowReflectionTexture();
     method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.GltfModelResource loadedGltf, androidx.xr.scenecore.runtime.Entity? parentEntity);
     method public suspend Object? createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
-    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity? parentEntity);
+    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, int mediaBlendingMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity? parentEntity);
     method public suspend Object? createWaterMaterial(boolean isAlphaMapVersion, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
     method public void destroyExrImage(androidx.xr.scenecore.runtime.ExrImageResource exrImage);
     method public void destroyGltfModel(androidx.xr.scenecore.runtime.GltfModelResource gltfModel);
@@ -807,6 +816,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
     method @InaccessibleFromKotlin public boolean getMContentColorMetadataSet();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
+    method @InaccessibleFromKotlin public int getMediaBlendingMode();
     method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution(androidx.xr.scenecore.runtime.ScenePose renderViewScenePose, androidx.xr.runtime.FieldOfView renderViewFov);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
@@ -817,6 +827,7 @@ package androidx.xr.scenecore.testing {
     method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
     method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
     method @InaccessibleFromKotlin public void setMContentColorMetadataSet(boolean);
+    method @InaccessibleFromKotlin public void setMediaBlendingMode(int);
     method public void setPerceivedResolution(androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolution);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
@@ -832,6 +843,7 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
     property public boolean mContentColorMetadataSet;
     property public int maxContentLightLevel;
+    property @androidx.xr.scenecore.runtime.SurfaceEntity.MediaBlendingMode public int mediaBlendingMode;
     property public androidx.xr.scenecore.runtime.TextureResource? primaryAlphaMask;
     property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
     property public int stereoMode;
@@ -849,6 +861,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
+    method @InaccessibleFromKotlin public int getMediaBlendingMode();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public int getStereoMode();
@@ -859,6 +872,7 @@ package androidx.xr.scenecore.testing {
     method public void setColliderEnabled(boolean enableCollider);
     method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
     method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
+    method @InaccessibleFromKotlin public void setMediaBlendingMode(int);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
@@ -873,6 +887,7 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.Dimensions dimensions;
     property public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
     property public int maxContentLightLevel;
+    property @androidx.xr.scenecore.runtime.SurfaceEntity.MediaBlendingMode public int mediaBlendingMode;
     property public androidx.xr.scenecore.runtime.TextureResource? primaryAlphaMask;
     property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
     property @androidx.xr.scenecore.runtime.SurfaceEntity.StereoMode public int stereoMode;

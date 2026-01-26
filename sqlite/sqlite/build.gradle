@@ -37,18 +37,35 @@ androidXMultiplatform {
         namespace = "androidx.sqlite.db"
     }
     ios()
+    js()
     jvm()
     linux()
     mac()
     tvos()
+    wasmJs()
     watchos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain.dependencies {
-            api("androidx.annotation:annotation:1.9.1")
+        commonMain {
+            dependencies {
+                api("androidx.annotation:annotation:1.9.1")
+            }
         }
+        nonWebMain {
+            dependsOn(commonMain)
+        }
+        androidMain {
+            dependsOn(nonWebMain)
+        }
+        jvmMain {
+            dependsOn(nonWebMain)
+        }
+        nativeMain {
+            dependsOn(nonWebMain)
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }

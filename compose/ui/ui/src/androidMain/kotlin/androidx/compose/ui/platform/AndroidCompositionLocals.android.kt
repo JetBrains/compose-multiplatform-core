@@ -24,6 +24,8 @@ import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.LocalHostDefaultProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
@@ -90,7 +92,7 @@ val LocalSavedStateRegistryOwner
 val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView") }
 
 @Composable
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, InternalComposeApi::class)
 internal fun ProvideAndroidCompositionLocals(
     owner: AndroidComposeView,
     content: @Composable () -> Unit,
@@ -121,6 +123,10 @@ internal fun ProvideAndroidCompositionLocals(
     val resourceIdCache = obtainResourceIdCache(context)
     val scrollCaptureInProgress =
         LocalScrollCaptureInProgress.current or owner.scrollCaptureInProgress
+
+    val hostDefaultProvider =
+        remember(view, viewTreeOwners) { AndroidHostDefaultProvider(owner.view) }
+
     CompositionLocalProvider(
         LocalConfiguration provides owner.configuration,
         LocalContext provides context,
@@ -128,6 +134,7 @@ internal fun ProvideAndroidCompositionLocals(
         LocalSavedStateRegistryOwner provides viewTreeOwners.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
         LocalView provides owner.view,
+        LocalHostDefaultProvider provides hostDefaultProvider,
         LocalImageVectorCache provides imageVectorCache,
         LocalResourceIdCache provides resourceIdCache,
         LocalProvidableScrollCaptureInProgress provides scrollCaptureInProgress,

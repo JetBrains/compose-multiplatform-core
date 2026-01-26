@@ -70,6 +70,7 @@ internal class Page(
     /** A list represent the [FormWidgetInfo] present on the page. */
     formWidgetInfos: List<FormWidgetInfo>? = null,
     private val pdfFormFillingConfig: PdfFormFillingConfig,
+    private val onBitmapCleared: (Int) -> Unit,
 ) {
     init {
         require(pageNum >= 0) { "Invalid negative page" }
@@ -189,6 +190,7 @@ internal class Page(
         links = null
         fetchLinksJob?.cancel()
         fetchLinksJob = null
+        onBitmapCleared(pageNum)
     }
 
     private fun maybeFetchPageText() {

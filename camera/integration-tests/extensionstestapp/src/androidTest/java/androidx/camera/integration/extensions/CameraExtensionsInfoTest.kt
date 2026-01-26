@@ -22,6 +22,7 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
+import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.adapter.awaitUntil
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -31,13 +32,10 @@ import androidx.camera.core.impl.utils.ContextUtil
 import androidx.camera.extensions.CameraExtensionsInfo
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.extensions.internal.Camera2ExtensionsUtil
-import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
-import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.integration.extensions.utils.ExtensionModeUtil.AVAILABLE_EXTENSION_MODES
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.SurfaceTextureProvider
@@ -62,16 +60,12 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = config.implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
+class CameraExtensionsInfoTest(private val cameraId: String, private val extensionMode: Int) {
 
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
-            PreTestCameraIdList(config.cameraXConfig)
+            PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
     @get:Rule
@@ -82,7 +76,7 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
         )
 
     companion object {
-        @Parameterized.Parameters(name = "config = {0}")
+        @Parameterized.Parameters(name = "cameraId = {0}, extensionMode = {1}")
         @JvmStatic
         fun parameters() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
@@ -104,19 +98,15 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
     fun setup() {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
 
-        ProcessCameraProvider.configureInstance(config.cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
         extensionsManager = runBlocking { ExtensionsManager.getInstance(context, cameraProvider) }
 
-        baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(config.cameraId)
-        assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, config.extensionMode))
+        baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
+        assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
         extensionCameraSelector =
-            extensionsManager.getExtensionEnabledCameraSelector(
-                baseCameraSelector,
-                config.extensionMode,
-            )
+            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
         instrumentation.runOnMainSync {
             fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
@@ -162,9 +152,9 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
     private fun isCamera2ExtensionStrengthSupported(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             (context.getSystemService(Context.CAMERA_SERVICE) as CameraManager).let {
-                val characteristics = it.getCameraExtensionCharacteristics(config.cameraId)
+                val characteristics = it.getCameraExtensionCharacteristics(cameraId)
                 val camera2ExtensionMode =
-                    Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(config.extensionMode)
+                    Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(extensionMode)
 
                 return characteristics
                     .getAvailableCaptureRequestKeys(camera2ExtensionMode)
@@ -211,9 +201,9 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
     private fun isCamera2CurrentExtensionModeSupported(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             (context.getSystemService(Context.CAMERA_SERVICE) as CameraManager).let {
-                val characteristics = it.getCameraExtensionCharacteristics(config.cameraId)
+                val characteristics = it.getCameraExtensionCharacteristics(cameraId)
                 val camera2ExtensionMode =
-                    Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(config.extensionMode)
+                    Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(extensionMode)
 
                 return characteristics
                     .getAvailableCaptureResultKeys(camera2ExtensionMode)

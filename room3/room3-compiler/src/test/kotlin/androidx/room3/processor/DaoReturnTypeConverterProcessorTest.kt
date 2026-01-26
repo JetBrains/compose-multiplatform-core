@@ -38,16 +38,16 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter {
-                suspend fun convert(
-                    executeAndConvert: suspend () -> Unit,
-                ): Foo {
-                    TODO()
+                class FooReturnTypeConverter {
+                    suspend fun convert(
+                        executeAndConvert: suspend () -> Unit,
+                    ): Foo {
+                        TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -63,10 +63,10 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter
-            """
+                class FooReturnTypeConverter
+                """
                     .trimIndent(),
             )
         runTest(
@@ -82,17 +82,17 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun <T> convert(
-                    executeAndConvert: suspend () -> T,
-                ): Foo {
-                   TODO()
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun <T> convert(
+                        executeAndConvert: suspend () -> T,
+                    ): Foo {
+                       TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -112,33 +112,33 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class Baz<E>(val value: E)
+                class Baz<E>(val value: E)
 
-            class BazReturnTypeConverter<E> {
-                @DaoReturnTypeConverter
-                suspend fun <T> convert(
-                    executeAndConvert: suspend () -> T,
-                ): Baz<E> {
-                    TODO()
+                class BazReturnTypeConverter<E> {
+                    @DaoReturnTypeConverter
+                    suspend fun <T> convert(
+                        executeAndConvert: suspend () -> T,
+                    ): Baz<E> {
+                        TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val db =
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @DaoReturnTypeConverters(BazReturnTypeConverter::class)
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract val dao: MyDao
-            }
-            """
+                @DaoReturnTypeConverters(BazReturnTypeConverter::class)
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract val dao: MyDao
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -158,40 +158,40 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "EitherReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
-            import arrow.core.*
+                import androidx.room3.*
+                import arrow.core.*
 
-            class EitherReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun <L, R> convert(
-                    executeAndConvert: suspend () -> R,
-                ): Either<L, R> {
-                   TODO()
+                class EitherReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun <L, R> convert(
+                        executeAndConvert: suspend () -> R,
+                    ): Either<L, R> {
+                       TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val dao =
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
-            import arrow.core.*
+                import androidx.room3.*
+                import arrow.core.*
 
-            @Dao
-            @DaoReturnTypeConverters(EitherReturnTypeConverter::class)
-            abstract class MyDao(private val db: RoomDatabase) {
-              @Query("SELECT * FROM MyEntity")
-              abstract suspend fun <T> leftConvert(): Either<T, Error>
+                @Dao
+                @DaoReturnTypeConverters(EitherReturnTypeConverter::class)
+                abstract class MyDao(private val db: RoomDatabase) {
+                  @Query("SELECT * FROM MyEntity")
+                  abstract suspend fun <T> leftConvert(): Either<T, Error>
 
-              @Query("SELECT * FROM MyEntity")
-              abstract suspend fun <T> rightConvert(): Either<Error, T>
-            }
+                  @Query("SELECT * FROM MyEntity")
+                  abstract suspend fun <T> rightConvert(): Either<Error, T>
+                }
 
-            @Entity
-            data class MyEntity(@PrimaryKey val pk: Int)
-            """
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+                """
                     .trimIndent(),
             )
         runTest(
@@ -208,31 +208,31 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "OtherFooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class OtherFooReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun <T> convert(
-                    executeAndConvert: suspend () -> T,
-                ): Foo<T> {
-                   TODO()
+                class OtherFooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun <T> convert(
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val db =
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @DaoReturnTypeConverters(FooReturnTypeConverter::class, OtherFooReturnTypeConverter::class)
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract val dao: MyDao
-            }
-            """
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class, OtherFooReturnTypeConverter::class)
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract val dao: MyDao
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -249,18 +249,18 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun convert(
-                    database: RoomDatabase,
-                    tableNames: Array<String>
-                ): Foo {
-                    TODO()
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun convert(
+                        database: RoomDatabase,
+                        tableNames: Array<String>
+                    ): Foo {
+                        TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -276,20 +276,20 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun convert(
-                    database: RoomDatabase,
-                    roomRawQuery: RoomRawQuery,
-                    tableNames: Array<String>,
-                    executeAndConvert: suspend (RoomRawQuery, Array<String>) -> Unit,
-                ): Foo {
-                    TODO()
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun convert(
+                        database: RoomDatabase,
+                        roomRawQuery: RoomRawQuery,
+                        tableNames: Array<String>,
+                        executeAndConvert: suspend (RoomRawQuery, Array<String>) -> Unit,
+                    ): Foo {
+                        TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runTest(
@@ -305,33 +305,33 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class Baz(data: MyEntity)
+                class Baz(data: MyEntity)
 
-            class BazReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun convert(
-                    executeAndConvert: suspend () -> MyEntity,
-                ): Baz {
-                    TODO()
+                class BazReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun convert(
+                        executeAndConvert: suspend () -> MyEntity,
+                    ): Baz {
+                        TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val db =
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @DaoReturnTypeConverters(BazReturnTypeConverter::class)
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract val dao: MyDao
-            }
-            """
+                @DaoReturnTypeConverters(BazReturnTypeConverter::class)
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract val dao: MyDao
+                }
+                """
                     .trimIndent(),
             )
         runTest(
@@ -359,14 +359,14 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "MyDatabase.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @DaoReturnTypeConverters(FooReturnTypeConverter::class)
-            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
-            abstract class MyDatabase : RoomDatabase() {
-              abstract val dao: MyDao
-            }
-            """
+                @DaoReturnTypeConverters(FooReturnTypeConverter::class)
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                abstract class MyDatabase : RoomDatabase() {
+                  abstract val dao: MyDao
+                }
+                """
                     .trimIndent(),
             )
 
@@ -374,17 +374,17 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "MyDao.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            @Dao
-            abstract class MyDao(private val db: RoomDatabase) {
-              @Query("SELECT * FROM MyEntity")
-              abstract suspend fun getFoo(): Foo<MyEntity>
-            }
+                @Dao
+                abstract class MyDao(private val db: RoomDatabase) {
+                  @Query("SELECT * FROM MyEntity")
+                  abstract suspend fun getFoo(): Foo<MyEntity>
+                }
 
-            @Entity
-            data class MyEntity(@PrimaryKey val pk: Int)
-            """
+                @Entity
+                data class MyEntity(@PrimaryKey val pk: Int)
+                """
                     .trimIndent(),
             )
 
@@ -392,11 +392,11 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooAndBar.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            open class Bar<T>(val data: T)
-            class Foo<T>(data: T): Bar<T>(data)
-            """
+                open class Bar<T>(val data: T)
+                class Foo<T>(data: T): Bar<T>(data)
+                """
                     .trimIndent(),
             )
 
@@ -404,17 +404,17 @@ class DaoReturnTypeConverterProcessorTest {
             Source.kotlin(
                 "FooReturnTypeConverter.kt",
                 """
-            import androidx.room3.*
+                import androidx.room3.*
 
-            class FooReturnTypeConverter {
-                @DaoReturnTypeConverter
-                suspend fun <T> convert(
-                    executeAndConvert: suspend () -> T,
-                ): Foo<T> {
-                   TODO()
+                class FooReturnTypeConverter {
+                    @DaoReturnTypeConverter
+                    suspend fun <T> convert(
+                        executeAndConvert: suspend () -> T,
+                    ): Foo<T> {
+                       TODO()
+                    }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
     }

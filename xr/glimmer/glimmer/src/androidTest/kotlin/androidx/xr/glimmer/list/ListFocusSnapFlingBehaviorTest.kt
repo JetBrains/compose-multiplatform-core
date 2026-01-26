@@ -207,10 +207,8 @@ class ListFocusSnapFlingBehaviorTest(orientation: Orientation) :
             return startPadding + focusScroll
         }
 
-    // TODO: b/444190961 - The current accumulation is not accurate.
-    //  The tolerance can be reduced once this bug is fixed.
     private val snapPositionTolerance: Float
-        get() = with(rule.density) { 4.dp.toPx() }
+        get() = with(rule.density) { 1.dp.toPx() }
 
     companion object {
         @JvmStatic

@@ -111,6 +111,7 @@ ksp {
 kotlin {
     compilerOptions {
         optIn.add("androidx.work.ExperimentalConfigurationApi")
+        optIn.add("androidx.work.ExperimentalEventsApi")
     }
 }
 

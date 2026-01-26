@@ -69,13 +69,13 @@ import androidx.work.BackoffPolicy;
 import androidx.work.Configuration;
 import androidx.work.Data;
 import androidx.work.DatabaseTest;
+import androidx.work.ExecutionEventListener;
 import androidx.work.ForegroundUpdater;
 import androidx.work.ListenableWorker;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.ProgressUpdater;
 import androidx.work.Tracer;
-import androidx.work.WorkExecutionEventListener;
 import androidx.work.WorkInfo;
 import androidx.work.WorkRequest;
 import androidx.work.Worker;
@@ -146,13 +146,13 @@ public class WorkerWrapperTest extends DatabaseTest {
     private final ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     private TestWorkerExceptionHandler mWorkerExceptionHandler;
     private Tracer mTracer;
-    private WorkExecutionEventListener mWorkExecutionListener;
+    private ExecutionEventListener mWorkExecutionListener;
 
     @Before
     public void setUp() {
         mContext = ApplicationProvider.getApplicationContext();
         mTracer = mock(Tracer.class);
-        mWorkExecutionListener = mock(WorkExecutionEventListener.class);
+        mWorkExecutionListener = mock(ExecutionEventListener.class);
         // Turn on tracing so we can ensure trace sections are correctly emitted.
         when(mTracer.isEnabled()).thenReturn(true);
         mWorkerExceptionHandler = new TestWorkerExceptionHandler();
@@ -163,7 +163,7 @@ public class WorkerWrapperTest extends DatabaseTest {
                 .setWorkerInitializationExceptionHandler(mWorkerExceptionHandler)
                 .setWorkerExecutionExceptionHandler(mWorkerExceptionHandler)
                 .setTracer(mTracer)
-                .setWorkExecutionEventListener(mWorkExecutionListener)
+                .setExecutionEventListener(mWorkExecutionListener)
                 .build();
         mWorkTaskExecutor = new InstantWorkTaskExecutor();
         mWorkSpecDao = mDatabase.workSpecDao();
@@ -208,9 +208,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+        inOrder.verify(mWorkExecutionListener, times(1)).onFinished(
                 eq(ListenableWorker.Result.success()), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -366,9 +366,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+        inOrder.verify(mWorkExecutionListener, times(1)).onFinished(
                 eq(ListenableWorker.Result.failure()), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -712,9 +712,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+        inOrder.verify(mWorkExecutionListener, times(1)).onFinished(
                 eq(ListenableWorker.Result.success()), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -760,9 +760,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+        inOrder.verify(mWorkExecutionListener, times(1)).onFinished(
                 eq(ListenableWorker.Result.failure()), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -808,9 +808,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onEnd(
+        inOrder.verify(mWorkExecutionListener, times(1)).onFinished(
                 eq(ListenableWorker.Result.retry()), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo endSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -1371,9 +1371,9 @@ public class WorkerWrapperTest extends DatabaseTest {
 
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStop(
+        inOrder.verify(mWorkExecutionListener, times(1)).onStopped(
                 eq(STOP_REASON_CONSTRAINT_CHARGING), workSnapshotCaptor.capture(), null);
         WorkInfo startSnapshot = workSnapshotCaptor.getAllValues().get(0);
         WorkInfo stopSnapshot = workSnapshotCaptor.getAllValues().get(1);
@@ -1405,7 +1405,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
         ArgumentCaptor<Throwable> throwableCaptor = ArgumentCaptor.forClass(Throwable.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
         inOrder.verify(mWorkExecutionListener, times(1)).onException(
                 throwableCaptor.capture(), workSnapshotCaptor.capture(), null);
@@ -1442,7 +1442,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         InOrder inOrder = inOrder(mWorkExecutionListener);
         ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
         ArgumentCaptor<Throwable> throwableCaptor = ArgumentCaptor.forClass(Throwable.class);
-        inOrder.verify(mWorkExecutionListener, times(1)).onStart(workSnapshotCaptor.capture(),
+        inOrder.verify(mWorkExecutionListener, times(1)).onStarted(workSnapshotCaptor.capture(),
                 null);
         inOrder.verify(mWorkExecutionListener, times(1)).onException(
                 throwableCaptor.capture(), workSnapshotCaptor.capture(), null);
@@ -1585,7 +1585,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.interrupt(0);
         ListenableWorker worker = factory.awaitWorker(UUID.fromString(id));
         assertThat(worker.getStopReason(), is(WorkInfo.STOP_REASON_NOT_STOPPED));
-        verify(mWorkExecutionListener, never()).onStop(anyInt(), any(), null);
+        verify(mWorkExecutionListener, never()).onStopped(anyInt(), any(), null);
     }
 
     @Test
@@ -1613,7 +1613,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         workerWrapper.launch();
         WorkSpec workSpec = mWorkSpecDao.getWorkSpec(work.getStringId());
         assertThat(workSpec.scheduleRequestedAt, is(-1L));
-        verify(mWorkExecutionListener, never()).onStop(anyInt(), any(), null);
+        verify(mWorkExecutionListener, never()).onStopped(anyInt(), any(), null);
     }
 
     @Test

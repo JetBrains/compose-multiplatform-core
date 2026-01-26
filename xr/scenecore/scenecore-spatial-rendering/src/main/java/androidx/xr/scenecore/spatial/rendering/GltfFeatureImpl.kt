@@ -28,6 +28,7 @@ import androidx.xr.scenecore.impl.impress.Material
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.spatial.core.AndroidXrEntity
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
@@ -227,6 +228,29 @@ internal class GltfFeatureImpl(
 
         if (boundsUpdateListeners.isEmpty()) {
             renderer.frameListener = null
+        }
+    }
+
+    @MainThread
+    override fun setReformAffordanceEnabled(
+        entity: GltfEntity,
+        enabled: Boolean,
+        executor: Executor,
+        systemMovable: Boolean,
+    ) {
+        impressApi.setGltfReformAffordanceEnabled(modelImpressNode, enabled, systemMovable)
+        if (enabled) {
+            subspace?.let { splitEngineSubspace ->
+                splitEngineSubspace.subspaceNode?.listenForInput(executor) { inputEvent ->
+                    splitEngineSubspaceManager.forwardInputEvent(
+                        inputEvent,
+                        splitEngineSubspace.subspaceId,
+                    )
+                    (entity as AndroidXrEntity).handleInputEvent(inputEvent)
+                }
+            }
+        } else {
+            subspace?.subspaceNode?.stopListeningForInput()
         }
     }
 }

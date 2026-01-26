@@ -689,6 +689,9 @@ public class Rc {
 
         /** (value - doc_load_time) * 1E-3 */
         public static final short TIME_FROM_LOAD_SEC = TimeAttribute.TIME_FROM_LOAD_SEC;
+
+        /**  The day of the year */
+        public static final short TIME_DAY_OF_YEAR = TimeAttribute.TIME_DAY_OF_YEAR;
     }
 
     /** Constants for use in ConditionalOperations */

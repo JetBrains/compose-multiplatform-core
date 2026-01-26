@@ -31,6 +31,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.SurfaceEntity.Shape.TriangleMesh
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
@@ -52,6 +53,7 @@ import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilitie
 import androidx.xr.scenecore.runtime.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.scenecore.runtime.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh as RtTriangleMesh
 import androidx.xr.scenecore.runtime.TextureSampler as RtTextureSampler
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
@@ -626,4 +628,12 @@ internal object DirectExecutor : Executor {
     override fun execute(command: Runnable) {
         command.run()
     }
+}
+
+internal fun RtTriangleMesh.toTriangleMesh(): TriangleMesh {
+    return TriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
+}
+
+internal fun TriangleMesh.toRtTriangleMesh(): RtTriangleMesh {
+    return RtTriangleMesh(positions = positions, texCoords = texCoords, indices = indices)
 }

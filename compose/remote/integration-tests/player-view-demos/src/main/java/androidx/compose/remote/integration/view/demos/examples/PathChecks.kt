@@ -83,4 +83,4 @@ fun SimplePath() {
     }
 }
 
-@Preview @Composable fun SimplePathPreview() = RemotePreview { SimplePath() }
+@Preview @Composable private fun SimplePathPreview() = RemotePreview { SimplePath() }

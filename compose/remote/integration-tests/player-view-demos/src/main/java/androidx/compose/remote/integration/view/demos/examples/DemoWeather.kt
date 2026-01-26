@@ -114,7 +114,7 @@ fun WeatherDemo() {
     }
 }
 
-@Preview @Composable fun WeatherDemoPreview() = RemotePreview { WeatherDemo() }
+@Preview @Composable private fun WeatherDemoPreview() = RemotePreview { WeatherDemo() }
 
 @RemoteComposable
 @Composable
@@ -138,7 +138,7 @@ fun WeatherHeader() {
     }
 }
 
-@Preview @Composable fun WeatherHeaderPreview() = RemotePreview { WeatherHeader() }
+@Preview @Composable private fun WeatherHeaderPreview() = RemotePreview { WeatherHeader() }
 
 val rowHeight = 90.rdp
 val rowHeightDp = 90.dp
@@ -157,7 +157,7 @@ fun WeatherBox() {
     }
 }
 
-@Preview @Composable fun WeatherBoxPreview() = RemotePreview { WeatherBox() }
+@Preview @Composable private fun WeatherBoxPreview() = RemotePreview { WeatherBox() }
 
 @RemoteComposable
 @Composable
@@ -182,7 +182,7 @@ fun WeatherBox2() {
     }
 }
 
-@Preview @Composable fun WeatherBox2Preview() = RemotePreview { WeatherBox2() }
+@Preview @Composable private fun WeatherBox2Preview() = RemotePreview { WeatherBox2() }
 
 @RemoteComposable
 @Composable
@@ -201,7 +201,7 @@ fun WeatherRow() {
     }
 }
 
-@Preview @Composable fun WeatherRowPreview() = RemotePreview { WeatherRow() }
+@Preview @Composable private fun WeatherRowPreview() = RemotePreview { WeatherRow() }
 
 @RemoteComposable
 @Composable
@@ -244,7 +244,7 @@ fun WeatherDays() {
     }
 }
 
-@Preview @Composable fun WeatherDaysPreview() = RemotePreview { WeatherDays() }
+@Preview @Composable private fun WeatherDaysPreview() = RemotePreview { WeatherDays() }
 
 @RemoteComposable
 @Composable

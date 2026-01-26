@@ -112,11 +112,11 @@ public class TextMerge extends Operation implements VariableSupport, Serializabl
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Merge two string into one")
-                .field(DocumentedOperation.INT, "textId", "id of the text")
-                .field(INT, "srcTextId1", "id of the path")
-                .field(INT, "srcTextId1", "x Shift of the text");
+        doc.operation("Text Operations", OP_CODE, CLASS_NAME)
+                .description("Merge two strings into one")
+                .field(DocumentedOperation.INT, "textId", "The ID of the resulting text")
+                .field(INT, "srcId1", "The ID of the first source string")
+                .field(INT, "srcId2", "The ID of the second source string");
     }
 
     @Override

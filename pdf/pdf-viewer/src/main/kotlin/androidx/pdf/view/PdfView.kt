@@ -72,6 +72,7 @@ import androidx.pdf.selection.SelectionMenuManager
 import androidx.pdf.selection.SelectionRenderer
 import androidx.pdf.selection.SelectionStateManager
 import androidx.pdf.selection.SelectionUiSignal
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.util.Accessibility
 import androidx.pdf.util.MathUtils
 import androidx.pdf.util.ZoomUtils
@@ -1698,7 +1699,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     pageSignalsToJoin?.join()
                     launch { manager.invalidationSignalFlow.collect { invalidate() } }
 
-                    launch { manager.bitmapReadyFlow.collect { isAnyBitmapAvailable = true } }
+                    launch {
+                        manager.bitmapUpdatedFlow.collect { pageBitmapState ->
+                            if (pageBitmapState is PageBitmapState.PageBitmapReady) {
+                                isAnyBitmapAvailable = true
+                            }
+                        }
+                    }
 
                     launch {
                         manager.pageTextReadyFlow.collect { pageNum ->
@@ -1791,7 +1798,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun showActionMode() {
         val localCurrentSelection = currentSelection ?: return
-        if (selectionActionModeCallback?.actionMode == null) {
+        // Populate the menu for non-image selections if the menu is currently empty
+        if (
+            currentSelection !is ImageSelection && selectionActionModeCallback?.actionMode == null
+        ) {
             val previousJob = selectionMenuJob
             selectionMenuJob =
                 backgroundScope.launch {

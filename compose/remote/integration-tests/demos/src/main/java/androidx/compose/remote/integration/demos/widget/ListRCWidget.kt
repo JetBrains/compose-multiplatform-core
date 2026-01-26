@@ -63,9 +63,9 @@ class ListRCWidget : AppWidgetProvider() {
     ): ByteArray =
         withContext(Dispatchers.Main) {
             captureSingleRemoteDocument(
-                    context,
-                    createCreationDisplayInfo(context),
-                    RcPlatformProfiles.WIDGETS_V6,
+                    context = context,
+                    creationDisplayInfo = createCreationDisplayInfo(context),
+                    profile = RcPlatformProfiles.WIDGETS_V6,
                     content = content,
                 )
                 .bytes

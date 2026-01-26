@@ -43,6 +43,7 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.kxml2)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -52,7 +53,7 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(36) }
     namespace = "androidx.security.state"
 }
 

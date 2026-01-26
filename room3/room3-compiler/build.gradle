@@ -239,5 +239,5 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
     description = "Android Room annotation processor"
-    kotlinTarget = KotlinTarget.KOTLIN_2_2
+    kotlinTarget = KotlinTarget.KOTLIN_2_3
 }

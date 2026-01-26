@@ -30,6 +30,9 @@ import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.actions.HostAction
+import androidx.compose.remote.creation.arrayMax
+import androidx.compose.remote.creation.arrayMin
+import androidx.compose.remote.creation.arraySpline
 import androidx.compose.remote.creation.max
 import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
@@ -52,8 +55,7 @@ private lateinit var fontSize: RcFontSizes
 
 @Preview
 @Composable
-@Preview
-fun RcTickerPreview() {
+private fun RcTickerPreview() {
     val context = LocalContext.current
     RemoteDocPreview(RcTicker(context))
 }
@@ -238,12 +240,12 @@ private fun RemoteComposeContextAndroid.graph() {
         val margin = rad * 0.3f
         val lineBottom = h - margin
         val path: Int = pathCreate(margin.toFloat(), lineBottom.toFloat())
-        val max = aMax(stockValues)
-        val min = aMin(stockValues) - 100f
+        val max = arrayMax(stockValues)
+        val min = arrayMin(stockValues) - 100f
         val xEnd = w - margin
         loop(margin, 1f, xEnd) { x ->
             val pos = (x - margin) / (w - margin * 2f)
-            val v = (aSpline(stockValues, pos) - min) / (max - min)
+            val v = (arraySpline(stockValues, pos) - min) / (max - min)
             val y = lineBottom - v * (lineBottom - margin)
             pathAppendLineTo(path, x.toFloat(), y.toFloat())
         }
@@ -401,22 +403,6 @@ private class RcTickerColorPack(val rc: RemoteComposeContextAndroid) {
 
         rc.endGlobal()
     }
-}
-
-// TODO move to RFloat
-@Suppress("RestrictedApiAndroidX")
-public fun aMax(a: RFloat): RFloat {
-    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_MAX))
-}
-
-@Suppress("RestrictedApiAndroidX")
-public fun aMin(a: RFloat): RFloat {
-    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_MIN))
-}
-
-@Suppress("RestrictedApiAndroidX")
-public fun aSpline(a: RFloat, pos: RFloat): RFloat {
-    return RFloat(a.writer, floatArrayOf(*a.array, *pos.array, Rc.FloatExpression.A_SPLINE))
 }
 
 @Suppress("RestrictedApiAndroidX")

@@ -121,4 +121,8 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
     public void removeOnBoundsUpdateListener(@NonNull Consumer<@NonNull BoundingBox> listener) {
         mFeature.removeOnBoundsUpdateListener(listener);
     }
+
+    public void setReformAffordanceEnabled(boolean enabled, boolean systemMovable) {
+        mFeature.setReformAffordanceEnabled(this, enabled, mExecutor, systemMovable);
+    }
 }

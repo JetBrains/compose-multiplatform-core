@@ -59,7 +59,6 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
     androidTestImplementation(project(":camera:camera-camera2"))
-    androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")

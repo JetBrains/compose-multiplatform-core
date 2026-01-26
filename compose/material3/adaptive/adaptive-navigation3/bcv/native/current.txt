@@ -6,6 +6,16 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.compose.material3.adaptive:adaptive-navigation3>
+sealed interface androidx.compose.material3.adaptive.navigation3/ListDetailSceneScope { // androidx.compose.material3.adaptive.navigation3/ListDetailSceneScope|null[0]
+    abstract val scaffoldTransitionScope // androidx.compose.material3.adaptive.navigation3/ListDetailSceneScope.scaffoldTransitionScope|{}scaffoldTransitionScope[0]
+        abstract fun <get-scaffoldTransitionScope>(): androidx.compose.material3.adaptive.layout/PaneScaffoldTransitionScope<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue> // androidx.compose.material3.adaptive.navigation3/ListDetailSceneScope.scaffoldTransitionScope.<get-scaffoldTransitionScope>|<get-scaffoldTransitionScope>(){}[0]
+}
+
+sealed interface androidx.compose.material3.adaptive.navigation3/SupportingPaneSceneScope { // androidx.compose.material3.adaptive.navigation3/SupportingPaneSceneScope|null[0]
+    abstract val scaffoldTransitionScope // androidx.compose.material3.adaptive.navigation3/SupportingPaneSceneScope.scaffoldTransitionScope|{}scaffoldTransitionScope[0]
+        abstract fun <get-scaffoldTransitionScope>(): androidx.compose.material3.adaptive.layout/PaneScaffoldTransitionScope<androidx.compose.material3.adaptive.layout/ThreePaneScaffoldRole, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldValue> // androidx.compose.material3.adaptive.navigation3/SupportingPaneSceneScope.scaffoldTransitionScope.<get-scaffoldTransitionScope>|<get-scaffoldTransitionScope>(){}[0]
+}
+
 final class <#A: kotlin/Any> androidx.compose.material3.adaptive.navigation3/ListDetailSceneStrategy : androidx.navigation3.scene/SceneStrategy<#A> { // androidx.compose.material3.adaptive.navigation3/ListDetailSceneStrategy|null[0]
     constructor <init>(kotlin/Boolean, androidx.compose.material3.adaptive.navigation/BackNavigationBehavior, androidx.compose.material3.adaptive.layout/PaneScaffoldDirective, androidx.compose.material3.adaptive.layout/ThreePaneScaffoldAdaptStrategies) // androidx.compose.material3.adaptive.navigation3/ListDetailSceneStrategy.<init>|<init>(kotlin.Boolean;androidx.compose.material3.adaptive.navigation.BackNavigationBehavior;androidx.compose.material3.adaptive.layout.PaneScaffoldDirective;androidx.compose.material3.adaptive.layout.ThreePaneScaffoldAdaptStrategies){}[0]
 
@@ -48,6 +58,10 @@ final class <#A: kotlin/Any> androidx.compose.material3.adaptive.navigation3/Sup
     }
 }
 
+final val androidx.compose.material3.adaptive.navigation3/LocalListDetailSceneScope // androidx.compose.material3.adaptive.navigation3/LocalListDetailSceneScope|{}LocalListDetailSceneScope[0]
+    final fun <get-LocalListDetailSceneScope>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.material3.adaptive.navigation3/ListDetailSceneScope?> // androidx.compose.material3.adaptive.navigation3/LocalListDetailSceneScope.<get-LocalListDetailSceneScope>|<get-LocalListDetailSceneScope>(){}[0]
+final val androidx.compose.material3.adaptive.navigation3/LocalSupportingPaneSceneScope // androidx.compose.material3.adaptive.navigation3/LocalSupportingPaneSceneScope|{}LocalSupportingPaneSceneScope[0]
+    final fun <get-LocalSupportingPaneSceneScope>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.material3.adaptive.navigation3/SupportingPaneSceneScope?> // androidx.compose.material3.adaptive.navigation3/LocalSupportingPaneSceneScope.<get-LocalSupportingPaneSceneScope>|<get-LocalSupportingPaneSceneScope>(){}[0]
 final val androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_ListDetailSceneStrategy$stableprop // androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_ListDetailSceneStrategy$stableprop|#static{}androidx_compose_material3_adaptive_navigation3_ListDetailSceneStrategy$stableprop[0]
 final val androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_SupportingPaneSceneStrategy$stableprop // androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_SupportingPaneSceneStrategy$stableprop|#static{}androidx_compose_material3_adaptive_navigation3_SupportingPaneSceneStrategy$stableprop[0]
 final val androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_ThreePaneScaffoldScene_OnBackResult$stableprop // androidx.compose.material3.adaptive.navigation3/androidx_compose_material3_adaptive_navigation3_ThreePaneScaffoldScene_OnBackResult$stableprop|#static{}androidx_compose_material3_adaptive_navigation3_ThreePaneScaffoldScene_OnBackResult$stableprop[0]

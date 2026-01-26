@@ -605,7 +605,7 @@ private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPre
 private fun IndirectPointerInputChange.changedToDown() = !isConsumed && !previousPressed && pressed
 
 @ExperimentalIndirectPointerApi
-private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
+internal fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
 
 @ExperimentalIndirectPointerApi
 private fun IndirectPointerInputChange.positionChangeInternal(

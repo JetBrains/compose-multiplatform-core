@@ -30,6 +30,7 @@ import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.widgets.toLayoutDirection
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
@@ -43,7 +44,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.io.ByteArrayInputStream
@@ -52,7 +55,7 @@ import java.io.ByteArrayInputStream
 public fun rememberRemoteDocument(
     creationDisplayInfo: CreationDisplayInfo = createCreationDisplayInfo(),
     profile: Profile = RcPlatformProfiles.ANDROIDX,
-    writerEvents: WriterEvents? = null,
+    writerEvents: WriterEvents = WriterEvents(),
     onCreate: ((CoreDocument) -> Unit)? = null,
     content: @Composable () -> Unit,
 ): MutableState<CoreDocument?> {
@@ -64,6 +67,7 @@ public fun rememberRemoteDocument(
         context = context,
         virtualDisplay = virtualDisplay,
         creationDisplayInfo = creationDisplayInfo,
+        layoutDirection = LocalLayoutDirection.current,
         immediateCapture = true,
         onPaint = { _, writer ->
             if (!done.value) {
@@ -125,6 +129,7 @@ public fun rememberAsyncRemoteDocument(
         context = LocalContext.current,
         virtualDisplay = virtualDisplay,
         creationDisplayInfo = creationDisplayInfo,
+        layoutDirection = LocalLayoutDirection.current,
         immediateCapture = false,
         onPaint = { view: View, writer: RemoteComposeWriter ->
             if (readyToCapture.value && !done.value) {
@@ -176,6 +181,7 @@ public class RemoteComposeCapture(
     context: Context,
     virtualDisplay: VirtualDisplay,
     creationDisplayInfo: CreationDisplayInfo,
+    layoutDirection: LayoutDirection? = null,
     public val immediateCapture: Boolean = true,
     public val onPaint: (View, RemoteComposeWriter) -> Boolean,
     public val onCaptureReady: @Composable () -> Unit,
@@ -189,6 +195,9 @@ public class RemoteComposeCapture(
             RemoteComposeExecution(
                 captureComposeView = captureComposeView,
                 creationDisplayInfo = creationDisplayInfo,
+                layoutDirection =
+                    layoutDirection
+                        ?: toLayoutDirection(context.resources.configuration.layoutDirection),
                 profile = profile,
                 writerEvents = writerEvents,
                 content = contentWrapper,
@@ -199,6 +208,7 @@ public class RemoteComposeCapture(
         context: Context,
         virtualDisplay: VirtualDisplay,
         creationDisplayInfo: CreationDisplayInfo,
+        layoutDirection: LayoutDirection? = null,
         immediateCapture: Boolean = true,
         onPaint: (View, RemoteComposeWriter) -> Boolean,
         onCaptureReady: @Composable () -> Unit,
@@ -210,6 +220,9 @@ public class RemoteComposeCapture(
                 RemoteComposeExecution(
                     captureComposeView = captureComposeView,
                     creationDisplayInfo = creationDisplayInfo,
+                    layoutDirection =
+                        layoutDirection
+                            ?: toLayoutDirection(context.resources.configuration.layoutDirection),
                     profile = RcPlatformProfiles.ANDROIDX,
                     writerEvents = null,
                     content = contentWrapper,
@@ -219,6 +232,7 @@ public class RemoteComposeCapture(
         context = context,
         virtualDisplay = virtualDisplay,
         creationDisplayInfo = creationDisplayInfo,
+        layoutDirection = layoutDirection,
         immediateCapture = immediateCapture,
         onPaint = onPaint,
         onCaptureReady = onCaptureReady,
@@ -240,7 +254,12 @@ public class RemoteComposeCapture(
         val captureComposeView =
             CaptureComposeView(presentation.context, immediateCapture, onPaint, onCaptureReady)
         captureComposeView.apply {
-            setContent { remoteComposeExecution(captureComposeView) { content.invoke() } }
+            setContent {
+                val effectiveLayoutDirection = layoutDirection ?: LocalLayoutDirection.current
+                CompositionLocalProvider(LocalLayoutDirection provides effectiveLayoutDirection) {
+                    remoteComposeExecution(captureComposeView) { content.invoke() }
+                }
+            }
         }
         presentation.show()
         resizableLayout = presentation.resizeLayout
@@ -252,18 +271,24 @@ public class RemoteComposeCapture(
 public fun RemoteComposeExecution(
     captureComposeView: CaptureComposeView,
     creationDisplayInfo: CreationDisplayInfo,
+    layoutDirection: LayoutDirection,
     profile: Profile,
     writerEvents: WriterEvents?,
     content: @Composable () -> Unit,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
     val remoteComposeCreationState = remember {
         RemoteComposeCreationState(
             creationDisplayInfo = creationDisplayInfo,
             profile = profile,
             writerEvents = writerEvents,
+            layoutDirection = layoutDirection,
         )
     }
-    CompositionLocalProvider(LocalRemoteComposeCreationState provides remoteComposeCreationState) {
+    CompositionLocalProvider(
+        LocalRemoteComposeCreationState provides remoteComposeCreationState,
+        LocalLayoutDirection provides layoutDirection,
+    ) {
         captureComposeView.setRemoteComposeState(remoteComposeCreationState)
         content.invoke()
     }
@@ -314,6 +339,7 @@ public fun RememberRemoteDocumentInline(
     val generated = remember { mutableStateOf(false) }
     if (!generated.value) {
         val creationDisplayInfo = createCreationDisplayInfo()
+        val layoutDirection = LocalLayoutDirection.current
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
@@ -337,6 +363,7 @@ public fun RememberRemoteDocumentInline(
                             RemoteComposeExecution(
                                 captureComposeView = this,
                                 creationDisplayInfo = creationDisplayInfo,
+                                layoutDirection = layoutDirection,
                                 profile = profile,
                                 writerEvents = null,
                                 content = content,

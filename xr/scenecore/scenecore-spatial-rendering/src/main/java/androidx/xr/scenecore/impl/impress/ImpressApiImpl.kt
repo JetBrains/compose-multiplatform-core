@@ -28,11 +28,14 @@ import androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorTransfer
 import androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel
+import androidx.xr.scenecore.impl.impress.ImpressApi.DrawMode
 import androidx.xr.scenecore.impl.impress.ImpressApi.MediaBlendingMode
 import androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -371,9 +374,19 @@ public class ImpressApiImpl : ImpressApi {
      * @param impressNode The integer ID of the impress node for the instance of the gLTF
      * @param enabled A boolean indicated whether to add or remove the reform affordance for the
      *   gLTF model.
+     * @param systemMovable A boolean indicating whether to handle the move input events or not.
      */
-    override fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean): Unit =
-        nSetGltfReformAffordanceEnabled(getViewNativeHandle(view), impressNode.handle, enabled)
+    override fun setGltfReformAffordanceEnabled(
+        impressNode: ImpressNode,
+        enabled: Boolean,
+        systemMovable: Boolean,
+    ): Unit =
+        nSetGltfReformAffordanceEnabled(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            enabled,
+            systemMovable,
+        )
 
     /**
      * Starts an animation on an instanced GLTFModel.
@@ -546,6 +559,28 @@ public class ImpressApiImpl : ImpressApi {
             radius,
         )
 
+    override fun setStereoSurfaceEntityCanvasShapeCustomMesh(
+        impressNode: ImpressNode,
+        leftPositions: FloatBuffer,
+        leftTexCoords: FloatBuffer,
+        leftIndices: IntBuffer?,
+        rightPositions: FloatBuffer?,
+        rightTexCoords: FloatBuffer?,
+        rightIndices: IntBuffer?,
+        @DrawMode drawMode: Int,
+    ): Unit =
+        nSetStereoSurfaceEntityCanvasShapeCustomMesh(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            leftPositions,
+            leftTexCoords,
+            leftIndices,
+            rightPositions,
+            rightTexCoords,
+            rightIndices,
+            drawMode,
+        )
+
     override fun setStereoSurfaceEntityColliderEnabled(
         impressNode: ImpressNode,
         enableCollider: Boolean,
@@ -564,6 +599,16 @@ public class ImpressApiImpl : ImpressApi {
             getViewNativeHandle(view),
             panelImpressNode.handle,
             validateStereoMode(stereoMode),
+        )
+
+    override fun setBlendingModeForStereoSurfaceEntity(
+        panelImpressNode: ImpressNode,
+        @MediaBlendingMode blendingMode: Int,
+    ): Unit =
+        nSetBlendingModeForStereoSurfaceEntity(
+            getViewNativeHandle(view),
+            panelImpressNode.handle,
+            validateMediaBlendingMode(blendingMode),
         )
 
     override fun setContentColorMetadataForStereoSurface(
@@ -1490,6 +1535,7 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         impressNode: Int,
         enabled: Boolean,
+        systemMovable: Boolean,
     )
 
     private external fun nAnimateGltfModel(
@@ -1556,6 +1602,18 @@ public class ImpressApiImpl : ImpressApi {
         radius: Float,
     )
 
+    private external fun nSetStereoSurfaceEntityCanvasShapeCustomMesh(
+        view: Long,
+        impressNode: Int,
+        leftPositions: FloatBuffer,
+        leftTexCoords: FloatBuffer,
+        leftIndices: IntBuffer?,
+        rightPositions: FloatBuffer?,
+        rightTexCoords: FloatBuffer?,
+        rightIndices: IntBuffer?,
+        drawMode: Int,
+    )
+
     private external fun nSetStereoSurfaceEntityColliderEnabled(
         view: Long,
         impressNode: Int,
@@ -1578,6 +1636,12 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         panelImpressNode: Int,
         stereoMode: Int,
+    )
+
+    private external fun nSetBlendingModeForStereoSurfaceEntity(
+        view: Long,
+        panelImpressNode: Int,
+        blendingMode: Int,
     )
 
     private external fun nSetContentColorMetadataForStereoSurfaceEntity(

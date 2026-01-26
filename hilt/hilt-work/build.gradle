@@ -50,5 +50,5 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2020"
     description = "Android Lifecycle WorkManager Hilt Extension"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

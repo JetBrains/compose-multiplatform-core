@@ -17,6 +17,8 @@
 package androidx.pdf.selection.model
 
 import android.graphics.Bitmap
+import android.os.Parcel
+import androidx.core.os.ParcelCompat
 import androidx.pdf.PdfRect
 import androidx.pdf.selection.Selection
 import androidx.pdf.view.PdfView
@@ -52,6 +54,7 @@ public class ImageSelection internal constructor(public val bitmap: Bitmap, imag
         if (this === other) return true
         if (other == null || other !is ImageSelection) return false
 
+        // Bitmaps are compared by reference, as comparing pixel by pixel is expensive.
         if (other.bitmap != this.bitmap) return false
         if (other.bounds != this.bounds) return false
 
@@ -69,4 +72,39 @@ public class ImageSelection internal constructor(public val bitmap: Bitmap, imag
             bitmap.recycle()
         }
     }
+
+    /** Writes a [ImageSelection] to [dest]. */
+    internal fun writeToParcel(dest: Parcel, flags: Int) {
+        dest.writeInt(bounds.size)
+        for (bound in bounds) {
+            dest.writeInt(bound.pageNum)
+            dest.writeFloat(bound.left)
+            dest.writeFloat(bound.top)
+            dest.writeFloat(bound.right)
+            dest.writeFloat(bound.bottom)
+        }
+        dest.writeParcelable(bitmap, flags)
+    }
+}
+
+/**
+ * Reads an [ImageSelection] from [source].
+ *
+ * Not part of the public API because public APIs cannot be [android.os.Parcelable]
+ */
+internal fun imageSelectionFromParcel(source: Parcel): ImageSelection {
+    val bounds = mutableListOf<PdfRect>()
+    val boundsSize = source.readInt()
+    for (i in 0 until boundsSize) {
+        val pageNum = source.readInt()
+        val left = source.readFloat()
+        val top = source.readFloat()
+        val right = source.readFloat()
+        val bottom = source.readFloat()
+        bounds.add(PdfRect(pageNum, left, top, right, bottom))
+    }
+    val bitmap: Bitmap? =
+        ParcelCompat.readParcelable(source, Bitmap::class.java.classLoader, Bitmap::class.java)
+    if (bitmap != null && bounds.isNotEmpty()) return ImageSelection(bitmap, bounds.first())
+    throw IllegalArgumentException("bitmap cannot be null")
 }

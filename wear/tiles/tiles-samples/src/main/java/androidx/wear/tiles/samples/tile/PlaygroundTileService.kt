@@ -24,7 +24,7 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.DimensionBuilders.weight
 import androidx.wear.protolayout.LayoutElementBuilders
-import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.TimelineBuilders.Timeline.fromLayoutElement
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32
 import androidx.wear.protolayout.expression.VersionBuilders.VersionInfo
@@ -73,19 +73,15 @@ import androidx.wear.tiles.Material3TileService
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.samples.R
+import androidx.wear.tiles.tile
 import kotlin.random.Random
 
 /** Base playground tile service for testing out features. */
 class PlaygroundTileService : Material3TileService() {
     override suspend fun MaterialScope.tileResponse(
         requestParams: RequestBuilders.TileRequest
-    ): TileBuilders.Tile = tile()
+    ): TileBuilders.Tile = tile(timeline = fromLayoutElement(tileLayout()))
 }
-
-private fun MaterialScope.tile(): TileBuilders.Tile =
-    TileBuilders.Tile.Builder()
-        .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(tileLayout()))
-        .build()
 
 private fun getFooValue(): Int = Random.nextInt(1000)
 

@@ -322,6 +322,10 @@ internal abstract class EmittableLazyList : EmittableWithChildren(resetsDepthFor
     override fun toString() =
         "EmittableLazyList(modifier=$modifier, horizontalAlignment=$horizontalAlignment, " +
             "activityOptions=$activityOptions, snapScroll=${snapScrolling}, children=[\n${childrenToString()}\n])"
+
+    override fun requiresRemoteCompose(): Boolean {
+        return snapScrolling != VerticalSnapScrollMode.None || super.requiresRemoteCompose()
+    }
 }
 
 internal class EmittableLazyListItem : EmittableLazyItemWithChildren() {

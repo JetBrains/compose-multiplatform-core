@@ -52,8 +52,7 @@ public class SessionConfigureSuccess() : SessionConfigureResult()
  * not linked.
  */
 @Suppress("MentionsGoogle")
-public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() :
-    SessionConfigureResult()
+public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. Required calibration has not been performed

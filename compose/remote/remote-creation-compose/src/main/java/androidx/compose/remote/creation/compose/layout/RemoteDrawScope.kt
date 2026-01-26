@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * A remote-compatible drawing scope for RemoteCompose. Unlike [DrawScope], this class uses remote
@@ -39,11 +38,8 @@ import androidx.compose.ui.unit.LayoutDirection
  * API incompatibilities.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public open class RemoteDrawScope(
-    public val remoteCanvas: RemoteCanvas,
-    public val fontScale: RemoteFloat,
-    public val layoutDirection: LayoutDirection,
-) : RemoteStateScope by remoteCanvas {
+public open class RemoteDrawScope(public val remoteCanvas: RemoteCanvas) :
+    RemoteStateScope by remoteCanvas {
     public val remoteComposeCreationState: RemoteComposeCreationState
         get() = remoteCanvas.creationState
 

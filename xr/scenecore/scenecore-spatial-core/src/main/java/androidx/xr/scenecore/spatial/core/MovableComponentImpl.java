@@ -21,6 +21,8 @@ import androidx.xr.runtime.math.Ray;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.InputEvent;
+import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.MovableComponent;
 import androidx.xr.scenecore.runtime.MoveEvent;
 import androidx.xr.scenecore.runtime.MoveEventListener;
@@ -50,13 +52,17 @@ class MovableComponentImpl implements MovableComponent {
     private final boolean mUserAnchorable;
     // Visible for testing.
     Consumer<ReformEvent> mReformEventConsumer;
+    private final InputEventListener mInputEventListener;
     private volatile Entity mEntity;
     private Entity mInitialParent;
     private Pose mLastPose = new Pose();
     private Vector3 mLastScale = new Vector3(1f, 1f, 1f);
+    private Ray mInitialRay;
     private Dimensions mCurrentSize;
     private boolean mIsMoving = false;
     @ScaleWithDistanceMode private int mScaleWithDistanceMode = ScaleWithDistanceMode.DEFAULT;
+    private float mHitPointToOriginDistance = 0f;
+    private Vector3 mGrabPointToCenterOffset = Vector3.Zero;
 
     MovableComponentImpl(
             boolean systemMovable,
@@ -109,6 +115,15 @@ class MovableComponentImpl implements MovableComponent {
                     mLastPose = newPose;
                     mLastScale = newScale;
                 };
+
+        mInputEventListener =
+                inputEvent ->
+                        mMoveEventListenersMap.forEach(
+                                (listener, executor) ->
+                                        executor.execute(
+                                                () -> {
+                                                    listener.onMoveEvent(getMoveEvent(inputEvent));
+                                                }));
     }
 
     private static int translateScaleWithDistanceMode(@ScaleWithDistanceMode int scale) {
@@ -136,12 +151,79 @@ class MovableComponentImpl implements MovableComponent {
                 null);
     }
 
+    private MoveEvent getMoveEvent(InputEvent inputEvent) {
+        int moveState = -1;
+
+        Entity parent =
+                (mEntity != null && mEntity.getParent() != null)
+                        ? mEntity.getParent()
+                        : mActivitySpaceImpl;
+
+        Vector3 originInParentSpace =
+                mActivitySpaceImpl.transformPositionTo(inputEvent.getOrigin(), parent);
+        Vector3 directionInParentSpace =
+                mActivitySpaceImpl.transformDirectionTo(inputEvent.getDirection(), parent);
+        Ray currentRay = new Ray(originInParentSpace, directionInParentSpace);
+
+        switch (inputEvent.getAction()) {
+            case InputEvent.Action.DOWN:
+                moveState = MoveEvent.MoveState.MOVE_STATE_START;
+                mInitialRay = new Ray(inputEvent.getOrigin(), inputEvent.getDirection());
+                mInitialParent = parent;
+                if (!inputEvent.getHitInfoList().isEmpty()) {
+                    Vector3 hitPosition = inputEvent.getHitInfoList().get(0).getHitPosition();
+                    mHitPointToOriginDistance = hitPosition.minus(originInParentSpace).getLength();
+                    mGrabPointToCenterOffset =
+                            mEntity.getPose().getTranslation().minus(hitPosition);
+                }
+                break;
+            case InputEvent.Action.MOVE:
+                moveState = MoveEvent.MoveState.MOVE_STATE_ONGOING;
+                break;
+            case InputEvent.Action.UP:
+                moveState = MoveEvent.MoveState.MOVE_STATE_END;
+                break;
+        }
+
+        Vector3 grabPoint =
+                originInParentSpace.plus(
+                        directionInParentSpace.toNormalized().times(mHitPointToOriginDistance));
+        Vector3 proposedTranslation = grabPoint.plus(mGrabPointToCenterOffset);
+        Pose proposedPose = new Pose(proposedTranslation, mEntity.getPose().getRotation());
+
+        MoveEvent moveEvent =
+                new MoveEvent(
+                        moveState,
+                        mInitialRay,
+                        currentRay,
+                        mLastPose,
+                        proposedPose,
+                        mLastScale,
+                        mEntity.getScale(),
+                        mInitialParent,
+                        null,
+                        null);
+        mLastPose = mEntity.getPose();
+        mLastScale = mEntity.getScale();
+        return moveEvent;
+    }
+
     @Override
     public boolean onAttach(@NonNull Entity entity) {
         if (mEntity != null) {
             return false;
         }
         mEntity = entity;
+        mLastPose = entity.getPose(Space.PARENT);
+        mLastScale = entity.getScale(Space.PARENT);
+
+        if (entity instanceof GltfEntityImpl) {
+            ((GltfEntityImpl) entity)
+                    .setReformAffordanceEnabled(
+                            /* enabled */ true, mSystemMovable && !mUserAnchorable);
+            entity.addInputEventListener(mRuntimeExecutor, mInputEventListener);
+            return true;
+        }
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
         int reformFlags = ReformOptions.FLAG_POSE_RELATIVE_TO_PARENT;
         reformFlags =
@@ -163,8 +245,6 @@ class MovableComponentImpl implements MovableComponent {
             reformOptions.setCurrentSize(
                     new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
         }
-        mLastPose = entity.getPose(Space.PARENT);
-        mLastScale = entity.getScale(Space.PARENT);
         ((AndroidXrEntity) entity).updateReformOptions();
         ((AndroidXrEntity) mEntity).addReformEventConsumer(mReformEventConsumer, mRuntimeExecutor);
         return true;
@@ -172,6 +252,14 @@ class MovableComponentImpl implements MovableComponent {
 
     @Override
     public void onDetach(@NonNull Entity entity) {
+        if (entity instanceof GltfEntityImpl) {
+            ((GltfEntityImpl) entity)
+                    .setReformAffordanceEnabled(
+                            /* enabled */ false, mSystemMovable && !mUserAnchorable);
+            entity.removeInputEventListener(mInputEventListener);
+            mEntity = null;
+            return;
+        }
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
         reformOptions.setEnabledReform(
                 reformOptions.getEnabledReform() & ~ReformOptions.ALLOW_MOVE);

@@ -135,4 +135,20 @@ public interface GltfFeature : RenderingFeature {
      * @param listener The listener to remove.
      */
     @MainThread public fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
+
+    /**
+     * Adds reform affordance to the passed GltfEntity.
+     *
+     * @param entity The GltfEntity to attach the reform affordance to.
+     * @param enabled Whether the affordance is enabled.
+     * @param executor The executor to run the listener on.
+     * @param systemMovable Whether the system should handle move events.
+     */
+    @MainThread
+    public fun setReformAffordanceEnabled(
+        entity: GltfEntity,
+        enabled: Boolean,
+        executor: Executor,
+        systemMovable: Boolean,
+    )
 }

@@ -46,7 +46,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -240,8 +239,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     }
 
     @Test
-    @Ignore("b/444190961")
-    fun scrollBy_scrollOnTheEdge_doesNotConsumeAllTheDelta() {
+    fun scrollBy_onTheEdge_doesNotConsumeAllTheDelta() {
         val state = ListState()
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
@@ -254,15 +252,14 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
             }
         }
 
-        // Scroll down 50dp
+        // Scroll down by 50dp.
         state.scrollByAndCheckConsumedValue(delta = 50f, consumed = 50f)
-        // Scroll up 100dp (even though only 50dp is available)
+        // Scroll up by 100dp when only 50dp is available. List should consume only 50dp of it.
         state.scrollByAndCheckConsumedValue(delta = -100f, consumed = -50f)
     }
 
     @Test
-    @Ignore("b/444190961")
-    fun scrollBy_tinyValues_areAccumulated() {
+    fun tinyValues_thatNotConsumed_areAccumulatedForSuccessiveScrolls() {
         val state = ListState()
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {

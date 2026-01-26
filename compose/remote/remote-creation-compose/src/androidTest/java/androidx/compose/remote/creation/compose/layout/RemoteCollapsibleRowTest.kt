@@ -23,6 +23,8 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
+import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.toInput
+import androidx.compose.remote.creation.compose.test.util.propertyName
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -64,34 +66,36 @@ class RemoteCollapsibleRowTest {
     @Test
     fun grid() =
         composeTestRule.runScreenshotTest {
-            gridScreenshotUI.GridContent(getLayoutAlignmentUIs() + collapsibleUI.getUIs())
+            gridScreenshotUI.GridContent(getLayoutAlignmentUIs() + collapsibleUI.getUIs().toInput())
         }
 
-    private fun getLayoutAlignmentUIs() =
+    private fun getLayoutAlignmentUIs():
+        List<Pair<String, @RemoteComposable @Composable () -> Unit>> =
         sequence {
                 for (alignment in alignments) {
                     for (arrangement in arrangements) {
                         yield(
-                            @RemoteComposable @Composable {
-                                // TODO(b/447100988): replace size by fillMaxSize in all those
-                                // RemoteCollapsibleRow
-                                RemoteCollapsibleRow(
-                                    modifier = RemoteModifier.size(DefaultContainerSize),
-                                    horizontalArrangement = arrangement,
-                                    verticalAlignment = alignment,
-                                ) {
-                                    RemoteBox(
-                                        modifier =
-                                            RemoteModifier.size(48.rdp)
-                                                .background(Color(0xFF6200EE))
-                                    )
-                                    RemoteBox(
-                                        modifier =
-                                            RemoteModifier.size(24.rdp)
-                                                .background(Color(0xFF03DAC6))
-                                    )
+                            "${alignment.propertyName()} ${arrangement.propertyName()}" to
+                                @RemoteComposable @Composable {
+                                    // TODO(b/447100988): replace size by fillMaxSize in all those
+                                    // RemoteCollapsibleRow
+                                    RemoteCollapsibleRow(
+                                        modifier = RemoteModifier.size(DefaultContainerSize),
+                                        horizontalArrangement = arrangement,
+                                        verticalAlignment = alignment,
+                                    ) {
+                                        RemoteBox(
+                                            modifier =
+                                                RemoteModifier.size(48.rdp)
+                                                    .background(Color(0xFF6200EE))
+                                        )
+                                        RemoteBox(
+                                            modifier =
+                                                RemoteModifier.size(24.rdp)
+                                                    .background(Color(0xFF03DAC6))
+                                        )
+                                    }
                                 }
-                            }
                         )
                     }
                 }

@@ -58,31 +58,34 @@ class ClipModifierTest {
     fun grid() =
         composeTestRule.runScreenshotTest {
             val clips =
-                listOf<@Composable RemoteModifier.() -> RemoteModifier>(
-                    { this },
-                    { clip(RectangleShape) },
-                    { clip(CircleShape) },
-                    { clip(CircleShape, DpSize(44.dp, 32.dp)) },
-                    { clip(RoundedCornerShape(size = 10.dp)) },
-                    { clip(RoundedCornerShape(percent = 25)) },
-                    { clip(RoundedCornerShape(percent = 50)) },
-                    { clip(RoundedCornerShape(topStart = 10.dp, bottomEnd = 10.dp)) },
+                listOf<Pair<String, @Composable RemoteModifier.() -> RemoteModifier>>(
+                    "RectangleShape" to { clip(RectangleShape) },
+                    "CircleShape" to { clip(CircleShape) },
+                    "CircleShape DpSize" to { clip(CircleShape, DpSize(44.dp, 32.dp)) },
+                    "RoundedCornerShape size" to { clip(RoundedCornerShape(size = 10.dp)) },
+                    "RoundedCornerShape percent 25" to { clip(RoundedCornerShape(percent = 25)) },
+                    "RoundedCornerShape percent 50" to { clip(RoundedCornerShape(percent = 50)) },
+                    "RoundedCornerShape custom size" to
+                        {
+                            clip(RoundedCornerShape(topStart = 10.dp, bottomEnd = 10.dp))
+                        },
                 )
 
             gridScreenshotUI.GridContent(
                 sequence {
-                        for (clipFn in clips) {
+                        for ((name, clipFn) in clips) {
                             yield(
-                                @RemoteComposable @Composable {
-                                    RemoteBox {
-                                        RemoteBox(
-                                            modifier =
-                                                RemoteModifier.size(DefaultContainerSize)
-                                                    .clipFn()
-                                                    .background(Color.Red)
-                                        )
+                                name to
+                                    @RemoteComposable @Composable {
+                                        RemoteBox {
+                                            RemoteBox(
+                                                modifier =
+                                                    RemoteModifier.size(DefaultContainerSize)
+                                                        .clipFn()
+                                                        .background(Color.Red)
+                                            )
+                                        }
                                     }
-                                }
                             )
                         }
                     }

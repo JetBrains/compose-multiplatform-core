@@ -175,6 +175,14 @@ internal class LocalCallSilenceExtensionImpl(
      */
     private suspend fun localCallSilenceStateChanged(isSilenced: Boolean) {
         Log.i(TAG, "localCallSilenceStateChanged: isSilenced=[$isSilenced]")
+        if (!canUserUpdateSilenceState.value) {
+            Log.w(
+                TAG,
+                "localCallSilenceStateChanged: Remote ICS requested update," +
+                    " but 'canUserUpdateSilenceState' is false.",
+            )
+            return
+        }
         // notify the voip application of the remote InCallService update
         onLocalSilenceUpdate(isSilenced)
         // update all remote surfaces to be in sync with the new state

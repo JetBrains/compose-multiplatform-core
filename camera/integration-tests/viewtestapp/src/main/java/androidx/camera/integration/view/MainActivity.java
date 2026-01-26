@@ -30,9 +30,6 @@ import android.widget.Toast;
 
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.camera2.Camera2Config;
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
-import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.testing.impl.util.EdgeToEdgeUtil;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -88,16 +85,6 @@ public class MainActivity extends AppCompatActivity {
     // The default scale type is FILL_CENTER.
     public static final int DEFAULT_SCALE_TYPE_ID = 1;
 
-    /** Intent extra representing type of camera implementation. */
-    public static final String INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation";
-
-    // Camera2 implementation.
-    public static final String CAMERA2_IMPLEMENTATION_OPTION = "camera2";
-    // Camera-pipe implementation.
-    public static final String CAMERA_PIPE_IMPLEMENTATION_OPTION = "camera_pipe";
-
-    private static String sCameraImplementationType;
-
     private boolean mCheckedPermissions = false;
     private FragmentType mFragmentType = FragmentType.CAMERA_CONTROLLER;
 
@@ -116,21 +103,6 @@ public class MainActivity extends AppCompatActivity {
             if (testItem != null) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
-                }
-            }
-            String cameraImplementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
-            if (cameraImplementation != null && sCameraImplementationType == null) {
-                if (cameraImplementation.equals(CAMERA2_IMPLEMENTATION_OPTION)) {
-                    ProcessCameraProvider.configureInstance(Camera2Config.defaultConfig());
-                    sCameraImplementationType = cameraImplementation;
-                } else if (cameraImplementation.equals(CAMERA_PIPE_IMPLEMENTATION_OPTION)) {
-                    ProcessCameraProvider.configureInstance(
-                            CameraPipeConfig.defaultConfig());
-                    sCameraImplementationType = cameraImplementation;
-                } else {
-                    throw new IllegalArgumentException("Failed to configure the CameraProvider "
-                            + "using unknown " + cameraImplementation
-                            + " implementation option in " + TAG + ".");
                 }
             }
         }

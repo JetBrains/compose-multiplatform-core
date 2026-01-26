@@ -128,7 +128,7 @@ public class FakeSceneRuntime(
         name: String,
         parent: Entity?,
     ): PanelEntity =
-        FakePanelEntity(view).apply {
+        FakePanelEntity(view, name).apply {
             dpPerMeter = deviceDpPerMeter
             size = dimensions
             this.parent = parent
@@ -143,7 +143,7 @@ public class FakeSceneRuntime(
         name: String,
         parent: Entity?,
     ): PanelEntity =
-        FakePanelEntity(view).apply {
+        FakePanelEntity(view, name).apply {
             dpPerMeter = deviceDpPerMeter
             sizeInPixels = pixelDimensions
             this.parent = parent
@@ -157,7 +157,7 @@ public class FakeSceneRuntime(
         hostActivity: Activity,
         parent: Entity?,
     ): ActivityPanelEntity =
-        FakeActivityPanelEntity().apply {
+        FakeActivityPanelEntity(name).apply {
             dpPerMeter = deviceDpPerMeter
             sizeInPixels = windowBoundsPx
             this.parent = parent
@@ -196,7 +196,7 @@ public class FakeSceneRuntime(
     }
 
     override fun createGroupEntity(pose: Pose, name: String, parent: Entity?): Entity {
-        val entity = FakeEntity()
+        val entity = FakeEntity(name)
         entity.setPose(pose)
         entity.parent = parent
 

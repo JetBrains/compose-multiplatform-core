@@ -171,6 +171,7 @@ fun Record.toPlatformRecord(): PlatformRecord {
         }
 }
 
+@SuppressLint("NewApi") // Guarded by sdk extension check
 private fun Record.toPlatformRecordExt13(): PlatformRecord? {
     if (!isAtLeastSdkExtension13()) {
         return null

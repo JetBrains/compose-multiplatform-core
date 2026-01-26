@@ -216,8 +216,13 @@ public open class RemoteComposeContext {
         return mRemoteWriter.textTransform(txtId, start, len, operation)
     }
 
-    public fun bitmapTextMeasure(textId: Int, bmFontId: Int, measureWidth: Int): Float {
-        return mRemoteWriter.bitmapTextMeasure(textId, bmFontId, measureWidth)
+    public fun bitmapTextMeasure(
+        textId: Int,
+        bmFontId: Int,
+        measureWidth: Int,
+        glyphSpacing: Float,
+    ): Float {
+        return mRemoteWriter.bitmapTextMeasure(textId, bmFontId, measureWidth, glyphSpacing)
     }
 
     public fun MatrixMultiply(matrixId: Float, from: FloatArray?, out: FloatArray?) {
@@ -494,8 +499,9 @@ public open class RemoteComposeContext {
         end: Int,
         x: Float,
         y: Float,
+        glyphSpacing: Float,
     ) {
-        mRemoteWriter.drawBitmapFontTextRun(textId, bitmapFontId, start, end, x, y)
+        mRemoteWriter.drawBitmapFontTextRun(textId, bitmapFontId, start, end, x, y, glyphSpacing)
     }
 
     public fun drawTextAnchored(
@@ -533,8 +539,19 @@ public open class RemoteComposeContext {
         y: Float,
         panX: Float,
         panY: Float,
+        glyphSpacing: Float,
     ) {
-        mRemoteWriter.drawBitmapTextAnchored(text, bitmapFontId, start, end, x, y, panX, panY)
+        mRemoteWriter.drawBitmapTextAnchored(
+            text,
+            bitmapFontId,
+            start,
+            end,
+            x,
+            y,
+            panX,
+            panY,
+            glyphSpacing,
+        )
     }
 
     public fun drawBitmapTextAnchored(
@@ -546,8 +563,19 @@ public open class RemoteComposeContext {
         y: Float,
         panX: Float,
         panY: Float,
+        glyphSpacing: Float,
     ) {
-        mRemoteWriter.drawBitmapTextAnchored(textId, bitmapFontId, start, end, x, y, panX, panY)
+        mRemoteWriter.drawBitmapTextAnchored(
+            textId,
+            bitmapFontId,
+            start,
+            end,
+            x,
+            y,
+            panX,
+            panY,
+            glyphSpacing,
+        )
     }
 
     public fun drawTweenPath(path1Id: Int, path2Id: Int, tween: Float, start: Float, stop: Float) {
