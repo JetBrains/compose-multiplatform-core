@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.ui.scene.ComposeScene
 import java.awt.Color
+import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
@@ -56,7 +57,7 @@ import org.jetbrains.skiko.hostOs
 internal class ComposeSceneAccessible(
     private val isWindowLevel: Boolean = false,
     private val forceEnableA11y: Boolean = false,
-    private val parent: () -> Accessible?,
+    private val sceneRoot: () -> Component,
     private val accessibilityControllersProvider: () -> List<AccessibilityController>,
 ) : Accessible {
     private val a11yEnabled by lazy {
@@ -80,6 +81,40 @@ internal class ComposeSceneAccessible(
 
     fun indexOfChild(controller: AccessibilityController): Int {
         return accessibilityControllersProvider().indexOf(controller)
+    }
+
+    /**
+     * Finds and returns a descendant [Accessible] that should receive accessibility focus when
+     * no element is actually focused.
+     *
+     * This is used, for example, to transfer focus when the currently focused [Accessible] is
+     * removed from the hierarchy.
+     */
+    fun defaultAccessibilityFocusTarget(): Accessible? {
+        val ignoredRoles = setOf(
+            AccessibleRole.PANEL,
+            AccessibleRole.GROUP_BOX,
+            AccessibleRole.UNKNOWN
+        )
+
+        // DFS over the Accessible hierarchy
+        val queue = ArrayDeque<Accessible>()
+        queue.addAll(accessibilityControllersProvider().map { it.rootAccessible })
+        while (queue.isNotEmpty()) {
+            val accessible = queue.removeFirst()
+            val context = accessible.accessibleContext ?: continue
+            if (context.accessibleRole !in ignoredRoles) {
+                return accessible
+            }
+
+            val childCount = context.accessibleChildrenCount
+            for (index in 0 until childCount) {
+                val child = context.getAccessibleChild(index)
+                queue.addFirst(child)
+            }
+        }
+
+        return null
     }
 
     inner class ComposeSceneAccessibleContext : AccessibleContext(), AccessibleComponent {
@@ -126,7 +161,7 @@ internal class ComposeSceneAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            return parent()
+            return sceneRoot().parent as? Accessible
         }
 
         override fun getAccessibleChildrenCount(): Int {

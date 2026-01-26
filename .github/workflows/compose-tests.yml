@@ -200,7 +200,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chrome: [ '118', 'stable' ]
+        chrome: [ '134', 'stable' ]
         task: [ 'Js', 'Wasm' ]
     steps:
       - name: Checkout Repository
@@ -216,6 +216,7 @@ jobs:
 
       - name: Setup Google Chrome
         uses: browser-actions/setup-chrome@v2
+        id: setup-chrome
         with:
           chrome-version: ${{ matrix.chrome }}
           install-chromedriver: true
@@ -228,7 +229,9 @@ jobs:
 
       - name: Run Web Chrome Tests
         run: |
-          ./gradlew :mpp:testWeb${{ matrix.task }} ${{ env.GRADLE_WEB_TESTS_FLAGS }} \
+          echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns && \
+          CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }} ./gradlew :mpp:testWeb${{ matrix.task }} \
+            --no-daemon --stacktrace --no-parallel \
             -Pjetbrains.androidx.web.tests.enableFirefox=false \
             -Pjetbrains.androidx.web.tests.enableChrome=true
 
