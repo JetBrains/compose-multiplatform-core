@@ -36,7 +36,7 @@ android {
     namespace = "androidx.xr.arcore.samples"
 
     defaultConfig {
-        minSdk = 27
+        minSdk { version = release(27) }
     }
 }
 

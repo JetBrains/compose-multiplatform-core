@@ -60,7 +60,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 24
+        minSdk { version = release(24) }
     }
 }
 

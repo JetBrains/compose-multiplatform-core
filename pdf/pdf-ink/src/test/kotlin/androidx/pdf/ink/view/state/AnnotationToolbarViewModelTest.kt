@@ -19,6 +19,7 @@ package androidx.pdf.ink.view.state
 import androidx.pdf.ink.view.AnnotationToolbarViewModel
 import androidx.pdf.ink.view.brush.model.BrushSizes
 import androidx.pdf.ink.view.colorpalette.model.Color
+import androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_BOTTOM
 import androidx.pdf.ink.view.tool.Eraser
 import androidx.pdf.ink.view.tool.Highlighter
 import androidx.pdf.ink.view.tool.Pen
@@ -50,6 +51,7 @@ class AnnotationToolbarViewModelTest {
             canRedo = false,
             highlighterState = ToolAttributes(1, 2, Color(123, 4, 5, "blue color")),
             penState = ToolAttributes(2, 3, Color(123, 4, 5, "red color")),
+            dockedState = DOCK_STATE_BOTTOM,
             isExpanded = true,
         )
 
@@ -325,6 +327,7 @@ class AnnotationToolbarViewModelTest {
                 canRedo = false,
                 highlighterState = ToolAttributes(1, 2, Color(123, 4, 5, "blue color")),
                 penState = ToolAttributes(2, 3, Color(123, 4, 5, "red color")),
+                dockedState = DOCK_STATE_BOTTOM,
                 isExpanded = true,
             )
         val collectedEffects = mutableListOf<ToolbarEffect>()
@@ -368,6 +371,18 @@ class AnnotationToolbarViewModelTest {
         // while expanding or collapsing
         assertThat(viewmodel.state.value.isColorPaletteVisible).isFalse()
         assertThat(viewmodel.state.value.isBrushSizeSliderVisible).isFalse()
+    }
+
+    @Test
+    fun onAction_DockedStateChanged_updatesState() {
+        val viewmodel = createViewModel()
+        // Assuming the initial state is DOCK_STATE_BOTTOM, change it to DOCK_STATE_END
+        val newDockState =
+            androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_END
+
+        viewmodel.onAction(ToolbarIntent.DockStateChanged(newDockState))
+
+        assertThat(viewmodel.state.value.dockedState).isEqualTo(newDockState)
     }
 
     private fun <T> CoroutineScope.collectInto(flow: Flow<T>, destination: MutableList<T>): Job {

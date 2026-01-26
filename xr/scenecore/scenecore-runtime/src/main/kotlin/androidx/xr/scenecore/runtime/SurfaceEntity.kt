@@ -20,6 +20,9 @@ import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
+import kotlin.jvm.JvmOverloads
 
 /**
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
@@ -283,15 +286,30 @@ public interface SurfaceEntity : Entity {
         }
     }
 
+    /** Specifies the draw mode of the mesh. */
+    public annotation class DrawMode {
+        public companion object {
+            /** Draw the mesh as a list of triangles. */
+            public const val TRIANGLES: Int = 0
+            /** Draw the mesh as a triangle strip. */
+            public const val TRIANGLE_STRIP: Int = 1
+            /** Draw the mesh as a triangle fan. */
+            public const val TRIANGLE_FAN: Int = 2
+        }
+    }
+
     /** Represents the shape of the spatial canvas which the surface is texture mapped to. */
     public interface Shape {
         public val dimensions: Dimensions
 
         /**
-         * A 2D rectangle-shaped canvas. Width and height are represented in the local spatial
-         * coordinate system of the entity. (0,0,0) is the center of the canvas.
+         * A 2D rectangle-shaped canvas. Width, height and corner radius are represented in the
+         * local spatial coordinate system of the entity. (0,0,0) is the center of the canvas.
          */
-        public class Quad(public val extents: FloatSize2d) : Shape {
+        public class Quad
+        @JvmOverloads
+        constructor(public val extents: FloatSize2d, public val cornerRadius: Float = 0.0f) :
+            Shape {
             override val dimensions: Dimensions = Dimensions(extents.width, extents.height, 0f)
         }
 
@@ -309,6 +327,57 @@ public interface SurfaceEntity : Entity {
          */
         public class Hemisphere(public val radius: Float) : Shape {
             override val dimensions: Dimensions = Dimensions(radius * 2, radius * 2, radius)
+        }
+
+        /**
+         * A triangle mesh. The mesh is specified by a list of positions and texture coordinates and
+         * an optional list of indices.
+         */
+        public class TriangleMesh(
+            /** The positions of the vertices in the mesh. */
+            public var positions: FloatBuffer,
+            public var texCoords: FloatBuffer,
+            public var indices: IntBuffer?,
+        )
+
+        /**
+         * A custom mesh canvas. The mesh is specified by a left eye mesh and an optional right eye
+         * mesh.
+         */
+        public class CustomMesh(
+            public val leftEye: TriangleMesh,
+            public val rightEye: TriangleMesh?,
+            public val drawMode: Int = DrawMode.TRIANGLES,
+        ) : Shape {
+            override val dimensions: Dimensions by lazy {
+                val min = floatArrayOf(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE)
+                val max = floatArrayOf(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE)
+
+                fun updateBounds(positions: FloatBuffer) {
+                    // Rewind buffer to make sure we start from the beginning
+                    positions.rewind()
+                    while (positions.remaining() >= 3) {
+                        val x = positions.get()
+                        val y = positions.get()
+                        val z = positions.get()
+                        min[0] = kotlin.math.min(min[0], x)
+                        max[0] = kotlin.math.max(max[0], x)
+                        min[1] = kotlin.math.min(min[1], y)
+                        max[1] = kotlin.math.max(max[1], y)
+                        min[2] = kotlin.math.min(min[2], z)
+                        max[2] = kotlin.math.max(max[2], z)
+                    }
+                }
+
+                updateBounds(leftEye.positions)
+                rightEye?.let { updateBounds(it.positions) }
+
+                val width = max[0] - min[0]
+                val height = max[1] - min[1]
+                val depth = max[2] - min[2]
+
+                Dimensions(width, height, depth)
+            }
         }
     }
 

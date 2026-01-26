@@ -133,8 +133,8 @@ class FakeEntityTest {
 
     @Test
     fun setPose_withDifferentSpaces() {
-        check(underTest.getPose(Space.PARENT) == Pose.Identity)
-        check(underTest.getPose(Space.REAL_WORLD) == Pose.Identity)
+        assertThat(underTest.getPose(Space.PARENT)).isEqualTo(Pose.Identity)
+        assertThat(underTest.getPose(Space.REAL_WORLD)).isEqualTo(Pose.Identity)
 
         val poseParent = Pose(Vector3.One, Quaternion.Identity)
         underTest.setPose(poseParent, Space.PARENT)
@@ -143,13 +143,6 @@ class FakeEntityTest {
         val poseWorld = Pose(Vector3.Right, Quaternion.Identity)
         underTest.setPose(poseWorld, Space.REAL_WORLD)
         assertPose(poseWorld, underTest.getPose(Space.REAL_WORLD))
-    }
-
-    @Test
-    fun getGravityAlignedPose_getsPoseCorrectly() {
-        val pose = Pose(Vector3.One, Quaternion.Identity)
-
-        assertThat(underTest.getGravityAlignedPose(pose)).isEqualTo(pose)
     }
 
     @Test

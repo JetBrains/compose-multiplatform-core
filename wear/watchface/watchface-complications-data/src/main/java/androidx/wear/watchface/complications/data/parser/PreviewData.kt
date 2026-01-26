@@ -19,14 +19,17 @@ package androidx.wear.watchface.complications.data.parser
 import android.content.Context
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
+import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.icu.text.NumberFormat
 import android.icu.util.TimeZone
 import android.os.Build
+import android.os.PersistableBundle
 import android.text.format.DateFormat
 import android.util.Log
 import android.util.TypedValue
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.wear.watchface.complications.data.ColorRamp
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationText
@@ -45,6 +48,7 @@ import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.complications.data.TimeDifferenceComplicationText
 import androidx.wear.watchface.complications.data.TimeDifferenceStyle
 import androidx.wear.watchface.complications.data.TimeFormatComplicationText
+import androidx.wear.watchface.complications.data.WeightedElementsComplicationData
 import androidx.wear.watchface.complications.data.formatting.ComplicationTextFormatting
 import java.io.IOException
 import java.time.Instant
@@ -65,12 +69,15 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private const val TAG_COMPLICATION = "complication"
         private const val TAG_TEXT = "text"
         private const val TAG_TITLE = "title"
+        private const val TAG_ELEMENT = "element"
         private const val TAG_PLAIN = "plain"
         private const val TAG_FORMATTED = "formatted"
         private const val TAG_TIME = "time"
         private const val TAG_DATE = "date"
         private const val TAG_PARAM = "param"
         private const val TAG_TIME_DIFFERENCE = "time-difference"
+        private const val TAG_EXTENDED_DATA = "extended-data"
+        private const val TAG_STRING_REPLACEMENT = "string-replacement"
 
         // XML Attributes
         private const val ATTR_TYPE = "type"
@@ -93,9 +100,16 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private const val ATTR_COLOR_RAMP_INTERPOLATED = "colorRampInterpolated"
         private const val ATTR_MIN_UNIT = "minUnit"
         private const val ATTR_DISPLAY_AS_NOW = "displayAsNow"
+        private const val ATTR_KEY = "key"
+        private const val ATTR_DICTIONARY_KEY = "dictionaryKey"
+        private const val ATTR_SKELETON_VALUE = "skeletonValue"
+        private const val ATTR_WEIGHT = "weight"
+        private const val ATTR_COLOR = "color"
+        private const val ATTR_BACKGROUND_COLOR = "backgroundColor"
 
         // Complication Type Strings
         private const val TYPE_STR_GOAL_PROGRESS = "GOAL_PROGRESS"
+        private const val TYPE_STR_WEIGHTED_ELEMENTS = "WEIGHTED_ELEMENTS"
         private const val TYPE_STR_RANGED_VALUE = "RANGED_VALUE"
         private const val TYPE_STR_SHORT_TEXT = "SHORT_TEXT"
         private const val TYPE_STR_LONG_TEXT = "LONG_TEXT"
@@ -122,6 +136,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @JvmStatic
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(XmlPullParserException::class, IOException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         fun inflate(providerContext: Context, parser: XmlResourceParser): PreviewData {
             // We use providerContext for both parser and provider context.
             // This preserves the old (slightly broken) behavior for external callers.
@@ -141,6 +156,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @JvmStatic
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(XmlPullParserException::class, IOException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         internal fun inflate(
             parserContext: Context,
             providerContext: Context,
@@ -171,6 +187,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseComplicationTag(
             parser: XmlResourceParser,
             type: ComplicationType,
@@ -187,6 +204,13 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                     parseRangedValueComplication(parser, parserContext, providerContext, textUtils)
                 ComplicationType.GOAL_PROGRESS ->
                     parseGoalProgressComplication(parser, parserContext, providerContext, textUtils)
+                ComplicationType.WEIGHTED_ELEMENTS ->
+                    parseWeightedElementsComplication(
+                        parser,
+                        parserContext,
+                        providerContext,
+                        textUtils,
+                    )
                 ComplicationType.MONOCHROMATIC_IMAGE ->
                     parseMonochromaticImageComplication(parser, providerContext)
                 ComplicationType.SMALL_IMAGE -> parseSmallImageComplication(parser, providerContext)
@@ -199,6 +223,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseShortTextComplication(
             parser: XmlResourceParser,
             parserContext: Context,
@@ -209,9 +234,11 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val smallImage = parseSmallImage(parser, providerContext)
             var text: ComplicationText? = null
             var title: ComplicationText? = null
+            val extras = PersistableBundle()
 
-            parseChildren(parser, parserContext, providerContext, textUtils) { tagName, textContent
-                ->
+            parseChildren(parser, parserContext, providerContext, textUtils, extras) {
+                tagName,
+                textContent ->
                 when (tagName) {
                     TAG_TEXT -> text = textContent.let { PlainComplicationText.Builder(it).build() }
                     TAG_TITLE ->
@@ -226,11 +253,13 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setTitle(title)
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
+                .setExtras(extras)
                 .build()
         }
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseLongTextComplication(
             parser: XmlResourceParser,
             parserContext: Context,
@@ -241,9 +270,11 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val smallImage = parseSmallImage(parser, providerContext)
             var text: ComplicationText? = null
             var title: ComplicationText? = null
+            val extras = PersistableBundle()
 
-            parseChildren(parser, parserContext, providerContext, textUtils) { tagName, textContent
-                ->
+            parseChildren(parser, parserContext, providerContext, textUtils, extras) {
+                tagName,
+                textContent ->
                 when (tagName) {
                     TAG_TEXT -> text = textContent.let { PlainComplicationText.Builder(it).build() }
                     TAG_TITLE ->
@@ -258,11 +289,13 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setTitle(title)
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
+                .setExtras(extras)
                 .build()
         }
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseRangedValueComplication(
             parser: XmlResourceParser,
             parserContext: Context,
@@ -287,9 +320,11 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val colorRamp = parseColorRampFromAttribute(parser, providerContext)
             var text: ComplicationText? = null
             var title: ComplicationText? = null
+            val extras = PersistableBundle()
 
-            parseChildren(parser, parserContext, providerContext, textUtils) { tagName, textContent
-                ->
+            parseChildren(parser, parserContext, providerContext, textUtils, extras) {
+                tagName,
+                textContent ->
                 when (tagName) {
                     TAG_TEXT -> text = textContent.let { PlainComplicationText.Builder(it).build() }
                     TAG_TITLE ->
@@ -309,11 +344,13 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setColorRamp(colorRamp)
+                .setExtras(extras)
                 .build()
         }
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseGoalProgressComplication(
             parser: XmlResourceParser,
             parserContext: Context,
@@ -333,9 +370,11 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val colorRamp = parseColorRampFromAttribute(parser, providerContext)
             var text: ComplicationText? = null
             var title: ComplicationText? = null
+            val extras = PersistableBundle()
 
-            parseChildren(parser, parserContext, providerContext, textUtils) { tagName, textContent
-                ->
+            parseChildren(parser, parserContext, providerContext, textUtils, extras) {
+                tagName,
+                textContent ->
                 when (tagName) {
                     TAG_TEXT -> text = textContent.let { PlainComplicationText.Builder(it).build() }
                     TAG_TITLE ->
@@ -353,6 +392,73 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setColorRamp(colorRamp)
+                .setExtras(extras)
+                .build()
+        }
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        @Throws(IOException::class, XmlPullParserException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
+        private fun parseWeightedElementsComplication(
+            parser: XmlResourceParser,
+            parserContext: Context,
+            providerContext: Context,
+            textUtils: ComplicationTextFormatting,
+        ): WeightedElementsComplicationData {
+            val elementBackgroundColor =
+                getResourceIdFromAttribute(parser, ATTR_BACKGROUND_COLOR, providerContext).let {
+                    if (it != 0) providerContext.getColor(it) else Color.TRANSPARENT
+                }
+            val monochromaticImage = parseMonochromaticImage(parser, providerContext)
+            val smallImage = parseSmallImage(parser, providerContext)
+            var text: ComplicationText? = null
+            var title: ComplicationText? = null
+            val elements = mutableListOf<WeightedElementsComplicationData.Element>()
+            val extras = PersistableBundle()
+
+            parseChildren(
+                parser,
+                parserContext,
+                providerContext,
+                textUtils,
+                extras,
+                onNonCommonTag = {
+                    if (it.name == TAG_ELEMENT) {
+                        val weight =
+                            requireNotNull(getFloatAttribute(it, ATTR_WEIGHT)) {
+                                "'weight' attribute is required for element"
+                            }
+                        require(weight > 0) { "'weight' attribute must be > 0" }
+
+                        val colorRes = getResourceIdFromAttribute(it, ATTR_COLOR, providerContext)
+                        require(colorRes != 0) { "'color' attribute is required for element" }
+                        val color = providerContext.getColor(colorRes)
+
+                        elements.add(WeightedElementsComplicationData.Element(weight, color))
+                        skip(it)
+                        true
+                    } else {
+                        false
+                    }
+                },
+            ) { tagName, textContent ->
+                when (tagName) {
+                    TAG_TEXT -> text = textContent.let { PlainComplicationText.Builder(it).build() }
+                    TAG_TITLE ->
+                        title = textContent.let { PlainComplicationText.Builder(it).build() }
+                }
+            }
+
+            return WeightedElementsComplicationData.Builder(
+                    elements,
+                    contentDescription = ComplicationText.EMPTY,
+                )
+                .setElementBackgroundColor(elementBackgroundColor)
+                .setText(text)
+                .setTitle(title)
+                .setMonochromaticImage(monochromaticImage)
+                .setSmallImage(smallImage)
+                .setExtras(extras)
                 .build()
         }
 
@@ -392,6 +498,18 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .build()
         }
 
+        /**
+         * Parses children of a complication tag.
+         *
+         * Such tags can be common across different complication types such as text, title,
+         * extended-data, etc. or specific to a particular complication type.
+         *
+         * Handling of non-common tags is delegated back as is to the caller through onNonCommonTag
+         * callback, where if the delegate returns true [parsing succeeded], we move to next child.
+         *
+         * Text tags such as title and text and parsed into their final string representation then
+         * passed back to the caller through onTextResolved.
+         */
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         @Throws(IOException::class, XmlPullParserException::class)
         private fun parseChildren(
@@ -399,19 +517,77 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
-            block: (String, String) -> Unit,
+            extras: PersistableBundle,
+            onNonCommonTag: ((XmlResourceParser) -> Boolean)? = null,
+            onTextResolved: (String, String) -> Unit,
         ) {
             while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_COMPLICATION) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
+
+                if (onNonCommonTag != null && onNonCommonTag(parser)) {
+                    continue
+                }
+
+                val tagName = parser.name
+
+                if (tagName == TAG_EXTENDED_DATA) {
+                    parseExtendedData(parser, parserContext, providerContext, textUtils, extras)
+                    continue
+                }
+
                 val textContent =
                     parseTextElement(parser, parserContext, providerContext, textUtils)
                 if (textContent != null) {
-                    block(parser.name, textContent)
+                    onTextResolved(tagName, textContent)
                 } else {
                     skip(parser)
                 }
+            }
+        }
+
+        private fun parseExtendedData(
+            parser: XmlResourceParser,
+            parserContext: Context,
+            providerContext: Context,
+            textUtils: ComplicationTextFormatting,
+            extras: PersistableBundle,
+        ) {
+            val key = parser.getAttributeValue(null, ATTR_KEY)
+            val skeletonValue = parser.getAttributeValue(null, ATTR_SKELETON_VALUE)
+            val dictionaryKey = parser.getAttributeValue(null, ATTR_DICTIONARY_KEY)
+
+            if (key != null && skeletonValue != null) {
+                extras.putString(key, skeletonValue)
+            }
+
+            if (dictionaryKey != null) {
+                val replacements = PersistableBundle()
+                while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_EXTENDED_DATA) {
+                    if (parser.eventType != XmlPullParser.START_TAG) {
+                        continue
+                    }
+                    if (parser.name == TAG_STRING_REPLACEMENT) {
+                        val replacementKey = parser.getAttributeValue(null, ATTR_KEY)
+                        val replacementText =
+                            parseInnerTextElements(
+                                parser,
+                                parserContext,
+                                providerContext,
+                                textUtils,
+                                TAG_STRING_REPLACEMENT,
+                            )
+                        if (replacementKey != null && replacementText != null) {
+                            replacements.putString(replacementKey, replacementText)
+                        }
+                    } else {
+                        skip(parser)
+                    }
+                }
+                extras.putPersistableBundle(dictionaryKey, replacements)
+            } else {
+                skip(parser)
             }
         }
 
@@ -453,11 +629,24 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): String? {
+            return parseInnerTextElements(
+                parser,
+                parserContext,
+                providerContext,
+                textUtils,
+                parser.name,
+            )
+        }
+
+        private fun parseInnerTextElements(
+            parser: XmlResourceParser,
+            parserContext: Context,
+            providerContext: Context,
+            textUtils: ComplicationTextFormatting,
+            parentTagName: String,
+        ): String? {
             var text: String? = null
-            while (
-                parser.next() != XmlPullParser.END_TAG ||
-                    (parser.name != TAG_TEXT && parser.name != TAG_TITLE)
-            ) {
+            while (parser.next() != XmlPullParser.END_TAG || parser.name != parentTagName) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
@@ -517,7 +706,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         /**
          * Resolves a string from a resource identifier (i.e., "@string/name", "@integer/number").
          */
-        private fun resolveTextResource(context: Context, resourceIdentifier: String): String? {
+        private fun resolveTextResource(context: Context, resourceIdentifier: String): Any? {
             val resources = context.resources
             val resourceName = resourceIdentifier.substring(1)
             val resId = resources.getIdentifier(resourceName, null, context.packageName)
@@ -531,9 +720,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 val typeName = resources.getResourceTypeName(resId)
                 when (typeName) {
                     "string" -> resources.getString(resId)
-                    "integer" ->
-                        NumberFormat.getInstance(Locale.getDefault())
-                            .format(resources.getInteger(resId))
+                    "integer" -> resources.getInteger(resId)
                     else -> {
                         Log.w(TAG, "Unsupported resource type '$typeName' for plain text field.")
                         null
@@ -725,6 +912,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private fun mapComplicationType(typeStr: String): ComplicationType {
             return when (typeStr) {
                 TYPE_STR_GOAL_PROGRESS -> ComplicationType.GOAL_PROGRESS
+                TYPE_STR_WEIGHTED_ELEMENTS -> ComplicationType.WEIGHTED_ELEMENTS
                 TYPE_STR_RANGED_VALUE -> ComplicationType.RANGED_VALUE
                 TYPE_STR_SHORT_TEXT -> ComplicationType.SHORT_TEXT
                 TYPE_STR_LONG_TEXT -> ComplicationType.LONG_TEXT

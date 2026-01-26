@@ -16,6 +16,7 @@
 
 package androidx.pdf.ink
 
+import android.content.Context
 import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.PointF
@@ -30,6 +31,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -39,18 +41,20 @@ import androidx.ink.authoring.InProgressStrokesView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.pdf.EditablePdfDocument
-import androidx.pdf.PdfDocument
+import androidx.pdf.PdfSandboxHandle
 import androidx.pdf.PdfWriteHandle
+import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.annotation.AnnotationsView
 import androidx.pdf.annotation.AnnotationsView.PageAnnotationsData
 import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.OnAnnotationHitListener
+import androidx.pdf.annotation.LocatedAnnotations
+import androidx.pdf.annotation.OnAnnotationLocatedListener
 import androidx.pdf.annotation.highlights.InProgressTextHighlightsListener
 import androidx.pdf.annotation.highlights.models.InProgressHighlightId
 import androidx.pdf.annotation.models.AnnotationsDisplayState
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.VisiblePdfAnnotations
+import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.ink.model.ApplyEditsState
 import androidx.pdf.ink.model.ApplyInProgressException
@@ -59,6 +63,7 @@ import androidx.pdf.ink.util.PageTransformCalculator
 import androidx.pdf.ink.util.toHighlighterConfig
 import androidx.pdf.ink.util.toInkBrush
 import androidx.pdf.ink.view.AnnotationToolbar
+import androidx.pdf.ink.view.draganddrop.ToolbarCoordinator
 import androidx.pdf.ink.view.tool.AnnotationToolInfo
 import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
@@ -95,8 +100,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     public constructor() : super()
 
     protected constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
-
-    private var lastViewportUpdate: ViewportUpdate? = null
 
     /**
      * If `true`, the fragment is in edit mode, allowing for annotating or editing. If `false`, the
@@ -202,6 +205,26 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     private lateinit var wetStrokesViewTouchHandler: WetStrokesViewTouchHandler
     private lateinit var pdfContentLayoutTouchListener: PdfContentLayoutTouchListener
     private lateinit var annotationToolbar: AnnotationToolbar
+
+    private lateinit var toolbarCoordinator: ToolbarCoordinator
+    private lateinit var pdfLoaderHandle: PdfSandboxHandle
+
+    private val toolbarLayoutChangeListener =
+        View.OnLayoutChangeListener {
+            v,
+            left,
+            top,
+            right,
+            bottom,
+            oldLeft,
+            oldTop,
+            oldRight,
+            oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+                wetStrokesView.maskPath = createToolbarMaskPath()
+            }
+        }
+
     private lateinit var pageInfoProvider: PageInfoProviderImpl
 
     private val annotationsViewDispatcher = AnnotationsViewTouchEventDispatcher()
@@ -223,7 +246,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                 )
             }
 
-            override fun onTextHighlightFailed(viewPoint: PointF) {
+            override fun onTextHighlightRejected(viewPoint: PointF) {
                 annotationsTouchEventDispatcher.switchActiveDispatcher(inkViewDispatcher, viewPoint)
             }
 
@@ -234,13 +257,18 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                     documentViewModel.addDraftAnnotation(annotation)
                 }
             }
+
+            override fun onTextHighlightError(exception: RequestFailedException) {
+                // TODO(b/409464802): Propagate it through event callback
+            }
         }
 
-    private val onAnnotationsHitListener =
-        object : OnAnnotationHitListener {
-            override fun onAnnotationHit(keyedPdfAnnotation: KeyedPdfAnnotation) {
+    private val onAnnotationLocatedListener =
+        object : OnAnnotationLocatedListener {
+            override fun onAnnotationsLocated(locatedAnnotations: LocatedAnnotations) {
                 if (documentViewModel.drawingMode.value == AnnotationDrawingMode.EraserMode) {
-                    // TODO: (b/473955799) Call removeAnnotation on EditableDocumentViewModel.
+                    val topAnnotation = locatedAnnotations.annotations.first()
+                    documentViewModel.removeAnnotation(topAnnotation.key)
                 }
             }
         }
@@ -248,6 +276,22 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val documentViewModel: EditableDocumentViewModel by viewModels {
         EditableDocumentViewModel.Factory
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        /**
+         * By starting initialization early, subsequent calls to load a document—whether through a
+         * new [documentUri] or a forced reload via[EditableDocumentViewModel.forceLoadDocument] can
+         * reuse the existing service connection, significantly reducing latency by avoiding
+         * repeated connect/disconnect cycles.
+         */
+        pdfLoaderHandle = SandboxedPdfLoader.startInitialization(context)
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        pdfLoaderHandle.close()
     }
 
     override fun onCreateView(
@@ -260,6 +304,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
         wetStrokesView =
             InProgressStrokesView(requireContext()).apply {
+                id = R.id.pdf_wet_strokes_view
                 layoutParams =
                     ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -277,9 +322,12 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
             }
-
-        inflater.inflate(R.layout.annotation_toolbar_layout, rootView, true)
-        annotationToolbar = rootView.findViewById(R.id.annotationToolbar)
+        annotationToolbar =
+            inflater.inflate(R.layout.annotation_toolbar_layout, null, false) as AnnotationToolbar
+        toolbarCoordinator =
+            ToolbarCoordinator(requireContext()).apply {
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
 
         val pdfContentLayout =
             rootView.findViewById<PdfContentLayout>(
@@ -287,6 +335,8 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
             )
         pdfContentLayout.addView(annotationView)
         pdfContentLayout.addView(wetStrokesView)
+
+        rootView.addView(toolbarCoordinator)
 
         return rootView
     }
@@ -318,11 +368,12 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         setupPdfViewListeners()
         setupAnnotationViewListeners()
         setupAnnotationToolbar()
+        setupToolbarCoordinator(annotationToolbar)
     }
 
     private fun setupAnnotationViewListeners() {
         annotationView.pageInfoProvider = pageInfoProvider
-        annotationView.addOnAnnotationHitListener(onAnnotationsHitListener)
+        annotationView.addOnAnnotationLocatedListener(onAnnotationLocatedListener)
         annotationView.addInProgressTextHighlightsListener(inProgressTextHighlightsListener)
     }
 
@@ -352,25 +403,8 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         }
     }
 
-    /**
-     * If the document is an [EditablePdfDocument], sets it for editing and initializes draft state.
-     * This method must call `super.onLoadDocumentSuccess(document)` first.
-     *
-     * @param document The loaded [PdfDocument].
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun onLoadDocumentSuccess(document: PdfDocument) {
-        super.onLoadDocumentSuccess(document)
-        val initialMatrices =
-            lastViewportUpdate?.let { update ->
-                generatePageRangeTransformationMatrices(
-                    update.firstVisiblePage,
-                    update.visiblePagesCount,
-                    update.pageLocations,
-                    update.zoomLevel,
-                )
-            }
-        documentViewModel.maybeInitialiseForDocument(document, initialMatrices)
+    private fun setupToolbarCoordinator(toolbar: AnnotationToolbar) {
+        toolbarCoordinator.apply { attachToolbar(toolbar) }
     }
 
     override fun onDestroyView() {
@@ -382,6 +416,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         wetStrokesView.removeFinishedStrokesListener(wetStrokesOnFinishedListener)
         annotationToolbar.setAnnotationToolbarListener(null)
         pdfContainer.setOnTouchListener(null)
+        if (::annotationToolbar.isInitialized) {
+            annotationToolbar.removeOnLayoutChangeListener(toolbarLayoutChangeListener)
+        }
     }
 
     private fun updateUiForEditMode(isEnabled: Boolean) {
@@ -396,8 +433,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         } else {
             annotationToolbar.apply {
                 reset()
-                post { wetStrokesView.maskPath = null }
+                wetStrokesView.maskPath = null
             }
+            toolbarCoordinator.updateLayout()
         }
     }
 
@@ -498,14 +536,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                     pageLocations: SparseArray<RectF>,
                     zoomLevel: Float,
                 ) {
-                    lastViewportUpdate =
-                        ViewportUpdate(
-                            firstVisiblePage,
-                            visiblePagesCount,
-                            pageLocations,
-                            zoomLevel,
-                        )
-
                     updateAnnotationDisplayState(
                         firstVisiblePage,
                         visiblePagesCount,
@@ -570,6 +600,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     }
 
     private fun setupAnnotationToolbar() {
+        annotationToolbar.addOnLayoutChangeListener(toolbarLayoutChangeListener)
         annotationToolbar.setAnnotationToolbarListener(
             object : AnnotationToolbar.AnnotationToolbarListener {
                 override fun onToolChanged(toolInfo: AnnotationToolInfo) {
@@ -670,7 +701,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     internal inner class AnnotationsViewTouchEventDispatcher : TouchEventDispatcher {
         override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-            return annotationView.onTouchEvent(event)
+            return annotationView.dispatchTouchEvent(event)
         }
     }
 
@@ -682,7 +713,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     internal inner class PdfViewTouchEventDispatcher : TouchEventDispatcher {
         override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-            return pdfView.onTouchEvent(event)
+            return pdfView.dispatchTouchEvent(event)
         }
     }
 

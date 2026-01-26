@@ -391,7 +391,6 @@ constructor(
         }
         tryResumeUseCaseManager(
             createUseCaseCameraConfig(
-                newUseCases = useCases,
                 graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
                 sessionConfigAdapter = sessionConfigAdapter,
                 isExtensions = useCamera2Extension,
@@ -401,13 +400,11 @@ constructor(
 
     @VisibleForTesting
     internal fun createUseCaseCameraConfig(
-        newUseCases: List<UseCase>,
         sessionConfigAdapter: SessionConfigAdapter,
         graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
         isExtensions: Boolean = false,
     ): UseCaseCameraConfig {
         return UseCaseCameraConfig.create(
-            useCases = newUseCases,
             cameraGraphConfigProvider = cameraGraphConfigProvider,
             sessionConfigAdapter = sessionConfigAdapter,
             graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,

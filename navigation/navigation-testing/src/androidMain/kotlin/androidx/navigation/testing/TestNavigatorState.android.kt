@@ -45,15 +45,15 @@ import kotlinx.coroutines.withContext
  * [coroutineDispatcher].
  */
 public actual class TestNavigatorState
-// TODO: @JvmOverloads conflicts with "actual" constructor
-public constructor(
+@JvmOverloads
+constructor(
     private val context: Context? = null,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : NavigatorState() {
-    public actual constructor() : this(
-        context = null,
-        coroutineDispatcher = Dispatchers.Main.immediate
-    )
+
+    public actual constructor(
+        coroutineDispatcher: CoroutineDispatcher
+    ) : this(null, coroutineDispatcher)
 
     internal val navContext = NavContext(context)
 
@@ -80,7 +80,13 @@ public constructor(
             viewModelStoreProvider,
         )
 
-    public actual fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
+    /**
+     * Restore a previously saved [NavBackStackEntry]. You must have previously called [pop] with
+     * [previouslySavedEntry] and `true`.
+     */
+    public actual fun restoreBackStackEntry(
+        previouslySavedEntry: NavBackStackEntry
+    ): NavBackStackEntry {
         val savedState =
             checkNotNull(savedStates[previouslySavedEntry.id]) {
                 "restoreBackStackEntry(previouslySavedEntry) must be passed a NavBackStackEntry " +

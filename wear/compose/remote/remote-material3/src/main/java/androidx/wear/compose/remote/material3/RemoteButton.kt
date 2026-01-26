@@ -56,6 +56,7 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rb
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
@@ -106,7 +107,7 @@ import androidx.wear.compose.material3.TextConfiguration
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Suppress("RestrictedApiAndroidX")
 public fun RemoteButton(
-    vararg onClick: Action,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     enabled: RemoteBoolean = true.rb,
     colors: RemoteButtonColors = RemoteButtonDefaults.buttonColors(),
@@ -163,7 +164,7 @@ public fun RemoteButton(
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 public fun RemoteButton(
-    vararg onClick: Action,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     enabled: RemoteBoolean = true.rb,
     containerPainter: RemotePainter,
@@ -254,7 +255,7 @@ public fun RemoteButton(
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 public fun RemoteButton(
-    vararg onClick: Action,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     secondaryLabel: @Composable @RemoteComposable (RemoteRowScope.() -> Unit)? = null,
     icon: (@Composable () -> Unit)? = null,
@@ -367,7 +368,7 @@ public fun RemoteButton(
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 public fun RemoteCompactButton(
-    vararg onClick: Action,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     icon: (@Composable () -> Unit)? = null,
     enabled: RemoteBoolean = true.rb,
@@ -379,14 +380,13 @@ public fun RemoteCompactButton(
     label: @Composable @RemoteComposable (RemoteRowScope.() -> Unit)?,
 ) {
     val tapPadding = RemoteButtonDefaults.CompactButtonTapTargetPadding
-    val hasActions = onClick.isNotEmpty()
 
     RemoteBox(
         modifier =
             modifier
                 .compactButtonModifier()
                 .padding(tapPadding)
-                .clickable(*onClick, enabled = enabled.constantValue ?: false && hasActions)
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
     ) {
         if (label != null) {
             RemoteButtonImpl(
@@ -455,7 +455,7 @@ public fun RemoteCompactButton(
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 private fun RemoteButtonImpl(
-    vararg onClick: Action,
+    onClick: Action? = null,
     modifier: RemoteModifier = RemoteModifier,
     colors: RemoteButtonColors,
     containerPainter: RemotePainter?,
@@ -468,9 +468,11 @@ private fun RemoteButtonImpl(
     labelFont: TextStyle,
     content: @Composable @RemoteComposable RemoteRowScope.() -> Unit,
 ) {
-    val hasActions = onClick.isNotEmpty()
     val containerModifier =
-        RemoteModifier.clickable(*onClick, enabled = enabled.constantValue ?: false && hasActions)
+        RemoteModifier.clickable(
+                actions = buildList { onClick?.let { add(it) } },
+                enabled = enabled.constantValueOrNull ?: false && onClick != null,
+            )
             .padding(contentPadding)
 
     RemoteRow(
@@ -503,7 +505,7 @@ private fun RemoteButtonImpl(
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 private fun RemoteButtonImpl(
-    vararg onClick: Action,
+    onClick: Action? = null,
     modifier: RemoteModifier = RemoteModifier,
     secondaryLabelContent: (@Composable @RemoteComposable RemoteRowScope.() -> Unit)?,
     icon: (@Composable @RemoteComposable () -> Unit)?,
@@ -779,8 +781,8 @@ public object RemoteButtonDefaults {
      */
     @Composable
     public fun scrimBrush(size: RemoteSize): RemoteBrush {
-        val startColor = scrimGradientStartColor
-        val endColor = scrimGradientEndColor
+        val startColor = scrimGradientStartColor.rc
+        val endColor = scrimGradientEndColor.rc
         return RemoteBrush.linearGradient(
             colors = listOf(startColor, endColor),
             RemoteOffset.Zero,
@@ -909,11 +911,11 @@ private fun RemoteDrawScope.drawBorder(
     w: RemoteFloat,
     h: RemoteFloat,
 ) {
-    with(shape.createOutline(RemoteSize(w, h), layoutDirection)) {
+    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
             RemotePaint().apply {
                 remoteColor = borderColor
-                strokeWidth = borderStrokeWidth.id
+                strokeWidth = borderStrokeWidth.floatId
                 style = Paint.Style.STROKE
             }
         )
@@ -928,7 +930,7 @@ private fun RemoteDrawScope.drawSolidColorShape(
     h: RemoteFloat,
     color: RemoteColor? = null,
 ) {
-    with(shape.createOutline(RemoteSize(w, h), layoutDirection)) {
+    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
         drawOutline(
             RemotePaint().apply {
                 style = Paint.Style.FILL

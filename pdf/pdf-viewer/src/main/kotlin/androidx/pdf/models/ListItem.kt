@@ -19,12 +19,10 @@ package androidx.pdf.models
 import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RestrictTo
 import java.util.Objects
 
 /** Represents a single option in a combo box or list box PDF form widget. */
 @SuppressLint("BanParcelableUsage")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ListItem(public val label: String, public val isSelected: Boolean) : Parcelable {
 
     private constructor(

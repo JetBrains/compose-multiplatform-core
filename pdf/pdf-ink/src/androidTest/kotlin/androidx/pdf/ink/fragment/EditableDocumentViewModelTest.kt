@@ -152,33 +152,6 @@ class EditableDocumentViewModelTest {
             .isEqualTo(newDocUri)
     }
 
-    @Test
-    fun maybeInitialiseForDocument_doesNotResetState_whenDocumentUriIsTheSame() = runTest {
-        val docUri = Uri.parse("content://test/same.pdf")
-        savedStateHandle[EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY] = docUri
-
-        // Initialize first time
-        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = docUri))
-
-        val initialAnnotation = createAnnotation(pageNum = 0)
-        annotationsViewModel.addDraftAnnotation(initialAnnotation)
-        val initialEdits =
-            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
-                .pageAnnotations
-
-        // Call again with same URI
-        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = docUri))
-
-        // State should remain
-        assertThat(
-                annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
-                    .pageAnnotations
-            )
-            .isEqualTo(initialEdits)
-        assertThat(savedStateHandle.get<Uri>(EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY))
-            .isEqualTo(docUri)
-    }
-
     // --- Annotation Editing Tests ---
 
     @Test
@@ -245,6 +218,60 @@ class EditableDocumentViewModelTest {
         assertThat(firstPageEdits).hasSize(1)
         assertThat(annotationsViewModel.canUndo.first()).isTrue()
         assertThat(annotationsViewModel.canRedo.first()).isFalse()
+    }
+
+    @Test
+    fun removeAnnotation_removesNewlyDrawnAnnotation() = runTest {
+        val annotation = createAnnotation(pageNum = 0)
+        annotationsViewModel.addDraftAnnotation(annotation)
+        annotationsViewModel.addDraftAnnotation(annotation)
+
+        // The annotations should be added and pageAnnotations List size should be 2.
+        var firstPageEdits =
+            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
+                .pageAnnotations[0]
+        assertThat(firstPageEdits).isNotNull()
+        assertThat(firstPageEdits).hasSize(2)
+
+        annotationsViewModel.removeAnnotation(firstPageEdits!!.first().key)
+
+        // The annotation should be removed and pageAnnotations List size should now be 1.
+        firstPageEdits =
+            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
+                .pageAnnotations[0]
+        assertThat(firstPageEdits).isNotNull()
+        assertThat(firstPageEdits).hasSize(1)
+    }
+
+    @Test
+    fun removeAnnotation_removesExistingAnnotation() = runTest {
+        val existingAnnotation = createAnnotation(pageNum = 0)
+        val newUri = Uri.parse("content://test/new_doc.pdf")
+        val documentWithAnnotation =
+            FakeEditablePdfDocument(
+                uri = newUri,
+                initialEdits = listOf(existingAnnotation, existingAnnotation),
+            )
+
+        annotationsViewModel.maybeInitialiseForDocument(documentWithAnnotation)
+
+        annotationsViewModel.fetchAnnotationsForPageRange(0, 0)
+
+        // The annotations should be present and pageAnnotations List size should be 2.
+        var firstPageEdits =
+            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
+                .pageAnnotations[0]
+        assertThat(firstPageEdits).isNotNull()
+        assertThat(firstPageEdits).hasSize(2)
+
+        annotationsViewModel.removeAnnotation(firstPageEdits!!.first().key)
+
+        // The annotation should be removed and pageAnnotations List size should now be 1.
+        firstPageEdits =
+            annotationsViewModel.annotationsDisplayStateFlow.value.visiblePageAnnotations
+                .pageAnnotations[0]
+        assertThat(firstPageEdits).isNotNull()
+        assertThat(firstPageEdits).hasSize(1)
     }
 
     // --- Visible Page Range & Refresh Tests ---

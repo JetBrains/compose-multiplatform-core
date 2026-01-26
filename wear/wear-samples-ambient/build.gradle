@@ -44,7 +44,7 @@ androidx {
 
 android {
     defaultConfig {
-        minSdk = 25
+        minSdk { version = release(25) }
     }
 
     buildTypes {

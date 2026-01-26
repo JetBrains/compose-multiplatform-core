@@ -41,6 +41,9 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
         androidResources.enable = true
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
     }
     desktop()
     mac()
@@ -68,7 +71,8 @@ androidXMultiplatform {
             implementation("androidx.collection:collection:1.5.0")
             implementation(libs.kotlinSerializationCore)
         }
-        commonTest.dependencies {
+        //temporary while navigation-testing doesn't have all targets
+        androidTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
             implementation(project(":kruth:kruth"))
@@ -90,7 +94,6 @@ androidXMultiplatform {
         }
 
         androidHostTest.dependencies {
-            implementation(project(":navigation:navigation-testing"))
             implementation("androidx.arch.core:core-testing:2.2.0")
             implementation(libs.junit)
             implementation(libs.mockitoCore4)

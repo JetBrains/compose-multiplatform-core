@@ -137,10 +137,6 @@ NoByteOrShort: androidx.work.Data.Builder#putByte(String, byte) parameter #1:
     Should avoid odd sized primitives; use `int` instead of `byte` in parameter value in androidx.work.Data.Builder.putByte(String key, byte value)
 
 
-NullableCollection: androidx.work.Data#getStringArray(String):
-    Return type of method androidx.work.Data.getStringArray(String) uses a nullable collection (`java.lang.String[]`); must be non-null
-
-
 SetterReturnsThis: androidx.work.WorkRequest.Builder#addTag(String):
     Methods must return the builder object (return type androidx.work.WorkRequest.Builder<B,W> instead of B): method androidx.work.WorkRequest.Builder.addTag(String)
 SetterReturnsThis: androidx.work.WorkRequest.Builder#setBackoffCriteria(androidx.work.BackoffPolicy, java.time.Duration):

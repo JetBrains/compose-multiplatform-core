@@ -138,18 +138,6 @@ constructor(private val rendererVersionInfo: VersionInfo = DEFAULT_RENDERER_VERS
      */
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
-    /**
-     * Clears all collected mappings from the scope, including mappings for resources and pending
-     * intents.
-     *
-     * This should only be used by the system, otherwise tile can have unexpected behaviour, such as
-     * not showing any resources.
-     */
-    public fun clearAll() {
-        resources.clear()
-        pendingIntents.clear()
-    }
-
     /** Returns whether this scope has any registered [Resources] or not. */
     public fun hasResources() = !resources.isEmpty()
 

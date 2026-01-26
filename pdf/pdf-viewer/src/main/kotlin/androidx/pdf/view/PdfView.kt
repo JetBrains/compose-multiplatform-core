@@ -72,6 +72,7 @@ import androidx.pdf.selection.SelectionMenuManager
 import androidx.pdf.selection.SelectionRenderer
 import androidx.pdf.selection.SelectionStateManager
 import androidx.pdf.selection.SelectionUiSignal
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.util.Accessibility
 import androidx.pdf.util.MathUtils
 import androidx.pdf.util.ZoomUtils
@@ -266,6 +267,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             invalidate()
         }
 
+    /** Enable or disable the image-selection feature surface. */
+    public var isImageSelectionEnabled: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            selectionStateManager?.isImageSelectionEnabled = value
+        }
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     /**
@@ -355,6 +364,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (typedArray.hasValue(R.styleable.PdfView_isFormFillingEnabled)) {
             isFormFillingEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isFormFillingEnabled, false)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_isImageSelectionEnabled)) {
+            isImageSelectionEnabled =
+                typedArray.getBoolean(R.styleable.PdfView_isImageSelectionEnabled, false)
         }
         if (typedArray.hasValue(R.styleable.PdfView_minZoom)) {
             minZoom = typedArray.getFloat(R.styleable.PdfView_minZoom, minZoom)
@@ -507,8 +520,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     /**
-     * Adds the specified listener to the list of listeners that is notified when any form widget is
-     * updated due to an edit action on the widget e.g. click on a radio button.
+     * Removes the specified listener from the list of listeners that is notified when any form
+     * widget is updated due to an edit action on the widget e.g. click on a radio button.
      *
      * @param listener The listener to remove
      */
@@ -812,7 +825,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     @VisibleForTesting internal var pdfViewAccessibilityManager: PdfViewAccessibilityManager? = null
-    @VisibleForTesting
+
     internal var isAccessibilityEnabled: Boolean =
         Accessibility.get().isAccessibilityEnabled(context)
         set(value) {
@@ -1472,6 +1485,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         state.isFormFillingEnabled = isFormFillingEnabled
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
+        state.isImageSelectionEnabled = isImageSelectionEnabled
         state.pagesPerRow = pagesPerRow
         state.horizontalPageSpacing = horizontalPageSpacing
         state.verticalPageSpacing = verticalPageSpacing
@@ -1614,6 +1628,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 pageLayoutManager = pageLayoutManager,
                 pageManager = pageManager,
                 initialSelection = localStateToRestore.selectionModel,
+                isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled,
             )
 
         val positionToRestore =
@@ -1629,6 +1644,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
         isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
+        isImageSelectionEnabled = localStateToRestore.isImageSelectionEnabled
         setAccessibility()
 
         restoreFormFillingEditText()
@@ -1776,7 +1792,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun showActionMode() {
         val localCurrentSelection = currentSelection ?: return
-        if (selectionActionModeCallback?.actionMode == null) {
+        // Populate the menu for non-image selections if the menu is currently empty
+        if (
+            currentSelection !is ImageSelection && selectionActionModeCallback?.actionMode == null
+        ) {
             val previousJob = selectionMenuJob
             selectionMenuJob =
                 backgroundScope.launch {
@@ -1828,7 +1847,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 this.formFillingEditText = formFillingEditText
             }
 
-        localPdfDocument.addOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
+        localPdfDocument.addOnPdfContentInvalidatedListener(
+            context.mainExecutor,
+            onPdfContentInvalidatedListener,
+        )
 
         val fastScrollCalculator = FastScrollCalculator(context)
         val fastScrollDrawer =
@@ -1881,6 +1903,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     errorFlow = errorFlow,
                     pageLayoutManager = pageLayoutManager,
                     pageManager = pageManager,
+                    isImageSelectionEnabled = isImageSelectionEnabled,
                 )
             setAccessibility()
         }
@@ -2222,7 +2245,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         visiblePageAreas.keyIterator().forEach { pageNum ->
             val editableFormWidgetsInPage =
-                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.readOnly }
+                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.isReadOnly }
 
             editableFormWidgetsInPage?.forEach { widget ->
                 if (visiblePageAreas.get(pageNum).contains(widget.widgetRect.toRectF())) {

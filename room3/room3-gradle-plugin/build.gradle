@@ -42,7 +42,7 @@ configurations {
 
 dependencies {
     implementation(gradleApi())
-    compileOnly("com.android.tools.build:gradle:8.4.2")
+    compileOnly("com.android.tools.build:gradle-api:8.4.2")
     compileOnly(libs.kotlinGradlePlugin)
     compileOnly(libs.kspGradlePlugin)
 

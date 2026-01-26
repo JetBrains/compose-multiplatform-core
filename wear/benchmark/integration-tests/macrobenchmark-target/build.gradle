@@ -23,7 +23,7 @@ plugins {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk = 28
+        minSdk { version = release(28) }
     }
 
     buildTypes {

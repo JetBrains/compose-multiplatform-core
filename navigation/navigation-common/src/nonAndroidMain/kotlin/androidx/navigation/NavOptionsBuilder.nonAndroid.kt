@@ -72,6 +72,7 @@ public actual class NavOptionsBuilder actual constructor() {
      * the back stack until this destination is found.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Suppress("KmpHideShowAnnotationMismatch")
     public fun popUpTo(id: Int, popUpToBuilder: PopUpToBuilder.() -> Unit = {}) {
         popUpToId = id
         popUpToRoute = null

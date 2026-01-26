@@ -43,7 +43,7 @@ android {
 
     defaultConfig {
         applicationId = "androidx.glance.wear.samples"
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 }
 

@@ -52,7 +52,7 @@ internal constructor(
         restoreState,
         createRoute(popUpToRoute).hashCode(),
         popUpToInclusive,
-        popUpToSaveState
+        popUpToSaveState,
     ) {
         this.popUpToRoute = popUpToRoute
     }
@@ -70,7 +70,7 @@ internal constructor(
         restoreState,
         popUpToRouteClass!!.serializer().generateHashCode(),
         popUpToInclusive,
-        popUpToSaveState
+        popUpToSaveState,
     ) {
         this.popUpToRouteClass = popUpToRouteClass
     }
@@ -88,7 +88,7 @@ internal constructor(
         restoreState,
         popUpToRouteObject::class.serializer().generateHashCode(),
         popUpToInclusive,
-        popUpToSaveState
+        popUpToSaveState,
     ) {
         this.popUpToRouteObject = popUpToRouteObject
     }
@@ -169,7 +169,7 @@ internal constructor(
         return sb.toString()
     }
 
-    public actual class Builder actual constructor() {
+    public actual class Builder {
         private var singleTop = false
         private var restoreState = false
 
@@ -205,11 +205,12 @@ internal constructor(
          * @see NavOptions.isPopUpToInclusive
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @Suppress("KmpHideShowAnnotationMismatch")
         @JvmOverloads
         public fun setPopUpTo(
             destinationId: Int,
             inclusive: Boolean,
-            saveState: Boolean = false
+            saveState: Boolean = false,
         ): Builder {
             popUpToId = destinationId
             popUpToRoute = null
@@ -293,13 +294,7 @@ internal constructor(
                     popUpToSaveState,
                 )
             } else {
-                NavOptions(
-                    singleTop,
-                    restoreState,
-                    popUpToId,
-                    popUpToInclusive,
-                    popUpToSaveState,
-                )
+                NavOptions(singleTop, restoreState, popUpToId, popUpToInclusive, popUpToSaveState)
             }
         }
     }

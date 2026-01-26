@@ -24,8 +24,8 @@ import androidx.camera.video.VideoSpec
 /** An [EncoderProfilesProvider] that filters profiles by a specific MIME type. */
 internal class MimeMatchedEncoderProfilesProvider(
     private val baseProvider: EncoderProfilesProvider,
-    private val videoMime: String = VideoSpec.MIME_TYPE_AUTO,
-    private val audioMime: String = AudioSpec.MIME_TYPE_AUTO,
+    private val videoMime: String = VideoSpec.MIME_TYPE_UNSPECIFIED,
+    private val audioMime: String = AudioSpec.MIME_TYPE_UNSPECIFIED,
 ) : EncoderProfilesProvider {
 
     private val profilesCache = mutableMapOf<Int, EncoderProfilesProxy?>()
@@ -41,19 +41,22 @@ internal class MimeMatchedEncoderProfilesProvider(
     }
 
     private fun filterProfiles(profiles: EncoderProfilesProxy): EncoderProfilesProxy? {
-        // If both are AUTO, return original to avoid unnecessary object creation
-        if (videoMime == VideoSpec.MIME_TYPE_AUTO && audioMime == AudioSpec.MIME_TYPE_AUTO) {
+        // If both are UNSPECIFIED, return original to avoid unnecessary object creation
+        if (
+            videoMime == VideoSpec.MIME_TYPE_UNSPECIFIED &&
+                audioMime == AudioSpec.MIME_TYPE_UNSPECIFIED
+        ) {
             return profiles
         }
 
         val matchedVideo =
             profiles.videoProfiles.filter {
-                videoMime == VideoSpec.MIME_TYPE_AUTO || it.mediaType == videoMime
+                videoMime == VideoSpec.MIME_TYPE_UNSPECIFIED || it.mediaType == videoMime
             }
 
         val matchedAudio =
             profiles.audioProfiles.filter {
-                audioMime == AudioSpec.MIME_TYPE_AUTO || it.mediaType == audioMime
+                audioMime == AudioSpec.MIME_TYPE_UNSPECIFIED || it.mediaType == audioMime
             }
 
         // For optimization, if the filtered video and audio profiles remain unchanged, the

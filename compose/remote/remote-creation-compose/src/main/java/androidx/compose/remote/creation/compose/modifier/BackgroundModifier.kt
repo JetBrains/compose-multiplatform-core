@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.SolidBackgroundModifier
@@ -31,8 +32,13 @@ import androidx.compose.ui.graphics.Color
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class BackgroundModifier(val color: RemoteColor) : RemoteModifier.Element {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return SolidBackgroundModifier(color.red.id, color.green.id, color.blue.id, color.alpha.id)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        return SolidBackgroundModifier(
+            color.red.floatId,
+            color.green.floatId,
+            color.blue.floatId,
+            color.alpha.floatId,
+        )
     }
 }
 

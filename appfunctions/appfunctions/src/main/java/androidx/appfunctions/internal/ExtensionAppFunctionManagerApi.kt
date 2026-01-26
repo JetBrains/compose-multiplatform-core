@@ -23,14 +23,15 @@ import android.os.OutcomeReceiver
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
-import androidx.appfunctions.AppFunctionManagerCompat
-import androidx.appfunctions.AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DEFAULT
-import androidx.appfunctions.AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_DISABLED
-import androidx.appfunctions.AppFunctionManagerCompat.Companion.APP_FUNCTION_STATE_ENABLED
+import androidx.appfunctions.AppFunctionManager
+import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_DEFAULT
+import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_DISABLED
+import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_ENABLED
 import androidx.appfunctions.AppFunctionSystemUnknownException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
-import com.android.extensions.appfunctions.AppFunctionManager
+import androidx.appfunctions.metadata.AppFunctionMetadata
+import com.android.extensions.appfunctions.AppFunctionManager as ExtensionAppFunctionManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Runnable
@@ -41,10 +42,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 internal class ExtensionAppFunctionManagerApi(private val context: Context) :
     AppFunctionManagerApi {
 
-    private val appFunctionManager: AppFunctionManager by lazy { AppFunctionManager(context) }
+    private val appFunctionManager: ExtensionAppFunctionManager by lazy {
+        ExtensionAppFunctionManager(context)
+    }
 
     override suspend fun executeAppFunction(
-        request: ExecuteAppFunctionRequest
+        request: ExecuteAppFunctionRequest,
+        functionMetadata: AppFunctionMetadata,
     ): ExecuteAppFunctionResponse {
         return suspendCancellableCoroutine { cont ->
             val cancellationSignal = CancellationSignal()
@@ -63,7 +67,10 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                         result: com.android.extensions.appfunctions.ExecuteAppFunctionResponse
                     ) {
                         cont.resume(
-                            ExecuteAppFunctionResponse.Success.fromPlatformExtensionClass(result)
+                            ExecuteAppFunctionResponse.Success.fromPlatformExtensionClass(
+                                result,
+                                functionMetadata,
+                            )
                         )
                     }
 
@@ -106,7 +113,7 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
 
     override suspend fun setAppFunctionEnabled(
         functionId: String,
-        @AppFunctionManagerCompat.EnabledState newEnabledState: Int,
+        @AppFunctionManager.EnabledState newEnabledState: Int,
     ) {
         val platformExtensionEnabledState = convertToPlatformExtensionEnabledState(newEnabledState)
         return suspendCancellableCoroutine { cont ->
@@ -143,9 +150,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
         return exception
     }
 
-    @AppFunctionManager.EnabledState
+    @ExtensionAppFunctionManager.EnabledState
     private fun convertToPlatformExtensionEnabledState(
-        @AppFunctionManagerCompat.EnabledState enabledState: Int
+        @AppFunctionManager.EnabledState enabledState: Int
     ): Int {
         return when (enabledState) {
             APP_FUNCTION_STATE_DEFAULT -> AppFunctionManager.APP_FUNCTION_STATE_DEFAULT

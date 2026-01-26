@@ -26,6 +26,8 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 
 /** Interface for the JNI API for communicating with the Impress Split Engine instance. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -62,6 +64,21 @@ public interface ImpressApi {
     }
 
     /**
+     * Specifies the draw mode of the surface.
+     *
+     * Values here match values from imp::PrimitiveType
+     */
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(DrawMode.TRIANGLES, DrawMode.TRIANGLE_STRIP, DrawMode.TRIANGLE_FAN)
+    public annotation class DrawMode {
+        public companion object {
+            public const val TRIANGLES: Int = 0
+            public const val TRIANGLE_STRIP: Int = 1
+            public const val TRIANGLE_FAN: Int = 2
+        }
+    }
+
+    /**
      * Specifies the content security level of the surface.
      *
      * Values here match values from imp::ContentSecurityLevel
@@ -78,10 +95,26 @@ public interface ImpressApi {
     }
 
     /**
+     * Specifies the blending mode of the content.
+     *
+     * Values here match values from imp::MediaBlendingMode.
+     */
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(MediaBlendingMode.OPAQUE, MediaBlendingMode.TRANSPARENT)
+    public annotation class MediaBlendingMode {
+        public companion object {
+            // Content is alpha-blended with the background.
+            public const val TRANSPARENT: Int = 0
+            // Content is opaque and does not blend with the background.
+            public const val OPAQUE: Int = 1
+        }
+    }
+
+    /**
      * Specifies the color standard of the content.
      *
-     * Values here match values from androidx.media3.common.C.ColorSpace For the enum values, please
-     * see:
+     * Values here match values from androidx.media3.common.C.ColorSpace. For the enum values,
+     * please see:
      * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/MediaFormat.java
      */
     @Retention(AnnotationRetention.SOURCE)
@@ -112,7 +145,7 @@ public interface ImpressApi {
     /**
      * Specifies the transfer function of the content.
      *
-     * Values here match values from androidx.media3.common.C.ColorTransfer For the enum values
+     * Values here match values from androidx.media3.common.C.ColorTransfer. For the enum values
      * (except sRGB and Gamma 2.2), please see:
      * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/MediaFormat.java
      */
@@ -139,8 +172,8 @@ public interface ImpressApi {
     /**
      * Specifies the color range of the content.
      *
-     * Values here match values from androidx.media3.common.C.ColorRange For the enum values, please
-     * see:
+     * Values here match values from androidx.media3.common.C.ColorRange. For the enum values,
+     * please see:
      * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/media/java/android/media/MediaFormat.java
      */
     @Retention(AnnotationRetention.SOURCE)
@@ -238,9 +271,9 @@ public interface ImpressApi {
     public fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean)
 
     /**
-     * Starts an animation on an instanced GLTFModel.
+     * Starts an animation on an instanced glTF model.
      *
-     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param animationName A nullable String which contains a requested animation to play. If null
      *   is provided, this will attempt to play the first animation it finds
      * @param looping True if the animation should loop. Note that if the animation is looped, the
@@ -256,16 +289,16 @@ public interface ImpressApi {
     ): Void?
 
     /**
-     * Stops an animation on an instanced GLTFModel.
+     * Stops an animation on an instanced glTF model.
      *
-     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
      */
     public fun stopGltfModelAnimation(impressNode: ImpressNode)
 
     /**
      * Toggles the playback of a glTF model's animation to pause or resume.
      *
-     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param playing `true` to resume the animation, `false` to pause it.
      */
     public fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean)
@@ -281,7 +314,7 @@ public interface ImpressApi {
      * centered at the origin. The concrete implementation should query the underlying rendering
      * engine for the actual bounds.
      *
-     * @param impressNode The integer ID of the Impress node for the instance of the glTF.
+     * @param impressNode The integer ID of the Impress node for the instance of the glTF model.
      * @return A [BoundingBox] object representing the model's bounding box. The
      *   [BoundingBox.center] defines the geometric center of the box, and the
      *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
@@ -301,7 +334,7 @@ public interface ImpressApi {
 
     /**
      * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
      * Furthermore, the surface cannot be used to render secure content.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
@@ -313,7 +346,7 @@ public interface ImpressApi {
 
     /**
      * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
@@ -328,7 +361,7 @@ public interface ImpressApi {
 
     /**
      * This method creates an Impress node with a stereo panel and returns the node object. Note
-     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
@@ -345,7 +378,29 @@ public interface ImpressApi {
     ): ImpressNode
 
     /**
-     * This method sets the Surface pixel dimenesions for a StereoSurfaceEntity.
+     * This method creates an Impress node with a stereo panel and returns the node object. Note
+     * that the StereoSurfaceEntity will not render anything until the canvas shape is set.
+     *
+     * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
+     * @param mediaBlendingMode The [Int] mediaBlendingMode to apply. Must be a member of
+     *   MediaBlendingMode.
+     * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
+     *   ContentSecurityLevel.
+     * @param useSuperSampling This [Boolean] specifies if the super sampling filter is enabled when
+     *   rendering the surface.
+     * @return An int impress node ID which can be used for updating the surface later
+     * @throws InvalidArgumentException if stereoMode, mediaBlendingMode or contentSecurityLevel are
+     *   invalid.
+     */
+    public fun createStereoSurface(
+        @StereoMode stereoMode: Int,
+        @MediaBlendingMode mediaBlendingMode: Int,
+        @ContentSecurityLevel contentSecurityLevel: Int,
+        useSuperSampling: Boolean,
+    ): ImpressNode
+
+    /**
+     * This method sets the Surface pixel dimensions for a StereoSurfaceEntity.
      *
      * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
      * @param width The width in pixels to set the buffer size for the Surface.
@@ -366,6 +421,7 @@ public interface ImpressApi {
         impressNode: ImpressNode,
         width: Float,
         height: Float,
+        cornerRadius: Float,
     )
 
     /**
@@ -383,6 +439,33 @@ public interface ImpressApi {
      * @param radius The radius in local spatial units of the hemisphere.
      */
     public fun setStereoSurfaceEntityCanvasShapeHemisphere(impressNode: ImpressNode, radius: Float)
+
+    /**
+     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress node object.
+     *
+     * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
+     * @param leftPositions The positions of the left eye mesh.
+     * @param leftTexCoords The texture coordinates of the left eye mesh.
+     * @param leftIndices The indices of the left eye mesh.
+     * @param rightPositions The positions of the right eye mesh.
+     * @param rightTexCoords The texture coordinates of the right eye mesh.
+     * @param rightIndices The indices of the right eye mesh.
+     * @param drawMode The draw mode of the mesh.
+     * @throws IllegalArgumentException if the number of positions and texcoords do not correspond
+     *   to the same number of vertices for either eye (i.e. `positions.capacity() / 3 !=
+     *   texCoords.capacity() / 2`), or if values in the indices are out of bounds (greater than or
+     *   equal to the number of vertices).
+     */
+    public fun setStereoSurfaceEntityCanvasShapeCustomMesh(
+        impressNode: ImpressNode,
+        leftPositions: FloatBuffer,
+        leftTexCoords: FloatBuffer,
+        leftIndices: IntBuffer?,
+        rightPositions: FloatBuffer?,
+        rightTexCoords: FloatBuffer?,
+        rightIndices: IntBuffer?,
+        @DrawMode drawMode: Int,
+    )
 
     /**
      * Dynamically enables or disables the collider for the StereoSurfaceEntity.

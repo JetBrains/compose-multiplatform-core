@@ -49,7 +49,7 @@ internal class FormWidgetInteractionHandler(
 
     /** Entry point to handle interaction with the formWidget. */
     fun handleInteraction(touchPoint: PdfPoint, formWidgetInfo: FormWidgetInfo) {
-        if (formWidgetInfo.readOnly) return
+        if (formWidgetInfo.isReadOnly) return
 
         val pageNum = touchPoint.pageNum
         // switch case to delegate to the appropriate handler
@@ -136,7 +136,7 @@ internal class FormWidgetInteractionHandler(
         pageNum: Int,
         formWidgetInfo: FormWidgetInfo,
     ) {
-        if (formWidgetInfo.multiSelect) {
+        if (formWidgetInfo.isMultiSelect) {
             showMultiChoiceSelectMenu(pageNum, formWidgetInfo)
         } else {
             showSingleChoiceSelectMenu(pageNum, formWidgetInfo)

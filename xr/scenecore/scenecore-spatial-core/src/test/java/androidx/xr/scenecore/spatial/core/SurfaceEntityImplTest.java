@@ -137,7 +137,9 @@ public final class SurfaceEntityImplTest {
 
     @Test
     public void setShape_setsShape() {
-        assertShapeIsSetCorrectly(new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f)));
+        assertShapeIsSetCorrectly(new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f), 1.5f));
+        assertThat(((SurfaceEntity.Shape.Quad) mSurfaceEntity.getShape()).getCornerRadius())
+                .isEqualTo(1.5f);
         assertShapeIsSetCorrectly(new SurfaceEntity.Shape.Sphere(11f));
         assertShapeIsSetCorrectly(new SurfaceEntity.Shape.Hemisphere(10f));
     }

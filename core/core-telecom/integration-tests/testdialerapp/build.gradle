@@ -27,7 +27,7 @@ android {
     compileSdkMinor = 1
     defaultConfig {
         applicationId = "androidx.core.telecom.testdialerapp"
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 
     buildTypes {

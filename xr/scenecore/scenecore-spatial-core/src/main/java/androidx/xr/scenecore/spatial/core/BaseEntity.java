@@ -27,7 +27,6 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.Component;
 import androidx.xr.scenecore.runtime.Entity;
@@ -39,6 +38,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Implementation of a subset of core Entity functionality. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -46,7 +46,7 @@ import java.util.List;
 public abstract class BaseEntity extends BaseScenePose implements Entity {
     private final List<Entity> mChildren = new ArrayList<>();
     private final List<Component> mComponentList = new ArrayList<>();
-    private BaseEntity mParent;
+    private AtomicReference<BaseEntity> mParent = new AtomicReference<>(null);
     private Pose mPose = new Pose();
     private Vector3 mScale = new Vector3(1.0f, 1.0f, 1.0f);
     private float mAlpha = 1.0f;
@@ -59,17 +59,21 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
     }
 
     protected void addChildInternal(@NonNull Entity child) {
-        if (mChildren.contains(child)) {
-            throw new IllegalStateException("Trying to add child who is already a child.");
+        synchronized (mChildren) {
+            if (mChildren.contains(child)) {
+                throw new IllegalStateException("Trying to add child who is already a child.");
+            }
+            mChildren.add(child);
         }
-        mChildren.add(child);
     }
 
     protected void removeChildInternal(@NonNull Entity child) {
-        if (!mChildren.contains(child)) {
-            throw new IllegalStateException("Trying to remove child who is not a child.");
+        synchronized (mChildren) {
+            if (!mChildren.contains(child)) {
+                throw new IllegalStateException("Trying to remove child who is not a child.");
+            }
+            mChildren.remove(child);
         }
-        mChildren.remove(child);
     }
 
     private View getAccessibilityView() {
@@ -132,7 +136,7 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
 
     @Override
     public @Nullable Entity getParent() {
-        return mParent;
+        return mParent.get();
     }
 
     @Override
@@ -141,18 +145,23 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
             throw new IllegalStateException(
                     "Cannot set non-BaseEntity as a parent of a BaseEntity");
         }
-        if (mParent != null) {
-            mParent.removeChildInternal(this);
+        BaseEntity newParent = (BaseEntity) parent;
+        BaseEntity oldParent = mParent.getAndSet(newParent);
+        if (oldParent != null) {
+            oldParent.removeChildInternal(this);
         }
-        mParent = (BaseEntity) parent;
-        if (mParent != null) {
-            mParent.addChildInternal(this);
+        if (newParent != null) {
+            newParent.addChildInternal(this);
         }
     }
 
     @Override
     public @NonNull List<Entity> getChildren() {
-        return mChildren;
+        synchronized (mChildren) {
+            // Returns a new copy of the list to avoid ConcurrentModificationException during
+            // external iteration.
+            return new ArrayList<>(mChildren);
+        }
     }
 
     @Override
@@ -197,74 +206,18 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
 
     @Override
     public @NonNull Pose getActivitySpacePose() {
+        BaseEntity parent = mParent.get();
         // Any parentless "space" entities (such as the root and anchor entities) are expected to
         // override this method non-recursively so that this error is never thrown.
-        if (mParent == null) {
+        if (parent == null) {
             throw new IllegalStateException("Cannot get pose in ActivitySpace with a null parent");
         }
 
-        return mParent.getActivitySpacePose()
+        return parent.getActivitySpacePose()
                 .compose(
                         new Pose(
-                                mPose.getTranslation().scale(mParent.getActivitySpaceScale()),
+                                mPose.getTranslation().scale(parent.getActivitySpaceScale()),
                                 mPose.getRotation()));
-    }
-
-    @Override
-    @NonNull
-    public Pose getGravityAlignedPose(@NonNull Pose pose) {
-        if (mParent == null) {
-            throw new IllegalStateException("Cannot get gravity aligned pose with a null parent");
-        }
-
-        // 1. Determine the world pose of the reference frame for the PARENT space.
-        //    This is needed to convert rotations between the local space and world space.
-        Pose referenceFrameWorldPose = mParent.getPose(Space.REAL_WORLD);
-
-        // 2. Convert the input pose's local rotation to a world-space rotation.
-        Quaternion inputWorldRotation =
-                referenceFrameWorldPose.getRotation().times(pose.getRotation());
-
-        // 3. Perform the gravity-alignment calculation in world space. The yaw of the resulting
-        // gravity-aligned pose is generally derived from the world-space yaw of the input `pose`.
-        // This world-space yaw is a combination of the parent's world rotation and the entity's
-        // local rotation (`pose.getRotation()`).
-        //    - Get the "forward" vector from the world rotation.
-        //    - Project it onto the horizontal (X-Z) ground plane.
-        //    - Create a new rotation that looks in that projected direction.
-        Vector3 worldForward = inputWorldRotation.times(new Vector3(0f, 0f, 1f));
-        Vector3 gravityAlignedForward = new Vector3(worldForward.getX(), 0f, worldForward.getZ());
-
-        Quaternion gravityAlignedWorldRotation;
-        if (gravityAlignedForward.getLengthSquared() < 1e-6f) {
-            // The original pose was looking straight up or down, so its yaw is undefined.
-            // As a fallback, we create a rotation that is upright but uses the yaw of the reference
-            // frame (`mParent`) in world space..
-            Vector3 referenceForward =
-                    referenceFrameWorldPose.getRotation().times(new Vector3(0f, 0f, 1f));
-            Vector3 projectedReference =
-                    new Vector3(referenceForward.getX(), 0f, referenceForward.getZ());
-            if (projectedReference.getLengthSquared() < 1e-6f) {
-                gravityAlignedWorldRotation = Quaternion.Identity; // Ultimate fallback
-            } else {
-                gravityAlignedWorldRotation =
-                        Quaternion.fromLookTowards(projectedReference.toNormalized(), Vector3.Up);
-            }
-        } else {
-            gravityAlignedWorldRotation =
-                    Quaternion.fromLookTowards(gravityAlignedForward.toNormalized(), Vector3.Up);
-        }
-
-        // 4. Convert the new, aligned world rotation back to the PARENT space.
-        Quaternion finalLocalRotation =
-                referenceFrameWorldPose
-                        .getRotation()
-                        .getInverse()
-                        .times(gravityAlignedWorldRotation);
-
-        // 5. Return a new pose using the original translation rotated by the NEWLY calculated local
-        // rotation.
-        return new Pose(pose.getTranslation(), finalLocalRotation);
     }
 
     @Override
@@ -283,15 +236,24 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
 
     @Override
     public void setScale(@NonNull Vector3 scale, @SpaceValue int relativeTo) {
+        BaseEntity parent = mParent.get();
         switch (relativeTo) {
             case Space.PARENT:
                 mScale = scale;
                 break;
             case Space.ACTIVITY:
-                mScale = scale.scale(mParent.getActivitySpaceScale().inverse());
+                if (parent == null) {
+                    throw new IllegalStateException(
+                            "Cannot set scale relative to ActivitySpace with a null parent");
+                }
+                mScale = scale.scale(parent.getActivitySpaceScale().inverse());
                 break;
             case Space.REAL_WORLD:
-                mScale = scale.scale(mParent.getWorldSpaceScale().inverse());
+                if (parent == null) {
+                    throw new IllegalStateException(
+                            "Cannot set scale relative to WorldSpace with a null parent");
+                }
+                mScale = scale.scale(parent.getWorldSpaceScale().inverse());
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
@@ -322,34 +284,38 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
     }
 
     private float getActivitySpaceAlpha() {
-        if (mParent == null) {
+        BaseEntity parent = mParent.get();
+        if (parent == null) {
             return mAlpha;
         }
-        return mParent.getActivitySpaceAlpha() * mAlpha;
+        return parent.getActivitySpaceAlpha() * mAlpha;
     }
 
     @Override
     public @NonNull Vector3 getWorldSpaceScale() {
-        if (mParent == null) {
+        BaseEntity parent = mParent.get();
+        if (parent == null) {
             throw new IllegalStateException("Cannot get scale in WorldSpace with a null parent");
         }
-        return mParent.getWorldSpaceScale().scale(mScale);
+        return parent.getWorldSpaceScale().scale(mScale);
     }
 
     @Override
     public @NonNull Vector3 getActivitySpaceScale() {
-        if (mParent == null) {
+        BaseEntity parent = mParent.get();
+        if (parent == null) {
             throw new IllegalStateException("Cannot get scale in ActivitySpace with a null parent");
         }
-        return mParent.getActivitySpaceScale().scale(mScale);
+        return parent.getActivitySpaceScale().scale(mScale);
     }
 
     @Override
     public boolean isHidden(boolean includeParents) {
-        if (!includeParents || mParent == null) {
+        BaseEntity parent = mParent.get();
+        if (!includeParents || parent == null) {
             return mHidden;
         }
-        return mHidden || mParent.isHidden(true);
+        return mHidden || parent.isHidden(true);
     }
 
     @Override
@@ -368,7 +334,9 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
     @Override
     public boolean addComponent(@NonNull Component component) {
         if (component.onAttach(this)) {
-            mComponentList.add(component);
+            synchronized (mComponentList) {
+                mComponentList.add(component);
+            }
             return true;
         }
         return false;
@@ -378,9 +346,11 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
     public <T extends Component> @NonNull List<T> getComponentsOfType(
             @NonNull Class<? extends T> type) {
         List<T> components = new ArrayList<>();
-        for (Component component : mComponentList) {
-            if (type.isInstance(component)) {
-                components.add(type.cast(component));
+        synchronized (mComponentList) {
+            for (Component component : mComponentList) {
+                if (type.isInstance(component)) {
+                    components.add(type.cast(component));
+                }
             }
         }
         return components;
@@ -388,22 +358,30 @@ public abstract class BaseEntity extends BaseScenePose implements Entity {
 
     @Override
     public @NonNull List<Component> getComponents() {
-        return mComponentList;
+        synchronized (mComponentList) {
+            // Returns a new copy of the list to avoid ConcurrentModificationException during
+            // external iteration.
+            return new ArrayList<>(mComponentList);
+        }
     }
 
     @Override
     public void removeComponent(@NonNull Component component) {
-        if (mComponentList.contains(component)) {
-            component.onDetach(this);
-            mComponentList.remove(component);
+        synchronized (mComponentList) {
+            if (mComponentList.contains(component)) {
+                component.onDetach(this);
+                mComponentList.remove(component);
+            }
         }
     }
 
     @Override
     public void removeAllComponents() {
-        for (Component component : mComponentList) {
-            component.onDetach(this);
+        synchronized (mComponentList) {
+            for (Component component : mComponentList) {
+                component.onDetach(this);
+            }
+            mComponentList.clear();
         }
-        mComponentList.clear();
     }
 }

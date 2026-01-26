@@ -116,10 +116,6 @@ public open class FakeEntity() : FakeScenePose(), Entity {
         return parentPose?.compose(pose) ?: pose
     }
 
-    override fun getGravityAlignedPose(pose: Pose): Pose {
-        return pose
-    }
-
     /** Updates the pose (position and rotation) of the Entity relative to the given space. */
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
         if (relativeTo == Space.ACTIVITY && parent == null) {

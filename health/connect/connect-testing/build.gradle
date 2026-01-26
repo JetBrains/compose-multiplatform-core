@@ -42,7 +42,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.health.connect.testing"
     testOptions.unitTests.includeAndroidResources = true

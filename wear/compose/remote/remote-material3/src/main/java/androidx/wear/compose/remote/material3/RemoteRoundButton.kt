@@ -35,7 +35,7 @@ import androidx.compose.runtime.Composable
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
 internal fun RemoteRoundButton(
-    vararg onClick: Action,
+    onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
     backgroundColor: RemoteColor,
     enabled: RemoteBoolean,
@@ -61,7 +61,7 @@ internal fun RemoteRoundButton(
                     )
                     drawContent()
                 }
-                .clickable(*onClick, enabled = enabled.constantValue ?: false),
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false),
         content = content,
     )
 }

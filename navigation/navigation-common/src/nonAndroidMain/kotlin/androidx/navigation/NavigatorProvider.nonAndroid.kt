@@ -23,7 +23,6 @@ import androidx.annotation.CallSuper
 import androidx.annotation.RestrictTo
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
-import kotlin.jvm.JvmStatic
 import kotlin.reflect.KClass
 
 public actual open class NavigatorProvider actual constructor() {
@@ -92,8 +91,8 @@ public actual open class NavigatorProvider actual constructor() {
         return _namedNavigators.put(name, navigator)
     }
 
-    internal companion object {
-        internal fun validateName(name: String?): Boolean {
+    internal actual companion object {
+        internal actual fun validateName(name: String?): Boolean {
             return !name.isNullOrEmpty()
         }
     }

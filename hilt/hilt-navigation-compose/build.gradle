@@ -31,7 +31,7 @@ plugins {
     id("com.android.experimental.built-in-kotlin")
     id("com.google.devtools.ksp")
     id("AndroidXComposePlugin")
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
 }
 
 android {

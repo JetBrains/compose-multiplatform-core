@@ -25,6 +25,7 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputId
+import androidx.camera.camera2.pipe.PlatformApiCompat
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.Api28Compat
@@ -276,6 +277,8 @@ public class AndroidMultiResolutionImageReader(
             capacity: Int,
             executor: Executor,
             usageFlags: Long?,
+            enableConcurrentOutputs: Boolean,
+            plaformApiCompat: PlatformApiCompat?,
         ): ImageReaderWrapper {
             require(capacity > 0) { "Capacity ($capacity) must be > 0" }
             require(capacity <= AndroidImageReader.IMAGEREADER_MAX_CAPACITY) {
@@ -283,6 +286,11 @@ public class AndroidMultiResolutionImageReader(
                     "${AndroidImageReader.IMAGEREADER_MAX_CAPACITY}. Android has undocumented " +
                     "internal limits that are different depending on which device the " +
                     "MultiResolutionImageReader is created on."
+            }
+            if (enableConcurrentOutputs) {
+                require(plaformApiCompat?.isMultiResolutionConcurrentReadersEnabled() == true) {
+                    "Concurrent MultiResolutionImageReaders are not supported on this device"
+                }
             }
 
             // Create and configure a new MultiResolutionImageReader
@@ -293,7 +301,17 @@ public class AndroidMultiResolutionImageReader(
             }
 
             val multiResolutionImageReader =
-                if (usageFlags != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                if (plaformApiCompat?.isMultiResolutionConcurrentReadersEnabled() == true) {
+                    plaformApiCompat.buildMultiResolutionImageReader(
+                        outputIdMap.keys,
+                        outputFormat,
+                        capacity,
+                        usageFlags,
+                        enableConcurrentOutputs,
+                    )
+                } else if (
+                    usageFlags != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                ) {
                     MultiResolutionImageReader(outputIdMap.keys, outputFormat, capacity, usageFlags)
                 } else {
                     MultiResolutionImageReader(outputIdMap.keys, outputFormat, capacity)
@@ -322,6 +340,8 @@ public class AndroidMultiResolutionImageReader(
             capacity: Int,
             executor: Executor,
             usageFlags: Long?,
+            enableConcurrentOutputs: Boolean,
+            platformApiCompat: PlatformApiCompat?,
         ): ImageReaderWrapper {
             require(cameraStream.outputs.isNotEmpty()) { "$cameraStream outputs cannot be empty!" }
             val format = cameraStream.outputs.first().format
@@ -330,7 +350,16 @@ public class AndroidMultiResolutionImageReader(
                     MultiResolutionStreamInfo(it.size.width, it.size.height, it.camera.value) to
                         it.id
                 }
-            return create(format.value, cameraStream.id, outputMap, capacity, executor, usageFlags)
+            return create(
+                format.value,
+                cameraStream.id,
+                outputMap,
+                capacity,
+                executor,
+                usageFlags,
+                enableConcurrentOutputs,
+                platformApiCompat,
+            )
         }
     }
 }

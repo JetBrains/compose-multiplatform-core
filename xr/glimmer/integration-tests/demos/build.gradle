@@ -53,7 +53,7 @@ ApkCopyHelperKt.setupAppApkCopy(project, "release")
 android {
     compileSdk = 36
     defaultConfig {
-        minSdk = 35
+        minSdk { version = release(35) }
     }
     namespace = "androidx.xr.glimmer.demos"
 }

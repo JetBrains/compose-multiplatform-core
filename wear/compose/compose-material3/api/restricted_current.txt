@@ -1091,12 +1091,12 @@ package androidx.wear.compose.material3 {
   public final class PagerScaffoldDefaults {
     method @InaccessibleFromKotlin public androidx.compose.animation.core.AnimationSpec<java.lang.Float> getFadeOutAnimationSpec();
     method @InaccessibleFromKotlin public float getHighSnapPositionalThreshold();
-    method @InaccessibleFromKotlin public float getSnapPositionalThreshold();
+    method @InaccessibleFromKotlin public float getLowSnapPositionalThreshold();
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.compose.foundation.gestures.TargetedFlingBehavior snapWithSpringFlingBehavior(androidx.wear.compose.foundation.pager.PagerState state);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.foundation.gestures.TargetedFlingBehavior snapWithSpringFlingBehavior(androidx.wear.compose.foundation.pager.PagerState, androidx.compose.runtime.Composer?, int);
     property public androidx.compose.animation.core.AnimationSpec<java.lang.Float> FadeOutAnimationSpec;
     property public float HighSnapPositionalThreshold;
-    property public float SnapPositionalThreshold;
+    property public float LowSnapPositionalThreshold;
     field public static final androidx.wear.compose.material3.PagerScaffoldDefaults INSTANCE;
   }
 

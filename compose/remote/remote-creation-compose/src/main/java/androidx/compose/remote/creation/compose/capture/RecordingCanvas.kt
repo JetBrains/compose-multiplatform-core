@@ -48,10 +48,15 @@ import androidx.compose.remote.creation.compose.state.RemoteColorFilter
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.getFloatIdForCreationState
+import androidx.compose.remote.creation.compose.state.pack
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 
 /**
@@ -83,7 +88,7 @@ import androidx.compose.ui.graphics.toArgb
  *   compose perspective (are paint objects reused this way?)
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
+public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap), RemoteStateScope {
 
     private var lastStyleOrdinal: Int = -1
     private var typeface: Int = -1
@@ -101,8 +106,12 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
     private var lastRemoteShader: RemoteShader? = null
     private var lastBlendMode: BlendMode? = null
     private var lastRemoteColorFilter: RemoteColorFilter? = null
-    public lateinit var document: RemoteComposeWriter
-    public lateinit var creationState: RemoteComposeCreationState
+    override lateinit var creationState: RemoteComposeCreationState
+    override val document: RemoteComposeWriter
+        get() = creationState.document
+
+    override val remoteDensity: RemoteDensity
+        get() = creationState.remoteDensity
 
     private var usingShaderMatrix: Boolean = false
 
@@ -132,7 +141,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
      */
     public fun setRemoteComposeCreationState(creationState: RemoteComposeCreationState) {
         this.creationState = creationState
-        this.document = creationState.document
     }
 
     /**
@@ -157,7 +165,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
                 if (remoteColor == null) {
                     paint.color.toLong() shl 32
                 } else {
-                    val constantValue = remoteColor.constantValue
+                    val constantValue = remoteColor.constantValueOrNull
                     if (constantValue == null) {
                         remoteColor.getIdForCreationState(creationState).toLong() shl
                             6 or
@@ -286,7 +294,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
             if (tmpLastRemoteColorFilter != null) {
                 when (tmpLastRemoteColorFilter) {
                     is RemoteBlendModeColorFilter -> {
-                        val constantColor = tmpLastRemoteColorFilter.color.constantValue
+                        val constantColor = tmpLastRemoteColorFilter.color.constantValueOrNull
 
                         if (constantColor != null) {
                             // Where possible use a constant instead of an expression.
@@ -339,7 +347,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         val shader = paint.shader as? RemoteShader
         if (forceSendingPaint || shader != lastRemoteShader) {
             if (shader != null) {
-                shader.apply(paintBundle)
+                shader.apply(creationState, paintBundle)
                 if (usingShaderMatrix || shader.remoteMatrix3x3 != null) {
                     usingShaderMatrix = true
                     val remoteMatrix3x3 = shader.remoteMatrix3x3
@@ -593,16 +601,21 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
+    public fun drawBitmap(bitmap: ImageBitmap, left: Float, top: Float, paint: Paint?) {
         usePaint(paint!!)
+        val androidBitmap = bitmap.asAndroidBitmap()
         document.drawBitmap(
-            bitmap,
+            androidBitmap,
             left,
             top,
-            left + bitmap.width.toFloat(),
-            top + bitmap.height.toFloat(),
+            left + androidBitmap.width.toFloat(),
+            top + androidBitmap.height.toFloat(),
             "",
         )
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), left, top, paint)
     }
 
     public fun drawBitmap(
@@ -620,16 +633,21 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
+    public fun drawBitmap(bitmap: ImageBitmap, src: Rect?, dst: Rect, paint: Paint?) {
         usePaint(paint!!)
+        val androidBitmap = bitmap.asAndroidBitmap()
         document.drawBitmap(
-            bitmap,
+            androidBitmap,
             dst.left.toFloat(),
             dst.top.toFloat(),
             dst.right.toFloat(),
             dst.bottom.toFloat(),
             "",
         )
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), src, dst, paint)
     }
 
     public fun drawBitmap(bitmap: RemoteBitmap, src: Rect?, dst: Rect, paint: Paint?) {
@@ -644,9 +662,14 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
+    public fun drawBitmap(bitmap: ImageBitmap, src: Rect?, dst: RectF, paint: Paint?) {
         usePaint(paint!!)
-        document.drawBitmap(bitmap, dst.left, dst.top, dst.right, dst.bottom, "")
+        val androidBitmap = bitmap.asAndroidBitmap()
+        document.drawBitmap(androidBitmap, dst.left, dst.top, dst.right, dst.bottom, "")
+    }
+
+    override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
+        drawBitmap(bitmap.asImageBitmap(), src, dst, paint)
     }
 
     /**

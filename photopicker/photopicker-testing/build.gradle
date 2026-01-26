@@ -35,7 +35,7 @@ android {
     namespace = "androidx.photopicker.testing"
     compileSdk = 36
     defaultConfig {
-        minSdk = 34
+        minSdk { version = release(34) }
     }
 }
 

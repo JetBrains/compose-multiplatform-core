@@ -1351,6 +1351,17 @@ package androidx.car.app.model {
     method public double getLongitude();
   }
 
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class CarProgressBar {
+    method public androidx.car.app.model.CarColor? getColor();
+    method public float getProgress();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class CarProgressBar.Builder {
+    ctor public CarProgressBar.Builder(@FloatRange(from=0.0f, to=1.0f) float);
+    method public androidx.car.app.model.CarProgressBar build();
+    method public androidx.car.app.model.CarProgressBar.Builder setColor(androidx.car.app.model.CarColor);
+  }
+
   @androidx.car.app.annotations.CarProtocol public class CarSpan extends android.text.style.CharacterStyle {
     ctor public CarSpan();
     method public void updateDrawState(android.text.TextPaint);
@@ -1412,6 +1423,51 @@ package androidx.car.app.model {
     method public long getDurationSeconds();
   }
 
+  @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.RequiresCarApi(8) public final class FilterChip implements androidx.car.app.model.Item {
+    method public androidx.car.app.model.CarIcon? getEndIcon();
+    method public androidx.car.app.model.OnClickDelegate? getOnClickDelegate();
+    method public androidx.car.app.model.CarIcon? getStartIcon();
+    method public androidx.car.app.model.FilterChipStyle? getStyle();
+    method public androidx.car.app.model.CarText? getTitle();
+    method public boolean isSelected();
+  }
+
+  public static final class FilterChip.Builder {
+    ctor public FilterChip.Builder();
+    method public androidx.car.app.model.FilterChip build();
+    method public androidx.car.app.model.FilterChip.Builder setEndIcon(androidx.car.app.model.CarIcon);
+    method public androidx.car.app.model.FilterChip.Builder setOnClickListener(androidx.car.app.model.OnClickListener);
+    method public androidx.car.app.model.FilterChip.Builder setSelected(boolean);
+    method public androidx.car.app.model.FilterChip.Builder setStartIcon(androidx.car.app.model.CarIcon);
+    method public androidx.car.app.model.FilterChip.Builder setStyle(androidx.car.app.model.FilterChipStyle);
+    method public androidx.car.app.model.FilterChip.Builder setTitle(androidx.car.app.model.CarText);
+    method public androidx.car.app.model.FilterChip.Builder setTitle(CharSequence);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class FilterChipSection extends androidx.car.app.model.Section<androidx.car.app.model.FilterChip!> {
+    method public androidx.car.app.model.FilterChipStyle? getStyle();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class FilterChipSection.Builder extends androidx.car.app.model.Section.BaseBuilder<androidx.car.app.model.FilterChip!,androidx.car.app.model.FilterChipSection.Builder!> {
+    ctor public FilterChipSection.Builder();
+    method public androidx.car.app.model.FilterChipSection build();
+    method public androidx.car.app.model.FilterChipSection.Builder setStyle(androidx.car.app.model.FilterChipStyle);
+  }
+
+  @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.RequiresCarApi(8) public final class FilterChipStyle {
+    method public androidx.car.app.model.CarColor? getBackgroundColor();
+    method public androidx.car.app.model.CarColor? getContentColor();
+    method public androidx.car.app.model.CarColor? getOutlineColor();
+  }
+
+  public static final class FilterChipStyle.Builder {
+    ctor public FilterChipStyle.Builder();
+    method public androidx.car.app.model.FilterChipStyle build();
+    method public androidx.car.app.model.FilterChipStyle.Builder setBackgroundColor(androidx.car.app.model.CarColor);
+    method public androidx.car.app.model.FilterChipStyle.Builder setContentColor(androidx.car.app.model.CarColor);
+    method public androidx.car.app.model.FilterChipStyle.Builder setOutlineColor(androidx.car.app.model.CarColor);
+  }
+
   @androidx.car.app.annotations.CarProtocol public final class ForegroundCarColorSpan extends androidx.car.app.model.CarSpan {
     method public static androidx.car.app.model.ForegroundCarColorSpan create(androidx.car.app.model.CarColor);
     method public androidx.car.app.model.CarColor getColor();
@@ -1422,6 +1478,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.CarIcon? getImage();
     method public int getImageType();
     method public androidx.car.app.model.OnClickDelegate? getOnClickDelegate();
+    method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.CarProgressBar? getProgressBar();
     method public androidx.car.app.model.CarText? getText();
     method public androidx.car.app.model.CarText? getTitle();
     method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public boolean isIndexable();
@@ -1440,6 +1497,7 @@ package androidx.car.app.model {
     method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public androidx.car.app.model.GridItem.Builder setIndexable(boolean);
     method public androidx.car.app.model.GridItem.Builder setLoading(boolean);
     method public androidx.car.app.model.GridItem.Builder setOnClickListener(androidx.car.app.model.OnClickListener);
+    method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.GridItem.Builder setProgressBar(androidx.car.app.model.CarProgressBar);
     method public androidx.car.app.model.GridItem.Builder setText(androidx.car.app.model.CarText);
     method public androidx.car.app.model.GridItem.Builder setText(CharSequence);
     method public androidx.car.app.model.GridItem.Builder setTitle(androidx.car.app.model.CarText?);
@@ -1761,6 +1819,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.Metadata? getMetadata();
     method @androidx.car.app.annotations.RequiresCarApi(6) public int getNumericDecoration();
     method public androidx.car.app.model.OnClickDelegate? getOnClickDelegate();
+    method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.CarProgressBar? getProgressBar();
     method @androidx.car.app.annotations.RequiresCarApi(8) public int getRowEndImageType();
     method public int getRowImageType();
     method public java.util.List<androidx.car.app.model.CarText!> getTexts();
@@ -1795,6 +1854,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.Row.Builder setMetadata(androidx.car.app.model.Metadata);
     method @IntRange(from=0) @androidx.car.app.annotations.RequiresCarApi(6) public androidx.car.app.model.Row.Builder setNumericDecoration(int);
     method public androidx.car.app.model.Row.Builder setOnClickListener(androidx.car.app.model.OnClickListener);
+    method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.Row.Builder setProgressBar(androidx.car.app.model.CarProgressBar);
     method public androidx.car.app.model.Row.Builder setTitle(androidx.car.app.model.CarText);
     method public androidx.car.app.model.Row.Builder setTitle(CharSequence);
     method public androidx.car.app.model.Row.Builder setToggle(androidx.car.app.model.Toggle);

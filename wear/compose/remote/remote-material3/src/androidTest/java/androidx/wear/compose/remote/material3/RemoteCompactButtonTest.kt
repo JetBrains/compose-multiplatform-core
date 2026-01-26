@@ -19,6 +19,7 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -26,6 +27,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rb
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -66,6 +68,7 @@ class RemoteCompactButtonTest {
         ) {
             Center(RemoteModifier.fillMaxSize()) {
                 RemoteCompactButton(
+                    onClick = testAction,
                     modifier = RemoteModifier,
                     enabled = false.rb,
                     label = { RemoteText("disabled".rs) },
@@ -118,3 +121,5 @@ class RemoteCompactButtonTest {
         )
     }
 }
+
+private val testAction = HostAction("".rs, 1.rf)

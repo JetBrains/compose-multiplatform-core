@@ -92,7 +92,10 @@ public open class UiAutomatorTestScope protected constructor() {
 
     /** Unregisters all the watchers previously registered with [watchFor]. */
     public fun unregisterWatchers() {
-        watcherRegistrations.forEach { it.unregister() }
+        // watcherRegistrations set will be modified in this loop, so we need to iterate on a copy.
+        for (registration in watcherRegistrations.toSet()) {
+            registration.unregister()
+        }
     }
 
     /**

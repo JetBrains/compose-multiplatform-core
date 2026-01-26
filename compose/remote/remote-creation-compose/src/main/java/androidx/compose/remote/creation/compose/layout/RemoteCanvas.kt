@@ -21,11 +21,11 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Matrix
@@ -38,10 +38,7 @@ import androidx.compose.ui.graphics.Matrix
 public class RemoteCanvas(
     /** The underlying [RecordingCanvas] being wrapped. */
     public val internalCanvas: RecordingCanvas
-) {
-    /** The [RemoteComposeCreationState] associated with the document being drawn into. */
-    public val creationState: RemoteComposeCreationState
-        get() = internalCanvas.creationState
+) : RemoteStateScope by internalCanvas {
 
     /** Saves the current canvas state. */
     public fun save() {

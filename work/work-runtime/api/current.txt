@@ -171,8 +171,9 @@ package androidx.work {
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object?> getKeyValueMap();
     method public long getLong(String key, long defaultValue);
     method public long[]? getLongArray(String key);
+    method public String?[]? getNullableStringArray(String key);
     method public String? getString(String key);
-    method public String[]? getStringArray(String key);
+    method @Deprecated public String[]? getStringArray(String key);
     method public <T> boolean hasKeyWithValueOfType(String key, Class<T> klass);
     method public byte[] toByteArray();
     property public java.util.Map<java.lang.String,java.lang.Object?> keyValueMap;
@@ -411,7 +412,7 @@ package androidx.work {
   }
 
   public final class WorkInfo {
-    ctor @BytecodeOnly public WorkInfo(java.util.UUID!, androidx.work.WorkInfo.State!, java.util.Set!, androidx.work.Data!, androidx.work.Data!, int, int, androidx.work.Constraints!, long, androidx.work.WorkInfo.PeriodicityInfo!, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public WorkInfo(java.util.UUID!, androidx.work.WorkInfo.State!, java.util.Set!, androidx.work.Data!, androidx.work.Data!, int, int, androidx.work.Constraints!, long, androidx.work.WorkInfo.PeriodicityInfo!, long, int, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress);
@@ -422,6 +423,7 @@ package androidx.work {
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis);
     ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis, optional int stopReason);
+    ctor public WorkInfo(java.util.UUID id, androidx.work.WorkInfo.State state, java.util.Set<java.lang.String> tags, optional androidx.work.Data outputData, optional androidx.work.Data progress, optional int runAttemptCount, optional int generation, optional androidx.work.Constraints constraints, optional long initialDelayMillis, optional androidx.work.WorkInfo.PeriodicityInfo? periodicityInfo, optional long nextScheduleTimeMillis, optional int stopReason, optional String? workerClassName);
     method @InaccessibleFromKotlin public androidx.work.Constraints getConstraints();
     method @InaccessibleFromKotlin public int getGeneration();
     method @InaccessibleFromKotlin public java.util.UUID getId();
@@ -434,6 +436,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public androidx.work.WorkInfo.State getState();
     method @InaccessibleFromKotlin @RequiresApi(31) public int getStopReason();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getTags();
+    method @InaccessibleFromKotlin public String? getWorkerClassName();
     property public androidx.work.Constraints constraints;
     property public int generation;
     property public java.util.UUID id;
@@ -446,6 +449,7 @@ package androidx.work {
     property public androidx.work.WorkInfo.State state;
     property @RequiresApi(31) public int stopReason;
     property public java.util.Set<java.lang.String> tags;
+    property public String? workerClassName;
     field public static final androidx.work.WorkInfo.Companion Companion;
     field public static final int STOP_REASON_APP_STANDBY = 12; // 0xc
     field public static final int STOP_REASON_BACKGROUND_RESTRICTION = 11; // 0xb

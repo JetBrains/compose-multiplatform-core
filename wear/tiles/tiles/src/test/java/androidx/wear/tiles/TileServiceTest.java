@@ -99,7 +99,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
@@ -200,6 +199,9 @@ public class TileServiceTest {
     @After
     public void tearDown() {
         TileService.setUseWearSdkImpl(null); // Reset WearSdk detection
+        mSavedResourcesSharedPref.edit().clear().commit();
+        mFakeTileServiceController.get().mResourcesToSend.clear();
+        mFakeTileServiceController.get().mResourcesToSendCounter.clear();
     }
 
     @Test
@@ -1137,14 +1139,15 @@ public class TileServiceTest {
 
     @Test
     public void mergeVersions_takesTileAndResVersion() {
+        int tileId = 1;
         String incomingVer = "1234";
         String resVer = "ABCD";
 
         String version =
                 TileService.mergeTileAndScopeResourcesVersion(
-                        incomingVer, new Resources.Builder().setVersion(resVer).build());
+                        tileId, incomingVer, new Resources.Builder().setVersion(resVer).build());
 
-        assertThat(version).isEqualTo(incomingVer + ";" + resVer);
+        assertThat(version).isEqualTo(tileId + ";" + incomingVer + ";" + resVer);
     }
 
     @Test
@@ -1199,7 +1202,10 @@ public class TileServiceTest {
         mTileProviderServiceStub.onResourcesRequest(
                 TILE_WITH_RESOURCES_ID,
                 new ResourcesRequestData(
-                        RequestProto.ResourcesRequest.newBuilder().build().toByteArray(),
+                        RequestProto.ResourcesRequest.newBuilder()
+                                .setVersion(tile.getResourcesVersion())
+                                .build()
+                                .toByteArray(),
                         ResourcesRequestData.VERSION_PROTOBUF),
                 mMockResourcesCallback);
         shadowOf(Looper.getMainLooper()).idle();
@@ -1300,7 +1306,10 @@ public class TileServiceTest {
         mTileProviderServiceStub.onResourcesRequest(
                 TILE_WITH_RESOURCES_ID,
                 new ResourcesRequestData(
-                        RequestProto.ResourcesRequest.newBuilder().build().toByteArray(),
+                        RequestProto.ResourcesRequest.newBuilder()
+                                .setVersion(tile.getResourcesVersion())
+                                .build()
+                                .toByteArray(),
                         ResourcesRequestData.VERSION_PROTOBUF),
                 mMockResourcesCallback);
         shadowOf(Looper.getMainLooper()).idle();
@@ -1362,7 +1371,11 @@ public class TileServiceTest {
                         ExtensionRegistryLite.getEmptyRegistry());
         expect.that(tile.hasResources()).isFalse();
         // Make sure we didn't save "empty" resource
-        expect.that(mFakeTileServiceController.get().removeSavedResources(5)).isNull();
+        expect.that(
+                        mFakeTileServiceController
+                                .get()
+                                .removeSavedResources(tile.getResourcesVersion()))
+                .isNull();
     }
 
     @Test
@@ -1384,38 +1397,6 @@ public class TileServiceTest {
                         tileCaptor.getValue().getContents(),
                         ExtensionRegistryLite.getEmptyRegistry());
         assertThat(tile.getResourcesVersion()).isEqualTo("5");
-    }
-
-    @Test
-    public void incomingTile_withScope_withSupportedRenderer_scopeClearedOnThrow()
-            throws Exception {
-        mFakeTileServiceController.get().mRequestFailure = new CancellationException();
-        // Register noop resources so we make sure it's cleared even when onTileResReq throws
-        mFakeTileServiceController
-                .get()
-                .getScope(TILE_WITH_RESOURCES_ID, Version.CURRENT)
-                .registerResource("1", new ImageResource.Builder().build());
-
-        mTileProviderServiceStub.onTileRequest(
-                TILE_WITH_RESOURCES_ID,
-                new TileRequestData(
-                        RequestProto.TileRequest.newBuilder()
-                                .setDeviceConfiguration(sDeviceParamRendererWithResources)
-                                .build()
-                                .toByteArray(),
-                        TileRequestData.VERSION_PROTOBUF),
-                mMockTileCallback);
-        shadowOf(Looper.getMainLooper()).idle();
-
-        verify(mMockTileCallback, never()).updateTileData(any());
-        expect.that(
-                        mFakeTileServiceController
-                                .get()
-                                .getScope(TILE_WITH_RESOURCES_ID, Version.CURRENT)
-                                .hasResources())
-                .isFalse();
-        expect.that(mFakeTileServiceController.get().removeSavedResources(TILE_WITH_RESOURCES_ID))
-                .isNull();
     }
 
     @Test
@@ -1484,10 +1465,10 @@ public class TileServiceTest {
         expect.that(mSavedResourcesSharedPref.getAll()).isNotEmpty();
         Map<String, ?> allPref = mSavedResourcesSharedPref.getAll();
         expect.that(allPref).isNotEmpty();
-        expect.that(allPref).hasSize(1);
+        expect.that(allPref).hasSize(2);
 
         // Get resources so we can compare that onTileResReq returns the same
-        String key = getOnlyKeyFromMap(allPref);
+        String key = allPref.keySet().stream().findFirst().orElseThrow().replace(";counter", "");
         Resources resources =
                 Resources.fromProto(
                         ResourceProto.Resources.parseFrom(
@@ -1501,7 +1482,10 @@ public class TileServiceTest {
         mTileProviderServiceStub.onResourcesRequest(
                 TILE_WITH_RESOURCES_ID,
                 new ResourcesRequestData(
-                        RequestProto.ResourcesRequest.newBuilder().build().toByteArray(),
+                        RequestProto.ResourcesRequest.newBuilder()
+                                .setVersion(tile.getResourcesVersion())
+                                .build()
+                                .toByteArray(),
                         ResourcesRequestData.VERSION_PROTOBUF),
                 mMockResourcesCallback);
         shadowOf(Looper.getMainLooper()).idle();
@@ -1520,19 +1504,21 @@ public class TileServiceTest {
         expect.that(mFakeTileServiceController.get().mResourcesToSend).isEmpty();
 
         Resources resources = new Resources.Builder().build();
-        int tileId = 5;
+        String resourcesVersion = "5;test;1234";
         mSavedResourcesSharedPref
                 .edit()
                 .putString(
-                        String.valueOf(tileId),
+                        resourcesVersion,
                         Base64.encodeToString(resources.toProto().toByteArray(), Base64.DEFAULT))
                 .apply();
+        mSavedResourcesSharedPref.edit().putInt(resourcesVersion + ";counter", 1).apply();
 
-        Resources fetchedResource = mFakeTileServiceController.get().removeSavedResources(tileId);
+        Resources fetchedResource =
+                mFakeTileServiceController.get().removeSavedResources(resourcesVersion);
 
         expect.that(mFakeTileServiceController.get().mResourcesToSend).isEmpty();
         expect.that(fetchedResource.toProto()).isEqualTo(resources.toProto());
-        expect.that(mSavedResourcesSharedPref.contains(String.valueOf(tileId))).isFalse();
+        expect.that(mSavedResourcesSharedPref.contains(resourcesVersion)).isFalse();
     }
 
     @Test
@@ -1541,11 +1527,11 @@ public class TileServiceTest {
         expect.that(mFakeTileServiceController.get().mResourcesToSend).isEmpty();
 
         Resources resources = new Resources.Builder().build();
-        int tileId = 5;
+        String resourcesVersion = "5;test;1234";
         mSavedResourcesSharedPref
                 .edit()
                 .putString(
-                        String.valueOf(tileId),
+                        resourcesVersion,
                         Base64.encodeToString(
                                 new Resources.Builder()
                                         .setVersion("diff")
@@ -1554,13 +1540,15 @@ public class TileServiceTest {
                                         .toByteArray(),
                                 Base64.DEFAULT))
                 .apply();
-        mFakeTileServiceController.get().mResourcesToSend.put(tileId, resources);
+        mSavedResourcesSharedPref.edit().putInt(resourcesVersion + ";counter", 1).apply();
+        mFakeTileServiceController.get().mResourcesToSend.put(resourcesVersion, resources);
 
-        Resources fetchedResource = mFakeTileServiceController.get().removeSavedResources(tileId);
+        Resources fetchedResource =
+                mFakeTileServiceController.get().removeSavedResources(resourcesVersion);
 
         expect.that(mFakeTileServiceController.get().mResourcesToSend).isEmpty();
         expect.that(fetchedResource.toProto()).isEqualTo(resources.toProto());
-        expect.that(mSavedResourcesSharedPref.contains(String.valueOf(tileId))).isFalse();
+        expect.that(mSavedResourcesSharedPref.contains(resourcesVersion)).isFalse();
     }
 
     @Test
@@ -1612,6 +1600,26 @@ public class TileServiceTest {
     }
 
     @Test
+    public void onResourcesRequest_versionWithScope_returnsResourcesWithVersionFromScope()
+            throws Exception {
+        int tileId = 5;
+        String resourcesVersion = tileId + ";test;1234";
+        ResourcesRequestData resourcesRequestData =
+                new ResourcesRequestData(
+                        RequestProto.ResourcesRequest.newBuilder()
+                                .setVersion(resourcesVersion)
+                                .build()
+                                .toByteArray(),
+                        ResourcesRequestData.VERSION_PROTOBUF);
+
+        mTileProviderServiceStub.onResourcesRequest(
+                tileId, resourcesRequestData, mMockResourcesCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockResourcesCallback, never()).updateResources(any());
+    }
+
+    @Test
     public void tileService_tileRequest_checkCapabilityFromScope() throws Exception {
         mTileProviderServiceStub.onTileRequest(
                 5,
@@ -1635,16 +1643,6 @@ public class TileServiceTest {
                 .isTrue();
         expect.that(scope.hasCapability(ProtoLayoutScope.RendererCapability.LOTTIE_COLOR_FOR_SLOT))
                 .isFalse();
-    }
-
-    private static String getOnlyKeyFromMap(Map<String, ?> allPref) {
-        String key = "";
-        for (Entry<String, ?> entry : allPref.entrySet()) {
-            // We know we have 1 entry
-            key = entry.getKey();
-            break;
-        }
-        return key;
     }
 
     private void assertActiveTilesSnapshot(@NonNull String tileIdentifier) throws Exception {

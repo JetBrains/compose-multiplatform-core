@@ -27,7 +27,7 @@ import androidx.xr.projected.binding.ProjectedServiceConnection
 import androidx.xr.projected.platform.IProjectedDeviceStateListener
 import androidx.xr.projected.platform.IProjectedService
 import androidx.xr.projected.platform.ProjectedDeviceState
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,12 +36,12 @@ import kotlinx.coroutines.launch
 internal class ProjectedDeviceLifecycle(
     provider: LifecycleOwner,
     private val context: Context,
-    private val serviceConnectionDispatcher: CoroutineDispatcher,
+    private val serviceConnectionCoroutineContext: CoroutineContext,
 ) : Lifecycle() {
 
     private val registry = LifecycleRegistry(provider)
     private val mainDispatcherCoroutineScope = CoroutineScope(Dispatchers.Main)
-    private val serviceConnectionCoroutineScope = CoroutineScope(serviceConnectionDispatcher)
+    private val serviceConnectionCoroutineScope = CoroutineScope(serviceConnectionCoroutineContext)
     private var serviceConnection: ProjectedServiceConnection? = null
     private var projectedService: IProjectedService? = null
 
@@ -82,7 +82,7 @@ internal class ProjectedDeviceLifecycle(
             val notInitialized = registry.observerCount == 0
             registry.addObserver(observer)
             if (notInitialized) {
-                launch(serviceConnectionDispatcher) { initialize() }
+                launch(serviceConnectionCoroutineContext) { initialize() }
             }
         }
     }

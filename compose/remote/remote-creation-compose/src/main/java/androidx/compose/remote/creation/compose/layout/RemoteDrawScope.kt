@@ -24,6 +24,7 @@ import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.graphics.ClipOp
@@ -42,7 +43,7 @@ public open class RemoteDrawScope(
     public val remoteCanvas: RemoteCanvas,
     public val fontScale: RemoteFloat,
     public val layoutDirection: LayoutDirection,
-) {
+) : RemoteStateScope by remoteCanvas {
     public val remoteComposeCreationState: RemoteComposeCreationState
         get() = remoteCanvas.creationState
 
@@ -194,7 +195,7 @@ public open class RemoteDrawScope(
             dstOffset.y,
             dstOffset.x + dstSize.width,
             dstOffset.y + dstSize.height,
-            scaleType.toRemoteCompose(),
+            scaleType.toImageScalingInt(),
             scaleFactor,
             contentDescription,
         )

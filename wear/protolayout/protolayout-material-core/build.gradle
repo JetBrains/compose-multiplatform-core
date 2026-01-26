@@ -31,7 +31,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     namespace = "androidx.wear.protolayout.materialcore"
 }

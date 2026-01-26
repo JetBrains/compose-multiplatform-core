@@ -24,7 +24,7 @@ plugins {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
     namespace = "androidx.wear.compose.material3.macrobenchmark"
     targetProjectPath = ":wear:compose:compose-material3-macrobenchmark-target"

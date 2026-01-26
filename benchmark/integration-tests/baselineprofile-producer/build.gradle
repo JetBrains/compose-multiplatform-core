@@ -32,7 +32,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdk = 24
+        minSdk { version = release(24) }
     }
     testOptions.managedDevices.allDevices {
         pixel6Api31(ManagedVirtualDevice) {

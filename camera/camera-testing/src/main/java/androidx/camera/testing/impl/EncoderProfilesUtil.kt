@@ -251,15 +251,20 @@ public object EncoderProfilesUtil {
 
     /** A utility method to create an AudioProfileProxy with some default values. */
     public fun createFakeAudioProfileProxy(
-        audioMediaType: String = DEFAULT_AUDIO_MEDIA_TYPE
+        audioCodec: Int = DEFAULT_AUDIO_CODEC,
+        audioMediaType: String = DEFAULT_AUDIO_MEDIA_TYPE,
+        bitrate: Int = DEFAULT_AUDIO_BITRATE,
+        sampleRate: Int = DEFAULT_AUDIO_SAMPLE_RATE,
+        channelCount: Int = DEFAULT_AUDIO_CHANNELS,
+        profile: Int = DEFAULT_AUDIO_PROFILE,
     ): AudioProfileProxy {
         return AudioProfileProxy.create(
-            DEFAULT_AUDIO_CODEC,
+            audioCodec,
             audioMediaType,
-            DEFAULT_AUDIO_BITRATE,
-            DEFAULT_AUDIO_SAMPLE_RATE,
-            DEFAULT_AUDIO_CHANNELS,
-            DEFAULT_AUDIO_PROFILE,
+            bitrate,
+            sampleRate,
+            channelCount,
+            profile,
         )
     }
 }

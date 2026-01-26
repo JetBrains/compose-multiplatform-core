@@ -18,9 +18,11 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.v2.RemoteCanvasV2
 import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
@@ -49,10 +51,11 @@ public fun RemoteCanvas(
         RemoteCanvasV2(modifier, content)
         return
     }
+    val creationState = LocalRemoteComposeCreationState.current
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
     Spacer(
         modifier =
-            RemoteComposeCanvasModifier(modifier.toRemoteCompose())
+            RemoteComposeCanvasModifier(creationState.toRecordingModifier(modifier))
                 .drawBehind {
                     RemoteDrawScope(
                             remoteCanvas =

@@ -22,7 +22,6 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.xr.arcore.RenderViewpoint
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -63,7 +62,6 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class EntityTest {
-    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private lateinit var sceneRuntime: SceneRuntime
@@ -993,6 +991,45 @@ class EntityTest {
         val successResult = scenecoreResult as PerceivedResolutionResult.Success
         assertThat(successResult.perceivedResolution.width).isEqualTo(100)
         assertThat(successResult.perceivedResolution.height).isEqualTo(200)
+    }
+
+    @Test
+    fun surfaceEntity_setShapeWithCornerRadius() {
+        val quad = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f), 0.5f)
+        surfaceEntity.shape = quad
+
+        val rtSurfaceEntity = surfaceEntity.rtEntity as FakeSurfaceEntity
+        assertThat(rtSurfaceEntity.shape).isInstanceOf(RtSurfaceEntity.Shape.Quad::class.java)
+
+        val rtShape = rtSurfaceEntity.shape as RtSurfaceEntity.Shape.Quad
+        assertThat(rtShape.cornerRadius).isEqualTo(0.5f)
+    }
+
+    @Test
+    fun surfaceEntity_setShapeWithInvalidCornerRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f), -0.5f)
+        }
+    }
+
+    @Test
+    fun surfaceEntity_createQuadWithInvalidExtents_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(-1.0f, 1.0f))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, -1.0f))
+        }
+    }
+
+    @Test
+    fun surfaceEntity_createSphereWithInvalidRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) { SurfaceEntity.Shape.Sphere(-1.0f) }
+    }
+
+    @Test
+    fun surfaceEntity_createHemisphereWithInvalidRadius_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) { SurfaceEntity.Shape.Hemisphere(-1.0f) }
     }
 
     @Test

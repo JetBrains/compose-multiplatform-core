@@ -76,7 +76,7 @@ private var Impl: EdgeToEdgeImpl? = null
  */
 @JvmName("enable")
 @JvmOverloads
-fun ComponentActivity.enableEdgeToEdge(
+public fun ComponentActivity.enableEdgeToEdge(
     statusBarStyle: SystemBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
     navigationBarStyle: SystemBarStyle = SystemBarStyle.auto(DefaultLightScrim, DefaultDarkScrim),
 ) {
@@ -129,7 +129,7 @@ fun ComponentActivity.enableEdgeToEdge(
 }
 
 /** The style for the status bar or the navigation bar used in [enableEdgeToEdge]. */
-class SystemBarStyle
+public class SystemBarStyle
 private constructor(
     private val lightScrim: Int,
     internal val darkScrim: Int,
@@ -137,7 +137,7 @@ private constructor(
     internal val detectDarkMode: (Resources) -> Boolean,
 ) {
 
-    companion object {
+    public companion object {
 
         /**
          * Creates a new instance of [SystemBarStyle]. This style detects the dark mode
@@ -161,7 +161,7 @@ private constructor(
          */
         @JvmStatic
         @JvmOverloads
-        fun auto(
+        public fun auto(
             @ColorInt lightScrim: Int,
             @ColorInt darkScrim: Int,
             detectDarkMode: (Resources) -> Boolean = { resources ->
@@ -185,7 +185,7 @@ private constructor(
          *   the contrast against the light system icons.
          */
         @JvmStatic
-        fun dark(@ColorInt scrim: Int): SystemBarStyle {
+        public fun dark(@ColorInt scrim: Int): SystemBarStyle {
             return SystemBarStyle(
                 lightScrim = scrim,
                 darkScrim = scrim,
@@ -204,7 +204,7 @@ private constructor(
          *   system icon color is always light. It is expected to be dark.
          */
         @JvmStatic
-        fun light(@ColorInt scrim: Int, @ColorInt darkScrim: Int): SystemBarStyle {
+        public fun light(@ColorInt scrim: Int, @ColorInt darkScrim: Int): SystemBarStyle {
             return SystemBarStyle(
                 lightScrim = scrim,
                 darkScrim = darkScrim,

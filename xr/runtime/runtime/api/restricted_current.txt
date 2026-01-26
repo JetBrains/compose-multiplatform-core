@@ -197,6 +197,10 @@ package androidx.xr.runtime {
     property public kotlin.time.ComparableTimeMark timeMark;
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalXrDeviceLifecycleApi {
+    ctor @KotlinOnly public ExperimentalXrDeviceLifecycleApi();
+  }
+
   public final class FieldOfView {
     ctor public FieldOfView(float angleLeft, float angleRight, float angleUp, float angleDown);
     method public androidx.xr.runtime.FieldOfView copy();
@@ -262,7 +266,7 @@ package androidx.xr.runtime {
     ctor public NodeHolder(T node, Class<? extends java.lang.Object?> type);
   }
 
-  @SuppressCompatibility @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is in an unstable preview state and requires a developer preview system image work properly. Do not use this API in release builds as it will likely to lead to crashes.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PreviewSpatialApi3 {
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is in an unstable preview state and requires a developer preview system image work properly. Do not use this API in release builds as it will likely to lead to crashes.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PreviewSpatialApi3 {
   }
 
   public final class RequiredCalibrationType {
@@ -274,7 +278,7 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.RequiredCalibrationType REQUIRED_CALIBRATION_TYPE_FACE_TRACKING;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.CLASS}) public @interface RequiresSpatialApi {
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.CLASS}) public @interface RequiresSpatialApi {
     ctor @KotlinOnly public RequiresSpatialApi(int value);
     method @InaccessibleFromKotlin public abstract int value();
     property public abstract int value;
@@ -369,7 +373,7 @@ package androidx.xr.runtime {
     ctor public SessionResumeSuccess();
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialApiVersionHelper {
+  public final class SpatialApiVersionHelper {
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static int getPreviewSpatialApiVersion();
     method @InaccessibleFromKotlin public static int getSpatialApiVersion();
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static int previewSpatialApiVersion;
@@ -384,7 +388,7 @@ package androidx.xr.runtime {
     property public abstract int spatialApiVersion;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialApiVersions {
+  public final class SpatialApiVersions {
     property public static int SPATIAL_API_V1;
     property public static int SPATIAL_API_V2;
     property public static int SPATIAL_API_V3;
@@ -552,11 +556,15 @@ package androidx.xr.runtime.internal {
     method public void configure(androidx.xr.runtime.Config config);
     method public void create();
     method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
+    method @InaccessibleFromKotlin public default Long? getInstancePointer();
+    method @InaccessibleFromKotlin public default Long? getSessionPointer();
     method public void pause();
     method public void resume();
     method public void stop();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark>);
     property public abstract androidx.xr.runtime.Config config;
+    property public default Long? instancePointer;
+    property public default Long? sessionPointer;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface PerceptionRuntimeFactory extends androidx.xr.runtime.internal.Service {
@@ -579,6 +587,15 @@ package androidx.xr.runtime.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class UnsupportedDeviceException extends androidx.xr.runtime.internal.LifecycleException {
     ctor public UnsupportedDeviceException();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface XrDeviceCapabilityProvider extends androidx.lifecycle.LifecycleOwner {
+    method @InaccessibleFromKotlin public android.content.Context getContext();
+    property public abstract android.content.Context context;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface XrDeviceCapabilityProviderFactory extends androidx.xr.runtime.internal.Service {
+    method public androidx.xr.runtime.internal.XrDeviceCapabilityProvider create(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
   }
 
 }

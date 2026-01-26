@@ -34,6 +34,14 @@ internal const val ANNOTATION_TOOLBAR_IN_DARK_MODE = "annotation_toolbar_in_dark
 internal const val ANNOTATION_TOOLBAR_IN_LIGHT_MODE = "annotation_toolbar_in_light_mode"
 
 internal const val ANNOTATION_TOOLBAR_COLLAPSED = "annotation_toolbar_collapsed"
+internal const val ANNOTATION_TOOLBAR_DOCKED_START_WITH_BRUSH_SIZE =
+    "annotation_toolbar_docked_start_with_brush_size"
+internal const val ANNOTATION_TOOLBAR_DOCKED_START_WITH_COLOR_PALETTE =
+    "annotation_toolbar_docked_start_with_color_palette"
+internal const val ANNOTATION_TOOLBAR_DOCKED_END_WITH_BRUSH_SIZE =
+    "annotation_toolbar_docked_end_with_brush_size"
+internal const val ANNOTATION_TOOLBAR_DOCKED_END_WITH_COLOR_PALETTE =
+    "annotation_toolbar_docked_end_with_color_palette"
 internal const val BRUSH_SIZE_SELECTED_ON_STEP_0 = "brush_size_selector_on_step_0"
 internal const val BRUSH_SIZE_SELECTED_ON_STEP_4 = "brush_size_selector_on_step_4"
 internal const val BRUSH_SIZE_IN_VERTICAL_ORIENTATION = "brush_size_in_vertical_orientation"

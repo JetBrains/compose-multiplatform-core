@@ -71,6 +71,7 @@ internal class SurfaceFeatureImpl(
                             entityImpressNode,
                             value.extents.width,
                             value.extents.height,
+                            value.cornerRadius,
                         )
                     } catch (e: IllegalArgumentException) {
                         throw IllegalStateException(e)
@@ -91,6 +92,22 @@ internal class SurfaceFeatureImpl(
                         impressApi.setStereoSurfaceEntityCanvasShapeHemisphere(
                             entityImpressNode,
                             value.radius,
+                        )
+                    } catch (e: IllegalArgumentException) {
+                        throw IllegalStateException(e)
+                    }
+                }
+                is SurfaceEntity.Shape.CustomMesh -> {
+                    try {
+                        impressApi.setStereoSurfaceEntityCanvasShapeCustomMesh(
+                            entityImpressNode,
+                            value.leftEye.positions,
+                            value.leftEye.texCoords,
+                            value.leftEye?.indices,
+                            value.rightEye?.positions,
+                            value.rightEye?.texCoords,
+                            value.rightEye?.indices,
+                            value.drawMode,
                         )
                     } catch (e: IllegalArgumentException) {
                         throw IllegalStateException(e)

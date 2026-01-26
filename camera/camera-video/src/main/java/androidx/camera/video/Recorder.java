@@ -42,6 +42,7 @@ import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.util.Arrays.asList;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -55,7 +56,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.util.LruCache;
 import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
@@ -70,12 +70,9 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraInfo;
-import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
-import androidx.camera.core.impl.AdapterCameraInfo;
-import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.MutableStateObservable;
 import androidx.camera.core.impl.Observable;
@@ -342,7 +339,11 @@ public final class Recorder implements VideoOutput {
      *
      * @see QualitySelector
      */
-    public static final QualitySelector DEFAULT_QUALITY_SELECTOR = VideoSpec.QUALITY_SELECTOR_AUTO;
+    public static final QualitySelector DEFAULT_QUALITY_SELECTOR =
+            QualitySelector.fromOrderedList(
+                    asList(Quality.FHD, Quality.HD, Quality.SD),
+                    FallbackStrategy.higherQualityOrLowerThan(Quality.FHD)
+            );
 
     private static final VideoSpec VIDEO_SPEC_DEFAULT =
             VideoSpec.builder()
@@ -351,7 +352,7 @@ public final class Recorder implements VideoOutput {
                     .build();
     private static final MediaSpec MEDIA_SPEC_DEFAULT =
             MediaSpec.builder()
-                    .setOutputFormat(MediaSpec.OUTPUT_FORMAT_AUTO)
+                    .setOutputFormat(MediaSpec.OUTPUT_FORMAT_UNSPECIFIED)
                     .setVideoSpec(VIDEO_SPEC_DEFAULT)
                     .build();
     @SuppressWarnings({"deprecation", "RedundantSuppression"})
@@ -369,6 +370,8 @@ public final class Recorder implements VideoOutput {
     private static final long RETRY_SETUP_VIDEO_DELAY_MS = 1000L;
     @VisibleForTesting
     static final EncoderFactory DEFAULT_ENCODER_FACTORY = EncoderImpl::new;
+    private static final VideoEncoderInfo.Finder DEFAULT_VIDEO_ENCODER_INFO_FINDER =
+            VideoEncoderInfoImpl.FINDER;
     private static final MuxerFactory DEFAULT_MUXER_FACTORY = MediaMuxerImpl::new;
     private static final OutputStorage.Factory OUTPUT_STORAGE_FACTORY_DEFAULT =
             OutputStorageImpl::new;
@@ -380,11 +383,6 @@ public final class Recorder implements VideoOutput {
     private static final String INSUFFICIENT_STORAGE_ERROR_MSG =
             "Insufficient storage space. The available storage (%d bytes) is below the required "
                     + "threshold of %d bytes.";
-
-    @GuardedBy("sVideoCapabilitiesCache")
-    // A size of 16 is likely more than enough for all camera/config combinations on a device.
-    private static final LruCache<VideoCapabilitiesCacheKey, VideoCapabilities>
-            sVideoCapabilitiesCache = new LruCache<>(16);
 
     @VisibleForTesting
     static int sRetrySetupVideoMaxCount = RETRY_SETUP_VIDEO_MAX_COUNT;
@@ -613,7 +611,10 @@ public final class Recorder implements VideoOutput {
             int sessionType) {
         int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
                 ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
-        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource);
+        String videoMimeType = getObservableData(mMediaSpec).getVideoSpec().getMimeType();
+
+        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource,
+                videoMimeType);
     }
 
     /**
@@ -746,8 +747,8 @@ public final class Recorder implements VideoOutput {
      * Gets the audio source of this Recorder.
      *
      * @return the value provided to {@link Builder#setAudioSource(int)} on the builder used to
-     * create this recorder, or the default value of {@link AudioSpec#SOURCE_AUTO} if no source was
-     * set.
+     * create this recorder, or the default value of {@link AudioSpec#SOURCE_UNSPECIFIED} if no
+     * source was set.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @AudioSpec.Source
@@ -1270,21 +1271,11 @@ public final class Recorder implements VideoOutput {
         Size surfaceSize = surfaceRequest.getResolution();
         // Fetch and cache nearest encoder profiles, if one exists.
         DynamicRange dynamicRange = surfaceRequest.getDynamicRange();
-        VideoCapabilities capabilities = getMediaCapabilities(
+        EncoderProfilesResolver profilesResolver = getEncoderProfilesResolver(
                 surfaceRequest.getCamera().getCameraInfo(),
                 surfaceRequest.getSessionType());
-        Quality highestSupportedQuality = capabilities.findNearestHigherSupportedQualityFor(
+        mResolvedEncoderProfiles = profilesResolver.findNearestHigherSupportedEncoderProfilesFor(
                 surfaceSize, dynamicRange);
-        Logger.d(TAG, "Using supported quality of " + highestSupportedQuality
-                + " for surface size " + surfaceSize);
-        if (highestSupportedQuality != Quality.NONE) {
-            mResolvedEncoderProfiles = capabilities.getProfiles(highestSupportedQuality,
-                    dynamicRange);
-            if (mResolvedEncoderProfiles == null) {
-                throw new AssertionError("Camera advertised available quality but did not "
-                        + "produce EncoderProfiles  for advertised quality.");
-            }
-        }
         Logger.d(TAG, "mResolvedEncoderProfiles = " + mResolvedEncoderProfiles);
 
         if (mSetupVideoTask != null) {
@@ -1711,7 +1702,7 @@ public final class Recorder implements VideoOutput {
             try {
                 MediaSpec mediaSpec = getObservableData(mMediaSpec);
                 int muxerOutputFormat =
-                        mediaSpec.getOutputFormat() == MediaSpec.OUTPUT_FORMAT_AUTO
+                        mediaSpec.getOutputFormat() == MediaSpec.OUTPUT_FORMAT_UNSPECIFIED
                                 ? supportedMuxerFormatOrDefaultFrom(mResolvedEncoderProfiles,
                                 MediaSpec.outputFormatToMuxerFormat(
                                         MEDIA_SPEC_DEFAULT.getOutputFormat()))
@@ -3096,7 +3087,18 @@ public final class Recorder implements VideoOutput {
      */
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE);
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, VideoSpec.MIME_TYPE_UNSPECIFIED);
+    }
+
+    /**
+     * Returns the {@link VideoCapabilities} of Recorder with respect to input camera information
+     * and video mime type.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
+            @NonNull String mimeType) {
+        return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, mimeType);
     }
 
     /**
@@ -3119,7 +3121,7 @@ public final class Recorder implements VideoOutput {
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                videoCapabilitiesSource);
+                videoCapabilitiesSource, VideoSpec.MIME_TYPE_UNSPECIFIED);
     }
 
     /**
@@ -3164,74 +3166,45 @@ public final class Recorder implements VideoOutput {
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         VideoCapabilities videoCapabilities = getVideoCapabilitiesInternal(
-                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource);
+                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource,
+                VideoSpec.MIME_TYPE_UNSPECIFIED);
         return videoCapabilities.getSupportedDynamicRanges().isEmpty() ? null : videoCapabilities;
     }
 
     private static @NonNull VideoCapabilities getVideoCapabilitiesInternal(
             @VideoRecordingType int videoRecordingType,
             @NonNull CameraInfo cameraInfo,
+            @VideoCapabilitiesSource int videoCapabilitiesSource,
+            @NonNull String mimeType) {
+        CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) cameraInfo;
+        if (VideoSpec.MIME_TYPE_UNSPECIFIED.equals(mimeType)) {
+            EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
+                    videoRecordingType, cameraInfo, videoCapabilitiesSource);
+            return new RecorderVideoCapabilities(profilesResolver, cameraInfoInternal);
+        } else {
+            return new MimeMatchedVideoCapabilities(mimeType, cameraInfoInternal,
+                    DEFAULT_VIDEO_ENCODER_INFO_FINDER);
+        }
+    }
+
+    /** Gets the {@link EncoderProfilesResolver} for the given camera info. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Override
+    public @NonNull EncoderProfilesResolver getEncoderProfilesResolver(
+            @NonNull CameraInfo cameraInfo, int sessionType) {
+        int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
+                ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
+
+        return getEncoderProfilesResolverInternal(videoCaptureType, cameraInfo,
+                mVideoCapabilitiesSource);
+    }
+
+    private static @NonNull EncoderProfilesResolver getEncoderProfilesResolverInternal(
+            @VideoRecordingType int videoRecordingType,
+            @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
-        if (shouldSkipCapabilitiesCache(cameraInfo)) {
-            return new RecorderVideoCapabilities(videoCapabilitiesSource,
-                    (CameraInfoInternal) cameraInfo, videoRecordingType,
-                    VideoEncoderInfoImpl.FINDER);
-        }
-
-        AdapterCameraInfo adapterCameraInfo = (AdapterCameraInfo) cameraInfo;
-
-        String cameraId = adapterCameraInfo.getCameraId();
-        CameraConfig cameraConfig = adapterCameraInfo.getCameraConfig();
-        VideoCapabilitiesCacheKey key = VideoCapabilitiesCacheKey.create(cameraId, cameraConfig,
-                videoRecordingType, videoCapabilitiesSource);
-
-        synchronized (sVideoCapabilitiesCache) {
-            VideoCapabilities capabilities = sVideoCapabilitiesCache.get(key);
-
-            if (capabilities == null) {
-                capabilities = new RecorderVideoCapabilities(videoCapabilitiesSource,
-                        (CameraInfoInternal) cameraInfo, videoRecordingType,
-                        VideoEncoderInfoImpl.FINDER);
-                sVideoCapabilitiesCache.put(key, capabilities);
-            }
-            return capabilities;
-        }
-    }
-
-    /**
-     * Checks whether the video capabilities for a given camera should be cached.
-     *
-     * <p>Caching is skipped for external cameras or cameras with an unknown lens facing, as their
-     * properties may not be stable across device reboots or during camera hot-plugging.
-     */
-    private static boolean shouldSkipCapabilitiesCache(@NonNull CameraInfo cameraInfo) {
-        if (cameraInfo instanceof AdapterCameraInfo) {
-            AdapterCameraInfo adapterCameraInfo = (AdapterCameraInfo) cameraInfo;
-            return adapterCameraInfo.isExternalCamera()
-                    || adapterCameraInfo.getLensFacing() == CameraSelector.LENS_FACING_UNKNOWN;
-        }
-        // If we can't determine the camera properties (e.g., not an AdapterCameraInfo),
-        // it's safer to skip caching.
-        return true;
-    }
-
-    @SuppressWarnings("unused") // Use as a key class, which methods are not called directly.
-    @AutoValue
-    abstract static class VideoCapabilitiesCacheKey {
-        static VideoCapabilitiesCacheKey create(@NonNull String cameraId,
-                @NonNull CameraConfig cameraConfig, @VideoRecordingType int videoRecordingType,
-                @VideoCapabilitiesSource int videoCapabilitiesSource) {
-            return new AutoValue_Recorder_VideoCapabilitiesCacheKey(cameraId, cameraConfig,
-                    videoRecordingType, videoCapabilitiesSource);
-        }
-
-        abstract @NonNull String getCameraId();
-
-        abstract @NonNull CameraConfig getCameraConfig();
-
-        abstract @VideoRecordingType int getVideoRecordingType();
-
-        abstract @VideoCapabilitiesSource int getVideoCapabilitiesSource();
+        return EncoderProfilesResolverFactory.getResolver(cameraInfo, videoRecordingType,
+                videoCapabilitiesSource, DEFAULT_VIDEO_ENCODER_INFO_FINDER);
     }
 
     @AutoValue
@@ -3700,7 +3673,7 @@ public final class Recorder implements VideoOutput {
          * options.
          */
         public Builder() {
-            mMediaSpecBuilder = MediaSpec.builder();
+            mMediaSpecBuilder = MEDIA_SPEC_DEFAULT.toBuilder();
         }
 
         /**
@@ -3860,9 +3833,9 @@ public final class Recorder implements VideoOutput {
          * enabled on a per-recording basis with {@link PendingRecording#withAudioEnabled()}
          * before starting the recording.
          *
-         * @param source The audio source to use. One of {@link AudioSpec#SOURCE_AUTO} or
+         * @param source The audio source to use. One of {@link AudioSpec#SOURCE_UNSPECIFIED} or
          *               {@link AudioSpec#SOURCE_CAMCORDER}. Default is
-         *               {@link AudioSpec#SOURCE_AUTO}.
+         *               {@link AudioSpec#SOURCE_UNSPECIFIED}.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull Builder setAudioSource(@AudioSpec.Source int source) {

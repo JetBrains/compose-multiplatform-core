@@ -93,6 +93,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
             is ToolbarIntent.BrushSizeChanged -> onBrushSizeChanged(intent)
             is ToolbarIntent.ColorSelected -> onColorSelected(intent)
             is ToolbarIntent.DismissPopups -> hideAnyPopup()
+            is ToolbarIntent.DockStateChanged ->
+                _state.value = _state.value.copy(dockedState = intent.dockedState)
             is ToolbarIntent.ExpandToolbar -> expandOrCollapseToolbar(isExpanded = true)
             is ToolbarIntent.CollapseToolbar -> expandOrCollapseToolbar(isExpanded = false)
         }

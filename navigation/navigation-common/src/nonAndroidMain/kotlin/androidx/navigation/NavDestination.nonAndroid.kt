@@ -209,13 +209,11 @@ actual constructor(public actual val navigatorName: String) {
         val equalArguments =
             impl.arguments.size == other.impl.arguments.size &&
                 impl.arguments.asSequence().all {
-                    other.impl.arguments.containsKey(it.key) && other.impl.arguments[it.key] == it.value
+                    other.impl.arguments.containsKey(it.key) &&
+                        other.impl.arguments[it.key] == it.value
                 }
 
-        return id == other.id &&
-            route == other.route &&
-            equalDeepLinks &&
-            equalArguments
+        return id == other.id && route == other.route && equalDeepLinks && equalArguments
     }
 
     public override fun hashCode(): Int {

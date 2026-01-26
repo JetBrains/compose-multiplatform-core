@@ -18,7 +18,6 @@ package androidx.compose.remote.player.compose.creation.compose.capture
 
 import android.content.Context
 import android.graphics.BlendMode
-import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.WireBuffer
@@ -38,12 +37,15 @@ import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
@@ -122,9 +124,7 @@ class BlendModeTest {
     @Composable
     private fun RemoteBlendModeVisual(blendMode: BlendMode, name: String) {
         RemoteBox(
-            RemoteModifier.size(100.rdp)
-                .border(1.rdp, androidx.compose.ui.graphics.Color.Black)
-                .padding(8.dp),
+            RemoteModifier.size(100.rdp).border(1.rdp, Color.Black.rc).padding(8.dp),
             horizontalAlignment = RemoteAlignment.Start,
             verticalArrangement = RemoteArrangement.Top,
         ) {
@@ -135,7 +135,7 @@ class BlendModeTest {
                 val paint =
                     RemotePaint().apply {
                         style = Paint.Style.FILL
-                        this.color = Color.MAGENTA
+                        this.color = Color.Magenta.toArgb()
                     }
 
                 // Draw dst
@@ -146,7 +146,7 @@ class BlendModeTest {
                 )
 
                 // Draw src
-                paint.color = Color.BLUE
+                paint.color = Color.Blue.toArgb()
                 paint.blendMode = blendMode
                 drawRect(
                     paint = paint,

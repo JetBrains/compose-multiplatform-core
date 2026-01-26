@@ -687,7 +687,6 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    // TODO: b/441105591 - Add more unit tests.
     public void enablePanelDepthTest(boolean enabled) {
         mExtensions.enablePanelDepthTest(mActivity, enabled);
     }

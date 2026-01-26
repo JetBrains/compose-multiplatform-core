@@ -133,7 +133,7 @@ private fun RemoteDrawScope.drawTimeText(
 
     val textPaint =
         RemotePaint().apply {
-            textSize = fontSize.id
+            textSize = fontSize.floatId
             typeface = fontTypeface
             remoteColor = textColor
         }

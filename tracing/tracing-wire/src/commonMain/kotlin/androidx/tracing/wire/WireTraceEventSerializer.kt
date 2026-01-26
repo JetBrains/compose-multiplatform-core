@@ -212,6 +212,8 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchTrackEvent.name = event.name
                 scratchTrackEvent.counter_value = event.counterLongValue
                 scratchTrackEvent.double_counter_value = event.counterDoubleValue
+                scratchTrackEvent.correlation_id = event.correlationId
+                scratchTrackEvent.correlation_id_str = event.correlationIdString
                 scratchTrackEvent.flow_ids = event.flowIds
                 // Categories
                 if (

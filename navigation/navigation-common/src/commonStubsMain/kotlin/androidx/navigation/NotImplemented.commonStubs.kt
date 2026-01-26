@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package androidx.navigation.internal
 
-package androidx.navigation
+internal actual class SynchronizedObject actual constructor()
 
-import androidx.annotation.RestrictTo
-
-@Suppress("NOTHING_TO_INLINE")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public inline fun implementedInJetBrainsFork(): Nothing =
-    throw NotImplementedError("Implemented only in JetBrains fork.")
+internal actual inline fun <T> synchronizedImpl(
+    lock: SynchronizedObject,
+    crossinline action: () -> T,
+): T = action()

@@ -147,7 +147,6 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                         .build()
                 tilePreview.onTileResourceRequest(resourcesRequest)
             }
-        scope.clearAll()
 
         val inflateFuture = inflateAsync(layout, resources, this@TileServiceViewAdapter)
         inflateFuture.addListener(

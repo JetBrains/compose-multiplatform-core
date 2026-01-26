@@ -18,10 +18,14 @@ package androidx.pdf.ink.view
 
 import android.content.Context
 import android.view.ViewGroup.LayoutParams
+import android.widget.LinearLayout
 import androidx.pdf.PdfTestActivity
 import androidx.pdf.ink.R
 import androidx.pdf.ink.util.setSliderValue
 import androidx.pdf.ink.util.withSliderValue
+import androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_BOTTOM
+import androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_END
+import androidx.pdf.ink.view.draganddrop.ToolbarDockState.Companion.DOCK_STATE_START
 import androidx.pdf.ink.view.tool.AnnotationToolView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onIdle
@@ -38,6 +42,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.android.material.slider.Slider
+import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlin.test.assertNotNull
@@ -302,6 +307,61 @@ class AnnotationToolbarTest {
         assertTrue(annotationToolbar.isConfigPopupVisible)
         annotationToolbar.dismissPopups()
         assertFalse(annotationToolbar.isConfigPopupVisible)
+    }
+
+    @Test
+    fun testSetDockState_updatesOrientationAndConstraints() {
+        var toolbar: AnnotationToolbar? = null
+        setupAnnotationToolbar { toolbar = it }
+
+        assertNotNull(toolbar)
+
+        // Change dock state to START (Vertical)
+        activityRule.scenario.onActivity { toolbar.dockState = DOCK_STATE_START }
+        onIdle()
+
+        // Verify tool tray orientation updated to Vertical
+        val toolTray = toolbar.findViewById<LinearLayout>(R.id.tool_tray)
+        assertThat(toolTray.orientation).isEqualTo(LinearLayout.VERTICAL)
+
+        // Change dock state back to BOTTOM (Horizontal)
+        activityRule.scenario.onActivity { toolbar.dockState = DOCK_STATE_BOTTOM }
+        onIdle()
+
+        // Verify tool tray orientation reverted to Horizontal
+        assertThat(toolTray?.orientation).isEqualTo(LinearLayout.HORIZONTAL)
+    }
+
+    @Test
+    fun testDockState_restoresOnConfigChange() {
+        // Prepare activity with a toolbar
+        PdfTestActivity.onCreateCallback = { activity ->
+            activity.container.addView(
+                createToolbar(activity),
+                LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT),
+            )
+        }
+
+        with(ActivityScenario.launch(PdfTestActivity::class.java)) {
+            // Set dock state to END
+            onActivity { activity ->
+                val toolbar = activity.findViewById<AnnotationToolbar>(ANNOTATION_TOOLBAR_VIEW_ID)
+                toolbar.dockState = DOCK_STATE_END
+            }
+            onIdle()
+
+            // Recreate activity
+            recreate()
+
+            // Assert dock state is restored
+            onActivity { activity ->
+                val toolbar = activity.findViewById<AnnotationToolbar>(ANNOTATION_TOOLBAR_VIEW_ID)
+                assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_END)
+
+                val toolTray = toolbar.findViewById<LinearLayout>(R.id.tool_tray)
+                assertThat(toolTray.orientation).isEqualTo(LinearLayout.VERTICAL)
+            }
+        }
     }
 
     private fun assertColorPaletteChecks() {

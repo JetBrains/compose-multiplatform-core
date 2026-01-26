@@ -26,6 +26,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Size
 import androidx.annotation.RequiresExtension
+import androidx.pdf.annotation.models.ImagePdfObject
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor.Companion.parcelSizeInBytes
 import androidx.pdf.content.PdfPageTextContent
@@ -46,6 +47,7 @@ import java.io.File
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -278,6 +280,92 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    @Test
+    fun getPageTopObject_validImageObject_fetchLargeImage() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        withDocument(PDF_DOCUMENT_WITH_TEXT_AND_IMAGE) { document ->
+            val pageNumber = 0
+            val point = PointF(500f, 500f)
+
+            val topObject = document.getTopPageObjectAtPosition(pageNumber, point)
+
+            assertNotNull(topObject)
+            assertThat(topObject is ImagePdfObject).isTrue()
+
+            (topObject as ImagePdfObject).let { topObject ->
+                assertNotNull(topObject.bitmap)
+                assertThat(topObject.bitmap.byteCount).isEqualTo(14960000)
+                assertThat(topObject.bounds.top).isNotEqualTo(topObject.bounds.bottom)
+                assertThat(topObject.bounds.left).isNotEqualTo(topObject.bounds.right)
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    @Test
+    fun getPageTopObject_validImageObject_fetchMediumImage() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        withDocument(PDF_DOCUMENT_WITH_IMAGE) { document ->
+            val pageNumber = 0
+            val point = PointF(150f, 300f)
+
+            val topObject = document.getTopPageObjectAtPosition(pageNumber, point)
+            assertNotNull(topObject)
+            assertThat(topObject is ImagePdfObject).isTrue()
+
+            (topObject as ImagePdfObject).let { topObject ->
+                assertNotNull(topObject.bitmap)
+                assertThat(topObject.bitmap.byteCount).isEqualTo(1839280)
+                assertThat(topObject.bounds.top).isNotEqualTo(topObject.bounds.bottom)
+                assertThat(topObject.bounds.left).isNotEqualTo(topObject.bounds.right)
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    @Test
+    fun getPageTopObject_validImageObject_fetchSmallImage() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        withDocument(PDF_DOCUMENT_WITH_LINKS) { document ->
+            val pageNumber = 0
+            val point = PointF(60f, 50f)
+
+            val topObject = document.getTopPageObjectAtPosition(pageNumber, point)
+            assertNotNull(topObject)
+            assertThat(topObject is ImagePdfObject).isTrue()
+
+            (topObject as ImagePdfObject).let { topObject ->
+                assertNotNull(topObject.bitmap)
+                assertThat(topObject.bitmap.byteCount).isEqualTo(23800)
+                assertThat(topObject.bounds.top).isNotEqualTo(topObject.bounds.bottom)
+                assertThat(topObject.bounds.left).isNotEqualTo(topObject.bounds.right)
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    @Test
+    fun getPageTopObject_validImageObject_notPresent() = runTest {
+        if (!isRequiredSdkExtensionAvailable(19)) return@runTest
+
+        withDocument(PDF_DOCUMENT_WITH_LINKS) { document ->
+            val pageNumber = 0
+            val point1 = PointF(500f, 500f)
+
+            val topObject1 = document.getTopPageObjectAtPosition(pageNumber, point1)
+            assertNull(topObject1)
+
+            val point2 = PointF(300f, 300f)
+
+            val topObject2 = document.getTopPageObjectAtPosition(pageNumber, point2)
+            assertNull(topObject2)
+        }
+    }
+
     @Test
     fun getPageContent_pageWithOnlyText_returnsPageContentWithText() = runTest {
         withDocument(PDF_DOCUMENT) { document ->
@@ -343,7 +431,7 @@ class SandboxedPdfDocumentTest {
         val pageNum = 0
         val editableFormWidget =
             document.getFormWidgetInfos(pageNum).find {
-                !it.readOnly && it.widgetType == FormWidgetInfo.WIDGET_TYPE_CHECKBOX
+                !it.isReadOnly && it.widgetType == FormWidgetInfo.WIDGET_TYPE_CHECKBOX
             }
         requireNotNull(editableFormWidget)
 
@@ -541,6 +629,8 @@ class SandboxedPdfDocumentTest {
         private const val PDF_DOCUMENT_WITH_LINKS = "sample_links.pdf"
         private const val PDF_DOCUMENT_PARTIALLY_CORRUPTED_FILE = "partially_corrupted.pdf"
         private const val PDF_DOCUMENT_WITH_TEXT_AND_IMAGE = "alt_text.pdf"
+
+        private const val PDF_DOCUMENT_WITH_IMAGE = "acro_js.pdf"
 
         internal suspend fun withDocument(filename: String, block: suspend (PdfDocument) -> Unit) {
             val document = openDocument(filename)

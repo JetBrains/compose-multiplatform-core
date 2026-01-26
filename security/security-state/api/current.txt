@@ -83,18 +83,25 @@ package androidx.security.state {
 
   public class SecurityStateManagerCompat {
     ctor public SecurityStateManagerCompat(android.content.Context context);
+    ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile);
+    ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile, optional String vendorSupplementalPatchConfigFile);
+    ctor @BytecodeOnly public SecurityStateManagerCompat(android.content.Context!, String!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public android.os.Bundle getGlobalSecurityState(optional String moduleMetadataProviderPackageName);
     method @BytecodeOnly public static android.os.Bundle! getGlobalSecurityState$default(androidx.security.state.SecurityStateManagerCompat!, String!, int, Object!);
     field public static final androidx.security.state.SecurityStateManagerCompat.Companion Companion;
     field public static final String KEY_KERNEL_VERSION = "kernel_version";
     field public static final String KEY_SYSTEM_SPL = "system_spl";
+    field public static final String KEY_SYSTEM_SUPPLEMENTAL_PATCHES = "system_supplemental_security_patches";
     field public static final String KEY_VENDOR_SPL = "vendor_spl";
+    field public static final String KEY_VENDOR_SUPPLEMENTAL_PATCHES = "vendor_supplemental_security_patches";
   }
 
   public static final class SecurityStateManagerCompat.Companion {
     property public static String KEY_KERNEL_VERSION;
     property public static String KEY_SYSTEM_SPL;
+    property public static String KEY_SYSTEM_SUPPLEMENTAL_PATCHES;
     property public static String KEY_VENDOR_SPL;
+    property public static String KEY_VENDOR_SUPPLEMENTAL_PATCHES;
   }
 
   public final class UpdateInfo {

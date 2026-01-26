@@ -21,6 +21,7 @@ package androidx.wear.compose.remote.material3
 import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -35,7 +36,7 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
-import androidx.compose.remote.creation.compose.state.rememberRemoteDpValue
+import androidx.compose.remote.creation.compose.state.asRdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.layout.ContentScale
@@ -160,8 +161,10 @@ private fun FallbackAvatar(
 @RemoteComposable
 @SuppressLint("RestrictedApiAndroidX")
 private fun BackgroundOverlay(modifier: RemoteModifier, overlayColor: RemoteColor) {
+    val density = LocalRemoteComposeCreationState.current.remoteDensity
     RemoteCanvas(modifier = modifier.clip(ImageDefaults.backgroundShape())) {
-        val cornerRadius = RemoteDp(ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.value.rf).toPx()
+        val cornerRadius =
+            RemoteDp(ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.value.rf).toPx(density)
         drawRoundRect(
             paint = RemotePaint().apply { remoteColor = overlayColor },
             cornerRadius = RemoteOffset(cornerRadius, cornerRadius),
@@ -176,9 +179,7 @@ public object ImageDefaults {
     internal val AVATAR_SIZE_DP = 24.dp
     internal val BACKGROUND_CORNER_RADIUS_DP = 26.dp
 
-    @RemoteComposable
-    @Composable
-    public fun avatarSize(): RemoteDp = rememberRemoteDpValue { AVATAR_SIZE_DP }
+    @RemoteComposable @Composable public fun avatarSize(): RemoteDp = AVATAR_SIZE_DP.asRdp()
 
     @Composable public fun avatarShape(): RoundedCornerShape = RoundedCornerShape(AVATAR_SIZE_DP)
 

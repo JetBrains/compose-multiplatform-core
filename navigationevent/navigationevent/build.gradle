@@ -58,6 +58,7 @@ androidXMultiplatform {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
             api("androidx.compose.runtime:runtime-annotation:1.9.0")
+            implementation("androidx.collection:collection:1.5.0")
         }
 
         commonTest.dependencies {
@@ -84,14 +85,9 @@ androidXMultiplatform {
             implementation(libs.testRunner)
         }
 
-        unixMain.dependsOn(nativeMain)
-        unixTest.dependsOn(nativeTest)
-
-        appleMain.dependsOn(unixMain)
-        appleTest.dependsOn(unixTest)
-
-        linuxMain.dependsOn(unixMain)
-        linuxTest.dependsOn(unixTest)
+        nativeMain.dependencies {
+            implementation(libs.atomicFu)
+        }
 
         webTest.dependencies {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")

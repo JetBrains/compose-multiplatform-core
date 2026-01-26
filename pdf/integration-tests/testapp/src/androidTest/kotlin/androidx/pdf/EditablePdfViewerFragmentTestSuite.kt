@@ -50,6 +50,7 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
 import org.junit.Assume.assumeFalse
@@ -119,6 +120,39 @@ class EditablePdfViewerFragmentTestSuite {
             fragment.setIsAnnotationIntentResolvable(true)
             fragment.isToolboxVisible = true
         }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_endToEndAnnotationFlow() = runTest {
+        if (!isRequiredSdkExtensionAvailable()) return@runTest
+
+        lateinit var fragment: TestEditablePdfViewerFragment
+        scenario.onFragment { fragment = it }
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // 1. Create an annotation and apply the edits.
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        fragment.pdfApplyEditsIdlingResource.increment()
+        fragment.applyDraftEdits()
+        onIdle()
+
+        // 2. Store the annotations from the current document.
+        val originalAnnotations = fragment.fetchAnnotations(pageNum = 0)
+        assertThat(originalAnnotations).isNotEmpty()
+
+        // 3. Save the document with annotations to a new file.
+        val destinationUri = TestUtils.createFile(DESTINATION_FILE_NAME)
+        fragment.writeTo(destinationUri.toPfd())
+
+        // 4. Load the newly saved document.
+        fragment.pdfLoadingIdlingResource.increment()
+        fragment.documentUri = destinationUri
+        onIdle()
+
+        // 5. Verify the annotations of the new document.
+        val savedAnnotations = fragment.fetchAnnotations(0)
+        assertThat(savedAnnotations).isEqualTo(originalAnnotations)
     }
 
     @Test
@@ -423,6 +457,7 @@ class EditablePdfViewerFragmentTestSuite {
 
     companion object {
         private const val TEST_DOCUMENT_FILE = "sample.pdf"
+        private const val DESTINATION_FILE_NAME = "destination.pdf"
         private const val REQUIRED_EXTENSION_VERSION = 18
 
         fun isRequiredSdkExtensionAvailable(): Boolean {

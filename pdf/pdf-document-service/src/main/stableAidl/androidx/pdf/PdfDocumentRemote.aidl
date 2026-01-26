@@ -27,6 +27,7 @@ import android.graphics.pdf.models.FormEditRecord;
 import android.graphics.pdf.models.FormWidgetInfo;
 import android.graphics.pdf.models.selection.PageSelection;
 import android.graphics.pdf.models.selection.SelectionBoundary;
+import android.graphics.PointF;
 import android.os.ParcelFileDescriptor;
 import androidx.pdf.DraftEditOperation;
 import androidx.pdf.DraftEditResult;
@@ -34,6 +35,7 @@ import androidx.pdf.models.Dimensions;
 import androidx.pdf.annotation.models.PdfAnnotation;
 import androidx.pdf.annotation.models.PaginatedAnnotations;
 import androidx.pdf.RenderParams;
+import androidx.pdf.annotation.models.PdfObject;
 
 /** Remote interface for interacting with a PDF document */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
@@ -229,5 +231,15 @@ interface PdfDocumentRemote {
     * @return A [DraftEditResult] indicating the outcome of the batch operation.
     */
     DraftEditResult applyDraftEdits(in List<DraftEditOperation> operations);
+
+    /**
+     * Gets the topmost PDF object at a given position on a page, filtered by object types.
+     *
+     * @param point The position on the page to check, where coordinates are relative to the top-left
+     * of the page.
+     * @param types An array of integers representing the types of PDF objects to consider.
+     * @return The {@link PdfObject} found at the specified position, or null if no object is found.
+     */
+    PdfObject getTopPageObjectAtPosition( int pageNum, in PointF point, in int[] types);
 
 }
