@@ -42,7 +42,7 @@ dependencies {
         // version of foundation will be at least this version. This will prevent the bug in
         // foundation from occurring. This does _NOT_ require that the app have foundation as
         // a dependency.
-        implementation(project(":compose:foundation:foundation")) {
+        commonMainImplementation(project(":compose:foundation:foundation")) {
             because 'prevents a critical bug in Text'
         }
     }
