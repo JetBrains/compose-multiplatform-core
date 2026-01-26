@@ -35,9 +35,7 @@ import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
@@ -128,15 +126,16 @@ class RemoteShapeTest {
 
     @Test
     fun roundedDifferentPercentRadiusRTL() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                val topStart = 50
-                val topEnd = 25
-                val bottomEnd = 25
-                val bottomStart = 50
-                val rounded = RemoteRoundedCornerShape(topStart, topEnd, bottomEnd, bottomStart)
-                DrawRemoteShape(rounded)
-            }
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            layoutDirection = LayoutDirection.Rtl,
+        ) {
+            val topStart = 50
+            val topEnd = 25
+            val bottomEnd = 25
+            val bottomStart = 50
+            val rounded = RemoteRoundedCornerShape(topStart, topEnd, bottomEnd, bottomStart)
+            DrawRemoteShape(rounded)
         }
     }
 

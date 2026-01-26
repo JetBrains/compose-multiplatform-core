@@ -218,7 +218,7 @@ class SpatialCompose : ComponentActivity() {
         SpatialColumn(SubspaceModifier.testTag("PanelGridColumn")) {
             SpatialCurvedRow(
                 modifier = SubspaceModifier.width(2000.dp).height(1200.dp).testTag("PanelGridRow"),
-                alignment = SpatialAlignment.BottomCenter,
+                verticalAlignment = SpatialAlignment.Bottom,
                 curveRadius = curveRadius,
             ) {
                 SpatialColumn(
@@ -255,7 +255,7 @@ class SpatialCompose : ComponentActivity() {
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
                             .testTag("CenterColumn"),
-                    alignment = SpatialAlignment.TopCenter,
+                    horizontalAlignment = SpatialAlignment.CenterHorizontally,
                     verticalArrangement = SpatialArrangement.SpaceAround,
                 ) {
                     SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))

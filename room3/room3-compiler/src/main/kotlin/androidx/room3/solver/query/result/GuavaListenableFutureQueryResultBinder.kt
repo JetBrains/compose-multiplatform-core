@@ -23,6 +23,7 @@ import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomGuavaMemberNames.GUAVA_ROOM_CREATE_LISTENABLE_FUTURE
+import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 
@@ -62,8 +63,9 @@ class GuavaListenableFutureQueryResultBinder(val typeArg: XType, adapter: QueryR
                             addLocalVal(
                                 statementVar,
                                 SQLiteDriverTypeNames.STATEMENT,
-                                "%L.prepare(%L)",
+                                "%L.%M(%L)",
                                 connectionVar,
+                                SQLiteDriverMemberNames.CONNECTION_PREPARE,
                                 sqlQueryVar,
                             )
                             beginControlFlow("try")

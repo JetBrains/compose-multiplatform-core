@@ -686,10 +686,15 @@ public class RemoteComposeBuffer {
      * @param end (end - 1) is the index of the last character in text to draw
      * @param x The x-coordinate of the origin of the text being drawn
      * @param y The y-coordinate of the baseline of the text being drawn
+     * @param glyphSpacing horizontal spacing adjustment in pixels between glyphs
      */
     public void addDrawBitmapFontTextRun(
-            int textId, int bitmapFontId, int start, int end, float x, float y) {
-        DrawBitmapFontText.apply(mBuffer, textId, bitmapFontId, start, end, x, y);
+            int textId, int bitmapFontId, int start, int end, float x, float y,
+            float glyphSpacing) {
+        if (mApiLevel < 8 && glyphSpacing != 0f) {
+            throw new RuntimeException("glyphSpacing not supported in API level < 8");
+        }
+        DrawBitmapFontText.apply(mBuffer, textId, bitmapFontId, start, end, x, y, glyphSpacing);
     }
 
     /**
@@ -701,10 +706,16 @@ public class RemoteComposeBuffer {
      * @param start The index of the first character in text to draw
      * @param end (end - 1) is the index of the last character in text to draw
      * @param yAdj Adjustment away from the path along the normal at that point
+     * @param glyphSpacing horizontal spacing adjustment in pixels between glyphs
      */
     public void addDrawBitmapFontTextRunOnPath(
-            int textId, int bitmapFontId, int pathId, int start, int end, float yAdj) {
-        DrawBitmapFontTextOnPath.apply(mBuffer, textId, bitmapFontId, pathId, start, end, yAdj);
+            int textId, int bitmapFontId, int pathId, int start, int end, float yAdj,
+            float glyphSpacing) {
+        if (mApiLevel < 8 && glyphSpacing != 0f) {
+            throw new RuntimeException("glyphSpacing not supported in API level < 8");
+        }
+        DrawBitmapFontTextOnPath.apply(
+                mBuffer, textId, bitmapFontId, pathId, start, end, yAdj, glyphSpacing);
     }
 
     /**
@@ -728,6 +739,7 @@ public class RemoteComposeBuffer {
      * @param end (end - 1) is the index of the last character in text to draw
      * @param panX justifies text -1.0=right, 0.0=center, 1.0=left
      * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
+     * @param glyphSpacing horizontal spacing adjustment between glyphs in pixels
      */
     public void drawBitmapTextAnchored(
             int textId,
@@ -737,8 +749,13 @@ public class RemoteComposeBuffer {
             float x,
             float y,
             float panX,
-            float panY) {
-        DrawBitmapTextAnchored.apply(mBuffer, textId, bitmapFontId, start, end, x, y, panX, panY);
+            float panY,
+            float glyphSpacing) {
+        if (mApiLevel < 8 && glyphSpacing != 0f) {
+            throw new RuntimeException("glyphSpacing not supported in API level < 8");
+        }
+        DrawBitmapTextAnchored.apply(
+                mBuffer, textId, bitmapFontId, start, end, x, y, panX, panY, glyphSpacing);
     }
 
     /**
@@ -857,7 +874,8 @@ public class RemoteComposeBuffer {
      * @param operations the operations list to add to
      */
     public void inflateFromBuffer(@NonNull ArrayList<Operation> operations) {
-        mApiLevel = Header.readApiLevel(mBuffer);
+        mBuffer.setIndex(0);
+        mApiLevel = Header.peekApiLevel(mBuffer);
         int profiles = 0;
         if (mApiLevel >= 7) {
             try {
@@ -2479,10 +2497,14 @@ public class RemoteComposeBuffer {
      * @param textId the input text
      * @param bmFontId the bitmap font
      * @param type
+     * @param glyphSpacing horizontal spacing adjustment in pixels between glyphs
      * @return
      */
-    public void bitmapTextMeasure(int id, int textId, int bmFontId, int type) {
-        BitmapTextMeasure.apply(mBuffer, id, textId, bmFontId, type);
+    public void bitmapTextMeasure(int id, int textId, int bmFontId, int type, float glyphSpacing) {
+        if (mApiLevel < 8 && glyphSpacing != 0f) {
+            throw new RuntimeException("glyphSpacing not supported in API level < 8");
+        }
+        BitmapTextMeasure.apply(mBuffer, id, textId, bmFontId, type, glyphSpacing);
     }
 
     /**

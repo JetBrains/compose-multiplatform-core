@@ -6,10 +6,6 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.compose.foundation:foundation>
-open annotation class androidx.compose.foundation.gestures/ExperimentalTapGestureDetectorBehaviorApi : kotlin/Annotation { // androidx.compose.foundation.gestures/ExperimentalTapGestureDetectorBehaviorApi|null[0]
-    constructor <init>() // androidx.compose.foundation.gestures/ExperimentalTapGestureDetectorBehaviorApi.<init>|<init>(){}[0]
-}
-
 open annotation class androidx.compose.foundation.lazy.grid/LazyGridScopeMarker : kotlin/Annotation { // androidx.compose.foundation.lazy.grid/LazyGridScopeMarker|null[0]
     constructor <init>() // androidx.compose.foundation.lazy.grid/LazyGridScopeMarker.<init>|<init>(){}[0]
 }

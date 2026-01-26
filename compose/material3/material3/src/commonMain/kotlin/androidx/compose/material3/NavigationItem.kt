@@ -820,7 +820,6 @@ private class AnimatedMeasurePolicy(
             topIconIndicatorVerticalPadding = topIconIndicatorVerticalPadding,
             topIconIndicatorHorizontalPadding = topIconIndicatorHorizontalPadding,
             startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
-            startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
             itemHorizontalPadding = itemHorizontalPadding,
         )
@@ -990,7 +989,6 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
     topIconIndicatorVerticalPadding: Dp,
     topIconIndicatorHorizontalPadding: Dp,
     startIconIndicatorHorizontalPadding: Dp,
-    startIconIndicatorVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
     itemHorizontalPadding: Dp,
 ): MeasureResult {
@@ -1042,7 +1040,7 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
         itemHorizontalPadding.roundToPx() + startIconIndicatorHorizontalPadding.roundToPx()
 
     val iconYTopIcon = topIconIndicatorVerticalPadding.roundToPx()
-    val iconYStartIcon = startIconIndicatorVerticalPadding.roundToPx()
+    val iconYStartIcon = (height - iconPlaceable.height) / 2
 
     val iconX = lerp(iconXTopIcon, iconXStartIcon, iconPositionProgress)
     val iconY = lerp(iconYTopIcon, iconYStartIcon, iconPositionProgress)

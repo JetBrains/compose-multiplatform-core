@@ -1056,6 +1056,16 @@ package androidx.wear.tiles {
     method @Deprecated public androidx.wear.tiles.TileBuilders.Tile.Builder setTimeline(androidx.wear.tiles.TimelineBuilders.Timeline);
   }
 
+  public final class TileKt {
+    method public static androidx.wear.tiles.TileBuilders.Tile tile(androidx.wear.protolayout.TimelineBuilders.Timeline timeline, optional long freshnessMillis, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.StateBuilders.State? state, optional String? resourcesVersion);
+    method @BytecodeOnly public static androidx.wear.tiles.TileBuilders.Tile! tile$default(androidx.wear.protolayout.TimelineBuilders.Timeline!, long, androidx.wear.protolayout.StateBuilders.State!, String!, int, Object!);
+    method @KotlinOnly public static androidx.wear.protolayout.TimelineBuilders.TimeInterval timeInterval(kotlin.time.Duration start, kotlin.time.Duration end);
+    method @BytecodeOnly public static androidx.wear.protolayout.TimelineBuilders.TimeInterval timeInterval-QTBD994(long, long);
+    method public static androidx.wear.protolayout.TimelineBuilders.Timeline timeline(androidx.wear.protolayout.TimelineBuilders.TimelineEntry... entries);
+    method public static androidx.wear.protolayout.TimelineBuilders.TimelineEntry timelineEntry(androidx.wear.protolayout.LayoutElementBuilders.LayoutElement layout, optional androidx.wear.protolayout.TimelineBuilders.TimeInterval? validity);
+    method @BytecodeOnly public static androidx.wear.protolayout.TimelineBuilders.TimelineEntry! timelineEntry$default(androidx.wear.protolayout.LayoutElementBuilders.LayoutElement!, androidx.wear.protolayout.TimelineBuilders.TimeInterval!, int, Object!);
+  }
+
   public abstract class TileService extends android.app.Service {
     ctor public TileService();
     method public static com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.wear.tiles.ActiveTileIdentifier!>!> getActiveTilesAsync(android.content.Context, java.util.concurrent.Executor);

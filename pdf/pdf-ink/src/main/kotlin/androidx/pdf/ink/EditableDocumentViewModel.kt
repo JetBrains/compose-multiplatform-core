@@ -285,10 +285,16 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
     private suspend fun refreshVisibleAnnotations(range: IntRange) {
         val manager = annotationsManager ?: return
 
+        // Defensive check to avoid stale obsolete get invocations
+        if (visiblePageRange != range) return
+
         val pageAnnotations =
             range
                 .associateWith { pageNum -> manager.getAnnotations(pageNum) }
                 .filterValues { it.isNotEmpty() }
+
+        // This check ensures that the flow is not updated with stale data
+        if (visiblePageRange != range) return
 
         _annotationDisplayStateFlow.update {
             it.copy(visiblePageAnnotations = VisiblePdfAnnotations(pageAnnotations))

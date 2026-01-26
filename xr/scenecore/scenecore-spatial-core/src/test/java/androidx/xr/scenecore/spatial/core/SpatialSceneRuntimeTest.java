@@ -934,6 +934,19 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
+    public void enablePanelDepthTest_callsExtensions() {
+        Node rootNode = mRuntime.getSceneRootNode();
+
+        mRuntime.enablePanelDepthTest(true);
+
+        assertThat(mNodeRepository.isEnablePanelDepthTest(rootNode)).isTrue();
+
+        mRuntime.enablePanelDepthTest(false);
+
+        assertThat(mNodeRepository.isEnablePanelDepthTest(rootNode)).isFalse();
+    }
+
+    @Test
     public void setPreferredAspectRatio_callsExtensions() {
         mRuntime.setPreferredAspectRatio(mActivity, 1.23f);
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getPreferredAspectRatio(mActivity))

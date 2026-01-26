@@ -216,12 +216,12 @@ compatibility between various components of the development workflow.
 From the `frameworks/support` directory, you can use
 
 ```shell
-PROJECT_PREFIX=:core:,:work: ./gradlew :studio
+./studiow :core:,:work:
 ```
 
-where `PROJECT_PREFIX` is comma separated list of project prefixes for projects
-you want to work on. This will automatically download and run the correct
-version of Studio to work on the selected libraries.
+where the argument is comma separated list of project prefixes for projects you
+want to work on. This will automatically download and run the correct version of
+Studio to work on the selected libraries.
 
 If you want to open all projects, you can run
 

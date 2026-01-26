@@ -78,6 +78,13 @@ class TransformationActivity : AppCompatActivity() {
         findViewById<DebugTextLinearView>(R.id.mainDebugTextPanel).also { it.setName("Main Panel") }
     }
     private var debugTextPanelsToUpdate = mutableListOf<DebugTextPanel>()
+    private var labelsToUpdate = mutableListOf<LabelToUpdate>()
+
+    private data class LabelToUpdate(
+        val labelPanel: DebugTextPanel,
+        val trackedEntity: Entity,
+        val dimensions: FloatSize3d,
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,6 +146,9 @@ class TransformationActivity : AppCompatActivity() {
                     }
                     updateDebugTextPanel(panel.view, panel.trackedEntity!!, anchorState)
                 }
+                for (label in labelsToUpdate) {
+                    updateLabelPanelSize(label.labelPanel, label.trackedEntity, label.dimensions)
+                }
                 // Update main panel debug data
                 updateDebugTextPanel(
                     mainActivityDebugView,
@@ -163,8 +173,9 @@ class TransformationActivity : AppCompatActivity() {
             it.setScale(1f)
             anchor!!.addChild(it)
         }
+        val anchorLabelDimensions = FloatSize3d(245f, 87f)
         anchorDebugPanel =
-            createDebugPanelAndLabel("Anchor", anchor!!).also { panel ->
+            createDebugPanelAndLabel("Anchor", anchor!!, anchorLabelDimensions).also { panel ->
                 panel.view.setLine(
                     "onAnchorSpaceUpdatedCount",
                     (++onAnchorSpaceUpdatedCount).toString(),
@@ -179,19 +190,43 @@ class TransformationActivity : AppCompatActivity() {
     }
 
     private fun createActivitySpaceDebugPanel() {
+        val largeLabelDimensions = FloatSize3d(280f, 100f)
         activitySpaceDebugPanel =
-            createDebugPanelAndLabel("ActivitySpace", session!!.scene.activitySpace).also { panel ->
-                panel.view.setLine(
-                    "onActivitySpaceUpdatedCount",
-                    (++onActivitySpaceUpdatedCount).toString(),
+            createDebugPanelAndLabel(
+                    "ActivitySpace",
+                    session!!.scene.activitySpace,
+                    largeLabelDimensions,
                 )
-                session!!.scene.activitySpace.addOnSpaceUpdatedListener {
+                .also { panel ->
                     panel.view.setLine(
                         "onActivitySpaceUpdatedCount",
                         (++onActivitySpaceUpdatedCount).toString(),
                     )
+                    session!!.scene.activitySpace.addOnSpaceUpdatedListener {
+                        panel.view.setLine(
+                            "onActivitySpaceUpdatedCount",
+                            (++onActivitySpaceUpdatedCount).toString(),
+                        )
+                    }
                 }
+    }
+
+    private fun updateLabelPanelSize(
+        labelPanel: DebugTextPanel,
+        entity: Entity,
+        labelDimensions: FloatSize3d,
+    ) {
+        val entityScale = entity.getScale(Space.REAL_WORLD)
+        if (entityScale > 0) {
+            val newPixelWidth = (labelDimensions.width * entityScale).toInt().coerceAtLeast(10)
+            val newPixelHeight = (labelDimensions.height * entityScale).toInt().coerceAtLeast(10)
+            if (
+                labelPanel.panelEntity.sizeInPixels.width != newPixelWidth ||
+                    labelPanel.panelEntity.sizeInPixels.height != newPixelHeight
+            ) {
+                labelPanel.panelEntity.sizeInPixels = IntSize2d(newPixelWidth, newPixelHeight)
             }
+        }
     }
 
     private fun updateDebugTextPanel(
@@ -339,7 +374,7 @@ class TransformationActivity : AppCompatActivity() {
         val largeLabelDimensions = FloatSize3d(700f, 200f)
         createDebugPanelAndLabel("SunEntity", sunEntity, largeLabelDimensions)
         createDebugPanelAndLabel("PlanetEntity", planetEntity, largeLabelDimensions)
-        createDebugPanelAndLabel("MoonEntity", moonEntity, largeLabelDimensions)
+        createDebugPanelAndLabel("MoonEntity", moonEntity, largeLabelDimensions.times(2))
     }
 
     private fun orbitModelAroundParent(
@@ -393,20 +428,17 @@ class TransformationActivity : AppCompatActivity() {
         // The label that follows the object (parented to the object itself)
         // Ensure this doesn't conflict if trackedEntity is already a panel
         if (trackedEntity !is PanelEntity || trackedEntity != debugPanel) {
-            val entityScaleInRealWorld = trackedEntity.getScale(Space.REAL_WORLD)
-            val labelPixelWidth =
-                (labelDimensions.width * entityScaleInRealWorld).toInt().coerceAtLeast(10)
-            val labelPixelHeight =
-                (labelDimensions.height * entityScaleInRealWorld).toInt().coerceAtLeast(10)
-
-            DebugTextPanel(
-                // This is a separate label, parented to the trackedEntity
-                this,
-                session!!,
-                trackedEntity,
-                pixelDimensions = IntSize2d(labelPixelWidth, labelPixelHeight),
-                name = name,
-            )
+            val labelPanel =
+                DebugTextPanel(
+                    // This is a separate label, parented to the trackedEntity
+                    this,
+                    session!!,
+                    trackedEntity,
+                    pixelDimensions =
+                        IntSize2d(labelDimensions.width.toInt(), labelDimensions.height.toInt()),
+                    name = name,
+                )
+            labelsToUpdate.add(LabelToUpdate(labelPanel, trackedEntity, labelDimensions))
         }
         return debugPanel
     }

@@ -19,13 +19,16 @@ package androidx.room3.coroutines
 import androidx.room3.TransactionScope
 import androidx.room3.Transactor
 import androidx.room3.concurrent.AtomicInt
+import androidx.room3.concurrent.ReentrantLock
+import androidx.room3.concurrent.withLock
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.execSQL
+import androidx.sqlite.executeSQL
+import androidx.sqlite.prepare
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
 internal typealias TransactionWrapper<T> = suspend (suspend () -> T) -> T
@@ -39,29 +42,35 @@ internal typealias TransactionWrapper<T> = suspend (suspend () -> T) -> T
  *   [SQLiteDriver.hasConnectionPool]) is provided to Room.
  */
 internal class PassthroughConnectionPool(
-    private val driver: SQLiteDriver,
-    private val fileName: String,
+    private val connectionFactory: ConnectionFactory,
     private val transactionWrapper: TransactionWrapper<Any?>? = null,
 ) : ConnectionPool {
 
-    private val connection = lazy { driver.open(fileName) }
+    private val lock = ReentrantLock()
+    private lateinit var connection: SQLiteConnection
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
         block: suspend (Transactor) -> R,
     ): R {
-        val confinedConnection = coroutineContext[ConnectionElement]?.connectionWrapper
+        val confinedConnection = currentCoroutineContext()[ConnectionElement]?.connectionWrapper
         if (confinedConnection != null) {
             return block.invoke(confinedConnection)
         }
-
-        val connectionWrapper = PassthroughConnection(transactionWrapper, connection.value)
+        val delegate =
+            lock.withLock {
+                if (!::connection.isInitialized) {
+                    connection = connectionFactory.invoke()
+                }
+                connection
+            }
+        val connectionWrapper = PassthroughConnection(transactionWrapper, delegate)
         return withContext(ConnectionElement(connectionWrapper)) { block.invoke(connectionWrapper) }
     }
 
     override fun close() {
-        if (connection.isInitialized()) {
-            connection.value.close()
+        if (::connection.isInitialized) {
+            connection.close()
         }
     }
 
@@ -82,11 +91,11 @@ private class PassthroughConnection(
     private var nestedTransactionCount = AtomicInt(0)
     private var currentTransactionType: Transactor.SQLiteTransactionType? = null
 
-    override suspend fun <R> useRawConnection(block: (SQLiteConnection) -> R): R {
+    override suspend fun <R> useRawConnection(block: suspend (SQLiteConnection) -> R): R {
         return block.invoke(delegate)
     }
 
-    override suspend fun <R> usePrepared(sql: String, block: (SQLiteStatement) -> R): R {
+    override suspend fun <R> usePrepared(sql: String, block: suspend (SQLiteStatement) -> R): R {
         return if (inTransaction() && transactionWrapper != null) {
             @Suppress("UNCHECKED_CAST") // Safe to cast since it just pipes the result
             transactionWrapper.invoke { delegate.prepare(sql).use { block.invoke(it) } } as R
@@ -113,11 +122,11 @@ private class PassthroughConnection(
     ): R {
         when (type) {
             Transactor.SQLiteTransactionType.DEFERRED ->
-                delegate.execSQL("BEGIN DEFERRED TRANSACTION")
+                delegate.executeSQL("BEGIN DEFERRED TRANSACTION")
             Transactor.SQLiteTransactionType.IMMEDIATE ->
-                delegate.execSQL("BEGIN IMMEDIATE TRANSACTION")
+                delegate.executeSQL("BEGIN IMMEDIATE TRANSACTION")
             Transactor.SQLiteTransactionType.EXCLUSIVE ->
-                delegate.execSQL("BEGIN EXCLUSIVE TRANSACTION")
+                delegate.executeSQL("BEGIN EXCLUSIVE TRANSACTION")
         }
         if (nestedTransactionCount.incrementAndGet() > 0) {
             currentTransactionType = type
@@ -141,9 +150,9 @@ private class PassthroughConnection(
                     currentTransactionType = null
                 }
                 if (success) {
-                    delegate.execSQL("END TRANSACTION")
+                    delegate.executeSQL("END TRANSACTION")
                 } else {
-                    delegate.execSQL("ROLLBACK TRANSACTION")
+                    delegate.executeSQL("ROLLBACK TRANSACTION")
                 }
             } catch (ex: SQLiteException) {
                 exception?.addSuppressed(ex) ?: throw ex
@@ -157,10 +166,13 @@ private class PassthroughConnection(
 
     private inner class PassthroughTransactor<T> : TransactionScope<T>, RawConnectionAccessor {
 
-        override suspend fun <R> useRawConnection(block: (SQLiteConnection) -> R): R =
+        override suspend fun <R> useRawConnection(block: suspend (SQLiteConnection) -> R): R =
             this@PassthroughConnection.useRawConnection(block)
 
-        override suspend fun <R> usePrepared(sql: String, block: (SQLiteStatement) -> R): R {
+        override suspend fun <R> usePrepared(
+            sql: String,
+            block: suspend (SQLiteStatement) -> R,
+        ): R {
             return this@PassthroughConnection.usePrepared(sql, block)
         }
 

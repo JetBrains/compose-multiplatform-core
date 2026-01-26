@@ -59,23 +59,40 @@ class BorderModifierTest {
     fun grid() =
         composeTestRule.runScreenshotTest {
             val borders =
-                listOf<@Composable RemoteModifier.() -> RemoteModifier>(
-                    { this },
-                    { border(1.rdp, Color.Red.rc) },
-                    { border(2.rdp, Color.Red.rc) },
-                    { border(3.rdp, Color.Red.rc) },
-                    { border(3.rdp, Color.Blue.rc.copy(alpha = 0.5f.rf)) },
+                listOf<Pair<String, @Composable RemoteModifier.() -> RemoteModifier>>(
+                    "1dp" to { border(1.rdp, Color.Red.rc) },
+                    "2dp" to { border(2.rdp, Color.Red.rc) },
+                    "3dp" to { border(3.rdp, Color.Red.rc) },
+                    "color alpha" to { border(3.rdp, Color.Blue.rc.copy(alpha = 0.5f.rf)) },
                     // Ensure a non constant color
-                    { border(3.rdp, Color.Blue.rc.copy(alpha = 0.5f.rf.createReference())) },
-                    { border(width = 2.rdp, color = Color.Green.rc, shape = RemoteRectangleShape) },
-                    { border(width = 2.rdp, color = Color.Magenta.rc, shape = RemoteCircleShape) },
-                    {
-                        border(
-                            width = 2.rdp,
-                            color = Color.Cyan.rc,
-                            shape = RemoteRoundedCornerShape(size = 10.rf),
-                        )
-                    },
+                    "color ref" to
+                        {
+                            border(3.rdp, Color.Blue.rc.copy(alpha = 0.5f.rf.createReference()))
+                        },
+                    "RemoteRectangleShape" to
+                        {
+                            border(
+                                width = 2.rdp,
+                                color = Color.Green.rc,
+                                shape = RemoteRectangleShape,
+                            )
+                        },
+                    "RemoteCircleShape" to
+                        {
+                            border(
+                                width = 2.rdp,
+                                color = Color.Magenta.rc,
+                                shape = RemoteCircleShape,
+                            )
+                        },
+                    "RemoteRoundedCornerShape" to
+                        {
+                            border(
+                                width = 2.rdp,
+                                color = Color.Cyan.rc,
+                                shape = RemoteRoundedCornerShape(size = 10.rf),
+                            )
+                        },
                     //                     Not supported in BorderModifierOperation
                     //                    {
                     //                        border(
@@ -105,16 +122,18 @@ class BorderModifierTest {
 
             gridScreenshotUI.GridContent(
                 sequence {
-                        for (borderFn in borders) {
+                        for ((name, borderFn) in borders) {
                             yield(
-                                @RemoteComposable @Composable {
-                                    RemoteBox {
-                                        RemoteBox(
-                                            modifier =
-                                                RemoteModifier.size(DefaultContainerSize).borderFn()
-                                        )
+                                name to
+                                    @RemoteComposable @Composable {
+                                        RemoteBox {
+                                            RemoteBox(
+                                                modifier =
+                                                    RemoteModifier.size(DefaultContainerSize)
+                                                        .borderFn()
+                                            )
+                                        }
                                     }
-                                }
                             )
                         }
                     }

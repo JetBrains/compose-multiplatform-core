@@ -78,7 +78,9 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
     }
 }
 
-@Preview @Composable fun SwitchWidgetOnStatePreview() = RemotePreview { SwitchWidgetOnState() }
+@Preview
+@Composable
+private fun SwitchWidgetOnStatePreview() = RemotePreview { SwitchWidgetOnState() }
 
 @Suppress("RestrictedApiAndroidX")
 @Composable
@@ -102,7 +104,9 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier, id: Int = 0)
     }
 }
 
-@Preview @Composable fun SwitchWidgetOffStatePreview() = RemotePreview { SwitchWidgetOffState() }
+@Preview
+@Composable
+private fun SwitchWidgetOffStatePreview() = RemotePreview { SwitchWidgetOffState() }
 
 @Suppress("RestrictedApiAndroidX")
 @Composable
@@ -236,4 +240,4 @@ fun SwitchWidgetDemo() {
     }
 }
 
-@Preview @Composable fun SwitchWidgetDemoPreview() = RemotePreview { SwitchWidgetDemo() }
+@Preview @Composable private fun SwitchWidgetDemoPreview() = RemotePreview { SwitchWidgetDemo() }

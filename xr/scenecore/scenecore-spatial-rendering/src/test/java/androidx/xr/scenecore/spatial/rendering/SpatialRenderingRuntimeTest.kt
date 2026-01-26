@@ -311,6 +311,7 @@ class SpatialRenderingRuntimeTest {
         val surfaceEntityQuad =
             renderingRuntime.createSurfaceEntity(
                 SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                SurfaceEntity.MediaBlendingMode.TRANSPARENT,
                 Pose(),
                 SurfaceEntity.Shape.Quad(FloatSize2d(kTestWidth, kTestHeight)),
                 SurfaceEntity.SurfaceProtection.NONE,
@@ -323,6 +324,7 @@ class SpatialRenderingRuntimeTest {
         val surfaceEntitySphere =
             renderingRuntime.createSurfaceEntity(
                 SurfaceEntity.StereoMode.TOP_BOTTOM,
+                SurfaceEntity.MediaBlendingMode.TRANSPARENT,
                 Pose(),
                 SurfaceEntity.Shape.Sphere(kTestSphereRadius),
                 SurfaceEntity.SurfaceProtection.NONE,
@@ -335,6 +337,7 @@ class SpatialRenderingRuntimeTest {
         val surfaceEntityHemisphere =
             renderingRuntime.createSurfaceEntity(
                 SurfaceEntity.StereoMode.MONO,
+                SurfaceEntity.MediaBlendingMode.TRANSPARENT,
                 Pose(),
                 SurfaceEntity.Shape.Hemisphere(kTestHemisphereRadius),
                 SurfaceEntity.SurfaceProtection.NONE,

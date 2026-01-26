@@ -18,19 +18,14 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * A remote-compatible drawing scope for RemoteCompose that provides access to the content of the
  * component being drawn.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteDrawWithContentScope(
-    remoteCanvas: RemoteCanvas,
-    fontScale: RemoteFloat,
-    layoutDirection: LayoutDirection,
-) : RemoteDrawScope(remoteCanvas, fontScale, layoutDirection) {
+public class RemoteDrawWithContentScope(remoteCanvas: RemoteCanvas) :
+    RemoteDrawScope(remoteCanvas) {
 
     /** Draws the content of the component. */
     public fun drawContent() {

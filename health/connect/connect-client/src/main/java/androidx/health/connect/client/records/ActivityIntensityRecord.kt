@@ -138,10 +138,10 @@ class ActivityIntensityRecord(
          * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
          */
         @JvmField
-        val INTENSITY_MINUTES_TOTAL: AggregateMetric<Duration> =
-            AggregateMetric.durationMetric(
+        val INTENSITY_MINUTES_TOTAL: AggregateMetric<Long> =
+            AggregateMetric.longMetric(
                 "ActivityIntensity",
-                aggregationType = AggregateMetric.AggregationType.DURATION,
+                aggregationType = AggregateMetric.AggregationType.TOTAL,
                 fieldName = "intensityMinutes",
             )
 

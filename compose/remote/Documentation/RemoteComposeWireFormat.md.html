@@ -1,0 +1,2478 @@
+
+            <meta charset="utf-8" lang="en"><style class="fallback">
+            body{visibility:hidden;}
+            table {
+              border-collapse: collapse;
+            }
+
+            .interpolation td {
+              border: 0px solid #888;
+              margin: 0;
+              padding: 0.5em;
+            }
+
+            td {
+              border: 1px solid #888;
+              margin: 0;
+              padding: 0.5em;
+            }
+            th {
+              background-color: #AAA;
+              color: #FFF;
+              border: 1px solid #888;
+              margin: 0;
+              padding: 0.5em;
+              text-align: left;
+            }
+
+            tr:nth-child(even) {
+              background-color: #EEE;
+            }
+
+            .md h1, .md .nonumberh1 {page-break-before:always}
+
+            @media screen and (min-width: 110em) {
+	        .md .longTOC, .md .mediumTOC, .md .shortTOC {
+		      max-width: 50%;
+		      width: 25%;
+              max-height: 100%;
+		      float: left;
+		      position: fixed;
+		      left: 20px;
+		      top: 20px;
+              overflow-y: auto;
+	        }
+}
+            </style>
+        
+**RemoteCompose Wire Format v1.1.0**
+    January 23, 2026
+
+
+*Current number of operations: 136 (0 not fully documented)*
+
+
+!!! ERROR
+    This is work in progress and subject to modifications.
+
+RemoteCompose is a standalone content format for Android. It consists
+of a list of operations providing rendering, layout, animation, expression evaluation and bindings.
+
+Wire Format overview
+======   
+
+The RemoteCompose wire format is a simple flat list of Operations,
+serialized in a binary format (see next sections for a detailed description of each operation).
+
+!!! WARNING
+    This wire format is intended to be used for fast generation and transport. For display purposes,
+    a more runtime-appropriate document should be created and used instead.
+
+Each list of operations contains as first element a Header (see section [Header]).
+
+            |Operations|
+            |:----:|
+            | **Header** |
+            | *Operation 1* |
+            | *Operation 2* |
+            | *Operation 3* |
+            | ... |
+            | *Operation n* |
+
+Encoding
+--------
+
+Operations are encoded in binary, using the following types:
+
+    | Type | Size (in bytes) |
+    |:----:|:----:|
+    | BYTE | 1 |
+    | BOOLEAN | 1 |
+    | SHORT | 2 |
+    | INT | 4 |
+    | FLOAT | 4 |
+    | LONG | 8 |
+    | DOUBLE | 8 |
+    | BUFFER | 4 + Size |
+    | UTF8 | BUFFER |
+
+A Buffer is simply encoded as the size of the buffer in bytes (encoded as an INT, so 4 bytes)
+followed by the byte buffer itself. UTF8 payload is simply encoded as a byte Buffer using encodeToByteArray().
+
+
+
+Components & Layout
+-------------------
+
+Operations can further be grouped in components, surrounded by ComponentStart (section [ComponentStart])
+and ComponentEnd (section [ComponentEnd]).
+
+            |Operations|
+            |:----:|
+            | ... |
+            | **ComponentStart** |
+            | *Operation 1* |
+            | *Operation 2* |
+            | *Operation 3* |
+            | ... |
+            | *Operation n* |
+            | **ComponentEnd** |
+            | ... |
+
+More specialized components can be created by using alternative layout operations instead of ComponentStart:
+
+- RootLayoutComponent
+- BoxLayout
+- RowLayout
+- ColumnLayout
+
+Layout managers such as BoxLayout, RowLayout, ColumnLayout provide a way to layout Components.
+Such layoutable/resizable components are structured slightly differently:
+
+            |Operations| | |
+            |:----: |:----:| :----: |
+            | **Header** | ||
+            | ... | ... | ... | 
+            | **RootLayoutComponent** | | |
+            | | **RowLayout** | |
+            | ... | ... | ... | 
+            | | **RowLayout** | |
+            | | *Modifier 1* | |
+            | | *Modifier 2* | |
+            | ... | ... | ... | 
+            | | *Modifier n* | |
+            | | | **LayoutComponentContent** |
+            | | | *Component 1* |
+            | | | *Component 2* |
+            | | | ... |
+            | | | *Component n* |
+            | | | **ComponentEnd** |
+            | | **ComponentEnd** | |
+            | **ComponentEnd** | | |
+
+
+In the example above, you can see that RowLayout is comprised of two sections -- a list of Modifier operations followed by a LayoutComponentContent component,
+containing the components to be laid out.
+
+
+
+# Layout overview
+
+## Overview
+
+The layout system work with **LayoutManager** that can layout **LayoutComponent** and **Component**.
+LayoutComponents are able to be laid out as well as resized, while Components can only be laid out.
+
+The following diagram shows the runtime class hiearchy:
+
+****************************************************************************************************
+*                                        .---------.
+*                                       | Component |
+*                                        '----+----'                                                    
+*                                             |            .-------------------.
+*                                             |'----------| RootLayoutComponent |
+*                                             |            '-------------------'
+*                                     .-------+-------.   
+*                                    | LayoutComponent |
+*                                     '-------+-------'                                                   
+*                                             |
+*                                      .------+------.
+*                                     | LayoutManager |
+*                                      '------+------'                           
+*                                             |
+*       .--------------+---------------+------+------------------.
+*      |               |               |                          |
+*  .---+-----.   .-----+------.   .----+----.                     |    .--------------.  
+* | BoxLayout | | ColumnLayout | | RowLayout |                    |'--| ImageComponent |
+*  '---------'   '-----+------'   '----+----'                     |    '--------------'                                                    
+*                      |               |                          |    .------------.
+*       .--------------+--------.   .--+-----------------.        |'--| CanvasLayout |
+*      | CollapsibleColumnLayout | | CollapsibleRowLayout |       |    '------------'
+*       '-----------------------'   '--------------------'        |    .-----------.
+*                                                                  '--| StateLayout |
+*                                                                      '-----------'
+****************************************************************************************************
+
+The following runtime classes directly map to layout operations in the wire format:
+
+
+           | Layout Operation | 
+           |----|
+           | **Component** |
+           | **RootLayoutComponent** |
+           | **BoxLayout** |
+           | **ColumnLayout** |
+           | **RowLayout** |
+           | *CollapsibleColumnLayout* (1) |
+           | *CollapsibleRowLayout* (1) |
+           | *ImageComponent* (1) |
+           | *CanvasLayout* (1) |
+           | *StateLayout* (1) |
+           | *LazyRow* (1) |
+           | *LazyColumn* (1) |
+
+(1) Work in Progress
+## Components
+
+**Component** is the base class representing Origami Components.
+                    
+We create components when loading the document, out of the **ComponentStart**
+and **ComponentEnd** operations in the original operations stream, grouping a list of operations:
+                   
+****************************************************************************************************
+*  .--------------.                 .---------.   
+* | ComponentStart |               | Component |
+*  '--------------'                 '--+------'
+*    .---------.                       |   
+*   | Operation |                      |'--> Operation  
+*    '---------'         --->          |
+*        ...                           |'--> ....
+*    .---------.                       |
+*   | Operation |                       '--> Operation
+*    '---------'
+*  .------------.
+* | ComponentEnd |
+*  '------------'
+****************************************************************************************************
+
+## LayoutComponents
+
+**LayoutComponent** represents layoutable components, which can be measured and may layout sub-components.
+It keeps track of a list of modifiers as well as a list of child components.           
+
+****************************************************************************************************
+*  .---------------.
+* | LayoutComponent |
+*  '-+-------------'                                                   
+*    |      .---------.
+*    |'--> | Modifiers | 
+*    |      '---------'                      
+*    |         |
+*    |         |'--> modifier 1                                                
+*    |         |
+*    |         |'--> modifier 2                                                
+*    |         |
+*    |         |'--> ...                                                
+*    |         |
+*    |          '--> modifier n                                                
+*    |      .--------.
+*     '--> | children | 
+*           '--------'                      
+*             |
+*             |'--> component 1                                                
+*             |
+*             |'--> component 2                                                
+*             |
+*             |'--> ...                                                
+*             |
+*              '--> component n                                                
+****************************************************************************************************
+
+### Modifiers
+
+Modifiers are a list of operations that change the way a component can be displayed.
+
+We have several modifiers that are related to the layout itself:
+
+Modifiers                | Role
+-------------------------|-------
+WidthModifierOperation   | width as fixed dimension
+HeightModifierOperation  | height as fixed dimension
+PaddingModifierOperation | padding information
+
+As well as modifiers that are able to change the way the component paint itself:
+
+Modifiers    | Role
+-------------|-------
+BackgroundModifierOperation | Draw a plain color background
+BorderModifierOperation | Draw a border around the component
+ClipRectModifierOperation | Add a clipping rect
+RoundedClipRectModifierOperation | Add a clipping round rect
+
+Modifiers are being applied in order, with Size and Padding impacting the draw-related
+modifiers. Modifiers are doing a simple version of the layout pass (i.e. we don't ask modifiers
+to measure and then layout them, we only layout them).
+
+Padding modifiers can be used before or after the content modifiers, which means that we do not
+need a "margin" concept as in other UI systems. Instead we can set up something like:
+
+
+****************************************************************************************************
+*  .---------.      .----------.      .---------.        .---------.
+* | Padding 4 |--> | Background |--> | Padding 8 | -->  / Content /
+*  '---------'      '----------'      '---------'      '---------'
+****************************************************************************************************
+
+Which would result in a "margin" of 4 followed by painting the background, with a "padding" of 8
+for the actual content.
+
+#### Sizing
+
+If a component is set to compute its own size (WRAP), Padding will be added to the computed size.
+
+But to note, if a component uses a modifier for indicating a fixed dimension, such as:
+
+****************************************************************************************************
+*  .---------.      .----------.      .---------.
+* | Padding 4 |--> | Size 10x10 |--> | Padding 2 |
+*  '---------'      '----------'      '---------'
+****************************************************************************************************
+
+The computed size of the component for its parent layout manager will be 14x14.
+
+
+#### Borders
+
+Borders are always applied on top of the content, so putting the border before a background or after would result in the same visuals:
+
+
+****************************************************************************************************
+*  .------.      .----------.          .----------.      .------.
+* | Border |--> | Background |   ==   | Background |--> | Border |
+*  '------'      '----------'          '----------'      '------'
+****************************************************************************************************
+
+Borders are purely a visual decoration, they do not impact sizing/padding, but they are impacted
+by them, so have to be evaluated in order.
+
+
+            
+## Layout Managers
+
+The actual layout managers are implemented as subclass of LayoutManager:
+
+Layout Manager          | Role
+------------------------|-----
+BoxLayout               | Layout elements in the same place
+RowLayout               | Layout elements in a row
+ColumnLayout            | Layout elements in a column
+CollapsibleRowLayout    | as RowLayout, but skip elements that don't fit
+CollapsibleColumnLayout | as ColumnLayout, but skip elements that don't fit
+LazyRow/Column           | on demand list layout
+
+### Scroll areas
+
+Scroll areas are handled as subclasses of LayoutContent:
+
+****************************************************************************************************
+*  .-----------------.
+* | ScrollContentHost |
+*  '--+--------------'
+*     |      .-------------.
+*     |'--> | ScrollContent |
+*     |      '-------------'
+*     |      .-------------.
+*      '--> | LayoutContent |
+*            '-------------'
+****************************************************************************************************
+
+## Layout / Measure cycle
+
+For a runtime document, we end up with the following structure for the layout operations:
+
+****************************************************************************************************
+*  .-------------------.
+* | RootLayoutComponent |
+*  '--+----------------'
+*     |      .-------------.
+*      '--> | LayoutManager |
+*            '--+----------'
+*               |      .-------------.
+*               |'--> | LayoutManager |
+*               |      '--+----------'
+*               |         |      .---------.
+*               |         |'--> | Component |
+*               |         |      '---------'
+*               |         |      .---------.
+*               |          '--> | Component |
+*               |                '---------'
+*               |      .---------.
+*                '--> | Component |
+*                      '---------'
+****************************************************************************************************
+
+The general layout / measure cycle works as follow:
+ - for each LayoutComponent, measure their children recursively
+ - capture that measure in a MeasurePass object
+ - then recursively layout the components by using the MeasurePass information.
+
+****************************************************************************************************
+*     .-------.
+*    |         |<--.
+*    | Measure |    | ideally single pass, using intrinsic sizes
+*    |         +---'  (multi-measure is discouraged, but allowed)
+*     '---+---'
+*         | 
+*         v
+*   .-----------.
+*  | MeasurePass |  contains position+size of all the components
+*   '-----+-----'
+*         |
+*         v
+*     .------.
+*    | Layout |<----.   we can animate upon receiving a new layout(measurePass) request
+*     '---+--'       |
+*         |      .---+---.
+*          '--> | Animate | 
+*                '-------'
+****************************************************************************************************
+
+1. RootLayoutComponent.layout(width, height) will measure all its children (Components), and gather
+   the result of the measure in a MeasurePass object. The MeasurePass is then used to layout
+   the components. The measure on its own never change the components, it's only role is to
+   gather the resulting dimensions / positions.
+
+2. Components implements the Measurable interface.
+
+3. The measure pass is ideally done as a single pass, asking each child to measure itself
+   given min/max constraints for width and height: the contract for the child is to enforce
+   those min/max constraints and set a size that is within those.
+   
+4. By default, when a component receive a new layout with a measure information, we animate
+   the change.
+   
+## Measure
+   
+Measure is done by asking components to add a ComponentMeasure to MeasurePass;
+ComponentMeasure contains the position, dimension and visibility of the component.
+Each component has an implicit ID that we use to map a given ComponentMeasure to a component.
+
+The measure itself consists in passing a set of (min, max) for width and height to the component.
+
+As part of the measurement, the list of modifiers may need to be evaluated (in order), to take in account
+dimension modifiers (size, padding..). 
+
+### Multi-measure
+
+In order to limit the needs for multi-measures, Measurable components have the concept
+of intrinsic sizes (min & max) -- they should be handled as equivalent to a measure query,
+but should be cached (or even pre-cached) by the component.
+
+Layout managers then can ask each child to measure themselves given min/max constraints,
+or if they need to, ask the child for their intrinsic sizes, then measure them.
+
+Layout managers can call measure multiple times on children (i.e. there is
+nothing preventing multi-measure) but this should be avoided as possible, given the
+potential performance impact (re-measuring a layout high in the hierarchy has the potential
+for a large performance hit).
+
+A component can indicate that its size/content changed and thus a layout pass is needed
+by calling invalidateMeasure(); this will flag the chain of component until the root
+and trigger the layout pass.     
+
+## Request layout / Request measure
+
+Generally, the layout system will react to change in dimensions, propagated from the root.
+Another important mechanism is the ability for components to invalidate themselves and trigger
+a relayout/remeasure pass.
+
+Components can do that simply by calling `invalidateMeasure()` -- this will mark themselves
+as needing both a repaint and a remeasure, and will walk the tree up until the root component,
+invalidating them as the tree is traversed. The root component then uses this to trigger a measure pass.
+
+# Document Protocol Operations
+Core document metadata, versioning, themes, and high-level behaviors.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 0 | Header | 29 
+    | 185 | Rem | 1 
+## Header
+Document metadata, containing the version, original size & density, capabilities mask
+
+6 Fields, total size 29 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | Header | Value: 0 
+    | INT | majorVersion | Major version 
+    | INT | minorVersion | Minor version 
+    | INT | patchVersion | Patch version 
+    | INT | width | Document width in pixels 
+    | INT | height | Document height in pixels 
+    | LONG | capabilities | Capabilities mask 
+## Rem
+Embed a remark or comment string in the document
+
+1 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | Rem | Value: 185 
+    | UTF8 | text | The comment string 
+# Data Operations
+Definitions of static constants, named variables, collections (lists/maps), and resource data (Bitmaps, Fonts).
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 80 | FloatConstant | 9 
+    | 101 | BitmapData | 13 
+    | 137 | NamedVariable | 9 
+    | 140 | IntegerConstant | 9 
+    | 143 | BooleanConstant | 6 
+    | 145 | DataMapIds | 17 
+    | 146 | IdListData | 9 + null x 4 
+    | 147 | IdListData | 9 + null x 4 
+    | 148 | LongConstant | 13 
+    | 154 | DataMapLookup | 13 
+    | 189 | FontData | 9 
+    | 197 | DataDynamicListFloat | 9 
+    | 198 | UpdateDynamicFloatList | 13 
+## FloatConstant
+A float and its associated id
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | FloatConstant | Value: 80 
+    | INT | id | id of the Float constant 
+    | FLOAT | value | 32-bit float value 
+## BitmapData
+Embed or reference bitmap image data
+
+4 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BitmapData | Value: 101 
+    | INT | imageId | The ID of the bitmap 
+    | INT | widthAndType | Encoded width and image type 
+    | INT | heightAndEncoding | Encoded height and data encoding 
+    | byte[] | bitmap | The raw or encoded bitmap data 
+## NamedVariable
+Add a string name for an ID
+
+3 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | NamedVariable | Value: 137 
+    | INT | varId | id to label 
+    | INT | varType | The type of variable 
+    | UTF8 | name | String 
+## IntegerConstant
+A integer and its associated id
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | IntegerConstant | Value: 140 
+    | INT | id | id of the Int constant 
+    | INT | value | 32-bit int value 
+## BooleanConstant
+A boolean and its associated id
+
+2 Fields, total size 6 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BooleanConstant | Value: 143 
+    | INT | id | id of Int 
+    | BYTE | value | 8-bit 0 or 1 
+## DataMapIds
+Encode a collection of named variable IDs
+
+5 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DataMapIds | Value: 145 
+    | INT | id | The ID of the map 
+    | INT | length | Number of entries 
+    | UTF8 | name[0..n] | The name of the entry 
+    | INT | type[0..n] | The type of the entry 
+    | INT | id[0..n] | The ID of the variable 
+## IdListData
+A list of IDs
+
+3 Fields, total size 9 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | IdListData | Value: 146 
+    | INT | id | The ID of the list 
+    | INT | length | Number of IDs 
+    | INT[] | ids | The array of IDs 
+## IdListData
+A list of floats
+
+3 Fields, total size 9 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | IdListData | Value: 147 
+    | INT | id | The ID of the list 
+    | INT | length | Number of floats 
+    | FLOAT[] | values | The array of floats 
+## LongConstant
+A long and its associated id
+
+2 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | LongConstant | Value: 148 
+    | INT | id | id of the Long constant 
+    | LONG | value | The long Value 
+## DataMapLookup
+Look up a value in a data map
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DataMapLookup | Value: 154 
+    | INT | id | The ID of the output value 
+    | INT | dataMapId | The ID of the data map 
+    | INT | stringId | The ID of the string to look up 
+## FontData
+Embed raw font data in the document
+
+3 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | FontData | Value: 189 
+    | INT | fontId | The ID of the font 
+    | INT | type | The type of the font (unused) 
+    | byte[] | fontData | The raw font file data 
+## DataDynamicListFloat
+A dynamic list of floats
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DataDynamicListFloat | Value: 197 
+    | INT | id | The ID of the list 
+    | FLOAT | length | The length of the list 
+## UpdateDynamicFloatList
+Update a value in a dynamic float list
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | UpdateDynamicFloatList | Value: 198 
+    | INT | arrayId | The ID of the array 
+    | FLOAT | index | The index to update 
+    | FLOAT | value | The new value 
+# Paint & Styles Operations
+Management of paint properties, shaders, and complex color definitions (themes, expressions).
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 40 | PaintData | 1 + null x 4 
+    | 45 | ShaderData | 25 + null x 4 + null x 4 
+    | 134 | ColorExpression | 25 
+    | 138 | ColorConstant | 9 
+    | 180 | ColorAttribute | 11 
+    | 196 | ColorTheme | 21 
+## PaintData
+Encode a Paint object with various properties
+
+1 Fields, total size 1 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | PaintData | Value: 40 
+    | INT[] | paintBundle | The encoded paint properties 
+## ShaderData
+Define a shader with associated uniforms
+
+11 Fields, total size 25 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ShaderData | Value: 45 
+    | INT | shaderID | The ID of the shader 
+    | INT | shaderTextId | The ID of the shader source text 
+    | INT | sizes | Encoded sizes of uniform maps (float, int, bitmap) 
+    | UTF8 | floatUniformName[0..n] | Name of float uniform 
+    | INT | floatUniformLength[0..n] | Length of float uniform 
+    | FLOAT[] | floatUniformValues[0..n] | Values of float uniform 
+    | UTF8 | intUniformName[0..n] | Name of int uniform 
+    | INT | intUniformLength[0..n] | Length of int uniform 
+    | INT[] | intUniformValues[0..n] | Values of int uniform 
+    | UTF8 | bitmapUniformName[0..n] | Name of bitmap uniform 
+    | INT | bitmapUniformValue[0..n] | ID of bitmap uniform 
+## ColorExpression
+Define a color via dynamic expression (HSV, ARGB, or Interpolation)
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ColorExpression | Value: 134 
+    | INT | id | The ID of the resulting color 
+    | INT | mode | The color calculation mode 
+    | INT | param1 | First parameter (color1, hue, or alpha depending on mode) 
+    | INT | param2 | Second parameter (color2, saturation, or red depending on mode) 
+    | INT | param3 | Third parameter (tween, value, or green depending on mode) 
+    | INT | param4 | Fourth parameter (blue, only used in ARGB modes) 
+### mode
+    | Name | Value |
+    | ---- | ---- |
+    | COLOR_COLOR_INTERPOLATE | 0 
+    | ID_COLOR_INTERPOLATE | 1 
+    | COLOR_ID_INTERPOLATE | 2 
+    | ID_ID_INTERPOLATE | 3 
+    | HSV_MODE | 4 
+    | ARGB_MODE | 5 
+    | IDARGB_MODE | 6 
+## ColorConstant
+Define a static color and associate it with an ID
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ColorConstant | Value: 138 
+    | INT | colorId | The ID of the color 
+    | INT | color | 32-bit ARGB color value 
+## ColorAttribute
+Extract components (Hue, RGB, Alpha) from a color
+
+3 Fields, total size 11 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ColorAttribute | Value: 180 
+    | INT | id | The ID to output the result to 
+    | INT | colorId | The ID of the source color 
+    | SHORT | type | The component to extract 
+### type
+    | Name | Value |
+    | ---- | ---- |
+    | COLOR_HUE | 0 
+    | COLOR_SATURATION | 1 
+    | COLOR_BRIGHTNESS | 2 
+    | COLOR_RED | 3 
+    | COLOR_GREEN | 4 
+    | COLOR_BLUE | 5 
+    | COLOR_ALPHA | 6 
+## ColorTheme
+Define a color that adapts to the current theme (light/dark)
+
+6 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ColorTheme | Value: 196 
+    | INT | id | The ID of the color 
+    | INT | groupId | The ID of the color group name string 
+    | SHORT | lightModeIndex | The ID of the color in the light group 
+    | SHORT | darkModeIndex | The ID of the color in the dark group 
+    | INT | lightModeFallback | 32-bit ARGB fallback color for light mode 
+    | INT | darkModeFallback | 32-bit ARGB fallback color for dark mode 
+# Canvas Operations
+Low-level drawing primitives for shapes, paths, text, and bitmaps, as well as clipping and layer management.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 42 | DrawRect | 17 
+    | 44 | DrawBitmap | 25 
+    | 46 | DrawCircle | 13 
+    | 47 | DrawLine | 17 
+    | 51 | DrawRoundRect | 25 
+    | 52 | DrawSector | 25 
+    | 56 | DrawOval | 17 
+    | 66 | DrawBitmapInt | 41 
+    | 124 | DrawPath | 5 
+    | 125 | DrawTweenPath | 21 
+    | 139 | DrawContent | 1 
+    | 149 | DrawBitmapScaled | 49 
+    | 152 | DrawArc | 25 
+    | 173 | CanvasOperations | 1 
+    | 190 | DrawToBitmap | 13 
+## DrawRect
+Draw the specified rectangle
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawRect | Value: 42 
+    | FLOAT | left | The left side of the rectangle 
+    | FLOAT | top | The top of the rectangle 
+    | FLOAT | right | The right side of the rectangle 
+    | FLOAT | bottom | The bottom of the rectangle 
+## DrawBitmap
+Draw a bitmap
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmap | Value: 44 
+    | INT | imageId | The ID of the bitmap 
+    | FLOAT | left | The left side of the image 
+    | FLOAT | top | The top of the image 
+    | FLOAT | right | The right side of the image 
+    | FLOAT | bottom | The bottom of the image 
+    | INT | descriptionId | The ID of the content description string 
+## DrawCircle
+Draw a Circle
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawCircle | Value: 46 
+    | FLOAT | centerX | The x-coordinate of the center of the circle to be drawn 
+    | FLOAT | centerY | The y-coordinate of the center of the circle to be drawn 
+    | FLOAT | radius | The radius of the circle to be drawn 
+## DrawLine
+Draw a line segment
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawLine | Value: 47 
+    | FLOAT | startX | The x-coordinate of the start point of the line 
+    | FLOAT | startY | The y-coordinate of the start point of the line 
+    | FLOAT | endX | The x-coordinate of the end point of the line 
+    | FLOAT | endY | The y-coordinate of the end point of the line 
+## DrawRoundRect
+Draw the specified round-rect
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawRoundRect | Value: 51 
+    | FLOAT | left | The left side of the rect 
+    | FLOAT | top | The top of the rect 
+    | FLOAT | right | The right side of the rect 
+    | FLOAT | bottom | The bottom of the rect 
+    | FLOAT | rx | The x-radius of the oval used to round the corners 
+    | FLOAT | ry | The y-radius of the oval used to round the corners 
+## DrawSector
+Draw the specified sector (pie shape)which will be scaled to fit inside the specified oval
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawSector | Value: 52 
+    | FLOAT | left | The left side of the Oval 
+    | FLOAT | top | The top of the Oval 
+    | FLOAT | right | The right side of the Oval 
+    | FLOAT | bottom | The bottom of the Oval 
+    | FLOAT | startAngle | Starting angle (in degrees) where the arc begins 
+    | FLOAT | sweepAngle | Sweep angle (in degrees) measured clockwise 
+## DrawOval
+Draw the specified oval
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawOval | Value: 56 
+    | FLOAT | left | The left side of the oval 
+    | FLOAT | top | The top of the oval 
+    | FLOAT | right | The right side of the oval 
+    | FLOAT | bottom | The bottom of the oval 
+## DrawBitmapInt
+Draw a bitmap using integer coordinates
+
+10 Fields, total size 41 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmapInt | Value: 66 
+    | INT | imageId | The ID of the bitmap 
+    | INT | srcLeft | The left side of the source image 
+    | INT | srcTop | The top of the source image 
+    | INT | srcRight | The right side of the source image 
+    | INT | srcBottom | The bottom of the source image 
+    | INT | dstLeft | The left side of the destination 
+    | INT | dstTop | The top of the destination 
+    | INT | dstRight | The right side of the destination 
+    | INT | dstBottom | The bottom of the destination 
+    | INT | cdId | The ID of the content description string 
+## DrawPath
+Draw a path
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawPath | Value: 124 
+    | INT | id | The ID of the path to draw 
+## DrawTweenPath
+Draw an interpolated path between two paths
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawTweenPath | Value: 125 
+    | INT | path1Id | The ID of the first path 
+    | INT | path2Id | The ID of the second path 
+    | FLOAT | tween | Interpolation value [0..1] 
+    | FLOAT | start | Trim the start of the path [0..1] 
+    | FLOAT | stop | Trim the end of the path [0..1] 
+## DrawContent
+Draw the component content
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawContent | Value: 139 
+## DrawBitmapScaled
+Draw a bitmap with scaling and alignment options
+
+12 Fields, total size 49 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmapScaled | Value: 149 
+    | INT | imageId | The ID of the bitmap 
+    | FLOAT | srcLeft | The left side of the source image 
+    | FLOAT | srcTop | The top of the source image 
+    | FLOAT | srcRight | The right side of the source image 
+    | FLOAT | srcBottom | The bottom of the source image 
+    | FLOAT | dstLeft | The left side of the destination 
+    | FLOAT | dstTop | The top of the destination 
+    | FLOAT | dstRight | The right side of the destination 
+    | FLOAT | dstBottom | The bottom of the destination 
+    | INT | scaleType | Type of scaling to apply 
+    | FLOAT | scaleFactor | Factor for fixed scale 
+    | INT | cdId | The ID of the content description string 
+### scaleType
+    | Name | Value |
+    | ---- | ---- |
+    | SCALE_NONE | 0 
+    | SCALE_INSIDE | 1 
+    | SCALE_FILL_WIDTH | 2 
+    | SCALE_FILL_HEIGHT | 3 
+    | SCALE_FIT | 4 
+    | SCALE_CROP | 5 
+    | SCALE_FILL_BOUNDS | 6 
+    | SCALE_FIXED_SCALE | 7 
+## DrawArc
+Draw the specified arcwhich will be scaled to fit inside the specified oval
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawArc | Value: 152 
+    | FLOAT | left | The left side of the Oval 
+    | FLOAT | top | The top of the Oval 
+    | FLOAT | right | The right side of the Oval 
+    | FLOAT | bottom | The bottom of the Oval 
+    | FLOAT | startAngle | Starting angle (in degrees) where the arc begins 
+    | FLOAT | sweepAngle | Sweep angle (in degrees) measured clockwise 
+## CanvasOperations
+A collection of canvas operations
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CanvasOperations | Value: 173 
+## DrawToBitmap
+Draw to a bitmap
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawToBitmap | Value: 190 
+    | INT | bitmapId | The bitmap to draw to or 0 to draw to the canvas 
+    | INT | mode | Flags to support configuration of bitmap 
+    | INT | color | set the initial of the bitmap 
+# Text Operations
+Operations for defining, manipulating, measuring, and rendering text and font data. This includes support for static strings, dynamic formatting, text-based expressions, spatial measurement of text
+  bounds, and high-fidelity rendering using both standard and bitmap fonts across various canvas geometries.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 43 | DrawText | 29 
+    | 48 | DrawBitmapFontText | 25 
+    | 49 | DrawBitmapFontTextOnPath | 25 
+    | 53 | DrawTextOnPath | 17 
+    | 57 | DrawTextOnCircle | 33 
+    | 102 | TextData | 5 
+    | 133 | DrawTextAnchored | 25 
+    | 135 | TextFromFloat | 17 
+    | 136 | TextMerge | 13 
+    | 151 | TextFromFloat | 13 
+    | 153 | TextFromINT | 13 
+    | 155 | TextMeasure | 13 
+    | 156 | TextLength | 9 
+    | 167 | BitmapFontData | 29 
+    | 170 | TextMeasure | 13 
+    | 182 | TextSubtext | 17 
+    | 183 | BitmapTextMeasure | 17 
+    | 184 | DrawBitmapTextAnchored | 33 
+    | 199 | TextTransform | 21 
+    | 208 | TextLayout | 45 
+    | 239 | CoreText | 85 + null x 4 + null x 4 
+## DrawText
+Draw a run of text, all in a single direction
+
+8 Fields, total size 29 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawText | Value: 43 
+    | INT | textId | The ID of the text to render 
+    | INT | start | The start index of the text to render 
+    | INT | end | The end index of the text to render 
+    | INT | contextStart | The index of the start of the shaping context 
+    | INT | contextEnd | The index of the end of the shaping context 
+    | FLOAT | x | The x position at which to draw the text 
+    | FLOAT | y | The y position at which to draw the text 
+    | BOOLEAN | rtl | Whether the run is in RTL direction 
+## DrawBitmapFontText
+Draw text using a bitmap font
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmapFontText | Value: 48 
+    | INT | textId | The ID of the text to render 
+    | INT | bitmapFontId | The ID of the bitmap font 
+    | INT | start | The start index of the text to render 
+    | INT | end | The end index of the text to render 
+    | FLOAT | x | The x position at which to draw the text 
+    | FLOAT | y | The y position at which to draw the text 
+## DrawBitmapFontTextOnPath
+Draw text using a bitmap font along a path
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmapFontTextOnPath | Value: 49 
+    | INT | textId | The ID of the text to render 
+    | INT | bitmapFontId | The ID of the bitmap font 
+    | INT | pathId | The ID of the path to follow 
+    | INT | start | The start index of the text to render 
+    | INT | end | The end index of the text to render 
+    | FLOAT | yAdj | Vertical adjustment relative to the path 
+## DrawTextOnPath
+Draw text along a path
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawTextOnPath | Value: 53 
+    | INT | textId | The ID of the text 
+    | INT | pathId | The ID of the path 
+    | FLOAT | hOffset | Horizontal offset along the path 
+    | FLOAT | vOffset | Vertical offset relative to the path 
+## DrawTextOnCircle
+Draw text along a circle
+
+8 Fields, total size 33 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawTextOnCircle | Value: 57 
+    | INT | textId | The ID of the text 
+    | FLOAT | centerX | The x coordinate of the center 
+    | FLOAT | centerY | The y coordinate of the center 
+    | FLOAT | radius | The radius of the circle 
+    | FLOAT | startAngle | The start angle in degrees 
+    | FLOAT | warpRadiusOffset | The warp radius offset 
+    | INT | alignment | The alignment of the text 
+    | INT | placement | The placement of the text 
+### alignment
+    | Name | Value |
+    | ---- | ---- |
+    | START | 0 
+    | CENTER | 1 
+    | END | 2 
+### placement
+    | Name | Value |
+    | ---- | ---- |
+    | OUTSIDE | 0 
+    | INSIDE | 1 
+## TextData
+Define a static string and associate it with an ID
+
+2 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextData | Value: 102 
+    | INT | textId | The ID of the text 
+    | UTF8 | text | The string value 
+## DrawTextAnchored
+Draw text centered about an anchor point
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawTextAnchored | Value: 133 
+    | INT | textId | The ID of the text to render 
+    | FLOAT | x | The x-position of the anchor point 
+    | FLOAT | y | The y-position of the anchor point 
+    | FLOAT | panX | The horizontal pan from left(-1) to right(1), 0 being centered 
+    | FLOAT | panY | The vertical pan from top(-1) to bottom(1), 0 being centered 
+    | INT | flags | Behavior flags 
+### flags
+    | Name | Value |
+    | ---- | ---- |
+    | ANCHOR_TEXT_RTL | 1 
+    | ANCHOR_MONOSPACE_MEASURE | 2 
+    | MEASURE_EVERY_TIME | 4 
+    | BASELINE_RELATIVE | 8 
+## TextFromFloat
+Convert a float value into a formatted string
+
+5 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextFromFloat | Value: 135 
+    | INT | textId | The ID of the resulting text 
+    | FLOAT | value | The float value to convert 
+    | SHORT | digitsBefore | Number of digits before the decimal point 
+    | SHORT | digitsAfter | Number of digits after the decimal point 
+    | INT | flags | Formatting and padding flags 
+## TextMerge
+Merge two strings into one
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextMerge | Value: 136 
+    | INT | textId | The ID of the resulting text 
+    | INT | srcId1 | The ID of the first source string 
+    | INT | srcId2 | The ID of the second source string 
+## TextFromFloat
+Look up a string from a collection via index
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextFromFloat | Value: 151 
+    | INT | textId | The ID of the resulting text 
+    | INT | dataSetId | The ID of the string collection 
+    | FLOAT | index | The index of the string to retrieve 
+## TextFromINT
+Look up a string from a collection via an integer index variable
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextFromINT | Value: 153 
+    | INT | textId | The ID of the resulting text 
+    | INT | dataSetId | The ID of the string collection 
+    | INT | indexId | The ID of the integer index variable 
+## TextMeasure
+Measure text dimensions and store the result in a float variable
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextMeasure | Value: 155 
+    | INT | id | The ID of the float variable to store the result 
+    | INT | textId | The ID of the text to measure 
+    | INT | type | The type of measurement (WIDTH, HEIGHT, etc.) 
+### type
+    | Name | Value |
+    | ---- | ---- |
+    | MEASURE_WIDTH | 0 
+    | MEASURE_HEIGHT | 1 
+    | MEASURE_LEFT | 2 
+    | MEASURE_RIGHT | 3 
+    | MEASURE_TOP | 4 
+    | MEASURE_BOTTOM | 5 
+## TextLength
+Get the length of a string and store it in a float variable
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextLength | Value: 156 
+    | INT | lengthId | The ID of the float variable to store the length 
+    | INT | textId | The ID of the text to measure 
+## BitmapFontData
+Define a bitmap font with glyph metadata and optional kerning
+
+13 Fields, total size 29 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BitmapFontData | Value: 167 
+    | INT | id | The ID of the bitmap font 
+    | INT | versionAndNumGlyphs | Encoded version and number of glyphs 
+    | UTF8 | chars[0..n] | The characters for each glyph 
+    | INT | bitmapId[0..n] | The bitmap ID for each glyph 
+    | SHORT | marginLeft[0..n] | Left margin for each glyph 
+    | SHORT | marginTop[0..n] | Top margin for each glyph 
+    | SHORT | marginRight[0..n] | Right margin for each glyph 
+    | SHORT | marginBottom[0..n] | Bottom margin for each glyph 
+    | SHORT | width[0..n] | Width for each glyph 
+    | SHORT | height[0..n] | Height for each glyph 
+    | SHORT | kerningSize | Number of entries in the kerning table 
+    | UTF8 | glyphPair[0..n] | Glyph pair for kerning 
+    | SHORT | adjustment[0..n] | Horizontal adjustment for kerning pair 
+## TextMeasure
+Extract text-related properties (width, length, etc.)
+
+4 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextMeasure | Value: 170 
+    | INT | id | The ID of the float variable to store the result 
+    | INT | textId | The ID of the text variable to measure 
+    | SHORT | type | The type of property to extract 
+    | SHORT | unused | unused field 
+## TextSubtext
+Extract a substring from a source string
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextSubtext | Value: 182 
+    | INT | textId | The ID of the resulting substring 
+    | INT | srcId1 | The ID of the source string 
+    | FLOAT | start | The start index of the substring 
+    | FLOAT | len | The length of the substring (or -1 for remainder) 
+## BitmapTextMeasure
+Measure text dimensions specifically for bitmap fonts
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BitmapTextMeasure | Value: 183 
+    | INT | id | The ID of the float variable to store the result 
+    | INT | textId | The ID of the text to measure 
+    | INT | bitmapFontId | The ID of the bitmap font 
+    | INT | type | The type of measurement (WIDTH, HEIGHT, etc.) 
+## DrawBitmapTextAnchored
+Draw bitmap font text anchored to a point with alignment (pan)
+
+8 Fields, total size 33 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawBitmapTextAnchored | Value: 184 
+    | INT | textId | The ID of the text to render 
+    | INT | bitmapFontId | The ID of the bitmap font 
+    | FLOAT | start | The start index of the text to render 
+    | FLOAT | end | The end index of the text to render 
+    | FLOAT | x | The x-position of the anchor point 
+    | FLOAT | y | The y-position of the anchor point 
+    | FLOAT | panX | The horizontal pan from left(-1) to right(1), 0 being centered 
+    | FLOAT | panY | The vertical pan from top(-1) to bottom(1), 0 being centered 
+## TextTransform
+Transform a string (case conversion, trimming, etc.)
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextTransform | Value: 199 
+    | INT | textId | The ID of the resulting transformed text 
+    | INT | srcId1 | The ID of the source string 
+    | FLOAT | start | The start index of the transformation range 
+    | FLOAT | len | The length of the transformation range 
+    | INT | operation | The type of transformation to apply 
+### operation
+    | Name | Value |
+    | ---- | ---- |
+    | TEXT_TO_LOWERCASE | 1 
+    | TEXT_TO_UPPERCASE | 2 
+    | TEXT_TRIM | 3 
+    | TEXT_CAPITALIZE | 4 
+    | TEXT_UPPERCASE_FIRST_CHAR | 5 
+## TextLayout
+Text layout implementation
+
+11 Fields, total size 45 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TextLayout | Value: 208 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+    | INT | textId | The ID of the text to display 
+    | INT | color | The text color (ARGB) 
+    | FLOAT | fontSize | The font size in pixels 
+    | INT | fontStyle | The font style (0=normal, 1=italic) 
+    | FLOAT | fontWeight | The font weight [1..1000] 
+    | INT | fontFamilyId | The ID of the font family name string 
+    | INT | textAlign | The text alignment and flags 
+    | INT | overflow | The overflow strategy 
+    | INT | maxLines | The maximum number of lines 
+## CoreText
+Core text layout implementation with advanced styling
+
+26 Fields, total size 85 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CoreText | Value: 239 
+    | INT | textId | The ID of the text to display 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID for animation purposes 
+    | INT | color | The text color (ARGB) 
+    | INT | colorId | The ID of the color variable 
+    | FLOAT | fontSize | The font size 
+    | FLOAT | minFontSize | Minimum font size for autosize 
+    | FLOAT | maxFontSize | Maximum font size for autosize 
+    | INT | fontStyle | The font style 
+    | FLOAT | fontWeight | The font weight 
+    | INT | fontFamily | The ID of the font family 
+    | INT | textAlign | Text alignment 
+    | INT | overflow | Overflow behavior 
+    | INT | maxLines | Maximum number of lines 
+    | FLOAT | letterSpacing | Letter spacing 
+    | FLOAT | lineHeightAdd | Line height addition 
+    | FLOAT | lineHeightMultiplier | Line height multiplier 
+    | INT | lineBreakStrategy | Line break strategy 
+    | INT | hyphenationFrequency | Hyphenation frequency 
+    | INT | justificationMode | Justification mode 
+    | BOOLEAN | underline | Whether to underline 
+    | BOOLEAN | strikethrough | Whether to strikethrough 
+    | INT[] | fontAxis | Font axis tags 
+    | FLOAT[] | fontAxisValues | Font axis values 
+    | BOOLEAN | autosize | Whether to enable autosize 
+    | INT | flags | Behavior flags 
+# Layout Operations
+High-level structural components (Box, Row, Column, etc.) used to build the UI hierarchy.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 2 | ComponentStart | 17 
+    | 176 | BoxLayout | 17 
+    | 200 | RootLayout | 5 
+    | 201 | LayoutContent | 5 
+    | 202 | BoxLayout | 17 
+    | 203 | RowLayout | 21 
+    | 204 | ColumnLayout | 21 
+    | 205 | CanvasLayout | 9 
+    | 209 | HostAction | 5 
+    | 210 | HostNamedAction | 9 
+    | 214 | ListEnd | 1 
+    | 216 | HostAction | 9 
+    | 217 | StateLayout | 21 
+    | 230 | CollapsibleRow | 21 
+    | 233 | CollapsibleColumn | 21 
+    | 234 | ImageLayout | 21 
+## ComponentStart
+Basic component encapsulating draw commands. This is not resizable.
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ComponentStart | Value: 2 
+    | INT | type | Type of component 
+    | INT | componentId | Unique ID for this component 
+    | FLOAT | width | Width of the component 
+    | FLOAT | height | Height of the component 
+## BoxLayout
+FitBox layout implementation.
+
+Only displays the first child component that fits in the available space.
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BoxLayout | Value: 176 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+### horizontalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | START | 1 
+    | CENTER | 2 
+    | END | 3 
+### verticalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | TOP | 4 
+    | CENTER | 2 
+    | BOTTOM | 5 
+### Examples
+
+<table class="interpolation">
+<tr>
+          
+<tr>
+<td width="100">Top</td>
+<td>
+  <img src='images/layout-BoxLayout-start-top.png' width="150">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">Center</td>
+<td>
+  <img src='images/layout-BoxLayout-center-center.png' width="150">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">Bottom</td>
+<td>
+  <img src='images/layout-BoxLayout-end-bottom.png' width="150">
+</td>
+</tr>  
+          
+</tr>
+</table>            
+          ## RootLayout
+Root element for a document. Other components / layout managers are children in the component tree starting from this Root component.
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | RootLayout | Value: 200 
+    | INT | componentId | Unique ID for this component 
+## LayoutContent
+Container for child components. BoxLayout, RowLayout and ColumnLayout expect a LayoutComponentContent as a child, encapsulating the components that need to be laid out.
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | LayoutContent | Value: 201 
+    | INT | componentId | Unique ID for this component 
+## BoxLayout
+Box layout implementation.
+
+Child components are laid out independently from one another,
+ and painted in their hierarchy order (first children drawnbefore the latter). Horizontal and Vertical positioningare supported.
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BoxLayout | Value: 202 
+    | INT | COMPONENT_ID | unique id for this component 
+    | INT | ANIMATION_ID | id used to match components, for animation purposes 
+    | INT | HORIZONTAL_POSITIONING | horizontal positioning value 
+    | INT | VERTICAL_POSITIONING | vertical positioning value 
+### HORIZONTAL_POSITIONING
+    | Name | Value |
+    | ---- | ---- |
+    | START | 1 
+    | CENTER | 2 
+    | END | 3 
+### VERTICAL_POSITIONING
+    | Name | Value |
+    | ---- | ---- |
+    | TOP | 4 
+    | CENTER | 2 
+    | BOTTOM | 5 
+### Examples
+
+<table class="interpolation">
+<tr>
+          
+<tr>
+<td width="100">Top</td>
+<td>
+  <img src='images/layout-BoxLayout-start-top.png' width="150">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">Center</td>
+<td>
+  <img src='images/layout-BoxLayout-center-center.png' width="150">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">Bottom</td>
+<td>
+  <img src='images/layout-BoxLayout-end-bottom.png' width="150">
+</td>
+</tr>  
+          
+</tr>
+</table>            
+          ## RowLayout
+Row layout implementation, positioning components one after the other horizontally.
+
+It supports weight and horizontal/vertical positioning.
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | RowLayout | Value: 203 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+    | FLOAT | spacedBy | Horizontal spacing between components 
+### horizontalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | START | 1 
+    | CENTER | 2 
+    | END | 3 
+    | SPACE_BETWEEN | 6 
+    | SPACE_EVENLY | 7 
+    | SPACE_AROUND | 8 
+### verticalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | TOP | 4 
+    | CENTER | 2 
+    | BOTTOM | 5 
+### Examples
+
+<table class="interpolation">
+<tr>
+          
+<tr>
+<td width="100">Start</td>
+<td>
+  <img src='images/layout-RowLayout-start-top.png' width="400">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">Center</td>
+<td>
+  <img src='images/layout-RowLayout-center-top.png' width="400">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">End</td>
+<td>
+  <img src='images/layout-RowLayout-end-top.png' width="400">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">SpaceEvenly</td>
+<td>
+  <img src='images/layout-RowLayout-space-evenly-top.png' width="400">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">SpaceAround</td>
+<td>
+  <img src='images/layout-RowLayout-space-around-top.png' width="400">
+</td>
+</tr>  
+          
+<tr>
+<td width="100">SpaceBetween</td>
+<td>
+  <img src='images/layout-RowLayout-space-between-top.png' width="400">
+</td>
+</tr>  
+          
+</tr>
+</table>            
+          ## ColumnLayout
+Column layout implementation, positioning components one after the other vertically.
+
+It supports weight and horizontal/vertical positioning.
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ColumnLayout | Value: 204 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+    | FLOAT | spacedBy | Horizontal spacing between components 
+### horizontalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | START | 1 
+    | CENTER | 2 
+    | END | 3 
+### verticalPositioning
+    | Name | Value |
+    | ---- | ---- |
+    | TOP | 4 
+    | CENTER | 2 
+    | BOTTOM | 5 
+    | SPACE_BETWEEN | 6 
+    | SPACE_EVENLY | 7 
+    | SPACE_AROUND | 8 
+### Examples
+
+<table class="interpolation">
+<tr>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-top.png' height="400"></td></tr>
+    <tr><td width="100">Top</td></tr>
+  </table>
+</td>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-center.png' height="400"></td></tr>
+    <tr><td width="100">Center</td></tr>
+  </table>
+</td>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-bottom.png' height="400"></td></tr>
+    <tr><td width="100">Bottom</td></tr>
+  </table>
+</td>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-space-evenly.png' height="400"></td></tr>
+    <tr><td width="100">SpaceEvenly</td></tr>
+  </table>
+</td>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-space-around.png' height="400"></td></tr>
+    <tr><td width="100">SpaceAround</td></tr>
+  </table>
+</td>
+          
+<td>
+  <table class="interpolation" width="100" height="400">
+    <tr><td><img src='images/layout-ColumnLayout-start-space-between.png' height="400"></td></tr>
+    <tr><td width="100">SpaceBetween</td></tr>
+  </table>
+</td>
+          
+</tr>
+</table>            
+          ## CanvasLayout
+Canvas implementation. Encapsulates drawing operations.
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CanvasLayout | Value: 205 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+## HostAction
+Host action. This operation represents a host action
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HostAction | Value: 209 
+    | INT | ACTION_ID | Host Action ID 
+## HostNamedAction
+Host Named action. This operation represents a host action
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HostNamedAction | Value: 210 
+    | INT | TEXT_ID | Named Host Action Text ID 
+    | INT | VALUE_ID | Named Host Action Value ID 
+## ListEnd
+End tag for a container component (Row, Column, etc.)
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ListEnd | Value: 214 
+## HostAction
+Host action. This operation represents a host action
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HostAction | Value: 216 
+    | INT | ACTION_ID | Host Action ID 
+    | INT | METADATA | Host Action Text Metadata ID 
+## StateLayout
+A layout that switches between child layouts based on an index
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | StateLayout | Value: 217 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+    | INT | indexId | The ID of the variable providing the current state index 
+## CollapsibleRow
+A row layout that can hide children if space is insufficient
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CollapsibleRow | Value: 230 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+    | FLOAT | spacedBy | Horizontal spacing between components 
+## CollapsibleColumn
+A column layout that can hide children if space is insufficient
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CollapsibleColumn | Value: 233 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID for animation purposes 
+    | INT | horizontalPositioning | Horizontal positioning value 
+    | INT | verticalPositioning | Vertical positioning value 
+    | FLOAT | spacedBy | Vertical spacing between components 
+## ImageLayout
+Image layout implementation
+
+5 Fields, total size 21 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ImageLayout | Value: 234 
+    | INT | componentId | Unique ID for this component 
+    | INT | animationId | ID used to match components for animation purposes 
+    | INT | bitmapId | The ID of the bitmap to display 
+    | INT | scaleType | The scale type to apply 
+    | FLOAT | alpha | The alpha transparency [0..1] 
+# Modifier Operations
+Augmentations applied to components to change their dimensions, appearance, or behavior.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 16 | WidthModifierOperation | 9 
+    | 54 | RoundedClipRectModifierOperation | 17 
+    | 55 | BackgroundModifierOperation | 37 
+    | 58 | PaddingModifierOperation | 17 
+    | 59 | ClickModifier | 1 
+    | 67 | HeightModifierOperation | 9 
+    | 107 | BorderModifierOperation | 45 
+    | 108 | ClipRectModifierOperation | 1 
+    | 174 | DrawContentOperation | 1 
+    | 211 | ComponentVisibilityOperation | 5 
+    | 219 | TouchModifier | 1 
+    | 220 | TouchUpModifier | 1 
+    | 221 | OffsetModifierOperation | 9 
+    | 223 | ZIndexModifierOperation | 5 
+    | 224 | GraphicsLayerModifierOperation | 13 
+    | 225 | TouchCancelModifier | 1 
+    | 226 | ScrollModifierOperation | 17 
+    | 228 | MarqueeModifierOperation | 25 
+    | 229 | RippleModifier | 1 
+    | 231 | WidthInModifierOperation | 9 
+    | 232 | HeightInModifierOperation | 9 
+    | 235 | CollapsiblePriorityModifierOperation | 9 
+    | 237 | AlignByModifierOperation | 9 
+    | 238 | LayoutCompute | 9 
+## WidthModifierOperation
+Set the width dimension on a component
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | WidthModifierOperation | Value: 16 
+    | INT | type | The type of dimension rule (0=FIXED, 1=WRAP, etc.) 
+    | FLOAT | value | The width value 
+## RoundedClipRectModifierOperation
+Clip the component's content to its rounded rectangular bounds
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | RoundedClipRectModifierOperation | Value: 54 
+    | FLOAT | topStart | The topStart radius of the rectangle 
+    | FLOAT | topEnd | The topEnd radius of the rectangle 
+    | FLOAT | bottomStart | The bottomStart radius of the rectangle 
+    | FLOAT | bottomEnd | The bottomEnd radius of the rectangle 
+## BackgroundModifierOperation
+Define a background color or shape for a component
+
+9 Fields, total size 37 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BackgroundModifierOperation | Value: 55 
+    | INT | flags | Behavior flags 
+    | INT | colorId | The ID of the color if flags include COLOR_REF 
+    | INT | reserve1 | Reserved for future use 
+    | INT | reserve2 | Reserved for future use 
+    | FLOAT | r | Red component [0..1] 
+    | FLOAT | g | Green component [0..1] 
+    | FLOAT | b | Blue component [0..1] 
+    | FLOAT | a | Alpha component [0..1] 
+    | INT | shapeType | The shape type (0=RECTANGLE, 1=CIRCLE) 
+## PaddingModifierOperation
+Define padding around a component
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | PaddingModifierOperation | Value: 58 
+    | FLOAT | left | Left padding 
+    | FLOAT | top | Top padding 
+    | FLOAT | right | Right padding 
+    | FLOAT | bottom | Bottom padding 
+## ClickModifier
+Click modifier. This operation contains a list of action operations executed on click
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ClickModifier | Value: 59 
+## HeightModifierOperation
+Set the height dimension on a component
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HeightModifierOperation | Value: 67 
+    | INT | type | The type of dimension rule (0=FIXED, 1=WRAP, etc.) 
+    | FLOAT | value | The height value 
+## BorderModifierOperation
+Define a border for a component
+
+11 Fields, total size 45 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | BorderModifierOperation | Value: 107 
+    | INT | flags | Behavior flags 
+    | INT | colorId | The ID of the color if flags include COLOR_REF 
+    | INT | reserve1 | Reserved for future use 
+    | INT | reserve2 | Reserved for future use 
+    | FLOAT | borderWidth | Width of the border 
+    | FLOAT | roundedCorner | Radius for rounded corners 
+    | FLOAT | r | Red component [0..1] 
+    | FLOAT | g | Green component [0..1] 
+    | FLOAT | b | Blue component [0..1] 
+    | FLOAT | a | Alpha component [0..1] 
+    | INT | shapeType | The shape type (0=RECTANGLE, 1=CIRCLE) 
+## ClipRectModifierOperation
+Clip the component's content to its rectangular bounds
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ClipRectModifierOperation | Value: 108 
+## DrawContentOperation
+A modifier that triggers drawing of the component's content
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | DrawContentOperation | Value: 174 
+## ComponentVisibilityOperation
+Set component visibility from a provided integer variable
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ComponentVisibilityOperation | Value: 211 
+    | INT | visibilityId | The ID of the integer variable representing visibility 
+## TouchModifier
+Touch down modifier. This operation contains a list of action operations executed on touch down
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TouchModifier | Value: 219 
+## TouchUpModifier
+Touch up modifier. This operation contains a list of action operations executed on touch up
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TouchUpModifier | Value: 220 
+## OffsetModifierOperation
+Shift the component's position
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | OffsetModifierOperation | Value: 221 
+    | FLOAT | x | X offset 
+    | FLOAT | y | Y offset 
+## ZIndexModifierOperation
+Define the Z-Index of a component
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ZIndexModifierOperation | Value: 223 
+    | FLOAT | value | The Z-Index value 
+## GraphicsLayerModifierOperation
+Define transformations (scale, rotation, alpha) for a component
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | GraphicsLayerModifierOperation | Value: 224 
+    | INT | length | Number of attributes 
+    | INT | attributeId[0..n] | The ID of the attribute 
+    | FLOAT | attributeValue[0..n] | The value of the attribute 
+## TouchCancelModifier
+Touch cancel modifier. This operation contains a list of action operations executed on touch cancel
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TouchCancelModifier | Value: 225 
+## ScrollModifierOperation
+Define a scrolling behavior for a component
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ScrollModifierOperation | Value: 226 
+    | INT | direction | Direction of the scroll (0=VERTICAL, 1=HORIZONTAL) 
+    | FLOAT | position | The current scroll position (expression) 
+    | FLOAT | max | The maximum scroll position 
+    | FLOAT | notchMax | The maximum notch position 
+## MarqueeModifierOperation
+Define a scrolling marquee effect for a component
+
+6 Fields, total size 25 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MarqueeModifierOperation | Value: 228 
+    | INT | iterations | Number of iterations 
+    | INT | animationMode | Animation mode 
+    | FLOAT | repeatDelayMillis | Repeat delay in ms 
+    | FLOAT | initialDelayMillis | Initial delay in ms 
+    | FLOAT | spacing | Spacing between marquee iterations 
+    | FLOAT | velocity | Velocity of the marquee animation 
+## RippleModifier
+Ripple modifier. This modifier will do a ripple animation on touch down
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | RippleModifier | Value: 229 
+## WidthInModifierOperation
+Add additional constraints to the width
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | WidthInModifierOperation | Value: 231 
+    | FLOAT | min | The minimum width, -1 if not applied 
+    | FLOAT | max | The maximum width, -1 if not applied 
+## HeightInModifierOperation
+Add additional constraints to the height
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HeightInModifierOperation | Value: 232 
+    | FLOAT | min | The minimum height, -1 if not applied 
+    | FLOAT | max | The maximum height, -1 if not applied 
+## CollapsiblePriorityModifierOperation
+Add additional priority to children of collapsible layouts
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CollapsiblePriorityModifierOperation | Value: 235 
+    | INT | orientation | Horizontal(0) or Vertical (1) 
+    | FLOAT | priority | The associated priority 
+## AlignByModifierOperation
+Align a component based on a specific baseline or anchor
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | AlignByModifierOperation | Value: 237 
+    | FLOAT | line | The ID of the float variable or baseline ID to align by 
+    | INT | flags | Alignment flags 
+## LayoutCompute
+Compute component position and measure via dynamic expressions
+
+3 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | LayoutCompute | Value: 238 
+    | INT | type | Type of computation (0=MEASURE, 1=POSITION) 
+    | INT | boundsId | The ID of the float list variable to store the bounds 
+    | BOOLEAN | animateChanges | Whether to animate layout changes 
+# Actions & Events Operations
+Interactive side effects, including host-side actions and dynamic state updates.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 212 | ValueIntegerChangeActionOperation | 9 
+    | 213 | ValueStringChangeActionOperation | 9 
+    | 218 | ValueIntegerExpressionChangeActionOperation | 17 
+    | 222 | ValueFloatChangeActionOperation | 9 
+    | 227 | ValueFloatExpressionChangeActionOperation | 9 
+## ValueIntegerChangeActionOperation
+Action that sets a new value for an integer variable
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ValueIntegerChangeActionOperation | Value: 212 
+    | INT | targetValueId | The ID of the integer variable to update 
+    | INT | value | The new integer value to assign 
+## ValueStringChangeActionOperation
+Action that sets a new value for a string variable
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ValueStringChangeActionOperation | Value: 213 
+    | INT | targetValueId | The ID of the string variable to update 
+    | INT | valueId | The ID of the new string value to assign 
+## ValueIntegerExpressionChangeActionOperation
+Action that updates an integer variable via a dynamic expression
+
+2 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ValueIntegerExpressionChangeActionOperation | Value: 218 
+    | LONG | targetValueId | The ID of the integer variable to update 
+    | LONG | valueExpressionId | The ID of the expression to evaluate 
+## ValueFloatChangeActionOperation
+Action that sets a new value for a float variable
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ValueFloatChangeActionOperation | Value: 222 
+    | INT | targetValueId | The ID of the float variable to update 
+    | FLOAT | value | The new float value to assign 
+## ValueFloatExpressionChangeActionOperation
+Action that updates a float variable via a dynamic expression
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ValueFloatExpressionChangeActionOperation | Value: 227 
+    | INT | targetValueId | The ID of the float variable to update 
+    | INT | valueExpressionId | The ID of the expression to evaluate 
+# Animation & Particles Operations
+Specialized systems for time-based transitions, impulses, and complex particle effects.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 14 | AnimationSpec | 29 
+    | 161 | ParticlesCreate | 21 + null x 4 
+    | 163 | ParticlesLoop | 17 + null x 4 + null x 4 
+    | 164 | ImpulseOperation | 9 
+    | 165 | ImpulseProcess | 1 
+    | 194 | ParticlesCompare | 27 + null x 4 + null x 4 + null x 4 
+## AnimationSpec
+Define the animation specifications for a component
+
+7 Fields, total size 29 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | AnimationSpec | Value: 14 
+    | INT | animationId | The ID of the animation 
+    | FLOAT | motionDuration | Duration of the motion animation in ms 
+    | INT | motionEasingType | The type of easing for motion 
+    | FLOAT | visibilityDuration | Duration of visibility animation in ms 
+    | INT | visibilityEasingType | The type of easing for visibility 
+    | INT | enterAnimation | The entry animation type 
+    | INT | exitAnimation | The exit animation type 
+## ParticlesCreate
+Create a particle system
+
+6 Fields, total size 21 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ParticlesCreate | Value: 161 
+    | INT | id | The ID of the particle system 
+    | INT | particleCount | Number of particles to create 
+    | INT | varCount | Number of variables associated with each particle 
+    | INT | varId[0..n] | The ID of each associated variable 
+    | INT | equLen[0..n] | The length of the initialization equation for each variable 
+    | FLOAT[] | equations[0..n] | The initialization equations (RPN) 
+## ParticlesLoop
+Update and recycle particles in a system
+
+6 Fields, total size 17 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ParticlesLoop | Value: 163 
+    | INT | id | The ID of the particle system 
+    | INT | restartLen | The length of the restart equation (recycles particle if > 0) 
+    | FLOAT[] | restartEquation | The restart equation (RPN) 
+    | INT | varCount | The number of update equations 
+    | INT | equLen[0..n] | The length of each update equation 
+    | FLOAT[] | equations[0..n] | The update equations (RPN) 
+## ImpulseOperation
+Execute a list of actions once, and a process block for a fixed duration
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ImpulseOperation | Value: 164 
+    | FLOAT | duration | Duration of the impulse 
+    | FLOAT | startAt | The start time of the impulse 
+## ImpulseProcess
+A block of operations executed during an active impulse
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ImpulseProcess | Value: 165 
+## ParticlesCompare
+Compare particles and execute conditional logic
+
+10 Fields, total size 27 + null x 4 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ParticlesCompare | Value: 194 
+    | INT | id | The ID of the particle system 
+    | SHORT | flags | Configuration flags 
+    | FLOAT | min | The minimum index to process 
+    | FLOAT | max | The maximum index to process 
+    | INT | expLen | The length of the comparison expression 
+    | FLOAT[] | expression | The comparison expression (RPN) 
+    | INT | res1Count | The number of equations in the first result block 
+    | FLOAT[] | res1Equations | The equations for the first result block 
+    | INT | res2Count | The number of equations in the second result block 
+    | FLOAT[] | res2Equations | The equations for the second result block 
+# Logic & Expressions Operations
+Dynamic calculations, conditional execution, loops, and measurement utilities.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 81 | FloatExpression | 9 + null x 4 + null x 4 
+    | 144 | IntegerExpression | 13 + null x 4 
+    | 150 | ComponentValue | 13 
+    | 157 | TouchExpression | 37 + null x 4 + null x 4 + null x 4 
+    | 171 | ImageAttribute | 13 + null x 4 
+    | 172 | TimeAttribute | 13 + null x 4 
+    | 178 | ConditionalOperations | 10 
+    | 192 | IdLookup | 13 
+    | 215 | Loop | 17 
+## FloatExpression
+Define a float via dynamic expression and optional animation
+
+5 Fields, total size 9 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | FloatExpression | Value: 81 
+    | INT | id | The ID of the resulting float 
+    | SHORT | expression_length | The length of the expression 
+    | SHORT | animation_length | The length of the animation spec 
+    | FLOAT[] | expression | Sequence of floats representing an expression (RPN) 
+    | FLOAT[] | animationSpec | Sequence of floats representing an animation curve 
+## IntegerExpression
+Define an integer via dynamic expression
+
+4 Fields, total size 13 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | IntegerExpression | Value: 144 
+    | INT | id | The ID of the resulting integer 
+    | INT | mask | Bitmask representing whether each value is a constant or an ID 
+    | INT | length | The number of elements in the expression 
+    | INT[] | values | The array of constants, IDs, and operators (RPN) 
+## ComponentValue
+Expose a component's layout property (width, height, etc.) as a variable
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ComponentValue | Value: 150 
+    | INT | type | The type of value to expose 
+    | INT | componentId | The ID of the component to reference 
+    | INT | valueId | The ID of the variable to store the value in 
+### type
+    | Name | Value |
+    | ---- | ---- |
+    | WIDTH | 0 
+    | HEIGHT | 1 
+    | POS_X | 2 
+    | POS_Y | 3 
+    | POS_ROOT_X | 4 
+    | POS_ROOT_Y | 5 
+    | CONTENT_WIDTH | 6 
+    | CONTENT_HEIGHT | 7 
+## TouchExpression
+Define a float value derived from touch interactions
+
+12 Fields, total size 37 + null x 4 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TouchExpression | Value: 157 
+    | INT | id | The ID of the resulting float variable 
+    | FLOAT | value | The initial value 
+    | FLOAT | min | The minimum allowed value 
+    | FLOAT | max | The maximum allowed value 
+    | FLOAT | velocityId | Reserved for velocity ID 
+    | INT | touchEffects | Haptic feedback and touch behavior flags 
+    | INT | expression_length | The length of the touch mapping expression 
+    | FLOAT[] | expression | Sequence of floats representing touch mapping (RPN) 
+    | INT | stopModeAndLen | Encoded stop mode and length of stop spec 
+    | FLOAT[] | stopSpec | Parameters for stop behavior (e.g., notches) 
+    | INT | easingLen | The length of the easing spec 
+    | FLOAT[] | easingSpec | Parameters for deceleration easing 
+## ImageAttribute
+Extract image-related properties (width, height)
+
+5 Fields, total size 13 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ImageAttribute | Value: 171 
+    | INT | id | The ID of the float variable to store the result 
+    | INT | imageId | The ID of the image variable to extract from 
+    | SHORT | type | The type of property to extract (0=WIDTH, 1=HEIGHT) 
+    | SHORT | argsLength | The number of additional arguments 
+    | INT[] | args | The additional arguments 
+## TimeAttribute
+Extract time-related information (seconds, hours, etc.)
+
+5 Fields, total size 13 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | TimeAttribute | Value: 172 
+    | INT | id | The ID of the float variable to store the result 
+    | INT | timeId | The ID of the time variable to extract from 
+    | SHORT | type | The type of time information to extract 
+    | SHORT | argsLength | The number of additional arguments 
+    | INT[] | args | The additional arguments 
+## ConditionalOperations
+Execute a list of operations if a condition is met
+
+3 Fields, total size 10 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | ConditionalOperations | Value: 178 
+    | BYTE | type | The type of comparison (EQ, NEQ, LT, etc.) 
+    | FLOAT | varA | The first value to compare 
+    | FLOAT | varB | The second value to compare 
+### type
+    | Name | Value |
+    | ---- | ---- |
+    | TYPE_EQ | 0 
+    | TYPE_NEQ | 1 
+    | TYPE_LT | 2 
+    | TYPE_LTE | 3 
+    | TYPE_GT | 4 
+    | TYPE_GTE | 5 
+## IdLookup
+Look up an ID from an ID collection via index
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | IdLookup | Value: 192 
+    | INT | textId | The ID of the integer variable to store the result 
+    | FLOAT | dataSet | The ID of the collection 
+    | FLOAT | index | The index of the ID to retrieve 
+## Loop
+Execute a list of operations in a loop
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | Loop | Value: 215 
+    | INT | indexId | The ID of the variable to store the loop index 
+    | FLOAT | from | Starting value 
+    | FLOAT | step | Increment value 
+    | FLOAT | until | Stop value (exclusive) 
+# Matrix Operations
+Coordinate system transformations, including translation, scaling, rotation, skewing, and matrix math.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 126 | MatrixScale | 17 
+    | 127 | MatrixTranslate | 9 
+    | 128 | MatrixSkew | 9 
+    | 129 | MatrixRotate | 13 
+    | 130 | MatrixSave | 1 
+    | 131 | MatrixRestore | 1 
+    | 181 | MatrixFromPath | 17 
+    | 186 | MatrixConstant | 9 + null x 4 
+    | 187 | MatrixExpression | 9 + null x 4 
+    | 188 | MatrixVectorMath | 15 + null x 4 + null x 4 
+## MatrixScale
+Scale the following draw commands
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixScale | Value: 126 
+    | FLOAT | scaleX | The amount to scale in X 
+    | FLOAT | scaleY | The amount to scale in Y 
+    | FLOAT | pivotX | The x-coordinate for the pivot point 
+    | FLOAT | pivotY | The y-coordinate for the pivot point 
+## MatrixTranslate
+Preconcat the current matrix with the specified translation
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixTranslate | Value: 127 
+    | FLOAT | dx | The distance to translate in X 
+    | FLOAT | dy | The distance to translate in Y 
+## MatrixSkew
+Current matrix with the specified skew.
+
+2 Fields, total size 9 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixSkew | Value: 128 
+    | FLOAT | skewX | The amount to skew in X 
+    | FLOAT | skewY | The amount to skew in Y 
+## MatrixRotate
+Apply rotation to matrix
+
+3 Fields, total size 13 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixRotate | Value: 129 
+    | FLOAT | rotate | Angle to rotate 
+    | FLOAT | pivotX | X Pivot point 
+    | FLOAT | pivotY | Y Pivot point 
+## MatrixSave
+Save the matrix and clip to a stack
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixSave | Value: 130 
+## MatrixRestore
+Restore the matrix and clip
+
+0 Fields, total size 1 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixRestore | Value: 131 
+## MatrixFromPath
+Set the matrix relative to a path position and tangent
+
+4 Fields, total size 17 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixFromPath | Value: 181 
+    | INT | pathId | The ID of the path 
+    | FLOAT | percent | The position on the path [0..1] 
+    | FLOAT | vOffset | Vertical offset from the path 
+    | INT | flags | Flags for position/tangent 
+### flags
+    | Name | Value |
+    | ---- | ---- |
+    | POSITION_MATRIX_FLAG | 1 
+    | TANGENT_MATRIX_FLAG | 2 
+## MatrixConstant
+A constant matrix and its associated ID
+
+3 Fields, total size 9 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixConstant | Value: 186 
+    | INT | matrixId | The ID of the matrix 
+    | INT | type | The type of matrix 
+    | FLOAT[] | values | The matrix values 
+## MatrixExpression
+A matrix defined by an expression
+
+3 Fields, total size 9 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixExpression | Value: 187 
+    | INT | matrixId | The ID of the matrix 
+    | INT | type | The type of matrix 
+    | FLOAT[] | expression | The matrix expression 
+## MatrixVectorMath
+Evaluates a matrix * vector and outputs a vector
+
+6 Fields, total size 15 + null x 4 + null x 4 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | MatrixVectorMath | Value: 188 
+    | INT | matrixId | The ID of the matrix 
+    | SHORT | opType | The type of operation (0=multiply) 
+    | INT | outLength | The length of the output vector 
+    | INT[] | outputs | The IDs to write the output vector 
+    | INT | inLength | The length of the input vector 
+    | FLOAT[] | inputs | The input vector values 
+# Accessibility Operations
+Semantics and properties used to expose UI information to assistive technologies.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 250 | CoreSemantics | 15 
+## CoreSemantics
+Define accessibility semantics for a component
+
+7 Fields, total size 15 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | CoreSemantics | Value: 250 
+    | INT | contentDescriptionId | ID of the content description string 
+    | BYTE | role | The accessibility role (BUTTON, CHECKBOX, etc.) 
+    | INT | textId | ID of the text string 
+    | INT | stateDescriptionId | ID of the state description string 
+    | BYTE | mode | Semantics merge mode (SET, MERGE) 
+    | BOOLEAN | enabled | Whether the component is enabled 
+    | BOOLEAN | clickable | Whether the component is clickable 
+# Miscellaneous Operations
+System-level feedback operations like Haptic Feedback.
+
+Operations in this category:
+    | ID | Name | Size (bytes) 
+    | ---- | ---- | ---- |
+    | 177 | HapticFeedback | 5 
+## HapticFeedback
+Generate an haptic feedback
+
+1 Fields, total size 5 bytes
+    | Type | Name | Description |
+    | ---- | ---- | ---- |
+    | BYTE | HapticFeedback | Value: 177 
+    | INT | hapticFeedbackType | Type of haptic feedback 
+
+# Appendix 1: FloatExpressions
+
+    | Name | Value | Value | EXAMPLE|
+    | ---- | ---- | ---- | ---- |
+    | ADD  | Nan(1) | addition | 3,2,ADD -> 5|
+    | SUB  | Nan(2) | subtraction | 3,2,SUB -> 1|
+    | MUL  | Nan(3) | multiplication | 3,2,MUL -> 1|
+    | DIV  | Nan(4) | division | 3,2,DIV -> 1.5 |
+    | MOD  | Nan(5) | Modulus | 3,2,DIV -> 1|
+    | MIN  | Nan(6) | Minimum | 3,2,MIN -> 2|
+    | MAX  | Nan(7) | Maximum | 3,2,MAX -> 3 |
+    | POW  | Nan(8) | power | 3,2,POW -> 9 |
+    | SQRT  | Nan(9) | square root | 2,SQRT-> 1.414 |
+    | ABS  | Nan(10) | absolute value | -2,ABS -> 2 |
+    | SIGN  | Nan(11) | sign | -3, SIGN -> -1 |
+    | COPY_SIGN  | Nan(12) | transfer sign |7, -3, COPY_SIGN -> -7 |
+    | EXP  | Nan(13) | exponent  | 1, EXP -> 2.7182 |
+    | FLOOR  | Nan(14) | floor | 32.3,FLOOR -> 32 |
+    | LOG  | Nan(15) | log() | 100, LOG -> 2 |
+    | LN  | Nan(16) | ln() | 100, LN -> 4.605|
+    | ROUND  | Nan(17) | round | 3.5, ROUND -> 4 |
+    | SIN  | Nan(18) | sin | 3.141/2, SIN -> 1.00 |
+    | COS  | Nan(19) | cosine | 3.141/2, COS -> 0.0 |
+    | TAN  | Nan(20) | tan |  3.141/4, TAN -> 1.0 |
+    | ASIN  | Nan(21) | asin |  1, ASIN -> 1.57 |
+    | ACOS  | Nan(22) | acos |  1, ACOS -> 0 |
+    | ATAN  | Nan(23) | atan |  1, ATAN -> 0.785 |
+    | ATAN2  | Nan(24) | atan2 |  x,y,ATAN2 - > atan2(x,y) |
+    | MAD  | Nan(25) | Multiple and add |7, -3, 2, MAD -> -7 |
+    | IFELSE  | Nan(26) | ?: | 1,2,0,IFELES -> 1 |
+    | CLAMP  | Nan(27) | clamp  |v,min,max,CLAMP -> v |
+    | CBRT  | Nan(28) | Cube root | |
+    | DEG | Nan(29) | radians to degree | |
+    | RAD | Nan(30 | degrees to radians | |
+    | CEIL | Nan(31) | Ceiling |3.14, CEIL -> 4 |
+    
+
+ **Array operation**
+
+    Array operation examples are for [1,2,3,4,5] 
+    | Name | Value | Value | EXAMPLE|
+    | ---- | ---- | ---- | ---- |
+    | A_DEREF | Nan(32) | Get a value from array | 2, a, A_DEREF -> 3|
+    | A_MAX | Nan(33) | Maximum of array | a, A_MAX -> 5|
+    | A_MIN | Nan(34) | Minimum of array | a, A_MIN -> 1|
+    | A_SUM | Nan(35) | Sum of array | a, A_SUM -> 15|
+    | A_AVG | Nan(36) | Average of array | a, A_AVG -> 3|
+    | A_LEN | Nan(37) | Length of array | a, A_LEN -> 5|
+WIP
+# Appendix 2: IntegerExpressions
+
+    | Name | Value | Value | EXAMPLE|
+    | ---- | ---- | ---- | ---- |
+    | ADD  | Nan(1) | addition | 3,2,ADD -> 5|
+    | SUB  | Nan(2) | subtraction | 3,2,SUB -> 1|
+    | MUL  | Nan(3) | multiplication | 3,2,MUL -> 1|
+    | DIV  | Nan(4) | division | 3,2,DIV -> 1 |
+    | MOD  | Nan(5) | Modulus | 3,2,DIV -> 1|
+    | SHL  | Nan(5) | Modulus | 3,2,SHL -> 1|
+    | SHR  | Nan(5) | Modulus | 3,2,SHR -> 1|
+    | USHR  | Nan(5) | Modulus | 3,2,USHR -> 1|
+    | OR  | Nan(5) | Modulus | 3,2,OR -> 1|
+    | AND  | Nan(5) | Modulus | 3,2,AND -> 1|
+    | XOR  | Nan(5) | Modulus | 3,2,XOR -> 1|
+    | COPY_SIGN  | Nan(5) | Modulus | 3,2,COPY_SIGN -> 1|
+    | MIN  | Nan(5) | Modulus | 3,2,MIN -> 2|
+    | MAX  | Nan(5) | Modulus | 3,2,MAX -> 3|
+    | NEG  | Nan(5) | Modulus | 2,NEG -> -2|
+    | ABS  | Nan(5) | Modulus | -2,ABS -> 2|
+    | INCR  | Nan(5) | Modulus | 2,INCR -> 3|
+    | DECR  | Nan(5) | Modulus | 2,DECR -> 1|
+    | NOT  | Nan(5) | Modulus |  2,NOT -> FFFFFFFD|
+    | SIGN  | Nan(5) | Modulus | 2,SIGN -> 1|
+    | CLAMP  | Nan(5) | Modulus | 4,2,3CLAMP -> 3|
+    | IFELSE  | Nan(5) | Modulus | 3,2,IFELSE -> 1|
+    | MAD  | Nan(5) | Modulus | 4,3,2,MAD -> 1|
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
+

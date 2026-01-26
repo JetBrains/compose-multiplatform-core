@@ -285,7 +285,7 @@ public abstract class AndroidXrEntity(
     }
 
     /** Handles an incoming input event from the underlying node and dispatches it appropriately. */
-    private fun handleInputEvent(xrInputEvent: InputEvent) {
+    public fun handleInputEvent(xrInputEvent: InputEvent) {
         if (xrInputEvent.dispatchFlags == InputEvent.DISPATCH_FLAG_CAPTURED_POINTER) {
             dispatchCapturedPointerEvent(xrInputEvent)
         } else {

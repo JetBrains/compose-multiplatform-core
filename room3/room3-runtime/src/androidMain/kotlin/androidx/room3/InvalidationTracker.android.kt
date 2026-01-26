@@ -103,7 +103,7 @@ actual constructor(
     }
 
     /** Internal method to initialize table tracking. */
-    internal actual fun internalInit(connection: SQLiteConnection) {
+    internal actual suspend fun internalInit(connection: SQLiteConnection) {
         implementation.configureConnection(connection)
         synchronized(trackerLock) {
             multiInstanceInvalidationClient?.start(checkNotNull(multiInstanceInvalidationIntent))
@@ -233,7 +233,7 @@ actual constructor(
     public fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: (SQLiteConnection) -> T,
+        computeFunction: suspend (SQLiteConnection) -> T,
     ): LiveData<T> {
         return createFlow(*tableNames, emitInitialState = true)
             .map { performSuspending(database, true, inTransaction, computeFunction) }

@@ -182,4 +182,20 @@ object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isAccessibilityShowOnScreenNestedScrollingEnabled: Boolean = true
+
+    /**
+     * Enables support of trackpad gesture events.
+     *
+     * If enabled, [androidx.compose.ui.input.pointer.PointerEvent]s can have type of
+     * [androidx.compose.ui.input.pointer.PointerEventType.Pan] and
+     * [androidx.compose.ui.input.pointer.PointerEventType.Scale], corresponding to gestures on a
+     * trackpad.
+     *
+     * These trackpad gestures will also generally be treated as mouse, with the exact behavior
+     * depending on platform specifics.
+     */
+    // TODO: b/475634969 remove the temporary flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTrackpadGestureHandlingEnabled: Boolean = false
 }

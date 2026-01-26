@@ -153,19 +153,21 @@ package androidx.compose.foundation {
     property public boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     property public boolean isCacheWindowForPagerEnabled;
     property public boolean isCacheWindowRefillFixEnabled;
-    property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
+    property public boolean isDelayPressesUsingGestureConsumptionEnabled;
     property public boolean isNewContextMenuEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
     property public boolean isSmartSelectionEnabled;
+    property public boolean isTrackpadGestureHandlingEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
     field public static boolean isAnchoredDraggableTargetValueCalculationFixEnabled;
     field public static boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     field public static boolean isCacheWindowForPagerEnabled;
     field public static boolean isCacheWindowRefillFixEnabled;
-    field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
+    field public static boolean isDelayPressesUsingGestureConsumptionEnabled;
     field public static boolean isNewContextMenuEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
     field public static boolean isSmartSelectionEnabled;
+    field public static boolean isTrackpadGestureHandlingEnabled;
   }
 
   public final class DarkThemeKt {
@@ -723,9 +725,6 @@ package androidx.compose.foundation.gestures {
     method @BytecodeOnly public static Object! drag$default(androidx.compose.foundation.gestures.DraggableState!, androidx.compose.foundation.MutatePriority!, kotlin.jvm.functions.Function2!, kotlin.coroutines.Continuation!, int, Object!);
   }
 
-  @Deprecated @SuppressCompatibility @kotlin.RequiresOptIn(message="This API feature-flags new behavior and will be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalTapGestureDetectorBehaviorApi {
-  }
-
   @androidx.compose.runtime.Stable public interface FlingBehavior {
     method public suspend Object? performFling(androidx.compose.foundation.gestures.ScrollScope, float initialVelocity, kotlin.coroutines.Continuation<? super java.lang.Float>);
   }
@@ -844,12 +843,9 @@ package androidx.compose.foundation.gestures {
     method @BytecodeOnly @Deprecated public static Object! awaitFirstDown$default(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, boolean, kotlin.coroutines.Continuation!, int, Object!);
     method public static suspend Object? detectTapGestures(androidx.compose.ui.input.pointer.PointerInputScope, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onDoubleTap, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onLongPress, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.gestures.PressGestureScope,? super androidx.compose.ui.geometry.Offset,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onPress, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onTap, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly public static Object! detectTapGestures$default(androidx.compose.ui.input.pointer.PointerInputScope!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, kotlin.jvm.functions.Function1!, kotlin.coroutines.Continuation!, int, Object!);
-    method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static boolean getDetectTapGesturesEnableNewDispatchingBehavior();
-    method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static void setDetectTapGesturesEnableNewDispatchingBehavior(boolean);
     method public static suspend Object? waitForUpOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope, optional androidx.compose.ui.input.pointer.PointerEventPass pass, kotlin.coroutines.Continuation<? super androidx.compose.ui.input.pointer.PointerInputChange?>);
     method @BytecodeOnly @Deprecated public static Object! waitForUpOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, kotlin.coroutines.Continuation!);
     method @BytecodeOnly public static Object! waitForUpOrCancellation$default(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, androidx.compose.ui.input.pointer.PointerEventPass!, kotlin.coroutines.Continuation!, int, Object!);
-    property @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static boolean DetectTapGesturesEnableNewDispatchingBehavior;
   }
 
   @androidx.compose.runtime.Stable public interface TargetedFlingBehavior extends androidx.compose.foundation.gestures.FlingBehavior {

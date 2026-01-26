@@ -546,4 +546,31 @@ class MediaRouter2Utils {
             builder.setRequiredPermissions(info.getRequiredPermissions());
         }
     }
+
+    @RequiresApi(api = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    static final class Api36Impl {
+        private Api36Impl() {}
+
+        @NonNull
+        static android.media.SuggestedDeviceInfo toFwkSuggestedDeviceInfo(
+                @NonNull SuggestedDeviceInfo suggestedDeviceInfo) {
+            return new android.media.SuggestedDeviceInfo.Builder(
+                            suggestedDeviceInfo.getDeviceDisplayName(),
+                            suggestedDeviceInfo.getRouteId(),
+                            androidXDeviceTypeToFwkDeviceType(suggestedDeviceInfo.getType()))
+                    .setExtras(suggestedDeviceInfo.getExtras())
+                    .build();
+        }
+
+        @NonNull
+        static SuggestedDeviceInfo toAndroidXSuggestedDeviceInfo(
+                @NonNull android.media.SuggestedDeviceInfo suggestedDeviceInfo) {
+            return new SuggestedDeviceInfo.Builder(
+                            suggestedDeviceInfo.getDeviceDisplayName(),
+                            suggestedDeviceInfo.getRouteId(),
+                            fwkDeviceTypeToAndroidXDeviceType(suggestedDeviceInfo.getType()))
+                    .setExtras(suggestedDeviceInfo.getExtras())
+                    .build();
+        }
+    }
 }

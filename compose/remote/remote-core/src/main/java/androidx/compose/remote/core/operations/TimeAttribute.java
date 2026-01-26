@@ -16,6 +16,7 @@
 package androidx.compose.remote.core.operations;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
+import static androidx.compose.remote.core.documentation.DocumentedOperation.INT_ARRAY;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.SHORT;
 
 import androidx.annotation.RestrictTo;
@@ -217,13 +218,13 @@ public class TimeAttribute extends PaintOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Time Operations", OP_CODE, CLASS_NAME)
-                .description("Calculate Information about time")
-                .field(INT, "id", "id to output")
-                .field(INT, "longId", "id of time to calculate on")
-                .field(SHORT, "type", "the type of calculation")
-                .field(SHORT, "argsLength", "The number of additional args")
-                .field(INT, "args", "argsLength", "The number of additional args");
+        doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
+                .description("Extract time-related information (seconds, hours, etc.)")
+                .field(INT, "id", "The ID of the float variable to store the result")
+                .field(INT, "timeId", "The ID of the time variable to extract from")
+                .field(SHORT, "type", "The type of time information to extract")
+                .field(SHORT, "argsLength", "The number of additional arguments")
+                .field(INT_ARRAY, "args", "The additional arguments");
     }
 
     @NonNull

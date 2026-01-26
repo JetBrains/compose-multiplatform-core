@@ -172,7 +172,7 @@ private class TestAppWidgetHostView(context: Context) : AppWidgetHostView(contex
 
 internal suspend fun Context.runAndTranslate(
     appWidgetId: Int = 0,
-    isRemoteCompose: Boolean = false,
+    isRemoteComposeAvailable: Boolean = false,
     content: @Composable () -> Unit,
 ): RemoteViews {
     val originalRoot = runTestingComposition(content)
@@ -180,7 +180,7 @@ internal suspend fun Context.runAndTranslate(
     // Copy makes a deep copy of the emittable tree, so will exercise the copy methods
     // of all of the emmitables the test checks too.
     val root = originalRoot.copy() as RemoteViewsRoot
-    normalizeCompositionTree(root, isRemoteCompose = isRemoteCompose)
+    normalizeCompositionTree(root, isRemoteComposeAvailable = isRemoteComposeAvailable)
     return translateComposition(
         this,
         appWidgetId,

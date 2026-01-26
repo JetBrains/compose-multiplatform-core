@@ -115,10 +115,10 @@ public class ColorConstant extends Operation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Expressions Operations", OP_CODE, CLASS_NAME)
-                .description("Define a Color")
-                .field(DocumentedOperation.INT, "id", "Id of the color")
-                .field(INT, "color", "32 bit ARGB color");
+        doc.operation("Paint & Styles Operations", OP_CODE, CLASS_NAME)
+                .description("Define a static color and associate it with an ID")
+                .field(DocumentedOperation.INT, "colorId", "The ID of the color")
+                .field(INT, "color", "32-bit ARGB color value");
     }
 
     @Override

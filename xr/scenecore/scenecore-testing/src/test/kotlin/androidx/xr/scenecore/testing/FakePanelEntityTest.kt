@@ -45,6 +45,18 @@ class FakePanelEntityTest {
     }
 
     @Test
+    fun name_isNotSetByDefault() {
+        assertThat(underTest.name).isEqualTo("")
+    }
+
+    @Test
+    fun name_isSet() {
+        // Dispose underTest so we can reuse view.
+        underTest.dispose()
+        assertThat(FakePanelEntity(view, "test").name).isEqualTo("test")
+    }
+
+    @Test
     fun getSizeInPixels_returnsDefaultValue() {
         assertThat(underTest.sizeInPixels).isEqualTo(PixelDimensions(1152, 1152))
     }

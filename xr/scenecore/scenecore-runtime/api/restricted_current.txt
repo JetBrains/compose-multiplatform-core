@@ -95,8 +95,6 @@ package androidx.xr.scenecore.runtime {
     method public java.util.List<androidx.xr.scenecore.runtime.Component> getComponents();
     method public <T extends androidx.xr.scenecore.runtime.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
-    method public default androidx.xr.runtime.math.Pose getGravityAlignedPose(optional androidx.xr.runtime.math.Pose pose);
-    method @BytecodeOnly public static androidx.xr.runtime.math.Pose! getGravityAlignedPose$default(androidx.xr.scenecore.runtime.Entity!, androidx.xr.runtime.math.Pose!, int, Object!);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Entity? getParent();
     method public default androidx.xr.runtime.math.Pose getPose();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.scenecore.runtime.SpaceValue int relativeTo);
@@ -163,6 +161,7 @@ package androidx.xr.scenecore.runtime {
     method @MainThread public void resumeAnimation();
     method @MainThread public void setColliderEnabled(boolean enableCollider);
     method @MainThread public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, String nodeName, int primitiveIndex);
+    method @MainThread public void setReformAffordanceEnabled(androidx.xr.scenecore.runtime.GltfEntity entity, boolean enabled, java.util.concurrent.Executor executor, boolean systemMovable);
     method @MainThread public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
     method @MainThread public void stopAnimation();
     property public abstract int animationState;
@@ -528,7 +527,7 @@ package androidx.xr.scenecore.runtime {
     method public androidx.xr.scenecore.runtime.TextureResource? borrowReflectionTexture();
     method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.GltfModelResource loadedGltf, androidx.xr.scenecore.runtime.Entity? parentEntity);
     method public suspend Object? createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
-    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, @androidx.xr.scenecore.runtime.SurfaceEntity.SurfaceProtection int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity? parentEntity);
+    method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, @androidx.xr.scenecore.runtime.SurfaceEntity.MediaBlendingMode int mediaBlendingMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, @androidx.xr.scenecore.runtime.SurfaceEntity.SurfaceProtection int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity? parentEntity);
     method public suspend Object? createWaterMaterial(boolean isAlphaMapVersion, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
     method public void destroyExrImage(androidx.xr.scenecore.runtime.ExrImageResource exrImage);
     method public void destroyGltfModel(androidx.xr.scenecore.runtime.GltfModelResource gltfModel);
@@ -917,6 +916,7 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
+    method @InaccessibleFromKotlin public int getMediaBlendingMode();
     method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution(androidx.xr.scenecore.runtime.ScenePose renderViewScenePose, androidx.xr.runtime.FieldOfView renderViewFov);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public int getStereoMode();
@@ -925,6 +925,7 @@ package androidx.xr.scenecore.runtime {
     method public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
     method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
+    method @InaccessibleFromKotlin public void setMediaBlendingMode(int);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
@@ -936,6 +937,7 @@ package androidx.xr.scenecore.runtime {
     property public abstract androidx.xr.scenecore.runtime.Dimensions dimensions;
     property public abstract androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
     property public abstract int maxContentLightLevel;
+    property public abstract int mediaBlendingMode;
     property public abstract androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
     property public abstract int stereoMode;
     property public abstract android.view.Surface surface;
@@ -1007,6 +1009,22 @@ package androidx.xr.scenecore.runtime {
     field public static final int ST2084 = 6; // 0x6
   }
 
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.DrawMode {
+    field public static final androidx.xr.scenecore.runtime.SurfaceEntity.DrawMode.Companion Companion;
+    field public static final int TRIANGLES = 0; // 0x0
+    field public static final int TRIANGLE_FAN = 2; // 0x2
+    field public static final int TRIANGLE_STRIP = 1; // 0x1
+  }
+
+  public static final class SurfaceEntity.DrawMode.Companion {
+    property public static int TRIANGLES;
+    property public static int TRIANGLE_FAN;
+    property public static int TRIANGLE_STRIP;
+    field public static final int TRIANGLES = 0; // 0x0
+    field public static final int TRIANGLE_FAN = 2; // 0x2
+    field public static final int TRIANGLE_STRIP = 1; // 0x1
+  }
+
   public static interface SurfaceEntity.EdgeFeather {
   }
 
@@ -1022,9 +1040,35 @@ package androidx.xr.scenecore.runtime {
     property public float topBottom;
   }
 
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.MediaBlendingMode {
+    field public static final androidx.xr.scenecore.runtime.SurfaceEntity.MediaBlendingMode.Companion Companion;
+    field public static final int OPAQUE = 1; // 0x1
+    field public static final int TRANSPARENT = 0; // 0x0
+  }
+
+  public static final class SurfaceEntity.MediaBlendingMode.Companion {
+    property public static int OPAQUE;
+    property public static int TRANSPARENT;
+    field public static final int OPAQUE = 1; // 0x1
+    field public static final int TRANSPARENT = 0; // 0x0
+  }
+
   public static interface SurfaceEntity.Shape {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
     property public abstract androidx.xr.scenecore.runtime.Dimensions dimensions;
+  }
+
+  public static final class SurfaceEntity.Shape.CustomMesh implements androidx.xr.scenecore.runtime.SurfaceEntity.Shape {
+    ctor public SurfaceEntity.Shape.CustomMesh(androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh leftEye, androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh? rightEye, optional int drawMode);
+    ctor @BytecodeOnly public SurfaceEntity.Shape.CustomMesh(androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh!, androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
+    method @InaccessibleFromKotlin public int getDrawMode();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh getLeftEye();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh? getRightEye();
+    property public androidx.xr.scenecore.runtime.Dimensions dimensions;
+    property public int drawMode;
+    property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh leftEye;
+    property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape.TriangleMesh? rightEye;
   }
 
   public static final class SurfaceEntity.Shape.Hemisphere implements androidx.xr.scenecore.runtime.SurfaceEntity.Shape {
@@ -1053,6 +1097,19 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public float getRadius();
     property public androidx.xr.scenecore.runtime.Dimensions dimensions;
     property public float radius;
+  }
+
+  public static final class SurfaceEntity.Shape.TriangleMesh {
+    ctor public SurfaceEntity.Shape.TriangleMesh(java.nio.FloatBuffer positions, java.nio.FloatBuffer texCoords, java.nio.IntBuffer? indices);
+    method @InaccessibleFromKotlin public java.nio.IntBuffer? getIndices();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer getPositions();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer getTexCoords();
+    method @InaccessibleFromKotlin public void setIndices(java.nio.IntBuffer?);
+    method @InaccessibleFromKotlin public void setPositions(java.nio.FloatBuffer);
+    method @InaccessibleFromKotlin public void setTexCoords(java.nio.FloatBuffer);
+    property public java.nio.IntBuffer? indices;
+    property public java.nio.FloatBuffer positions;
+    property public java.nio.FloatBuffer texCoords;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface SurfaceEntity.StereoMode {
@@ -1111,6 +1168,7 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getDimensions();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather getEdgeFeather();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
+    method @InaccessibleFromKotlin public int getMediaBlendingMode();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public int getStereoMode();
     method @InaccessibleFromKotlin public android.view.Surface getSurface();
@@ -1119,6 +1177,7 @@ package androidx.xr.scenecore.runtime {
     method public void setColliderEnabled(boolean enableCollider);
     method public void setContentColorMetadata(@androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace int colorSpace, @androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer int colorTransfer, @androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange int colorRange, int maxCLL);
     method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
+    method @InaccessibleFromKotlin public void setMediaBlendingMode(int);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
@@ -1130,6 +1189,7 @@ package androidx.xr.scenecore.runtime {
     property public abstract androidx.xr.scenecore.runtime.Dimensions dimensions;
     property public abstract androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
     property public abstract int maxContentLightLevel;
+    property @androidx.xr.scenecore.runtime.SurfaceEntity.MediaBlendingMode public abstract int mediaBlendingMode;
     property public abstract androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
     property @androidx.xr.scenecore.runtime.SurfaceEntity.StereoMode public abstract int stereoMode;
     property public abstract android.view.Surface surface;

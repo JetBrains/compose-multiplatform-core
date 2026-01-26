@@ -94,7 +94,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
     private lateinit var movableEntity: Entity
-    private val movableEntityOffset = Pose(Vector3(0f, 0.75f, -1.3f))
+    private val movableEntityOffset = Pose(Vector3(0f, 0.0f, -1.3f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
     private var anchorOffset = MutableStateFlow<Float>(0f)
     private lateinit var arDevice: ArDevice
@@ -362,7 +362,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
         Column(
             modifier =
-                Modifier.background(color = Color.White)
+                Modifier.background(color = Color.LightGray)
                     .fillMaxHeight()
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),

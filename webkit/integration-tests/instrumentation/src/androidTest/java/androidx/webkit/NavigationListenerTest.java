@@ -404,6 +404,18 @@ public class NavigationListenerTest {
     }
 
     @Test
+    public void isSamePageObject_sameUrl() {
+        WebkitUtils.checkFeature(WebViewFeature.PAGE_GET_URL);
+        final String successUrl = getSuccessUrl();
+        mWebViewOnUiThread.loadUrl(successUrl);
+        Navigation completedNavigation = waitForNextQueueElement(
+                mListener.mOnNavigationCompletedQueue);
+        Page navigationCompletePage = completedNavigation.getPage();
+        Assert.assertNotNull(navigationCompletePage);
+        Assert.assertEquals(navigationCompletePage.getUrl(), successUrl);
+    }
+
+    @Test
     public void canRemoveListener() throws InterruptedException {
         WebkitUtils.onMainThreadSync(
                 () -> WebViewCompat.removeNavigationListener(mWebView, mListener));

@@ -78,7 +78,7 @@ import java.util.Locale
 
 data class TodoItem(val description: String, val isCompleted: Boolean)
 
-class UserSubspaceActivity : ComponentActivity() {
+class FollowingSubspaceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -151,7 +151,7 @@ class UserSubspaceActivity : ComponentActivity() {
                         TopBarWithBackArrow(
                             scrollBehavior = null,
                             title = "",
-                            onClick = { this@UserSubspaceActivity.finish() },
+                            onClick = { this@FollowingSubspaceActivity.finish() },
                         )
                     }
                     Column(

@@ -521,23 +521,23 @@ public class ColumnLayout extends LayoutManager {
                 .exampleImage("SpaceEvenly", "layout-ColumnLayout-start-space-evenly.png")
                 .exampleImage("SpaceAround", "layout-ColumnLayout-start-space-around.png")
                 .exampleImage("SpaceBetween", "layout-ColumnLayout-start-space-between.png")
-                .field(INT, "COMPONENT_ID", "unique id for this component")
+                .field(INT, "componentId", "Unique ID for this component")
                 .field(
                         INT,
-                        "ANIMATION_ID",
-                        "id used to match components," + " for animation purposes")
-                .field(INT, "HORIZONTAL_POSITIONING", "horizontal positioning value")
-                .possibleValues("START", ColumnLayout.START)
-                .possibleValues("CENTER", ColumnLayout.CENTER)
-                .possibleValues("END", ColumnLayout.END)
-                .field(INT, "VERTICAL_POSITIONING", "vertical positioning value")
-                .possibleValues("TOP", ColumnLayout.TOP)
-                .possibleValues("CENTER", ColumnLayout.CENTER)
-                .possibleValues("BOTTOM", ColumnLayout.BOTTOM)
-                .possibleValues("SPACE_BETWEEN", ColumnLayout.SPACE_BETWEEN)
-                .possibleValues("SPACE_EVENLY", ColumnLayout.SPACE_EVENLY)
-                .possibleValues("SPACE_AROUND", ColumnLayout.SPACE_AROUND)
-                .field(FLOAT, "SPACED_BY", "Horizontal spacing between components");
+                        "animationId",
+                        "ID used to match components for animation purposes")
+                .field(INT, "horizontalPositioning", "Horizontal positioning value")
+                .possibleValues("START", START)
+                .possibleValues("CENTER", CENTER)
+                .possibleValues("END", END)
+                .field(INT, "verticalPositioning", "Vertical positioning value")
+                .possibleValues("TOP", TOP)
+                .possibleValues("CENTER", CENTER)
+                .possibleValues("BOTTOM", BOTTOM)
+                .possibleValues("SPACE_BETWEEN", SPACE_BETWEEN)
+                .possibleValues("SPACE_EVENLY", SPACE_EVENLY)
+                .possibleValues("SPACE_AROUND", SPACE_AROUND)
+                .field(FLOAT, "spacedBy", "Horizontal spacing between components");
     }
 
     @Override

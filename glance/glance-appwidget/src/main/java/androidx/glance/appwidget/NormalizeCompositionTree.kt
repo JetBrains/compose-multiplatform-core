@@ -17,26 +17,38 @@ package androidx.glance.appwidget
 
 import android.os.Build
 import android.util.Log
+import androidx.annotation.DimenRes
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.glance.Backend
 import androidx.glance.BackgroundModifier
+import androidx.glance.ColorFilter
 import androidx.glance.Emittable
 import androidx.glance.EmittableButton
 import androidx.glance.EmittableImage
 import androidx.glance.EmittableLazyItemWithChildren
 import androidx.glance.EmittableWithChildren
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.LambdaAction
 import androidx.glance.action.NoRippleOverride
+import androidx.glance.action.clickable
 import androidx.glance.addChild
 import androidx.glance.addChildIfNotNull
 import androidx.glance.appwidget.action.CompoundButtonAction
+import androidx.glance.appwidget.components.EmittableM3IconButton
+import androidx.glance.appwidget.components.EmittableM3TextButton
+import androidx.glance.background
 import androidx.glance.extractModifier
 import androidx.glance.findModifier
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.EmittableBox
+import androidx.glance.layout.EmittableRow
+import androidx.glance.layout.EmittableSpacer
 import androidx.glance.layout.HeightModifier
 import androidx.glance.layout.PaddingModifier
 import androidx.glance.layout.WidthModifier
@@ -44,18 +56,39 @@ import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.removeModifiersOfType
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.text.EmittableText
+import androidx.glance.text.FontWeight
+import androidx.glance.text.TextStyle
 import androidx.glance.toEmittableText
 import androidx.glance.unit.Dimension
 
+/** @return what backend to emit: RemoteViews vs RemoteCompose */
 internal fun normalizeCompositionTree(
     root: RemoteViewsRoot,
-    isRemoteCompose: Boolean,
+    isRemoteComposeAvailable: Boolean,
     isPreviewComposition: Boolean = false,
-) {
+): Backend {
+    val isRemoteCompose: Boolean = root.requiresRemoteCompose() && isRemoteComposeAvailable
     coerceToOneChild(root)
     root.normalizeSizes()
+
+    // M3 Button replacement pass
+    if (!isRemoteCompose) {
+        root.transformTree { view: Emittable ->
+            when (view) {
+                is EmittableM3TextButton -> view.normalizeForRemoteViews()
+                is EmittableM3IconButton -> view.normalizeForRemoteViews()
+                else -> view
+            }
+        }
+    }
+
+    // Full normalize pass
     root.transformTree { view ->
         if (isPreviewComposition) {
             view.removeActionModifiers()
@@ -68,6 +101,8 @@ internal fun normalizeCompositionTree(
             view
         }
     }
+
+    return if (isRemoteCompose) Backend.RemoteCompose else Backend.RemoteView
 }
 
 /** Remove any action modifiers within the tree. */
@@ -427,3 +462,142 @@ private fun MutableList<GlanceModifier?>.collect(): GlanceModifier =
     fold(GlanceModifier) { acc: GlanceModifier, mod: GlanceModifier? ->
         mod?.let { acc.then(mod) } ?: acc
     }
+
+/**
+ * Build up the ui tree for an M3 button. The material buttons are not xml views, so need special
+ * handling. They are manually built out of lower level emittables.
+ *
+ * @return a tree of emittables that will render as an M3 button.
+ */
+private fun EmittableM3TextButton.normalizeForRemoteViews(): Emittable {
+    fun maybeRoundCorners(@DimenRes radius: Int) =
+        if (isAtLeastApi31) GlanceModifier.cornerRadius(radius) else GlanceModifier
+
+    val iconSize = 18.dp
+    val totalHorizontalPadding = if (icon != null) 24.dp else 16.dp
+
+    val mainBox =
+        EmittableBox().also {
+            it.modifier =
+                this.modifier
+                    .padding(
+                        start = 16.dp,
+                        end = totalHorizontalPadding,
+                        top = 10.dp,
+                        bottom = 10.dp,
+                    )
+                    .background(
+                        imageProvider = ImageProvider(backgroundResource),
+                        colorFilter = ColorFilter.tint(backgroundTint),
+                    )
+                    .enabled(enabled)
+                    .clickable(
+                        onClick = onClick!!, // onclick is required
+                        rippleOverride =
+                            if (isAtLeastApi31) NoRippleOverride
+                            else R.drawable.glance_component_m3_button_ripple,
+                    )
+                    .then(maybeRoundCorners(R.dimen.glance_component_button_corners))
+        }
+
+    val emittableText =
+        EmittableText().also {
+            it.text = this.text
+            it.style = TextStyle(color = this.contentColor, fontSize = 14.sp, FontWeight.Medium)
+            it.maxLines = this.maxLines
+        }
+
+    if (icon == null) {
+
+        mainBox.children.add(
+            // for accessibility only: force button to be the same min height as the icon
+            // version.
+            // TODO: remove once b/290677181 is addressed
+            EmittableBox().also { sizeFixBox ->
+                sizeFixBox.modifier = GlanceModifier.size(iconSize)
+            }
+        )
+        mainBox.children.add(emittableText)
+    } else {
+        val row = EmittableRow()
+        row.verticalAlignment = Alignment.Vertical.CenterVertically
+        row.children.add(
+            EmittableImage().also { emittableImage ->
+                emittableImage.provider = icon
+                emittableImage.colorFilterParams = ColorFilter.tint(contentColor).colorFilterParams
+                emittableImage.modifier = GlanceModifier.size(iconSize)
+            }
+        )
+
+        row.children.add(
+            EmittableSpacer().also { emittableSpacer ->
+                emittableSpacer.modifier = GlanceModifier.width(8.dp)
+            }
+        )
+
+        row.children.add(emittableText)
+        mainBox.addChild(row)
+    }
+
+    return mainBox
+}
+
+/**
+ * Build up the ui tree for an M3 button. The material buttons are not xml views, so need special
+ * handling. They are manually built out of lower level emittables.
+ *
+ * @return a tree of emittables that will render as an M3 Icon Button.
+ */
+private fun EmittableM3IconButton.normalizeForRemoteViews(): Emittable {
+    val contentColor = contentColor!! // mandatory
+    val onClick = onClick!! // mandatory
+    val backgroundColor = backgroundColor
+    val theContentDescription = contentDescription
+
+    val backgroundModifier =
+        if (backgroundColor == null) GlanceModifier
+        else
+            GlanceModifier.background(
+                ImageProvider(shape.shape),
+                colorFilter = ColorFilter.tint(backgroundColor),
+            )
+
+    val outerBox =
+        EmittableBox().also { outerBox ->
+            outerBox.contentAlignment = Alignment.Center
+            outerBox.modifier =
+                GlanceModifier.size(
+                        shape.defaultSize
+                    ) // acts as a default if not overridden by [modifier]
+                    .then(modifier)
+                    .then(backgroundModifier)
+                    .clickable(onClick = onClick, rippleOverride = shape.ripple)
+                    .enabled(enabled)
+                    .then(maybeRoundCorners(shape.cornerRadius))
+
+            outerBox.addChild(
+                EmittableImage().also { emittableImage ->
+                    val modifier = GlanceModifier.size(24.dp)
+                    val finalModifier =
+                        if (theContentDescription != null) {
+                            modifier.semantics { this.contentDescription = theContentDescription }
+                        } else {
+                            modifier
+                        }
+
+                    emittableImage.provider = imageProvider
+                    emittableImage.colorFilterParams =
+                        ColorFilter.tint(contentColor).colorFilterParams
+                    emittableImage.modifier = finalModifier
+                }
+            )
+        }
+
+    return outerBox
+}
+
+private fun maybeRoundCorners(@DimenRes radius: Int) =
+    if (isAtLeastApi31) GlanceModifier.cornerRadius(radius) else GlanceModifier
+
+internal val isAtLeastApi31
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

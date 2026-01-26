@@ -979,6 +979,15 @@ public class WebViewFeatureInternal {
                     WebViewFeature.NAVIGATION_LISTENER_NON_NULL_PAGE_FOR_SAME_DOCUMENT_NAVIGATIONS,
                     Features.COMMITTED_NAVIGATION_GET_PAGE_NON_NULL);
 
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Page#getUrl()}
+     */
+    public static final ApiFeature.NoFramework PAGE_GET_URL =
+            new ApiFeature.NoFramework(
+                    WebViewFeature.PAGE_GET_URL,
+                    Features.PAGE_GET_URL);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

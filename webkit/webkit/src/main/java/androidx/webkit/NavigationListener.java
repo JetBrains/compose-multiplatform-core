@@ -16,10 +16,11 @@
 
 package androidx.webkit;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
-
 
 /**
  * Page identification and lifecycle APIs.
@@ -116,6 +117,8 @@ public interface NavigationListener {
      * @param page       The Page for which the First Contentful Paint occurred.
      * @param loadTimeUs Navigation to First Contentful Paint load time in microseconds.
      */
+    @SuppressLint("LambdaLast")
+
     default void onFirstContentfulPaint(@NonNull Page page, long loadTimeUs) {
 
     }
@@ -133,6 +136,7 @@ public interface NavigationListener {
      * @param page           The Page for which the First Contentful Paint occurred.
      * @param durationMillis Navigation to First Contentful Paint duration in milliseconds.
      */
+    @SuppressLint("LambdaLast")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void onFirstContentfulPaintMillis(@NonNull Page page, long durationMillis) {
 
@@ -152,6 +156,7 @@ public interface NavigationListener {
      * @param page           The Page for which the Largest Contentful Paint occurred.
      * @param durationMillis Navigation to Largest Contentful Paint duration in milliseconds.
      */
+    @SuppressLint("LambdaLast")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void onLargestContentfulPaintMillis(@NonNull Page page, long durationMillis) {
 
@@ -173,6 +178,7 @@ public interface NavigationListener {
      * @param markTimeMillis The time of the performance mark in milliseconds since
      *                       Performance.timeOrigin.
      */
+    @SuppressLint("LambdaLast")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void onPerformanceMarkMillis(@NonNull Page page,
             @NonNull String markName, long markTimeMillis) {

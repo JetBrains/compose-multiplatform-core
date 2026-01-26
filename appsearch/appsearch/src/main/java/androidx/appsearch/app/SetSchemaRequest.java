@@ -112,12 +112,14 @@ public final class SetSchemaRequest {
             MANAGED_PROFILE_CONTACTS_ACCESS,
             EXECUTE_APP_FUNCTIONS,
             PACKAGE_USAGE_STATS,
+            PRIVATE_COMPUTE_CORE_UID_ACCESS,
     })
     @Retention(RetentionPolicy.SOURCE)
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public @interface AppSearchSupportedPermission {}
 
     /**
@@ -229,6 +231,16 @@ public final class SetSchemaRequest {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int PACKAGE_USAGE_STATS = 11;
+
+    /**
+     * The visibility access for Private Compute Core.
+     *
+     * <p>A schema with this permission allows callers with a UID for which {@link
+     * android.os.Process#isPrivateComputeCoreUid} returns true to access the data.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS)
+    @ExperimentalAppSearchApi
+    public static final int PRIVATE_COMPUTE_CORE_UID_ACCESS = 12;
 
     private final Set<AppSearchSchema> mSchemas;
     private final Set<String> mSchemasNotDisplayedBySystem;
@@ -675,6 +687,7 @@ public final class SetSchemaRequest {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public @NonNull Builder addRequiredPermissionsForSchemaTypeVisibility(
                 @NonNull String schemaType,
                 @AppSearchSupportedPermission @NonNull Set<Integer> permissions) {
@@ -682,7 +695,7 @@ public final class SetSchemaRequest {
             Preconditions.checkNotNull(permissions);
             for (int permission : permissions) {
                 Preconditions.checkArgumentInRange(permission, READ_SMS,
-                        PACKAGE_USAGE_STATS, "permission");
+                        PRIVATE_COMPUTE_CORE_UID_ACCESS, "permission");
             }
             resetIfBuilt();
             Set<Set<Integer>> visibleToPermissions = mSchemasVisibleToPermissions.get(schemaType);

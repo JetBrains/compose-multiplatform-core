@@ -117,7 +117,7 @@ fun demoTouch1(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun DemoTouch1Preview() = RemoteDocPreview(demoTouch1())
+@Preview @Composable private fun DemoTouch1Preview() = RemoteDocPreview(demoTouch1())
 
 @Suppress("RestrictedApiAndroidX")
 fun demoTouch2(): RemoteComposeWriter {
@@ -201,7 +201,7 @@ fun demoTouch2(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun DemoTouch2Preview() = RemoteDocPreview(demoTouch2())
+@Preview @Composable private fun DemoTouch2Preview() = RemoteDocPreview(demoTouch2())
 
 @Suppress("RestrictedApiAndroidX")
 fun demoTouch3(mode: Int, spec: FloatArray?, title: String?): RemoteComposeWriter {
@@ -523,7 +523,7 @@ fun demoTouchWrap(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun DemoTouchWrapPreview() = RemoteDocPreview(demoTouchWrap())
+@Preview @Composable private fun DemoTouchWrapPreview() = RemoteDocPreview(demoTouchWrap())
 
 @Suppress("RestrictedApiAndroidX")
 fun demoTouchThumbWheel1(): RemoteComposeWriter {
@@ -652,7 +652,9 @@ fun demoTouchThumbWheel1(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun DemoTouchThumbWheel1Preview() = RemoteDocPreview(demoTouchThumbWheel1())
+@Preview
+@Composable
+private fun DemoTouchThumbWheel1Preview() = RemoteDocPreview(demoTouchThumbWheel1())
 
 @Suppress("RestrictedApiAndroidX")
 fun demoTouchThumbWheel2(): RemoteComposeWriter {
@@ -673,7 +675,9 @@ fun demoTouchThumbWheel2(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun DemoTouchThumbWheel2Preview() = RemoteDocPreview(demoTouchThumbWheel2())
+@Preview
+@Composable
+private fun DemoTouchThumbWheel2Preview() = RemoteDocPreview(demoTouchThumbWheel2())
 
 @Suppress("RestrictedApiAndroidX")
 private fun dial1(rcDoc: RemoteComposeWriterAndroid): Int {
@@ -876,21 +880,23 @@ fun touchStopGently(): RemoteComposeWriter {
     return demoTouch3(RemoteComposeWriter.STOP_GENTLY.toInt(), null, "STOP_GENTLY")
 }
 
-@Preview @Composable fun TouchStopGentlyPreview() = RemoteDocPreview(touchStopGently())
+@Preview @Composable private fun TouchStopGentlyPreview() = RemoteDocPreview(touchStopGently())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopEnds(): RemoteComposeWriter {
     return demoTouch3(RemoteComposeWriter.STOP_ENDS.toInt(), null, "STOP_ENDS")
 }
 
-@Preview @Composable fun TouchStopEndsPreview() = RemoteDocPreview(touchStopEnds())
+@Preview @Composable private fun TouchStopEndsPreview() = RemoteDocPreview(touchStopEnds())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopInstantly(): RemoteComposeWriter {
     return demoTouch3(RemoteComposeWriter.STOP_INSTANTLY.toInt(), null, "STOP_INSTANTLY")
 }
 
-@Preview @Composable fun TouchStopInstantlyPreview() = RemoteDocPreview(touchStopInstantly())
+@Preview
+@Composable
+private fun TouchStopInstantlyPreview() = RemoteDocPreview(touchStopInstantly())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopNotchesEven(): RemoteComposeWriter {
@@ -901,7 +907,9 @@ fun touchStopNotchesEven(): RemoteComposeWriter {
     )
 }
 
-@Preview @Composable fun TouchStopNotchesEvenPreview() = RemoteDocPreview(touchStopNotchesEven())
+@Preview
+@Composable
+private fun TouchStopNotchesEvenPreview() = RemoteDocPreview(touchStopNotchesEven())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopNotchesPercents(): RemoteComposeWriter {
@@ -914,7 +922,7 @@ fun touchStopNotchesPercents(): RemoteComposeWriter {
 
 @Preview
 @Composable
-fun TouchStopNotchesPercentsPreview() = RemoteDocPreview(touchStopNotchesPercents())
+private fun TouchStopNotchesPercentsPreview() = RemoteDocPreview(touchStopNotchesPercents())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopNotchesAbsolute(): RemoteComposeWriter {
@@ -927,14 +935,16 @@ fun touchStopNotchesAbsolute(): RemoteComposeWriter {
 
 @Preview
 @Composable
-fun TouchStopNotchesAbsolutePreview() = RemoteDocPreview(touchStopNotchesAbsolute())
+private fun TouchStopNotchesAbsolutePreview() = RemoteDocPreview(touchStopNotchesAbsolute())
 
 @Suppress("RestrictedApiAndroidX")
 fun touchStopAbsolutePos(): RemoteComposeWriter {
     return demoTouch3(RemoteComposeWriter.STOP_ABSOLUTE_POS.toInt(), null, "STOP_ABSOLUTE_POS")
 }
 
-@Preview @Composable fun TouchStopAbsolutePosPreview() = RemoteDocPreview(touchStopAbsolutePos())
+@Preview
+@Composable
+private fun TouchStopAbsolutePosPreview() = RemoteDocPreview(touchStopAbsolutePos())
 
 @Suppress("RestrictedApiAndroidX")
 fun simpleJavaAnim(): RemoteComposeWriter {
@@ -985,4 +995,4 @@ fun simpleJavaAnim(): RemoteComposeWriter {
     return rcDoc
 }
 
-@Preview @Composable fun SimpleJavaAnimPreview() = RemoteDocPreview(simpleJavaAnim())
+@Preview @Composable private fun SimpleJavaAnimPreview() = RemoteDocPreview(simpleJavaAnim())

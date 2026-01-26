@@ -65,6 +65,7 @@ import androidx.navigationevent.NavigationEventTransitionState.InProgress
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.NavigationEventState
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlin.collections.emptySet
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
@@ -574,10 +575,10 @@ public fun <T : Any> NavDisplay(
         )
 
     // Track currently rendered Scenes and their ZIndices
-    val sceneMap = remember { mutableStateMapOf<Pair<KClass<*>, Any>, Scene<T>>() }
-    val zIndices = remember { mutableObjectFloatMapOf<Pair<KClass<*>, Any>>() }
-    val initialKey = transition.currentState::class to transition.currentState.key
-    val targetKey = transition.targetState::class to transition.targetState.key
+    val sceneMap = remember { mutableStateMapOf<AnimatedSceneKey, Scene<T>>() }
+    val zIndices = remember { mutableObjectFloatMapOf<AnimatedSceneKey>() }
+    val initialKey = AnimatedSceneKey(transition.currentState)
+    val targetKey = AnimatedSceneKey(transition.targetState)
     val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
     val targetZIndex =
         when {
@@ -592,7 +593,7 @@ public fun <T : Any> NavDisplay(
 
     // Determine which entries should be rendered within each currently rendered scene,
     // using the z-index of each screen to always show the entry on the topmost screen
-    // The map is Pair<KCLass<Scene<T>, Scene.key> to a Set of NavEntry.key values
+    // The map is AnimatedSceneKey to a Set of NavEntry.key values
     val sceneToExcludedEntryMap =
         remember(sceneMap.entries.toList(), overlayScenes.toList(), zIndices.toString()) {
             buildMap {
@@ -618,6 +619,9 @@ public fun <T : Any> NavDisplay(
                 // Then we track which entries are already covered
                 val coveredEntryKeys = mutableSetOf<Any>()
 
+                // This determines whether this is a pop or not
+                val shouldSwapExcludedScenesFromTarget = transition.targetState != scenes.first()
+
                 // In scenesInZOrder's natural order, go through each scene, marking
                 // all of the entries not already covered as associated
                 // with that scene. This ensures that each unique contentKey will only be
@@ -628,8 +632,25 @@ public fun <T : Any> NavDisplay(
                             .map { it.contentKey }
                             .filterNot(coveredEntryKeys::contains)
                             .toSet()
-                    put(scene::class to scene.key, coveredEntryKeys.toMutableSet())
+                    // If our target scene is not the scene on top
+                    // we should exclude the entries in the target scene from all other scenes
+                    // this ensures we render the entry in the target scene when popping using
+                    // shared elements
+                    if (shouldSwapExcludedScenesFromTarget && transition.targetState != scene) {
+                        put(
+                            AnimatedSceneKey(scene),
+                            transition.targetState.entries.map { it.contentKey }.toSet(),
+                        )
+                    } else {
+                        put(AnimatedSceneKey(scene), coveredEntryKeys.toMutableSet())
+                    }
                     coveredEntryKeys.addAll(newlyCoveredEntryKeys)
+                }
+
+                // After we are done building the entire map, check if we should clear
+                // the target scene key
+                if (shouldSwapExcludedScenesFromTarget) {
+                    put(AnimatedSceneKey(transition.targetState), emptySet())
                 }
             }
         }
@@ -713,7 +734,7 @@ public fun <T : Any> NavDisplay(
     }
 
     transition.AnimatedContent(
-        contentKey = { scene -> scene::class to scene.key },
+        contentKey = { scene -> AnimatedSceneKey(scene) },
         contentAlignment = contentAlignment,
         modifier = modifier,
         transitionSpec = {
@@ -738,7 +759,7 @@ public fun <T : Any> NavDisplay(
             LocalLifecycleOwner provides sceneLifecycleOwner,
             LocalNavAnimatedContentScope provides this,
             LocalEntriesToExcludeFromCurrentScene provides
-                sceneToExcludedEntryMap.getValue(targetScene::class to targetScene.key),
+                sceneToExcludedEntryMap.getValue(AnimatedSceneKey(targetScene)),
         ) {
             targetScene.content()
         }
@@ -749,7 +770,7 @@ public fun <T : Any> NavDisplay(
         snapshotFlow { transition.isRunning }
             .filter { !it }
             .collect {
-                val targetKey = transition.targetState::class to transition.targetState.key
+                val targetKey = AnimatedSceneKey(transition.targetState)
                 // Creating a copy to avoid ConcurrentModificationException
                 @Suppress("ListIterator")
                 sceneMap.keys.toList().forEach { key ->
@@ -766,7 +787,7 @@ public fun <T : Any> NavDisplay(
     overlayScenes.fastForEachReversed { overlayScene ->
         CompositionLocalProvider(
             LocalEntriesToExcludeFromCurrentScene provides
-                sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key)
+                sceneToExcludedEntryMap.getValue(AnimatedSceneKey(overlayScene))
         ) {
             overlayScene.content.invoke()
         }
@@ -816,3 +837,7 @@ public expect fun <T : Any> defaultPopTransitionSpec():
 /** Default [transitionSpec] for predictive pop navigation to be used by [NavDisplay]. */
 public expect fun <T : Any> defaultPredictivePopTransitionSpec():
     AnimatedContentTransitionScope<Scene<T>>.(@NavigationEvent.SwipeEdge Int) -> ContentTransform
+
+internal data class AnimatedSceneKey(val clazz: KClass<*>, val key: Any) {
+    constructor(scene: Scene<*>) : this(scene::class, scene.key)
+}

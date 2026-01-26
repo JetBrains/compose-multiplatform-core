@@ -91,7 +91,7 @@ public class MatrixSave extends PaintOperation implements Serializable {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Matrix Operations", OP_CODE, CLASS_NAME)
                 .description("Save the matrix and clip to a stack");
     }
 

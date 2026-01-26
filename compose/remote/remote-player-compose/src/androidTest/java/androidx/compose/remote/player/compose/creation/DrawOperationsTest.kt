@@ -129,6 +129,8 @@ private fun ComposeScreenshotTestRule.drawOperationsInGrid() {
             drawTweenPath(),
             drawTweenPathWithPath(),
             drawOutsideBounds(),
+            drawBitmapFontTextRunWithGlyphSpacing(),
+            drawBitmapTextAnchoredWithGlyphSpacing(),
         )
 
     val columns = 5
@@ -330,7 +332,19 @@ private fun drawBitmapFontTextRun() = getCoreDocument {
             BitmapFontData.Glyph("B", bitmapId, 10, 0, 0, 0, 10, 10),
         )
     val bitmapFontId = addBitmapFont(glyphs)
-    drawBitmapFontTextRun(textId, bitmapFontId, 0, 2, 10f, 50f)
+    drawBitmapFontTextRun(textId, bitmapFontId, 0, 2, 10f, 50f, 0f)
+}
+
+private fun drawBitmapFontTextRunWithGlyphSpacing() = getCoreDocument {
+    val textId = textCreateId("AB")
+    val bitmapId = storeBitmap(createBitmap())
+    val glyphs =
+        arrayOf(
+            BitmapFontData.Glyph("A", bitmapId, 0, 0, 0, 0, 10, 10),
+            BitmapFontData.Glyph("B", bitmapId, 10, 0, 0, 0, 10, 10),
+        )
+    val bitmapFontId = addBitmapFont(glyphs)
+    drawBitmapFontTextRun(textId, bitmapFontId, 0, 2, 10f, 50f, -10f)
 }
 
 private fun drawTextAnchored() = getCoreDocument {
@@ -353,7 +367,7 @@ private fun drawBitmapTextAnchored() =
                 BitmapFontData.Glyph("B", bitmapId, 10, 0, 0, 0, 10, 10),
             )
         val bitmapFontId = addBitmapFont(glyphs)
-        drawBitmapTextAnchored("AB", bitmapFontId, 0f, 2f, 50f, 50f, 0.5f, 0.5f)
+        drawBitmapTextAnchored("AB", bitmapFontId, 0f, 2f, 50f, 50f, 0.5f, 0.5f, 0f)
     }
 
 private fun drawBitmapTextAnchoredWithTextId() =
@@ -368,7 +382,21 @@ private fun drawBitmapTextAnchoredWithTextId() =
                 BitmapFontData.Glyph("B", bitmapId, 10, 0, 0, 0, 10, 10),
             )
         val bitmapFontId = addBitmapFont(glyphs)
-        drawBitmapTextAnchored(textId, bitmapFontId, 0f, 2f, 50f, 50f, 0.5f, 0.5f)
+        drawBitmapTextAnchored(textId, bitmapFontId, 0f, 2f, 50f, 50f, 0.5f, 0.5f, 0f)
+    }
+
+private fun drawBitmapTextAnchoredWithGlyphSpacing() =
+    getCoreDocument(
+        extraTags = arrayOf(RemoteComposeWriter.HTag(Header.DOC_PROFILES, PROFILE_WIDGETS))
+    ) {
+        val bitmapId = storeBitmap(createBitmap())
+        val glyphs =
+            arrayOf(
+                BitmapFontData.Glyph("A", bitmapId, 0, 0, 0, 0, 10, 10),
+                BitmapFontData.Glyph("B", bitmapId, 10, 0, 0, 0, 10, 10),
+            )
+        val bitmapFontId = addBitmapFont(glyphs)
+        drawBitmapTextAnchored("AB", bitmapFontId, 0f, 2f, 50f, 50f, 0.5f, 0.5f, -10f)
     }
 
 private fun drawTweenPath() = getCoreDocument {

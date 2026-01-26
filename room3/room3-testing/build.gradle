@@ -38,10 +38,12 @@ androidXMultiplatform {
     }
     ios()
     jvm()
+    js()
     linux()
     mac()
     tvos()
     watchos()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 

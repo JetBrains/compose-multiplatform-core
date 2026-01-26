@@ -28,6 +28,7 @@ import android.os.Build.VERSION_CODES
 import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
+import androidx.core.telecom.CallException
 import androidx.core.telecom.CallsManager.Companion.CAPABILITY_BASELINE
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.extensions.CallExtensionScope
@@ -218,6 +219,24 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             assertEquals(
                 "Never received 'can user update silence' update for [$expected]",
                 expected,
+                result,
+            )
+        }
+
+        suspend fun assertLocalCallSilenceStateNotUpdated(unexpected: Boolean) {
+            val result =
+                withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
+                    Log.d(
+                        "assertLocalCallSilenceStateNotUpdated",
+                        ": WAITING TO ENSURE NOT [$unexpected]",
+                    )
+                    isLocallySilenced.first {
+                        Log.d("assertLocalCallSilenceStateNotUpdated", ": COLLECTED[$it]")
+                        it == unexpected
+                    }
+                }
+            assertNull(
+                "Received unexpected local call silence state update for [$unexpected]",
                 result,
             )
         }
@@ -768,6 +787,17 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     onConnected {
                         hasConnected = true
                         localSilenceExtension.waitForCanUserUpdateSilence(false)
+                        // 2. attempt to change the LCS value from the remot ICS even though
+                        // the app signaled the value cannot be changed
+                        val res =
+                            localSilenceExtension.extension.requestLocalCallSilenceUpdate(false)
+                        assertEquals(CallControlResult.Error(CallException.ERROR_UNKNOWN), res)
+                        // We requested 'false', but we expect the update to fail (remain 'true')
+                        // because canUserUpdateSilence is false.
+                        // Therefore, we assert that we do NOT receive 'false'.
+                        localSilenceExtension.assertLocalCallSilenceStateNotUpdated(
+                            unexpected = false
+                        )
 
                         // 2. Test: Enable the user's ability to mute (e.g. Server Mute applied)
                         voipAppControl.updateCanUserToggleSilence(true)

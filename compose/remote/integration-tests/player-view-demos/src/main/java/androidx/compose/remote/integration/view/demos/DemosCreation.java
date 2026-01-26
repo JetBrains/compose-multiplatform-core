@@ -30,6 +30,7 @@ import androidx.compose.remote.integration.view.demos.examples.DemoAnchorText;
 import androidx.compose.remote.integration.view.demos.examples.DemoAttributedString;
 import androidx.compose.remote.integration.view.demos.examples.DemoColorKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoGlobalKt;
+import androidx.compose.remote.integration.view.demos.examples.DemoGraphsKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoMetalClockKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoParticlesKt;
@@ -62,6 +63,8 @@ public abstract class DemosCreation {
         return new ArrayList<>(Arrays.asList(
 
                 getp("0/og/serverClock", ServerSideKt::serverClock),
+                getp("0/A/demoGraphs1", DemoGraphsKt::demoGraphs),
+                getp("0/A/demoGraphs0", DemoGraphsKt::demoGraphs2),
 
 
                 getp("5/Server/serverClock", ServerSideKt::serverClock),

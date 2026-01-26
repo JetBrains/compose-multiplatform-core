@@ -73,7 +73,6 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
-    androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.guavaAndroid)

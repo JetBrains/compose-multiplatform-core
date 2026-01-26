@@ -34,7 +34,6 @@ import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreati
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
-import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import java.math.RoundingMode
@@ -543,13 +542,13 @@ internal fun floatToString(v: Float, before: Int, after: Int, flags: Int) =
             TextFromFloat.SEPARATOR_SPACE_COMMA -> StringUtils.SEPARATOR_SPACE_COMMA
             TextFromFloat.SEPARATOR_UNDER_PERIOD -> StringUtils.SEPARATOR_UNDER_PERIOD
             else -> StringUtils.SEPARATOR_PERIOD_COMMA
-        }.toByte(),
+        },
         when (flags and (3 shl 4)) {
             TextFromFloat.GROUPING_BY3 -> StringUtils.GROUPING_BY3
             TextFromFloat.GROUPING_BY4 -> StringUtils.GROUPING_BY4
             TextFromFloat.GROUPING_BY32 -> StringUtils.GROUPING_BY32
             else -> StringUtils.GROUPING_NONE
-        }.toByte(),
+        },
         flags shr 8,
     )
 
@@ -1244,7 +1243,10 @@ public fun rememberMutableRemoteFloat(
     return remember {
         val context = RemoteFloatContext(state)
         val value = content(context)
-        MutableRemoteFloat { state -> value.getFloatIdForCreationState(state) }
+        MutableRemoteFloat { state ->
+            // Force creation of an id
+            asNan(value.getIdForCreationState(state))
+        }
     }
 }
 
@@ -1268,7 +1270,7 @@ public fun rememberRemoteFloat(content: RemoteFloatContext.() -> RemoteFloat): R
  * A Composable function to remember and provide a **named** remote float value.
  *
  * @param name The unique name for this remote float.
- * @param domain The domain of the named float (defaults to [RemoteDomains.USER]). This helps
+ * @param domain The domain of the named float (defaults to [RemoteState.Domain.User]). This helps
  *   organize named values in the remote document.
  * @param content default [RemoteFloat] value for this remote float.
  * @return A [RemoteFloat] instance that will be remembered across recompositions.
@@ -1277,7 +1279,7 @@ public fun rememberRemoteFloat(content: RemoteFloatContext.() -> RemoteFloat): R
 @RemoteComposable
 public fun rememberRemoteFloat(
     name: String,
-    domain: RemoteDomains = RemoteDomains.USER,
+    domain: RemoteState.Domain = RemoteState.Domain.User,
     content: RemoteFloatContext.() -> RemoteFloat,
 ): RemoteFloat {
     val state = LocalRemoteComposeCreationState.current

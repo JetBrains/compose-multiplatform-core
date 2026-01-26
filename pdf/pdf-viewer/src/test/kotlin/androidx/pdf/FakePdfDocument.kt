@@ -29,6 +29,7 @@ import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.models.ImagePdfObject
 import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
@@ -104,7 +105,8 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
-        TODO("Not yet implemented")
+        if (pageNum == -1) return null
+        return getSampleImagePdfObject()
     }
 
     override fun addOnPdfContentInvalidatedListener(
@@ -341,6 +343,12 @@ internal open class FakePdfDocument(
                             ),
                     ),
             )
+
+        fun getSampleImagePdfObject(): ImagePdfObject {
+            val bounds = RectF(0f, 100f, 0f, 100f)
+            val bitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
+            return ImagePdfObject(bitmap, bounds)
+        }
     }
 }
 

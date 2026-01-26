@@ -189,11 +189,7 @@ private constructor(
         this.entity = null
     }
 
-    private data class UpdatedReformEventInfo(
-        val pose: Pose,
-        val parent: Entity?,
-        val scale: Float,
-    )
+    private data class UpdatedReformEventInfo(val pose: Pose, val parent: Entity?, val scale: Float)
 
     private fun getUpdatedReformEventPoseAndParent(moveEvent: MoveEvent): UpdatedReformEventInfo {
         val initialParent = moveEvent.initialParent

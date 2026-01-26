@@ -96,6 +96,6 @@ public class ContainerEnd extends Operation {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Layout Operations", id(), name())
-                .description("End tag for list of operations.");
+                .description("End tag for a container component (Row, Column, etc.)");
     }
 }

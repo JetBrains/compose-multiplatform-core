@@ -74,14 +74,13 @@ import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
 import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
 import androidx.xr.compose.testapp.followingsubspace.AnchorFollowingSubspaceActivity
-import androidx.xr.compose.testapp.followingsubspace.UserSubspaceActivity
+import androidx.xr.compose.testapp.followingsubspace.FollowingSubspaceActivity
 import androidx.xr.compose.testapp.fragments.FragmentCompatibilityActivity
 import androidx.xr.compose.testapp.gravityaligned.GravityAlignedActivity
 import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
 import androidx.xr.compose.testapp.lifecycle.OpenCloseActivity
 import androidx.xr.compose.testapp.lifecycle.ResizeActivity
 import androidx.xr.compose.testapp.lifecycle.RuntimeSessionActivity
-import androidx.xr.compose.testapp.lookatuser.LookAtUserActivity
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
@@ -91,6 +90,7 @@ import androidx.xr.compose.testapp.performance.LayoutPerformance
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
 import androidx.xr.compose.testapp.pose.Pose
 import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
+import androidx.xr.compose.testapp.rotatetolookatuser.RotateToLookAtUserActivity
 import androidx.xr.compose.testapp.rotation.Rotation
 import androidx.xr.compose.testapp.spacemodechange.SpaceModeActivity
 import androidx.xr.compose.testapp.spatialalignmentusage.SpatialAlignmentUsageActivity
@@ -309,10 +309,10 @@ class MainActivity : ComponentActivity() {
                         startTest<AccessibilityActivity>()
                     }
                     TestCaseColumnRowItem(getString(R.string.ardevice_subspace_test_case)) {
-                        startTest<UserSubspaceActivity>()
+                        startTest<FollowingSubspaceActivity>()
                     }
-                    TestCaseColumnRowItem(getString(R.string.lookatuser_test_case)) {
-                        startTest<LookAtUserActivity>()
+                    TestCaseColumnRowItem(getString(R.string.rotatetolookatuser_test_case)) {
+                        startTest<RotateToLookAtUserActivity>()
                     }
                     TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
                     TestCaseColumnRowItem(getString(R.string.fragment_compatibility_test)) {

@@ -35,7 +35,6 @@ dependencies {
     androidTestImplementation(project(":benchmark:benchmark-junit4"))
 
     androidTestImplementation(project(":camera:camera-camera2"))
-    androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":camera:camera-core"))
     androidTestImplementation(project(":camera:camera-testing"))
 

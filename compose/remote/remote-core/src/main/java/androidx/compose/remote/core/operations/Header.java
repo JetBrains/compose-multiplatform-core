@@ -107,6 +107,9 @@ public class Header extends Operation implements RemoteComposeOperation {
     /** direct measure in paint, instead of wrap behavior */
     public static final short FEATURE_PAINT_MEASURE = 15;
 
+    /** Direct player to be verbose levels= 0=off,1,2,3 */
+    public static final short DEBUG = 16;
+
     /** The object is an integer */
     private static final short DATA_TYPE_INT = 0;
 
@@ -129,7 +132,8 @@ public class Header extends Operation implements RemoteComposeOperation {
         DOC_DATA_UPDATE,
         HOST_EXCEPTION_HANDLER,
         DOC_PROFILES,
-            FEATURE_PAINT_MEASURE
+        FEATURE_PAINT_MEASURE,
+        DEBUG
     };
     private static final String[] KEY_NAMES = {
         "DOC_WIDTH",
@@ -142,7 +146,7 @@ public class Header extends Operation implements RemoteComposeOperation {
         "HOST_EXCEPTION_HANDLER",
         "DOC_PROFILES",
         "PAINT_MEASURE",
-    };
+        "DEBUG"};
 
     /**
      * It encodes the version of the document (following semantic versioning) as well as the
@@ -485,20 +489,23 @@ public class Header extends Operation implements RemoteComposeOperation {
     }
 
     /**
-     * Read the Header api level
+     * Peeks and returns the Header api level
      *
      * @param buffer
      * @return api level, -1 if not found
      */
-    public static int readApiLevel(@NonNull WireBuffer buffer) {
-        int index = buffer.getIndex();
+    public static int peekApiLevel(@NonNull WireBuffer buffer) {
+        if (buffer.getIndex() != 0) {
+            throw new IllegalStateException(
+                    "Invalid buffer reading position; can't read the header");
+        }
         int headerOpId = buffer.readByte();
         if (headerOpId != Operations.HEADER) {
             return -1;
         }
         int majorVersion = buffer.readInt();
         int minorVersion = buffer.readInt();
-        buffer.setIndex(index);
+        buffer.setIndex(0);
         if (majorVersion >= 0x10000) {
             if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
                 return -1;
@@ -575,55 +582,52 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @throws IOException if there is an error reading the header
      */
     public static @NonNull Header readDirect(@NonNull WireBuffer buffer) throws IOException {
-        int index = buffer.getIndex();
-        try {
-
-            int type = buffer.readByte();
-
-            if (type != OP_CODE) {
-                throw new IOException("Invalid header " + type + " != " + OP_CODE);
-            }
-            int majorVersion = buffer.readInt();
-            int minorVersion = buffer.readInt();
-            int patchVersion = buffer.readInt();
-
-            if (majorVersion < 0x10000) {
-                int width = buffer.readInt();
-                int height = buffer.readInt();
-                // float density = is.read();
-                float density = 1f;
-                long capabilities = buffer.readLong();
-                return new Header(
-                        majorVersion,
-                        minorVersion,
-                        patchVersion,
-                        width,
-                        height,
-                        density,
-                        capabilities);
-            }
-
-            if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
-                throw new IOException(
-                        "Invalid header MAGIC_NUMBER "
-                                + (majorVersion & 0xFFFF0000)
-                                + " != "
-                                + MAGIC_NUMBER);
-            }
-            majorVersion &= 0xFFFF;
-            int len = buffer.readInt();
-            short[] types = new short[len];
-            Object[] values = new Object[len];
-            readMap(buffer, types, values);
-            IntMap<Object> map = new IntMap<>();
-            for (int i = 0; i < len; i++) {
-                map.put(types[i], values[i]);
-            }
-            return new Header(majorVersion, minorVersion, patchVersion, map);
-
-        } finally {
-            buffer.setIndex(index);
+        if (buffer.getIndex() != 0) {
+            throw new IllegalStateException(
+                    "Invalid buffer reading position; can't read the header.");
         }
+        int type = buffer.readByte();
+
+        if (type != OP_CODE) {
+            throw new IOException("Invalid header " + type + " != " + OP_CODE);
+        }
+        int majorVersion = buffer.readInt();
+        int minorVersion = buffer.readInt();
+        int patchVersion = buffer.readInt();
+
+        if (majorVersion < 0x10000) {
+            int width = buffer.readInt();
+            int height = buffer.readInt();
+            // float density = is.read();
+            float density = 1f;
+            long capabilities = buffer.readLong();
+            return new Header(
+                    majorVersion,
+                    minorVersion,
+                    patchVersion,
+                    width,
+                    height,
+                    density,
+                    capabilities);
+        }
+
+        if ((majorVersion & 0xFFFF0000) != MAGIC_NUMBER) {
+            throw new IOException(
+                    "Invalid header MAGIC_NUMBER "
+                            + (majorVersion & 0xFFFF0000)
+                            + " != "
+                            + MAGIC_NUMBER);
+        }
+        majorVersion &= 0xFFFF;
+        int len = buffer.readInt();
+        short[] types = new short[len];
+        Object[] values = new Object[len];
+        readMap(buffer, types, values);
+        IntMap<Object> map = new IntMap<>();
+        for (int i = 0; i < len; i++) {
+            map.put(types[i], values[i]);
+        }
+        return new Header(majorVersion, minorVersion, patchVersion, map);
     }
 
     /**
@@ -699,17 +703,16 @@ public class Header extends Operation implements RemoteComposeOperation {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Protocol Operations", OP_CODE, CLASS_NAME)
+        doc.operation("Document Protocol Operations", OP_CODE, CLASS_NAME)
                 .description(
                         "Document metadata, containing the version,"
                                 + " original size & density, capabilities mask")
-                .field(INT, "MAJOR_VERSION", "Major version")
-                .field(INT, "MINOR_VERSION", "Minor version")
-                .field(INT, "PATCH_VERSION", "Patch version")
-                .field(INT, "WIDTH", "Major version")
-                .field(INT, "HEIGHT", "Major version")
-                // .field(FLOAT, "DENSITY", "Major version")
-                .field(LONG, "CAPABILITIES", "Major version");
+                .field(INT, "majorVersion", "Major version")
+                .field(INT, "minorVersion", "Minor version")
+                .field(INT, "patchVersion", "Patch version")
+                .field(INT, "width", "Document width in pixels")
+                .field(INT, "height", "Document height in pixels")
+                .field(LONG, "capabilities", "Capabilities mask");
     }
 
     /**

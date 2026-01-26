@@ -19,18 +19,21 @@ package androidx.compose.remote.creation.compose.v2
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.Operations
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteDrawScope
+import androidx.compose.remote.creation.compose.layout.RemoteDrawWithContentScope
+import androidx.compose.remote.creation.compose.layout.find
+import androidx.compose.remote.creation.compose.modifier.DrawWithContentModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
@@ -45,42 +48,38 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
-import androidx.core.graphics.createBitmap
 
 internal abstract class RemoteComposeNodeV2 {
     val children = mutableListOf<RemoteComposeNodeV2>()
     var modifier: RemoteModifier = RemoteModifier
 
-    abstract fun render(creationState: RemoteComposeCreationState)
+    abstract fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas)
 
-    fun renderChildren(creationState: RemoteComposeCreationState) {
-        children.fastForEach { it.render(creationState) }
+    fun renderChildren(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val drawWithContent = modifier.find<DrawWithContentModifier>()
+
+        if (drawWithContent != null) {
+            val drawWithContentScope = RemoteDrawWithContentScope(remoteCanvas)
+
+            creationState.document.startCanvasOperations()
+            drawWithContent.onDraw(drawWithContentScope)
+            creationState.document.endCanvasOperations()
+        }
+
+        children.fastForEach { it.render(creationState, remoteCanvas) }
     }
 }
 
 internal class RemoteCanvasNodeV2 : RemoteComposeNodeV2() {
     var onDraw: (RemoteDrawScope.() -> Unit)? = null
 
-    override fun render(creationState: RemoteComposeCreationState) {
-        val recordingCanvas =
-            RecordingCanvas(createBitmap(1, 1)).apply {
-                setRemoteComposeCreationState(creationState)
-            }
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
 
         val recordingModifier = creationState.toRecordingModifier(modifier)
         creationState.document.startCanvas(recordingModifier)
         onDraw?.let { drawLambda ->
-            val remoteCanvas = RemoteCanvas(recordingCanvas)
-            val remoteDrawScope =
-                RemoteDrawScope(
-                    remoteCanvas = remoteCanvas,
-                    // TODO use real value
-                    fontScale = 1f.rf,
-                    // TODO use real value
-                    layoutDirection = LayoutDirection.Ltr,
-                )
+            val remoteDrawScope = RemoteDrawScope(remoteCanvas = remoteCanvas)
             remoteDrawScope.drawLambda()
         }
         creationState.document.endCanvas()
@@ -88,8 +87,8 @@ internal class RemoteCanvasNodeV2 : RemoteComposeNodeV2() {
 }
 
 internal class RemoteRootNodeV2 : RemoteComposeNodeV2() {
-    override fun render(creationState: RemoteComposeCreationState) {
-        creationState.document.root { renderChildren(creationState) }
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        creationState.document.root { renderChildren(creationState, remoteCanvas) }
     }
 }
 
@@ -97,14 +96,14 @@ internal class RemoteBoxNodeV2 : RemoteComposeNodeV2() {
     var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
     var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
 
-    override fun render(creationState: RemoteComposeCreationState) {
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
         val recordingModifier = creationState.toRecordingModifier(modifier)
         creationState.document.startBox(
             recordingModifier,
             horizontalAlignment.toRemote(),
             verticalArrangement.toRemote(),
         )
-        renderChildren(creationState)
+        renderChildren(creationState, remoteCanvas)
         creationState.document.endBox()
     }
 }
@@ -113,14 +112,14 @@ internal class RemoteRowNodeV2 : RemoteComposeNodeV2() {
     var horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start
     var verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top
 
-    override fun render(creationState: RemoteComposeCreationState) {
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
         val recordingModifier = creationState.toRecordingModifier(modifier)
         creationState.document.startRow(
             recordingModifier,
             horizontalArrangement.toRemote(),
             verticalAlignment.toRemote(),
         )
-        renderChildren(creationState)
+        renderChildren(creationState, remoteCanvas)
         creationState.document.endRow()
     }
 }
@@ -129,21 +128,83 @@ internal class RemoteColumnNodeV2 : RemoteComposeNodeV2() {
     var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
     var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
 
-    override fun render(creationState: RemoteComposeCreationState) {
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
         val recordingModifier = creationState.toRecordingModifier(modifier)
         creationState.document.startColumn(
             recordingModifier,
             horizontalAlignment.toRemote(),
             verticalArrangement.toRemote(),
         )
-        renderChildren(creationState)
+        renderChildren(creationState, remoteCanvas)
         creationState.document.endColumn()
+    }
+}
+
+internal class RemoteStateLayoutNodeV2 : RemoteComposeNodeV2() {
+    lateinit var currentState: RemoteInt
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startStateLayout(
+            recordingModifier,
+            currentState.getIdForCreationState(creationState),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endStateLayout()
+    }
+}
+
+internal class RemoteFitBoxNodeV2 : RemoteComposeNodeV2() {
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startFitBox(
+            recordingModifier,
+            horizontalAlignment.toRemote(),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endFitBox()
+    }
+}
+
+internal class RemoteCollapsibleColumnNodeV2 : RemoteComposeNodeV2() {
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startCollapsibleColumn(
+            recordingModifier,
+            horizontalAlignment.toRemote(),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endCollapsibleColumn()
+    }
+}
+
+internal class RemoteCollapsibleRowNodeV2 : RemoteComposeNodeV2() {
+    var horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start
+    var verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val recordingModifier = creationState.toRecordingModifier(modifier)
+        creationState.document.startCollapsibleRow(
+            recordingModifier,
+            horizontalArrangement.toRemote(),
+            verticalAlignment.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endCollapsibleRow()
     }
 }
 
 internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
     lateinit var text: RemoteString
-    var color: RemoteColor? = null
+    lateinit var color: RemoteColor
     var fontSize: RemoteFloat = 14f.rf
     var fontWeight: RemoteFloat = 400f.rf
     var fontStyle: FontStyle? = null
@@ -170,17 +231,17 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
         return Pair(fontAxisNames, fontAxisValues)
     }
 
-    override fun render(creationState: RemoteComposeCreationState) {
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
         val useCoreTextComponent =
             creationState.profile.supportedOperations.contains(Operations.CORE_TEXT)
 
         if (useCoreTextComponent) {
             val textIdValue = text.getIdForCreationState(creationState)
 
-            val colorInt = color?.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
+            val colorInt = color.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
             val colorId =
-                if (color?.hasConstantValue == false) {
-                    color!!.getIdForCreationState(creationState)
+                if (!color.hasConstantValue) {
+                    color.getIdForCreationState(creationState)
                 } else {
                     -1
                 }
@@ -221,26 +282,18 @@ internal class RemoteTextNodeV2 : RemoteComposeNodeV2() {
         } else {
             val textId = text.getIdForCreationState(creationState)
 
-            val colorInt = color?.constantValueOrNull?.toArgb() ?: android.graphics.Color.BLACK
-            val colorId =
-                if (color?.hasConstantValue == false) {
-                    color!!.getIdForCreationState(creationState)
+            val colorValue =
+                if (color.hasConstantValue) {
+                    color.constantValue.toArgb()
                 } else {
-                    -1
+                    color.getIdForCreationState(creationState)
                 }
 
-            val colorValue =
-                color?.constantValueOrNull?.toArgb()
-                    ?: (if (color?.hasConstantValue == false) {
-                        color!!.getIdForCreationState(creationState)
-                    } else {
-                        android.graphics.Color.BLACK
-                    })
             val flags =
-                if (color?.hasConstantValue == false) {
-                    TextLayout.FLAG_IS_DYNAMIC_COLOR.toShort()
-                } else {
+                if (color.hasConstantValue) {
                     0.toShort()
+                } else {
+                    TextLayout.FLAG_IS_DYNAMIC_COLOR.toShort()
                 }
 
             val fontSizePx = fontSize.getFloatIdForCreationState(creationState)
@@ -304,8 +357,9 @@ internal class RemoteImageNodeV2 : RemoteComposeNodeV2() {
     var remoteBitmap: RemoteBitmap? = null
     var contentScale: ContentScale = ContentScale.Fit
     var alpha: RemoteFloat = RemoteFloat(1f)
+    var contentDescription: RemoteString? = null
 
-    override fun render(creationState: RemoteComposeCreationState) {
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
         val bitmapId =
             remoteBitmap?.getIdForCreationState(creationState)
                 ?: image?.let { creationState.document.addBitmap(it) }

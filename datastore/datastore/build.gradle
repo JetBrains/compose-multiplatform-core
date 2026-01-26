@@ -55,8 +55,8 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
             implementation(libs.okio)
-            api(project(":datastore:datastore-core"))
-            api(project(":datastore:datastore-core-okio"))
+            implementation(project(":datastore:datastore-core"))
+            implementation(project(":datastore:datastore-core-okio"))
             implementation(project(":kruth:kruth"))
             implementation(project(":internal-testutils-datastore"))
         }

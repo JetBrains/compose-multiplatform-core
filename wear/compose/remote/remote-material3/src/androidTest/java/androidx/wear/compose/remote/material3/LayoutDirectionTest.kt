@@ -28,7 +28,6 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.MediumTest
@@ -70,10 +69,7 @@ class LayoutDirectionTest {
 
     @Test
     fun rtl() {
-        remoteComposeTestRule.runScreenshotTest(
-            deviceConfigurationOverride =
-                DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Rtl)
-        ) {
+        remoteComposeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
             RemoteRow(
                 modifier = RemoteModifier.fillMaxWidth().background(Color.Black),
                 horizontalArrangement = RemoteArrangement.Start,
@@ -89,10 +85,7 @@ class LayoutDirectionTest {
     @Test
     fun rtl_manual() {
         // Do the manual workarounds to display correctly
-        remoteComposeTestRule.runScreenshotTest(
-            deviceConfigurationOverride =
-                DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Rtl)
-        ) {
+        remoteComposeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
             RemoteRow(
                 modifier = RemoteModifier.fillMaxWidth().background(Color.Black),
                 horizontalArrangement = RemoteArrangement.End,

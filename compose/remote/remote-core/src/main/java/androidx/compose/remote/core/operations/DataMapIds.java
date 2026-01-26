@@ -148,11 +148,12 @@ public class DataMapIds extends Operation {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Encode a collection of name id pairs")
-                .field(INT, "id", "id the array")
-                .field(INT, "length", "number of entries")
-                .field(INT, "names[0]", "length", "path encoded as floats")
-                .field(UTF8, "id[0]", "length", "path encoded as floats");
+                .description("Encode a collection of named variable IDs")
+                .field(INT, "id", "The ID of the map")
+                .field(INT, "length", "Number of entries")
+                .field(UTF8, "name[0..n]", "The name of the entry")
+                .field(INT, "type[0..n]", "The type of the entry")
+                .field(INT, "id[0..n]", "The ID of the variable");
     }
 
     @NonNull

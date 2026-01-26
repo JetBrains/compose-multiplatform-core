@@ -103,6 +103,10 @@ public fun PdfViewer(
         remember(fastScrollConfig, context) { fastScrollConfig.pageIndicatorMarginEnd(context) }
     val verticalThumbMarginEnd =
         remember(fastScrollConfig, context) { fastScrollConfig.verticalThumbMarginEnd(context) }
+
+    val onFormWidgetUpdatedListener = remember {
+        PdfViewerOnFormWidgetUpdatedListener(onFormWidgetInfoUpdated)
+    }
     // Convert Dp to Px for the underlying PdfView.
     val density = LocalDensity.current
     val horizontalPageSpacingPx = with(density) { horizontalPageSpacing.roundToPx() }
@@ -124,17 +128,20 @@ public fun PdfViewer(
                         filterContextMenuComponents,
                     )
                 )
+                addOnFormWidgetInfoUpdatedListener(onFormWidgetUpdatedListener)
             }
         },
         onRelease = { view ->
             if (view == state.pdfView) state.pdfView = null
             view.setLinkClickListener(null)
+            view.removeOnFormWidgetInfoUpdatedListener(onFormWidgetUpdatedListener)
         },
         // Factory will execute exactly once; update is the correct place to supply mutable states
         update = { view ->
             view.pdfDocument = pdfDocument
             view.minZoom = minZoom
             view.maxZoom = maxZoom
+            view.isFormFillingEnabled = isFormFillingEnabled
             view.verticalAlignment = verticalAlignment
             view.fastScrollVerticalThumbDrawable = verticalThumbDrawable
             view.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
@@ -276,6 +283,22 @@ private class PdfViewerOnFirstContentLoadListener(private val behavior: (() -> U
     PdfView.OnFirstContentLoadListener {
     override fun onFirstContentLoad() {
         behavior?.invoke()
+    }
+}
+
+/**
+ * Bridge between the lambda-based [PdfViewer] API for supporting form-filling, and the listener
+ * interface [PdfView.OnFormWidgetInfoUpdatedListener] API for the same.
+ *
+ * The [FormEditInfo] received in the callback should be applied to the
+ * [androidx.pdf.EditablePdfDocument] via the [androidx.pdf.EditablePdfDocument.applyEdit] API in
+ * order for the changes to reflect on the PDF.
+ */
+private class PdfViewerOnFormWidgetUpdatedListener(
+    private val behavior: ((FormEditInfo) -> Unit)?
+) : PdfView.OnFormWidgetInfoUpdatedListener {
+    override fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo) {
+        behavior?.invoke(formEditInfo)
     }
 }
 

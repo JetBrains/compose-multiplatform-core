@@ -82,7 +82,7 @@ androidXMultiplatform {
 
         commonTest.dependencies {
             implementation(libs.kotlinReflect)
-            api(project(":compose:ui:ui-util"))
+            implementation(project(":compose:ui:ui-util"))
         }
 
         jvmAndAndroidMain.dependencies {

@@ -68,6 +68,6 @@ androidx {
     inceptionYear = "2021"
     description = "Android Navigation Fragment Hilt Extension"
     legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 

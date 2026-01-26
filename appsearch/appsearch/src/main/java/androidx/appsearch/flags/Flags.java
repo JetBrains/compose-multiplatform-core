@@ -366,6 +366,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
             FLAG_PREFIX + "enable_non_existent_qualified_id_join";
 
+    /** Enables visibility access for Private Compute Core UIDs. */
+    public static final String FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS =
+            FLAG_PREFIX + "enable_private_compute_core_uid_access";
+
     /**
      * Whether to enable skipping the unnecessary schema type equality check.
      */
@@ -816,6 +820,13 @@ public final class Flags {
     }
 
     /**
+     * Whether visibility access for Private Compute Core UIDs should be enabled.
+     */
+    public static boolean enablePrivateComputeCoreUidAccess() {
+        return true;
+    }
+
+    /*
      * Whether to enable skipping the unnecessary schema type equality check.
      */
     public static boolean enableSkipSetSchemaTypeEqualityCheck() {

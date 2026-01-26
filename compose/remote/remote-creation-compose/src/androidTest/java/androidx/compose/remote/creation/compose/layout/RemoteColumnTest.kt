@@ -23,6 +23,7 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
+import androidx.compose.remote.creation.compose.test.util.propertyName
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
@@ -68,26 +69,28 @@ class RemoteColumnTest {
                         for (arrangement in arrangements) {
                             for (alignment in alignments) {
                                 yield(
-                                    @RemoteComposable @Composable {
-                                        // TODO(b/447100988): replace size by fillMaxSize in all
-                                        // those RemoteColumns
-                                        RemoteColumn(
-                                            modifier = RemoteModifier.size(DefaultContainerSize),
-                                            horizontalAlignment = alignment,
-                                            verticalArrangement = arrangement,
-                                        ) {
-                                            RemoteBox(
+                                    "${arrangement.propertyName()} ${alignment.propertyName()}" to
+                                        @RemoteComposable @Composable {
+                                            // TODO(b/447100988): replace size by fillMaxSize in all
+                                            // those RemoteColumns
+                                            RemoteColumn(
                                                 modifier =
-                                                    RemoteModifier.size(48.rdp)
-                                                        .background(Color(0xFF6200EE))
-                                            )
-                                            RemoteBox(
-                                                modifier =
-                                                    RemoteModifier.size(24.rdp)
-                                                        .background(Color(0xFF03DAC6))
-                                            )
+                                                    RemoteModifier.size(DefaultContainerSize),
+                                                horizontalAlignment = alignment,
+                                                verticalArrangement = arrangement,
+                                            ) {
+                                                RemoteBox(
+                                                    modifier =
+                                                        RemoteModifier.size(48.rdp)
+                                                            .background(Color(0xFF6200EE))
+                                                )
+                                                RemoteBox(
+                                                    modifier =
+                                                        RemoteModifier.size(24.rdp)
+                                                            .background(Color(0xFF03DAC6))
+                                                )
+                                            }
                                         }
-                                    }
                                 )
                             }
                         }

@@ -60,7 +60,6 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":camera:camera-camera2"))
-    androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":camera:camera-lifecycle"))
     androidTestImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies

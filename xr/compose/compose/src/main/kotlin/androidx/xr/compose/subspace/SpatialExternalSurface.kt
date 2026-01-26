@@ -110,16 +110,20 @@ public value class StereoMode private constructor(internal val value: SurfaceEnt
     public companion object {
         /** Each eye will see the entire surface (no separation). */
         public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.MONO)
+
         /** The [top, bottom] halves of the surface will map to [left, right] eyes. */
         public val TopBottom: StereoMode = StereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM)
+
         /** The [left, right] halves of the surface will map to [left, right] eyes. */
         public val SideBySide: StereoMode = StereoMode(SurfaceEntity.StereoMode.SIDE_BY_SIDE)
+
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [left, right] eyes.
          */
         public val MultiviewLeftPrimary: StereoMode =
             StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY)
+
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [right, left] eyes.
@@ -147,6 +151,7 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
          * [SpatialExternalSurface] will show the Surface content.
          */
         public val None: SurfaceProtection = SurfaceProtection(SurfaceEntity.SurfaceProtection.NONE)
+
         /**
          * The Surface content is protected. Non-protected content can be decoded into this surface.
          * Protected content can be decoded into this Surface. Screen captures of the
@@ -188,6 +193,8 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
  * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
+ * @param superSamplingPattern The pattern to use to super sample this surface, or
+ *   [SuperSamplingPattern.None] to disable super sampling.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered over the
  *   Surface canvas. If using [StereoMode.SideBySide] or [StereoMode.TopBottom], it is recommended
@@ -203,6 +210,7 @@ public fun SpatialExternalSurface(
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
     interactionPolicy: InteractionPolicy? = null,
+    superSamplingPattern: SuperSamplingPattern = SuperSamplingPattern.Pentagon,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val finalModifier =
@@ -213,12 +221,13 @@ public fun SpatialExternalSurface(
     // When surface protection changes, the surface entity has to be recreated because protection is
     // a non mutable setting.
     val coreSurfaceEntity =
-        remember(surfaceProtection) {
+        remember(surfaceProtection, superSamplingPattern) {
             CoreSurfaceEntity(
                 SurfaceEntity.create(
                     session = checkNotNull(session) { "Session is required" },
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
+                    superSampling = superSamplingPattern.value,
                 ),
                 localDensity = density,
             )
@@ -272,6 +281,8 @@ public fun SpatialExternalSurface(
  *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
  *   media content.
  * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
+ * @param superSamplingPattern The pattern to use to super sample this surface, or
+ *   [SuperSamplingPattern.None] to disable super sampling.
  * @param onSurface Lambda invoked when the surface is created through
  *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
  *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
@@ -285,6 +296,7 @@ public fun SpatialExternalSurface180Hemisphere(
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
     interactionPolicy: InteractionPolicy? = null,
+    superSamplingPattern: SuperSamplingPattern = SuperSamplingPattern.Pentagon,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
@@ -296,6 +308,7 @@ public fun SpatialExternalSurface180Hemisphere(
         surfaceProtection = surfaceProtection,
         interactionPolicy = interactionPolicy,
         onSurface = onSurface,
+        superSamplingPattern = superSamplingPattern,
     )
 }
 
@@ -329,6 +342,8 @@ public fun SpatialExternalSurface180Hemisphere(
  *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
  *   media content.
  * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
+ * @param superSamplingPattern The pattern to use to super sample this surface, or
+ *   [SuperSamplingPattern.None] to disable super sampling.
  * @param onSurface Lambda invoked when the surface is created through
  *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
  *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
@@ -342,6 +357,7 @@ public fun SpatialExternalSurface360Sphere(
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
     interactionPolicy: InteractionPolicy? = null,
+    superSamplingPattern: SuperSamplingPattern = SuperSamplingPattern.Pentagon,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
@@ -353,6 +369,7 @@ public fun SpatialExternalSurface360Sphere(
         surfaceProtection = surfaceProtection,
         interactionPolicy = interactionPolicy,
         onSurface = onSurface,
+        superSamplingPattern = superSamplingPattern,
     )
 }
 
@@ -366,6 +383,7 @@ private fun SpatialExternalSurfaceSphere(
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
     interactionPolicy: InteractionPolicy?,
+    superSamplingPattern: SuperSamplingPattern,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
@@ -375,12 +393,13 @@ private fun SpatialExternalSurfaceSphere(
     val finalModifier = buildSpatialPanelModifier(modifier, null, null, interactionPolicy)
 
     val coreSurfaceEntity =
-        remember(surfaceProtection) {
+        remember(surfaceProtection, superSamplingPattern) {
             CoreSphereSurfaceEntity(
                 SurfaceEntity.create(
                     session = checkNotNull(session) { "Session is required" },
                     stereoMode = stereoMode.value,
                     surfaceProtection = surfaceProtection.value,
+                    superSampling = superSamplingPattern.value,
                     shape =
                         if (isHemisphere) {
                             SurfaceEntity.Shape.Hemisphere(meterRadius)
@@ -454,5 +473,23 @@ internal class SphereMeasurePolicy() : SubspaceMeasurePolicy {
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
         return layout(0, 0, 0) {}
+    }
+}
+
+/**
+ * Specifies the super sampling setting for this Surface. Super sampling can improve rendering
+ * quality at a performance cost.
+ */
+@JvmInline
+public value class SuperSamplingPattern
+private constructor(public val value: SurfaceEntity.SuperSampling) {
+    public companion object {
+        /** Super sampling is disabled. */
+        public val None: SuperSamplingPattern =
+            SuperSamplingPattern(SurfaceEntity.SuperSampling.NONE)
+
+        /** Super sampling is enabled with a default sampling pattern. */
+        public val Pentagon: SuperSamplingPattern =
+            SuperSamplingPattern(SurfaceEntity.SuperSampling.PENTAGON)
     }
 }

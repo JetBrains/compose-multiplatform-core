@@ -25,7 +25,10 @@ import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
+import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
+import androidx.compose.remote.creation.compose.v2.StateLayoutV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -157,6 +160,10 @@ public fun StateLayout(
     verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
     content: @Composable (Int) -> Unit,
 ) {
+    if (currentComposer.applier is RemoteComposeApplierV2) {
+        StateLayoutV2(stateMachine, modifier, content)
+        return
+    }
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
     Box(
         RemoteComposeStateLayoutModifier(

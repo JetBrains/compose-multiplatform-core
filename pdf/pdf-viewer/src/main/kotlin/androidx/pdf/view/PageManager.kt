@@ -73,11 +73,13 @@ internal class PageManager(
     val pageTextReadyFlow: SharedFlow<Int>
         get() = _pageTextReadyFlow
 
-    private val _bitmapReadyFlow = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    private val _bitmapUpdatedFlow = MutableSharedFlow<PageBitmapState>(extraBufferCapacity = 1)
 
-    /** This [SharedFlow] signals [PdfView] that new bitmaps are ready for the page. */
-    val bitmapReadyFlow: SharedFlow<Int>
-        get() = _bitmapReadyFlow
+    /**
+     * This [SharedFlow] signals [PdfView] that bitmaps are either ready or cleared for the page.
+     */
+    val bitmapUpdatedFlow: SharedFlow<PageBitmapState>
+        get() = _bitmapUpdatedFlow
 
     internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
         set(value) {
@@ -192,7 +194,7 @@ internal class PageManager(
                     backgroundScope,
                     maxBitmapSizePx,
                     onBitmapReady = {
-                        _bitmapReadyFlow.tryEmit(pageNum)
+                        _bitmapUpdatedFlow.tryEmit(PageBitmapState.PageBitmapReady(pageNum))
                         _invalidationSignalFlow.tryEmit(Unit)
                     },
                     onFormWidgetReady = { _invalidationSignalFlow.tryEmit(Unit) },
@@ -201,6 +203,9 @@ internal class PageManager(
                     isAccessibilityEnabled = isAccessibilityEnabled,
                     pdfFormFillingConfig = pdfFormFillingConfig,
                     formWidgetInfos = formWidgetInfos,
+                    onBitmapCleared = {
+                        _bitmapUpdatedFlow.tryEmit(PageBitmapState.PageBitmapCleared(pageNum))
+                    },
                 )
                 .apply {
                     // If the page is visible, let it know
@@ -278,3 +283,14 @@ internal class PageManager(
 private val EMPTY_HIGHLIGHTS = listOf<Highlight>()
 
 private val PAGE_RETENTION_RADIUS = 2
+
+/** Represents the state of bitmap for the specified page. */
+internal sealed interface PageBitmapState {
+    val pageNum: Int
+
+    /** Represents that bitmap has been fetched and is available for use. */
+    data class PageBitmapReady(override val pageNum: Int) : PageBitmapState
+
+    /** Represents that bitmap has been cleared from the memory. */
+    data class PageBitmapCleared(override val pageNum: Int) : PageBitmapState
+}

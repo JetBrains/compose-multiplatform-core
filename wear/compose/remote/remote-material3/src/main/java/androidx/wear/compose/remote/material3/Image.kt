@@ -25,6 +25,7 @@ import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreati
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteImage as CreationRemoteImage
 import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clip
@@ -39,6 +40,7 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.asRdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
@@ -63,15 +65,16 @@ public fun RemoteAvatarImage(
     if (shouldFallback) {
         FallbackAvatar(background = avatar, contentDescription = contentDescription, modifier)
     } else {
-        RemoteImage(
+        CreationRemoteImage(
             avatar,
             contentDescription = contentDescription,
-            contentScale = contentScale,
             modifier =
                 modifier
                     .width(ImageDefaults.avatarSize())
                     .height(ImageDefaults.avatarSize())
                     .clip(ImageDefaults.avatarShape()),
+            contentScale = contentScale,
+            alpha = DefaultAlpha.rf,
         )
     }
 }
@@ -101,11 +104,12 @@ public fun RemoteBackgroundImage(
     } else {
         RemoteBox(modifier = modifier) {
             val imageModifier = RemoteModifier.fillMaxSize().clip(ImageDefaults.backgroundShape())
-            RemoteImage(
+            CreationRemoteImage(
                 remoteBitmap = background,
                 contentDescription = contentDescription,
                 modifier = imageModifier,
                 contentScale = contentScale,
+                alpha = DefaultAlpha.rf,
             )
 
             if (overlayColor != null) {
@@ -127,11 +131,12 @@ private fun FallbackBackground(
     // TODO clipping effect.
     RemoteBox(modifier = modifier) {
         val imageModifier = RemoteModifier.fillMaxSize()
-        RemoteImage(
+        CreationRemoteImage(
             remoteBitmap = background,
             contentDescription = contentDescription,
             modifier = imageModifier,
             contentScale = contentScale,
+            alpha = DefaultAlpha.rf,
         )
 
         if (overlayColor != null) {
@@ -149,11 +154,12 @@ private fun FallbackAvatar(
     contentScale: ContentScale = ContentScale.FillBounds,
 ) {
     // TODO clipping effect.
-    RemoteImage(
+    CreationRemoteImage(
         remoteBitmap = background,
         contentDescription = contentDescription,
         modifier = modifier.fillMaxSize(),
         contentScale = contentScale,
+        alpha = DefaultAlpha.rf,
     )
 }
 

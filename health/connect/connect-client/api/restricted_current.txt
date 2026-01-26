@@ -289,7 +289,7 @@ package androidx.health.connect.client.records {
     field public static final int ACTIVITY_INTENSITY_TYPE_VIGOROUS = 1; // 0x1
     field public static final androidx.health.connect.client.records.ActivityIntensityRecord.Companion Companion;
     field public static final androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> DURATION_TOTAL;
-    field public static final androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> INTENSITY_MINUTES_TOTAL;
+    field public static final androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> INTENSITY_MINUTES_TOTAL;
     field public static final androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> MODERATE_DURATION_TOTAL;
     field public static final androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> VIGOROUS_DURATION_TOTAL;
   }
@@ -298,7 +298,7 @@ package androidx.health.connect.client.records {
     property public static int ACTIVITY_INTENSITY_TYPE_MODERATE;
     property public static int ACTIVITY_INTENSITY_TYPE_VIGOROUS;
     property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> DURATION_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> INTENSITY_MINUTES_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> INTENSITY_MINUTES_TOTAL;
     property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> MODERATE_DURATION_TOTAL;
     property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> VIGOROUS_DURATION_TOTAL;
   }

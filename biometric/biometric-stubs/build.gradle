@@ -40,8 +40,7 @@ android {
 
 androidx {
     name = "androidx.biometric:biometric-stubs"
-    type = SoftwareType.PUBLISHED_LIBRARY
-    doNotDocumentReason = "Not published to maven"
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
     inceptionYear = "2025"
     description = "Stubs for Android Biometric classes in older Android APIs"
 }

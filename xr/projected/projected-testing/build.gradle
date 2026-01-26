@@ -35,6 +35,8 @@ dependencies {
     implementation(libs.mockitoCore4)
     implementation(libs.mockitoKotlin4)
     implementation("androidx.annotation:annotation:1.8.1")
+    implementation(project(":xr:projected:projected-binding"))
+    implementation(project(":xr:projected:projected"))
 }
 
 android {

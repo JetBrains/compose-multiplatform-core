@@ -611,7 +611,10 @@ public final class Recorder implements VideoOutput {
             int sessionType) {
         int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
                 ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
-        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource);
+        String videoMimeType = getObservableData(mMediaSpec).getVideoSpec().getMimeType();
+
+        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource,
+                videoMimeType);
     }
 
     /**
@@ -1271,18 +1274,8 @@ public final class Recorder implements VideoOutput {
         EncoderProfilesResolver profilesResolver = getEncoderProfilesResolver(
                 surfaceRequest.getCamera().getCameraInfo(),
                 surfaceRequest.getSessionType());
-        Quality highestSupportedQuality = profilesResolver.findNearestHigherSupportedQualityFor(
+        mResolvedEncoderProfiles = profilesResolver.findNearestHigherSupportedEncoderProfilesFor(
                 surfaceSize, dynamicRange);
-        Logger.d(TAG, "Using supported quality of " + highestSupportedQuality
-                + " for surface size " + surfaceSize);
-        if (highestSupportedQuality != Quality.NONE) {
-            mResolvedEncoderProfiles = profilesResolver.getProfiles(highestSupportedQuality,
-                    dynamicRange);
-            if (mResolvedEncoderProfiles == null) {
-                throw new AssertionError("Camera advertised available quality but did not "
-                        + "produce EncoderProfiles  for advertised quality.");
-            }
-        }
         Logger.d(TAG, "mResolvedEncoderProfiles = " + mResolvedEncoderProfiles);
 
         if (mSetupVideoTask != null) {
@@ -3094,7 +3087,18 @@ public final class Recorder implements VideoOutput {
      */
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE);
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, VideoSpec.MIME_TYPE_UNSPECIFIED);
+    }
+
+    /**
+     * Returns the {@link VideoCapabilities} of Recorder with respect to input camera information
+     * and video mime type.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
+            @NonNull String mimeType) {
+        return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, mimeType);
     }
 
     /**
@@ -3117,7 +3121,7 @@ public final class Recorder implements VideoOutput {
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                videoCapabilitiesSource);
+                videoCapabilitiesSource, VideoSpec.MIME_TYPE_UNSPECIFIED);
     }
 
     /**
@@ -3162,18 +3166,25 @@ public final class Recorder implements VideoOutput {
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         VideoCapabilities videoCapabilities = getVideoCapabilitiesInternal(
-                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource);
+                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource,
+                VideoSpec.MIME_TYPE_UNSPECIFIED);
         return videoCapabilities.getSupportedDynamicRanges().isEmpty() ? null : videoCapabilities;
     }
 
     private static @NonNull VideoCapabilities getVideoCapabilitiesInternal(
             @VideoRecordingType int videoRecordingType,
             @NonNull CameraInfo cameraInfo,
-            @VideoCapabilitiesSource int videoCapabilitiesSource) {
+            @VideoCapabilitiesSource int videoCapabilitiesSource,
+            @NonNull String mimeType) {
         CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) cameraInfo;
-        EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
-                videoRecordingType, cameraInfo, videoCapabilitiesSource);
-        return new RecorderVideoCapabilities(profilesResolver, cameraInfoInternal);
+        if (VideoSpec.MIME_TYPE_UNSPECIFIED.equals(mimeType)) {
+            EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
+                    videoRecordingType, cameraInfo, videoCapabilitiesSource);
+            return new RecorderVideoCapabilities(profilesResolver, cameraInfoInternal);
+        } else {
+            return new MimeMatchedVideoCapabilities(mimeType, cameraInfoInternal,
+                    DEFAULT_VIDEO_ENCODER_INFO_FINDER);
+        }
     }
 
     /** Gets the {@link EncoderProfilesResolver} for the given camera info. */

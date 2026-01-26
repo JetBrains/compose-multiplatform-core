@@ -40,6 +40,7 @@ import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
 import androidx.test.rule.GrantPermissionRule;
+import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -47,6 +48,8 @@ import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
 import androidx.xr.scenecore.runtime.MovableComponent;
 import androidx.xr.scenecore.runtime.MoveEvent;
 import androidx.xr.scenecore.runtime.MoveEventListener;
@@ -55,9 +58,11 @@ import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.PlaneSemantic;
 import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.node.InputEvent;
 import com.android.extensions.xr.node.Mat4f;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeRepository;
@@ -65,6 +70,7 @@ import com.android.extensions.xr.node.NodeTransform;
 import com.android.extensions.xr.node.Quatf;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.ReformOptions;
+import com.android.extensions.xr.node.ShadowInputEvent;
 import com.android.extensions.xr.node.ShadowNode;
 import com.android.extensions.xr.node.ShadowNodeTransform;
 import com.android.extensions.xr.node.ShadowReformEvent;
@@ -87,6 +93,8 @@ import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = {Config.TARGET_SDK})
@@ -110,6 +118,7 @@ public class MovableComponentImplTest {
     private SpatialSceneRuntime mFakeRuntime;
     private ActivitySpaceImpl mActivitySpaceImpl;
     private Node mActivitySpaceNode;
+    private final GltfFeature mMockGltfFeature = Mockito.mock(GltfFeature.class);
 
     @Before
     public void setUp() {
@@ -206,6 +215,137 @@ public class MovableComponentImplTest {
         assertThat(options.getFlags()).isEqualTo(ReformOptions.FLAG_POSE_RELATIVE_TO_PARENT);
         assertThat(options.getEventCallback()).isNotNull();
         assertThat(options.getEventExecutor()).isNotNull();
+    }
+
+    private GltfEntityImpl createGltfEntity(Activity activity) {
+        NodeHolder<?> nodeHolder = new NodeHolder<>(mXrExtensions.createNode(), Node.class);
+        GltfFeature fakeGltfFeature =
+                FakeGltfFeature.Companion.createWithMockFeature(mMockGltfFeature, nodeHolder);
+
+        return new GltfEntityImpl(
+                activity,
+                fakeGltfFeature,
+                mActivitySpaceImpl,
+                mXrExtensions,
+                mEntityManager,
+                mFakeExecutor);
+    }
+
+    @Test
+    public void addSystemMovableComponentToGltfEntity_returnsTrue() {
+        GltfEntity entity = createGltfEntity(mActivity);
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        /* systemMovable= */ true,
+                        /* scaleInZ= */ false,
+                        /* userAnchorable= */ false,
+                        mActivitySpaceImpl,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+
+        assertThat(entity.addComponent(movableComponent)).isTrue();
+    }
+
+    @Test
+    public void addCustomMovableComponentToGltfEntity_returnsTrue() {
+        GltfEntity entity = createGltfEntity(mActivity);
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        /* systemMovable= */ false,
+                        /* scaleInZ= */ false,
+                        /* userAnchorable= */ false,
+                        mActivitySpaceImpl,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+
+        assertThat(entity.addComponent(movableComponent)).isTrue();
+    }
+
+    @Test
+    public void addAnchorableMovableComponentToGltfEntity_returnsTrue() {
+        GltfEntity entity = createGltfEntity(mActivity);
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        /* systemMovable= */ true,
+                        /* scaleInZ= */ false,
+                        /* userAnchorable= */ true,
+                        mActivitySpaceImpl,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+
+        assertThat(entity.addComponent(movableComponent)).isTrue();
+    }
+
+    @Test
+    public void addMovableComponentToGltfEntity_ReparentsGltfEntity() {
+        GltfEntity gltfEntity = createGltfEntity(mActivity);
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        true,
+                        false,
+                        false,
+                        mActivitySpaceImpl,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+
+        AndroidXrEntity entity = (AndroidXrEntity) gltfEntity;
+        // Cache parent before adding the component
+        Node parentBefore = mNodeRepository.getParent(entity.mNode);
+        // Assert the component has be added.
+        assertThat(gltfEntity.addComponent(movableComponent)).isTrue();
+        // Get parent after adding the component
+        Node parentAfter = mNodeRepository.getParent(entity.mNode);
+        // Assert it has been reparented by Impress.
+        assertThat(parentBefore != parentAfter).isTrue();
+    }
+
+    @Test
+    public void movableComponentAttachedToGltf_propagatesInputEvents() {
+        GltfEntity gltfEntity = createGltfEntity(mActivity);
+        AtomicReference<MoveEvent> moveEvent = new AtomicReference<>(null);
+        AtomicInteger moveEventCounter = new AtomicInteger(0);
+        MovableComponent movableComponent =
+                new MovableComponentImpl(
+                        false,
+                        false,
+                        false,
+                        mActivitySpaceImpl,
+                        mPanelShadowRenderer,
+                        mFakeExecutor);
+        assertThat(movableComponent).isNotNull();
+        MoveEventListener eventListener =
+                event -> {
+                    moveEvent.set(event);
+                    moveEventCounter.incrementAndGet();
+                };
+        movableComponent.addMoveEventListener(eventListener);
+
+        InputEvent inputEvent =
+                ShadowInputEvent.create(
+                        InputEvent.SOURCE_UNKNOWN,
+                        InputEvent.POINTER_TYPE_DEFAULT,
+                        /* timestamp */ 0,
+                        new Vec3(0, 0, 0),
+                        new Vec3(1, 1, 1),
+                        InputEvent.DISPATCH_FLAG_NONE,
+                        InputEvent.ACTION_DOWN);
+        AndroidXrEntity entity = (AndroidXrEntity) gltfEntity;
+        ShadowNode shadowNode = ShadowNode.extract(entity.mNode);
+        assertThat(gltfEntity.addComponent(movableComponent)).isTrue();
+
+        assertThat(shadowNode.getInputListener()).isNotNull();
+        assertThat(shadowNode.getInputExecutor()).isEqualTo(mFakeExecutor);
+        shadowNode
+                .getInputExecutor()
+                .execute(() -> shadowNode.getInputListener().accept(inputEvent));
+
+        mFakeExecutor.runAll();
+        assertThat(moveEventCounter.get() == 1).isTrue();
+        assertThat(moveEvent.get()).isNotNull();
     }
 
     @Test

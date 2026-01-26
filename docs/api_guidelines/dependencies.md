@@ -397,14 +397,17 @@ for external clients.
 
 For this reason, we try to separate (1) and (2) by pinning the Kotlin language
 and API versions until the new compiler has been in use in AndroidX for at least
-three months.
+three months. `kotlinc` only
+[supports three previous minor language versions](https://kotlinlang.org/docs/kotlin-evolution-principles.html#compatibility-options),
+therefore if we update to a `kotlinc` version that does not support the current
+AndroidX default `kotlinVersion`, the androidx default will be changed.
 
 Library owners *may* in limited cases update their Kotlin language version early
 by specifying the `kotlinVersion` DSL property:
 
 ```
 androidx {
-    kotlinVersion KOTLIN_1_9
+    kotlinVersion KOTLIN_2_2
 }
 ```
 

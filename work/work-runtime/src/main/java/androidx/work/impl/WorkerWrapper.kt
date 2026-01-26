@@ -121,30 +121,26 @@ public class WorkerWrapper internal constructor(builder: Builder) {
                         }
                     }
                 )
-            val workExecutionListener = configuration.getWorkExecutionEventListener()
+            val workExecutionListener = configuration.getExecutionEventListener()
             if (workExecutionListener != null && startedWork) {
                 val workInfoSnapshot = workSpecDao.getWorkStatusPojoForId(workSpecId)?.toWorkInfo()
-                workInfoSnapshot?.let {
-                    val listenerDispatcher =
-                        configuration.workExecutionEventExecutor.asCoroutineDispatcher()
-                    withContext(listenerDispatcher) {
-                        when (resolution) {
-                            is Resolution.Finished -> {
-                                workExecutionListener.onEnd(resolution.result, workInfoSnapshot)
-                            }
-                            is Resolution.Failed -> {
-                                workExecutionListener.onException(
-                                    resolution.throwable,
-                                    workInfoSnapshot,
-                                )
-                            }
-                            is Resolution.Stopped -> {
-                                workExecutionListener.onStop(resolution.reason, workInfoSnapshot)
-                            }
-                            is Resolution.WorkerWrapperFailure -> {
-                                // Should theoretically not run since a WorkerWrapper exception
-                                // should occur before startWork
-                            }
+                if (workInfoSnapshot != null) {
+                    when (resolution) {
+                        is Resolution.Finished -> {
+                            workExecutionListener.onFinished(resolution.result, workInfoSnapshot)
+                        }
+                        is Resolution.Failed -> {
+                            workExecutionListener.onException(
+                                resolution.throwable,
+                                workInfoSnapshot,
+                            )
+                        }
+                        is Resolution.Stopped -> {
+                            workExecutionListener.onStopped(resolution.reason, workInfoSnapshot)
+                        }
+                        is Resolution.WorkerWrapperFailure -> {
+                            // Should theoretically not run since a WorkerWrapper exception
+                            // should occur before startWork
                         }
                     }
                 }
@@ -342,15 +338,11 @@ public class WorkerWrapper internal constructor(builder: Builder) {
         val foregroundUpdater = params.foregroundUpdater
         val mainDispatcher = workTaskExecutor.getMainThreadExecutor().asCoroutineDispatcher()
         try {
-            val workExecutionListener = configuration.getWorkExecutionEventListener()
-            workExecutionListener?.let {
+            val workExecutionListener = configuration.getExecutionEventListener()
+            if (workExecutionListener != null) {
                 val workInfoSnapshot = workSpecDao.getWorkStatusPojoForId(workSpecId)?.toWorkInfo()
-                workInfoSnapshot?.let {
-                    val listenerDispatcher =
-                        configuration.workExecutionEventExecutor.asCoroutineDispatcher()
-                    withContext(listenerDispatcher) {
-                        workExecutionListener.onStart(workInfoSnapshot)
-                    }
+                if (workInfoSnapshot != null) {
+                    workExecutionListener.onStarted(workInfoSnapshot)
                 }
             }
             startedWork = true

@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT_ARRAY;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
@@ -321,11 +322,17 @@ public class PathExpression extends Operation implements VariableSupport, Serial
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Data Operations", OP_CODE, CLASS_NAME)
-                .description("Encode a Path ")
-                .field(DocumentedOperation.INT, "id", "id string")
-                .field(INT, "length", "id string")
-                .field(FLOAT_ARRAY, "pathData", "length", "path encoded as floats");
+        doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .description("Generate a path from dynamic expressions (X, Y over a range)")
+                .field(DocumentedOperation.INT, "id", "The ID of the resulting path")
+                .field(INT, "flags", "Configuration flags (LOOP, POLAR, etc.)")
+                .field(FLOAT, "min", "The minimum range value")
+                .field(FLOAT, "max", "The maximum range value")
+                .field(FLOAT, "count", "The number of points to generate")
+                .field(INT, "lenX", "The length of the X expression")
+                .field(FLOAT_ARRAY, "expressionX", "The X coordinate expression (RPN)")
+                .field(INT, "lenY", "The length of the Y expression")
+                .field(FLOAT_ARRAY, "expressionY", "The Y coordinate expression (RPN)");
     }
 
     @Override

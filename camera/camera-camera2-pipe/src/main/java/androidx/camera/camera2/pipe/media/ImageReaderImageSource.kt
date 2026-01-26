@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.media
 import android.media.ImageReader
 import android.os.Build
 import android.view.Surface
+import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.ImageSourceConfig
 import androidx.camera.camera2.pipe.OutputId
@@ -32,8 +33,11 @@ import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
-internal class ImageReaderImageSources @Inject constructor(private val threads: Threads) :
-    ImageSources {
+internal class ImageReaderImageSources
+@Inject
+constructor(private val threads: Threads, cameraPipeConfig: CameraPipe.Config) : ImageSources {
+    private val platformApiCompat = cameraPipeConfig.platformApiCompat
+
     override fun createImageSource(
         cameraStream: CameraStream,
         imageSourceConfig: ImageSourceConfig,
@@ -44,6 +48,7 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
             imageSourceConfig.usageFlags,
             imageSourceConfig.defaultDataSpace,
             imageSourceConfig.defaultHardwareBufferFormat,
+            imageSourceConfig.enableConcurrentOutputs,
         )
     }
 
@@ -53,6 +58,7 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
         usageFlags: Long?,
         defaultDataSpace: Int?,
         defaultHardwareBufferFormat: Int?,
+        enableConcurrentOutputs: Boolean,
     ): ImageSource {
         require(cameraStream.outputs.isNotEmpty()) { "$cameraStream must have outputs." }
         require(capacity > 0) { "Capacity ($capacity) must be > 0" }
@@ -60,6 +66,11 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
             "Capacity for creating new ImageReaderImageSources is restricted to " +
                 "$IMAGE_SOURCE_CAPACITY. Android has undocumented internal limits that can vary " +
                 "per device."
+        }
+        if (enableConcurrentOutputs) {
+            check(cameraStream.outputs.size > 1) {
+                "Cannot enable concurrent outputs for a single output camera stream."
+            }
         }
 
         val handlerProvider = { threads.camera2Handler }
@@ -125,6 +136,8 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
                     capacity,
                     executorProvider(),
                     usage,
+                    enableConcurrentOutputs,
+                    platformApiCompat,
                 )
             return ImageReaderImageSource.create(imageReader)
         }

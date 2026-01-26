@@ -27,8 +27,7 @@ internal expect inline fun TraceContext.currentProcessTrack(): ProcessTrack
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
 @Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(Scope.LIBRARY_GROUP)
-public class PerfettoTracer(context: TraceContext, name: String) :
-    Tracer(name = name, isEnabled = context.isEnabled) {
+public class PerfettoTracer(context: TraceContext) : Tracer(isEnabled = context.isEnabled) {
     // The process track
     @JvmField internal var process: ProcessTrack = context.currentProcessTrack()
 
@@ -165,9 +164,5 @@ public class PerfettoTracer(context: TraceContext, name: String) :
     override fun instant(category: String, name: String): EventMetadataCloseable {
         val track = currentThreadTrack()
         return track.instant(category = category, name = name)
-    }
-
-    override fun close() {
-        // Does nothing
     }
 }

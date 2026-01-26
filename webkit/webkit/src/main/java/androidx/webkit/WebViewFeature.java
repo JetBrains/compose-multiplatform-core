@@ -135,7 +135,8 @@ public class WebViewFeature {
             CUSTOM_REQUEST_HEADERS,
             ADD_QUIC_HINTS_V1,
             NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED,
-            WEB_VIEW_NAVIGATION_LISTENER_EXPERIMENTAL_V2
+            WEB_VIEW_NAVIGATION_LISTENER_EXPERIMENTAL_V2,
+            PAGE_GET_URL
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -893,6 +894,12 @@ public class WebViewFeature {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String PROVIDER_WEAKLY_REF_WEBVIEW = "PROVIDER_WEAKLY_REF_WEBVIEW";
+
+    /**
+     * Feature for {@link Page#getUrl()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String PAGE_GET_URL = "PAGE_GET_URL";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

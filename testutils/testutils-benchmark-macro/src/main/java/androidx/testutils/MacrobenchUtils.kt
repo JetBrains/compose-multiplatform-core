@@ -192,8 +192,18 @@ fun defaultComposeScrollingMetrics(): List<Metric> =
             mode = TraceSectionMetric.Mode.Sum,
         ),
         TraceSectionMetric(
-            sectionName = "Compose:applyChanges",
+            sectionNames =
+                listOf(
+                    "Compose:applyChanges",
+                    "Compose:recordChanges",
+                    "PausedComposition:applyChanges",
+                ),
             label = "applyChanges",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:onRemembered",
+            label = "onRemembered",
             mode = TraceSectionMetric.Mode.Sum,
         ),
         TraceSectionMetric(
@@ -209,6 +219,51 @@ fun defaultComposeScrollingMetrics(): List<Metric> =
         TraceSectionMetric(
             sectionName = "compose:lazy:prefetch:measure",
             label = "premeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "AndroidOwner:outOfFrameExecutor",
+            label = "outOfFrameExecutor",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:insertMovableContent",
+            label = "movableContent",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:applyObservers",
+            label = "applyObservers",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:LaunchedEffect", "Compose:coroutineScope"),
+            label = "composeCoroutines",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:lookaheadMeasure", "Compose:lookaheadRemeasure"),
+            label = "lookaheadMeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionNames = listOf("Compose:measure", "Compose:remeasure"),
+            label = "composeMeasure",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:lookaheadLayout",
+            label = "lookaheadLayout",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "Compose:layout",
+            label = "composeLayout",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
+        TraceSectionMetric(
+            sectionName = "AndroidOwner:draw",
+            label = "composeDraw",
             mode = TraceSectionMetric.Mode.Sum,
         ),
     )

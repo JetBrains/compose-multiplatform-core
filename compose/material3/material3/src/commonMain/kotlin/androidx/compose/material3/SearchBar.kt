@@ -67,7 +67,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
@@ -649,14 +648,7 @@ private fun ExpandedFullScreenSearchBarImpl(
     properties: DialogProperties = DialogProperties(),
     content: @Composable (FocusRequester, PredictiveBackState) -> Unit,
 ) {
-    if (
-        !state.isExpanded
-        // Workaround for b/442852007.
-        // Don't remove the window until the soft keyboard has finished its hide animation.
-        && !isImeVisible()
-    ) {
-        return
-    }
+    if (!state.isExpanded) return
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -815,14 +807,7 @@ private fun ExpandedDockedSearchBarImpl(
     properties: PopupProperties,
     content: @Composable (FocusRequester) -> Unit,
 ) {
-    if (
-        !state.isExpanded
-        // Workaround for b/442852007.
-        // Don't remove the window until the soft keyboard has finished its hide animation.
-        && !isImeVisible()
-    ) {
-        return
-    }
+    if (!state.isExpanded) return
 
     val positionProvider =
         remember(state) {
@@ -2984,7 +2969,11 @@ internal fun SearchBarImpl(
             {
                 Column(Modifier.graphicsLayer { alpha = animationProgress.value }) {
                     HorizontalDivider(color = colors.dividerColor)
-                    content()
+                    CompositionLocalProvider(
+                        LocalContentColor provides contentColorFor(colors.containerColor)
+                    ) {
+                        content()
+                    }
                 }
             }
         } else null
@@ -3633,15 +3622,6 @@ private val UnspecifiedTextFieldColors: TextFieldColors =
 
 // TODO: Replace to `WindowInfo.containerSize` once available
 @Composable internal expect fun getWindowContainerHeight(): Dp
-
-// WindowInsets.isImeVisible is experimental (and Android-only)
-@Composable
-private fun isImeVisible(): Boolean {
-    val density = LocalDensity.current
-    val ime = WindowInsets.ime
-    val isImeVisible = remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
-    return isImeVisible.value
-}
 
 private const val LayoutIdInputField = "InputField"
 private const val LayoutIdSurface = "Surface"

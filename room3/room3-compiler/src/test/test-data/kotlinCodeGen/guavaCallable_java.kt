@@ -3,6 +3,8 @@ import androidx.room3.guava.createListenableFuture
 import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.prepare
+import androidx.sqlite.step
 import com.google.common.util.concurrent.ListenableFuture
 import javax.`annotation`.processing.Generated
 import kotlin.Array

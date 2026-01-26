@@ -162,7 +162,7 @@ public class ActivitySpaceImpl(
                     "ActivitySpace is a root space and it does not have a parent."
                 )
             Space.ACTIVITY -> activitySpaceScale
-            Space.REAL_WORLD -> super.worldSpaceScale
+            Space.REAL_WORLD -> worldSpaceScale
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
     }

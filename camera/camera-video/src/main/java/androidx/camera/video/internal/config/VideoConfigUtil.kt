@@ -266,6 +266,16 @@ public object VideoConfigUtil {
     }
 
     /**
+     * Returns a set of supported [DynamicRange]s for the given video MIME type.
+     *
+     * @param mime The video MIME type to query.
+     * @return A [Set] of [DynamicRange] compatible with the video MIME type.
+     */
+    public fun getDynamicRangesForMime(mime: String): Set<DynamicRange> {
+        return DynamicRangeFormatComboRegistry.getDynamicRangesForVideoMime(mime)
+    }
+
+    /**
      * Resolves video related information into a [VideoEncoderConfig].
      *
      * @param videoMimeInfo the video mime info.
