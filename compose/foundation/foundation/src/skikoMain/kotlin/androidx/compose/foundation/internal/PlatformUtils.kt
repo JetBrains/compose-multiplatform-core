@@ -16,10 +16,4 @@
 
 package androidx.compose.foundation.internal
 
-import androidx.compose.ui.graphics.Canvas
-
 internal actual fun isAutofillAvailable(): Boolean = false
-
-@Suppress("INVISIBLE_REFERENCE")
-internal val Canvas.nativeCanvas: org.jetbrains.skia.Canvas
-    get() = (this as androidx.compose.ui.graphics.SkiaBackedCanvas).skia

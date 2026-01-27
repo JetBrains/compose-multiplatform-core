@@ -19,7 +19,6 @@ package androidx.compose.foundation.draganddrop
 import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.internal.nativeCanvas
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.DrawResult
@@ -28,6 +27,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerInputScope
 import kotlinx.coroutines.coroutineScope

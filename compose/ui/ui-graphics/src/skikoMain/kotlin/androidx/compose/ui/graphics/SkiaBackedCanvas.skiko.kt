@@ -51,7 +51,7 @@ internal actual fun ActualCanvas(image: ImageBitmap): Canvas {
  */
 fun org.jetbrains.skia.Canvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
 
-internal val Canvas.nativeCanvas: org.jetbrains.skia.Canvas
+val Canvas.nativeCanvas: org.jetbrains.skia.Canvas
     get() = (this as SkiaBackedCanvas).skia
 
 // This was added for internal usage from old render layers (another submodule),
