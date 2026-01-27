@@ -46,7 +46,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk { version = release(31) }
+        minSdk = 31
     }
 
     namespace = "androidx.core.uwb.rxjava3"

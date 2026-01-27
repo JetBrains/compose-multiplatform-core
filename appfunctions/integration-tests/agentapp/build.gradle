@@ -53,7 +53,7 @@ android {
     namespace = "androidx.appfunctions.integration.test.agent"
     compileSdk = 36
     defaultConfig {
-        minSdk { version = release(33) }
+        minSdk = 33
 
         testInstrumentationRunnerArgument("TARGET_APP_APK", targetAppApkName)
     }

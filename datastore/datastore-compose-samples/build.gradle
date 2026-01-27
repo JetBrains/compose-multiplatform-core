@@ -56,6 +56,6 @@ android {
     compileSdk = 35
     namespace = "com.example.datastorecomposesamples"
     defaultConfig {
-        minSdk { version = release(28) }
+        minSdk = 28
     }
 }

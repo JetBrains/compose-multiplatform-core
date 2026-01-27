@@ -45,7 +45,7 @@ dependencies {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk { version = release(24) }
+        minSdk = 24
     }
     namespace = "androidx.xr.compose.material3"
 }

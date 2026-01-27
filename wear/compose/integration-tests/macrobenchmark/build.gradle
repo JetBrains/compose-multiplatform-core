@@ -24,7 +24,7 @@ plugins {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk { version = release(29) }
+        minSdk = 29
     }
     namespace = "androidx.wear.compose.integration.macrobenchmark"
     targetProjectPath = ":wear:compose:integration-tests:macrobenchmark-target"

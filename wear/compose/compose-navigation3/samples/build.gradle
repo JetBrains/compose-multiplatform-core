@@ -55,7 +55,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk { version = release(25) }
+        minSdk = 25
     }
     namespace = "androidx.wear.compose.navigation3.samples"
 }

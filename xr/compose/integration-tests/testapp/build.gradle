@@ -28,7 +28,7 @@ android {
     namespace = "androidx.xr.compose.testapp"
     compileSdk = 35
     defaultConfig {
-        minSdk { version = release(34) }
+        minSdk = 34
     }
     buildTypes {
         release {

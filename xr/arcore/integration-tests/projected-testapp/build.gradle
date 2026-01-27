@@ -60,7 +60,7 @@ android {
     namespace = "androidx.xr.arcore.projected.testapp"
 
     defaultConfig {
-        minSdk { version = release(36) }
+        minSdk = 36
     }
 
     buildTypes {

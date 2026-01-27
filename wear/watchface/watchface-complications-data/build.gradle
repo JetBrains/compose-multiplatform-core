@@ -62,7 +62,7 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdk { version = release(26) }
+        minSdk = 26
         consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.wear.watchface.complications.data"

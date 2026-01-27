@@ -27,7 +27,7 @@ android {
     namespace = "androidx.tv.integration.macrobenchmark.target"
 
     defaultConfig {
-        minSdk { version = release(28) }
+        minSdk = 28
     }
 
     buildTypes {

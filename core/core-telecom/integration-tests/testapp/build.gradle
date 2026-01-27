@@ -26,7 +26,7 @@ android {
     compileSdkMinor = 1
     defaultConfig {
         applicationId = "androidx.core.telecom.test"
-        minSdk { version = release(26) }
+        minSdk = 26
     }
 
     buildTypes {

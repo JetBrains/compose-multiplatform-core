@@ -23,7 +23,7 @@ android {
     compileSdk = 36
     namespace = "androidx.wear.compose.remote.integration.demos"
     defaultConfig {
-        minSdk { version = release(29) }
+        minSdk = 29
     }
     useLibrary("wear-sdk")
 }

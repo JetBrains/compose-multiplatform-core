@@ -37,7 +37,7 @@ android {
     namespace = "androidx.compose.integration.hero.sysui.macrobenchmark.target"
     compileSdk = 36
     defaultConfig {
-        minSdk { version = release(31) } // This benchmark does not run below API 31
+        minSdk = 31 // This benchmark does not run below API 31
     }
 
     buildTypes {

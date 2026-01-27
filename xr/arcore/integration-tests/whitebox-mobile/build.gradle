@@ -35,7 +35,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdk { version = release(27) }
+        minSdk = 27
     }
     buildFeatures { viewBinding = true }
     namespace = "androidx.xr.arcore.apps.whitebox.mobile"

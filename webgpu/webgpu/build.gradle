@@ -64,7 +64,7 @@ androidx {
 android {
     namespace = "androidx.webgpu"
     defaultConfig {
-        minSdk { version = release(24) }
+        minSdk = 24
     }
 }
 

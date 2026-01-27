@@ -47,7 +47,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk { version = release(24) }
+        minSdk = 24
     }
 
     namespace = "androidx.xr.scenecore.guava"

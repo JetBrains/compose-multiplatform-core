@@ -56,7 +56,7 @@ androidx {
 android {
     compileSdk = 35
     defaultConfig {
-        minSdk { version = release(25) }
+        minSdk = 25
     }
     aaptOptions {
         noCompress "ttf"

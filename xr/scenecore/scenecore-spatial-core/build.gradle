@@ -73,7 +73,7 @@ dependencies {
 android {
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")
-        minSdk { version = release(24) }
+        minSdk = 24
     }
     sourceSets {
         androidTest {

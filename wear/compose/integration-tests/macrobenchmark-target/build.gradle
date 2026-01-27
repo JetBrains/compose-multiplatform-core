@@ -26,7 +26,7 @@ android {
     compileSdk = 35
 
     namespace = "androidx.wear.compose.integration.macrobenchmark.target"
-    defaultConfig.minSdk { version = release(25) }
+    defaultConfig.minSdk = 25
     buildTypes {
         release {
             minifyEnabled = true

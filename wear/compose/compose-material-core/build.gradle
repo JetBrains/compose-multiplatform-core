@@ -61,7 +61,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk { version = release(25) }
+        minSdk = 25
         consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.wear.compose.material.core"

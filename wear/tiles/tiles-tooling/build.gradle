@@ -40,7 +40,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk { version = release(26) }
+        minSdk = 26
     }
 
     namespace = "androidx.wear.tiles.tooling"

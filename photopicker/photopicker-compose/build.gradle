@@ -52,7 +52,7 @@ android {
     compileSdk = 36
     compileSdkExtension = 19
     defaultConfig {
-        minSdk { version = release(34) }
+        minSdk = 34
     }
 }
 

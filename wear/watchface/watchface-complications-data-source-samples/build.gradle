@@ -29,7 +29,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk { version = release(29) }
+        minSdk = 29
     }
 
     buildTypes {

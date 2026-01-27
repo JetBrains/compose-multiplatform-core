@@ -27,7 +27,7 @@ android {
     compileSdkMinor = 1
     defaultConfig {
         applicationId = "androidx.core.telecom.icstest"
-        minSdk { version = release(29) } // Move down to 23 if we support CallingApp:checkDialerRole for < Q
+        minSdk = 29 // Move down to 23 if we support CallingApp:checkDialerRole for < Q
     }
 
     buildTypes {
