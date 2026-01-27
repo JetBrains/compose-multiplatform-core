@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.text
+package androidx.compose.ui.internal
 
-import java.text.BreakIterator
+import androidx.compose.ui.graphics.Canvas
 
-internal actual fun String.findPrecedingBreak(index: Int): Int {
-    val it = BreakIterator.getCharacterInstance()
-    it.setText(this)
-    return it.preceding(index)
-}
-
-internal actual fun String.findFollowingBreak(index: Int): Int {
-    val it = BreakIterator.getCharacterInstance()
-    it.setText(this)
-    return it.following(index)
-}
+@Suppress("INVISIBLE_REFERENCE")
+internal val Canvas.nativeCanvas: org.jetbrains.skia.Canvas
+    get() = (this as androidx.compose.ui.graphics.SkiaBackedCanvas).skia
