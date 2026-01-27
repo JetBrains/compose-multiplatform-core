@@ -36,7 +36,7 @@ internal fun NSLocale.isRtl(): Boolean =
 
 
 @Immutable
-actual class Locale(val platformLocale: NSLocale) {
+actual class Locale internal constructor(internal val platformLocale: NSLocale) {
     actual val language: String
         get() = platformLocale.languageCode
     actual val script: String
