@@ -88,6 +88,8 @@ def addMavenRepositories(RepositoryHandler handler) {
             url = "https://central.sonatype.com/repository/maven-snapshots"
         }
         handler.mavenLocal()
+        handler.maven { url = "https://redirector.kotlinlang.org/maven/dev" }
+        handler.maven { url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev" }
     }
     // Ordering appears to be important: b/229733266
     def androidPluginRepoOverride = System.getenv("GRADLE_PLUGIN_REPO")

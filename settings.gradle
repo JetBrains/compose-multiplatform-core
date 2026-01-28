@@ -17,6 +17,8 @@ pluginManagement {
                 url = "https://plugins.gradle.org/m2/"
             }
         }
+        maven { url = "https://redirector.kotlinlang.org/maven/dev" }
+        maven { url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev" }
     }
     includeBuild("androidx-settings-plugins")
 }
