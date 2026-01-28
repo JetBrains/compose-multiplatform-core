@@ -194,8 +194,8 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
             image.height.toFloat(),
             topLeftOffset.x,
             topLeftOffset.y,
-            image.width.toFloat(),
-            image.height.toFloat(),
+            topLeftOffset.x + image.width.toFloat(),
+            topLeftOffset.y + image.height.toFloat(),
             paint
         )
     }
@@ -212,12 +212,12 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
             image = image,
             srcLeft = srcOffset.x.toFloat(),
             srcTop = srcOffset.y.toFloat(),
-            srcRight = srcSize.width.toFloat(),
-            srcBottom = srcSize.height.toFloat(),
+            srcRight = srcOffset.x.toFloat() + srcSize.width.toFloat(),
+            srcBottom = srcOffset.y.toFloat() + srcSize.height.toFloat(),
             dstLeft = dstOffset.x.toFloat(),
             dstTop = dstOffset.y.toFloat(),
-            dstRight = dstSize.width.toFloat(),
-            dstBottom = dstSize.height.toFloat(),
+            dstRight = dstOffset.x.toFloat() + dstSize.width.toFloat(),
+            dstBottom = dstOffset.y.toFloat() + dstSize.height.toFloat(),
             paint = paint
         )
     }
