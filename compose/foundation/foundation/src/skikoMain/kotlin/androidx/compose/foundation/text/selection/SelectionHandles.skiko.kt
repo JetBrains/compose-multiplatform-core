@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -137,29 +136,29 @@ internal fun Modifier.drawSelectionHandle(
     val paddingPx = with(density) { PADDING.toPx() }
     val radiusPx = with(density) { RADIUS.toPx() }
     val thicknessPx = with(density) { THICKNESS.toPx() }
-        onDrawWithContent {
-            drawContent()
-            if (!iconVisible()) return@onDrawWithContent
+    onDrawWithContent {
+        drawContent()
+        if (!iconVisible()) return@onDrawWithContent
 
-            // vertical line
-            drawRect(
-                color = handleColor,
-                topLeft = Offset(
-                    x = paddingPx + radiusPx - thicknessPx / 2,
-                    y = if (isLeft) paddingPx + radiusPx else 0f
-                ),
-                size = Size(thicknessPx, lineHeight + radiusPx)
+        // vertical line
+        drawRect(
+            color = handleColor,
+            topLeft = Offset(
+                x = paddingPx + radiusPx - thicknessPx / 2,
+                y = if (isLeft) paddingPx + radiusPx else 0f
+            ),
+            size = Size(thicknessPx, lineHeight + radiusPx)
+        )
+        // handle circle
+        drawCircle(
+            color = handleColor,
+            radius = radiusPx,
+            center = center.copy(
+                y = if (isLeft) paddingPx + radiusPx else lineHeight + radiusPx
             )
-            // handle circle
-            drawCircle(
-                color = handleColor,
-                radius = radiusPx,
-                center = center.copy(
-                    y = if (isLeft) paddingPx + radiusPx else lineHeight + radiusPx
-                )
-            )
-        }
+        )
     }
+}
 
 @Composable
 internal fun HandlePopup(
