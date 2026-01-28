@@ -62,10 +62,20 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         skikoVersion = toml.getTable("versions")!!.getString("skiko")!!
     }
 
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-9480 - migrate to applyDefaultHierarchyTemplate, and then the manual wiring will be obsolete
+    private val jvmAndAndroidMain by lazy {
+        val commonMain = multiplatformExtension.sourceSets.findByName("commonMain")!!
+        multiplatformExtension.sourceSets.findByName("jvmAndAndroidMain")
+            ?: multiplatformExtension.sourceSets.create("jvmAndAndroidMain").apply {
+                dependsOn(commonMain)
+            }
+    }
+
     override fun android(): Unit = multiplatformExtension.run {
         androidTarget()
 
         val androidMain = sourceSets.getByName("androidMain")
+        androidMain.dependsOn(jvmAndAndroidMain)
         val jvmMain = getOrCreateJvmMain()
         androidMain.dependsOn(jvmMain)
 
@@ -78,6 +88,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         jvm("desktop")
 
         val desktopMain = sourceSets.getByName("desktopMain")
+        desktopMain.dependsOn(jvmAndAndroidMain)
         val jvmMain = getOrCreateJvmMain()
         desktopMain.dependsOn(jvmMain)
 
@@ -207,45 +218,35 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     }
 
     override fun darwin(): Unit = multiplatformExtension.run {
-        macosX64()
         macosArm64()
-        iosX64("iosX64")
         iosArm64("iosArm64")
         iosSimulatorArm64("iosSimulatorArm64")
 
         val nativeMain = getOrCreateNativeMain()
         val darwinMain = sourceSets.create("darwinMain")
         val macosMain = sourceSets.create("macosMain")
-        val macosX64Main = sourceSets.getByName("macosX64Main")
         val macosArm64Main = sourceSets.getByName("macosArm64Main")
         val iosMain = sourceSets.create("iosMain")
-        val iosX64Main = sourceSets.getByName("iosX64Main")
         val iosArm64Main = sourceSets.getByName("iosArm64Main")
         val iosSimulatorArm64Main = sourceSets.getByName("iosSimulatorArm64Main")
         darwinMain.dependsOn(nativeMain)
         macosMain.dependsOn(darwinMain)
-        macosX64Main.dependsOn(macosMain)
         macosArm64Main.dependsOn(macosMain)
         iosMain.dependsOn(darwinMain)
-        iosX64Main.dependsOn(iosMain)
         iosArm64Main.dependsOn(iosMain)
         iosSimulatorArm64Main.dependsOn(iosMain)
 
         val nativeTest = getOrCreateNativeTest()
         val darwinTest = sourceSets.create("darwinTest")
         val macosTest = sourceSets.create("macosTest")
-        val macosX64Test = sourceSets.getByName("macosX64Test")
         val macosArm64Test = sourceSets.getByName("macosArm64Test")
         val iosTest = sourceSets.create("iosTest")
-        val iosX64Test = sourceSets.getByName("iosX64Test")
         val iosArm64Test = sourceSets.getByName("iosArm64Test")
         val iosSimulatorArm64Test = sourceSets.getByName("iosSimulatorArm64Test")
         darwinTest.dependsOn(nativeTest)
         macosTest.dependsOn(darwinTest)
-        macosX64Test.dependsOn(macosTest)
         macosArm64Test.dependsOn(macosTest)
         iosTest.dependsOn(darwinTest)
-        iosX64Test.dependsOn(iosTest)
         iosArm64Test.dependsOn(iosTest)
         iosSimulatorArm64Test.dependsOn(iosTest)
     }
@@ -312,8 +313,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val iosFlags = listOf("-linker-option", "-framework", "-linker-option", "UIKit")
 
         fun KotlinNativeTarget.configureFreeCompilerArgs() {
-            val isIOS = konanTarget == KonanTarget.IOS_X64 ||
-                konanTarget == KonanTarget.IOS_SIMULATOR_ARM64 ||
+            val isIOS = konanTarget == KonanTarget.IOS_SIMULATOR_ARM64 ||
                 konanTarget == KonanTarget.IOS_ARM64
 
             binaries.forEach {
@@ -335,9 +335,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             }
         }
         multiplatformExtension.run {
-            macosX64 { configureFreeCompilerArgs() }
             macosArm64 { configureFreeCompilerArgs() }
-            iosX64("iosX64") { configureFreeCompilerArgs() }
             iosArm64("iosArm64") { configureFreeCompilerArgs() }
             iosSimulatorArm64("iosSimulatorArm64") { configureFreeCompilerArgs() }
         }
@@ -364,11 +362,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
                     isStatic = true
                 }
             }
-            testableTargets.getByName(
-                "iosX64",
-                KotlinNativeTargetWithSimulatorTests::class,
-                KotlinNativeTargetWithSimulatorTests::configureTestRun
-            )
             testableTargets.getByName(
                 "iosSimulatorArm64",
                 KotlinNativeTargetWithSimulatorTests::class,

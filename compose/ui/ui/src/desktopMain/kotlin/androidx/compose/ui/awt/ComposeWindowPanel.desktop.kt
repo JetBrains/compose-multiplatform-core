@@ -32,7 +32,9 @@ import java.awt.FocusTraversalPolicy
 import java.awt.Window
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
+import org.jetbrains.skiko.DelicateSkikoApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
+import org.jetbrains.skiko.transparentWindowBackgroundHack
 
 /**
  * A panel used as a main view in [ComposeWindow] and [ComposeDialog].
@@ -51,6 +53,7 @@ internal class ComposeWindowPanel(
     // big objects in memory (like the whole LayoutNode tree of the window)
     private var _composeContainer: ComposeContainer? = ComposeContainer(
         container = this,
+        isWindowLevel = true,
         skiaLayerAnalytics = skiaLayerAnalytics,
         window = window,
         windowContainer = this,
@@ -93,7 +96,9 @@ internal class ComposeWindowPanel(
                 field = value
                 composeContainer.onWindowTransparencyChanged(value)
                 isOpaque = !value
-                window.background = getTransparentWindowBackground(value, renderApi)
+
+                @OptIn(DelicateSkikoApi::class)
+                window.background = if (value) transparentWindowBackgroundHack(renderApi) else null
             }
         }
 

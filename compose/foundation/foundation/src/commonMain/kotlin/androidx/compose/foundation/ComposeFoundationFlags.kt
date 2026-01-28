@@ -86,14 +86,6 @@ object ComposeFoundationFlags {
     @field:Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
 
     /**
-     * With this flag on we don't use suspend pointer input as part of Modifier.clickable
-     * implementation as an optimization.
-     */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isNonSuspendingPointerInputInClickableEnabled = true
-
-    /**
      * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
      * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
      * currently composed items, this includes visible and items composed through beyond bounds.
@@ -116,5 +108,5 @@ object ComposeFoundationFlags {
      * changed. For instance, if C and D are 2 items in the cache window and later they're removed
      * from the dataset, the cache window won't know it until it tries to prefetch them.
      */
-    @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = false
+    @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = true
 }

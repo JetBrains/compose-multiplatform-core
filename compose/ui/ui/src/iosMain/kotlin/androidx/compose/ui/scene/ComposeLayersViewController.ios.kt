@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.uikit.utils.CMPComposeContainerLifecycleDelegateProtocol
+import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ComposeContainerView
@@ -32,13 +34,17 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.CValue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.Canvas
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGSize
 import platform.UIKit.UIEvent
+import platform.UIKit.UIInterfaceOrientation
+import platform.UIKit.UIInterfaceOrientationMask
 import platform.UIKit.UIScreen
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -46,14 +52,20 @@ import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowLevelAlert
 import platform.UIKit.UIWindowLevelNormal
+import platform.UIKit.childViewControllerForStatusBarHidden
+import platform.UIKit.childViewControllerForStatusBarStyle
+import platform.UIKit.preferredInterfaceOrientationForPresentation
+import platform.UIKit.shouldAutorotate
+import platform.UIKit.supportedInterfaceOrientations
+import platform.darwin.NSObject
 
 /**
  * A class responsible for managing and rendering [UIKitComposeSceneLayer]s.
  */
 internal class ComposeLayersViewController(
     useSeparateRenderThreadWhenPossible: Boolean,
-    private val context: CoroutineContext
-): UIViewController(nibName = null, bundle = null) {
+    private val coroutineContext: CoroutineContext
+): CMPViewController(lifecycleDelegate = EmptyComposeContainerLifecycleDelegate()) {
     val windowContext = PlatformWindowContext()
 
     private val window = LayersWindow()
@@ -75,6 +87,10 @@ internal class ComposeLayersViewController(
             metalView = metalView,
             onLayoutSubviews = { windowContext.updateWindowContainerSize() }
         )
+    }
+
+    init {
+        coroutineContext.job.invokeOnCompletion { dispose() }
     }
 
     fun withLayers(block: (List<UIKitComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
@@ -115,7 +131,7 @@ internal class ComposeLayersViewController(
         window.setHidden(true)
     }
 
-    fun dispose() {
+    private fun dispose() {
         // `dispose` is called instead of `close`, because `close` is also used imperatively
         // to remove the layer from the array based on user interaction.
         while (this.layers.isNotEmpty()) {
@@ -160,7 +176,7 @@ internal class ComposeLayersViewController(
         val transaction = layer.retrieveInteropTransaction()
 
         if (this.layers.isEmpty()) {
-            // It was the last layer, remove the view and executed the actions immediately
+            // It was the last layer, remove the view and execute the actions immediately
             hide()
 
             transaction.actions.fastForEach { it.invoke() }
@@ -208,7 +224,7 @@ internal class ComposeLayersViewController(
 
     /**
      * Iterate through existing layers and merge their interop transactions to be consumed by the
-     * [MetalView], also include transactions of the layers that were removed and are not
+     * [MetalView], also including transactions of the layers that were removed and are not
      * present in [layers] anymore.
      */
     private fun retrieveAndMergeInteropTransactions(): UIKitInteropTransaction {
@@ -257,6 +273,38 @@ internal class ComposeLayersViewController(
         }
     }
 
+    override fun viewControllerDidEnterWindowHierarchy() {}
+
+    override fun viewControllerDidLeaveWindowHierarchy() {}
+
+    override fun userInterfaceStyleDidChange() {}
+
+    override fun preferredInterfaceOrientationForPresentation(): UIInterfaceOrientation {
+        return referenceWindow?.rootViewController?.preferredInterfaceOrientationForPresentation()
+            ?: super.preferredInterfaceOrientationForPresentation()
+    }
+
+    override fun supportedInterfaceOrientations(): UIInterfaceOrientationMask {
+        return referenceWindow?.rootViewController?.supportedInterfaceOrientations()
+            ?: super.supportedInterfaceOrientations()
+    }
+
+    override fun shouldAutorotate(): Boolean {
+        return referenceWindow?.rootViewController?.shouldAutorotate() ?: super.shouldAutorotate()
+    }
+
+    override fun childViewControllerForStatusBarStyle(): UIViewController? {
+        return referenceWindow?.rootViewController?.childViewControllerForStatusBarStyle()
+            ?: referenceWindow?.rootViewController
+            ?: super.childViewControllerForStatusBarStyle()
+    }
+
+    override fun childViewControllerForStatusBarHidden(): UIViewController? {
+        return referenceWindow?.rootViewController?.childViewControllerForStatusBarHidden()
+            ?: referenceWindow?.rootViewController
+            ?: super.childViewControllerForStatusBarHidden()
+    }
+
     /**
      * Animates the layout transition of layers.
      * See [androidx.compose.ui.scene.ComposeHostingViewController.animateSizeTransition]
@@ -266,7 +314,8 @@ internal class ComposeLayersViewController(
         duration: Duration,
     ) {
         val displayLinkListener = DisplayLinkListener()
-        val sizeTransitionScope = CoroutineScope(context + displayLinkListener.frameClock)
+        val sizeTransitionScope =
+            CoroutineScope(coroutineContext + displayLinkListener.frameClock + Job())
         displayLinkListener.start()
 
         animateSizeTransition(sizeTransitionScope, duration)
@@ -283,7 +332,7 @@ internal class ComposeLayersViewController(
     private fun crossFadeSizeTransition(
         transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
     ) {
-        val transitionScope = CoroutineScope(context)
+        val transitionScope = CoroutineScope(coroutineContext + Job())
         val layersAnimationClosure = rootView.animateCrossFadeTransition(transitionScope)
 
         transitionCoordinator.animateAlongsideTransition(
@@ -320,9 +369,9 @@ internal class ComposeLayersViewController(
     }
 }
 
-private class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
+internal class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        // Hit-testing only the Compose view or any view that located on top of it.
+        // Hit-testing only the Compose view or any view that is located on top of it.
         for (subview in subviews.reversed()) {
             subview as UIView
             val isDescendantOfComposeView = rootViewController?.view?.isDescendantOfView(subview)
@@ -336,4 +385,11 @@ private class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
         }
         return null
     }
+}
+
+private class EmptyComposeContainerLifecycleDelegate: NSObject(),
+    CMPComposeContainerLifecycleDelegateProtocol {
+    override fun composeContainerWillDealloc() {}
+    override fun composeContainerWillAppear() {}
+    override fun composeContainerDidDisappear() {}
 }

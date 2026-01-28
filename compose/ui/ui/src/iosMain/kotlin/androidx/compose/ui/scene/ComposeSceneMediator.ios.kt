@@ -96,6 +96,8 @@ import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skiko.OS
@@ -127,7 +129,6 @@ private class SemanticsOwnerListenerImpl(
     private val view: UIView,
     private val coroutineContext: CoroutineContext,
     private val performEscape: () -> Boolean,
-    private val onKeyboardPresses: (Set<*>) -> Unit,
     private val onScreenReaderActive: (Boolean) -> Unit,
 ) : PlatformContext.SemanticsOwnerListener {
 
@@ -146,7 +147,6 @@ private class SemanticsOwnerListenerImpl(
                 semanticsOwner,
                 coroutineContext,
                 performEscape,
-                onKeyboardPresses,
                 onScreenReaderActive
             ).also {
                 it.isEnabled = isEnabled
@@ -184,6 +184,7 @@ private class SemanticsOwnerListenerImpl(
 
 internal class ComposeSceneMediator(
     private val onFocusBehavior: OnFocusBehavior,
+    private val isClearFocusOnMouseDownEnabled: Boolean,
     focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
@@ -204,7 +205,7 @@ internal class ComposeSceneMediator(
         override var isActive by mutableStateOf(false)
     }
 
-    private var disposed = false
+    private val isActive get() = coroutineContext.isActive
 
     private val viewConfiguration: ViewConfiguration =
         object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
@@ -225,7 +226,7 @@ internal class ComposeSceneMediator(
     private var size: IntSize?
         get() = scene.size
         set(value) {
-            if (!disposed) {
+            if (isActive) {
                 scene.size = value
                 if (value != null) {
                     windowInsetsManager.sceneSize.value = value
@@ -243,7 +244,7 @@ internal class ComposeSceneMediator(
     var composeSceneDensity: Density
         get() = scene.density
         set(value) {
-            if (!disposed) {
+            if (isActive) {
                 scene.density = value
             }
         }
@@ -259,7 +260,7 @@ internal class ComposeSceneMediator(
     var layoutDirection: LayoutDirection
         get() = scene.layoutDirection
         set(value) {
-            if (!disposed) {
+            if (isActive) {
                 scene.layoutDirection = value
             }
         }
@@ -267,7 +268,7 @@ internal class ComposeSceneMediator(
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext
         set(value) {
-            if (!disposed) {
+            if (isActive) {
                 scene.compositionLocalContext = value
             }
         }
@@ -343,7 +344,6 @@ internal class ComposeSceneMediator(
 
                 down || up
             },
-            onKeyboardPresses = ::onKeyboardPresses,
             onScreenReaderActive = { platformScreenReader.isActive = it }
         )
     }
@@ -388,6 +388,10 @@ internal class ComposeSceneMediator(
             isLayoutTransitionAnimating ||
             semanticsOwnerListener.hasInvalidations ||
             textInputService.hasInvalidations
+
+    init {
+        coroutineContext.job.invokeOnCompletion { dispose() }
+    }
 
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
@@ -624,8 +628,7 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun dispose() {
-        disposed = true
+    private fun dispose() {
         onPreviewKeyEvent = { false }
         onKeyEvent = { false }
 
@@ -722,6 +725,8 @@ internal class ComposeSceneMediator(
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
+        override val isClearFocusOnMouseDownEnabled: Boolean
+            get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
         override var isKeepScreenOnEnabled: Boolean
             get() = UIKitIdleTimerManager.isIdleTimerDisabled

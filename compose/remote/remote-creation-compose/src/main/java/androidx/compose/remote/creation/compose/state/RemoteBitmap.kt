@@ -25,6 +25,8 @@ import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreati
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 
 /**
  * Abstract base class for all remote bitmap representations in Compose Remote, this class extends
@@ -111,6 +113,20 @@ internal constructor(
             MutableRemoteBitmap(state, constantValue = null) { creationState ->
                 creationState.document.addNamedBitmap(name, initialValue)
             }
+
+        /**
+         * Creates a [RemoteBitmap] with the specified [width] and [height].
+         *
+         * @param width The width of the [RemoteBitmap] to create
+         * @param height The height of the [RemoteBitmap] to create
+         * @return A [RemoteBitmap] with the specified [width] and [height].
+         */
+        public fun createOffscreenRemoteBitmap(width: Int, height: Int): RemoteBitmap =
+            object : RemoteBitmap(null, null) {
+                public override fun writeToDocument(
+                    creationState: RemoteComposeCreationState
+                ): Int = creationState.document.createBitmap(width, height)
+            }
     }
 }
 
@@ -176,3 +192,9 @@ public fun rememberRemoteBitmap(
         }
     }
 }
+
+/** Extension property to convert a [ImageBitmap] to a [RemoteBitmap]. */
+public val ImageBitmap.rb: RemoteBitmap
+    get() {
+        return RemoteBitmap(this.asAndroidBitmap())
+    }

@@ -17,7 +17,6 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Canvas
@@ -29,10 +28,9 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
+import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
@@ -48,6 +46,7 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.navigationevent.NavigationEventDispatcher
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
+import kotlinx.coroutines.Job
 import platform.CoreGraphics.CGPoint
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
@@ -62,14 +61,14 @@ internal class UIKitComposeSceneLayer(
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
-    onFocusBehavior: OnFocusBehavior,
-    endEdgeGestureBehavior: EndEdgePanGestureBehavior,
+    configuration: ComposeContainerConfiguration,
     private var focusedViewsList: FocusedViewsList?,
-    compositionContext: CompositionContext,
+    parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val coroutineContext: CoroutineContext,
     private val interfaceOrientationState: State<InterfaceOrientation>,
 ) : ComposeSceneLayer {
+    private val layerJob = Job()
+    private val layerCoroutineContext = parentCoroutineContext + layerJob
 
     override var focusable: Boolean = focusedViewsList != null
         set(value) {
@@ -93,15 +92,16 @@ internal class UIKitComposeSceneLayer(
     private val navigationEventInput = UIKitNavigationEventInput(
         density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },
-        endEdgePanGestureBehavior = endEdgeGestureBehavior
+        endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     ).also { navigationEventDispatcher.addInput(it) }
 
     private val mediator = ComposeSceneMediator(
-        onFocusBehavior = onFocusBehavior,
+        onFocusBehavior = configuration.onFocusBehavior,
+        isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
         windowContext = layersViewController.windowContext,
         architectureComponentsOwner = ownerProvider,
-        coroutineContext = compositionContext.effectCoroutineContext,
+        coroutineContext = layerCoroutineContext,
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
@@ -120,7 +120,7 @@ internal class UIKitComposeSceneLayer(
         PlatformLayersComposeScene(
             density = mediator.screenDensity,
             layoutDirection = initialLayoutDirection,
-            coroutineContext = coroutineContext,
+            coroutineContext = layerCoroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidate = invalidate,
         )
@@ -188,9 +188,9 @@ internal class UIKitComposeSceneLayer(
         navigationEventDispatcher.removeInput(navigationEventInput)
         focusedViewsList?.disposeChild()
         focusedViewsList = null
-        mediator.dispose()
         interactionView.removeFromSuperview()
         interactionView.dispose()
+        layerJob.cancel()
     }
 
     @Composable

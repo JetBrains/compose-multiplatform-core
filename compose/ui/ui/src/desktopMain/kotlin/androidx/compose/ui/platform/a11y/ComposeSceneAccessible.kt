@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.ui.scene.ComposeScene
 import java.awt.Color
+import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
@@ -54,8 +55,9 @@ import org.jetbrains.skiko.hostOs
  * @see ComposeAccessible
  */
 internal class ComposeSceneAccessible(
+    private val isWindowLevel: Boolean = false,
     private val forceEnableA11y: Boolean = false,
-    private val parent: () -> Accessible?,
+    private val sceneRoot: () -> Component,
     private val accessibilityControllersProvider: () -> List<AccessibilityController>,
 ) : Accessible {
     private val a11yEnabled by lazy {
@@ -79,6 +81,40 @@ internal class ComposeSceneAccessible(
 
     fun indexOfChild(controller: AccessibilityController): Int {
         return accessibilityControllersProvider().indexOf(controller)
+    }
+
+    /**
+     * Finds and returns a descendant [Accessible] that should receive accessibility focus when
+     * no element is actually focused.
+     *
+     * This is used, for example, to transfer focus when the currently focused [Accessible] is
+     * removed from the hierarchy.
+     */
+    fun defaultAccessibilityFocusTarget(): Accessible? {
+        val ignoredRoles = setOf(
+            AccessibleRole.PANEL,
+            AccessibleRole.GROUP_BOX,
+            AccessibleRole.UNKNOWN
+        )
+
+        // DFS over the Accessible hierarchy
+        val queue = ArrayDeque<Accessible>()
+        queue.addAll(accessibilityControllersProvider().map { it.rootAccessible })
+        while (queue.isNotEmpty()) {
+            val accessible = queue.removeFirst()
+            val context = accessible.accessibleContext ?: continue
+            if (context.accessibleRole !in ignoredRoles) {
+                return accessible
+            }
+
+            val childCount = context.accessibleChildrenCount
+            for (index in 0 until childCount) {
+                val child = context.getAccessibleChild(index)
+                queue.addFirst(child)
+            }
+        }
+
+        return null
     }
 
     inner class ComposeSceneAccessibleContext : AccessibleContext(), AccessibleComponent {
@@ -125,7 +161,7 @@ internal class ComposeSceneAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            return parent()
+            return sceneRoot().parent as? Accessible
         }
 
         override fun getAccessibleChildrenCount(): Int {
@@ -173,12 +209,16 @@ internal class ComposeSceneAccessible(
         override fun getAccessibleRole(): AccessibleRole {
             // We want to return a role that makes the ComposeScene container "transparent" to
             // accessibility, as if its contents are inside the parent directly.
-            // On macOS, PANEL is ignored by Java's a11y (see CAccessibility.ignoredRoles), but on
-            // Windows, it makes NVDA read it as "panel" when clicked.
-            // On Windows, NVDA ignores UNKNOWN, but on macOS UNKNOWN causes VoiceOver to highlight
-            // the entire component when traversing via VoiceOver shortcuts.
+            // - On Windows, NVDA ignores UNKNOWN, but on macOS UNKNOWN causes VoiceOver to highlight
+            //   the entire component when traversing via VoiceOver shortcuts.
+            // - On macOS, PANEL is ignored by Java's a11y (see CAccessibility.ignoredRoles), but on
+            //   Windows, it makes NVDA read it as "panel" when clicked. The exception to this is
+            //   when the scene is for the entire window (with, e.g., Composable Window), returning
+            //   PANEL when nothing else is focused makes VoiceOver highlight it because it is
+            //   the focused Swing component. UNKNOWN prevents that, and because it's top-level,
+            //   the case with traversing via VoiceOver shortcuts doesn't apply.
             return when (hostOs) {
-                OS.MacOS -> AccessibleRole.PANEL
+                OS.MacOS -> if (isWindowLevel) AccessibleRole.UNKNOWN else AccessibleRole.PANEL
                 else -> AccessibleRole.UNKNOWN
             }
         }

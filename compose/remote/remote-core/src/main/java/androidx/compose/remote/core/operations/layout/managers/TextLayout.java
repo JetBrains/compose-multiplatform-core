@@ -141,7 +141,13 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
 
             mTextAlignValue = (short) (mTextAlign & 0xFFFF);
             if (mIsDynamicColorEnabled) {
+                int prevColorValue = mColorValue;
                 mColorValue = context.getColor(mColor);
+
+                if (prevColorValue != mColorValue && mComputedTextLayout != null) {
+                    // mComputedTextLayout caches the paint color
+                    invalidateMeasure();
+                }
             } else {
                 mColorValue = mColor;
             }
@@ -488,6 +494,7 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
                             mOverflow,
                             mMaxLines,
                             maxWidth,
+                            maxHeight,
                             0f,
                             0f,
                             1f,

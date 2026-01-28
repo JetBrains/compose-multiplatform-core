@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
+
 package androidx.compose.remote.creation.compose.capture
 
 import android.content.Context
-import androidx.annotation.RestrictTo
+import androidx.collection.emptyIntObjectMap
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.v2.captureRemoteDocumentV2
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Capture a RemoteCompose document by rendering the specified [content] Composable in a virtual
@@ -33,35 +39,56 @@ import kotlin.coroutines.suspendCoroutine
  * This can be used for testing, or for generating documents on the fly to be sent to a remote
  * client.
  *
+ * This API is experimental and is likely to change in the future before becoming API stable.
+ *
  * @param context the Android [Context] to use for the capture.
  * @param creationDisplayInfo details about the virtual display to create.
  * @param profile the [Profile] to use for the capture, determining which operations are supported.
  * @param content the Composable content to render and capture.
  * @return a [ByteArray] containing the RemoteCompose document.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public suspend fun captureRemoteDocument(
+public suspend fun captureSingleRemoteDocument(
     context: Context,
     creationDisplayInfo: CreationDisplayInfo = createCreationDisplayInfo(context),
     profile: Profile = RcPlatformProfiles.ANDROIDX,
-    writerCallbacks: WriterCallback? = null,
     content: @Composable @RemoteComposable () -> Unit,
-): ByteArray = suspendCoroutine { continuation ->
-    var completed = false
-    RemoteComposeCapture(
-        context = context,
-        creationDisplayInfo = creationDisplayInfo,
-        immediateCapture = true,
-        onPaint = { view, writer ->
-            if (!completed) {
-                completed = true
-                continuation.resume(writer.encodeToByteArray())
-            }
-            true
-        },
-        onCaptureReady = @Composable {},
-        profile = profile,
-        writerCallbacks = writerCallbacks,
-        content = content,
-    )
+): CapturedDocument {
+    if (RemoteComposeCreationComposeFlags.isRemoteApplierEnabled) {
+        val bytes =
+            captureRemoteDocumentV2(
+                    creationDisplayInfo = creationDisplayInfo,
+                    profile = profile,
+                    content = content,
+                )
+                .first()
+        // TODO: WriterEvents/PendingIntents support in V2
+        return CapturedDocument(bytes, emptyIntObjectMap())
+    }
+
+    return suspendCancellableCoroutine { continuation ->
+        val virtualDisplay = DisplayPool.allocate(context, creationDisplayInfo)
+
+        val writerEvents = WriterEvents()
+
+        RemoteComposeCapture(
+            context = context,
+            virtualDisplay = virtualDisplay,
+            creationDisplayInfo = creationDisplayInfo,
+            immediateCapture = true,
+            onPaint = { _, writer ->
+                if (continuation.isActive) {
+                    val docBytes = writer.encodeToByteArray()
+                    continuation.resume(CapturedDocument(docBytes, writerEvents.pendingIntents))
+                    DisplayPool.release(virtualDisplay)
+                }
+                true
+            },
+            onCaptureReady = @Composable {},
+            profile = profile,
+            writerEvents = writerEvents,
+            content = content,
+        )
+
+        continuation.invokeOnCancellation { DisplayPool.release(virtualDisplay) }
+    }
 }

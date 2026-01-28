@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
+
 package androidx.compose.remote
 
 import android.annotation.SuppressLint
@@ -24,20 +26,19 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.capture.rememberAsyncRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rotate
 import androidx.compose.remote.creation.compose.capture.scale
-import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
-import androidx.compose.remote.creation.compose.capture.shaders.radialGradient
 import androidx.compose.remote.creation.compose.capture.translate
 import androidx.compose.remote.creation.compose.layout.CaptureAsBitmap
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteCanvas
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas0
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteContext
@@ -50,7 +51,7 @@ import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clickable
-import androidx.compose.remote.creation.compose.modifier.drawWithContent
+import androidx.compose.remote.creation.compose.modifier.drawWithContent0
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
@@ -61,11 +62,14 @@ import androidx.compose.remote.creation.compose.modifier.onTouchUp
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.shaders.radialGradient
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.serialization.yaml.YAMLSerializer
@@ -89,7 +93,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.font.FontFamily
@@ -109,13 +113,15 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 26) // b/437958945
+@SdkSuppress(minSdkVersion = 29) // b/437958945
 @RunWith(AndroidJUnit4::class)
 class BasicLayoutTest {
 
     @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
-    val creationDisplayInfo = CreationDisplayInfo((300 * 2.75).toInt(), (300 * 2.75).toInt(), 2.75f)
+    // Cuttlefish tests run on device with 720x1280 at 2.0 density
+    val creationDisplayInfo =
+        CreationDisplayInfo((260 * 2.75).toInt(), (300 * 2.75).toInt(), ((2.75f * 160).toInt()))
 
     @Composable
     fun rememberRemoteDocumentFixedDensity(
@@ -152,7 +158,7 @@ class BasicLayoutTest {
             WithFixedDensity {
                 val doc = rememberRemoteDocumentFixedDensity { content() }
                 Column {
-                    var documentWidth by remember { mutableStateOf(300) }
+                    var documentWidth by remember { mutableStateOf(260) }
                     var documentHeight by remember { mutableStateOf(300) }
                     val documentContent = remember { mutableStateOf("") }
                     val docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
@@ -222,7 +228,7 @@ class BasicLayoutTest {
             WithFixedDensity {
                 val doc = rememberRemoteDocumentFixedDensity { content() }
                 Column {
-                    var documentWidth by remember { mutableStateOf(300) }
+                    var documentWidth by remember { mutableStateOf(260) }
                     var documentHeight by remember { mutableStateOf(300) }
                     val documentContent = remember { mutableStateOf("") }
                     val docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
@@ -311,7 +317,7 @@ class BasicLayoutTest {
             WithFixedDensity {
                 val doc = rememberAsyncRemoteDocumentFixedDensity { content(it) }
                 Column {
-                    var documentWidth by remember { mutableStateOf(300) }
+                    var documentWidth by remember { mutableStateOf(260) }
                     var documentHeight by remember { mutableStateOf(300) }
                     val documentContent = remember { mutableStateOf("") }
                     val docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
@@ -374,23 +380,24 @@ class BasicLayoutTest {
     @SdkSuppress(minSdkVersion = 29)
     @Test
     fun testLayoutAndValues() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
-    CANVAS [-5:-1] = [0.0, 275.0, 825.0, 275.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+    CANVAS [-5:-1] = [0.0, 275.0, 715.0, 275.0] VISIBLE
       MODIFIERS
         HEIGHT = 100.0 dp
-        BACKGROUND = [0.0, 0.0, 825.0, 275.0] color [1.0, 1.0, 1.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 715.0, 275.0] color [1.0, 1.0, 1.0, 1.0] shape [0]
         PADDING = [22.0, 22.0, 22.0, 22.0]
-        BACKGROUND = [0.0, 0.0, 781.0, 231.0] color [0.8, 0.8, 0.8, 1.0] shape [0]
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 781.0, 231.0] VISIBLE
+        BACKGROUND = [0.0, 0.0, 671.0, 231.0] color [0.8, 0.8, 0.8, 1.0] shape [0]
+      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 671.0, 231.0] VISIBLE
         ComponentValue value 42 set to WIDTH of Component -7
         ComponentValue value 43 set to HEIGHT of Component -7
-        DrawLine(0.0, 0.0, [42 = 781.0], [43 = 231.0])
-        DrawLine(0.0, [43 = 231.0], [42 = 781.0], 0.0)
+        DrawLine(0.0, 0.0, [42 = 671.0], [43 = 231.0])
+        DrawLine(0.0, [43 = 231.0], [42 = 671.0], 0.0)
 """
         testLayout(result) {
             RemoteColumn(
@@ -398,7 +405,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                RemoteCanvas(
+                RemoteCanvas0(
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
@@ -423,19 +430,20 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testSimple() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
-    CANVAS [-5:-1] = [0.0, 275.0, 825.0, 275.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+    CANVAS [-5:-1] = [0.0, 275.0, 715.0, 275.0] VISIBLE
       MODIFIERS
         HEIGHT = 100.0 dp
-        BACKGROUND = [0.0, 0.0, 825.0, 275.0] color [1.0, 1.0, 1.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 715.0, 275.0] color [1.0, 1.0, 1.0, 1.0] shape [0]
         PADDING = [22.0, 22.0, 22.0, 22.0]
-        BACKGROUND = [0.0, 0.0, 781.0, 231.0] color [0.8, 0.8, 0.8, 1.0] shape [0]
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 781.0, 231.0] VISIBLE
+        BACKGROUND = [0.0, 0.0, 671.0, 231.0] color [0.8, 0.8, 0.8, 1.0] shape [0]
+      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 671.0, 231.0] VISIBLE
 """
         testLayout(result) {
             RemoteColumn(
@@ -443,7 +451,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 verticalArrangement = RemoteArrangement.Center,
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
-                RemoteCanvas(
+                RemoteCanvas0(
                     modifier =
                         RemoteModifier.fillMaxWidth()
                             .height(100.rdp)
@@ -460,7 +468,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     fun testAsyncLayout() {
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
   COLUMN [-3:-1] = [0.0, 0.0, 825.0, 451.0] VISIBLE
     MODIFIERS
     BOX [-5:-1] = [0.0, 0.0, 825.0, 88.0] VISIBLE
@@ -552,10 +560,10 @@ DATA_TEXT<42> = ""
 DATA_TEXT<43> = "Bonjour le monde!"
 DATA_TEXT<44> = "Hello World"
 DATA_TEXT<45> = "Hola Mundo"
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
       PADDING = [55.0, 55.0, 55.0, 55.0]
       BACKGROUND = [0.0, 0.0, 715.0, 715.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
     ROW [-5:-1] = [0.0, 181.5, 715.0, 250.0] VISIBLE
@@ -627,12 +635,12 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
             """
 DATA_TEXT<42> = ""
 DATA_TEXT<43> = "Bonjour Le Monde!"
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     DATA_TEXT<44> = "serif"
     DATA_TEXT<45> = "sans-serif"
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
       PADDING = [55.0, 55.0, 55.0, 55.0]
       BACKGROUND = [0.0, 0.0, 715.0, 715.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
     TEXT_LAYOUT [-5:-1] = [130.0, 51.5, 455.0, 102.0] VISIBLE (43:"Bonjour Le Monde!")
@@ -750,13 +758,14 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testBasicClickAction() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
-    BOX [-5:-1] = [275.0, 275.0, 275.0, 275.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+    BOX [-5:-1] = [220.0, 275.0, 275.0, 275.0] VISIBLE
       MODIFIERS
         WIDTH = 100.0 dp
         HEIGHT = 100.0 dp
@@ -771,7 +780,8 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
                 RemoteBox(
-                    modifier = RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action"))
+                    modifier =
+                        RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action".rs))
                 )
             }
         }
@@ -779,13 +789,14 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testBasicClickActionParam() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
-    BOX [-5:-1] = [275.0, 275.0, 275.0, 275.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+    BOX [-5:-1] = [220.0, 275.0, 275.0, 275.0] VISIBLE
       MODIFIERS
         WIDTH = 100.0 dp
         HEIGHT = 100.0 dp
@@ -802,7 +813,8 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 val param = rememberRemoteIntValue { 128 }
                 RemoteBox(
                     modifier =
-                        RemoteModifier.size(100.rdp).clickable(HostAction("my_host_action", param))
+                        RemoteModifier.size(100.rdp)
+                            .clickable(HostAction("my_host_action".rs, param))
                 )
             }
         }
@@ -814,10 +826,10 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         val result =
             """
 DATA_TEXT<42> = ""
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
     STATE_LAYOUT [-5:-1] = [330.0, 330.0, 165.0, 165.0] VISIBLE
       MODIFIERS
       BOX [-7:-1] = [330.0, 330.0, 165.0, 165.0] VISIBLE
@@ -871,10 +883,10 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         val result =
             """
 DATA_TEXT<42> = ""
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
     STATE_LAYOUT [-5:-1] = [302.5, 302.5, 220.0, 220.0] VISIBLE
       MODIFIERS
       BOX [-7:-1] = [0.0, 0.0, 165.0, 165.0] GONE
@@ -924,13 +936,14 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testTouch() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  COLUMN [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  COLUMN [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
-    STATE_LAYOUT [-5:-1] = [302.5, 302.5, 220.0, 220.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 825.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+    STATE_LAYOUT [-5:-1] = [247.5, 302.5, 220.0, 220.0] VISIBLE
       MODIFIERS
         TOUCH_DOWN_MODIFIER
           VALUE_INTEGER_CHANGE = 42 -> 0
@@ -945,7 +958,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
             WIDTH = 60.0 dp
             HEIGHT = 60.0 dp
             BACKGROUND = [0.0, 0.0, 165.0, 165.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
-      BOX [-11:-1] = [302.5, 302.5, 220.0, 220.0] VISIBLE
+      BOX [-11:-1] = [247.5, 302.5, 220.0, 220.0] VISIBLE
         MODIFIERS
         BOX [-13:-1] = [0.0, 0.0, 220.0, 220.0] VISIBLE
           MODIFIERS
@@ -992,24 +1005,25 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testIntrinsics1() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 825.0, 165.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  ROW [-3:-1] = [0.0, 0.0, 715.0, 165.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 165.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
-    BOX [-5:-1] = [0.0, 0.0, 411.125, 82.5] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 165.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
+    BOX [-5:-1] = [0.0, 0.0, 356.125, 82.5] VISIBLE
       MODIFIERS
-        BACKGROUND = [0.0, 0.0, 411.125, 82.5] color [1.0, 0.0, 0.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 356.125, 82.5] color [1.0, 0.0, 0.0, 1.0] shape [0]
         HEIGHT = 30.0 dp
         PADDING = [11.0, 0.0, 0.0, 0.0]
-    BOX [-7:-1] = [411.125, 0.0, 2.75, 165.0] VISIBLE
+    BOX [-7:-1] = [356.125, 0.0, 2.75, 165.0] VISIBLE
       MODIFIERS
         WIDTH = 1.0 dp
         BACKGROUND = [0.0, 0.0, 2.75, 165.0] color [0.0, 1.0, 0.0, 1.0] shape [0]
-    BOX [-9:-1] = [413.875, 0.0, 411.125, 165.0] VISIBLE
+    BOX [-9:-1] = [358.875, 0.0, 356.125, 165.0] VISIBLE
       MODIFIERS
-        BACKGROUND = [0.0, 0.0, 411.125, 165.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 356.125, 165.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
         HEIGHT = 60.0 dp
         PADDING = [0.0, 0.0, 11.0, 0.0]
 """
@@ -1038,30 +1052,31 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 
     @Test
     fun testIntrinsics2() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  ROW [-3:-1] = [0.0, 0.0, 825.0, 165.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  ROW [-3:-1] = [0.0, 0.0, 715.0, 165.0] VISIBLE
     MODIFIERS
-      BACKGROUND = [0.0, 0.0, 825.0, 165.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
-    BOX [-5:-1] = [0.0, 0.0, 411.125, 165.0] VISIBLE
+      BACKGROUND = [0.0, 0.0, 715.0, 165.0] color [0.0, 1.0, 1.0, 1.0] shape [0]
+    BOX [-5:-1] = [0.0, 0.0, 356.125, 165.0] VISIBLE
       MODIFIERS
-        BACKGROUND = [0.0, 0.0, 411.125, 165.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 356.125, 165.0] color [1.0, 0.0, 0.0, 1.0] shape [0]
         HEIGHT = 60.0 dp
         PADDING = [11.0, 0.0, 0.0, 0.0]
-    BOX [-7:-1] = [411.125, 0.0, 2.75, 165.0] VISIBLE
+    BOX [-7:-1] = [356.125, 0.0, 2.75, 165.0] VISIBLE
       MODIFIERS
         WIDTH = 1.0 dp
         BACKGROUND = [0.0, 0.0, 2.75, 165.0] color [0.0, 1.0, 0.0, 1.0] shape [0]
-    BOX [-9:-1] = [413.875, 0.0, 411.125, 82.5] VISIBLE
+    BOX [-9:-1] = [358.875, 0.0, 356.125, 82.5] VISIBLE
       MODIFIERS
-        BACKGROUND = [0.0, 0.0, 411.125, 82.5] color [0.0, 0.0, 1.0, 1.0] shape [0]
+        BACKGROUND = [0.0, 0.0, 356.125, 82.5] color [0.0, 0.0, 1.0, 1.0] shape [0]
         HEIGHT = 30.0 dp
         PADDING = [0.0, 0.0, 11.0, 0.0]
-  BOX [-11:-1] = [0.0, 0.0, 825.0, 55.0] VISIBLE
+  BOX [-11:-1] = [0.0, 0.0, 715.0, 55.0] VISIBLE
     MODIFIERS
       HEIGHT = 20.0 dp
-      BACKGROUND = [0.0, 0.0, 825.0, 55.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
+      BACKGROUND = [0.0, 0.0, 715.0, 55.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
 """
         testLayout(result) {
             @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
@@ -1099,20 +1114,15 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     @SdkSuppress(minSdkVersion = 29)
     @Test
     fun testColorFilter1() {
+
         val result =
             """
 DATA_TEXT<42> = "Green"
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  ComponentValue value 43 set to WIDTH of Component -2
-  ComponentValue value 44 set to HEIGHT of Component -2
-  BOX [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-    CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-      MODIFIERS
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 48 set to WIDTH of Component -7
-        ComponentValue value 49 set to HEIGHT of Component -7
-    TEXT_LAYOUT [-8:-1] = [305.0, 364.0, 215.0, 97.0] VISIBLE (42:"Green")
+      DRAW_CONTENT
+    TEXT_LAYOUT [-5:-1] = [250.0, 364.0, 215.0, 97.0] VISIBLE (42:"Green")
       MODIFIERS
 """
         testLayout(result) {
@@ -1143,11 +1153,11 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         val painter = rememberVectorPainter(icon)
         val iconSizePx = with(LocalDensity.current) { Dp(size.value.internalAsFloat()).toPx() }
         val scale = iconSizePx / 24f
-        RemoteCanvas(modifier = RemoteModifier.size(size)) {
+        RemoteCanvas0(modifier = RemoteModifier.size(size)) {
             scale(scale, pivot = RemoteOffset.Zero) {
                 // Suppressed because of https://buganizer.corp.google.com/issues/375131944
                 @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-                with(painter.vector.root) { this@RemoteCanvas.drawScope.draw() }
+                with(painter.vector.root) { this@RemoteCanvas0.drawScope.draw() }
             }
         }
     }
@@ -1155,26 +1165,21 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     @SdkSuppress(minSdkVersion = 29)
     @Test
     fun testColorFilter2() {
+
         val result =
             """
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-  ComponentValue value 42 set to WIDTH of Component -2
-  ComponentValue value 43 set to HEIGHT of Component -2
-  BOX [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
+  BOX [-3:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
     MODIFIERS
-    CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-      MODIFIERS
-      CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 47 set to WIDTH of Component -7
-        ComponentValue value 48 set to HEIGHT of Component -7
-    ROW [-8:-1] = [368.5, 368.5, 88.0, 88.0] VISIBLE
+      DRAW_CONTENT
+    ROW [-5:-1] = [313.5, 368.5, 88.0, 88.0] VISIBLE
       MODIFIERS
         BACKGROUND = [0.0, 0.0, 88.0, 88.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
-      CANVAS [-10:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
+      CANVAS [-7:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
         MODIFIERS
           WIDTH = 32.0 dp
           HEIGHT = 32.0 dp
-        CANVAS_CONTENT [-12:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
+        CANVAS_CONTENT [-9:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
 """
         testLayout(result) {
             val colors =
@@ -1205,7 +1210,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
             """
 DATA_TEXT<42> = ""
 DATA_TEXT<43> = "XYZ"
-ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+ROOT [-2:-1] = [0.0, 0.0, 715.0, 825.0] VISIBLE
   ROW [-3:-1] = [0.0, 0.0, 176.0, 176.0] VISIBLE
     MODIFIERS
       BACKGROUND = [0.0, 0.0, 176.0, 176.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
@@ -1315,16 +1320,16 @@ list:
             ) {
                 RemoteBox(
                     modifier =
-                        RemoteModifier.drawWithContent {
-                                rotate(37f) { this@drawWithContent.drawContent() }
+                        RemoteModifier.drawWithContent0 {
+                                rotate(37f) { this@drawWithContent0.drawContent() }
                                 translate(40f, 40f) {
                                     rotate(45f) {
-                                        scale(1.2f) { this@drawWithContent.drawContent() }
+                                        scale(1.2f) { this@drawWithContent0.drawContent() }
                                     }
                                 }
                                 drawContent()
                                 translate(-40f, -40f) {
-                                    rotate(30f) { this@drawWithContent.drawContent() }
+                                    rotate(30f) { this@drawWithContent0.drawContent() }
                                 }
                             }
                             .size(64.rdp)

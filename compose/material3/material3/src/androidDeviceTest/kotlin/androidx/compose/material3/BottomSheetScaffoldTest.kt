@@ -77,7 +77,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onParent
@@ -1129,6 +1129,47 @@ class BottomSheetScaffoldTest {
             assertThat(
                     bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
                         SheetValue.Expanded
+                    )
+                )
+                .isTrue()
+        }
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightZero_providesHiddenAnchor() {
+        val bottomSheetState =
+            SheetState(
+                skipPartiallyExpanded = false,
+                skipHiddenState = false,
+                initialValue = SheetValue.Expanded,
+                positionalThreshold = {
+                    with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
+                },
+                velocityThreshold = {
+                    with(rule.density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                },
+            )
+        rule.setContent {
+            BottomSheetScaffold(
+                sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight)) },
+                sheetDragHandle = null,
+                sheetPeekHeight = 0.dp,
+                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState),
+            ) {
+                Text("Content")
+            }
+        }
+        rule.runOnIdle {
+            assertThat(bottomSheetState.anchoredDraggableState.anchors.size).isEqualTo(2)
+            assertThat(
+                    bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
+                        SheetValue.Expanded
+                    )
+                )
+                .isTrue()
+            assertThat(
+                    bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
+                        SheetValue.Hidden
                     )
                 )
                 .isTrue()

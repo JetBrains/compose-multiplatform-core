@@ -558,9 +558,12 @@ internal class OverlayInputView(
         panGestureRecognizer.delaysTouchesBegan = false
         panGestureRecognizer.delaysTouchesEnded = false
         bounces = false
+        scrollsToTop = false
     }
 
     override fun canBecomeFirstResponder() = true
+
+    override fun canBecomeFocused(): Boolean = false
 
     override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
@@ -662,6 +665,8 @@ internal class BackgroundInputView(
             onAppeared?.invoke()
         }
     }
+
+    override fun canBecomeFocused(): Boolean = false
 
     override fun layoutSubviews() {
         super.layoutSubviews()

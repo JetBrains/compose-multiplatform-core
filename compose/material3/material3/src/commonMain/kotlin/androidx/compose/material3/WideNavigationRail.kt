@@ -43,7 +43,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.internal.Strings
-import androidx.compose.material3.internal.draggableAnchorsV2
+import androidx.compose.material3.internal.draggableAnchors
 import androidx.compose.material3.internal.getString
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -1236,18 +1236,18 @@ private fun ModalWideNavigationRailContent(
                             TransformOrigin(if (isRtl) 1f else 0f, PredictiveBackPivotFractionY)
                     }
                 }
-                .draggableAnchorsV2(railState.anchoredDraggableState, Orientation.Horizontal) {
+                .draggableAnchors(railState.anchoredDraggableState, Orientation.Horizontal) {
                     railSize,
                     _ ->
                     val width = railSize.width.toFloat()
                     val minValue =
                         if (isStandaloneModal) {
-                            if (isRtl) width else -width
+                            -width
                         } else {
                             0f
                         }
                     val maxValue = 0f
-                    return@draggableAnchorsV2 DraggableAnchors {
+                    return@draggableAnchors DraggableAnchors {
                         WideNavigationRailValue.Collapsed at minValue
                         WideNavigationRailValue.Expanded at maxValue
                     } to railState.targetValue

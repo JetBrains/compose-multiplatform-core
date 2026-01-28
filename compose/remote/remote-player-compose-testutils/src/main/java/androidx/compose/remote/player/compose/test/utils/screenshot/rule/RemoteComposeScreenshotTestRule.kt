@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
+
 package androidx.compose.remote.player.compose.test.utils.screenshot.rule
 
 import android.content.Context
@@ -24,14 +26,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.capture.captureRemoteDocument
+import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.heightDp
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.capture.widthDp
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.ExperimentalRemoteComposePlayerApi
+import androidx.compose.remote.player.compose.ExperimentalRemotePlayerApi
 import androidx.compose.remote.player.compose.RemoteComposePlayerFlags
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
@@ -43,9 +47,10 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.test.core.app.ApplicationProvider
@@ -69,12 +74,13 @@ import org.junit.runners.model.Statement
  * @param matcher The algorithm to be used to perform the matching. If null, it will let
  *   [androidx.compose.testutils.assertAgainstGolden] use its default.
  */
-@OptIn(ExperimentalRemoteComposePlayerApi::class)
+@OptIn(ExperimentalRemotePlayerApi::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class RemoteComposeScreenshotTestRule(
     moduleDirectory: String,
     private val matcher: BitmapMatcher? = null,
     private val targetPlayer: TargetPlayer,
+    private val profile: Profile = RcPlatformProfiles.ANDROIDX,
 ) : ExternalResource() {
     private val composeTestRule = createComposeRule(StandardTestDispatcher())
     private val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
@@ -82,6 +88,8 @@ class RemoteComposeScreenshotTestRule(
     private val displayInfo = createCreationDisplayInfo(ApplicationProvider.getApplicationContext())
 
     private lateinit var testDescription: Description
+
+    val clickEvents: MutableList<Pair<String, Any?>> = mutableListOf()
 
     private val testName =
         object : TestWatcher() {
@@ -117,7 +125,9 @@ class RemoteComposeScreenshotTestRule(
         content: @Composable @RemoteComposable () -> Unit,
     ): CoreDocument {
         val document: ByteArray =
-            withContext(Dispatchers.Main) { captureRemoteDocument(context, content = content) }
+            withContext(Dispatchers.Main) {
+                captureSingleRemoteDocument(context, content = content).bytes
+            }
 
         val remoteComposeDocument =
             CoreDocument().apply {
@@ -144,11 +154,15 @@ class RemoteComposeScreenshotTestRule(
         screenshotName: Description = testDescription,
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color? = null,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
+        profile: Profile? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         setContent(
             creationDisplayInfo = creationDisplayInfo,
             backgroundColor = backgroundColor,
+            deviceConfigurationOverride = deviceConfigurationOverride,
+            profile = profile,
             content = content,
         )
         composeTestRule.verifyScreenshot(screenshotName, screenshotRule)
@@ -159,30 +173,33 @@ class RemoteComposeScreenshotTestRule(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color? = null,
         document: CoreDocument,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
         outerContent: (@Composable (content: @Composable @RemoteComposable () -> Unit) -> Unit)? =
             null,
     ) {
         composeTestRule.setContent {
-            val boxModifier =
-                Modifier.width(creationDisplayInfo.widthDp)
-                    .height(creationDisplayInfo.heightDp)
-                    .then(
-                        if (backgroundColor != null) {
-                            Modifier.background(backgroundColor)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag("playerRoot")
+            WithOverride(deviceConfigurationOverride) {
+                val boxModifier =
+                    Modifier.width(creationDisplayInfo.widthDp)
+                        .height(creationDisplayInfo.heightDp)
+                        .then(
+                            if (backgroundColor != null) {
+                                Modifier.background(backgroundColor)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .testTag("playerRoot")
 
-            val content: @Composable @RemoteComposable () -> Unit = {
-                RemoteDocumentPlayer(document, creationDisplayInfo)
-            }
-            Box(modifier = boxModifier) {
-                if (outerContent != null) {
-                    outerContent(content)
-                } else {
-                    content()
+                val content: @Composable @RemoteComposable () -> Unit = {
+                    RemoteDocumentPlayer(document, creationDisplayInfo)
+                }
+                Box(modifier = boxModifier) {
+                    if (outerContent != null) {
+                        outerContent(content)
+                    } else {
+                        content()
+                    }
                 }
             }
         }
@@ -192,30 +209,47 @@ class RemoteComposeScreenshotTestRule(
     private fun setContent(
         creationDisplayInfo: CreationDisplayInfo = displayInfo,
         backgroundColor: Color?,
+        deviceConfigurationOverride: DeviceConfigurationOverride? = null,
+        profile: Profile? = null,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
         composeTestRule.setContent {
-            val boxModifier =
-                Modifier.width(creationDisplayInfo.widthDp)
-                    .height(creationDisplayInfo.heightDp)
-                    .then(
-                        if (backgroundColor != null) {
-                            Modifier.background(backgroundColor)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag(ROOT_TEST_TAG)
+            WithOverride(deviceConfigurationOverride) {
+                val boxModifier =
+                    Modifier.width(creationDisplayInfo.widthDp)
+                        .height(creationDisplayInfo.heightDp)
+                        .then(
+                            if (backgroundColor != null) {
+                                Modifier.background(backgroundColor)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .testTag(ROOT_TEST_TAG)
 
-            Box(modifier = boxModifier) {
-                val document: CoreDocument? by
-                    rememberRemoteDocument(
-                        content = content,
-                        creationDisplayInfo = creationDisplayInfo,
-                        profile = RcPlatformProfiles.ANDROIDX,
-                    )
-                document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                Box(modifier = boxModifier) {
+                    val document: CoreDocument? by
+                        rememberRemoteDocument(
+                            content = content,
+                            creationDisplayInfo = creationDisplayInfo,
+                            profile = profile ?: this@RemoteComposeScreenshotTestRule.profile,
+                        )
+                    document?.let { RemoteDocumentPlayer(it, creationDisplayInfo) }
+                }
             }
+        }
+    }
+
+    @Composable
+    private fun WithOverride(
+        deviceConfigurationOverride: DeviceConfigurationOverride?,
+        content: @Composable () -> Unit,
+    ) {
+        if (deviceConfigurationOverride != null) {
+
+            DeviceConfigurationOverride(deviceConfigurationOverride, content)
+        } else {
+            content()
         }
     }
 
@@ -230,6 +264,7 @@ class RemoteComposeScreenshotTestRule(
             creationDisplayInfo.height,
             debugMode = 1,
             bitmapLoader = bitmapLoader,
+            onNamedAction = { name, value, _ -> clickEvents.add(Pair(name, value)) },
         )
     }
 

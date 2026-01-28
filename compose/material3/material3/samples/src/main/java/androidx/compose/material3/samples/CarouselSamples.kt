@@ -89,7 +89,6 @@ import androidx.compose.ui.util.lerp
 import kotlin.math.max
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -110,8 +109,10 @@ fun HorizontalMultiBrowseCarouselSample() {
             CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
         )
 
+    val state = rememberCarouselState { items.count() }
+    val animationScope = rememberCoroutineScope()
     HorizontalMultiBrowseCarousel(
-        state = rememberCarouselState { items.count() },
+        state = state,
         modifier = Modifier.fillMaxWidth().height(221.dp),
         preferredItemWidth = 186.dp,
         itemSpacing = 8.dp,
@@ -119,7 +120,13 @@ fun HorizontalMultiBrowseCarouselSample() {
     ) { i ->
         val item = items[i]
         Image(
-            modifier = Modifier.height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
+            modifier =
+                Modifier.height(205.dp)
+                    .fillMaxWidth()
+                    .clickable(true, "Tap to focus", Role.Image) {
+                        animationScope.launch { state.animateScrollToItem(i) }
+                    }
+                    .maskClip(MaterialTheme.shapes.extraLarge),
             painter = painterResource(id = item.imageResId),
             contentDescription = stringResource(item.contentDescriptionResId),
             contentScale = ContentScale.Crop,
@@ -127,7 +134,6 @@ fun HorizontalMultiBrowseCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -208,7 +214,6 @@ fun HorizontalCenteredHeroCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -328,7 +333,6 @@ fun FadingHorizontalMultiBrowseCarouselSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable

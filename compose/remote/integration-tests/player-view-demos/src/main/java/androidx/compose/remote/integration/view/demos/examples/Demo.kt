@@ -208,7 +208,7 @@ fun plot2(): RemoteComposeWriter {
                                 (minX + maxX) / 2,
                                 min = minX,
                                 max = maxX,
-                                TouchExpression.STOP_INSTANTLY.toInt(),
+                                TouchExpression.STOP_INSTANTLY,
                                 0f,
                                 0,
                                 null,
@@ -310,7 +310,6 @@ fun plot4(): RemoteComposeWriter {
     return rc.writer
 }
 
-// Failing to display due to b/450104887
 @Preview @Composable fun Plot1Preview() = RemoteDocPreview(plot1())
 
 @Preview @Composable fun Plot2Preview() = RemoteDocPreview(plot2())

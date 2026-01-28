@@ -86,8 +86,10 @@ class PlayerScreenshotTest {
                         BoxLayout.CENTER,
                         BoxLayout.CENTER,
                     ) {
-                        rcDoc.painter.setColor(Color.BLUE).commit()
-                        rcDoc.drawCircle(0f, 0f, 100f)
+                        rcDoc.canvas(RecordingModifier().fillMaxSize()) {
+                            rcDoc.painter.setColor(Color.BLUE).commit()
+                            rcDoc.drawCircle(100f, 100f, 100f)
+                        }
                     }
                 }
             }
@@ -144,6 +146,90 @@ class PlayerScreenshotTest {
         activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
 
         assertScreenshot("ellipses")
+    }
+
+    @Test
+    fun showAutosize1() {
+        val androidContext = AndroidRemoteContext()
+        playerView.layoutParams = FrameLayout.LayoutParams(600, 600, Gravity.CENTER)
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(
+                androidContext,
+                7,
+                RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            ) { rcDoc ->
+                rcDoc.root {
+                    rcDoc.column(RecordingModifier().background(Color.YELLOW).fillMaxSize()) {
+                        val content = "The quick brown fox jumps over the lazy dog"
+                        rcDoc.text(
+                            content,
+                            RecordingModifier().background(Color.LTGRAY).size(400),
+                            color = Color.BLUE,
+                            autosize = true,
+                        )
+                    }
+                }
+            }
+        activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
+
+        assertScreenshot("autosize1")
+    }
+
+    @Test
+    fun showAutosize2() {
+        val androidContext = AndroidRemoteContext()
+        playerView.layoutParams = FrameLayout.LayoutParams(600, 600, Gravity.CENTER)
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(
+                androidContext,
+                7,
+                RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            ) { rcDoc ->
+                rcDoc.root {
+                    rcDoc.column(RecordingModifier().background(Color.YELLOW).fillMaxSize()) {
+                        val content = "The quick brown fox jumps over the lazy dog"
+                        rcDoc.text(
+                            content,
+                            RecordingModifier().background(Color.LTGRAY).size(200),
+                            color = Color.BLUE,
+                            minFontSize = 60f,
+                            autosize = true,
+                        )
+                    }
+                }
+            }
+        activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
+
+        assertScreenshot("autosize2")
+    }
+
+    @Test
+    fun showAutosize3() {
+        val androidContext = AndroidRemoteContext()
+        playerView.layoutParams = FrameLayout.LayoutParams(600, 600, Gravity.CENTER)
+        val remoteComposeDocument: RemoteDocument =
+            createDocument(
+                androidContext,
+                7,
+                RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            ) { rcDoc ->
+                rcDoc.root {
+                    rcDoc.column(RecordingModifier().background(Color.YELLOW).fillMaxSize()) {
+                        val content = "The quick brown fox jumps over the lazy dog"
+                        rcDoc.text(
+                            content,
+                            RecordingModifier().background(Color.LTGRAY).size(200),
+                            color = Color.BLUE,
+                            minFontSize = 60f,
+                            autosize = true,
+                            overflow = CoreText.OVERFLOW_ELLIPSIS,
+                        )
+                    }
+                }
+            }
+        activityScenarioRule.scenario.onActivity { playerView.setDocument(remoteComposeDocument) }
+
+        assertScreenshot("autosize3")
     }
 
     fun assertScreenshot(filename: String) {

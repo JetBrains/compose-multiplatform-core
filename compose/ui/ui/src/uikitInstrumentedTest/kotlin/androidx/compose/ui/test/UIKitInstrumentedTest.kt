@@ -21,8 +21,10 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
+import androidx.compose.ui.scene.LayersWindow
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.getTouchesEvent
+import androidx.compose.ui.test.utils.mouseDown
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.resetTouches
 import androidx.compose.ui.test.utils.toCGPoint
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -291,15 +294,34 @@ internal class UIKitInstrumentedTest(
             toView = appDelegate.window()
         )
 
-        val targetWindow = window ?: appDelegate.window()!!
+        return getTargetWindow(position, window).touchDown(positionOnWindow.asDpOffset())
+    }
+
+    /**
+     * Simulates a mouse-down event at the specified position on the screen.
+     *
+     * @param position The position on the root hosting controller.
+     * @param window will be used to handle mouse/trackpad click; otherwise,
+     * the window hosting the view will be used.
+     * @return A UITouch object representing the mouse/trackpad interaction.
+     */
+    fun mouseDown(position: DpOffset, window: UIWindow? = null): UITouch {
+        val positionOnWindow = viewController.view.convertPoint(
+            point = position.toCGPoint(),
+            toView = appDelegate.window()
+        )
+
+        return getTargetWindow(position, window).mouseDown(positionOnWindow.asDpOffset())
+    }
+
+    private fun getTargetWindow(position: DpOffset, window: UIWindow? = null): UIWindow {
+        return window ?: appDelegate.window()!!
             .windowScene!!
             .windows
             .findLast {
                 it as UIWindow
                 it.hitTest(position.toCGPoint(), it.getTouchesEvent()) != null
             } as UIWindow
-
-        return targetWindow.touchDown(positionOnWindow.asDpOffset())
     }
 
     /**
@@ -312,11 +334,28 @@ internal class UIKitInstrumentedTest(
     }
 
     /**
+     * Simulates a click gesture at the specified position on the screen.
+     *
+     * @param position The position on the root hosting controller.
+     */
+    fun click(position: DpOffset) {
+        return mouseDown(position).up()
+    }
+
+    /**
      * Simulates a tap gesture for a given AccessibilityTestNode.
      */
     fun AccessibilityTestNode.tap() {
         val frame = frame ?: error("Internal error. Frame is missing.")
         return tap(frame.center())
+    }
+
+    /**
+     * Simulates a trackpad click gesture for a given AccessibilityTestNode.
+     */
+    fun AccessibilityTestNode.click() {
+        val frame = frame ?: error("Internal error. Frame is missing.")
+        return click(frame.center())
     }
 
     fun AccessibilityTestNode.doubleTap() {
@@ -389,8 +428,8 @@ internal class UIKitInstrumentedTest(
 
     val UITouch.location: DpOffset
         get() {
-        return locationInView(viewController.view).asDpOffset()
-    }
+            return locationInView(viewController.view).asDpOffset()
+        }
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -403,18 +442,27 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
 
+        val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+            ?: error("No window scene found")
+        val allWindows = scene.windows
+
         _window = UIWindow(frame = UIScreen.mainScreen.bounds)
         _window?.backgroundColor = UIColor.systemBackgroundColor
-        _window?.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
+        _window?.windowScene = scene
 
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
+
+        allWindows.forEach {
+            (it as UIWindow).setHidden(true)
+        }
     }
 
     fun cleanUp() {
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 
+        UIApplication.sharedApplication().setDelegate(null)
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
@@ -470,6 +518,15 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 }
 
+internal fun MockAppDelegate.findLayersWindow(): LayersWindow {
+    val window = this@findLayersWindow.window?.windowScene?.windows?.mapNotNull {
+        it as? LayersWindow
+    }?.single { !it.isHidden() }
+
+    assertNotNull(window, "${LayersWindow::class} not found in scene")
+    return window
+}
+
 internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol? {
     val windowScene = viewController.view.window?.windowScene ?: return null
 
@@ -489,4 +546,12 @@ internal fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol
     }.firstNotNullOfOrNull {
         findFirstResponder(view = it as UIView)
     } as? UITextInputProtocol
+}
+
+internal fun ComposeHostingViewController.waitForIdle() {
+    UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
+}
+
+internal fun ComposeHostingView.waitForIdle() {
+    UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
 }
