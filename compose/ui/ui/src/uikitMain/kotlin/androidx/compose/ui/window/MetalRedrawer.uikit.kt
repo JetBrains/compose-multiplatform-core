@@ -249,7 +249,7 @@ internal class MetalRedrawer(
 
     var isActive: Boolean = true
         set(newValue) {
-            if (field == newValue) {
+            if (field != newValue) {
                 field = newValue
                 setNeedsRedraw()
 
@@ -276,6 +276,14 @@ internal class MetalRedrawer(
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
+
+        // Wait until all scheduled rendering tasks are completed to eliminate race conditions
+        // when clearing the resources
+        if (useSeparateRenderThreadWhenPossible) {
+            trace("MetalRedrawer:dispose:waitForAsyncRenderingTasks") {
+                dispatch_sync(renderingDispatchQueue) {}
+            }
+        }
 
         pictureRecorder.close()
         context.close()
@@ -430,6 +438,9 @@ internal class MetalRedrawer(
                     picture.close()
                     surface.flushAndSubmit()
 
+                    surface.close()
+                    renderTarget.close()
+
                     if (useSeparateRenderThreadWhenPossible) {
                         dispatch_semaphore_signal(drawCanvasSemaphore)
                     }
@@ -468,9 +479,6 @@ internal class MetalRedrawer(
                             isInteropActive = false
                         }
                     }
-
-                    surface.close()
-                    renderTarget.close()
 
                     // Track current inflight command buffers to synchronously wait for their schedule in case app goes background
                     inflightCommandBuffers.add(commandBuffer)
