@@ -60,6 +60,7 @@ androidXMultiplatform {
             api("androidx.graphics:graphics-shapes:1.1.0")
 
             implementation(project(":compose:ui:ui-util"))
+            implementation(project(":compose:ui:ui-backhandler"))
             implementation(project(":compose:foundation:foundation-layout"))
             implementation("androidx.annotation:annotation:1.9.1")
             implementation("androidx.collection:collection:1.5.0")
@@ -104,7 +105,6 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.datetime)
-                implementation(project(":compose:ui:ui-backhandler"))
             }
         }
 
