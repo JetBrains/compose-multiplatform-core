@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel.compose
+@file:JvmName("TestNavHostController_jbKt")
 
-internal actual fun getSaveableKeyPrefix(thisRef: Any?): String =
-    if (thisRef != null) thisRef::class.qualifiedName + "." else ""
+package androidx.navigation.testing
+
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
+import kotlin.jvm.JvmName
+
+public actual class TestNavHostController : NavHostController() {
+
+    public actual val backStack: List<NavBackStackEntry> get() = currentBackStack.value
+
+    init {
+        navigatorProvider = TestNavigatorProvider()
+    }
+}

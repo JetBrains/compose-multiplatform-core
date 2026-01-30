@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+@file:JvmName("TestNavigator_jbKt")
+
 package androidx.testutils
 
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
+import kotlin.jvm.JvmName
 
 public actual open class TestNavigator actual constructor(private val hasTransitions: Boolean) :
     Navigator<TestNavigator.Destination>(TEST_NAVIGATOR_NAME) {

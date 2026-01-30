@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.testing
+@file:Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@file:JvmName("WeakReference_jvmKt")
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
+package androidx.navigation.compose.internal
 
-internal actual fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T =
-    runBlocking(context = dispatcher) { block() }
+internal actual class WeakReference<T : Any> actual constructor(reference: T) {
+    private val javaReference = java.lang.ref.WeakReference(reference)
+    actual fun get(): T? = javaReference.get()
+    actual fun clear() { javaReference.clear() }
+}

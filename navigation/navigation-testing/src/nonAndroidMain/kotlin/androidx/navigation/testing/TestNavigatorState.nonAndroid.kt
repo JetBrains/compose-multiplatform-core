@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("TestNavigatorState_jbKt")
+
 package androidx.navigation.testing
 
 import androidx.lifecycle.Lifecycle
@@ -27,6 +29,7 @@ import androidx.navigation.SupportingPane
 import androidx.navigation.internal.NavContext
 import androidx.savedstate.SavedState
 import androidx.savedstate.savedState
+import kotlin.jvm.JvmName
 
 public actual class TestNavigatorState actual constructor() : NavigatorState() {
     internal val navContext = NavContext()

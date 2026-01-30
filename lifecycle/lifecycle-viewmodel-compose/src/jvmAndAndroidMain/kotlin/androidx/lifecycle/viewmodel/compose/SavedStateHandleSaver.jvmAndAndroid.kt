@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.navigation.compose.internal
+@file:Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@file:JvmName("SavedStateHandleSaver_jvmKt")
 
-internal actual class WeakReference<T : Any> actual constructor(reference: T) {
-    private val javaReference = java.lang.ref.WeakReference(reference)
-    actual fun get(): T? = javaReference.get()
-    actual fun clear() { javaReference.clear() }
-}
+package androidx.lifecycle.viewmodel.compose
+
+internal actual fun getSaveableKeyPrefix(thisRef: Any?): String =
+    if (thisRef != null) thisRef::class.qualifiedName + "." else ""

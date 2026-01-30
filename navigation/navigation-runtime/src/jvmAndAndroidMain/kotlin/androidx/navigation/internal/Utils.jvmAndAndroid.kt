@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+@file:Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@file:JvmName("Utils_jvmKt")
+
 package androidx.navigation.internal
 
-import java.util.concurrent.atomic.AtomicInteger
-
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
-internal actual typealias AtomicInt = AtomicInteger
+internal actual fun identityHashCode(instance: Any?): Int = System.identityHashCode(instance)
