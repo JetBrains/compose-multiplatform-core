@@ -43,7 +43,7 @@ internal fun UIPress.toComposeEvent(): KeyEvent {
     }
 
     // UIPress has special types for arrow keys, page up/down, game controller buttons,
-    // and Siri remote buttons, and has null `key`. In other cases the `type` returns
+    // Siri remote buttons, and has null `key`. In other cases the `type` returns
     // an int value that doesn't match any UIPressType.
     val specialTypeKey = when (type) {
         UIPressTypeUpArrow -> Key.DirectionUp
