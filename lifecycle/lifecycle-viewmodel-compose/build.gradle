@@ -97,7 +97,15 @@ androidXMultiplatform {
 
         nonAndroidTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(libs.kotlinCoroutinesTest)
+            }
         }
+
+        jvmMain.dependsOn(nonAndroidMain)
+        jvmTest.dependsOn(nonAndroidTest)
+        desktopMain.dependsOn(jvmMain)
+        desktopTest.dependsOn(jvmTest)
 
         desktopMain {
             dependsOn(nonAndroidMain)

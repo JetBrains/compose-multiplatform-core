@@ -26,6 +26,9 @@ import kotlinx.validation.ExperimentalBCVApi
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
+import org.gradle.api.tasks.testing.AbstractTestTask
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
@@ -142,6 +145,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     override fun apply(project: Project) {
         if (!isJetBrainsFork(project)) return
 
+        project.configureTests()
         project.changeMavenCoordinatesToJetBrains()
         project.configureMavenArtifactUpload(componentFactory)
         project.configureDependencyVerification()
@@ -171,8 +175,26 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 }
 
+private fun Project.configureTests() {
+    tasks.withType(AbstractTestTask::class.java) { task ->
+        task.testLogging.apply {
+            events = hashSetOf(
+                TestLogEvent.FAILED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_OUT,
+                TestLogEvent.PASSED
+            )
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+    }
+}
+
 @OptIn(ExternalKotlinTargetApi::class)
 private fun enableArtifactRedirectionPublishing(project: Project) {
+    if (!JetBrainsPublication.shouldPublish(project)) return
     val redirection = project.artifactRedirection() ?: return
 
     val ext = project.multiplatformExtension ?: error("expected a multiplatform project")

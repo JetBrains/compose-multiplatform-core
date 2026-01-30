@@ -72,6 +72,11 @@ androidXMultiplatform {
         nonAndroidMain.dependsOn(commonMain)
         nonAndroidTest.dependsOn(commonTest)
 
+        jvmMain.dependsOn(nonAndroidMain)
+        jvmTest.dependsOn(nonAndroidTest)
+        desktopMain.dependsOn(jvmMain)
+        desktopTest.dependsOn(jvmTest)
+
         desktopMain.dependsOn(nonAndroidMain)
         desktopTest.dependsOn(nonAndroidTest)
 
@@ -119,10 +124,8 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        wasmJsMain {
-            dependencies {
-                implementation(libs.kotlinXw3c)
-            }
+        webMain.dependencies {
+            implementation(libs.kotlinXw3c)
         }
     }
 }

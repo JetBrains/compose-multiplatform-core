@@ -117,6 +117,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.androidx.build.jetBrainsGetDefaultAndroidBaseJavaVersion
 import org.jetbrains.androidx.build.jetBrainsGetDefaultTargetJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -277,6 +278,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         anchorTask: TaskProvider<Task>,
         androidXExtension: AndroidXExtension,
     ) {
+        if (isJetBrainsFork(project)) return
         anchorTask.configure { it.dependsOn(task) }
         val xmlReportDestDir = project.getHostTestResultDirectory()
         val testName = "${project.path}:${task.name}"
@@ -750,7 +752,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     BuildTypeAttr.ATTRIBUTE,
                     project.objects.named<BuildTypeAttr>("release"),
                 )
-                it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
+                // disable, as it triggers android compilation during IDEA sync
+                if (!isJetBrainsFork(project)) it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
             }
         }
     }
@@ -978,6 +981,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     }
 
     private fun Project.configureProjectStructureValidation(androidXExtension: AndroidXExtension) {
+        if (isJetBrainsFork(project)) return
         // AndroidXExtension.mavenGroup is not readable until afterEvaluate.
         afterEvaluate {
             val mavenGroup = androidXExtension.mavenGroup
@@ -1011,8 +1015,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             throw IllegalArgumentException("Unexpected extension: $this")
         }
         compileOptions.apply {
-            sourceCompatibility = VERSION_1_8
-            targetCompatibility = VERSION_1_8
+            sourceCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
+            targetCompatibility = jetBrainsGetDefaultAndroidBaseJavaVersion(project)
         }
 
         val defaultMinSdk = project.defaultAndroidConfig.minSdk

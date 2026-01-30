@@ -97,6 +97,7 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
+                implementation(project(":annotation:annotation"))
                 implementation(project(":kruth:kruth"))
             }
         }

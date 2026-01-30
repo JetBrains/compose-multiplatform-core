@@ -102,8 +102,6 @@ androidXMultiplatform {
         }
 
         jvmAndAndroidMain.dependencies {
-            // TODO: Recheck. Not in fork, no usages
-            api(libs.jspecify)
         }
 
         androidMain.dependencies {
@@ -113,6 +111,7 @@ androidXMultiplatform {
             compileOnly(project(":compose:ui:ui-android-stubs"))
             implementation("androidx.autofill:autofill:1.0.0")
             implementation(libs.kotlinCoroutinesAndroid)
+            api(libs.jspecify)
 
             implementation("androidx.activity:activity-ktx:1.7.0")
             implementation("androidx.core:core:1.16.0")
@@ -219,6 +218,7 @@ androidXMultiplatform {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":navigationevent:navigationevent-compose"))
+                implementation(project(":compose:ui:ui-test"))
             }
         }
 
@@ -266,10 +266,13 @@ androidXMultiplatform {
             }
         }
 
-        uikitInstrumentedTest {
+        iosInstrumentedTest {
             dependencies {
                 implementation(project(":compose:material:material"))
+                implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":internal-testutils-xctest"))
             }
         }
 
@@ -469,6 +472,8 @@ tasks.findByName("desktopTest").configure {
 }
 
 tasks.register("desktopHeadlessTest", Test) {
+    group = "verification"
+    description = "Headless desktop tests"
     testClassesDirs = sourceSets.desktopTest.output.classesDirs
     classpath = sourceSets.desktopTest.runtimeClasspath
 
