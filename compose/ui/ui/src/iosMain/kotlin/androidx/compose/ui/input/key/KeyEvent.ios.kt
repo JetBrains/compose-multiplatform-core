@@ -51,7 +51,7 @@ internal fun UIPress.toComposeEvent(): KeyEvent {
         UIPressTypeLeftArrow -> Key.DirectionLeft
         UIPressTypeRightArrow -> Key.DirectionRight
         UIPressTypeSelect -> Key.DirectionCenter
-        UIPressTypeMenu -> Key.Back
+        UIPressTypeMenu -> Key.Menu
         UIPressTypePlayPause -> Key.MediaPlayPause
         UIPressTypePageDown -> Key.PageDown
         UIPressTypePageUp -> Key.PageUp
