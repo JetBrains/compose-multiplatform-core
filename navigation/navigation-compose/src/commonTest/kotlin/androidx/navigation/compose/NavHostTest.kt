@@ -1223,7 +1223,7 @@ class NavHostTest {
         lateinit var screen1Lifecycle: State<Lifecycle.State>
         lateinit var screen2Lifecycle: State<Lifecycle.State>
         lateinit var dialogLifecycle: State<Lifecycle.State>
-        setContentWithLifecycleOwner {
+        setContent {
             navController = rememberNavController()
             NavHost(navController, startDestination = "screen1") {
                 composable("screen1") {
