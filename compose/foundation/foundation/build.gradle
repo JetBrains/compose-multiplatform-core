@@ -124,7 +124,7 @@ androidXMultiplatform {
         skikoMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.skiko)
+                api(libs.skiko)
                 implementation(libs.atomicFu)
             }
         }
@@ -133,6 +133,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test"))
+                implementation(libs.skiko)
             }
         }
 
