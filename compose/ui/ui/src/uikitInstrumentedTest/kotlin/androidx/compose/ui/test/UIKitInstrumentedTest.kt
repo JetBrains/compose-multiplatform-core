@@ -434,7 +434,7 @@ internal class UIKitInstrumentedTest(
 
 @OptIn(ExperimentalForeignApi::class)
 internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
-    private var _window: UIWindow? = null
+    private var _window: UIWindow? = UIWindow(frame = UIScreen.mainScreen.bounds)
     override fun window(): UIWindow? = _window
 
     private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
@@ -446,7 +446,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
             ?: error("No window scene found")
         val allWindows = scene.windows
 
-        _window = UIWindow(frame = UIScreen.mainScreen.bounds)
+        _window = _window ?: UIWindow(frame = UIScreen.mainScreen.bounds)
         _window?.backgroundColor = UIColor.systemBackgroundColor
         _window?.windowScene = scene
 
