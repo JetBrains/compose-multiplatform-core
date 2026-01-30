@@ -444,9 +444,8 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
-        val allWindows = scene.windows
+        val allWindows = scene.windows - _window
 
-        _window = _window ?: UIWindow(frame = UIScreen.mainScreen.bounds)
         _window?.backgroundColor = UIColor.systemBackgroundColor
         _window?.windowScene = scene
 
