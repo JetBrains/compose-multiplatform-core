@@ -72,8 +72,7 @@ androidXMultiplatform {
             implementation("androidx.collection:collection:1.5.0")
             implementation(libs.kotlinSerializationCore)
         }
-        //temporary while navigation-testing doesn't have all targets
-        androidTest.dependencies {
+        commonTest.dependencies {
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
             implementation(project(":kruth:kruth"))
@@ -82,22 +81,6 @@ androidXMultiplatform {
 
         nonAndroidMain.dependsOn(commonMain)
         nonAndroidTest.dependsOn(commonTest)
-
-        darwinMain.dependsOn(appleMain)
-        darwinTest.dependsOn(appleTest)
-        iosMain.dependsOn(darwinMain)
-        iosTest.dependsOn(darwinTest)
-        macosMain.dependsOn(darwinMain)
-        macosTest.dependsOn(darwinTest)
-        tvosMain.dependsOn(darwinMain)
-        tvosTest.dependsOn(darwinTest)
-        watchosMain.dependsOn(darwinMain)
-        watchosTest.dependsOn(darwinTest)
-
-        jvmMain.dependsOn(nonAndroidMain)
-        jvmTest.dependsOn(nonAndroidTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
 
         desktopMain.dependsOn(nonAndroidMain)
         desktopTest.dependsOn(nonAndroidTest)
