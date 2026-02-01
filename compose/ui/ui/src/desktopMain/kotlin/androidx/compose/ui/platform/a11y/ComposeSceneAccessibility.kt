@@ -16,7 +16,11 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.ui.platform.PlatformComponent
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.scene.ComposeScene
+import androidx.compose.ui.scene.ComposeSceneMediator
+import androidx.compose.ui.semantics.SemanticsOwner
 import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
@@ -33,22 +37,23 @@ import javax.accessibility.AccessibleContext
 import javax.accessibility.AccessibleRole
 import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleStateSet
+import kotlin.coroutines.CoroutineContext
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
-import androidx.compose.ui.scene.ComposeSceneMediator
 
 /**
  * Manages the accessibility aspects of the Compose scene for [ComposeSceneMediator].
  *
- * @see AccessibilityController
+ * @see SemanticsOwnerAccessibilityController
  * @see ComposeAccessible
  */
 internal class ComposeSceneAccessibility(
+    private val platformComponent: PlatformComponent,
+    private val coroutineContext: CoroutineContext,
     private val isWindowLevel: Boolean = false,
     private val sceneRoot: () -> Component,
-    private val accessibilityControllersProvider: () -> List<AccessibilityController>,
-) {
-    val enabled by lazy {
+) : PlatformContext.SemanticsOwnerListener {
+    private val enabled by lazy {
         (System.getProperty("compose.accessibility.enable") != "false") &&
         (System.getenv("COMPOSE_DISABLE_ACCESSIBILITY") == null)
     }
@@ -65,8 +70,60 @@ internal class ComposeSceneAccessibility(
     val accessibleContextProvider: ((Component) -> AccessibleContext)?
         get() = if (enabled) { _ -> accessibleFocusHelper.accessibleContext } else null
 
-    fun requestFocusOnAccessible(accessible: Accessible) {
-        accessibleFocusHelper.requestFocusOnAccessible(accessible)
+    private val accessibilityControllerByOwner = mutableMapOf<SemanticsOwner, SemanticsOwnerAccessibilityController>()
+    // Internal for testing
+    internal val accessibilityControllers = mutableListOf<SemanticsOwnerAccessibilityController>()
+
+    private var requestingFocus = false
+    private fun onAccessibleReceivedFocus(accessible: ComposeAccessible?) {
+        // requestFocusOnAccessible fires focusGained events, which in turn
+        // can call this method themselves, so we need to prevent infinite recursion
+        if (requestingFocus) return
+
+        val target = accessible ?: defaultAccessibilityFocusTarget()
+        if (target != null) {
+            requestingFocus = true
+            try {
+                accessibleFocusHelper.requestFocusOnAccessible(target)
+            } finally {
+                requestingFocus = false
+            }
+        }
+    }
+
+    override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
+        check(semanticsOwner !in accessibilityControllerByOwner)
+        val controller = SemanticsOwnerAccessibilityController(
+            owner = semanticsOwner,
+            desktopComponent = platformComponent,
+            sceneAccessibility = this,
+            onFocusReceived = ::onAccessibleReceivedFocus,
+        )
+        controller.launchSyncLoop(coroutineContext)
+        accessibilityControllerByOwner[semanticsOwner] = controller
+        accessibilityControllers.add(controller)
+    }
+
+    override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
+        val controller = accessibilityControllerByOwner.remove(semanticsOwner) ?: return
+        accessibilityControllers.remove(controller)
+        controller.dispose()
+    }
+
+    override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
+        accessibilityControllerByOwner[semanticsOwner]?.onSemanticsChange()
+    }
+
+    override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) {
+        accessibilityControllerByOwner[semanticsOwner]?.onLayoutChanged(nodeId = semanticsNodeId)
+    }
+
+    fun onContentComponentGainedFocus() {
+        accessibilityControllers.lastOrNull()?.onFocusGained()
+    }
+
+    fun onContentComponentLostFocus() {
+        accessibilityControllers.lastOrNull()?.onFocusLost()
     }
 
     fun accessibleParentOverride(accessible: Accessible): Accessible? {
@@ -77,8 +134,8 @@ internal class ComposeSceneAccessibility(
         return sceneRoot() as? Accessible
     }
 
-    fun indexOfChild(controller: AccessibilityController): Int {
-        return accessibilityControllersProvider().indexOf(controller)
+    fun indexOfChild(controller: SemanticsOwnerAccessibilityController): Int {
+        return accessibilityControllers.indexOf(controller)
     }
 
     /**
@@ -88,7 +145,7 @@ internal class ComposeSceneAccessibility(
      * This is used, for example, to transfer focus when the currently focused [Accessible] is
      * removed from the hierarchy.
      */
-    fun defaultAccessibilityFocusTarget(): Accessible? {
+    private fun defaultAccessibilityFocusTarget(): Accessible? {
         val ignoredRoles = setOf(
             AccessibleRole.PANEL,
             AccessibleRole.GROUP_BOX,
@@ -97,7 +154,9 @@ internal class ComposeSceneAccessibility(
 
         // DFS over the Accessible hierarchy
         val queue = ArrayDeque<Accessible>()
-        queue.addAll(accessibilityControllersProvider().map { it.rootAccessible })
+        accessibilityControllers.lastOrNull()?.let {
+            queue.add(it.rootAccessible)
+        }
         while (queue.isNotEmpty()) {
             val accessible = queue.removeFirst()
             val context = accessible.accessibleContext ?: continue
@@ -116,16 +175,8 @@ internal class ComposeSceneAccessibility(
     }
 
     inner class ComposeSceneAccessibleContext : AccessibleContext(), AccessibleComponent {
-        // Internal for testing
-        internal val accessibilityControllers: List<AccessibilityController>
-            get() = accessibilityControllersProvider()
-
-        private val accessibilityController: AccessibilityController?
-            get() = accessibilityControllers.firstOrNull()
-
-        private fun getMainOwnerAccessibleRoot(): ComposeAccessible? {
-            return accessibilityController?.rootAccessible
-        }
+        private val mainRootAccessible: ComposeAccessible?
+            get() = accessibilityControllers.firstOrNull()?.rootAccessible
 
         /**
          * This function is used by Swing accessibility support to get accessible under a [Point]
@@ -135,7 +186,7 @@ internal class ComposeSceneAccessibility(
          * [ComposeScene] and finds the best [Accessible] under the pointer.
          */
         override fun getAccessibleAt(p: Point): Accessible {
-            for (controller in accessibilityControllers) {
+            for (controller in accessibilityControllers.reversed()) {
                 val rootAccessible = controller.rootAccessible
                 val context = rootAccessible.composeAccessibleContext
                 val accessibleOnPoint = context.getAccessibleAt(p) ?: continue
@@ -171,19 +222,19 @@ internal class ComposeSceneAccessibility(
         }
 
         override fun getSize(): Dimension? {
-            return getMainOwnerAccessibleRoot()?.composeAccessibleContext?.size
+            return mainRootAccessible?.composeAccessibleContext?.size
         }
 
         override fun getLocationOnScreen(): Point? {
-            return getMainOwnerAccessibleRoot()?.composeAccessibleContext?.locationOnScreen
+            return mainRootAccessible?.composeAccessibleContext?.locationOnScreen
         }
 
         override fun getLocation(): Point? {
-            return getMainOwnerAccessibleRoot()?.composeAccessibleContext?.location
+            return mainRootAccessible?.composeAccessibleContext?.location
         }
 
         override fun getBounds(): Rectangle? {
-            return getMainOwnerAccessibleRoot()?.composeAccessibleContext?.bounds
+            return mainRootAccessible?.composeAccessibleContext?.bounds
         }
 
         override fun isShowing(): Boolean = true

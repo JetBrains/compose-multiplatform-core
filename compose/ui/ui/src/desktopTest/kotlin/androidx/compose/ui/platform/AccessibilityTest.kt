@@ -34,13 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.assertThat
 import androidx.compose.ui.isEqualTo
-import androidx.compose.ui.platform.a11y.AccessibilityController
+import androidx.compose.ui.platform.a11y.SemanticsOwnerAccessibilityController
 import androidx.compose.ui.platform.a11y.ComposeAccessible
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
-import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility.ComposeSceneAccessibleContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.awtRole
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
@@ -501,56 +499,27 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
             sceneAccessibility.accessibleContextProvider?.invoke(this)
     }
 
-    // A SemanticsOwnerListener to manage the AccessibilityControllers
-    val semanticsOwnerListener = object : PlatformContext.SemanticsOwnerListener {
-        private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
-        val accessibilityControllers get() = _accessibilityControllers.values.reversed()
-
-        override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-            check(semanticsOwner !in _accessibilityControllers)
-            _accessibilityControllers[semanticsOwner] = AccessibilityController(
-                owner = semanticsOwner,
-                desktopComponent = PlatformComponent.Empty,
-                sceneAccessibility = sceneAccessibility,
-                onFocusReceived = { }
-            )
-        }
-
-        override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-            _accessibilityControllers.remove(semanticsOwner)?.dispose()
-        }
-
-        override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-            _accessibilityControllers[semanticsOwner]?.onSemanticsChange()
-        }
-
-        override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) {
-            _accessibilityControllers[semanticsOwner]?.onLayoutChanged(nodeId = semanticsNodeId)
-        }
-    }
+    val testDispatcher = StandardTestDispatcher()
 
     sceneAccessibility = ComposeSceneAccessibility(
+        platformComponent = PlatformComponent.Empty,
+        coroutineContext = testDispatcher,
         sceneRoot = { sceneComponent },
-        accessibilityControllersProvider = { semanticsOwnerListener.accessibilityControllers }
     )
 
-    // Reset the a11y usage, to avoid having one test affect the next
-    AccessibilityController.AccessibilityUsage.reset()
+    // Reset the a11y usage to avoid having one test affect the next
+    SemanticsOwnerAccessibilityController.AccessibilityUsage.reset()
 
-    val testDispatcher = StandardTestDispatcher()
     runInternalSkikoComposeUiTest(
-        semanticsOwnerListener = semanticsOwnerListener,
+        semanticsOwnerListener = sceneAccessibility,
         coroutineDispatcher = testDispatcher
     ) {
-        semanticsOwnerListener.accessibilityControllers.forEach {
-            it.launchSyncLoop(testDispatcher)
-        }
-
-        val scope = ComposeA11yTestScope(
-            test = this,
-            sceneAccessibleContext = sceneAccessibility.sceneAccessibleContext
+        block(
+            ComposeA11yTestScope(
+                test = this,
+                sceneAccessibility = sceneAccessibility
+            )
         )
-        block(scope)
     }
 }
 
@@ -560,7 +529,7 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
 @OptIn(ExperimentalTestApi::class)
 internal class ComposeA11yTestScope(
     val test: SkikoComposeUiTest,
-    val sceneAccessibleContext: ComposeSceneAccessibleContext
+    val sceneAccessibility: ComposeSceneAccessibility
 ) {
 
     @Suppress("MemberVisibilityCanBePrivate")
@@ -569,7 +538,7 @@ internal class ComposeA11yTestScope(
 
     @Suppress("MemberVisibilityCanBePrivate")
     fun SemanticsNode.fetchAccessible(): ComposeAccessible {
-        for (controller in sceneAccessibleContext.accessibilityControllers) {
+        for (controller in sceneAccessibility.accessibilityControllers) {
             controller.accessibleByNodeId(id)?.let {
                 return it
             }

@@ -17,18 +17,18 @@ import org.jetbrains.skiko.initializeCAccessible
  */
 internal class AccessibleFocusHelper(
     private val component: Component,
-    private val regularAccessibleContext: AccessibleContext,
+    private val sceneAccessibleContext: AccessibleContext,
 ) {
 
     private var focusedAccessible: Accessible? = null
 
     val accessibleContext: AccessibleContext
-        get() = focusedAccessible?.accessibleContext ?: regularAccessibleContext
+        get() = focusedAccessible?.accessibleContext ?: sceneAccessibleContext
 
     private var resetFocusAccessibleJob: Job? = null
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun requestFocusOnAccessible(accessible: Accessible) {
+    fun requestFocusOnAccessible(accessible: Accessible?) {
         focusedAccessible = accessible
 
         when (hostOs) {
@@ -44,9 +44,11 @@ internal class AccessibleFocusHelper(
         // and its accessibility context. This timeout is used to deal with concurrency
         // TODO Find more reliable procedure
         resetFocusAccessibleJob?.cancel()
-        resetFocusAccessibleJob = GlobalScope.launch(MainUIDispatcher) {
-            delay(100)
-            focusedAccessible = null
+        if (focusedAccessible != null) {
+            resetFocusAccessibleJob = GlobalScope.launch(MainUIDispatcher) {
+                delay(100)
+                focusedAccessible = null
+            }
         }
     }
 
@@ -57,7 +59,7 @@ internal class AccessibleFocusHelper(
      */
     fun accessibleParentOverride(accessible: Accessible): Accessible? {
         return if (accessible == focusedAccessible) {
-            regularAccessibleContext.accessibleParent as Accessible
+            sceneAccessibleContext.accessibleParent as Accessible
         } else {
             null
         }

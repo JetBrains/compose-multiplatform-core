@@ -75,7 +75,7 @@ private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boo
  */
 internal class ComposeAccessible(
     semanticsNode: SemanticsNode,
-    private val controller: AccessibilityController
+    private val controller: SemanticsOwnerAccessibilityController
 ) : Accessible,
     // Must be a subclass of java.awt.Component because CAccessible only registers property
     // listeners with the accessible context if the Accessible is an instance of java.awt.Component
@@ -266,10 +266,7 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            controller.accessibleParentOverride(this@ComposeAccessible)?.let { return it }
-
-            val parentNode = semanticsNode.parent ?: return controller.sceneAccessible()
-            return controller.accessibleByNodeId(parentNode.id)!!
+            return controller.accessibleParentOf(this@ComposeAccessible)
         }
 
         override fun getAccessibleIndexInParent(): Int {
@@ -468,7 +465,7 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleRole(): AccessibleRole {
-            AccessibilityController.AccessibilityUsage.notifyInUse()
+            SemanticsOwnerAccessibilityController.AccessibilityUsage.notifyInUse()
             return computeAccessibleRole()
         }
 
