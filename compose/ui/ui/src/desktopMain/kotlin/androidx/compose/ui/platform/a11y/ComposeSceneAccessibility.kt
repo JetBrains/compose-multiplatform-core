@@ -44,7 +44,7 @@ import org.jetbrains.skiko.hostOs
 /**
  * Manages the accessibility aspects of the Compose scene for [ComposeSceneMediator].
  *
- * @see SemanticsOwnerAccessibilityController
+ * @see SemanticsOwnerAccessibility
  * @see ComposeAccessible
  */
 internal class ComposeSceneAccessibility(
@@ -70,9 +70,9 @@ internal class ComposeSceneAccessibility(
     val accessibleContextProvider: ((Component) -> AccessibleContext)?
         get() = if (enabled) { _ -> accessibleFocusHelper.accessibleContext } else null
 
-    private val accessibilityControllerByOwner = mutableMapOf<SemanticsOwner, SemanticsOwnerAccessibilityController>()
+    private val ownerAccessibilityByOwner = mutableMapOf<SemanticsOwner, SemanticsOwnerAccessibility>()
     // Internal for testing
-    internal val accessibilityControllers = mutableListOf<SemanticsOwnerAccessibilityController>()
+    internal val ownerAccessibilityList = mutableListOf<SemanticsOwnerAccessibility>()
 
     private var requestingFocus = false
     private fun onAccessibleReceivedFocus(accessible: ComposeAccessible?) {
@@ -80,50 +80,48 @@ internal class ComposeSceneAccessibility(
         // can call this method themselves, so we need to prevent infinite recursion
         if (requestingFocus) return
 
-        val target = accessible ?: defaultAccessibilityFocusTarget()
-        if (target != null) {
-            requestingFocus = true
-            try {
-                accessibleFocusHelper.requestFocusOnAccessible(target)
-            } finally {
-                requestingFocus = false
-            }
+        requestingFocus = true
+        try {
+            val target = accessible ?: defaultAccessibilityFocusTarget()
+            accessibleFocusHelper.requestFocusOnAccessible(target)
+        } finally {
+            requestingFocus = false
         }
     }
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-        check(semanticsOwner !in accessibilityControllerByOwner)
-        val controller = SemanticsOwnerAccessibilityController(
+        check(semanticsOwner !in ownerAccessibilityByOwner)
+        val ownerAccessibility = SemanticsOwnerAccessibility(
             owner = semanticsOwner,
             desktopComponent = platformComponent,
             sceneAccessibility = this,
             onFocusReceived = ::onAccessibleReceivedFocus,
         )
-        controller.launchSyncLoop(coroutineContext)
-        accessibilityControllerByOwner[semanticsOwner] = controller
-        accessibilityControllers.add(controller)
+        ownerAccessibility.launchSyncLoop(coroutineContext)
+        ownerAccessibilityByOwner[semanticsOwner] = ownerAccessibility
+        ownerAccessibilityList.add(ownerAccessibility)
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-        val controller = accessibilityControllerByOwner.remove(semanticsOwner) ?: return
-        accessibilityControllers.remove(controller)
+        val controller = ownerAccessibilityByOwner.remove(semanticsOwner) ?: return
+        ownerAccessibilityList.remove(controller)
         controller.dispose()
     }
 
     override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-        accessibilityControllerByOwner[semanticsOwner]?.onSemanticsChange()
+        ownerAccessibilityByOwner[semanticsOwner]?.onSemanticsChange()
     }
 
     override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) {
-        accessibilityControllerByOwner[semanticsOwner]?.onLayoutChanged(nodeId = semanticsNodeId)
+        ownerAccessibilityByOwner[semanticsOwner]?.onLayoutChanged(nodeId = semanticsNodeId)
     }
 
     fun onContentComponentGainedFocus() {
-        accessibilityControllers.lastOrNull()?.onFocusGained()
+        ownerAccessibilityList.lastOrNull()?.onFocusGained()
     }
 
     fun onContentComponentLostFocus() {
-        accessibilityControllers.lastOrNull()?.onFocusLost()
+        ownerAccessibilityList.lastOrNull()?.onFocusLost()
     }
 
     fun accessibleParentOverride(accessible: Accessible): Accessible? {
@@ -134,8 +132,8 @@ internal class ComposeSceneAccessibility(
         return sceneRoot() as? Accessible
     }
 
-    fun indexOfChild(controller: SemanticsOwnerAccessibilityController): Int {
-        return accessibilityControllers.indexOf(controller)
+    fun indexOfChild(ownerAccessibility: SemanticsOwnerAccessibility): Int {
+        return ownerAccessibilityList.indexOf(ownerAccessibility)
     }
 
     /**
@@ -154,7 +152,7 @@ internal class ComposeSceneAccessibility(
 
         // DFS over the Accessible hierarchy
         val queue = ArrayDeque<Accessible>()
-        accessibilityControllers.lastOrNull()?.let {
+        ownerAccessibilityList.lastOrNull()?.let {
             queue.add(it.rootAccessible)
         }
         while (queue.isNotEmpty()) {
@@ -176,7 +174,7 @@ internal class ComposeSceneAccessibility(
 
     inner class ComposeSceneAccessibleContext : AccessibleContext(), AccessibleComponent {
         private val mainRootAccessible: ComposeAccessible?
-            get() = accessibilityControllers.firstOrNull()?.rootAccessible
+            get() = ownerAccessibilityList.firstOrNull()?.rootAccessible
 
         /**
          * This function is used by Swing accessibility support to get accessible under a [Point]
@@ -186,7 +184,7 @@ internal class ComposeSceneAccessibility(
          * [ComposeScene] and finds the best [Accessible] under the pointer.
          */
         override fun getAccessibleAt(p: Point): Accessible {
-            for (controller in accessibilityControllers.reversed()) {
+            for (controller in ownerAccessibilityList.reversed()) {
                 val rootAccessible = controller.rootAccessible
                 val context = rootAccessible.composeAccessibleContext
                 val accessibleOnPoint = context.getAccessibleAt(p) ?: continue
@@ -214,11 +212,11 @@ internal class ComposeSceneAccessibility(
         }
 
         override fun getAccessibleChildrenCount(): Int {
-            return accessibilityControllers.size
+            return ownerAccessibilityList.size
         }
 
         override fun getAccessibleChild(i: Int): Accessible {
-            return accessibilityControllers[i].rootAccessible
+            return ownerAccessibilityList[i].rootAccessible
         }
 
         override fun getSize(): Dimension? {

@@ -75,7 +75,7 @@ private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boo
  */
 internal class ComposeAccessible(
     semanticsNode: SemanticsNode,
-    private val controller: SemanticsOwnerAccessibilityController
+    private val ownerAccessibility: SemanticsOwnerAccessibility
 ) : Accessible,
     // Must be a subclass of java.awt.Component because CAccessible only registers property
     // listeners with the accessible context if the Accessible is an instance of java.awt.Component
@@ -171,7 +171,7 @@ internal class ComposeAccessible(
             get() = semanticsConfig.getOrNull(SemanticsProperties.Selected)
 
         private val density: Density
-            get() = controller.desktopComponent.density
+            get() = ownerAccessibility.desktopComponent.density
 
         val horizontalScroll
             get() = semanticsConfig.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
@@ -266,11 +266,11 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            return controller.accessibleParentOf(this@ComposeAccessible)
+            return ownerAccessibility.accessibleParentOf(this@ComposeAccessible)
         }
 
         override fun getAccessibleIndexInParent(): Int {
-            val parent = semanticsNode.parent ?: return controller.indexInScene()
+            val parent = semanticsNode.parent ?: return ownerAccessibility.indexInScene()
             return parent.traversalOrderedChildren().indexOfFirst { it.id == semanticsNode.id }
         }
 
@@ -342,7 +342,7 @@ internal class ComposeAccessible(
             val regularChildren = semanticsNode.traversalOrderedChildren()
             val childrenSize = regularChildren.size
             return if (index < childrenSize) {
-                controller.accessibleByNodeId(regularChildren[index].id)
+                ownerAccessibility.accessibleByNodeId(regularChildren[index].id)
             } else {
                 auxiliaryChildren[index - childrenSize]
             }
@@ -382,7 +382,7 @@ internal class ComposeAccessible(
         override fun getAccessibleAt(p: Point): Accessible? {
             val accessibleChildren = semanticsNode.traversalOrderedChildren()
             for (child in accessibleChildren) {
-                val accessible = controller.accessibleByNodeId(child.id) as? Accessible ?: continue
+                val accessible = ownerAccessibility.accessibleByNodeId(child.id) as? Accessible ?: continue
                 val accessibleComponent = (accessible.accessibleContext as? AccessibleComponent) ?: continue
                 accessibleComponent.getAccessibleAt(p)?.let {
                     return it
@@ -465,7 +465,7 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleRole(): AccessibleRole {
-            SemanticsOwnerAccessibilityController.AccessibilityUsage.notifyInUse()
+            SemanticsOwnerAccessibility.AccessibilityUsage.notifyInUse()
             return computeAccessibleRole()
         }
 

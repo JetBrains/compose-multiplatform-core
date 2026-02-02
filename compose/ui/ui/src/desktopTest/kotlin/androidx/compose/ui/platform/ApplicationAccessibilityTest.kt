@@ -37,7 +37,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.a11y.SemanticsOwnerAccessibilityController
+import androidx.compose.ui.platform.a11y.SemanticsOwnerAccessibility
 import androidx.compose.ui.platform.a11y.ComposeAccessible
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility.ComposeSceneAccessibleContext
 import androidx.compose.ui.unit.*
@@ -375,7 +375,7 @@ class ApplicationAccessibilityTest {
 
     @Test
     fun initiallyFocusedElementNotifiesSystemOfFocus() = runApplicationTest {
-        SemanticsOwnerAccessibilityController.AccessibilityUsage.notifyInUse()
+        SemanticsOwnerAccessibility.AccessibilityUsage.notifyInUse()
 
         val deferredWindow = CompletableDeferred<ComposeWindow>()
         launchTestWindowApplication {

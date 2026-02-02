@@ -43,9 +43,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /**
- * This class manages the accessibility aspects of a [SemanticsOwner].
+ * Manages the accessibility aspects of a [SemanticsOwner].
  *
- * It creates a [ComposeAccessible] for each [SemanticsNode] in the semantics tree, and keeps them
+ * Creates a [ComposeAccessible] for each [SemanticsNode] in the semantics tree, and keeps them
  * up to date with the semantics tree.
  *
  * @param onFocusReceived a callback that will be called with [ComposeAccessible]
@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
  * @see ComposeSceneAccessibility
  * @see ComposeAccessible
  */
-internal class SemanticsOwnerAccessibilityController(
+internal class SemanticsOwnerAccessibility(
     private val owner: SemanticsOwner,
     val desktopComponent: PlatformComponent,
     private val sceneAccessibility: ComposeSceneAccessibility,
@@ -91,7 +91,7 @@ internal class SemanticsOwnerAccessibilityController(
     }
 
     /**
-     * Returns the index of this [SemanticsOwnerAccessibilityController]'s root node in the scene.
+     * Returns the index of this [SemanticsOwnerAccessibility]'s root node in the scene.
      */
     fun indexInScene(): Int {
         return sceneAccessibility.indexOfChild(this)
@@ -318,13 +318,13 @@ internal class SemanticsOwnerAccessibilityController(
     private var syncingJob: Job? = null
 
     /**
-     * Whether this [SemanticsOwnerAccessibilityController] has been disposed.
+     * Whether this [SemanticsOwnerAccessibility] has been disposed.
      */
     @Volatile
     private var disposed = false
 
     /**
-     * Disposes of this [SemanticsOwnerAccessibilityController], releasing any resources associated with it.
+     * Disposes of this [SemanticsOwnerAccessibility], releasing any resources associated with it.
      */
     fun dispose() {
         syncingJob?.cancel()
@@ -339,7 +339,7 @@ internal class SemanticsOwnerAccessibilityController(
             throw IllegalStateException("Sync loop already running")
 
         syncingJob = CoroutineScope(context).launch {
-            AccessibilityUsage.runActiveController(this@SemanticsOwnerAccessibilityController) {
+            AccessibilityUsage.runActiveInstance(this@SemanticsOwnerAccessibility) {
                 while (true) {
                     nodeSyncChannel.receive()
                     syncNodes()
@@ -482,8 +482,8 @@ internal class SemanticsOwnerAccessibilityController(
 
     /**
      * Holds how recently the system has queried the program's accessibility state and manages
-     * enabling/disabling the syncing of [SemanticsOwnerAccessibilityController]s with the semantic tree when the
-     * system has not queried the program's accessibility state for a while.
+     * enabling/disabling the syncing of [SemanticsOwnerAccessibility]s with the semantic tree when
+     * the system has not queried the program's accessibility state for a while.
      */
     object AccessibilityUsage {
 
@@ -494,9 +494,9 @@ internal class SemanticsOwnerAccessibilityController(
         private val MaxIdleTimeNanos = 5.minutes.inWholeNanoseconds
 
         /**
-         * The set of "live" [SemanticsOwnerAccessibilityController]s.
+         * The set of "live" [SemanticsOwnerAccessibility]s.
          */
-        private val activeControllers = mutableSetOf<SemanticsOwnerAccessibilityController>()
+        private val activeInstances = mutableSetOf<SemanticsOwnerAccessibility>()
 
         /**
          * The time of the latest accessibility call from the system.
@@ -508,7 +508,7 @@ internal class SemanticsOwnerAccessibilityController(
          * Resets this object to its initial state. This is needed for tests.
          */
         internal fun reset() {
-            assert(activeControllers.isEmpty())
+            assert(activeInstances.isEmpty())
             lastUseTimeNanos = System.nanoTime() - (MaxIdleTimeNanos + 1)
         }
 
@@ -520,8 +520,8 @@ internal class SemanticsOwnerAccessibilityController(
          */
         fun notifyInUse() {
             lastUseTimeNanos = System.nanoTime()
-            for (controller in activeControllers) {
-                controller.scheduleNodeSyncIfNeeded()
+            for (instance in activeInstances) {
+                instance.scheduleNodeSyncIfNeeded()
             }
         }
 
@@ -536,17 +536,17 @@ internal class SemanticsOwnerAccessibilityController(
 
 
         /**
-         * Registers the given controller as an active one until [block] returns.
+         * Registers the given [SemanticsOwnerAccessibility] as an active one until [block] returns.
          */
-        suspend fun runActiveController(
-            controller: SemanticsOwnerAccessibilityController,
+        suspend fun runActiveInstance(
+            ownerAccessibility: SemanticsOwnerAccessibility,
             block: suspend () -> Unit
         ) {
             try {
-                activeControllers.add(controller)
+                activeInstances.add(ownerAccessibility)
                 block()
             } finally {
-                activeControllers.remove(controller)
+                activeInstances.remove(ownerAccessibility)
             }
         }
     }

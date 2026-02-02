@@ -34,7 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.assertThat
 import androidx.compose.ui.isEqualTo
-import androidx.compose.ui.platform.a11y.SemanticsOwnerAccessibilityController
+import androidx.compose.ui.platform.a11y.SemanticsOwnerAccessibility
 import androidx.compose.ui.platform.a11y.ComposeAccessible
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
 import androidx.compose.ui.semantics.Role
@@ -508,7 +508,7 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
     )
 
     // Reset the a11y usage to avoid having one test affect the next
-    SemanticsOwnerAccessibilityController.AccessibilityUsage.reset()
+    SemanticsOwnerAccessibility.AccessibilityUsage.reset()
 
     runInternalSkikoComposeUiTest(
         semanticsOwnerListener = sceneAccessibility,
@@ -538,7 +538,7 @@ internal class ComposeA11yTestScope(
 
     @Suppress("MemberVisibilityCanBePrivate")
     fun SemanticsNode.fetchAccessible(): ComposeAccessible {
-        for (controller in sceneAccessibility.accessibilityControllers) {
+        for (controller in sceneAccessibility.ownerAccessibilityList) {
             controller.accessibleByNodeId(id)?.let {
                 return it
             }
