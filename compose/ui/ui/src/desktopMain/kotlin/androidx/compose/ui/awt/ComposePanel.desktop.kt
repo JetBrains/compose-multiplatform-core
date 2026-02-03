@@ -55,6 +55,7 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param renderSettings Configuration class for rendering settings.
+ * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
 class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
