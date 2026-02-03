@@ -1,3 +1,6 @@
+
+
+
 /*
  * Copyright 2023 The Android Open Source Project
  *
@@ -17,8 +20,10 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.uikit.toNanoSeconds
+import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.ObjCClass
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import org.jetbrains.skia.Canvas
@@ -26,64 +31,38 @@ import org.jetbrains.skia.Color
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeMake
-import platform.Metal.MTLCreateSystemDefaultDevice
-import platform.Metal.MTLDeviceProtocol
-import platform.Metal.MTLPixelFormatBGRA8Unorm
-import platform.QuartzCore.CAMetalLayer
-import platform.UIKit.UIColor
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
 import platform.UIKit.UIViewMeta
 
-internal interface MetalView {
-    val view: UIView
-    val redrawer: MetalRedrawer
-    var canBeOpaque: Boolean
-    fun dispose()
-}
-
-internal fun MetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    useSeparateRenderThreadWhenPossible: Boolean,
-    render: (Canvas, nanoTime: Long) -> Unit,
-): MetalView = if (useSeparateRenderThreadWhenPossible) {
-    SurfaceMetalView(retrieveInteropTransaction, render).holder
-} else {
-    LegacyMetalView(retrieveInteropTransaction, render).holder
-}
-
 // https://youtrack.jetbrains.com/issue/CMP-9722
-// Copy of the class SurfaceMetalView with a different layer.
-// All the changes here must be implemented in the `SurfaceMetalView` as well.
-private class LegacyMetalView(
+// Copy of the class LegacyMetalView with a different layer.
+// All the changes here must be implemented in the `LegacyMetalView` as well.
+internal class SurfaceMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     render: (Canvas, nanoTime: Long) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
-        @BetaInteropApi
-        override fun layerClass() = CAMetalLayer
+        @OptIn(BetaInteropApi::class)
+        override fun layerClass(): ObjCClass = CMPMetalLayer
     }
 
-    private val device: MTLDeviceProtocol =
-        MTLCreateSystemDefaultDevice()
-            ?: throw IllegalStateException("Metal is not supported on this system")
-
-    private val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
+    private val metalLayer: CMPMetalLayer get() = layer as CMPMetalLayer
     private var canvasBackground: Int = Color.TRANSPARENT
 
-    val holder: MetalView get() = LegacyMetalViewHolder(this)
+    val holder: MetalView get() = SurfaceMetalViewHolder(this)
 
-    val redrawer = LegacyMetalRedrawer(
+    val redrawer = SurfaceMetalRedrawer(
         metalLayer,
-        retrieveInteropTransaction
+        retrieveInteropTransaction,
     ) { canvas, targetTimestamp ->
         canvas.clear(canvasBackground)
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
     /**
-     * @see [LegacyMetalView.canBeOpaque]
+     * @see [SurfaceMetalView.canBeOpaque]
      */
     var canBeOpaque: Boolean
         get() = redrawer.canBeOpaque
@@ -95,15 +74,7 @@ private class LegacyMetalView(
     init {
         userInteractionEnabled = false
 
-        metalLayer.also {
-            // Workaround for cinterop issue
-            // Type mismatch: inferred type is platform.Metal.MTLDeviceProtocol but objcnames.protocols.MTLDeviceProtocol? was expected
-            it.device = device as objcnames.protocols.MTLDeviceProtocol?
-
-            it.pixelFormat = MTLPixelFormatBGRA8Unorm
-            it.backgroundColor = UIColor.clearColor.CGColor
-            it.framebufferOnly = false
-        }
+        metalLayer.contentsScale = this.contentScaleFactor
 
         updateCanvasBackgroundColor()
     }
@@ -162,8 +133,8 @@ private class LegacyMetalView(
     override fun canBecomeFirstResponder() = false
 }
 
-private class LegacyMetalViewHolder(
-    private val metalView: LegacyMetalView
+private class SurfaceMetalViewHolder(
+    private val metalView: SurfaceMetalView
 ): MetalView {
     override val view: UIView get() = metalView
     override val redrawer: MetalRedrawer get() = metalView.redrawer

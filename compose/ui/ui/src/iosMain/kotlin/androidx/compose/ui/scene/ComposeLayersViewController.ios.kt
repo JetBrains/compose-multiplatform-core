@@ -153,7 +153,7 @@ internal class ComposeLayersViewController(
     fun attach(layer: UIKitComposeSceneLayer) {
         val isFirstLayer = layers.isEmpty()
         layers.add(layer)
-        view.insertSubview(layer.interactionView, belowSubview = metalView)
+        view.insertSubview(layer.interactionView, belowSubview = metalView.view)
         layer.interactionView.addLayoutConstraintsToMatch(view)
         view.embedSubview(layer.overlayView)
 
