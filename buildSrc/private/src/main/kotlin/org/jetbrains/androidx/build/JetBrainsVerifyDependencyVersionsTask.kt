@@ -98,6 +98,7 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 }
 
+@Suppress("DEPRECATION")
 internal fun Project.configureDependencyVerification() {
     // Verify only what is publishing
     val component = JetBrainsPublication.projectPathToComponent[path] ?: return

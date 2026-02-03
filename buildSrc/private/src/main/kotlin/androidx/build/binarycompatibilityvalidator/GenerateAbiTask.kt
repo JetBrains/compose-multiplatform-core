@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("ERROR_SUPPRESSION")
+
 package androidx.build.binarycompatibilityvalidator
 
 import javax.inject.Inject
@@ -37,9 +39,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
-import org.jetbrains.kotlin.abi.tools.AbiToolsFactory
-import org.jetbrains.kotlin.abi.tools.api.AbiFilters
-import org.jetbrains.kotlin.abi.tools.api.v2.KlibTarget
+import org.jetbrains.kotlin.abi.tools.*
 
 @CacheableTask
 abstract class GenerateAbiTask
@@ -78,7 +78,7 @@ abstract class KlibDumpWorker : WorkAction<KlibDumpWorker.Parameters> {
         abstract val excludedAnnotatedWith: SetProperty<String>
     }
 
-    private val abiTools = AbiToolsFactory().get().v2
+    private val abiTools = AbiTools.getInstance()
 
     override fun execute() {
         val klibTargets = parameters.klibs.get()
