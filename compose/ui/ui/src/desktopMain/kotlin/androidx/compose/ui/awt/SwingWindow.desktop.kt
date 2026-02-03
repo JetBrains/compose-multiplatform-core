@@ -203,7 +203,7 @@ fun SwingWindow(
         }
     }
 
-    val coroutineContext = LocalCoroutineContext.current
+    val coroutineContext = rememberCoroutineScope().coroutineContext
 
     SwingWindow(
         visible = visible,

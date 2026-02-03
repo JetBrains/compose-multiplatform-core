@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
@@ -39,7 +40,6 @@ import androidx.compose.ui.window.DialogModalityType
 import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
-import androidx.compose.ui.window.LocalCoroutineContext
 import androidx.compose.ui.window.LocalWindow
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.UndecoratedWindowDecoration
@@ -234,7 +234,7 @@ fun SwingDialog(
         }
     }
 
-    val coroutineContext = LocalCoroutineContext.current
+    val coroutineContext = rememberCoroutineScope().coroutineContext
 
     SwingDialog(
         visible = visible,

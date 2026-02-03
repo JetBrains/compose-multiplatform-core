@@ -30,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
@@ -38,8 +37,6 @@ import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -226,7 +223,6 @@ suspend fun awaitApplication(
                                 // density to calculate intrinsicSize
                                 LocalDensity provides GlobalDensity,
                                 LocalLayoutDirection provides GlobalLayoutDirection,
-                                LocalCoroutineContext provides coroutineContext
                             ) {
                                 applicationScope.content()
                             }
@@ -253,11 +249,6 @@ interface ApplicationScope {
      */
     fun exitApplication()
 }
-
-/**
- * Allows passing the coroutine context to child recomposers.
- */
-internal val LocalCoroutineContext = staticCompositionLocalOf<CoroutineContext> { EmptyCoroutineContext }
 
 private object YieldFrameClock : MonotonicFrameClock {
     override suspend fun <R> withFrameNanos(
