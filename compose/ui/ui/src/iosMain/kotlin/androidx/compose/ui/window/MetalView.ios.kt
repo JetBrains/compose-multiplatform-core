@@ -36,7 +36,7 @@ import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
 import platform.UIKit.UIViewMeta
 
-internal interface MetalView {
+internal sealed interface MetalView {
     val view: UIView
     val redrawer: MetalRedrawer
     var canBeOpaque: Boolean
@@ -55,7 +55,7 @@ internal fun MetalView(
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class SurfaceMetalView with a different layer.
-// All the changes here must be implemented in the `SurfaceMetalView` as well.
+// All changes made here must also be implemented in the `SurfaceMetalView`.
 private class LegacyMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     render: (Canvas, nanoTime: Long) -> Unit,

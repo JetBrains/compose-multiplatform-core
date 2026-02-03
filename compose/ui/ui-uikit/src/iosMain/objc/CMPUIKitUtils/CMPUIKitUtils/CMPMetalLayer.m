@@ -63,7 +63,7 @@ static const NSUInteger kMaxDrawables = 3;
     NSUInteger width = (NSUInteger)_drawableSize.width;
     NSUInteger height = (NSUInteger)_drawableSize.height;
 
-    if (width == 0 || height == 0) {
+    if (width <= 0 || height <= 0) {
         return NULL;
     }
 
@@ -112,28 +112,33 @@ static const NSUInteger kMaxDrawables = 3;
             CFRelease(surface);
         }
     } else {
-        // Prefer idle surfaces; fall back to oldest by presentation time
-        CMPDrawable *bestDrawable = nil;
-        CFTimeInterval oldestTime = INFINITY;
+        // Prefer a drawable that is not in use, or the oldest presented drawable
+        // Separate idle and in-use drawables for clarity
+        CMPDrawable *oldestIdle = nil;
+        CMPDrawable *oldestInUse = nil;
+        CFTimeInterval oldestIdleTime = INFINITY;
+        CFTimeInterval oldestInUseTime = INFINITY;
 
         for (CMPDrawable *drawable in _availableDrawables) {
             BOOL inUse = IOSurfaceIsInUse(drawable.surface);
 
             if (!inUse) {
-                if (bestDrawable == nil || drawable.presentedTime < oldestTime) {
-                    bestDrawable = drawable;
-                    oldestTime = drawable.presentedTime;
+                if (drawable.presentedTime < oldestIdleTime) {
+                    oldestIdle = drawable;
+                    oldestIdleTime = drawable.presentedTime;
                 }
-            } else if (bestDrawable == nil || IOSurfaceIsInUse(bestDrawable.surface)) {
-                if (drawable.presentedTime < oldestTime) {
-                    bestDrawable = drawable;
-                    oldestTime = drawable.presentedTime;
+            } else {
+                if (drawable.presentedTime < oldestInUseTime) {
+                    oldestInUse = drawable;
+                    oldestInUseTime = drawable.presentedTime;
                 }
             }
         }
 
+        CMPDrawable *bestDrawable = oldestIdle ?: oldestInUse;
+        // Prefer idle, fall back to in-use
         if (bestDrawable != nil) {
-            result = bestDrawable;
+            result = oldestIdle ?: oldestInUse;
             [_availableDrawables removeObject:bestDrawable];
         }
     }

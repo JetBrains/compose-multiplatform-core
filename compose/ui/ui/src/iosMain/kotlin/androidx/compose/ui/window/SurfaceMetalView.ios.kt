@@ -1,8 +1,5 @@
-
-
-
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +35,7 @@ import platform.UIKit.UIViewMeta
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class LegacyMetalView with a different layer.
-// All the changes here must be implemented in the `LegacyMetalView` as well.
+// All changes made here must also be implemented in the `LegacyMetalView`.
 internal class SurfaceMetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     render: (Canvas, nanoTime: Long) -> Unit,

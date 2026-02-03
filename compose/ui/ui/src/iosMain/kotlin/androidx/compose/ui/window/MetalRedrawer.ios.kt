@@ -35,7 +35,7 @@ import platform.Foundation.NSTimeInterval
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 
-sealed interface MetalRedrawer {
+internal sealed interface MetalRedrawer {
     var isActive: Boolean
     fun draw(waitUntilCompletion: Boolean)
     fun setNeedsRedraw()
@@ -49,7 +49,7 @@ sealed interface MetalRedrawer {
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class SurfaceMetalRedrawer with a different layer.
-// All the changes here must be implemented in the `SurfaceMetalRedrawer` as well.
+// All changes made here must also be implemented in the `SurfaceMetalRedrawer`.
 internal class LegacyMetalRedrawer(
     private val metalLayer: CAMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,

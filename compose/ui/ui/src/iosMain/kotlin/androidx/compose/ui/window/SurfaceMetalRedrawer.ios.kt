@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ internal class DisplayLinkConditions(
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class LegacyMetalRedrawer with a different layer.
-// All the changes here must be implemented in the `LegacyMetalRedrawer` as well.
+// All changes made here must also be implemented in the `LegacyMetalRedrawer`.
 internal class SurfaceMetalRedrawer(
     private val metalLayer: CMPMetalLayer,
     private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
@@ -406,9 +406,10 @@ internal class SurfaceMetalRedrawer(
         var isDrawing = false
 
         nextFrameLock.doLocked {
+            val hasScheduledFrame = nextFrameForRenderLoop != null
             nextFrameForRenderLoop?.dispose()
             nextFrameForRenderLoop = frame
-            isDrawing = isRenderLoopActive
+            isDrawing = isRenderLoopActive || hasScheduledFrame
         }
 
         return !isDrawing
@@ -433,10 +434,7 @@ internal class SurfaceMetalRedrawer(
             metalLayer.nextDrawable()
         }
 
-        val presentAsynchronously = !NSThread.isMainThread && !frame.waitUntilCompletion
-
         if (drawable == null) {
-            // Logger.warn { "'metalLayer.nextDrawable()' returned null. Skipping the frame." }
             frame.dispose()
             return
         }
@@ -479,7 +477,7 @@ internal class SurfaceMetalRedrawer(
         commandBuffer.addCompletedHandler {
             dispatch_group_leave(inflightCommandBuffersGroup)
         }
-        if (presentAsynchronously) {
+        if (!frame.waitUntilCompletion) {
             commandBuffer.addScheduledHandler {
                 metalLayer.presentDrawable(drawable) {
                     frame.interopTransaction.performTransaction()
@@ -488,14 +486,11 @@ internal class SurfaceMetalRedrawer(
         }
         commandBuffer.commit()
 
-        // Present texture
-        if (!presentAsynchronously) {
+        if (frame.waitUntilCompletion) {
             commandBuffer.waitUntilScheduled()
             metalLayer.presentDrawable(drawable) {
                 frame.interopTransaction.performTransaction()
             }
-        }
-        if (frame.waitUntilCompletion) {
             commandBuffer.waitUntilCompleted()
         }
     }
