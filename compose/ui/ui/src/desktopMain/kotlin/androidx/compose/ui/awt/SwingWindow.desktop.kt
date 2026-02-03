@@ -16,7 +16,12 @@
 
 package androidx.compose.ui.awt
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentCompositionLocalContext
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
@@ -24,8 +29,26 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.scene.LocalComposeSceneContext
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.*
-import androidx.compose.ui.window.*
+import androidx.compose.ui.util.ComponentUpdater
+import androidx.compose.ui.util.componentListenerRef
+import androidx.compose.ui.util.setIcon
+import androidx.compose.ui.util.setPositionSafely
+import androidx.compose.ui.util.setSizeSafely
+import androidx.compose.ui.util.setUndecoratedSafely
+import androidx.compose.ui.util.windowListenerRef
+import androidx.compose.ui.util.windowStateListenerRef
+import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
+import androidx.compose.ui.window.UndecoratedWindowDecoration
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowLocationTracker
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.componentOrientation
+import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.resizerThickness
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
