@@ -39,6 +39,7 @@ import androidx.compose.ui.window.DialogModalityType
 import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
+import androidx.compose.ui.window.LocalCoroutineContext
 import androidx.compose.ui.window.LocalWindow
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
 import androidx.compose.ui.window.UndecoratedWindowDecoration
@@ -233,6 +234,8 @@ fun SwingDialog(
         }
     }
 
+    val coroutineContext = LocalCoroutineContext.current
+
     SwingDialog(
         visible = visible,
         onPreviewKeyEvent = onPreviewKeyEvent,
@@ -243,10 +246,14 @@ fun SwingDialog(
                 ComposeDialog(
                     owner = owner,
                     modalityType = currentModalityType,
-                    graphicsConfiguration = graphicsConfiguration
+                    graphicsConfiguration = graphicsConfiguration,
+                    coroutineContext = coroutineContext
                 )
             } else {
-                ComposeDialog(graphicsConfiguration = graphicsConfiguration)
+                ComposeDialog(
+                    graphicsConfiguration = graphicsConfiguration,
+                    coroutineContext = coroutineContext
+                )
             }
             dialog.apply {
                 // close state is controlled by DialogState.isOpen
