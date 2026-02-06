@@ -161,7 +161,7 @@ androidXMultiplatform {
         desktopTest {
             dependsOn(skikoTest)
             dependencies {
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
             }
         }
 

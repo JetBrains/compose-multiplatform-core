@@ -149,6 +149,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
         project.changeMavenCoordinatesToJetBrains()
         project.configureMavenArtifactUpload(componentFactory)
         project.configureDependencyVerification()
+        project.configureSkikoAwtRuntimeConstraints()
         project.plugins.all { plugin ->
             if (plugin is KotlinMultiplatformPluginWrapper) {
                 onKotlinMultiplatformPluginApplied(project)

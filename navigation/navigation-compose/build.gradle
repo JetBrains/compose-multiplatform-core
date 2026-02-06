@@ -136,7 +136,7 @@ androidXMultiplatform {
         desktopTest {
             dependsOn(nonAndroidTest)
             dependencies {
-                implementation(libs.skikoCurrentOs)
+                implementation(libs.skikoAwtRuntime)
                 implementation(libs.kotlinCoroutinesSwing)
             }
         }
