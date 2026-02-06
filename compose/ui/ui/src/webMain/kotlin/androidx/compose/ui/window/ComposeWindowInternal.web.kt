@@ -396,7 +396,6 @@ internal class ComposeWindow(
         }
 
         addTypedEvent<PointerEvent>("pointerdown") { event ->
-            println("[${event.type}] ${event.pointerType} ${event.offsetX} ${event.offsetY}")
             onPointerEvent(event)
         }
 
