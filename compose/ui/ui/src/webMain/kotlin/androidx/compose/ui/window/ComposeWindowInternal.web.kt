@@ -596,7 +596,8 @@ internal class ComposeWindow(
     private fun onPointerEvent(
         event: PointerEvent,
     ) {
-        // we need this guard so that we won't process touch events second time
+        // TODO: we need this guard so that we won't process touch events second time
+        // see https://youtrack.jetbrains.com/issue/CMP-9745/Switch-to-pointer-events-for-processing-touch-events
         if (event.pointerType != "mouse") return
 
         keyboardModeState = KeyboardModeState.Hardware
