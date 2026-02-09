@@ -11,24 +11,27 @@ import org.jetbrains.skiko.MainUIDispatcher
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
 import org.jetbrains.skiko.initializeCAccessible
+import androidx.compose.ui.scene.skia.SkiaLayerComponent
 
 /**
  * A helper class for requesting accessibility focus on a given accessible.
  */
 internal class AccessibleFocusHelper(
     private val component: Component,
-    private val regularAccessible: Accessible,
+    private val sceneAccessibleContext: AccessibleContext,
 ) {
 
     private var focusedAccessible: Accessible? = null
 
     val accessibleContext: AccessibleContext
-        get() = (focusedAccessible ?: regularAccessible).accessibleContext
+        get() = focusedAccessible?.accessibleContext ?: sceneAccessibleContext
 
     private var resetFocusAccessibleJob: Job? = null
 
     @OptIn(DelicateCoroutinesApi::class)
     fun requestFocusOnAccessible(accessible: Accessible?) {
+        initializeAccessible(accessible)
+
         focusedAccessible = accessible
 
         when (hostOs) {
@@ -44,9 +47,24 @@ internal class AccessibleFocusHelper(
         // and its accessibility context. This timeout is used to deal with concurrency
         // TODO Find more reliable procedure
         resetFocusAccessibleJob?.cancel()
-        resetFocusAccessibleJob = GlobalScope.launch(MainUIDispatcher) {
-            delay(100)
-            focusedAccessible = null
+        if (focusedAccessible != null) {
+            resetFocusAccessibleJob = GlobalScope.launch(MainUIDispatcher) {
+                delay(100)
+                focusedAccessible = null
+            }
+        }
+    }
+
+    /**
+     * When [focusedAccessible] is set, for the accessible hierarchy to be correct, its parent must
+     * be reported as the scene's accessible context. This function returns it if [accessible] is
+     * [focusedAccessible].
+     */
+    fun accessibleParentOverride(accessible: Accessible): Accessible? {
+        return if (accessible == focusedAccessible) {
+            sceneAccessibleContext.accessibleParent as Accessible
+        } else {
+            null
         }
     }
 
@@ -68,29 +86,22 @@ internal class AccessibleFocusHelper(
 }
 
 /**
- * This method should be called on custom [Accessible] creation (or its context if context is
- * created lazily).
+ * [sun.lwawt.macosx.CAccessible.getCAccessible] builds a mapping of [AccessibleContext] to
+ * [sun.lwawt.macosx.CAccessible] instances (which wrap the corresponding [Accessible]).
+ * If it is called with the Skia layer content [Accessible] (=[SkiaLayerComponent.contentRoot])
+ * while the [AccessibleFocusHelper] hack is active ([AccessibleFocusHelper.focusedAccessible] is
+ * not `null`), it builds an incorrect mapping, associating the focused [AccessibleContext] with
+ * [SkiaLayerComponent.contentRoot].
  *
- * JDK's accessibility support (at least for macOS) builds mapping AccessibleContext -> Accessible.
- * Some [Accessible]s are built only when focus is settled and
- * since we have a hack [AccessibleFocusHelper.requestFocusOnAccessible], wrong mapping
- * can be built (ComponentAccessibleContext -> SkiaLayer instead of
- * ComponentAccessibleContext -> ComponentAccessible).
+ * To work around this problem, [initializeAccessible] explicitly calls
+ * [sun.lwawt.macosx.CAccessible.getCAccessible] on the focused [Accessible], forcing the correct
+ * association to be made. Future calls then just retrieve the already stored value.
  *
- * This method forces JDK's accessibility support to cache mapping
- * ComponentAccessibleContext -> ComponentAccessible, if it is called on
- * ComponentAccessibleContext creation.
- *
- * Related to the [issue](https://youtrack.jetbrains.com/issue/COMPOSE-176).
+ * See also [Error when following the instructions of
+ * VoiceOver](https://youtrack.jetbrains.com/issue/CMP-176).
  */
-internal fun initializeAccessible(accessible: Accessible) {
-    when (hostOs) {
-        OS.MacOS -> {
-            initializeCAccessible(accessible)
-        }
-
-        else -> {
-            // TODO: do we need something for Windows?
-        }
+private fun initializeAccessible(accessible: Accessible?) {
+    if ((accessible != null) && (hostOs == OS.MacOS)) {
+        initializeCAccessible(accessible)
     }
 }

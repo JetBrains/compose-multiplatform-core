@@ -487,5 +487,4 @@ tasks.desktopTest {
     useJUnit {
         excludeCategories("androidx.compose.ui.HeadlessTest")
     }
-    finalizedBy("desktopHeadlessTest")
 }
