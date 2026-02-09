@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asComposeCanvas
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.toSize
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit.NANOSECONDS
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
@@ -243,7 +245,7 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
 
     /**
      * Update the composition with the content described by the [content] composable. After this
-     * has been called the changes to produce the initial composition has been calculated and
+     * has been called, the changes to produce the initial composition have been calculated and
      * applied to the composition.
      *
      * Will throw an [IllegalStateException] if the composition has been disposed.
@@ -289,6 +291,40 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
     fun render(time: Duration): Image =
         render(time.toLong(NANOSECONDS))
 
+    /**
+     * Render the current content until there are no more invalidations.
+     *
+     * @param initialNanoTime The time to start rendering from.
+     * @param stepNanoTime The time to step rendering by.
+     */
+    @ExperimentalComposeUiApi
+    fun renderUntilIdle(initialNanoTime: Long = 0, stepNanoTime: Long = 16L): Long {
+        var time = initialNanoTime
+        Snapshot.sendApplyNotifications()
+        while (hasInvalidations()) {
+            render(time)
+            time += stepNanoTime
+            Snapshot.sendApplyNotifications()
+        }
+        return time
+    }
+
+    /**
+     * Render the current content until there are no more invalidations.
+     *
+     * @param initialNanoTime The time to start rendering from.
+     * @param stepNanoTime The time to step rendering by.
+     */
+    @ExperimentalComposeUiApi
+    fun renderUntilIdle(
+        initialNanoTime: Duration,
+        stepNanoTime: Duration = 16.milliseconds
+    ): Long {
+        return renderUntilIdle(
+            initialNanoTime = initialNanoTime.inWholeNanoseconds,
+            stepNanoTime = stepNanoTime.inWholeNanoseconds
+        )
+    }
     /**
      * Send pointer event to the content.
      *

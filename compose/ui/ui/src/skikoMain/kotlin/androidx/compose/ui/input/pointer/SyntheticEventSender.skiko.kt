@@ -39,7 +39,7 @@ import androidx.compose.ui.util.fastMapNotNull
  * The alternative of sending synthetic moves is to send a native press/release as
  * Enter/Exit separately from Press/Release.
  * But this approach requires more changes - we need a separate HitPathTracker for Enter/Exit.
- * The user code  won't see anything new with this approach
+ * The user code won't see anything new with this approach
  * (besides that Enter/Exit event will have nativeEvent.type == Release/Press)
  *
  * We don't send synthetic events for touch, as it doesn't have Enter/Exit, and it will be
@@ -81,6 +81,14 @@ internal class SyntheticEventSender(
         val syntheticReleasesResult = sendMissingReleases(event)
         val syntheticPressesResult = sendMissingPresses(event)
         val eventResult = sendInternal(event)
+
+        // Clear `previousEvent` when the mouse exits to prevent any synthetic events from being
+        // sent accidentally.
+        if ((event.eventType == PointerEventType.Exit) &&
+            (event.pointers.fastAll { it.type == PointerType.Mouse })) {
+            previousEvent = null
+        }
+
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
             syntheticPressesResult,
