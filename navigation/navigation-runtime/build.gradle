@@ -63,6 +63,7 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
         }
 
+        nonAndroidMain.dependsOn(commonMain)
         jvmMain.dependsOn(nonAndroidMain)
         jvmTest.dependsOn(nonAndroidTest)
         desktopMain.dependsOn(jvmMain)
