@@ -32,6 +32,10 @@ android {
     compileSdk = 35
 }
 
+android {
+    compileSdk = 35
+}
+
 dependencies {
     api(libs.jspecify)
     // Public API dependencies

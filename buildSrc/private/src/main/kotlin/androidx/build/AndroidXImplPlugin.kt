@@ -662,20 +662,16 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
         name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
-    private fun AarMetadata.configureMinAgpVersion() {
-        @Suppress("UnstableApiUsage") // usage of minAgpVersion
-        minAgpVersion.set(
-            minCompileSdk.map { value ->
-                // Taken from
-                // https://developer.android.com/build/releases/gradle-plugin#api-level-support
-                when (value) {
-                    1 -> "7.2.0"
-                    33 -> "7.2.0"
-                    34 -> "8.1.1"
-                    35 -> "8.6.0"
-                    36 -> "8.9.1"
-                    else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
-                }
+    private fun AarMetadata.configure(compileSdk: Int?) {
+        // Taken from
+        // https://developer.android.com/build/releases/gradle-plugin#api-level-support
+        fun mapToMinAgpVersion(compileSdk: Int): String {
+            return when (compileSdk) {
+                33 -> "7.2.0"
+                34 -> "8.1.1"
+                35 -> "8.6.0"
+                36 -> "8.9.1"
+                else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
             }
         }
 
