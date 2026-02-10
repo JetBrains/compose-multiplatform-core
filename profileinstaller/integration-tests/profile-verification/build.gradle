@@ -29,7 +29,8 @@ import java.util.zip.ZipFile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
+    //id("com.android.experimental.built-in-kotlin")
+    id("org.jetbrains.kotlin.android")
 }
 
 // This task copies the apks provided by the `apkAssets` configuration and places them in the

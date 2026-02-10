@@ -26,7 +26,8 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("com.android.legacy-kapt")
-    id("com.android.experimental.built-in-kotlin")
+    //id("com.android.experimental.built-in-kotlin")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {

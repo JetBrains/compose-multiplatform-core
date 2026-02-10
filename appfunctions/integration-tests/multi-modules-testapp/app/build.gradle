@@ -18,7 +18,8 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
+    //id("com.android.experimental.built-in-kotlin")
+    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
