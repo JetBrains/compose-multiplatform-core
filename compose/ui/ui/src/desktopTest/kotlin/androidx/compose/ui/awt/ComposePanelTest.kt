@@ -938,4 +938,36 @@ class ComposePanelTest {
             frame.dispose()
         }
     }
+
+    @Test
+    fun `ComposePanel revalidates container on content changes`() = runApplicationTest {
+        assumeFalse(GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance)
+
+        var itemHeight by mutableStateOf(10)
+        val composePanel = ComposePanel()
+        
+        composePanel.setContent {
+            Box(Modifier.size(10.dp, itemHeight.dp))
+        }
+
+        val frame = JFrame()
+        try {
+            frame.contentPane.add(composePanel, BorderLayout.NORTH)
+            frame.size = Dimension(500, 400)
+            frame.isVisible = true
+            
+            awaitIdle()
+
+            assertEquals(10, composePanel.size.height)
+            
+            // Change the content size
+            itemHeight = 60
+            
+            awaitIdle()
+
+            assertEquals(60, composePanel.size.height)
+        } finally {
+            frame.dispose()
+        }
+    }
 }

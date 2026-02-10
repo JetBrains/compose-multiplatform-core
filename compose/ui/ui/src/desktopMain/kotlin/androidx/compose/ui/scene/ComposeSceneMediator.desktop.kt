@@ -694,8 +694,12 @@ internal class ComposeSceneMediator(
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) = catchExceptions {
         interopContainer.postponingExecutingScheduledUpdates {
+            val hadInvalidations = scene.hasInvalidations()
             canvas.withSceneOffset {
                 scene.render(asComposeCanvas(), nanoTime)
+            }
+            if (hadInvalidations) {
+                container.revalidate()
             }
         }
     }
