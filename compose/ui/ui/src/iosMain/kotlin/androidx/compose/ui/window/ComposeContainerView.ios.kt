@@ -49,7 +49,7 @@ internal class ComposeContainerView(
         updateBackgroundColor()
     }
 
-    private var metalView: MetalView? = null
+    private var metalView: MetalViewHolder? = null
     private var onDidMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
@@ -79,7 +79,7 @@ internal class ComposeContainerView(
     }
 
     fun updateMetalView(
-        metalView: MetalView?,
+        metalView: MetalViewHolder?,
         onDidMoveToWindow: (UIWindow?) -> Unit = {},
         onLayoutSubviews: () -> Unit = {}
     ) {

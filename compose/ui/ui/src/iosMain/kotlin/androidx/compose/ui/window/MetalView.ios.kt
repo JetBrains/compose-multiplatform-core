@@ -36,7 +36,11 @@ import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
 import platform.UIKit.UIViewMeta
 
-internal sealed interface MetalView {
+/**
+ * Hides implementation details of LegacyMetalView and SurfaceMetalView.
+ * Must be removed after https://youtrack.jetbrains.com/issue/CMP-9722
+ */
+internal sealed interface MetalViewHolder {
     val view: UIView
     val redrawer: MetalRedrawer
     var canBeOpaque: Boolean
@@ -47,7 +51,7 @@ internal fun MetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
     render: (Canvas, nanoTime: Long) -> Unit,
-): MetalView = if (useSeparateRenderThreadWhenPossible) {
+): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
     SurfaceMetalView(retrieveInteropTransaction, render).holder
 } else {
     LegacyMetalView(retrieveInteropTransaction, render).holder
@@ -72,7 +76,7 @@ private class LegacyMetalView(
     private val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
     private var canvasBackground: Int = Color.TRANSPARENT
 
-    val holder: MetalView get() = LegacyMetalViewHolder(this)
+    val holder: MetalViewHolder get() = LegacyMetalViewHolder(this)
 
     val redrawer = LegacyMetalRedrawer(
         metalLayer,
@@ -164,7 +168,7 @@ private class LegacyMetalView(
 
 private class LegacyMetalViewHolder(
     private val metalView: LegacyMetalView
-): MetalView {
+): MetalViewHolder {
     override val view: UIView get() = metalView
     override val redrawer: MetalRedrawer get() = metalView.redrawer
     override var canBeOpaque: Boolean by metalView::canBeOpaque

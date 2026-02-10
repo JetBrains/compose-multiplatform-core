@@ -48,7 +48,7 @@ internal class SurfaceMetalView(
     private val metalLayer: CMPMetalLayer get() = layer as CMPMetalLayer
     private var canvasBackground: Int = Color.TRANSPARENT
 
-    val holder: MetalView get() = SurfaceMetalViewHolder(this)
+    val holder: MetalViewHolder get() = SurfaceMetalViewHolder(this)
 
     val redrawer = SurfaceMetalRedrawer(
         metalLayer,
@@ -132,7 +132,7 @@ internal class SurfaceMetalView(
 
 private class SurfaceMetalViewHolder(
     private val metalView: SurfaceMetalView
-): MetalView {
+): MetalViewHolder {
     override val view: UIView get() = metalView
     override val redrawer: MetalRedrawer get() = metalView.redrawer
     override var canBeOpaque: Boolean by metalView::canBeOpaque
