@@ -17,6 +17,8 @@
 package androidx.camera.camera2.pipe.internal
 
 import android.util.Size
+import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame.Companion.isFrameInfoAvailable
 import androidx.camera.camera2.pipe.Frame.Companion.isImageAvailable
@@ -26,6 +28,7 @@ import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.media.OutputImage
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
@@ -45,22 +48,76 @@ import org.robolectric.annotation.Config
 class FrameImplTest {
     private val stream1Id = StreamId(1)
     private val stream2Id = StreamId(2)
+    private val stream3Id = StreamId(3)
 
     private val output1Id = OutputId(10)
     private val output2Id = OutputId(12)
     private val output3Id = OutputId(13)
+    private val output4Id = OutputId(14)
+    private val output5Id = OutputId(15)
+    private val output6Id = OutputId(16)
+
+    private val cameraId = CameraId("0")
+
+    private val outputStream1 =
+        StreamGraphImpl.OutputStreamImpl(
+            output1Id,
+            Size(640, 480),
+            StreamFormat.YUV_420_888,
+            cameraId,
+        )
+    private val outputStream3 =
+        StreamGraphImpl.OutputStreamImpl(
+            output3Id,
+            Size(640, 480),
+            StreamFormat.YUV_420_888,
+            cameraId,
+        )
+    private val outputStream4 =
+        StreamGraphImpl.OutputStreamImpl(
+            output4Id,
+            Size(640, 480),
+            StreamFormat.RAW_SENSOR,
+            cameraId,
+        )
+    private val outputStream5 =
+        StreamGraphImpl.OutputStreamImpl(
+            output5Id,
+            Size(720, 480),
+            StreamFormat.RAW_SENSOR,
+            cameraId,
+        )
+    private val outputStream6 =
+        StreamGraphImpl.OutputStreamImpl(
+            output6Id,
+            Size(1600, 900),
+            StreamFormat.RAW_SENSOR,
+            cameraId,
+        )
+    private val stream1 =
+        CameraStream(stream1Id, listOf(outputStream1)).apply { outputStream1.stream = this }
+    private val stream2 =
+        CameraStream(stream2Id, listOf(outputStream3)).apply { outputStream3.stream = this }
+    private val stream3 =
+        CameraStream(stream3Id, listOf(outputStream4, outputStream5, outputStream6)).apply {
+            outputStream4.stream = this
+            outputStream5.stream = this
+            outputStream6.stream = this
+        }
 
     private val fakeSurfaces = FakeSurfaces()
     private val stream1Surface = fakeSurfaces.createFakeSurface(Size(640, 480))
     private val stream2Surface = fakeSurfaces.createFakeSurface(Size(640, 480))
-    private val streamToSurfaceMap = mapOf(stream1Id to stream1Surface, stream2Id to stream2Surface)
+    private val stream3Surface = fakeSurfaces.createFakeSurface(Size(640, 480))
+    private val streamToSurfaceMap =
+        mapOf(stream1Id to stream1Surface, stream2Id to stream2Surface, stream3Id to stream3Surface)
 
     private val frameNumber = FrameNumber(420)
     private val frameTimestampNs = 1234L
     private val frameTimestamp = CameraTimestamp(frameTimestampNs)
 
-    private val imageStreams = setOf(stream1Id, stream2Id)
-    private val request = Request(streams = listOf(stream1Id, stream2Id))
+    private val imageStreams = setOf(stream1, stream2, stream3)
+    private val request = Request(streams = listOf(stream1Id, stream2Id, stream3Id))
     private val fakeRequestMetadata =
         FakeRequestMetadata.from(request, streamToSurfaceMap, repeating = false)
 
@@ -75,22 +132,33 @@ class FrameImplTest {
     private val frameInfoResult = frameState.frameInfoOutput
     private val streamResult1 = frameState.imageOutputs.first { it.streamId == stream1Id }
     private val streamResult2 = frameState.imageOutputs.first { it.streamId == stream2Id }
+    private val streamResult3 =
+        frameState.imageOutputs.filter { it.streamId == stream3Id }.sortedBy { it.outputId.value }
 
     private val stream1Image = FakeImage(640, 480, StreamFormat.YUV_420_888.value, frameTimestampNs)
     private val stream2Image = FakeImage(640, 480, StreamFormat.YUV_420_888.value, frameTimestampNs)
+    private val stream3Image1 = FakeImage(640, 480, StreamFormat.RAW_SENSOR.value, frameTimestampNs)
 
     private val stream1OutputImage = OutputImage.from(stream1Id, output1Id, stream1Image)
     private val stream2OutputImage = OutputImage.from(stream2Id, output3Id, stream2Image)
+    private val stream3OutputImage1 = OutputImage.from(stream3Id, output4Id, stream3Image1)
+
     private val fakeFrameMetadata = FakeFrameMetadata(frameNumber = frameNumber)
     private val fakeFrameInfo = FakeFrameInfo(metadata = fakeFrameMetadata)
 
     private val sharedOutputFrame = FrameImpl(frameState)
 
+    @After
+    fun tearDown() {
+        fakeSurfaces.close()
+        sharedOutputFrame.close()
+    }
+
     @Test
     fun sharedOutputFrameHasResults() {
         assertThat(sharedOutputFrame.frameNumber).isEqualTo(frameNumber)
         assertThat(sharedOutputFrame.frameTimestamp).isEqualTo(frameTimestamp)
-        assertThat(sharedOutputFrame.imageStreams).containsExactly(stream1Id, stream2Id)
+        assertThat(sharedOutputFrame.imageStreams).containsExactly(stream1Id, stream2Id, stream3Id)
     }
 
     @Test
@@ -101,6 +169,7 @@ class FrameImplTest {
 
         assertThat(streamResult1.status).isEqualTo(OutputStatus.UNAVAILABLE)
         assertThat(streamResult2.status).isEqualTo(OutputStatus.UNAVAILABLE)
+        streamResult3.forEach { assertThat(it.status).isEqualTo(OutputStatus.UNAVAILABLE) }
         assertThat(frameInfoResult.status).isEqualTo(OutputStatus.UNAVAILABLE)
     }
 
@@ -121,19 +190,28 @@ class FrameImplTest {
         assertThat(outputImage2.streamId).isEqualTo(stream2Id)
         assertThat(outputImage2.outputId).isEqualTo(output3Id)
 
+        assertThat(sharedOutputFrame.isImageAvailable(stream3Id)).isTrue()
+        val outputImage3 = sharedOutputFrame.getImage(stream3Id)!!
+        assertThat(outputImage3.streamId).isEqualTo(stream3Id)
+        assertThat(outputImage3.outputId).isEqualTo(output4Id)
+
         assertThat(stream1Image.isClosed).isFalse()
         assertThat(stream2Image.isClosed).isFalse()
+        assertThat(stream3Image1.isClosed).isFalse()
 
         sharedOutputFrame.close()
 
         assertThat(stream1Image.isClosed).isFalse()
         assertThat(stream2Image.isClosed).isFalse()
+        assertThat(stream3Image1.isClosed).isFalse()
 
         outputImage1.close()
         outputImage2.close()
+        outputImage3.close()
 
         assertThat(stream1Image.isClosed).isTrue()
         assertThat(stream2Image.isClosed).isTrue()
+        assertThat(stream3Image1.isClosed).isTrue()
     }
 
     @Test
@@ -143,6 +221,7 @@ class FrameImplTest {
 
         assertThat(stream1Image.isClosed).isTrue()
         assertThat(stream2Image.isClosed).isTrue()
+        assertThat(stream3Image1.isClosed).isTrue()
     }
 
     @Test
@@ -152,6 +231,7 @@ class FrameImplTest {
 
         assertThat(stream1Image.isClosed).isTrue()
         assertThat(stream2Image.isClosed).isTrue()
+        assertThat(stream3Image1.isClosed).isTrue()
     }
 
     @Test
@@ -340,6 +420,30 @@ class FrameImplTest {
             42,
             frameTimestamp.value,
             OutputResult.from(stream2OutputImage),
+        )
+
+        // Complete streamResult3 with stream3OutputImage1, the other ones unavailable. This is
+        // to simulate the case where only one single output image is expected for the stream.
+        streamResult3[0].onOutputComplete(
+            frameNumber,
+            frameTimestamp,
+            42,
+            frameTimestamp.value,
+            OutputResult.from(stream3OutputImage1),
+        )
+        streamResult3[1].onOutputComplete(
+            frameNumber,
+            frameTimestamp,
+            42,
+            frameTimestamp.value,
+            OutputResult.failure(OutputStatus.UNAVAILABLE),
+        )
+        streamResult3[2].onOutputComplete(
+            frameNumber,
+            frameTimestamp,
+            42,
+            frameTimestamp.value,
+            OutputResult.failure(OutputStatus.UNAVAILABLE),
         )
 
         // Complete frameInfoResult

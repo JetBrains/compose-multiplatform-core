@@ -18,12 +18,15 @@ package androidx.xr.scenecore {
   public final class ActivitySpace extends androidx.xr.scenecore.BaseEntity<androidx.xr.scenecore.runtime.ActivitySpace> {
     method public void addOnBoundsChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
     method public void addOnBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void addOnSpaceUpdatedListener(Runnable listener);
-    method public void addOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable listener);
+    method public void addOnOriginChangedListener(Runnable listener);
+    method public void addOnOriginChangedListener(java.util.concurrent.Executor executor, Runnable listener);
+    method @Deprecated public void addOnSpaceUpdatedListener(Runnable listener);
+    method @Deprecated public void addOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable listener);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getBounds();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
     method public void removeOnBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void removeOnSpaceUpdatedListener(Runnable listener);
+    method public void removeOnOriginChangedListener(Runnable listener);
+    method @Deprecated public void removeOnSpaceUpdatedListener(Runnable listener);
     property public androidx.xr.runtime.math.FloatSize3d bounds;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
   }
@@ -47,8 +50,8 @@ package androidx.xr.scenecore {
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType, optional java.time.Duration timeout);
     method public androidx.xr.arcore.Anchor? getAnchor();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.AnchorEntity.State getState();
-    method public void setOnSpaceUpdatedListener(Runnable? listener);
-    method public void setOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable? listener);
+    method public void setOnOriginChangedListener(Runnable? listener);
+    method public void setOnOriginChangedListener(java.util.concurrent.Executor executor, Runnable? listener);
     method public void setOnStateChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<androidx.xr.scenecore.AnchorEntity.State>? listener);
     method public void setOnStateChangedListener(java.util.function.Consumer<androidx.xr.scenecore.AnchorEntity.State>? listener);
     property public androidx.xr.scenecore.AnchorEntity.State state;

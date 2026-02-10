@@ -129,6 +129,10 @@ public abstract class TileService extends Service {
      *
      * <p>This can be used to replace which provider service is associated with a widget on the
      * device.
+     *
+     * <p> This attribute is only used on devices on API version 37 and above. For backwards
+     * compatibility with services being used on older devices, the default value of the fully
+     * qualified name of the older service should be used.
      */
     public static final String METADATA_GROUP_KEY = "androidx.wear.tiles.GROUP";
 

@@ -107,22 +107,6 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
 
         extensionCameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
-
-        instrumentation.runOnMainSync {
-            fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
-            preview = Preview.Builder().build()
-            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
-            imageCapture = ImageCapture.Builder().build()
-            camera =
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    extensionCameraSelector,
-                    preview,
-                    imageCapture,
-                )
-        }
-
-        cameraExtensionsInfo = extensionsManager.getCameraExtensionsInfo(camera.cameraInfo)
     }
 
     @After
@@ -139,6 +123,7 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
     @Test
     fun isExtensionStrengthAvailable_returnCorrectValue() {
         val available = isCamera2ExtensionStrengthSupported()
+        bindAndRetrieveExtensionsInfo()
         assertThat(cameraExtensionsInfo.isExtensionStrengthAvailable).isEqualTo(available)
 
         if (available) {
@@ -168,6 +153,7 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
     @Test
     fun isCurrentExtensionModeAvailable_returnCorrectValue(): Unit = runBlocking {
         val available = isCamera2CurrentExtensionModeSupported()
+        bindAndRetrieveExtensionsInfo()
         assertThat(cameraExtensionsInfo.isCurrentExtensionModeAvailable).isEqualTo(available)
 
         if (available) {
@@ -211,5 +197,23 @@ class CameraExtensionsInfoTest(private val cameraId: String, private val extensi
             }
         }
         return false
+    }
+
+    private fun bindAndRetrieveExtensionsInfo() {
+        instrumentation.runOnMainSync {
+            fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
+            preview = Preview.Builder().build()
+            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+            imageCapture = ImageCapture.Builder().build()
+            camera =
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    extensionCameraSelector,
+                    preview,
+                    imageCapture,
+                )
+        }
+
+        cameraExtensionsInfo = extensionsManager.getCameraExtensionsInfo(camera.cameraInfo)
     }
 }

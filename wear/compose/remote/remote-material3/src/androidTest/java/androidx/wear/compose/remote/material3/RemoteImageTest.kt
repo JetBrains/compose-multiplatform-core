@@ -21,6 +21,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.layout.RemoteImage as CreationRemoteImage
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rdp
@@ -28,10 +29,11 @@ import androidx.compose.remote.creation.compose.state.rememberRemoteBitmap
 import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.remote.player.core.platform.BitmapLoader
+import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -47,16 +49,12 @@ import org.junit.runners.JUnit4
 class RemoteImageTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
-                moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-                targetPlayer = TargetPlayer.View,
-            )
-            .apply {
-                bitmapLoader = BitmapLoader {
-                    val resources = ApplicationProvider.getApplicationContext<Context>().resources
-                    resources.openRawResource(R.drawable.clear)
-                }
+        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY).apply {
+            bitmapLoader = BitmapLoader {
+                val resources = ApplicationProvider.getApplicationContext<Context>().resources
+                resources.openRawResource(R.drawable.clear)
             }
+        }
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     @Test
@@ -71,10 +69,12 @@ class RemoteImageTest {
                 rememberRemoteBitmapValue(name = "avatarImage") {
                     createImage(size, size).asImageBitmap()
                 }
-            RemoteImage(
+            CreationRemoteImage(
                 avatarImage,
                 contentDescription = rememberRemoteString { "background" },
-                RemoteModifier.size(size.rdp),
+                modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = DefaultAlpha.rf,
             )
         }
     }
@@ -91,11 +91,12 @@ class RemoteImageTest {
                 rememberRemoteBitmapValue(name = "backgroundImage") {
                     createImage(size, size).asImageBitmap()
                 }
-            RemoteImage(
+            CreationRemoteImage(
                 remoteBitmap = backgroundImage,
-                alpha = 0.6f.rf,
                 contentDescription = rememberRemoteString { "background" },
                 modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = 0.6f.rf,
             )
         }
     }
@@ -113,10 +114,12 @@ class RemoteImageTest {
                     name = "dummy",
                     url = "android.resource://androidx.compose.remote.foundation/drawable/dummy",
                 )
-            RemoteImage(
+            CreationRemoteImage(
                 dummyImage,
                 contentDescription = rememberRemoteString { "background" },
-                RemoteModifier.size(size.rdp),
+                modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = DefaultAlpha.rf,
             )
         }
     }
@@ -129,11 +132,12 @@ class RemoteImageTest {
                 CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
         ) {
             val backgroundImage = createImage(size, size)
-            RemoteImage(
+            CreationRemoteImage(
                 bitmap = backgroundImage.asImageBitmap(),
-                alpha = 0.6f.rf,
                 contentDescription = rememberRemoteString { "background" },
                 modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = 0.6f.rf,
             )
         }
     }

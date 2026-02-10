@@ -21,12 +21,15 @@ package androidx.xr.scenecore {
   public final class ActivitySpace extends androidx.xr.scenecore.BaseEntity<androidx.xr.scenecore.runtime.ActivitySpace> {
     method public void addOnBoundsChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
     method public void addOnBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void addOnSpaceUpdatedListener(Runnable listener);
-    method public void addOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable listener);
+    method public void addOnOriginChangedListener(Runnable listener);
+    method public void addOnOriginChangedListener(java.util.concurrent.Executor executor, Runnable listener);
+    method @Deprecated public void addOnSpaceUpdatedListener(Runnable listener);
+    method @Deprecated public void addOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable listener);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getBounds();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
     method public void removeOnBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void removeOnSpaceUpdatedListener(Runnable listener);
+    method public void removeOnOriginChangedListener(Runnable listener);
+    method @Deprecated public void removeOnSpaceUpdatedListener(Runnable listener);
     property public androidx.xr.runtime.math.FloatSize3d bounds;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
   }
@@ -50,8 +53,8 @@ package androidx.xr.scenecore {
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType, optional java.time.Duration timeout);
     method public androidx.xr.arcore.Anchor? getAnchor();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.AnchorEntity.State getState();
-    method public void setOnSpaceUpdatedListener(Runnable? listener);
-    method public void setOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable? listener);
+    method public void setOnOriginChangedListener(Runnable? listener);
+    method public void setOnOriginChangedListener(java.util.concurrent.Executor executor, Runnable? listener);
     method public void setOnStateChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<androidx.xr.scenecore.AnchorEntity.State>? listener);
     method public void setOnStateChangedListener(java.util.function.Consumer<androidx.xr.scenecore.AnchorEntity.State>? listener);
     property public androidx.xr.scenecore.AnchorEntity.State state;
@@ -1020,13 +1023,14 @@ package androidx.xr.scenecore {
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode);
+    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode mediaBlendingMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection, optional androidx.xr.scenecore.Entity? parent);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection, optional androidx.xr.scenecore.Entity? parent);
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.Texture? getAuxiliaryAlphaMaskTexture();
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? getContentColorMetadata();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getDimensions();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams getEdgeFeatheringParams();
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode getMediaBlendingMode();
     method public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution(androidx.xr.arcore.RenderViewpoint renderViewpoint);
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.Texture? getPrimaryAlphaMaskTexture();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.SurfaceEntity.Shape getShape();
@@ -1035,6 +1039,7 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.Texture?);
     method @InaccessibleFromKotlin @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setContentColorMetadata(androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata?);
     method @InaccessibleFromKotlin @MainThread public void setEdgeFeatheringParams(androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams);
+    method @InaccessibleFromKotlin @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setMediaBlendingMode(androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode);
     method @InaccessibleFromKotlin @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.Texture?);
     method @InaccessibleFromKotlin @MainThread public void setShape(androidx.xr.scenecore.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin @MainThread public void setStereoMode(androidx.xr.scenecore.SurfaceEntity.StereoMode);
@@ -1043,6 +1048,7 @@ package androidx.xr.scenecore {
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata;
     property public androidx.xr.runtime.math.FloatSize3d dimensions;
     property public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams edgeFeatheringParams;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode mediaBlendingMode;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.Texture? primaryAlphaMaskTexture;
     property public androidx.xr.scenecore.SurfaceEntity.Shape shape;
     property public androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode;
@@ -1054,10 +1060,10 @@ package androidx.xr.scenecore {
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode);
+    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode mediaBlendingMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection, optional androidx.xr.scenecore.Entity? parent);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.Shape shape, optional androidx.xr.scenecore.SurfaceEntity.StereoMode stereoMode, optional androidx.xr.scenecore.SurfaceEntity.SuperSampling superSampling, optional androidx.xr.scenecore.SurfaceEntity.SurfaceProtection surfaceProtection, optional androidx.xr.scenecore.Entity? parent);
-    method @BytecodeOnly @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.SurfaceEntity! create$default(androidx.xr.scenecore.SurfaceEntity.Companion!, androidx.xr.runtime.Session!, androidx.xr.runtime.math.Pose!, androidx.xr.scenecore.SurfaceEntity.Shape!, androidx.xr.scenecore.SurfaceEntity.StereoMode!, androidx.xr.scenecore.SurfaceEntity.SuperSampling!, androidx.xr.scenecore.SurfaceEntity.SurfaceProtection!, androidx.xr.scenecore.Entity!, int, Object!);
+    method @BytecodeOnly @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.SurfaceEntity! create$default(androidx.xr.scenecore.SurfaceEntity.Companion!, androidx.xr.runtime.Session!, androidx.xr.runtime.math.Pose!, androidx.xr.scenecore.SurfaceEntity.Shape!, androidx.xr.scenecore.SurfaceEntity.StereoMode!, androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode!, androidx.xr.scenecore.SurfaceEntity.SuperSampling!, androidx.xr.scenecore.SurfaceEntity.SurfaceProtection!, androidx.xr.scenecore.Entity!, int, Object!);
     method @BytecodeOnly @MainThread public static androidx.xr.scenecore.SurfaceEntity! create$default(androidx.xr.scenecore.SurfaceEntity.Companion!, androidx.xr.runtime.Session!, androidx.xr.runtime.math.Pose!, androidx.xr.scenecore.SurfaceEntity.Shape!, androidx.xr.scenecore.SurfaceEntity.StereoMode!, androidx.xr.scenecore.SurfaceEntity.SuperSampling!, androidx.xr.scenecore.SurfaceEntity.SurfaceProtection!, int, Object!);
   }
 
@@ -1162,6 +1168,17 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin public float getTopBottom();
     property public float leftRight;
     property public float topBottom;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class SurfaceEntity.MediaBlendingMode {
+    field public static final androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode.Companion Companion;
+    field public static final androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode OPAQUE;
+    field public static final androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode TRANSPARENT;
+  }
+
+  public static final class SurfaceEntity.MediaBlendingMode.Companion {
+    property public androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode OPAQUE;
+    property public androidx.xr.scenecore.SurfaceEntity.MediaBlendingMode TRANSPARENT;
   }
 
   public static interface SurfaceEntity.Shape {

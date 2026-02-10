@@ -18,7 +18,7 @@ package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -44,7 +44,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
         public fun left(session: Session): Eye? {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
-            check(config.eyeTracking != Config.EyeTrackingMode.DISABLED) {
+            check(config.eyeTracking != EyeTrackingMode.DISABLED) {
                 "Config.EyeTrackingMode is set to DISABLED."
             }
             return perceptionStateExtender.xrResourcesManager.leftEye
@@ -59,7 +59,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
         public fun right(session: Session): Eye? {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
-            check(config.eyeTracking != Config.EyeTrackingMode.DISABLED) {
+            check(config.eyeTracking != EyeTrackingMode.DISABLED) {
                 "Config.EyeTrackingMode is set to DISABLED."
             }
             return perceptionStateExtender.xrResourcesManager.rightEye

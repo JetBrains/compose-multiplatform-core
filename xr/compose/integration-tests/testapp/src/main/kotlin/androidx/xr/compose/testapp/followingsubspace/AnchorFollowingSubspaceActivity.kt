@@ -63,6 +63,7 @@ import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
@@ -95,9 +96,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
             session =
                 remember(this) { (Session.create(activity = this) as SessionCreateSuccess).session }
             LaunchedEffect(session) {
-                session.configure(
-                    Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
-                )
+                session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
             }
 
             MainPanelContent()

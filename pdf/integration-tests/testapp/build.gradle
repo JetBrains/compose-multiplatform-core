@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "androidx.pdf.testapp"
-
+    group = "androidx.pdf"
     defaultConfig {
         applicationId = "androidx.pdf.testapp"
         minSdk = 31

@@ -8,6 +8,11 @@ package androidx.lifecycle.viewmodel.compose {
     field public static final androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner INSTANCE;
   }
 
+  public final class LocalViewModelStoreOwner_androidKt {
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.HostDefaultKey<androidx.lifecycle.ViewModelStoreOwner?> getViewModelStoreOwnerHostDefaultKey();
+    property public static androidx.compose.runtime.HostDefaultKey<androidx.lifecycle.ViewModelStoreOwner?> ViewModelStoreOwnerHostDefaultKey;
+  }
+
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface SavedStateHandleSaveableApi {
   }
 

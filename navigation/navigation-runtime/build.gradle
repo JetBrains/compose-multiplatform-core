@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -37,12 +36,6 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.navigation"
         androidResources.enable = true
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
-        }
     }
     desktop()
     mac()
@@ -69,8 +62,6 @@ androidXMultiplatform {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
-        nonAndroidMain.dependsOn(commonMain)
-        nonAndroidTest.dependsOn(commonTest)
 
         jvmMain.dependsOn(nonAndroidMain)
         jvmTest.dependsOn(nonAndroidTest)
@@ -88,11 +79,11 @@ androidXMultiplatform {
             api("androidx.annotation:annotation-experimental:1.4.1")
         }
         androidDeviceTest.dependencies {
-            implementation("androidx.annotation:annotation:1.8.0")
-            implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7")
-            implementation("androidx.lifecycle:lifecycle-common:2.8.7")
-            implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
-            implementation("androidx.lifecycle:lifecycle-runtime-testing:2.8.7")
+            implementation("androidx.annotation:annotation:1.9.1")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4")
+            implementation("androidx.lifecycle:lifecycle-common:2.9.4")
+            implementation("androidx.lifecycle:lifecycle-runtime:2.9.4")
+            implementation("androidx.lifecycle:lifecycle-runtime-testing:2.9.4")
             implementation(project(":internal-testutils-navigation"))
             implementation(project(":internal-testutils-runtime"))
             implementation(libs.hamcrestCore)

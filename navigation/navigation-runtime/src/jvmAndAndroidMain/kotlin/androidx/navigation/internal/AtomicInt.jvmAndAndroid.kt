@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
-package androidx.navigation.internal
-
 import java.util.concurrent.atomic.AtomicInteger
 
-internal actual typealias AtomicInt = AtomicInteger
+internal actual class AtomicInt actual constructor(initial: Int) {
+    private val atomicInt: AtomicInteger = AtomicInteger(initial)
+
+    internal actual fun incrementAndGet(): Int {
+        return atomicInt.incrementAndGet()
+    }
+
+    internal actual fun decrementAndGet(): Int {
+        return atomicInt.decrementAndGet()
+    }
+
+    internal actual fun get(): Int {
+        return atomicInt.get()
+    }
+}
+

@@ -30,6 +30,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkInfo.State.ENQUEUED
+import androidx.work.await
 import androidx.work.impl.WorkManagerImpl
 import androidx.work.impl.model.WorkSpec
 import androidx.work.impl.utils.taskexecutor.SerialExecutor
@@ -62,7 +63,7 @@ class TestSchedulerRealExecutorTest {
     fun testWorker_withDependentWork_shouldSucceedSynchronously() {
         val request = OneTimeWorkRequest.from(TestWorker::class.java)
         val dependentRequest = OneTimeWorkRequest.from(TestWorker::class.java)
-        wm.beginWith(request).then(dependentRequest).enqueue()
+        wm.beginWith(request).then(dependentRequest).enqueue().result.get()
         awaitSuccess(dependentRequest.id)
     }
 

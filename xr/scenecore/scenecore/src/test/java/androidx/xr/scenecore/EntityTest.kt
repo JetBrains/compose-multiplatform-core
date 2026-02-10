@@ -23,7 +23,8 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.LifecycleManager
@@ -132,7 +133,7 @@ class EntityTest {
         session.configure(
             Config(
                 planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                deviceTracking = DeviceTrackingMode.LAST_KNOWN,
             )
         )
         renderViewpoint = RenderViewpoint.left(session)!!

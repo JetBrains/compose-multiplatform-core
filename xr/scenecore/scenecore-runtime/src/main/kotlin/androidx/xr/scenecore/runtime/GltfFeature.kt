@@ -36,6 +36,9 @@ public interface GltfFeature : RenderingFeature {
      */
     @get:MainThread public val size: FloatSize3d
 
+    /** Returns the animations of the glTF model. */
+    @MainThread public fun getAnimations(executor: Executor): List<GltfAnimationFeature>
+
     /** Returns the current animation state of the glTF entity. */
     public val animationState: Int
 
@@ -135,4 +138,20 @@ public interface GltfFeature : RenderingFeature {
      * @param listener The listener to remove.
      */
     @MainThread public fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
+
+    /**
+     * Adds reform affordance to the passed GltfEntity.
+     *
+     * @param entity The GltfEntity to attach the reform affordance to.
+     * @param enabled Whether the affordance is enabled.
+     * @param executor The executor to run the listener on.
+     * @param systemMovable Whether the system should handle move events.
+     */
+    @MainThread
+    public fun setReformAffordanceEnabled(
+        entity: GltfEntity,
+        enabled: Boolean,
+        executor: Executor,
+        systemMovable: Boolean,
+    )
 }

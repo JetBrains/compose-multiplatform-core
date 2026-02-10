@@ -16,6 +16,9 @@
 
 package androidx.xr.scenecore.spatial.core;
 
+import static androidx.xr.scenecore.spatial.core.RuntimeUtils.getPositionFromTransform;
+import static androidx.xr.scenecore.spatial.core.RuntimeUtils.getRotationFromTransform;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -32,6 +35,7 @@ import android.view.View;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.runtime.ActivityPanelEntity;
 import androidx.xr.scenecore.runtime.ActivitySpace;
@@ -80,6 +84,8 @@ import com.android.extensions.xr.space.SpatialState;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
@@ -131,11 +137,13 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     private final PanelEntity mMainPanelEntity;
     private final AtomicBoolean mIsBoundaryConsentGrantedCache;
     @VisibleForTesting boolean mIsExtensionVisibilityStateCallbackRegistered = false;
+    @VisibleForTesting Closeable mKeyEntityTransformCloseable;
     private @Nullable Activity mActivity;
     private boolean mIsDestroyed;
     private @Nullable Pair<Executor, Consumer<SpatialVisibility>> mSpatialVisibilityHandler;
     private @Nullable SpatialModeChangeListener mSpatialModeChangeListener;
     private @Nullable ContentObserver mBoundaryConsentObserver;
+    private @Nullable Entity mKeyEntity = null;
 
     private SpatialSceneRuntime(
             @NonNull Activity activity,
@@ -278,6 +286,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             return;
         }
         mEnvironment.dispose();
+        clearKeyEntitySubscription(false);
         mSpatialModeChangeListener = null;
         mExtensions.clearSpatialStateCallback(mActivity);
 
@@ -722,7 +731,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 scaleInZ,
                 userAnchorable,
                 mActivitySpace,
-                new PanelShadowRenderer(
+                new PanelShadowRendererImpl(
                         mActivitySpace, mPerceptionSpaceScenePose, mActivity, mExtensions),
                 mExecutor);
     }
@@ -838,5 +847,65 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     @Override
     public @NonNull BoundsComponent createBoundsComponent() {
         return new BoundsComponentImpl();
+    }
+
+    @Override
+    public @Nullable Entity getKeyEntity() {
+        return mKeyEntity;
+    }
+
+    @Override
+    public void setKeyEntity(@Nullable Entity entity) {
+        if (Objects.equals(mKeyEntity, entity)) {
+            return;
+        }
+
+        // Always clean up the old entity's subscription first.
+        clearKeyEntitySubscription(true);
+
+        mKeyEntity = entity;
+
+        // If the new entity is valid, set up a new subscription.
+        if (mKeyEntity instanceof AndroidXrEntity) {
+            setupKeyEntitySubscription((AndroidXrEntity) mKeyEntity);
+        }
+    }
+
+    /** Clears any existing subscription for the current key entity. */
+    private void clearKeyEntitySubscription(boolean throwException) {
+        if (mKeyEntityTransformCloseable == null) {
+            return;
+        }
+        try {
+            mKeyEntityTransformCloseable.close();
+            mExtensions.getUnderlyingObject().clearSpatialContinuityHint(mActivity);
+        } catch (IOException e) {
+            if (throwException) {
+                // Re-throw as an unchecked exception but include the original cause.
+                throw new RuntimeException(
+                        "Could not close the key entity's transform subscription.", e);
+            }
+        } finally {
+            // Ensure the reference is cleared even if closing fails.
+            mKeyEntityTransformCloseable = null;
+        }
+    }
+
+    /** Creates a new subscription to the transform of the given key entity. */
+    private void setupKeyEntitySubscription(@NonNull AndroidXrEntity entity) {
+        mKeyEntityTransformCloseable =
+                entity.getNode()
+                        .subscribeToTransform(
+                                mExecutor,
+                                nodeTransform -> {
+                                    Matrix4 transform =
+                                            RuntimeUtils.getMatrix(nodeTransform.getTransform());
+                                    mExtensions
+                                            .getUnderlyingObject()
+                                            .setSpatialContinuityHint(
+                                                    mActivity,
+                                                    getPositionFromTransform(transform),
+                                                    getRotationFromTransform(transform));
+                                });
     }
 }

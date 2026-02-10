@@ -16,7 +16,6 @@
 
 package androidx.pdf.testapp.ui.v2
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
@@ -49,7 +48,6 @@ import com.google.android.material.snackbar.Snackbar
 import java.io.IOException
 import kotlinx.coroutines.launch
 
-@SuppressLint("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 class EditablePdfHostFragment : EditablePdfViewerFragment() {
     private val viewModel: EditablePdfHostViewModel by viewModels()
@@ -121,6 +119,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
         }
 
         pdfView.isImageSelectionEnabled = true
+        pdfView.isFormFillingEnabled = true
         setupPdfViewListeners()
     }
 
@@ -230,7 +229,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
         uri: Uri,
     ): ParcelFileDescriptor? {
         return try {
-            contentResolver.openFileDescriptor(uri, "rw")
+            contentResolver.openFileDescriptor(uri, "rwt")
         } catch (e: IOException) {
             null
         }

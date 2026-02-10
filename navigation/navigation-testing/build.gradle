@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -62,8 +61,6 @@ androidXMultiplatform {
             implementation(project(":lifecycle:lifecycle-viewmodel"))
             implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
         }
-
-        nonAndroidMain.dependsOn(commonMain)
 
         commonTest.dependencies {
             implementation(libs.kotlinTest)
@@ -118,37 +115,15 @@ androidXMultiplatform {
             implementation(libs.testRunner)
         }
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
+        nonAndroidMain {}.dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nativeMain.dependsOn(nonAndroidMain)
+        webMain {}.dependsOn(nonAndroidMain)
 
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nativeTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
-        }
+        nonAndroidTest {}.dependsOn(commonTest)
+        desktopTest.dependsOn(nonAndroidTest)
+        nativeTest.dependsOn(nonAndroidTest)
+        webTest {}.dependsOn(nonAndroidTest)
     }
 }
 

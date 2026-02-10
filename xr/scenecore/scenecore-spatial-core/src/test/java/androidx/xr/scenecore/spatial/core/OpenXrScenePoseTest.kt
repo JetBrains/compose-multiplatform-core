@@ -28,6 +28,7 @@ import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.runtime.impl.BaseScenePose
 import androidx.xr.scenecore.testing.FakeGltfFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.XrExtensions

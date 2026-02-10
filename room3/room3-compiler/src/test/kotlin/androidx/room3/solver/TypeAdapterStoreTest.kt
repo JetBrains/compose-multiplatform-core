@@ -95,44 +95,44 @@ class TypeAdapterStoreTest {
             Source.java(
                 "foo.bar.EmptyClass",
                 """
-            package foo.bar;
-            import androidx.room3.*;
-            public class EmptyClass {
-                public enum Color {
-                    RED,
-                    GREEN
-                }
-                public class ColorTypeConverter {
-                    @TypeConverter
-                    public Color fromIntToColorEnum(int colorInt) {
-                        if (colorInt == 1) {
-                            return Color.RED;
-                        } else {
-                            return Color.GREEN;
+                package foo.bar;
+                import androidx.room3.*;
+                public class EmptyClass {
+                    public enum Color {
+                        RED,
+                        GREEN
+                    }
+                    public class ColorTypeConverter {
+                        @TypeConverter
+                        public Color fromIntToColorEnum(int colorInt) {
+                            if (colorInt == 1) {
+                                return Color.RED;
+                            } else {
+                                return Color.GREEN;
+                            }
                         }
                     }
                 }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val entity =
             Source.java(
                 "foo.bar.EntityWithOneWayEnum",
                 """
-            package foo.bar;
-            import androidx.room3.*;
-            @Entity
-            @TypeConverters(EmptyClass.ColorTypeConverter.class)
-            public class EntityWithOneWayEnum {
-                public enum Color {
-                    RED,
-                    GREEN
+                package foo.bar;
+                import androidx.room3.*;
+                @Entity
+                @TypeConverters(EmptyClass.ColorTypeConverter.class)
+                public class EntityWithOneWayEnum {
+                    public enum Color {
+                        RED,
+                        GREEN
+                    }
+                    @PrimaryKey public Long id;
+                    public Color color;
                 }
-                @PrimaryKey public Long id;
-                public Color color;
-            }
-            """
+                """
                     .trimIndent(),
             )
         runKspTest(sources = listOf(entity, converter)) { invocation ->
@@ -190,11 +190,12 @@ class TypeAdapterStoreTest {
         val enumSrc =
             Source.java(
                 "foo.bar.Fruit",
-                """ package foo.bar;
-                enum Fruit {
-                    APPLE,
-                    BANANA,
-                    STRAWBERRY}
+                """
+                | package foo.bar;
+                |                enum Fruit {
+                |                    APPLE,
+                |                    BANANA,
+                |                    STRAWBERRY}
                 """
                     .trimMargin(),
             )
@@ -217,15 +218,15 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            @JvmInline
-            value class IntValueClass(val data: Int)
-            @JvmInline
-            value class StringValueClass(val data: String)
-            class EntityWithValueClass {
-                val intData = IntValueClass(123)
-                val stringData = StringValueClass("bla")
-            }
-            """
+                @JvmInline
+                value class IntValueClass(val data: Int)
+                @JvmInline
+                value class StringValueClass(val data: String)
+                class EntityWithValueClass {
+                    val intData = IntValueClass(123)
+                    val stringData = StringValueClass("bla")
+                }
+                """
                     .trimIndent(),
             )
         var results: Map<String, String?> = mutableMapOf()
@@ -276,12 +277,12 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            @JvmInline
-            value class Foo(val value : Int) {
-                val double
-                    get() = value * 2
-            }
-            """
+                @JvmInline
+                value class Foo(val value : Int) {
+                    val double
+                        get() = value * 2
+                }
+                """
                     .trimIndent(),
             )
 
@@ -308,9 +309,9 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            @JvmInline
-            value class Foo(private val value : Int)
-            """
+                @JvmInline
+                value class Foo(private val value : Int)
+                """
                     .trimIndent(),
             )
 
@@ -337,9 +338,9 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            @JvmInline
-            value class Foo private constructor(val value : Int)
-            """
+                @JvmInline
+                value class Foo private constructor(val value : Int)
+                """
                     .trimIndent(),
             )
 
@@ -530,13 +531,13 @@ class TypeAdapterStoreTest {
                 bindScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
-                final java.lang.Long _tmp;
-                if (curs.isNull(0)) {
-                  _tmp = null;
-                } else {
-                  _tmp = curs.getLong(0);
-                }
-                outDate = new java.util.Date(_tmp);
+                    final java.lang.Long _tmp;
+                    if (curs.isNull(0)) {
+                      _tmp = null;
+                    } else {
+                      _tmp = curs.getLong(0);
+                    }
+                    outDate = new java.util.Date(_tmp);
                     """
                         .trimIndent()
                 ),
@@ -1461,32 +1462,32 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            import androidx.room3.*
-            typealias MyLongAlias = Long
-            typealias MyNullableLongAlias = Long?
+                import androidx.room3.*
+                typealias MyLongAlias = Long
+                typealias MyNullableLongAlias = Long?
 
-            data class MyClass(val foo:String)
-            typealias MyClassAlias = MyClass
-            typealias MyClassNullableAlias = MyClass?
+                data class MyClass(val foo:String)
+                typealias MyClassAlias = MyClass
+                typealias MyClassNullableAlias = MyClass?
 
-            object MyConverters {
-                @TypeConverter
-                fun myClassToString(myClass : MyClass): String = TODO()
-                @TypeConverter
-                fun nullableMyClassToString(myClass : MyClass?): String? = TODO()
-            }
-            class Subject {
-                val myLongAlias : MyLongAlias = TODO()
-                val myLongAlias_nullable : MyLongAlias? = TODO()
-                val myNullableLongAlias : MyNullableLongAlias = TODO()
-                val myNullableLongAlias_nullable : MyNullableLongAlias? = TODO()
-                val myClass : MyClass = TODO()
-                val myClassAlias : MyClassAlias = TODO()
-                val myClassAlias_nullable : MyClassAlias? = TODO()
-                val myClassNullableAlias : MyClassNullableAlias = TODO()
-                val myClassNullableAlias_nullable : MyClassNullableAlias = TODO()
-            }
-            """
+                object MyConverters {
+                    @TypeConverter
+                    fun myClassToString(myClass : MyClass): String = TODO()
+                    @TypeConverter
+                    fun nullableMyClassToString(myClass : MyClass?): String? = TODO()
+                }
+                class Subject {
+                    val myLongAlias : MyLongAlias = TODO()
+                    val myLongAlias_nullable : MyLongAlias? = TODO()
+                    val myNullableLongAlias : MyNullableLongAlias = TODO()
+                    val myNullableLongAlias_nullable : MyNullableLongAlias? = TODO()
+                    val myClass : MyClass = TODO()
+                    val myClassAlias : MyClassAlias = TODO()
+                    val myClassAlias_nullable : MyClassAlias? = TODO()
+                    val myClassNullableAlias : MyClassNullableAlias = TODO()
+                    val myClassNullableAlias_nullable : MyClassNullableAlias = TODO()
+                }
+                """
                     .trimIndent(),
             )
         runKspTest(sources = listOf(source)) { invocation ->
@@ -1558,71 +1559,71 @@ class TypeAdapterStoreTest {
             Source.java(
                 "foo.bar.Human",
                 """
-            package foo.bar;
-            public class Human extends Username {
-                public String relationId;
-            }
-            """
+                package foo.bar;
+                public class Human extends Username {
+                    public String relationId;
+                }
+                """
                     .trimIndent(),
             )
         val classWithFncs =
             Source.java(
                 "foo.bar.Username",
                 """
-            package foo.bar;
-            public class Username extends Person {
-                public String name;
-                @Override
-                public boolean equals(Object o) {
-                    return false;
+                package foo.bar;
+                public class Username extends Person {
+                    public String name;
+                    @Override
+                    public boolean equals(Object o) {
+                        return false;
+                    }
+                    @Override
+                    public int hashCode() {
+                        return 0;
+                    }
                 }
-                @Override
-                public int hashCode() {
-                    return 0;
-                }
-            }
-            """
+                """
                     .trimIndent(),
             )
         val classWithoutFncs =
             Source.java(
                 "foo.bar.Person",
                 """
-            package foo.bar;
-            public class Person {
-                public String userId;
-            }
-            """
+                package foo.bar;
+                public class Person {
+                    public String userId;
+                }
+                """
                     .trimIndent(),
             )
         val enumClass =
             Source.java(
                 "foo.bar.Names",
                 """
-            package foo.bar;
-            public enum Names {
-                ELLA,
-                BOB,
-                JAMES
-            }
-            """
+                package foo.bar;
+                public enum Names {
+                    ELLA,
+                    BOB,
+                    JAMES
+                }
+                """
                     .trimIndent(),
             )
         val classWithWrongFncs =
             Source.java(
                 "foo.bar.UsernameWithWrongFncs",
                 """
-            package foo.bar;
-            public class UsernameWithWrongFncs {
-                public String name;
-                public boolean equals() {
-                    return true;
+                package foo.bar;
+                public class UsernameWithWrongFncs {
+                    public String name;
+                    public boolean equals() {
+                        return true;
+                    }
+                    public int hashCode(int num) {
+                        return num;
+                    }
                 }
-                public int hashCode(int num) {
-                    return num;
-                }
-            }
-            """
+                """
                     .trimIndent(),
             )
         runKspTest(
@@ -1654,18 +1655,18 @@ class TypeAdapterStoreTest {
             Source.java(
                 "foo.bar.Subject",
                 """
-            package foo.bar;
-            public class Subject {
-                public int primitiveInt = 0;
-                public Integer boxedInt = 1;
-                public boolean primitiveBool = true;
-                public Boolean boxedBool = false;
-                public double primitiveDouble = 2.2;
-                public Double boxedDouble = 3.3;
-                public long primitiveLong = 4L;
-                public Long boxedLong = 5L;
-            }
-            """
+                package foo.bar;
+                public class Subject {
+                    public int primitiveInt = 0;
+                    public Integer boxedInt = 1;
+                    public boolean primitiveBool = true;
+                    public Boolean boxedBool = false;
+                    public double primitiveDouble = 2.2;
+                    public Double boxedDouble = 3.3;
+                    public long primitiveLong = 4L;
+                    public Long boxedLong = 5L;
+                }
+                """
                     .trimIndent(),
             )
         runKspTest(
@@ -1690,14 +1691,14 @@ class TypeAdapterStoreTest {
             Source.kotlin(
                 "Foo.kt",
                 """
-            import androidx.room3.*
-            class Subject {
-               val anInteger = 0
-               val aBoolean = true
-               val aDouble = 2.2
-               val aLong = 5L
-            }
-            """
+                import androidx.room3.*
+                class Subject {
+                   val anInteger = 0
+                   val aBoolean = true
+                   val aDouble = 2.2
+                   val aLong = 5L
+                }
+                """
                     .trimIndent(),
             )
         runKspTest(sources = listOf(source)) { invocation ->

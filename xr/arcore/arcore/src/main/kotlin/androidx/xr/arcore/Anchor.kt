@@ -21,7 +21,7 @@ import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -75,11 +75,11 @@ internal constructor(
          * [persist] that are still present in the local storage.
          *
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.AnchorPersistenceMode.DISABLED].
+         *   [androidx.xr.runtime.AnchorPersistenceMode.DISABLED].
          */
         @JvmStatic
         public fun getPersistedAnchorUuids(session: Session): List<UUID> {
-            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+            check(session.config.anchorPersistence != AnchorPersistenceMode.DISABLED) {
                 "Config.AnchorPersistenceMode is set to DISABLED."
             }
             return session.perceptionRuntime.perceptionManager.getPersistedAnchorUuids()
@@ -91,11 +91,11 @@ internal constructor(
          * The [uuid] should be the return value of a previous call to [persist].
          *
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.AnchorPersistenceMode.DISABLED].
+         *   [AnchorPersistenceMode.DISABLED].
          */
         @JvmStatic
         public fun load(session: Session, uuid: UUID): AnchorCreateResult {
-            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+            check(session.config.anchorPersistence != AnchorPersistenceMode.DISABLED) {
                 "Config.AnchorPersistenceMode is set to DISABLED."
             }
 
@@ -116,11 +116,11 @@ internal constructor(
          * Deletes a persisted Anchor denoted by [uuid] from local storage.
          *
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.AnchorPersistenceMode.DISABLED] or the provided [uuid] is invalid.
+         *   [AnchorPersistenceMode.DISABLED] or the provided [uuid] is invalid.
          */
         @JvmStatic
         public fun unpersist(session: Session, uuid: UUID) {
-            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+            check(session.config.anchorPersistence != AnchorPersistenceMode.DISABLED) {
                 "Config.AnchorPersistenceMode is set to DISABLED."
             }
             session.perceptionRuntime.perceptionManager.unpersistAnchor(uuid)
@@ -183,12 +183,12 @@ internal constructor(
      *
      * @return the [UUID] that uniquely identifies this anchor.
      * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.AnchorPersistenceMode.DISABLED], or if there was an unexpected error persisting the
-     *   anchor (e.g. ran out of memory).
+     *   [AnchorPersistenceMode.DISABLED], or if there was an unexpected error persisting the anchor
+     *   (e.g. ran out of memory).
      */
     public suspend fun persist(): UUID {
         val config = xrResourceManager.lifecycleManager.config
-        check(config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+        check(config.anchorPersistence != AnchorPersistenceMode.DISABLED) {
             "Config.AnchorPersistenceMode is set to DISABLED."
         }
         runtimeAnchor.persist()

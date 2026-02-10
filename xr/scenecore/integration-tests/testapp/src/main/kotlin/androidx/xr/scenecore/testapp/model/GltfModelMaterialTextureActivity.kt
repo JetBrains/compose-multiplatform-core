@@ -28,6 +28,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -75,7 +76,7 @@ class GltfModelMaterialTextureActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {

@@ -19,7 +19,7 @@ package androidx.xr.runtime.internal
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.XrDevice.DisplayBlendMode
+import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /**

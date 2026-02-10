@@ -42,6 +42,8 @@ import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
@@ -121,8 +123,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
         scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.configure(
             Config(
-                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                handTracking = Config.HandTrackingMode.BOTH,
+                deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                handTracking = HandTrackingMode.BOTH,
             )
         )
         session.scene.keyEntity = session.scene.mainPanelEntity

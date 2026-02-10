@@ -47,36 +47,36 @@ class SecurityStateManagerCompatTest {
     private lateinit var securityStateManagerCompat: SecurityStateManagerCompat
     private val SYSTEM_FILE_CONTENT =
         """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
-        <patch>
-            <id>CVE-2022-00000</id>
-        </patch>
-        <patch>
-            <id>CVE-2023-11111</id>
-        </patch>
-    </security-patches>
-    """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
+            <patch>
+                <id>CVE-2022-00000</id>
+            </patch>
+            <patch>
+                <id>CVE-2023-11111</id>
+            </patch>
+        </security-patches>
+        """
             .trimIndent()
     private val VENDOR_FILE_CONTENT =
         """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
-        <patch>
-            <id>CVE-2024-12345</id>
-        </patch>
-        <patch>
-            <id>CVE-2025-54321</id>
-        </patch>
-    </security-patches>
-    """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
+            <patch>
+                <id>CVE-2024-12345</id>
+            </patch>
+            <patch>
+                <id>CVE-2025-54321</id>
+            </patch>
+        </security-patches>
+        """
             .trimIndent()
     private val EMPTY_FILE_CONTENT =
         """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
-    </security-patches>
-    """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <security-patches xmlns="http://schemas.android.com/security/patches/1.0">
+        </security-patches>
+        """
             .trimIndent()
     private lateinit var systemFile: File
     private lateinit var vendorFile: File

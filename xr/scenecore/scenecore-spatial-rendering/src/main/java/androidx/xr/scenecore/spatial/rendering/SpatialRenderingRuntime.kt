@@ -664,6 +664,7 @@ private constructor(
 
     override fun createSurfaceEntity(
         @SurfaceEntity.StereoMode stereoMode: Int,
+        @SurfaceEntity.MediaBlendingMode mediaBlendingMode: Int,
         pose: Pose,
         shape: SurfaceEntity.Shape,
         @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
@@ -681,6 +682,7 @@ private constructor(
                 subspaceManager,
                 extensions,
                 stereoMode,
+                mediaBlendingMode,
                 shape,
                 surfaceProtection,
                 superSampling,

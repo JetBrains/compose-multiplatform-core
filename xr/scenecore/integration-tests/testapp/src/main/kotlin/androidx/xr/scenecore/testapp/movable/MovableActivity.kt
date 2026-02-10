@@ -28,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -102,7 +103,7 @@ class MovableActivity : AppCompatActivity() {
             finish()
             return false
         }
-        session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         session!!.scene.keyEntity = session!!.scene.mainPanelEntity
 
         // Enable passthrough by default to allow interaction with the real world,

@@ -21,8 +21,11 @@ import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 
 internal object RemoteComposeConstants {
-    const val DefaultWeight = 1f
-    const val DefaultFontSize = 8f // TODO arbitrary choice of default font size
+
+    object Text {
+        const val DefaultWeight = 1f
+        const val DefaultFontSize = 14f // TODO arbitrary choice of default font size
+    }
 
     const val RemoteComposeVersion = 6
 

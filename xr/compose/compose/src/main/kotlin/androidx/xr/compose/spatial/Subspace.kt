@@ -67,6 +67,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
@@ -438,7 +439,7 @@ public fun FollowingSubspace(
     if (!validateFollowingSubspaceConfiguration(target, behavior, session.config)) return
 
     // If we're following an anchor and want the content to follow it as tightly as possible,
-    // its best to link them together in the scene graph rather than implement custom logic.
+    // it's best to link them together in the scene graph rather than implement custom logic.
     if (target is AnchorTarget && behavior == FollowBehavior.Tight) {
         Subspace(
             modifier = modifier,
@@ -491,7 +492,7 @@ private fun validateFollowingSubspaceConfiguration(
     config: Config,
 ): Boolean {
     // Following an AR device requires head tracking to be enabled.
-    if (target is ArDeviceTarget && config.deviceTracking == Config.DeviceTrackingMode.DISABLED) {
+    if (target is ArDeviceTarget && config.deviceTracking == DeviceTrackingMode.DISABLED) {
         return false
     }
 

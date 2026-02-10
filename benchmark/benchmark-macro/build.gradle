@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -117,15 +116,17 @@ tasks.withType(KotlinCompile).configureEach {
     }
 }
 
-// Define a task dependency so the app is installed before we run macro benchmarks.
-afterEvaluate {
-    // `:benchmark:integration-tests:macrobenchmark-target:installRelease` is not in the compose
-    // build, so it may fail the compose build job.
-    def installTask = tasks.findByPath(
-            ":benchmark:integration-tests:macrobenchmark-target:installRelease")
-    if (installTask != null) {
-        tasks.getByPath(":benchmark:benchmark-macro:connectedReleaseAndroidTest")
-                .dependsOn(installTask)
+if (!androidx.isIsolatedProjectsEnabled()) { // b/481057703
+    // Define a task dependency so the app is installed before we run macro benchmarks.
+    afterEvaluate {
+        // `:benchmark:integration-tests:macrobenchmark-target:installRelease` is not in the compose
+        // build, so it may fail the compose build job.
+        def installTask = tasks.findByPath(
+                ":benchmark:integration-tests:macrobenchmark-target:installRelease")
+        if (installTask != null) {
+            tasks.getByPath(":benchmark:benchmark-macro:connectedReleaseAndroidTest")
+                    .dependsOn(installTask)
+        }
     }
 }
 

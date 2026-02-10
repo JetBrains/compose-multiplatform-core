@@ -18,7 +18,7 @@ package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.DepthMap
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.math.IntSize2d
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -51,11 +51,10 @@ public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : D
 
     private var resolution: IntSize2d = IntSize2d()
 
-    internal var depthEstimationMode: Config.DepthEstimationMode =
-        Config.DepthEstimationMode.DISABLED
+    internal var depthEstimationMode: DepthEstimationMode = DepthEstimationMode.DISABLED
 
-    internal fun updateDepthEstimationMode(depthEstimationMode: Config.DepthEstimationMode) {
-        if (depthEstimationMode == Config.DepthEstimationMode.DISABLED) {
+    internal fun updateDepthEstimationMode(depthEstimationMode: DepthEstimationMode) {
+        if (depthEstimationMode == DepthEstimationMode.DISABLED) {
             resolution = IntSize2d()
             rawDepthMap = null
             rawConfidenceMap = null
@@ -69,7 +68,7 @@ public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : D
 
     internal fun update(depthMapBuffers: Array<ByteBuffer>) {
         when (depthEstimationMode) {
-            Config.DepthEstimationMode.RAW_ONLY -> {
+            DepthEstimationMode.RAW_ONLY -> {
                 check(depthMapBuffers.size == EXPECTED_RAW_BUFFER_COUNT) {
                     "Unexpected number of depth map buffers for ${depthEstimationMode.toString()} config: expected=${EXPECTED_RAW_BUFFER_COUNT}, actual=${depthMapBuffers.size}"
                 }
@@ -77,7 +76,7 @@ public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : D
                 smoothDepthMap = null
                 smoothConfidenceMap = null
             }
-            Config.DepthEstimationMode.SMOOTH_ONLY -> {
+            DepthEstimationMode.SMOOTH_ONLY -> {
                 check(depthMapBuffers.size == EXPECTED_SMOOTH_BUFFER_COUNT) {
                     "Unexpected number of depth map buffers for ${depthEstimationMode.toString()} config: expected=${EXPECTED_SMOOTH_BUFFER_COUNT}, actual=${depthMapBuffers.size}"
                 }
@@ -85,7 +84,7 @@ public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : D
                 rawDepthMap = null
                 rawConfidenceMap = null
             }
-            Config.DepthEstimationMode.SMOOTH_AND_RAW -> {
+            DepthEstimationMode.SMOOTH_AND_RAW -> {
                 check(
                     depthMapBuffers.size == EXPECTED_RAW_BUFFER_COUNT + EXPECTED_SMOOTH_BUFFER_COUNT
                 ) {

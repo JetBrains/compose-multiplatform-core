@@ -22,9 +22,13 @@ import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider
 import androidx.xr.runtime.testing.math.assertPose
 import androidx.xr.runtime.testing.math.assertVector3
+import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.InteractableComponent
+import androidx.xr.scenecore.runtime.ResizableComponent
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
@@ -72,6 +76,7 @@ class EntityTest {
     fun setUp() {
         expect(true, "XrExtensions should not be null") { xrExtensions != null }
 
+        FakeSpatialApiVersionProvider.testSpatialApiVersion = 1
         activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
 
         spatialSceneRuntime =
@@ -97,6 +102,7 @@ class EntityTest {
     fun tearDown() {
         spatialSceneRuntime.destroy()
         xrExtensions = null
+        FakeSpatialApiVersionProvider.testSpatialApiVersion = null
     }
 
     @Test
@@ -501,5 +507,58 @@ class EntityTest {
     fun getPoseInRealWorldSpace_nullParent_throwsException() {
         entity.parent = null
         assertThrows(IllegalStateException::class.java) { entity.getPose(Space.REAL_WORLD) }
+    }
+
+    @Test
+    fun addComponent_addsComponent() {
+        val resizableComponent =
+            ResizableComponentImpl(
+                fakeScheduledExecutorService,
+                xrExtensions!!,
+                Dimensions(0f, 0f, 0f),
+                Dimensions(1f, 1f, 1f),
+            )
+        entity.addComponent(resizableComponent)
+
+        assertThat(entity.getComponents()).containsExactly(resizableComponent)
+    }
+
+    @Test
+    fun removeComponent_removesComponent() {
+        val resizableComponent =
+            ResizableComponentImpl(
+                fakeScheduledExecutorService,
+                xrExtensions!!,
+                Dimensions(0f, 0f, 0f),
+                Dimensions(1f, 1f, 1f),
+            )
+        val interactableComponent: InteractableComponent =
+            InteractableComponentImpl(fakeScheduledExecutorService) {}
+        entity.addComponent(resizableComponent)
+        entity.addComponent(interactableComponent)
+
+        entity.removeComponent(resizableComponent)
+
+        assertThat(entity.getComponents()).containsExactly(interactableComponent)
+    }
+
+    @Test
+    fun getComponentsOfType_getsOnlyComponentOfType() {
+        val resizableComponent =
+            ResizableComponentImpl(
+                fakeScheduledExecutorService,
+                xrExtensions!!,
+                Dimensions(0f, 0f, 0f),
+                Dimensions(1f, 1f, 1f),
+            )
+        val interactableComponent: InteractableComponent =
+            InteractableComponentImpl(fakeScheduledExecutorService) {}
+        entity.addComponent(resizableComponent)
+        entity.addComponent(interactableComponent)
+
+        assertThat(entity.getComponentsOfType(InteractableComponent::class.java))
+            .containsExactly(interactableComponent)
+        assertThat(entity.getComponentsOfType(ResizableComponent::class.java))
+            .containsExactly(resizableComponent)
     }
 }

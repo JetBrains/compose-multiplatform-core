@@ -38,7 +38,7 @@ public class ActiveWearWidgetHandle
 public constructor(
     public val provider: ComponentName,
     public val instanceId: WidgetInstanceId,
-    @ContainerType public val containerType: Int,
+    @get:ContainerType @param:ContainerType public val containerType: Int,
 ) {
     override fun equals(other: Any?): Boolean =
         when {

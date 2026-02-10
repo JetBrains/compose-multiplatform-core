@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 
@@ -43,7 +42,7 @@ internal constructor(
      * the world coordinate space.
      *
      * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.PlaneTrackingMode.DISABLED]
+     *   [androidx.xr.runtime.PlaneTrackingMode.DISABLED]
      */
     public fun createAnchor(): AnchorCreateResult {
         return trackable.createAnchor(hitPose)

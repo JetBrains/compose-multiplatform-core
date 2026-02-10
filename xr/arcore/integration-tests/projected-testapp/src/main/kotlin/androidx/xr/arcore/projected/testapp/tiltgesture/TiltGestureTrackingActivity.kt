@@ -43,6 +43,7 @@ import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
@@ -121,9 +122,7 @@ class TiltGestureTrackingActivity : ComponentActivity() {
                 session = result.session
                 try {
                     when (
-                        session.configure(
-                            Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
-                        )
+                        session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
                     ) {
                         is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
                             Log.e(

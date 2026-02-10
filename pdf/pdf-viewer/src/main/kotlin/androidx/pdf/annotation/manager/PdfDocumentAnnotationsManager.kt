@@ -48,7 +48,6 @@ internal class PdfDocumentAnnotationsManager(
     private val operationsTracker: AnnotationOperationsTracker,
 ) : PdfAnnotationsManager {
     override suspend fun getAnnotations(pageNum: Int): List<KeyedPdfAnnotation> {
-        // TODO(b/462603193): Remove the map once draft state returns KeyedPdfAnnotation
         val draftAnnotations = draftState.getDraftAnnotations(pageNum)
         val persistedAnnotations = annotationsRepository.getAnnotationsForPage(pageNum)
 

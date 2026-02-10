@@ -18,7 +18,7 @@ package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,13 +35,13 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
          *
          * @param session the currently active [Session].
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.DeviceTrackingMode.DISABLED].
+         *   [androidx.xr.runtime.DeviceTrackingMode.DISABLED].
          */
         @JvmStatic
         public fun getInstance(session: Session): ArDevice {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
-            check(config.deviceTracking != Config.DeviceTrackingMode.DISABLED) {
+            check(config.deviceTracking != DeviceTrackingMode.DISABLED) {
                 "Config.DeviceTrackingMode is set to DISABLED."
             }
             return perceptionStateExtender.xrResourcesManager.arDevice

@@ -16,6 +16,8 @@
 
 package androidx.pdf.ink.view
 
+import androidx.core.graphics.ColorUtils
+import androidx.pdf.ink.util.InkDefaults
 import androidx.pdf.ink.view.brush.model.BrushSizes
 import androidx.pdf.ink.view.colorpalette.model.Color
 import androidx.pdf.ink.view.colorpalette.model.Emoji
@@ -107,8 +109,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
             // its button acts as a toggle for the brush slider
             _state.value =
                 state.value.copy(
-                    isBrushSizeSliderVisible = !state.value.isBrushSizeSliderVisible,
-                    isColorPaletteVisible = false,
+                    showBrushSizeSlider = !state.value.showBrushSizeSlider,
+                    showColorPalette = false,
                 )
         } else {
             // If a different tool was selected (or no tool), switch to the newTool.
@@ -116,8 +118,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
                 _state.value.copy(
                     selectedTool = newTool,
                     isColorPaletteEnabled = true,
-                    isBrushSizeSliderVisible = false,
-                    isColorPaletteVisible = false,
+                    showBrushSizeSlider = false,
+                    showColorPalette = false,
                 )
             // Only dispatch the tool updated when it's not previously selected
             // to avoid redundant callbacks
@@ -135,8 +137,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
                     selectedTool = AnnotationToolsKey.ERASER,
                     // The eraser has no configurable attributes, so its popups are always
                     // hidden/disabled.
-                    isColorPaletteVisible = false,
-                    isBrushSizeSliderVisible = false,
+                    showColorPalette = false,
+                    showBrushSizeSlider = false,
                     isColorPaletteEnabled = false,
                 )
             dispatchToolUpdated(state.value)
@@ -203,9 +205,9 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
         _state.value =
             _state.value.copy(
                 selectedTool = null,
-                isColorPaletteVisible = false,
+                showColorPalette = false,
                 isColorPaletteEnabled = false,
-                isBrushSizeSliderVisible = false,
+                showBrushSizeSlider = false,
             )
     }
 
@@ -213,8 +215,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
         _state.value =
             _state.value.copy(
                 isAnnotationVisible = !state.value.isAnnotationVisible,
-                isColorPaletteVisible = false,
-                isBrushSizeSliderVisible = false,
+                showColorPalette = false,
+                showBrushSizeSlider = false,
             )
         dispatchAnnotationVisibility(state.value)
     }
@@ -226,8 +228,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
 
         _state.value =
             _state.value.copy(
-                isColorPaletteVisible = !state.value.isColorPaletteVisible,
-                isBrushSizeSliderVisible = false,
+                showColorPalette = !state.value.showColorPalette,
+                showBrushSizeSlider = false,
             )
     }
 
@@ -244,8 +246,14 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
                         BrushSizes.highlightBrushSizes[
                                 state.highlighterState.selectedBrushSizeIndex]
                     val color = (state.highlighterState.paletteItem as? Color)?.color
+                    val colorWithAlpha =
+                        color?.let {
+                            ColorUtils.setAlphaComponent(it, InkDefaults.HIGHLIGHTER_ALPHA)
+                        }
                     val emoji = (state.highlighterState.paletteItem as? Emoji)?.emoji
-                    ToolbarEffect.ToolUpdated(Highlighter(brushSize.toFloat(), color, emoji))
+                    ToolbarEffect.ToolUpdated(
+                        Highlighter(brushSize.toFloat(), colorWithAlpha, emoji)
+                    )
                 }
                 AnnotationToolsKey.ERASER -> {
                     ToolbarEffect.ToolUpdated(Eraser)
@@ -257,8 +265,7 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
     }
 
     private fun hideAnyPopup() {
-        _state.value =
-            _state.value.copy(isColorPaletteVisible = false, isBrushSizeSliderVisible = false)
+        _state.value = _state.value.copy(showColorPalette = false, showBrushSizeSlider = false)
     }
 
     private fun expandOrCollapseToolbar(isExpanded: Boolean) {
@@ -266,8 +273,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
             _state.value.copy(
                 isExpanded = isExpanded,
                 // Hide any popup shown while expanding or collapsing
-                isBrushSizeSliderVisible = false,
-                isColorPaletteVisible = false,
+                showBrushSizeSlider = false,
+                showColorPalette = false,
             )
     }
 

@@ -14,38 +14,48 @@
  * limitations under the License.
  */
 
-@file:JvmName("TestNavigatorDestinationBuilderKt")
-@file:JvmMultifileClass
+file:Suppress("NOTHING_TO_INLINE")
 
 package androidx.testutils
 
 import androidx.navigation.NavDestinationBuilder
 import androidx.navigation.NavDestinationDsl
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.get
-import kotlin.jvm.JvmMultifileClass
-import kotlin.jvm.JvmName
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
-/**
- * Construct a new [TestNavigator.Destination]
- */
+/** Construct a new [TestNavigator.Destination] */
 inline fun NavGraphBuilder.test(route: String) = test(route) {}
 
-/**
- * Construct a new [TestNavigator.Destination]
- */
+/** Construct a new [TestNavigator.Destination] */
+inline fun <reified T : Any> NavGraphBuilder.test(typeMap: Map<KType, NavType<*>> = emptyMap()) =
+    test<T>(typeMap) {}
+
+/** Construct a new [TestNavigator.Destination] */
 inline fun NavGraphBuilder.test(
     route: String,
-    builder: TestNavigatorDestinationBuilder.() -> Unit
-) = destination(
-    TestNavigatorDestinationBuilder(provider["test"/* TEST_NAVIGATOR_NAME */], route).apply(builder)
-)
+    builder: TestNavigatorDestinationBuilder.() -> Unit,
+) =
+    destination(
+        TestNavigatorDestinationBuilder(provider[TestNavigator::class], route).apply(builder)
+    )
 
-/**
- * DSL for constructing a new [TestNavigator.Destination]
- */
+/** Construct a new [TestNavigator.Destination] */
+inline fun <reified T : Any> NavGraphBuilder.test(
+    typeMap: Map<KType, NavType<*>> = emptyMap(),
+    builder: TestNavigatorDestinationBuilder.() -> Unit,
+) =
+    destination(
+        TestNavigatorDestinationBuilder(provider[TestNavigator::class], T::class, typeMap)
+            .apply(builder)
+    )
+
+/** DSL for constructing a new [TestNavigator.Destination] */
 @NavDestinationDsl
 expect class TestNavigatorDestinationBuilder : NavDestinationBuilder<TestNavigator.Destination> {
-    @Suppress("ConvertSecondaryConstructorToPrimary")
     constructor(navigator: TestNavigator, route: String)
+
+    constructor(navigator: TestNavigator, route: KClass<*>, typeMap: Map<KType, NavType<*>>)
 }

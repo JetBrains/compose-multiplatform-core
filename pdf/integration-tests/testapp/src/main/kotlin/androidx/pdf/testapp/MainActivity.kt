@@ -16,7 +16,6 @@
 
 package androidx.pdf.testapp
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -42,7 +41,6 @@ import androidx.pdf.testapp.ui.v2.TabbedPdfViewerFragment
 import androidx.pdf.testapp.ui.v2.compose.PdfComposeFragment
 import com.google.android.material.button.MaterialButton
 
-@SuppressLint("RestrictedApiAndroidX")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class MainActivity : AppCompatActivity() {
 

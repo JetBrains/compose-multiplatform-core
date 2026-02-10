@@ -82,8 +82,14 @@ import org.xmlpull.v1.XmlPullParserException
  * @property group The name of the group this widget provider is associated with. Widget providers
  *   in the same group represent the same widget on the device. Only one provider service should be
  *   enabled at a time for a given group. This can be used to replace which provider service is
- *   associated with a widget on the device. Defaults to the fully qualified name of the provider
- *   service.
+ *   associated with a widget on the device.
+ *
+ * Defaults to the fully qualified name of the provider service.
+ *
+ * This attribute is only used on devices on API version 37 and above. For backwards compatibility
+ * with services being used on older devices, the default value of the fully qualified name of the
+ * older service should be used.
+ *
  * @property configIntentAction The intent action to launch an activity for configuring the widget.
  *   This can be null if no configuration is needed.
  * @property unrecognisedAttributes Any unrecognised attributes during the XML parsing of the

@@ -36,6 +36,8 @@ import androidx.pdf.annotation.models.EditOperation
 class FakePdfPage(private val pageNum: Int, override val height: Int, override val width: Int) :
     PdfPage {
 
+    override var isClosed = false
+
     internal data class AnnotationOperationRecord(
         val aospId: Int,
         val operation: EditOperation.Operation,

@@ -61,8 +61,8 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                 parameters.prebuilts.isPresent
         ) {
             """
-                Prebuilts directory for Konan must be provided when the project is not a playground
-                project.
+            Prebuilts directory for Konan must be provided when the project is not a playground
+            project.
             """
                 .trimIndent()
         }

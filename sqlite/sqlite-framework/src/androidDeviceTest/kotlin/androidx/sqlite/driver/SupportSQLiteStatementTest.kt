@@ -33,8 +33,8 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        SELECT
-                        """
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -55,9 +55,9 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        -- cmt
-                        SELECT
-                        """
+                    -- cmt
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -65,10 +65,10 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        -- line 1
-                        -- line 2
-                        SELECT
-                        """
+                    -- line 1
+                    -- line 2
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -76,10 +76,10 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        -- line 1
-                        SELECT
-                        -- line 2
-                        """
+                    -- line 1
+                    SELECT
+                    -- line 2
+                    """
                         .trimIndent()
                 )
             )
@@ -89,9 +89,9 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /* cmt */
-                        SELECT
-                        """
+                    /* cmt */
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -99,10 +99,10 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /* line 1
-                           line 2 */
-                        SELECT
-                        """
+                    /* line 1
+                       line 2 */
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -110,12 +110,12 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /*
-                         * line 1
-                         * line 2
-                         */
-                        SELECT
-                        """
+                    /*
+                     * line 1
+                     * line 2
+                     */
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -123,13 +123,13 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /*
-                         * /* foo
-                         * * bar
-                         * // baz
-                         */
-                        SELECT
-                        """
+                    /*
+                     * /* foo
+                     * * bar
+                     * // baz
+                     */
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -137,12 +137,12 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /********
-                         * line 1
-                         * line 2
-                         ********/
-                        SELECT
-                        """
+                    /********
+                     * line 1
+                     * line 2
+                     ********/
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -152,10 +152,10 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        /* line 1 */
-                        -- line 2
-                        SELECT
-                        """
+                    /* line 1 */
+                    -- line 2
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )
@@ -163,10 +163,10 @@ class SupportSQLiteStatementTest {
         assertThat(
                 getStatementPrefix(
                     """
-                        -- line 1
-                        /* line 2 */
-                        SELECT
-                        """
+                    -- line 1
+                    /* line 2 */
+                    SELECT
+                    """
                         .trimIndent()
                 )
             )

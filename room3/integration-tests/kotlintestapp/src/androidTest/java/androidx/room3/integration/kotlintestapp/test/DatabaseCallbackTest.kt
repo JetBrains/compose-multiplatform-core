@@ -104,7 +104,7 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
                 )
                 .addCallback(
                     object : RoomDatabase.Callback() {
-                        override fun onCreate(connection: SQLiteConnection) {
+                        override suspend fun onCreate(connection: SQLiteConnection) {
                             connection.execSQL(
                                 "INSERT INTO publisher (publisherId, name) VALUES ('p1', 'pub1')"
                             )
@@ -131,7 +131,7 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
                     object : RoomDatabase.Callback() {
                         var isBadInsertDone = false
 
-                        override fun onCreate(connection: SQLiteConnection) {
+                        override suspend fun onCreate(connection: SQLiteConnection) {
                             if (!isBadInsertDone) {
                                 isBadInsertDone = true
                                 connection.execSQL("INSERT INTO fake_table (c1) VALUES (1)")
@@ -154,11 +154,11 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         var created = false
         var opened = false
 
-        override fun onCreate(connection: SQLiteConnection) {
+        override suspend fun onCreate(connection: SQLiteConnection) {
             created = true
         }
 
-        override fun onOpen(connection: SQLiteConnection) {
+        override suspend fun onOpen(connection: SQLiteConnection) {
             opened = true
         }
     }

@@ -19,7 +19,7 @@ package androidx.xr.arcore.playservices
 import android.media.Image
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.DepthMap
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.math.IntSize2d
 import com.google.ar.core.Frame
 import com.google.ar.core.exceptions.NotYetAvailableException
@@ -52,13 +52,12 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
 
     private var resolution: IntSize2d = IntSize2d()
 
-    internal var depthEstimationMode: Config.DepthEstimationMode =
-        Config.DepthEstimationMode.DISABLED
+    internal var depthEstimationMode: DepthEstimationMode = DepthEstimationMode.DISABLED
     private var depthConfidenceImageBuffer: Queue<Image> = LinkedList()
 
-    internal fun updateDepthEstimationMode(depthEstimationMode: Config.DepthEstimationMode) {
+    internal fun updateDepthEstimationMode(depthEstimationMode: DepthEstimationMode) {
         resolution = IntSize2d()
-        if (depthEstimationMode == Config.DepthEstimationMode.DISABLED) {
+        if (depthEstimationMode == DepthEstimationMode.DISABLED) {
             rawDepthMap = null
             rawConfidenceMap = null
             smoothDepthMap = null
@@ -68,7 +67,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
     }
 
     internal fun update(lastFrame: Frame) {
-        if (depthEstimationMode == Config.DepthEstimationMode.DISABLED) {
+        if (depthEstimationMode == DepthEstimationMode.DISABLED) {
             popDepthImageElement()
             return
         }
@@ -76,7 +75,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
             val currentRawDepthImage = lastFrame.acquireRawDepthImage16Bits()
             val currentRawConfidenceImage = lastFrame.acquireRawDepthConfidenceImage()
             val currentDepthImage =
-                if (depthEstimationMode != Config.DepthEstimationMode.RAW_ONLY) {
+                if (depthEstimationMode != DepthEstimationMode.RAW_ONLY) {
                     lastFrame.acquireDepthImage16Bits()
                 } else {
                     null
@@ -84,7 +83,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
             if (currentRawConfidenceImage.planes.size > 0) {
                 rawConfidenceMap =
                     currentRawConfidenceImage.planes[0].buffer.order(ByteOrder.nativeOrder())
-                if (depthEstimationMode != Config.DepthEstimationMode.RAW_ONLY) {
+                if (depthEstimationMode != DepthEstimationMode.RAW_ONLY) {
                     smoothConfidenceMap = rawConfidenceMap
                 }
                 pushDepthImageElement(currentRawConfidenceImage)
@@ -108,20 +107,20 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
             }
 
             if (
-                (depthEstimationMode == Config.DepthEstimationMode.SMOOTH_AND_RAW ||
-                    depthEstimationMode == Config.DepthEstimationMode.RAW_ONLY) &&
+                (depthEstimationMode == DepthEstimationMode.SMOOTH_AND_RAW ||
+                    depthEstimationMode == DepthEstimationMode.RAW_ONLY) &&
                     (currentRawDepthImage.width != resolution.width ||
                         currentRawDepthImage.height != resolution.height)
             ) {
                 resolution = IntSize2d(currentRawDepthImage.width, currentRawDepthImage.height)
                 rawDepthMap = FloatBuffer.allocate(resolution.width * resolution.height)
-                if (depthEstimationMode == Config.DepthEstimationMode.SMOOTH_AND_RAW) {
+                if (depthEstimationMode == DepthEstimationMode.SMOOTH_AND_RAW) {
                     smoothDepthMap = FloatBuffer.allocate(resolution.width * resolution.height)
                 }
             }
 
             if (
-                depthEstimationMode == Config.DepthEstimationMode.SMOOTH_ONLY &&
+                depthEstimationMode == DepthEstimationMode.SMOOTH_ONLY &&
                     (currentDepthImage!!.width != resolution.width ||
                         currentDepthImage!!.height != resolution.height)
             ) {
@@ -130,7 +129,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
             }
 
             when (depthEstimationMode) {
-                Config.DepthEstimationMode.RAW_ONLY -> {
+                DepthEstimationMode.RAW_ONLY -> {
 
                     val rawPlane = currentRawDepthImage.planes[0]
                     convertDepthMapBuffer(
@@ -142,7 +141,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
                     smoothConfidenceMap = null
                 }
 
-                Config.DepthEstimationMode.SMOOTH_ONLY -> {
+                DepthEstimationMode.SMOOTH_ONLY -> {
 
                     val smoothPlane = currentDepthImage!!.planes[0]
                     convertDepthMapBuffer(
@@ -155,7 +154,7 @@ public class ArCoreDepthMap internal constructor() : DepthMap {
                     rawConfidenceMap = null
                 }
 
-                Config.DepthEstimationMode.SMOOTH_AND_RAW -> {
+                DepthEstimationMode.SMOOTH_AND_RAW -> {
 
                     val rawPlane = currentRawDepthImage.planes[0]
                     convertDepthMapBuffer(

@@ -360,6 +360,8 @@ package androidx.xr.arcore {
 
   public final class Geospatial {
     method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.AnchorCreateResult>);
     method public androidx.xr.arcore.CreateGeospatialPoseFromPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.arcore.CreatePoseFromGeospatialPoseResult createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
     method public static androidx.xr.arcore.Geospatial getInstance(androidx.xr.runtime.Session session);
@@ -389,6 +391,17 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Geospatial.State NOT_RUNNING;
     property public androidx.xr.arcore.Geospatial.State PAUSED;
     property public androidx.xr.arcore.Geospatial.State RUNNING;
+  }
+
+  public static final class Geospatial.Surface {
+    field public static final androidx.xr.arcore.Geospatial.Surface.Companion Companion;
+    field public static final androidx.xr.arcore.Geospatial.Surface ROOFTOP;
+    field public static final androidx.xr.arcore.Geospatial.Surface TERRAIN;
+  }
+
+  public static final class Geospatial.Surface.Companion {
+    property public androidx.xr.arcore.Geospatial.Surface ROOFTOP;
+    property public androidx.xr.arcore.Geospatial.Surface TERRAIN;
   }
 
   public final class Hand {

@@ -21,7 +21,7 @@ import android.provider.Settings.System
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
 import androidx.xr.arcore.runtime.HandJointType as RuntimeHandJoint
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -45,13 +45,13 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
          *
          * @param session the currently active [Session].
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.HandTrackingMode.DISABLED].
+         *   [androidx.xr.runtime.HandTrackingMode.DISABLED].
          */
         @JvmStatic
         public fun left(session: Session): Hand? {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
-            check(config.handTracking != Config.HandTrackingMode.DISABLED) {
+            check(config.handTracking != HandTrackingMode.DISABLED) {
                 "Config.HandTrackingMode is set to DISABLED."
             }
             return perceptionStateExtender.xrResourcesManager.leftHand
@@ -62,13 +62,13 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
          *
          * @param session the currently active [Session].
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.HandTrackingMode.DISABLED].
+         *   [HandTrackingMode.DISABLED].
          */
         @JvmStatic
         public fun right(session: Session): Hand? {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
-            check(config.handTracking != Config.HandTrackingMode.DISABLED) {
+            check(config.handTracking != HandTrackingMode.DISABLED) {
                 "Config.HandTrackingMode is set to DISABLED."
             }
             return perceptionStateExtender.xrResourcesManager.rightHand

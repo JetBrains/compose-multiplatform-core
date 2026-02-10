@@ -423,6 +423,13 @@ class NavTypeConverterTest {
     }
 
     @Test
+    fun matchEnumClass() {
+        val descriptor = serializer<TestEnum>().descriptor
+        val kType = typeOf<TestEnum>()
+        assertThat(descriptor.matchKType(kType)).isTrue()
+    }
+
+    @Test
     fun matchWrongTypeParam() {
         val descriptor = serializer<Set<Int>>().descriptor
         val kType = typeOf<Set<Boolean>>()
@@ -716,15 +723,12 @@ class NavTypeConverterTest {
     }
 
     @Test
-<<<<<<<< HEAD:navigation/navigation-common/src/commonTest/kotlin/androidx/navigation/serialization/NavTypeConverterTest.kt
     fun getNavTypeEnumArraySerializable() {
         val type = serializer<Array<TestEnum>>().descriptor.getNavType()
         assertThat(type).isEqualTo(UNKNOWN)
     }
 
     @Test
-========
->>>>>>>> integration-aosp/1.11.0-alpha04:navigation/navigation-common/src/androidTest/kotlin/androidx/navigation/serialization/NavTypeConverterTest.kt
     fun getNavTypeUnsupportedArray() {
         assertThat(serializer<Array<Double>>().descriptor.getNavType()).isEqualTo(UNKNOWN)
 
@@ -764,6 +768,12 @@ class NavTypeConverterTest {
     @Serializable
     class TestObject {
         val arg: String = "test"
+    }
+
+    @Serializable
+    enum class TestEnum {
+        First,
+        Second,
     }
 
     @Serializable class ParamDerivedTwo : Param()

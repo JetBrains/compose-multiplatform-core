@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,9 @@
 
 package androidx.navigation
 
-import androidx.savedstate.SavedState
-
-internal actual class NoNameNavigator
-actual constructor() : Navigator<NavDestination>() {
+internal actual class NoNameNavigator actual constructor() : Navigator<NavDestination>() {
     actual override fun createDestination(): NavDestination {
         throw IllegalStateException("createDestination is not supported")
-    }
-
-    actual override fun navigate(
-        destination: NavDestination,
-        args: SavedState?,
-        navOptions: NavOptions?,
-        navigatorExtras: Extras?
-    ): NavDestination? {
-        throw IllegalStateException("navigate is not supported")
     }
 
     actual override fun popBackStack(): Boolean {
@@ -39,8 +27,7 @@ actual constructor() : Navigator<NavDestination>() {
 }
 
 /** An empty [Navigator] used to test [NavigatorProvider]. */
-internal actual open class EmptyNavigator
-actual constructor() : Navigator<NavDestination>(NAME) {
+internal actual open class EmptyNavigator actual constructor() : Navigator<NavDestination>(NAME) {
 
     actual companion object {
         actual const val NAME: String = "empty"
@@ -50,17 +37,9 @@ actual constructor() : Navigator<NavDestination>(NAME) {
         throw IllegalStateException("createDestination is not supported")
     }
 
-    actual override fun navigate(
-        destination: NavDestination,
-        args: SavedState?,
-        navOptions: NavOptions?,
-        navigatorExtras: Extras?
-    ): NavDestination? {
-        throw IllegalStateException("navigate is not supported")
-    }
-
     actual override fun popBackStack(): Boolean {
         throw IllegalStateException("popBackStack is not supported")
     }
-
 }
+
+internal actual class EmptyNavigator2 actual constructor() : EmptyNavigator()

@@ -43,9 +43,15 @@ import kotlinx.coroutines.CompletableDeferred
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeImpressApiImpl : ImpressApi {
-    internal data class AnimationInProgress(
+    public data class AnimationInProgress(
         var name: String?,
-        var fireOnDone: ResolvableFuture<Void?>?,
+        var fireOnDone: ResolvableFuture<Void?>? = null,
+        var looping: Boolean = false,
+        var speed: Float = 1.0f,
+        var startTime: Float = 0.0f,
+        var channel: Int = 0,
+        var playbackTime: Float = 0.0f,
+        var paused: Boolean = false,
     )
 
     /** Test bookkeeping data for a Android Surface */
@@ -130,6 +136,9 @@ public class FakeImpressApiImpl : ImpressApi {
     private val impressLoopAnimatedNodes: MutableMap<ImpressNode, AnimationInProgress> = HashMap()
     // Vector of animating Impress nodes that are currently paused.
     private val impressPausedAnimatedNode: MutableList<ImpressNode> = ArrayList()
+    // Map of impress nodes to their channel-based animations
+    private val channelAnimations: MutableMap<ImpressNode, MutableMap<Int, AnimationInProgress>> =
+        HashMap()
     // Map of impress entity nodes to their associated StereoSurfaceEntityData
     private val stereoSurfaceEntities: MutableMap<ImpressNode, StereoSurfaceEntityData> = HashMap()
     // Map of texture image tokens to their associated Texture object
@@ -220,10 +229,16 @@ public class FakeImpressApiImpl : ImpressApi {
         throw IllegalArgumentException("not implemented")
     }
 
-    override fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean) {
+    override fun setGltfReformAffordanceEnabled(
+        impressNode: ImpressNode,
+        enabled: Boolean,
+        systemMovable: Boolean,
+    ) {
         throw IllegalArgumentException("not implemented")
     }
 
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     @Suppress("RestrictTo")
     override suspend fun animateGltfModel(
         impressNode: ImpressNode,
@@ -242,6 +257,36 @@ public class FakeImpressApiImpl : ImpressApi {
         return null
     }
 
+    override suspend fun animateGltfModelNew(
+        impressNode: ImpressNode,
+        animationName: String?,
+        looping: Boolean,
+        speed: Float,
+        startTime: Float,
+        channel: Int,
+    ): Void? {
+        if (getGltfNodeData(impressNode) == null) {
+            throw IllegalArgumentException("Impress node not found")
+        }
+        val animationInProgress =
+            AnimationInProgress(
+                name = animationName,
+                fireOnDone = null,
+                looping = looping,
+                speed = speed,
+                startTime = startTime,
+                channel = channel,
+                playbackTime = startTime,
+                paused = false,
+            )
+
+        val nodeAnims = channelAnimations.getOrPut(impressNode) { HashMap() }
+        nodeAnims[channel] = animationInProgress
+        return null
+    }
+
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     override fun stopGltfModelAnimation(impressNode: ImpressNode) {
         activeAnimations[impressNode]?.complete(Unit)
 
@@ -258,6 +303,30 @@ public class FakeImpressApiImpl : ImpressApi {
         }
     }
 
+    override fun stopGltfModelAnimationNew(impressNode: ImpressNode, channel: Int) {
+        val nodeAnims = channelAnimations[impressNode]
+        if (nodeAnims != null) {
+            nodeAnims.remove(channel)
+            if (nodeAnims.isEmpty()) {
+                channelAnimations.remove(impressNode)
+            }
+        }
+    }
+
+    override fun toggleGltfModelAnimationNew(
+        impressNode: ImpressNode,
+        playing: Boolean,
+        channel: Int,
+    ) {
+        val nodeAnims = channelAnimations[impressNode]
+        val animation = nodeAnims?.get(channel)
+        if (animation != null) {
+            animation.paused = !playing
+        }
+    }
+
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     override fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean) {
         if (getGltfNodeData(impressNode) == null) {
             throw IllegalArgumentException("Impress node not found")
@@ -283,6 +352,32 @@ public class FakeImpressApiImpl : ImpressApi {
                 impressPausedAnimatedNode.add(impressNode)
             }
         }
+    }
+
+    override fun setGltfModelAnimationPlaybackTime(
+        impressNode: ImpressNode,
+        playbackTime: Float,
+        channel: Int,
+    ) {
+        val nodeAnims = channelAnimations[impressNode]
+        nodeAnims?.get(channel)?.playbackTime = playbackTime
+    }
+
+    override fun setGltfModelAnimationSpeed(impressNode: ImpressNode, speed: Float, channel: Int) {
+        val nodeAnims = channelAnimations[impressNode]
+        nodeAnims?.get(channel)?.speed = speed
+    }
+
+    override fun getGltfModelAnimationCount(impressNode: ImpressNode): Int {
+        return 0
+    }
+
+    override fun getGltfModelAnimationName(impressNode: ImpressNode, index: Int): String {
+        return ""
+    }
+
+    override fun getGltfModelAnimationDurationSeconds(impressNode: ImpressNode, index: Int): Float {
+        return 0f
     }
 
     override fun createImpressNode(): ImpressNode {
@@ -344,6 +439,10 @@ public class FakeImpressApiImpl : ImpressApi {
 
     /** Returns the number of animating Impress nodes that are currently paused. */
     public fun impressNodeAnimationPausingSize(): Int = impressPausedAnimatedNode.size
+
+    /** Returns the map of channel animations for a given node. */
+    public fun getChannelAnimations(impressNode: ImpressNode): Map<Int, AnimationInProgress>? =
+        channelAnimations[impressNode]
 
     override fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode {
         return createStereoSurface(
@@ -500,6 +599,16 @@ public class FakeImpressApiImpl : ImpressApi {
             stereoSurfaceEntities[panelImpressNode]
                 ?: throw IllegalArgumentException("Couldn't find stereo surface entity!")
         data.stereoMode = stereoMode
+    }
+
+    override fun setBlendingModeForStereoSurfaceEntity(
+        panelImpressNode: ImpressNode,
+        @MediaBlendingMode blendingMode: Int,
+    ) {
+        val data =
+            stereoSurfaceEntities[panelImpressNode]
+                ?: throw IllegalArgumentException("Couldn't find stereo surface entity!")
+        data.mediaBlendingMode = blendingMode
     }
 
     override fun setContentColorMetadataForStereoSurface(

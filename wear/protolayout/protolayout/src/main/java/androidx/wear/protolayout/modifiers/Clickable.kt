@@ -158,7 +158,7 @@ fun LayoutModifier.clickable(clickable: Clickable): LayoutModifier =
  * @param requestedStateMap is the state associated with this action. This state will be passed to
  *   the action handler.
  */
-@SuppressLint("ProtoLayoutMinSchema")
+@SuppressLint("ProtoLayoutMinSchema", "MissingJvmstatic")
 fun loadAction(
     @RequiresSchemaVersion(major = 1, minor = 200) requestedStateMap: DynamicDataMap? = null
 ): LoadAction =

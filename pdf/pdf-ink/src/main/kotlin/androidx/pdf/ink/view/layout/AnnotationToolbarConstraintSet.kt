@@ -29,6 +29,8 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
     private val margin16dp = context.resources.getDimensionPixelSize(R.dimen.margin_16dp)
     private val colorPaletteMaxWidth =
         context.resources.getDimensionPixelSize(R.dimen.color_palette_max_width)
+    private val colorPaletteMaxHeight =
+        context.resources.getDimensionPixelSize(R.dimen.color_palette_max_height)
 
     val dockStateStart: ConstraintSet = createConstraintSetFor(DOCK_STATE_START)
     val dockStateEnd: ConstraintSet = createConstraintSetFor(DOCK_STATE_END)
@@ -128,11 +130,11 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
         clear(R.id.color_palette, ConstraintSet.BOTTOM)
         clear(R.id.color_palette, ConstraintSet.START)
         clear(R.id.color_palette, ConstraintSet.END)
-        setVisibility(R.id.color_palette, ConstraintSet.GONE)
 
         when (dockState) {
             DOCK_STATE_START -> {
-                constrainWidth(R.id.color_palette, colorPaletteMaxWidth)
+                constrainWidth(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
+                constrainMaxWidth(R.id.color_palette, colorPaletteMaxWidth)
                 constrainHeight(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
                 connect(
                     R.id.color_palette,
@@ -155,7 +157,8 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
                 setMargin(R.id.color_palette, ConstraintSet.START, margin16dp)
             }
             DOCK_STATE_END -> {
-                constrainWidth(R.id.color_palette, colorPaletteMaxWidth)
+                constrainWidth(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
+                constrainMaxWidth(R.id.color_palette, colorPaletteMaxWidth)
                 constrainHeight(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
                 connect(
                     R.id.color_palette,
@@ -180,6 +183,7 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
             DOCK_STATE_BOTTOM -> {
                 constrainWidth(R.id.color_palette, ConstraintSet.MATCH_CONSTRAINT)
                 constrainHeight(R.id.color_palette, ConstraintSet.WRAP_CONTENT)
+                constrainMaxHeight(R.id.color_palette, colorPaletteMaxHeight)
                 connect(
                     R.id.color_palette,
                     ConstraintSet.START,
@@ -211,7 +215,6 @@ internal class AnnotationToolbarConstraintSet(context: Context) {
         clear(R.id.brush_size_selector, ConstraintSet.BOTTOM)
         clear(R.id.brush_size_selector, ConstraintSet.START)
         clear(R.id.brush_size_selector, ConstraintSet.END)
-        setVisibility(R.id.brush_size_selector, ConstraintSet.GONE)
 
         when (dockState) {
             DOCK_STATE_START -> {

@@ -71,6 +71,12 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
         return hostView
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Disable animations on annotation toolbar for tests
+        annotationToolbar.areAnimationsEnabled = false
+    }
+
     override fun onLoadDocumentSuccess(document: PdfDocument) {
         super.onLoadDocumentSuccess(document)
         pdfDocument = document

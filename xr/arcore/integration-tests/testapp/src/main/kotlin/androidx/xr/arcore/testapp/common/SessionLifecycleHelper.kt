@@ -22,7 +22,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.EyeTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Log
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
@@ -82,28 +89,28 @@ class SessionLifecycleHelper(
 
     private fun getRequiredPermissions(config: Config): List<String> {
         val permissions = mutableListOf<String>()
-        if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+        if (config.planeTracking != PlaneTrackingMode.DISABLED) {
             permissions.add(SCENE_UNDERSTANDING_COARSE)
         }
-        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
+        if (config.depthEstimation != DepthEstimationMode.DISABLED) {
             permissions.add(SCENE_UNDERSTANDING_FINE)
         }
-        if (config.handTracking != Config.HandTrackingMode.DISABLED) {
+        if (config.handTracking != HandTrackingMode.DISABLED) {
             permissions.add(HAND_TRACKING)
         }
-        if (config.faceTracking != Config.FaceTrackingMode.DISABLED) {
+        if (config.faceTracking != FaceTrackingMode.DISABLED) {
             permissions.add(FACE_TRACKING)
         }
-        if (config.deviceTracking != Config.DeviceTrackingMode.DISABLED) {
+        if (config.deviceTracking != DeviceTrackingMode.DISABLED) {
             permissions.add(HEAD_TRACKING)
         }
-        if (config.eyeTracking == Config.EyeTrackingMode.COARSE_TRACKING) {
+        if (config.eyeTracking == EyeTrackingMode.COARSE_TRACKING) {
             permissions.add(EYE_TRACKING_COARSE)
         }
-        if (config.eyeTracking == Config.EyeTrackingMode.FINE_TRACKING) {
+        if (config.eyeTracking == EyeTrackingMode.FINE_TRACKING) {
             permissions.add(EYE_TRACKING_FINE)
         }
-        if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
+        if (config.geospatial == GeospatialMode.VPS_AND_GPS) {
             permissions.add(ACCESS_FINE_LOCATION)
         }
         return permissions

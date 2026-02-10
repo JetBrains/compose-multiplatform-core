@@ -220,9 +220,9 @@ class AffectedModuleDetectorWrapper : AffectedModuleDetector(logger = null) {
         return wrapped?.get()?.detector
             ?: throw GradleException(
                 """
-                        Tried to get the affected module detector implementation too early.
-                        You cannot access it until all projects are evaluated.
-            """
+                Tried to get the affected module detector implementation too early.
+                You cannot access it until all projects are evaluated.
+                """
                     .trimIndent()
             )
     }

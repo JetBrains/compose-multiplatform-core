@@ -31,7 +31,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.math.Pose
@@ -54,10 +54,10 @@ import kotlinx.coroutines.asExecutor
  * modifier allows the element to be anchored to a plane in the real world.
  *
  * This modifier requires requires [androidx.xr.runtime.Session.configure] to be called with
- * [androidx.xr.runtime.Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration
- * requires that the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not granted, the
- * `anchorable` functionality will be disabled, and the element will behave as if the anchorable
- * modifier was not applied.
+ * [androidx.xr.runtime.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration requires that
+ * the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not granted, the `anchorable`
+ * functionality will be disabled, and the element will behave as if the anchorable modifier was not
+ * applied.
  *
  * @param enabled true if this composable should be movable.
  * @param anchorPlaneOrientations when supplied, this movable entity can be anchored to Horizontal
@@ -223,7 +223,7 @@ internal class AnchorableNode(
     private fun enableAnchorableComponent() {
         check(component == null) { "MovableComponent already enabled." }
 
-        if (session.config.planeTracking == Config.PlaneTrackingMode.DISABLED) {
+        if (session.config.planeTracking == PlaneTrackingMode.DISABLED) {
             return
         }
 

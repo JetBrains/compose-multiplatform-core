@@ -146,6 +146,13 @@ public object TextButtonDefaults {
     public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
+    /**
+     * The minimum recommended parent top and bottom content padding for a [TextButton] in a list
+     * such as [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListVerticalContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** Returns the default [TextButtonShapes] for a static [TextButton]. */
     @Composable public fun shapes(): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes
 

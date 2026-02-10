@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
+import kotlin.collections.forEach
 
-/** A simple Navigator that doesn't actually navigate anywhere, but does dispatch correctly */
 @Navigator.Name("test")
 actual open class TestNavigator actual constructor(private val hasTransitions: Boolean) :
     Navigator<TestNavigator.Destination>() {
 
-    actual val backStack: List<NavBackStackEntry>
+    val backStack: List<NavBackStackEntry>
         get() = state.backStack.value
 
-    actual val current: NavBackStackEntry
+    val current: NavBackStackEntry
         get() = backStack.lastOrNull() ?: throw IllegalStateException("Nothing on the back stack")
 
-    actual fun popCurrent() {
+    fun popCurrent() {
         state.pop(current, false)
     }
 
@@ -66,7 +66,6 @@ actual open class TestNavigator actual constructor(private val hasTransitions: B
         state.markTransitionComplete(entry)
     }
 
-    /** A simple Test destination */
     actual open class Destination actual constructor(navigator: Navigator<out NavDestination>) :
         NavDestination(navigator)
 }

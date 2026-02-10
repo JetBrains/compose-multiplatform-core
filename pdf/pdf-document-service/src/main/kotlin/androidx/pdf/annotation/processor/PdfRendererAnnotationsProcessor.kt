@@ -62,7 +62,7 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
                         else -> -1
                     }
 
-                if (currentPageNum == -1) return@forEach
+                if (currentPageNum == -1) throw Exception("Invalid page index")
 
                 if (lastOpenedPage == null || lastOpenedPageNum != currentPageNum) {
                     lastOpenedPage?.let { page -> renderer.releasePage(page, lastOpenedPageNum) }

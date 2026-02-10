@@ -32,6 +32,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.ExrImage
@@ -89,7 +90,7 @@ class EnvironmentActivity : AppCompatActivity() {
 
         session = SessionManager(this).createSession()
         if (session == null) this.finish()
-        session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session!!.configure(Config(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         session?.scene?.keyEntity = session?.scene?.mainPanelEntity
 
         // toolbar

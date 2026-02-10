@@ -147,15 +147,25 @@ private constructor(private val frameState: FrameState, override val imageStream
     override suspend fun awaitImage(streamId: StreamId): OutputImage? {
         if (closed.value) return null
         if (!imageStreams.contains(streamId)) return null
-        val output = frameState.imageOutputs.firstOrNull { it.streamId == streamId }
-        return output?.await()
+        val outputs = frameState.imageOutputs.filter { it.streamId == streamId }
+        for (output in outputs) {
+            output.await()?.let {
+                return it
+            }
+        }
+        return null
     }
 
     override fun getImage(streamId: StreamId): OutputImage? {
         if (closed.value) return null
         if (!imageStreams.contains(streamId)) return null
-        val output = frameState.imageOutputs.firstOrNull { it.streamId == streamId }
-        return output?.outputOrNull()
+        val outputs = frameState.imageOutputs.filter { it.streamId == streamId }
+        for (output in outputs) {
+            output.outputOrNull()?.let {
+                return it
+            }
+        }
+        return null
     }
 
     override fun imageStatus(streamId: StreamId): OutputStatus {

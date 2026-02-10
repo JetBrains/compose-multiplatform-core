@@ -19,13 +19,11 @@ package androidx.camera.video.internal.config
 import android.content.Context
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.video.AudioSpec
@@ -42,7 +40,6 @@ import org.junit.After
 import org.junit.Assume
 import org.junit.Assume.assumeFalse
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -62,16 +59,8 @@ class AudioEncoderConfigAudioProfileResolverTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val defaultAudioSpec = AudioSpec.builder().build()

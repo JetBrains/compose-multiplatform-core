@@ -43,6 +43,9 @@ public interface GltfEntity : Entity {
      */
     public val gltfModelBoundingBox: BoundingBox
 
+    /** Returns a list of all animations in the model. */
+    public val animations: List<GltfAnimationFeature>
+
     /**
      * Starts the animation with the given name.
      *

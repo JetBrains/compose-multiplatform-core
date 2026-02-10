@@ -558,8 +558,8 @@ class SandboxedPdfDocumentTest {
                     editablePdfDocument.applyEdits(draft.toEditsDraft())
                 }
 
-            assertThat(thrownException.failureIndex).isEqualTo(1)
-            assertThat(thrownException.appliedEditIds.size).isEqualTo(1)
+            assertThat(thrownException.failureIndex).isEqualTo(0)
+            assertThat(thrownException.appliedEditIds.size).isEqualTo(0)
             assertThat(thrownException.error.message).isEqualTo("Invalid page index")
         }
     }
@@ -586,8 +586,8 @@ class SandboxedPdfDocumentTest {
                         editablePdfDocument.applyEdits(draft.toEditsDraft())
                     }
 
-                assertThat(thrownException.failureIndex).isEqualTo(19) // last index
-                assertThat(thrownException.appliedEditIds.size).isEqualTo(numAnnots)
+                assertThat(thrownException.failureIndex).isEqualTo(0)
+                assertThat(thrownException.appliedEditIds.size).isEqualTo(0)
                 assertThat(thrownException.error.message).isEqualTo("Invalid page index")
             }
         }

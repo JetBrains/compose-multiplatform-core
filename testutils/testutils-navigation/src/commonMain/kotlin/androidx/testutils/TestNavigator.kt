@@ -16,32 +16,14 @@
 
 package androidx.testutils
 
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.Navigator
 
-/**
- * A simple Navigator that doesn't actually navigate anywhere, but does dispatch correctly
- */
-public expect open class TestNavigator(hasTransitions: Boolean = false) :
+/** A simple Navigator that doesn't actually navigate anywhere, but does dispatch correctly */
+expect open class TestNavigator(hasTransitions: Boolean = false) :
     Navigator<TestNavigator.Destination> {
-
-    public val backStack: List<NavBackStackEntry>
-
-    public val current: NavBackStackEntry
-
-    public fun popCurrent()
-
-    public fun onTransitionComplete(entry: NavBackStackEntry)
-
     override fun createDestination(): Destination
 
-    /**
-     * A simple Test destination
-     */
-    public open class Destination(
-        navigator: Navigator<out NavDestination>
-    ) : NavDestination
+    /** A simple Test destination */
+    open class Destination(navigator: Navigator<out NavDestination>) : NavDestination
 }
-
-internal const val TEST_NAVIGATOR_NAME = "test"

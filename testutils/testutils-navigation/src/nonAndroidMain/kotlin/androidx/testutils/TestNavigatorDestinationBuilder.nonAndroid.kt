@@ -18,9 +18,17 @@ package androidx.testutils
 
 import androidx.navigation.NavDestinationBuilder
 import androidx.navigation.NavDestinationDsl
+import androidx.navigation.NavType
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @NavDestinationDsl
 actual class TestNavigatorDestinationBuilder : NavDestinationBuilder<TestNavigator.Destination> {
-    @Suppress("ConvertSecondaryConstructorToPrimary")
     actual constructor(navigator: TestNavigator, route: String) : super(navigator, route)
+
+    actual constructor(
+        navigator: TestNavigator,
+        route: KClass<*>,
+        typeMap: Map<KType, NavType<*>>,
+    ) : super(navigator, route, typeMap)
 }

@@ -76,16 +76,16 @@ abstract class BaseConformanceTest {
         connection
             .prepare(
                 """
-            INSERT INTO Test (
-                integerCol_long,
-                integerCol_int,
-                integerCol_boolean,
-                realCol_double,
-                realCol_float,
-                textCol,
-                blobCol
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """
+                INSERT INTO Test (
+                    integerCol_long,
+                    integerCol_int,
+                    integerCol_boolean,
+                    realCol_double,
+                    realCol_float,
+                    textCol,
+                    blobCol
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """
                     .trimIndent()
             )
             .use {
@@ -396,7 +396,7 @@ abstract class BaseConformanceTest {
                 WITH RECURSIVE
                   cnt(x) AS (VALUES(1) UNION ALL SELECT x + 1 FROM cnt WHERE x < 10)
                 SELECT x FROM cnt;
-            """
+                """
                     .trimIndent()
             )
             .use {
@@ -482,7 +482,8 @@ abstract class BaseConformanceTest {
                 cid PRIMARY KEY,
                 pid,
                 FOREIGN KEY(pid) REFERENCES Parent(pid)
-            )"""
+            )
+            """
                 .trimIndent()
         )
         connection.execSQL("INSERT INTO Parent (pid) VALUES ('p1')")

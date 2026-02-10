@@ -23,7 +23,7 @@ import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
 import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
@@ -36,10 +36,11 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Provides localization ability in Earth-relative coordinates.
  *
- * To use the Geospatial object, configure the session with [Config.GeospatialMode.VPS_AND_GPS].
+ * To use the Geospatial object, configure the session with
+ * [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS].
  *
- * Not all devices support [Config.GeospatialMode.VPS_AND_GPS], use [ConfigMode.isSupported] to
- * check if the current device supports enabling this mode.
+ * Not all devices support [androidx.xr.runtime.GeospatialMode.VPS_AND_GPS], use
+ * [ConfigMode.isSupported] to check if the current device supports enabling this mode.
  *
  * The Geospatial object should only be used when its [State] is [State.Running], and otherwise
  * should not be used. Use [Geospatial.state] to obtain the current [State].
@@ -212,7 +213,6 @@ internal constructor(
     }
 
     /** The type of surface on which to create an anchor. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public class Surface private constructor(private val value: Int) {
         public companion object {
             /** The terrain surface. */
@@ -237,7 +237,8 @@ internal constructor(
      * away from the center of the earth, and Z+ points to the south.
      *
      * The tracking state of an [Anchor] will permanently become [TrackingState.Stopped] if the
-     * [Config.GeospatialMode] is disabled, or if another full-space app uses Geospatial.
+     * [androidx.xr.runtime.GeospatialMode] is disabled, or if another full-space app uses
+     * Geospatial.
      *
      * Creating anchors near the north pole or south pole is not supported. If the latitude is
      * within 0.1 degrees of the north pole or south pole (90 degrees or -90 degrees), this function
@@ -249,7 +250,6 @@ internal constructor(
      * @param eastUpSouthQuaternion the rotation quaternion of the anchor.
      * @throws [IllegalArgumentException] if the latitude is outside the allowable range.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun createAnchor(
         latitude: Double,
         longitude: Double,
@@ -265,8 +265,6 @@ internal constructor(
             AnchorCreateSuccess(anchor)
         } catch (e: AnchorResourcesExhaustedException) {
             AnchorCreateResourcesExhausted()
-        } catch (e: IllegalStateException) {
-            AnchorCreateIllegalState()
         }
     }
 
@@ -295,7 +293,8 @@ internal constructor(
      *
      * A Terrain anchor's tracking state will be [TrackingState.Paused] if the Earth is not actively
      * tracking. Its tracking state will permanently become [TrackingState.Stopped] if
-     * [Config.GeospatialMode] is disabled, or if another full-space app uses Geospatial.
+     * [androidx.xr.runtime.GeospatialMode] is disabled, or if another full-space app uses
+     * Geospatial.
      *
      * Latitude and longitude are defined by the
      * [WGS84 specification](https://en.wikipedia.org/wiki/World_Geodetic_System), and the altitude
@@ -309,9 +308,9 @@ internal constructor(
      * @param longitude the longitude of the anchor.
      * @param altitudeAboveSurface The altitude of the anchor above the given surface.
      * @param eastUpSouthQuaternion the rotation quaternion of the anchor.
+     * @param surface the surface on which to create the anchor.
      * @throws IllegalArgumentException if the latitude is outside the allowable range.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public suspend fun createAnchorOnSurface(
         latitude: Double,
         longitude: Double,
@@ -333,8 +332,6 @@ internal constructor(
             val anchor = Anchor(runtimeAnchor, xrResourcesManager)
             xrResourcesManager.addUpdatable(anchor)
             AnchorCreateSuccess(anchor)
-        } catch (e: IllegalStateException) {
-            AnchorCreateIllegalState()
         } catch (e: AnchorResourcesExhaustedException) {
             AnchorCreateResourcesExhausted()
         } catch (e: AnchorNotAuthorizedException) {
@@ -356,10 +353,7 @@ internal constructor(
     }
 
     private fun checkGeospatialModeEnabled() {
-        check(
-            xrResourcesManager.lifecycleManager.config.geospatial ==
-                Config.GeospatialMode.VPS_AND_GPS
-        ) {
+        check(xrResourcesManager.lifecycleManager.config.geospatial == GeospatialMode.VPS_AND_GPS) {
             "To use this function, Config.GeospatialMode must be set to VPS_AND_GPS."
         }
     }

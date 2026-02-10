@@ -2469,6 +2469,10 @@ package androidx.collection {
     method public static <E> androidx.collection.OrderedScatterSet<E> orderedScatterSetOf(E element1, E element2);
     method public static <E> androidx.collection.OrderedScatterSet<E> orderedScatterSetOf(E element1, E element2, E element3);
     method public static <E> androidx.collection.OrderedScatterSet<E> orderedScatterSetOf(E... elements);
+    method public static <E> androidx.collection.MutableOrderedScatterSet<E> toMutableOrderedScatterSet(androidx.collection.OrderedScatterSet<E>);
+    method public static <E> androidx.collection.MutableOrderedScatterSet<E> toMutableOrderedScatterSet(java.util.Collection<? extends E>);
+    method public static <E> androidx.collection.OrderedScatterSet<E> toOrderedScatterSet(androidx.collection.OrderedScatterSet<E>);
+    method public static <E> androidx.collection.OrderedScatterSet<E> toOrderedScatterSet(java.util.Collection<? extends E>);
   }
 
   public abstract sealed exhaustive class ScatterMap<K, V> {

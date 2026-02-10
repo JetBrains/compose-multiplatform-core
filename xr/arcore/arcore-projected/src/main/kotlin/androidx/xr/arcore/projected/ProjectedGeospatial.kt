@@ -43,7 +43,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
     Geospatial {
     public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
-        private set
+        internal set
 
     private val service: IProjectedPerceptionService
         get() = xrResources.service

@@ -33,7 +33,8 @@ import kotlin.math.roundToInt
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.PanelEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakePanelEntity(private val view: View? = null) : FakeEntity(), PanelEntity {
+public open class FakePanelEntity(public val view: View? = null, name: String = "") :
+    FakeEntity(name), PanelEntity {
 
     private val context = view?.context
     private val windowManager = context?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.KotlinTarget
@@ -87,6 +86,7 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.mockitoKotlin)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)
@@ -112,6 +112,7 @@ ksp {
 kotlin {
     compilerOptions {
         optIn.add("androidx.work.ExperimentalConfigurationApi")
+        optIn.add("androidx.work.ExperimentalEventsApi")
     }
 }
 

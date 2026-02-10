@@ -662,16 +662,20 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
         name == otherName || dependsOn.any { it.includesSourceSet(otherName) }
 
-    private fun AarMetadata.configure(compileSdk: Int?) {
-        // Taken from
-        // https://developer.android.com/build/releases/gradle-plugin#api-level-support
-        fun mapToMinAgpVersion(compileSdk: Int): String {
-            return when (compileSdk) {
-                33 -> "7.2.0"
-                34 -> "8.1.1"
-                35 -> "8.6.0"
-                36 -> "8.9.1"
-                else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+    private fun AarMetadata.configureMinAgpVersion() {
+        @Suppress("UnstableApiUsage") // usage of minAgpVersion
+        minAgpVersion.set(
+            minCompileSdk.map { value ->
+                // Taken from
+                // https://developer.android.com/build/releases/about-agp#api-level-support
+                when (value) {
+                    1 -> "7.2.0"
+                    33 -> "7.2.0"
+                    34 -> "8.1.1"
+                    35 -> "8.6.0"
+                    36 -> "8.9.1"
+                    else -> throw Exception("Unknown compileSdk to minAgpVersion mapping")
+                }
             }
         }
 
@@ -1210,18 +1214,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     .trimIndent()
             }
 
-        kmpExtension.targets.configureEach { kotlinTarget ->
-            kotlinTarget.compilations.configureEach { compilation ->
-                // Configure all KMP targets to allow expect/actual classes that are not stable.
-                // (see https://youtrack.jetbrains.com/issue/KT-61573)
-                compilation.compileTaskProvider.configure { task ->
-                    task.compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
-                    androidXConfiguration.kotlinApiVersion.let {
-                        task.compilerOptions.apiVersion.set(it)
-                        task.compilerOptions.languageVersion.set(it)
-                    }
-                }
-            }
+        kmpExtension.compilerOptions {
+            // Configure all KMP targets to allow expect/actual classes that are not stable.
+            // (see https://youtrack.jetbrains.com/issue/KT-61573)
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+
+            apiVersion.set(androidXConfiguration.kotlinApiVersion)
+            languageVersion.set(androidXConfiguration.kotlinApiVersion)
         }
     }
 

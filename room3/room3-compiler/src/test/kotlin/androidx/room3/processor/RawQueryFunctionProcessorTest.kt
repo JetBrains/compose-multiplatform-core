@@ -195,12 +195,12 @@ class RawQueryFunctionProcessorTest {
                     Source.kotlin(
                         "RawQuerySuspendUnitDao.kt",
                         """
-                    import androidx.room3.RawQuery
-                    import androidx.sqlite.db.SupportSQLiteQuery
-                    interface RawQuerySuspendUnitDao {
-                        @RawQuery suspend fun foo(query: SupportSQLiteQuery)
-                    }
-                    """
+                        import androidx.room3.RawQuery
+                        import androidx.sqlite.db.SupportSQLiteQuery
+                        interface RawQuerySuspendUnitDao {
+                            @RawQuery suspend fun foo(query: SupportSQLiteQuery)
+                        }
+                        """
                             .trimIndent(),
                     )
                 )

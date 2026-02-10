@@ -19,7 +19,7 @@ package androidx.xr.arcore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.XrDevice.DisplayBlendMode
+import androidx.xr.runtime.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /** Test-only implementation of [androidx.xr.arcore.runtime.PerceptionRuntime] */

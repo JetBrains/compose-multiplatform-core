@@ -19,6 +19,8 @@ package androidx.pdf.ink.fragment
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.ext.SdkExtensions
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.widget.LinearLayout
 import androidx.annotation.RequiresExtension
 import androidx.fragment.app.testing.FragmentScenario
@@ -35,13 +37,19 @@ import androidx.pdf.util.ToolbarMatchers.matchesToolbarMask
 import androidx.pdf.util.ToolbarMatchers.withDockState
 import androidx.pdf.util.ToolbarViewActions
 import androidx.pdf.util.ToolbarViewActions.performDragAndDrop
+import androidx.pdf.view.PdfView
 import androidx.test.espresso.Espresso.onIdle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.action.GeneralClickAction
+import androidx.test.espresso.action.GeneralLocation
+import androidx.test.espresso.action.Press
+import androidx.test.espresso.action.Tap
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -121,9 +129,6 @@ class EditablePdfViewerFragmentTests {
 
         // Initiate drag event
         onView(withId(R.id.annotationToolbar)).perform(ViewActions.longClick())
-        onIdle()
-        // Verify toolbar collapses on long press
-        onView(withId(R.id.collapsed_tool)).check(matches(isDisplayed()))
 
         // Drag to the left side of the screen
         performDragAndDrop(
@@ -238,6 +243,46 @@ class EditablePdfViewerFragmentTests {
             // After reload, assert we move to the 1st page
             assertThat(pdfView.firstVisiblePage).isEqualTo(expectedFirstVisiblePage)
         }
+    }
+
+    @Test
+    fun test_editablePdfFragment_clearsSelection_onEnterEditMode() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        onView(withId(PdfR.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(PdfR.id.edit_fab)).check(matches(isDisplayed()))
+        onIdle()
+
+        var pdfView: PdfView? = null
+        scenario.onFragment { fragment -> pdfView = fragment.view?.findViewById(PdfR.id.pdfView) }
+
+        longClickAtCenter()
+        assertThat(pdfView?.currentSelection).isNotNull()
+
+        enterEditMode()
+
+        assertThat(pdfView?.currentSelection).isNull()
+        onView(withId(PdfR.id.edit_fab)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.annotationToolbar)).check(matches(isDisplayed()))
+    }
+
+    private fun longClickAtCenter() {
+        onView(isRoot())
+            .perform(
+                GeneralClickAction(
+                    Tap.LONG,
+                    { view ->
+                        GeneralLocation.CENTER.calculateCoordinates(view)
+                            .map { it + 20f }
+                            .toFloatArray()
+                    },
+                    Press.THUMB,
+                    InputDevice.SOURCE_UNKNOWN,
+                    MotionEvent.BUTTON_PRIMARY,
+                )
+            )
     }
 
     companion object {

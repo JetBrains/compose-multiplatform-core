@@ -136,4 +136,9 @@ class FakeGltfEntityTest {
         assertThat(underTest.node.materialArray[primitiveIndex])
             .isEqualTo(FakeResource(primitiveIndex.toLong()))
     }
+
+    @Test
+    fun getAnimations_returnsEmptyList() {
+        assertThat(underTest.animations).isEmpty()
+    }
 }

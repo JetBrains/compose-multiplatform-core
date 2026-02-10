@@ -30,7 +30,6 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
@@ -75,7 +74,6 @@ class ComposeCameraAppTest {
 
     // Activity launch will render ImageCaptureScreen
     // Ensure that ImageCapture screen's PreviewView is streaming properly
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
@@ -87,7 +85,6 @@ class ComposeCameraAppTest {
     @Test
     @LabTestRule.LabTestOnly
     @RepeatRule.Repeat(times = 10)
-    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun testPreviewViewStreamStateOnNavigation() {
 
         // Get VideoCapture Navigation Tab (Node)

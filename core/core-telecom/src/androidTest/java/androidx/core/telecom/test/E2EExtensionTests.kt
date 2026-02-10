@@ -867,6 +867,72 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
     }
 
     /**
+     * Verifies that when the InCallService requests a local silence update, the state is not
+     * automatically updated (echoed back) by the Extension library. The state should only change
+     * once the VoIP app explicitly acknowledges and updates it.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testRequestLocalCallSilenceUpdateWaitsForVoipApp(): Unit = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+
+            // 1. Create the call with Local Silence capabilities (start un-silenced)
+            val voipCallId =
+                createAndVerifyVoipCall(
+                    voipAppControl,
+                    callback,
+                    listOf(getLocalSilenceCapability(setOf())),
+                    parameters.direction,
+                    initIsLocallySilenced = false,
+                    initCanUserUpdateSilence = true,
+                )
+
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            var hasConnected = false
+
+            with(ics) {
+                connectExtensions(call) {
+                    val localSilenceExtension = CachedLocalSilence(this)
+                    onConnected {
+                        hasConnected = true
+                        // Ensure initial state is false (un-silenced)
+                        localSilenceExtension.waitForLocalCallSilenceState(false)
+
+                        // 2. ICS requests to silence the call (request = true)
+                        val result =
+                            localSilenceExtension.extension.requestLocalCallSilenceUpdate(true)
+                        assertEquals(CallControlResult.Success(), result)
+
+                        // 3. Verify VoIP app received the request via the callback
+                        // This corresponds to "onLocalSilenceUpdate is given to the voip app"
+                        callback.waitForIsLocalSilenced(voipCallId, true)
+
+                        // 4. CRITICAL ASSERTION:
+                        // Assert that the ICS has NOT received the state update yet.
+                        // This proves the extension impl did not optimistically update the state
+                        // internally.
+                        localSilenceExtension.assertLocalCallSilenceStateNotUpdated(
+                            unexpected = true
+                        )
+
+                        // 5. Now, have the VoIP app explicitly update the state
+                        voipAppControl.updateIsLocallySilenced(true)
+
+                        // 6. Verify ICS now receives the update
+                        localSilenceExtension.waitForLocalCallSilenceState(true)
+
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never received", hasConnected)
+        }
+    }
+
+    /**
      * Create a VOIP call with a participants extension and attach participant Call extensions.
      * Verify kick participant functionality works as expected
      */

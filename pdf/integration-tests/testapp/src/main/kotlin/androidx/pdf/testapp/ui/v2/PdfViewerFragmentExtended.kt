@@ -56,7 +56,6 @@ import kotlinx.coroutines.withContext
  * adds a FloatingActionButton for search functionality and manages its visibility based on the
  * immersive mode state. It also includes a toggleable vertical thumbnail preview.
  */
-@Suppress("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 class PdfViewerFragmentExtended : PdfViewerFragment(), FeatureFlagListener {
 

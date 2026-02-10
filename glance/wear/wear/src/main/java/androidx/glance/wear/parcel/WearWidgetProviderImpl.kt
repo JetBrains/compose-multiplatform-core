@@ -22,9 +22,11 @@ import android.util.Log
 import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.ContainerInfo
 import androidx.glance.wear.GlanceWearWidget
+import androidx.glance.wear.WearWidgetEventBatch
 import androidx.glance.wear.WearWidgetParams
 import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.cache.WidgetContainerSpec
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -111,7 +113,7 @@ internal class WearWidgetProviderImpl(
             if (handleParcel == null) {
                 val errMessage = "Null widget handle parcel."
                 Log.e(TAG, errMessage)
-                callback?.onError(ACTIVATION_ERROR_CODE_INVALID_ARGUMENT, errMessage)
+                callback?.onError(ERROR_CODE_INVALID_ARGUMENT, errMessage)
                 return@launch
             }
             val handle =
@@ -120,13 +122,42 @@ internal class WearWidgetProviderImpl(
                 } catch (e: IllegalArgumentException) {
                     val errMessage = "Error deserializing ActiveWearWidgetHandle"
                     Log.e(TAG, errMessage, e)
-                    callback?.onError(ACTIVATION_ERROR_CODE_INVALID_ARGUMENT, errMessage)
+                    callback?.onError(ERROR_CODE_INVALID_ARGUMENT, errMessage)
                     return@launch
                 }
             try {
                 eventHandler.invoke(context, handle)
             } catch (e: Exception) {
-                callback?.onError(ACTIVATION_ERROR_CODE_INTERNAL_ERROR, e.message)
+                callback?.onError(ERROR_CODE_INTERNAL_ERROR, e.message)
+                throw e
+            }
+            callback?.onSuccess()
+        }
+    }
+
+    override fun onEvents(
+        eventBatchParcel: WearWidgetEventBatchParcel?,
+        callback: IExecutionCallback?,
+    ) {
+        mainScope.launch {
+            if (eventBatchParcel == null) {
+                val errorMessage = "Null event batch parcel."
+                Log.e(TAG, errorMessage)
+                callback?.onError(ERROR_CODE_INVALID_ARGUMENT, errorMessage)
+                return@launch
+            }
+            val eventBatch =
+                try {
+                    WearWidgetEventBatch.fromParcel(eventBatchParcel)
+                } catch (e: IOException) {
+                    Log.e(TAG, "Error deserializing WearWidgetEventBatch", e)
+                    callback?.onError(ERROR_CODE_INVALID_ARGUMENT, e.message)
+                    return@launch
+                }
+            try {
+                widget.onEvents(context, eventBatch.events)
+            } catch (e: Exception) {
+                callback?.onError(ERROR_CODE_INTERNAL_ERROR, e.message)
                 throw e
             }
             callback?.onSuccess()

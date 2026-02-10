@@ -374,9 +374,77 @@ public class ImpressApiImpl : ImpressApi {
      * @param impressNode The integer ID of the impress node for the instance of the gLTF
      * @param enabled A boolean indicated whether to add or remove the reform affordance for the
      *   gLTF model.
+     * @param systemMovable A boolean indicating whether to handle the move input events or not.
      */
-    override fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean): Unit =
-        nSetGltfReformAffordanceEnabled(getViewNativeHandle(view), impressNode.handle, enabled)
+    override fun setGltfReformAffordanceEnabled(
+        impressNode: ImpressNode,
+        enabled: Boolean,
+        systemMovable: Boolean,
+    ): Unit =
+        nSetGltfReformAffordanceEnabled(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            enabled,
+            systemMovable,
+        )
+
+    /**
+     * Starts an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param animationName A nullable String which contains a requested animation to play. If null
+     *   is provided, this will attempt to play the first animation it finds
+     * @param looping True if the animation should loop. Note that if the animation is looped, the
+     *   returned Future will never fire successfully.
+     * @param speed The speed of the animation where 1.0 is the normal speed and negative values
+     *   will play the animation in reverse.
+     * @param startTime The start time of the animation in seconds.
+     * @param channel The channel of the animation.
+     * @return a [Void] result when the animation completed.
+     */
+    override suspend fun animateGltfModelNew(
+        impressNode: ImpressNode,
+        animationName: String?,
+        looping: Boolean,
+        speed: Float,
+        startTime: Float,
+        channel: Int,
+    ): Void? = suspendCancellableCoroutine { continuation ->
+        nAnimateGltfModelNew(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            animationName,
+            looping,
+            speed,
+            startTime,
+            channel,
+            object : AssetAnimator {
+                override fun onComplete() {
+                    continuation.resume(null)
+                }
+
+                override fun onFailure(message: String) {
+                    // We can safely check for the CANCELLED string here since we
+                    // know that the underlying absl Status code is being
+                    // translated to a java Exception and the message is being
+                    // propagated. Ideally the native code would generate a separate
+                    // signal call for this.
+                    // TODO: b/374217508 - Publish a more precisely typed Exception
+                    // interface for this.
+                    if (message.contains("CANCELLED")) {
+                        onCancelled(message)
+                    } else {
+                        continuation.resumeWithException(Exception(message))
+                    }
+                }
+
+                override fun onCancelled(message: String) {
+                    continuation.cancel(Exception(message))
+                }
+            },
+        )
+        "AnimateGltfModel Operation"
+    }
 
     /**
      * Starts an animation on an instanced GLTFModel.
@@ -389,6 +457,8 @@ public class ImpressApiImpl : ImpressApi {
      * @return a [Void] result when the animation stops. An exception is thrown if the animation
      *   can't play.
      */
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     override suspend fun animateGltfModel(
         impressNode: ImpressNode,
         animationName: String?,
@@ -432,11 +502,109 @@ public class ImpressApiImpl : ImpressApi {
      *
      * @param impressNode The integer ID of the Impress node for the instance of the GLTF
      */
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     override fun stopGltfModelAnimation(impressNode: ImpressNode): Unit =
         nStopGltfModelAnimation(getViewNativeHandle(view), impressNode.handle)
 
+    /**
+     * Stops an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param channel The channel of the animation.
+     */
+    override fun stopGltfModelAnimationNew(impressNode: ImpressNode, channel: Int): Unit =
+        nStopGltfModelAnimationNew(getViewNativeHandle(view), impressNode.handle, channel)
+
+    /**
+     * Toggles an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param playing True if the animation should play, false if it should stop.
+     * @param channel The channel of the animation.
+     */
+    override fun toggleGltfModelAnimationNew(
+        impressNode: ImpressNode,
+        playing: Boolean,
+        channel: Int,
+    ): Unit =
+        nToggleGltfModelAnimationNew(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            playing,
+            channel,
+        )
+
+    /**
+     * Toggles an animation on an instanced GLTFModel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param playing True if the animation should play, false if it should stop.
+     */
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     override fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean): Unit =
         nToggleGltfModelAnimation(getViewNativeHandle(view), impressNode.handle, playing)
+
+    /**
+     * Sets the playback time of an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param playbackTime The playback time of the animation.
+     * @param channel The channel of the animation.
+     */
+    override fun setGltfModelAnimationPlaybackTime(
+        impressNode: ImpressNode,
+        playbackTime: Float,
+        channel: Int,
+    ): Unit =
+        nSetGltfModelAnimationPlaybackTime(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            playbackTime,
+            channel,
+        )
+
+    /**
+     * Sets the playback speed of an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param speed The speed of the animation where 1.0 is the normal speed and negative values
+     *   will play the animation in reverse.
+     * @param channel The channel of the animation.
+     */
+    override fun setGltfModelAnimationSpeed(
+        impressNode: ImpressNode,
+        speed: Float,
+        channel: Int,
+    ): Unit =
+        nSetGltfModelAnimationSpeed(getViewNativeHandle(view), impressNode.handle, speed, channel)
+
+    /**
+     * Returns the number of animations on an instanced glTF model.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     */
+    override fun getGltfModelAnimationCount(impressNode: ImpressNode): Int =
+        nGetGltfModelAnimationCount(getViewNativeHandle(view), impressNode.handle)
+
+    /**
+     * Returns the name of the animation on an instanced glTF model.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param index The index of the animation as defined in the glTF file.
+     */
+    override fun getGltfModelAnimationName(impressNode: ImpressNode, index: Int): String? =
+        nGetGltfModelAnimationName(getViewNativeHandle(view), impressNode.handle, index)
+
+    /**
+     * Returns the duration in seconds of the animation on an instanced glTF model.
+     *
+     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param index The index of the animation as defined in the glTF file.
+     */
+    override fun getGltfModelAnimationDurationSeconds(impressNode: ImpressNode, index: Int): Float =
+        nGetGltfModelAnimationDurationSeconds(getViewNativeHandle(view), impressNode.handle, index)
 
     override fun createImpressNode(): ImpressNode =
         ImpressNode(nCreateImpressNode(getViewNativeHandle(view)))
@@ -589,6 +757,16 @@ public class ImpressApiImpl : ImpressApi {
             getViewNativeHandle(view),
             panelImpressNode.handle,
             validateStereoMode(stereoMode),
+        )
+
+    override fun setBlendingModeForStereoSurfaceEntity(
+        panelImpressNode: ImpressNode,
+        @MediaBlendingMode blendingMode: Int,
+    ): Unit =
+        nSetBlendingModeForStereoSurfaceEntity(
+            getViewNativeHandle(view),
+            panelImpressNode.handle,
+            validateMediaBlendingMode(blendingMode),
         )
 
     override fun setContentColorMetadataForStereoSurface(
@@ -1515,8 +1693,22 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         impressNode: Int,
         enabled: Boolean,
+        systemMovable: Boolean,
     )
 
+    private external fun nAnimateGltfModelNew(
+        view: Long,
+        impressNode: Int,
+        animationName: String?,
+        loop: Boolean,
+        speed: Float,
+        startTime: Float,
+        channelId: Int,
+        assetAnimator: AssetAnimator,
+    )
+
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     private external fun nAnimateGltfModel(
         view: Long,
         impressNode: Int,
@@ -1525,9 +1717,50 @@ public class ImpressApiImpl : ImpressApi {
         assetAnimator: AssetAnimator,
     )
 
+    private external fun nStopGltfModelAnimationNew(view: Long, impressNode: Int, channelId: Int)
+
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     private external fun nStopGltfModelAnimation(view: Long, impressNode: Int)
 
+    private external fun nToggleGltfModelAnimationNew(
+        view: Long,
+        impressNode: Int,
+        toggle: Boolean,
+        channelId: Int,
+    )
+
+    // TODO: b/465818627 - Remove old animation APIs once all clients are
+    // migrated to new animation system.
     private external fun nToggleGltfModelAnimation(view: Long, impressNode: Int, toggle: Boolean)
+
+    private external fun nSetGltfModelAnimationPlaybackTime(
+        view: Long,
+        impressNode: Int,
+        playbackTime: Float,
+        channelId: Int,
+    )
+
+    private external fun nSetGltfModelAnimationSpeed(
+        view: Long,
+        impressNode: Int,
+        speed: Float,
+        channelId: Int,
+    )
+
+    private external fun nGetGltfModelAnimationCount(view: Long, impressNode: Int): Int
+
+    private external fun nGetGltfModelAnimationName(
+        view: Long,
+        impressNode: Int,
+        index: Int,
+    ): String?
+
+    private external fun nGetGltfModelAnimationDurationSeconds(
+        view: Long,
+        impressNode: Int,
+        index: Int,
+    ): Float
 
     private external fun nGetGltfModelLocalBounds(
         view: Long,
@@ -1615,6 +1848,12 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         panelImpressNode: Int,
         stereoMode: Int,
+    )
+
+    private external fun nSetBlendingModeForStereoSurfaceEntity(
+        view: Long,
+        panelImpressNode: Int,
+        blendingMode: Int,
     )
 
     private external fun nSetContentColorMetadataForStereoSurfaceEntity(

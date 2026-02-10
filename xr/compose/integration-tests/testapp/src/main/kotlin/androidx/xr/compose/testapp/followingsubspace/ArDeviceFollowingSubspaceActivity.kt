@@ -71,14 +71,14 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
 data class TodoItem(val description: String, val isCompleted: Boolean)
 
-class UserSubspaceActivity : ComponentActivity() {
+class FollowingSubspaceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -90,7 +90,7 @@ class UserSubspaceActivity : ComponentActivity() {
     private fun MainContent() {
         val session = checkNotNull(LocalSession.current) { "session must be initialized" }
         session.configure(
-            config = session.config.copy(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
+            config = session.config.copy(deviceTracking = DeviceTrackingMode.LAST_KNOWN)
         )
 
         val todoItems = remember {
@@ -151,7 +151,7 @@ class UserSubspaceActivity : ComponentActivity() {
                         TopBarWithBackArrow(
                             scrollBehavior = null,
                             title = "",
-                            onClick = { this@UserSubspaceActivity.finish() },
+                            onClick = { this@FollowingSubspaceActivity.finish() },
                         )
                     }
                     Column(

@@ -254,6 +254,7 @@ public interface CanvasStrokeRenderer {
          * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
          *   for drawing textured strokes.
          */
+        @Suppress("MissingJvmstatic")
         @JvmStatic
         public fun create(
             textureStore: TextureBitmapStore = TextureBitmapStore { null }

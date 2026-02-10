@@ -267,8 +267,37 @@ public interface ImpressApi {
      *
      * @param impressNode The object of Impress node for the instance of the glTF model.
      * @param enabled If the reform affordance should be added or removed.
+     * @param systemMovable If the system should handle move input events.
      */
-    public fun setGltfReformAffordanceEnabled(impressNode: ImpressNode, enabled: Boolean)
+    public fun setGltfReformAffordanceEnabled(
+        impressNode: ImpressNode,
+        enabled: Boolean,
+        systemMovable: Boolean,
+    )
+
+    /**
+     * Starts an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param animationName A nullable String which contains a requested animation to play. If null
+     *   is provided, this will attempt to play the first animation it finds
+     * @param looping True if the animation should loop. Note that if the animation is looped, the
+     *   returned Coroutine will never fire successfully.
+     * @param speed The speed of the animation where 1.0 is the normal speed and negative values
+     *   will play the animation in reverse.
+     * @param startTime The start time of the animation in seconds.
+     * @param channel The channel of the animation.
+     * @return a Coroutine which fires when the animation stops. It will return an exception if the
+     *   animation can't play.
+     */
+    public suspend fun animateGltfModelNew(
+        impressNode: ImpressNode,
+        animationName: String?,
+        looping: Boolean,
+        speed: Float,
+        startTime: Float,
+        channel: Int,
+    ): Void?
 
     /**
      * Starts an animation on an instanced glTF model.
@@ -281,7 +310,8 @@ public interface ImpressApi {
      * @return a Coroutine which fires when the animation stops. It will return an exception if the
      *   animation can't play.
      */
-    // TODO: b/362829319 - Remove CompletableFuture from SE integration.
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     public suspend fun animateGltfModel(
         impressNode: ImpressNode,
         animationName: String?,
@@ -289,11 +319,30 @@ public interface ImpressApi {
     ): Void?
 
     /**
+     * Stops an animation on an instanced glTF model on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param channel The channel of the animation.
+     */
+    public fun stopGltfModelAnimationNew(impressNode: ImpressNode, channel: Int)
+
+    /**
      * Stops an animation on an instanced glTF model.
      *
      * @param impressNode The object of the Impress node for the instance of the glTF model.
      */
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     public fun stopGltfModelAnimation(impressNode: ImpressNode)
+
+    /**
+     * Toggles the playback of a glTF model's animation to pause or resume on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param playing `true` to resume the animation, `false` to pause it.
+     * @param channel The channel of the animation.
+     */
+    public fun toggleGltfModelAnimationNew(impressNode: ImpressNode, playing: Boolean, channel: Int)
 
     /**
      * Toggles the playback of a glTF model's animation to pause or resume.
@@ -301,7 +350,58 @@ public interface ImpressApi {
      * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param playing `true` to resume the animation, `false` to pause it.
      */
+    // TODO: b/465818627 - Remove old animation APIs once all clients are migrated
+    // to new animation system.
     public fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean)
+
+    /**
+     * Sets the playback time of a glTF model's animation on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param playbackTime The playback time of the animation in seconds.
+     * @param channel The channel of the animation.
+     */
+    public fun setGltfModelAnimationPlaybackTime(
+        impressNode: ImpressNode,
+        playbackTime: Float,
+        channel: Int,
+    )
+
+    /**
+     * Sets the speed of a glTF model's animation on a specific channel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param speed The speed of the animation where 1.0 is the normal speed and negative values
+     *   will play the animation in reverse.
+     * @param channel The channel of the animation.
+     */
+    public fun setGltfModelAnimationSpeed(impressNode: ImpressNode, speed: Float, channel: Int)
+
+    /**
+     * Returns the number of animations on an instanced glTF model.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @return The number of animations on the model.
+     */
+    public fun getGltfModelAnimationCount(impressNode: ImpressNode): Int
+
+    /**
+     * Returns the name of the animation on an instanced glTF model if it exists.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param index The index of the animation as defined in the glTF file.
+     * @return The name of the animation.
+     */
+    public fun getGltfModelAnimationName(impressNode: ImpressNode, index: Int): String?
+
+    /**
+     * Returns the duration of the animation on an instanced glTF model.
+     *
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
+     * @param index The index of the animation as defined in the glTF file.
+     * @return The duration of the animation in seconds.
+     */
+    public fun getGltfModelAnimationDurationSeconds(impressNode: ImpressNode, index: Int): Float
 
     /** This method creates an Impress node and returns its impress node object. */
     public fun createImpressNode(): ImpressNode
@@ -497,6 +597,18 @@ public interface ImpressApi {
     public fun setStereoModeForStereoSurface(
         panelImpressNode: ImpressNode,
         @StereoMode stereoMode: Int,
+    )
+
+    /**
+     * Updates the blending mode for an impress node hosting a StereoSurface.
+     *
+     * @param panelImpressNode The Impress node which hosts the panel to be updated.
+     * @param blendingMode The [Int] blending mode to apply. Must be a member of MediaBlendingMode.
+     * @throws IllegalArgumentException if blendingMode is invalid.
+     */
+    public fun setBlendingModeForStereoSurfaceEntity(
+        panelImpressNode: ImpressNode,
+        @MediaBlendingMode blendingMode: Int,
     )
 
     /**

@@ -77,6 +77,23 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
     public open suspend fun onRemoved(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
 
     /**
+     * Called when the system sends a batch of interaction events. The time between calls to this
+     * method may vary, do not depend on it for time-sensitive or critical tasks.
+     *
+     * Interaction events represent user direct interaction with a widget, for example when a widget
+     * was visible.
+     *
+     * This function must complete within 10 seconds of being called. If the timeout is exceeded,
+     * the operation will be canceled.
+     *
+     * This method is called from the main thread.
+     *
+     * @param context the context from which this method is called
+     * @param events A list [WearWidgetEvent] representing interactions that occurred.
+     */
+    @MainThread public open suspend fun onEvents(context: Context, events: List<WearWidgetEvent>) {}
+
+    /**
      * Trigger a content update for all widgets associated with the [provider] service component.
      *
      * @param context the context from which this method is called.

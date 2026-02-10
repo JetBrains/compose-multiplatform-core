@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.wear.compose.material3.ProvideTextStyle
-import androidx.wear.compose.material3.Shapes
 import androidx.wear.compose.material3.Typography
 
 @Composable
@@ -65,13 +64,6 @@ public object RemoteTypography {
     internal val typography: Typography = Typography()
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public object RemoteShapes {
-    internal val shapes: Shapes = Shapes()
-}
-
 internal val LocalRemoteColorScheme = staticCompositionLocalOf { RemoteColorScheme() }
-
-internal val LocalRemoteShapes = staticCompositionLocalOf { RemoteShapes }
 
 internal val LocalRemoteTypography = staticCompositionLocalOf { RemoteTypography }

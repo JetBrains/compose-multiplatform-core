@@ -72,6 +72,8 @@ androidXMultiplatform {
                 implementation(project(":compose:ui:ui-backhandler"))
             }
         }
+        nonAndroidMain {}.dependsOn(commonMain)
+        nonAndroidTest {}.dependsOn(commonTest)
 
         nonAndroidTest {
             dependsOn(commonTest)

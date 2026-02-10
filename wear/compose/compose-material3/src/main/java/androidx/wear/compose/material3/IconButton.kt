@@ -385,6 +385,13 @@ public object IconButtonDefaults {
     public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
+    /**
+     * The minimum recommended parent top and bottom content padding for an [IconButton] in a list
+     * such as [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListVerticalContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** Recommended alpha to apply to an IconButton with Image content with disabled */
     public val DisabledImageOpacity: Float = DisabledContentAlpha
 

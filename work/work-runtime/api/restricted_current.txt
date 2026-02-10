@@ -19,6 +19,7 @@ package androidx.work {
     method @InaccessibleFromKotlin public androidx.work.Clock getClock();
     method @InaccessibleFromKotlin public int getContentUriTriggerWorkersLimit();
     method @InaccessibleFromKotlin public String? getDefaultProcessName();
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.ExecutionEventListener? getExecutionEventListener();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getExecutor();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<java.lang.Throwable>? getInitializationExceptionHandler();
     method @InaccessibleFromKotlin public androidx.work.InputMergerFactory getInputMergerFactory();
@@ -26,9 +27,9 @@ package androidx.work {
     method @InaccessibleFromKotlin public int getMinJobSchedulerId();
     method @InaccessibleFromKotlin public long getRemoteSessionTimeoutMillis();
     method @InaccessibleFromKotlin public androidx.work.RunnableScheduler getRunnableScheduler();
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.ScheduleEventListener? getScheduleEventListener();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<java.lang.Throwable>? getSchedulingExceptionHandler();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getTaskExecutor();
-    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.WorkExecutionEventListener? getWorkExecutionEventListener();
     method @InaccessibleFromKotlin public kotlin.coroutines.CoroutineContext getWorkerCoroutineContext();
     method @InaccessibleFromKotlin public androidx.core.util.Consumer<androidx.work.WorkerExceptionInfo>? getWorkerExecutionExceptionHandler();
     method @InaccessibleFromKotlin public androidx.work.WorkerFactory getWorkerFactory();
@@ -60,6 +61,7 @@ package androidx.work {
     method public androidx.work.Configuration.Builder setClock(androidx.work.Clock clock);
     method public androidx.work.Configuration.Builder setContentUriTriggerWorkersLimit(int contentUriTriggerWorkersLimit);
     method public androidx.work.Configuration.Builder setDefaultProcessName(String processName);
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.Configuration.Builder setExecutionEventListener(androidx.work.ExecutionEventListener listener);
     method public androidx.work.Configuration.Builder setExecutor(java.util.concurrent.Executor executor);
     method public androidx.work.Configuration.Builder setInitializationExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> exceptionHandler);
     method public androidx.work.Configuration.Builder setInputMergerFactory(androidx.work.InputMergerFactory inputMergerFactory);
@@ -69,10 +71,9 @@ package androidx.work {
     method public androidx.work.Configuration.Builder setMinimumLoggingLevel(int loggingLevel);
     method public androidx.work.Configuration.Builder setRemoteSessionTimeoutMillis(@IntRange(from=0L, to=1200000L) long timeoutMillis);
     method public androidx.work.Configuration.Builder setRunnableScheduler(androidx.work.RunnableScheduler runnableScheduler);
+    method @SuppressCompatibility @androidx.work.ExperimentalEventsApi public androidx.work.Configuration.Builder setScheduleEventListener(androidx.work.ScheduleEventListener listener);
     method public androidx.work.Configuration.Builder setSchedulingExceptionHandler(androidx.core.util.Consumer<java.lang.Throwable> schedulingExceptionHandler);
     method public androidx.work.Configuration.Builder setTaskExecutor(java.util.concurrent.Executor taskExecutor);
-    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.Configuration.Builder setWorkExecutionEventListener(androidx.work.WorkExecutionEventListener? listener);
-    method @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public androidx.work.Configuration.Builder setWorkExecutionEventListener(androidx.work.WorkExecutionEventListener? listener, java.util.concurrent.Executor? executor);
     method public androidx.work.Configuration.Builder setWorkerCoroutineContext(kotlin.coroutines.CoroutineContext context);
     method public androidx.work.Configuration.Builder setWorkerExecutionExceptionHandler(androidx.core.util.Consumer<androidx.work.WorkerExceptionInfo> workerExceptionHandler);
     method public androidx.work.Configuration.Builder setWorkerFactory(androidx.work.WorkerFactory workerFactory);
@@ -220,6 +221,13 @@ package androidx.work {
     method public final androidx.work.ListenableWorker? createWorker(android.content.Context appContext, String workerClassName, androidx.work.WorkerParameters workerParameters);
   }
 
+  @SuppressCompatibility @androidx.work.ExperimentalEventsApi public interface ExecutionEventListener {
+    method public suspend Object? onException(Throwable throwable, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onFinished(androidx.work.ListenableWorker.Result result, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStarted(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? onStopped(int stopReason, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   public enum ExistingPeriodicWorkPolicy {
     enum_constant public static final androidx.work.ExistingPeriodicWorkPolicy CANCEL_AND_REENQUEUE;
     enum_constant public static final androidx.work.ExistingPeriodicWorkPolicy KEEP;
@@ -235,6 +243,9 @@ package androidx.work {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalConfigurationApi {
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalEventsApi {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.CLASS}) public @interface ExperimentalWorkRequestBuilderApi {
@@ -394,6 +405,14 @@ package androidx.work {
     method public void scheduleWithDelay(@IntRange(from=0) long, Runnable);
   }
 
+  @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public interface ScheduleEventListener {
+    method public default suspend Object? onCancelled(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onEnqueued(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onPrerequisiteFailed(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onUnblocked(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public default suspend Object? onUpdated(androidx.work.WorkInfo oldWorkInfo, androidx.work.WorkInfo updatedWorkInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   public abstract class WorkContinuation {
     ctor public WorkContinuation();
     method public static androidx.work.WorkContinuation combine(java.util.List<androidx.work.WorkContinuation!>);
@@ -402,13 +421,6 @@ package androidx.work {
     method public abstract androidx.lifecycle.LiveData<java.util.List<androidx.work.WorkInfo!>!> getWorkInfosLiveData();
     method public final androidx.work.WorkContinuation then(androidx.work.OneTimeWorkRequest);
     method public abstract androidx.work.WorkContinuation then(java.util.List<androidx.work.OneTimeWorkRequest!>);
-  }
-
-  @SuppressCompatibility @androidx.work.ExperimentalConfigurationApi public interface WorkExecutionEventListener {
-    method public suspend Object? onEnd(androidx.work.ListenableWorker.Result result, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? onException(Throwable throwable, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? onStart(androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? onStop(int stopReason, androidx.work.WorkInfo workInfo, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
   public final class WorkInfo {

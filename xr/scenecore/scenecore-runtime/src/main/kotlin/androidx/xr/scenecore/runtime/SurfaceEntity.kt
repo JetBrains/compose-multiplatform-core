@@ -43,6 +43,13 @@ public interface SurfaceEntity : Entity {
     public var stereoMode: Int
 
     /**
+     * Specifies the blending mode of the content.
+     *
+     * @throws kotlin.IllegalStateException when setting this value if the Entity has been disposed.
+     */
+    public var mediaBlendingMode: Int
+
+    /**
      * Specifies the geometry of the spatial canvas which the surface is texture mapped to.
      *
      * @throws kotlin.IllegalStateException when setting this value if the Entity has been disposed.
@@ -295,6 +302,16 @@ public interface SurfaceEntity : Entity {
             public const val TRIANGLE_STRIP: Int = 1
             /** Draw the mesh as a triangle fan. */
             public const val TRIANGLE_FAN: Int = 2
+        }
+    }
+
+    /** Specifies the blending mode of the content. */
+    public annotation class MediaBlendingMode {
+        public companion object {
+            // Content is alpha-blended with the background.
+            public const val TRANSPARENT: Int = 0
+            // Content is opaque and does not blend with the background.
+            public const val OPAQUE: Int = 1
         }
     }
 

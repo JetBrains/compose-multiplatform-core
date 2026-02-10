@@ -190,8 +190,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                 analysisPlatform = analysisPlatform.jsonName,
                                 sourceRoots = objects.fileCollection().from(sourceDir),
                                 // TODO(b/181224204): KMP samples aren't supported, dackka assumes
-                                // all
-                                // samples are in common
+                                // all samples are in common
                                 samples =
                                     if (analysisPlatform == DokkaAnalysisPlatform.COMMON) {
                                         getSampleSourceFileCollection()
@@ -218,7 +217,13 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 displayName = "main",
                 analysisPlatform = "jvm",
                 sourceRoots = objects.fileCollection().from(jvmSourcesDir),
-                samples = getSampleSourceFileCollection(),
+                // All samples are assumed to be in the common source set if there is one
+                samples =
+                    if (multiplatformSourceSets.isNotEmpty()) {
+                        objects.fileCollection()
+                    } else {
+                        getSampleSourceFileCollection()
+                    },
                 includes = objects.fileCollection().from(includesFiles(jvmSourcesDir.get().asFile)),
                 classpath = dependenciesClasspath,
                 externalDocumentationLinks = externalDocs,

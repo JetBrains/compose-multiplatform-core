@@ -22,6 +22,7 @@ import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimeEye
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
@@ -65,7 +66,7 @@ class EyeTest {
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
-        session.configure(Config(eyeTracking = Config.EyeTrackingMode.COARSE_TRACKING))
+        session.configure(Config(eyeTracking = EyeTrackingMode.COARSE_TRACKING))
         xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 

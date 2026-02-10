@@ -39,7 +39,6 @@ import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
@@ -76,7 +75,6 @@ import androidx.camera.integration.core.util.CameraInfoUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraAvailabilityUtil.assumeDeviceHasFrontCamera
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.CountdownDeferred
@@ -145,10 +143,6 @@ private val EXIF_GAINMAP_PATTERNS =
 class ImageCaptureTest(private val implName: String, private val cameraXConfig: CameraXConfig) {
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
-
-    @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             CameraUtil.PreTestCameraIdList(cameraXConfig)
@@ -167,11 +161,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -887,9 +877,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         assertThat(error).isEqualTo(ImageCapture.ERROR_FILE_IO)
     }
 
-    @kotlin.OptIn(
-        androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop::class
-    )
     @Test
     @OptIn(markerClass = [ExperimentalCamera2Interop::class])
     fun camera2InteropCaptureSessionCallbacks() = runBlocking {

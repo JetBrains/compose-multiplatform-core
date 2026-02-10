@@ -105,7 +105,7 @@ package androidx.xr.arcore.playservices {
     method public java.util.List<androidx.xr.arcore.runtime.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Frame lastFrame();
     method public androidx.xr.arcore.runtime.Anchor loadAnchor(java.util.UUID uuid);
-    method public void setDepthEstimationMode(androidx.xr.runtime.Config.DepthEstimationMode depthMode);
+    method public void setDepthEstimationMode(androidx.xr.runtime.DepthEstimationMode depthMode);
     method public void setDisplayRotation(int rotation, int width, int height);
     method public void unpersistAnchor(java.util.UUID uuid);
     property public androidx.xr.arcore.playservices.ArCoreDevice arDevice;

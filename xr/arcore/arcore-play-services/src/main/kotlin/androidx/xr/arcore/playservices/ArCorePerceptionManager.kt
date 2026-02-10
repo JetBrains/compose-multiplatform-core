@@ -28,7 +28,8 @@ import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.CameraFacingDirection
+import androidx.xr.runtime.DepthEstimationMode
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -66,7 +67,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal fun timeSinceLastFrame(): Duration = lastFrameTimeMark?.elapsedNow() ?: Duration.ZERO
 
     private val xrResources: XrResources = XrResources()
-    internal var depthEstimationMode = Config.DepthEstimationMode.DISABLED
+    internal var depthEstimationMode = DepthEstimationMode.DISABLED
 
     private var displayRotation = Surface.ROTATION_0
     private var displayWidth = 0
@@ -286,7 +287,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
 
         arDevice.update(_latestFrame)
 
-        if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
+        if (depthEstimationMode != DepthEstimationMode.DISABLED) {
             xrResources.depthMap.update(_latestFrame)
         }
 
@@ -314,9 +315,9 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     /**
      * Sets the Depth Estimation Mode for the Perception Manager and the [xrResources.depthMap]
      *
-     * @param depthMode The desired [Config.DepthEstimationMode].
+     * @param depthMode The desired [DepthEstimationMode].
      */
-    public fun setDepthEstimationMode(depthMode: Config.DepthEstimationMode) {
+    public fun setDepthEstimationMode(depthMode: DepthEstimationMode) {
         depthEstimationMode = depthMode
         xrResources.depthMap.updateDepthEstimationMode(depthMode)
     }
@@ -330,11 +331,11 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         xrResources.depthMap.dispose()
     }
 
-    internal fun setCameraFacingDirection(facingDirection: Config.CameraFacingDirection) {
+    internal fun setCameraFacingDirection(facingDirection: CameraFacingDirection) {
         val arCoreFacingDirection =
             when (facingDirection) {
-                Config.CameraFacingDirection.USER -> CameraConfig.FacingDirection.FRONT
-                Config.CameraFacingDirection.WORLD -> CameraConfig.FacingDirection.BACK
+                CameraFacingDirection.USER -> CameraConfig.FacingDirection.FRONT
+                CameraFacingDirection.WORLD -> CameraConfig.FacingDirection.BACK
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported CameraFacingDirection ${facingDirection}."

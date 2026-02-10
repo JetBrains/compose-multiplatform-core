@@ -293,6 +293,13 @@ public object ButtonGroupDefaults {
         )
     }
 
+    /**
+     * The minimum recommended parent top and bottom content padding for a [ButtonGroup] in a list
+     * such as [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListVerticalContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** How much buttons grow (and neighbors shrink) when pressed. */
     public val ExpansionWidth: Dp = 24.dp
 

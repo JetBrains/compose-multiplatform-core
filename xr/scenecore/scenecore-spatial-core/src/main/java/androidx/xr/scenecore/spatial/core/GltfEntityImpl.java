@@ -21,6 +21,7 @@ import android.content.Context;
 import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.GltfAnimationFeature;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
 import androidx.xr.scenecore.runtime.MaterialResource;
@@ -30,6 +31,7 @@ import com.android.extensions.xr.XrExtensions;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
@@ -58,6 +60,12 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
     @NonNull
     public BoundingBox getGltfModelBoundingBox() {
         return mFeature.getGltfModelBoundingBox();
+    }
+
+    @Override
+    @NonNull
+    public List<GltfAnimationFeature> getAnimations() {
+        return mFeature.getAnimations(mExecutor);
     }
 
     @Override
@@ -120,5 +128,9 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
 
     public void removeOnBoundsUpdateListener(@NonNull Consumer<@NonNull BoundingBox> listener) {
         mFeature.removeOnBoundsUpdateListener(listener);
+    }
+
+    public void setReformAffordanceEnabled(boolean enabled, boolean systemMovable) {
+        mFeature.setReformAffordanceEnabled(this, enabled, mExecutor, systemMovable);
     }
 }

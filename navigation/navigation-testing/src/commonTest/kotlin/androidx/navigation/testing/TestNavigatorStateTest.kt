@@ -20,6 +20,7 @@ import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.testing.TestLifecycleOwner
@@ -32,16 +33,13 @@ import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import androidx.navigation.SupportingPane
 import androidx.navigation.navOptions
-import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-class TestNavigatorStateTest {
-    private lateinit var state: TestNavigatorState
+@IgnoreAndroidHostTest // Runs on all targets EXCEPT AndroidHost; still runs on AndroidDevice.
+internal class TestNavigatorStateTest {
 
-    @BeforeTest
-    fun setUp() {
-        state = TestNavigatorState()
-    }
+    @OptIn(ExperimentalCoroutinesApi::class) private val state = TestNavigatorState()
 
     @Test
     fun testLifecycle() {
@@ -259,10 +257,12 @@ class TestNavigatorStateTest {
             null,
         )
 
-        val viewModel = ViewModelProvider.create(
-            owner = secondEntry,
-            factory = viewModelFactory { initializer { TestViewModel() } }
-        ).get(TestViewModel::class)
+        val viewModel =
+            ViewModelProvider.create(
+                    owner = secondEntry,
+                    factory = viewModelFactory { initializer { TestViewModel() } },
+                )
+                .get(TestViewModel::class)
 
         navigator.popBackStack(secondEntry, true)
         val restoredSecondEntry = state.restoreBackStackEntry(secondEntry)
@@ -402,68 +402,6 @@ class TestNavigatorStateTest {
         assertThat(secondEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.DESTROYED)
     }
 
-    @Navigator.Name("test")
-    internal class TestNavigator : Navigator<NavDestination>(TEST_NAVIGATOR_NAME) {
-        override fun createDestination(): NavDestination = NavDestination(this)
-    }
-
-    @Navigator.Name("test")
-    internal class TestTransitionNavigator : Navigator<NavDestination>() {
-        private val testLifecycleOwner = TestLifecycleOwner()
-        val testLifecycle = testLifecycleOwner.lifecycle
-
-        override fun createDestination(): NavDestination = NavDestination(this)
-
-        override fun navigate(
-            entries: List<NavBackStackEntry>,
-            navOptions: NavOptions?,
-            navigatorExtras: Extras?,
-        ) {
-            entries.forEach { entry -> state.pushWithTransition(entry) }
-        }
-
-        override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
-            state.popWithTransition(popUpTo, savedState)
-        }
-    }
-
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
-    internal class FloatingWindowTestNavigator : Navigator<FloatingTestDestination>(TEST_NAVIGATOR_NAME) {
-        override fun createDestination(): FloatingTestDestination = FloatingTestDestination(this)
-    }
-
-    internal class FloatingTestDestination(navigator: Navigator<out NavDestination>) :
-        NavDestination(navigator), FloatingWindow
-
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
-    internal class SupportingPaneTestNavigator : Navigator<SupportingPaneTestDestination>(TEST_NAVIGATOR_NAME) {
-        override fun createDestination(): SupportingPaneTestDestination =
-            SupportingPaneTestDestination(this)
-    }
-
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
-    internal class SupportingPaneTestTransitionNavigator :
-        Navigator<SupportingPaneTestDestination>(TEST_NAVIGATOR_NAME) {
-
-        override fun createDestination(): SupportingPaneTestDestination =
-            SupportingPaneTestDestination(this)
-
-        override fun navigate(
-            entries: List<NavBackStackEntry>,
-            navOptions: NavOptions?,
-            navigatorExtras: Extras?,
-        ) {
-            entries.forEach { entry -> state.pushWithTransition(entry) }
-        }
-
-        override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
-            state.popWithTransition(popUpTo, savedState)
-        }
-    }
-
-    internal class SupportingPaneTestDestination(navigator: Navigator<out NavDestination>) :
-        NavDestination(navigator), SupportingPane
-
     class TestViewModel : ViewModel() {
         var wasCleared = false
 
@@ -474,4 +412,54 @@ class TestNavigatorStateTest {
     }
 }
 
-private const val TEST_NAVIGATOR_NAME = "test"
+internal class FloatingTestDestination(navigator: Navigator<out NavDestination>) :
+    NavDestination(navigator), FloatingWindow
+
+internal class SupportingPaneTestDestination(navigator: Navigator<out NavDestination>) :
+    NavDestination(navigator), SupportingPane
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+internal expect class TestNavigator() : Navigator<NavDestination> {
+    override fun createDestination(): NavDestination
+}
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+internal expect class TestTransitionNavigator() : Navigator<NavDestination> {
+    val testLifecycleOwner: TestLifecycleOwner
+    val testLifecycle: LifecycleRegistry
+
+    override fun createDestination(): NavDestination
+
+    override fun navigate(
+        entries: List<NavBackStackEntry>,
+        navOptions: NavOptions?,
+        navigatorExtras: Extras?,
+    )
+
+    override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean)
+}
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+internal expect class FloatingWindowTestNavigator() : Navigator<FloatingTestDestination> {
+    override fun createDestination(): FloatingTestDestination
+}
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+internal expect class SupportingPaneTestNavigator() : Navigator<SupportingPaneTestDestination> {
+    override fun createDestination(): SupportingPaneTestDestination
+}
+
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+internal expect class SupportingPaneTestTransitionNavigator() :
+    Navigator<SupportingPaneTestDestination> {
+
+    override fun createDestination(): SupportingPaneTestDestination
+
+    override fun navigate(
+        entries: List<NavBackStackEntry>,
+        navOptions: NavOptions?,
+        navigatorExtras: Extras?,
+    )
+
+    override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean)
+}

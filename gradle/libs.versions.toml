@@ -8,7 +8,8 @@ androidGradlePlugin = "8.12.0"
 androidLint = "31.12.0"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2025.2.3.5"
+androidStudioIj = "2025.2.3.5"
+androidStudioName = "panda2-canary1"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -33,8 +34,8 @@ builder = "8.6.0-alpha05"
 byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
-composeCompilerPlugin = "2.2.20"
-dagger = "2.57.1"
+composeCompilerPlugin = "2.3.0"
+dagger = "2.59"
 datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "2.11.0"
 dexmaker = "2.28.6"
@@ -43,7 +44,7 @@ espressoDevice = "1.1.0"
 grpc = "1.52.0"
 guavaJre = "33.2.1-jre"
 hamcrestCore = "1.3"
-hilt = "2.57.1"
+hilt = "2.59"
 incap = "0.2"
 javaxInject = "1"
 jbrApi = "1.9.0"
@@ -51,24 +52,23 @@ jcodec = "0.2.5"
 kotlin18 = "1.8.22"
 kotlin19 = "1.9.24"
 # Use the most up-to-date patch
-kotlin20 = "2.0.21"
-kotlin21 = "2.1.21"
+kotlin21 = "2.1.20"
 kotlin22 = "2.2.20"
-# TODO set org.gradle.configuration-cache=true in gradle.properties after updating this to Kotlin 2.2.21 or greater
-kotlin = "2.2.20"
-kotlinBenchmark = "0.4.14"
-kotlinGradlePluginAnnotations = "2.2.20"
-kotlinGradlePluginApi = "2.2.20"
+kotlin23 = "2.3.0"
+kotlin = "2.3.0"
+kotlinBenchmark = "0.4.15"
+kotlinGradlePluginAnnotations = "2.3.0"
+kotlinGradlePluginApi = "2.3.0"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.9.0"
-kotlinNativeUtils = "2.2.20"
+kotlinNativeUtils = "2.3.0"
 kotlinSerialization = "1.8.0"
-kotlinToolingCore = "2.2.20"
-ksp = "2.2.20-2.0.4"
-ktfmt = "0.54"
+kotlinToolingCore = "2.3.0"
+ksp = "2.3.4"
+ktfmt = "0.61"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
-ktfmtIdeaPlugin = "1.2.0.54"
+ktfmtIdeaPlugin = "1.3.0.61"
 leakcanary = "2.13"
 media3 = "1.4.1"
 metalava = "1.0.0-alpha14"
@@ -141,7 +141,7 @@ byteBuddyAgent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byt
 checkerframework = { module = "org.checkerframework:checker-qual", version = "2.5.3" }
 checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
-dackka = { module = "com.google.devsite:dackka", version = "1.6.6" }
+dackka = { module = "com.google.devsite:dackka", version = "1.7.0" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 daggerCompiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
@@ -275,7 +275,7 @@ opentest4j = { module = "org.opentest4j:opentest4j", version = "1.2.0" }
 playFeatureDelivery = { module = "com.google.android.play:feature-delivery", version = "2.1.0" }
 playServicesAuth = {module = "com.google.android.gms:play-services-auth", version = "21.1.1"}
 playServicesBase = { module = "com.google.android.gms:play-services-base", version = "17.0.0" }
-playServicesBasement = { module = "com.google.android.gms:play-services-basement", version = "17.0.0" }
+playServicesBasement = { module = "com.google.android.gms:play-services-basement", version = "18.10.0" }
 playServicesBlockstore = {module = "com.google.android.gms:play-services-auth-blockstore", version = "16.4.0"}
 playServicesDevicePerformance = { module = "com.google.android.gms:play-services-deviceperformance", version = "16.0.0" }
 playServicesFido = {module = "com.google.android.gms:play-services-fido", version = "21.0.0"}

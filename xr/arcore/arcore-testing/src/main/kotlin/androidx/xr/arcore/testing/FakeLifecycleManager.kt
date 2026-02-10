@@ -17,8 +17,14 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.time.ComparableTimeMark
 import kotlin.time.TestTimeSource
@@ -86,12 +92,12 @@ public class FakeLifecycleManager(
 
     override var config: Config =
         Config(
-            Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+            PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
             augmentedObjectCategories = AugmentedObjectCategory.Companion.all(),
-            Config.HandTrackingMode.BOTH,
-            Config.DeviceTrackingMode.LAST_KNOWN,
-            Config.DepthEstimationMode.SMOOTH_AND_RAW,
-            Config.AnchorPersistenceMode.LOCAL,
+            HandTrackingMode.BOTH,
+            DeviceTrackingMode.LAST_KNOWN,
+            DepthEstimationMode.SMOOTH_AND_RAW,
+            AnchorPersistenceMode.LOCAL,
         )
 
     override fun configure(config: Config) {
@@ -101,16 +107,11 @@ public class FakeLifecycleManager(
                 state == State.RESUMED ||
                 state == State.PAUSED
         )
-        if (
-            !shouldSupportPlaneTracking && config.planeTracking != Config.PlaneTrackingMode.DISABLED
-        ) {
+        if (!shouldSupportPlaneTracking && config.planeTracking != PlaneTrackingMode.DISABLED) {
             throw UnsupportedOperationException()
         }
 
-        if (
-            !shouldSupportFaceTracking &&
-                config.faceTracking == Config.FaceTrackingMode.BLEND_SHAPES
-        ) {
+        if (!shouldSupportFaceTracking && config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
             throw UnsupportedOperationException()
         }
 

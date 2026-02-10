@@ -16,7 +16,6 @@
 
 package androidx.pdf.testapp.ui.v2
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RequiresExtension
@@ -27,7 +26,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-@SuppressLint("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 class EditablePdfHostViewModel : ViewModel() {
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Ready)

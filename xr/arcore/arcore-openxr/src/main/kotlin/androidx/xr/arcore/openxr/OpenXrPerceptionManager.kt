@@ -29,7 +29,8 @@ import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -133,9 +134,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     // Mono depth map is not supported in OpenXR.
     override val monoDepthMap: DepthMap? = null
 
-    internal var depthEstimationMode = Config.DepthEstimationMode.DISABLED
+    internal var depthEstimationMode = DepthEstimationMode.DISABLED
 
-    internal var eyeTrackingMode = Config.EyeTrackingMode.DISABLED
+    internal var eyeTrackingMode = EyeTrackingMode.DISABLED
 
     private var lastUpdateXrTime: Long = 0L
 
@@ -153,13 +154,13 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         // TODO(b/421191332): Add the View Camera config and apply it for poseInUnboundedSpace.
         updateRenderViewpoints(xrTime, false)
 
-        if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
+        if (depthEstimationMode != DepthEstimationMode.DISABLED) {
             val depthMapBuffers = nativeGetDepthImagesDataBuffers(xrTime)
             xrResources.leftDepthMap.update(depthMapBuffers)
             xrResources.rightDepthMap.update(depthMapBuffers)
         }
 
-        if (eyeTrackingMode != Config.EyeTrackingMode.DISABLED) {
+        if (eyeTrackingMode != EyeTrackingMode.DISABLED) {
             updateEyes(xrTime)
         }
 

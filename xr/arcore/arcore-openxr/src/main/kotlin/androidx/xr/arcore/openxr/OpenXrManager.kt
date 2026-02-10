@@ -22,8 +22,15 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DepthEstimationMode
+import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
+import androidx.xr.runtime.GeospatialMode
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Log
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.manifest.HAND_TRACKING
@@ -83,17 +90,17 @@ internal constructor(
     // TODO(b/392660855): Disable all features by default once this API is fully implemented.
     override var config: Config =
         Config(
-            Config.PlaneTrackingMode.DISABLED,
+            PlaneTrackingMode.DISABLED,
             augmentedObjectCategories = listOf(),
-            Config.HandTrackingMode.DISABLED,
-            Config.DeviceTrackingMode.DISABLED,
-            Config.DepthEstimationMode.DISABLED,
-            Config.AnchorPersistenceMode.LOCAL,
+            HandTrackingMode.DISABLED,
+            DeviceTrackingMode.DISABLED,
+            DepthEstimationMode.DISABLED,
+            AnchorPersistenceMode.LOCAL,
         )
         private set
 
     override fun configure(config: Config) {
-        if (config.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW) {
+        if (config.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW) {
             throw UnsupportedOperationException(
                 "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
             )
@@ -103,7 +110,7 @@ internal constructor(
         // XR_ERROR_PERMISSION_INSUFFICIENT when the HAND_TRACKING permission is not
         // granted, so we manually check it here.
         if (
-            config.handTracking != Config.HandTrackingMode.DISABLED &&
+            config.handTracking != HandTrackingMode.DISABLED &&
                 ContextCompat.checkSelfPermission(activity, HAND_TRACKING) !=
                     PackageManager.PERMISSION_GRANTED
         ) {
@@ -153,7 +160,7 @@ internal constructor(
         }
 
         if (config.handTracking != this.config.handTracking) {
-            if (config.handTracking == Config.HandTrackingMode.BOTH) {
+            if (config.handTracking == HandTrackingMode.BOTH) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.leftHand)
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.rightHand)
             } else {
@@ -167,7 +174,7 @@ internal constructor(
         }
 
         if (config.deviceTracking != this.config.deviceTracking) {
-            if (config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            if (config.deviceTracking == DeviceTrackingMode.LAST_KNOWN) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.arDevice)
             } else {
                 perceptionManager.xrResources.removeUpdatable(
@@ -187,7 +194,7 @@ internal constructor(
         }
 
         if (config.faceTracking != this.config.faceTracking) {
-            if (config.faceTracking == Config.FaceTrackingMode.BLEND_SHAPES) {
+            if (config.faceTracking == FaceTrackingMode.BLEND_SHAPES) {
                 if (!nativeGetFaceTrackerCalibration()) {
                     throw FaceTrackingNotCalibratedException()
                 }
@@ -204,7 +211,7 @@ internal constructor(
         }
 
         if (config.geospatial != this.config.geospatial) {
-            if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
+            if (config.geospatial == GeospatialMode.VPS_AND_GPS) {
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.geospatial)
             } else {
                 perceptionManager.xrResources.removeUpdatable(
@@ -230,7 +237,7 @@ internal constructor(
         val now = timeSource.markNow()
         val xrTime = timeSource.getXrTime(now)
 
-        if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+        if (config.planeTracking != PlaneTrackingMode.DISABLED) {
             perceptionManager.updatePlanes(xrTime)
         }
 

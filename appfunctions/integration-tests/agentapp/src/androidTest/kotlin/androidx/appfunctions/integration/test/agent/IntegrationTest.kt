@@ -1417,6 +1417,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_getFilesData_validUriAccess() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(targetContext))
         val request =
             ExecuteAppFunctionRequest(
                 targetPackageName = TARGET_APP_PACKAGE,
@@ -1443,6 +1444,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_getFileData_persistUriGrantingShouldSucceed() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(targetContext))
         val request =
             ExecuteAppFunctionRequest(
                 targetPackageName = TARGET_APP_PACKAGE,
@@ -1481,6 +1483,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_requestCancellation_isIsolated() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(targetContext))
         val requestA =
             ExecuteAppFunctionRequest(
                 targetPackageName = TARGET_APP_PACKAGE,

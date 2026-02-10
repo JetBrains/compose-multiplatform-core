@@ -853,15 +853,15 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             Source.java(
                 "foo.bar.Relation",
                 """
-            package foo.bar;
-            import androidx.room3.*;
-            @Entity
-            public class Relation {
-              @PrimaryKey
-              long relationId;
-              long userId;
-            }
-            """
+                package foo.bar;
+                import androidx.room3.*;
+                @Entity
+                public class Relation {
+                  @PrimaryKey
+                  long relationId;
+                  long userId;
+                }
+                """
                     .trimIndent(),
             )
         singleQueryMethod<ReadQueryFunction>(
@@ -1648,7 +1648,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                         return 0;
                     }
                 }
-            """
+                """
                     .trimIndent(),
             )
         singleQueryMethod<ReadQueryFunction>(

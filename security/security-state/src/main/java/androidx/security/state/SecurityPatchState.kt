@@ -17,21 +17,40 @@
 package androidx.security.state
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.IBinder
+import android.os.RemoteException
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringDef
+import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_KERNEL_VERSION
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_SYSTEM_SPL
+import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_SYSTEM_SUPPLEMENTAL_PATCHES
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_VENDOR_SPL
+import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_VENDOR_SUPPLEMENTAL_PATCHES
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
+import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -107,6 +126,15 @@ constructor(
             "https://storage.googleapis.com/osv-android-api"
 
         /**
+         * Timeout in milliseconds to wait for an [IUpdateInfoService] implementation to bind.
+         *
+         * A 5-second timeout is standard for Android service binding to handle cases where the
+         * target service process hangs or fails to attach, preventing this API from suspending
+         * indefinitely.
+         */
+        public const val UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS: Long = 5000L
+
+        /**
          * System component providing ro.build.version.security_patch property value as
          * DateBasedSpl.
          */
@@ -174,6 +202,7 @@ constructor(
          * @return A fully constructed URL pointing to the specific vulnerability report for this
          *   device.
          */
+        @Suppress("MissingJvmstatic")
         @JvmStatic
         @RequiresApi(26)
         public fun getVulnerabilityReportUrl(
@@ -182,6 +211,10 @@ constructor(
             val newEndpoint = "v1/android_sdk_${Build.VERSION.SDK_INT}.json"
             return serverUrl.buildUpon().appendEncodedPath(newEndpoint).build()
         }
+
+        private const val TAG = "SecurityPatchState"
+        private const val ACTION_UPDATE_INFO_SERVICE =
+            "androidx.security.state.provider.UPDATE_INFO_SERVICE"
     }
 
     /** Annotation for defining the component to use. */
@@ -190,7 +223,10 @@ constructor(
         open = true,
         value = [COMPONENT_SYSTEM, COMPONENT_SYSTEM_MODULES, COMPONENT_KERNEL, COMPONENT_VENDOR],
     )
-    internal annotation class Component
+    @SuppressLint(
+        "PublicTypedef"
+    ) // Exposed so that external clients (UpdateInfo) can see the valid values.
+    public annotation class Component
 
     /** Severity of reported security issues. */
     public enum class Severity {
@@ -674,6 +710,286 @@ constructor(
     }
 
     /**
+     * Fetches the latest available security patch level for a specific component.
+     *
+     * This is a convenience method that determines the effective security state by aggregating
+     * results from all trusted providers and comparing them against the device's current state.
+     *
+     * **Performance:** This method performs IPC (Inter-Process Communication) to query trusted
+     * services. While the providers themselves may return cached data without triggering a network
+     * call, the service binding process is asynchronous and significantly heavier than local memory
+     * lookups.
+     *
+     * **Aggregation Logic:** If multiple providers report updates for the same component (e.g.,
+     * both an OEM updater and GOTA report a "SYSTEM" update), this method conservatively selects
+     * the **newest** (highest version/date) patch level among them.
+     *
+     * **Note:** This value is based on the server-side state known to the update clients. It may
+     * not represent a real-time check if the update client has restricted background syncs (e.g.,
+     * due to rate limiting or battery saver).
+     *
+     * @param component The component to check (e.g., [COMPONENT_SYSTEM],
+     *   [COMPONENT_SYSTEM_MODULES]).
+     * @param timeoutMillis The maximum time to wait for the query to complete, in milliseconds.
+     *   Defaults to [UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS].
+     * @return The latest [SecurityPatchLevel] found. If no updates are available, or if the
+     *   available updates are older than or equal to the current device state, this returns the
+     *   current Device SPL.
+     */
+    public suspend fun fetchAvailableSecurityPatchLevel(
+        @Component component: String,
+        timeoutMillis: Long = UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS,
+    ): SecurityPatchLevel {
+        val deviceSpl = getDeviceSecurityPatchLevel(component)
+        val results = queryAllAvailableUpdates(timeoutMillis)
+
+        val maxAvailableSpl =
+            results
+                .asSequence()
+                .flatMap { it.updates }
+                .filter { update -> update.component == component }
+                .mapNotNull { update ->
+                    try {
+                        getComponentSecurityPatchLevel(component, update.securityPatchLevel)
+                    } catch (e: IllegalArgumentException) {
+                        Log.w(
+                            TAG,
+                            "Ignoring invalid SPL format from provider: ${update.securityPatchLevel}",
+                        )
+                        null
+                    }
+                }
+                .maxOrNull()
+
+        if (maxAvailableSpl != null && maxAvailableSpl > deviceSpl) {
+            return maxAvailableSpl
+        }
+
+        return deviceSpl
+    }
+
+    /**
+     * Queries for available security updates from all trusted update providers.
+     *
+     * This method performs a comprehensive check by:
+     * 1. **Discovering** all trusted services on the device that implement the `UpdateInfoService`
+     *    protocol (e.g., c, Google Play Store).
+     * 2. **Querying** each service concurrently to retrieve its status.
+     * 3. **Collecting** the results into a list.
+     *
+     * **Freshness & Caching:** The freshness of the returned data depends on the internal policies
+     * of the individual update providers. Providers are expected to maintain a reasonably fresh
+     * cache (typically refreshing at least once per hour). If a provider determines its cache is
+     * stale, this call may block while it performs a network fetch.
+     *
+     * @param timeoutMillis The maximum time to wait for each provider to respond, in milliseconds.
+     *   Defaults to [UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS].
+     * @return A list of [UpdateCheckResult] objects. Each element represents the status reported by
+     *   a distinct update provider, containing its list of updates and the timestamp of its last
+     *   successful synchronization.
+     */
+    public suspend fun queryAllAvailableUpdates(
+        timeoutMillis: Long = UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS
+    ): List<UpdateCheckResult> =
+        withContext(Dispatchers.IO) {
+            val trustedServices = getTrustedUpdateInfoServices()
+
+            if (trustedServices.isEmpty()) {
+                Log.i(TAG, "No trusted update providers found.")
+                return@withContext emptyList()
+            }
+
+            // Bind to all providers concurrently to minimize total latency
+            val deferredResults =
+                trustedServices.map { serviceComponent ->
+                    async { fetchFromUpdateInfoService(serviceComponent, timeoutMillis) }
+                }
+
+            return@withContext deferredResults.awaitAll()
+        }
+
+    /**
+     * Binds to a specific [IUpdateInfoService] implementation, retrieves its status, and unbinds.
+     *
+     * This method handles the asynchronous lifecycle of the Android [ServiceConnection], wrapping
+     * the callback-based [Context.bindService] API into a suspending function.
+     *
+     * To ensure safety and responsiveness:
+     * 1. It enforces a strict timeout (specified by [timeoutMillis]) to prevent indefinite
+     *    suspension.
+     * 2. It executes the blocking IPC call on a background thread to avoid ANRs on the main thread.
+     *
+     * **Telemetry & Identity:** The `Intent` used to bind includes the client's package name as a
+     * data URI (`package:com.example.client`). This serves two purposes:
+     * 1. **Identity:** Allows the service to identify the caller in its `onClientConnected` and
+     *    `onClientDisconnected` lifecycle hooks (e.g., for tracking session duration).
+     * 2. **Session Tracking:** Forces the Android system to treat each client's connection as a
+     *    unique binding. By default, Android caches the Binder for identical Intents and suppresses
+     *    subsequent `onBind` calls. Adding unique data ensures the service receives a lifecycle
+     *    event for *every* client session.
+     *
+     * @param component The [ComponentName] of the [IUpdateInfoService] to bind to.
+     * @param timeoutMillis The maximum time to wait for the service to respond.
+     * @return An [UpdateCheckResult] containing the data from the provider. If the operation fails,
+     *   returns an empty result with the provider's package name.
+     */
+    private suspend fun fetchFromUpdateInfoService(
+        component: ComponentName,
+        timeoutMillis: Long,
+    ): UpdateCheckResult {
+        // Default result to return in case of any failure (graceful degradation)
+        val emptyResult =
+            UpdateCheckResult(
+                providerPackageName = component.packageName,
+                updates = emptyList(),
+                lastCheckTimeMillis = 0L,
+            )
+
+        return try {
+            // Safety: Apply a strict timeout to prevent indefinite hanging if the
+            // target service process is broken or fails to respond.
+            withTimeout(timeoutMillis) {
+                suspendCancellableCoroutine { continuation ->
+                    val intent =
+                        Intent(ACTION_UPDATE_INFO_SERVICE).apply {
+                            this.component = component
+                            // Attach unique data to identify the caller and force a fresh bind for
+                            // each client
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+
+                    val connection =
+                        object : ServiceConnection {
+                            override fun onServiceConnected(name: ComponentName, service: IBinder) {
+                                // Critical: onServiceConnected runs on the Main (UI) Thread.
+                                // The AIDL call `listAvailableUpdates` is blocking (not oneway) and
+                                // may
+                                // perform network operations. We must offload this to a background
+                                // thread
+                                // to avoid freezing the app (ANR).
+                                Thread {
+                                        try {
+                                            val binder =
+                                                IUpdateInfoService.Stub.asInterface(service)
+                                            val result = binder.listAvailableUpdates()
+
+                                            if (continuation.isActive) continuation.resume(result)
+                                        } catch (e: RemoteException) {
+                                            // Log warning for "swallowed" exceptions to help
+                                            // debugging
+                                            Log.w(
+                                                TAG,
+                                                "Error calling listAvailableUpdates on ${name.packageName}",
+                                                e,
+                                            )
+                                            if (continuation.isActive)
+                                                continuation.resume(emptyResult)
+                                        } catch (e: Exception) {
+                                            // Catch generic exceptions from the background thread
+                                            // wrapper
+                                            Log.w(
+                                                TAG,
+                                                "Error in background IPC for ${name.packageName}",
+                                                e,
+                                            )
+                                            if (continuation.isActive)
+                                                continuation.resume(emptyResult)
+                                        } finally {
+                                            // Cleanup: Always unbind after the IPC is done.
+                                            // This must happen here (in the background) to ensure
+                                            // we don't
+                                            // unbind while the binder is still in use.
+                                            try {
+                                                context.unbindService(this)
+                                            } catch (e: Exception) {
+                                                // Ignore unbind errors (e.g., service already died)
+                                            }
+                                        }
+                                    }
+                                    .start()
+                            }
+
+                            override fun onServiceDisconnected(name: ComponentName) {
+                                // Handle unexpected disconnection (crash of the remote service)
+                                Log.w(TAG, "Service disconnected unexpectedly: ${name.packageName}")
+                                if (continuation.isActive) continuation.resume(emptyResult)
+
+                                // Ensure we clean up our side of the connection to prevent leaks
+                                try {
+                                    context.unbindService(this)
+                                } catch (e: Exception) {}
+                            }
+                        }
+
+                    try {
+                        val bound =
+                            context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+                        if (!bound) {
+                            Log.w(TAG, "Failed to bind to service: ${component.packageName}")
+                            continuation.resume(emptyResult)
+                        }
+                    } catch (e: SecurityException) {
+                        Log.w(
+                            TAG,
+                            "Security exception binding to service: ${component.packageName}",
+                            e,
+                        )
+                        continuation.resume(emptyResult)
+                    }
+
+                    // Ensure we unbind if the coroutine is cancelled by the caller
+                    continuation.invokeOnCancellation {
+                        try {
+                            context.unbindService(connection)
+                        } catch (e: Exception) {}
+                    }
+                }
+            }
+        } catch (e: TimeoutCancellationException) {
+            // Handle the timeout gracefully by logging and returning empty
+            Log.w(TAG, "Timed out waiting for service: ${component.packageName}")
+            emptyResult
+        }
+    }
+
+    /**
+     * Discovers trusted system services that implement the UpdateInfoService protocol.
+     *
+     * This method queries the [PackageManager] for services that handle the
+     * [ACTION_UPDATE_INFO_SERVICE] intent, using the `PackageManager.MATCH_SYSTEM_ONLY` flag. This
+     * flag ensures that only components from applications installed on the system image are
+     * returned, which includes both original and updated system apps.
+     *
+     * @return A list of [ComponentName]s for all trusted update services found on the device.
+     */
+    @VisibleForTesting
+    internal fun getTrustedUpdateInfoServices(): List<ComponentName> {
+        val intent = Intent(ACTION_UPDATE_INFO_SERVICE)
+
+        val resolveInfos =
+            context.packageManager.queryIntentServices(intent, PackageManager.MATCH_SYSTEM_ONLY)
+
+        return resolveInfos.mapNotNull { resolveInfo ->
+            val serviceInfo = resolveInfo.serviceInfo
+            if (serviceInfo?.applicationInfo == null) {
+                null
+            } else {
+                val isSystem =
+                    (serviceInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                if (isSystem) {
+                    ComponentName(serviceInfo.packageName, serviceInfo.name)
+                } else {
+                    Log.w(
+                        TAG,
+                        "Ignoring non-system provider found with MATCH_SYSTEM_ONLY: ${serviceInfo.packageName}",
+                    )
+                    null
+                }
+            }
+        }
+    }
+
+    /**
      * Retrieves a list of the latest kernel LTS versions from the vulnerability report.
      *
      * @return A list of [VersionedSecurityPatchLevel] representing kernel LTS versions, or an empty
@@ -824,6 +1140,25 @@ constructor(
     }
 
     /**
+     * Retrieves a list of additional CVEs that have been patched by the OEM supplemental to the
+     * declared Security Patch Level (SPL).
+     *
+     * @return A List of CVE identifier strings (e.g., "CVE-2023-12345"). Returns an empty list if
+     *   no supplemental patches are declared or found.
+     */
+    private fun getSupplementalPatchedCves(): List<String> {
+        val globalSecurityState =
+            securityStateManagerCompat.getGlobalSecurityState(getSystemModules()[0])
+
+        val systemSupplementalCves =
+            globalSecurityState.getStringArray(KEY_SYSTEM_SUPPLEMENTAL_PATCHES) ?: emptyArray()
+        val vendorSupplementalCves =
+            globalSecurityState.getStringArray(KEY_VENDOR_SUPPLEMENTAL_PATCHES) ?: emptyArray()
+
+        return (systemSupplementalCves + vendorSupplementalCves).toList()
+    }
+
+    /**
      * Verifies if all specified CVEs have been patched in the system. This method aggregates the
      * CVEs patched across specified system components and checks if the list includes all CVEs
      * provided.
@@ -847,6 +1182,9 @@ constructor(
             val fixes = getPatchedCves(component, spl)
             allPatchedCves.addAll(fixes.values.flatten())
         }
+
+        // Add supplemental CVEs
+        allPatchedCves.addAll(getSupplementalPatchedCves())
 
         // Check if all provided CVEs are in the patched CVEs list
         return cveList.all { allPatchedCves.contains(it) }

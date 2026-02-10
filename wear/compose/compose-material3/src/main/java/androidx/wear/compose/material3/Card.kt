@@ -809,6 +809,15 @@ public object CardDefaults {
             bottom = CardVerticalPadding,
         )
 
+    /**
+     * The minimum recommended parent top and bottom content padding for a [Card] in a list such as
+     * [TransformingLazyColumn].
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     */
+    public val minimumListVerticalContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** Additional bottom padding added for TitleCard with an image background */
     public val ImageBottomPadding: Dp = 12.dp
 

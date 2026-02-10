@@ -23,6 +23,7 @@ import androidx.wear.protolayout.TimelineBuilders.TimelineEntry
 import androidx.wear.protolayout.layout.basicText
 import androidx.wear.protolayout.types.layoutString
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import org.junit.Test
@@ -45,21 +46,22 @@ class TileTest {
     @Test
     fun tile_allParams_inflates() {
         val timeline = fromLayoutElement(TEST_ELEMENT1)
-        val freshness = 1234L
+        val freshness = 1234.milliseconds
         val state = State.Builder().build()
         val resVersion = "test"
 
         val tile =
             tile(
                 timeline = timeline,
-                freshnessMillis = freshness,
+                freshness = freshness,
                 state = state,
                 resourcesVersion = resVersion,
             )
 
         assertThat(tile.tileTimeline!!.toProto()).isEqualTo(timeline.toProto())
         assertThat(tile.state!!.toProto()).isEqualTo(state.toProto())
-        assertThat(tile.freshnessIntervalMillis).isEqualTo(freshness)
+        assertThat(tile.freshnessIntervalMillis)
+            .isEqualTo(freshness.toLong(DurationUnit.MILLISECONDS))
         assertThat(tile.resourcesVersion).isEqualTo(resVersion)
     }
 

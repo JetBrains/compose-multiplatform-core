@@ -53,6 +53,7 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorEntity.State;
@@ -96,6 +97,7 @@ import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.environment.ShadowEnvironmentVisibilityState;
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState;
+import com.android.extensions.xr.node.FakeCloseable;
 import com.android.extensions.xr.node.InputEvent.HitInfo;
 import com.android.extensions.xr.node.Mat4f;
 import com.android.extensions.xr.node.Node;
@@ -103,6 +105,7 @@ import com.android.extensions.xr.node.NodeRepository;
 import com.android.extensions.xr.node.ReformOptions;
 import com.android.extensions.xr.node.ShadowInputEvent;
 import com.android.extensions.xr.node.ShadowNode;
+import com.android.extensions.xr.node.ShadowNodeTransform;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.PerceivedResolution;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
@@ -125,6 +128,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowContentResolver;
 
+import java.io.Closeable;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -154,6 +158,7 @@ public class SpatialSceneRuntimeTest {
 
     @Before
     public void setUp() {
+        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(1);
         mActivity = Robolectric.buildActivity(Activity.class).create().start().get();
         mShadowContentResolver = shadowOf(mActivity.getContentResolver());
         mContentResolver = mActivity.getContentResolver();
@@ -169,6 +174,7 @@ public class SpatialSceneRuntimeTest {
         // Destroy the runtime between test cases to clean up lingering references.
         mRuntime.destroy();
         mRuntime = null;
+        FakeSpatialApiVersionProvider.Companion.setTestSpatialApiVersion(null);
     }
 
     private GltfEntityImpl createGltfEntity() {
@@ -2459,5 +2465,101 @@ public class SpatialSceneRuntimeTest {
                 .isNull();
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getMainWindowNode(mActivity)).isNull();
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getTaskNode(mActivity)).isNull();
+    }
+
+    @Test
+    public void setKeyEntity_setsKeyEntity() {
+        Entity entity = createGroupEntity();
+        mRuntime.setKeyEntity(entity);
+        assertThat(mRuntime.getKeyEntity()).isEqualTo(entity);
+    }
+
+    @Test
+    public void setKeyEntity_subscribesToTransformAndUpdatesHint() {
+        Entity entity = createGroupEntity();
+        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
+
+        mRuntime.setKeyEntity(entity);
+
+        assertThat(node.getTransformListener()).isNotNull();
+        assertThat(node.getTransformExecutor()).isEqualTo(mFakeExecutor);
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNotNull();
+
+        // Trigger callback
+        node.getTransformExecutor()
+                .execute(
+                        () ->
+                                node.getTransformListener()
+                                        .accept(
+                                                ShadowNodeTransform.create(
+                                                        new Mat4f(new float[16]))));
+
+        assertThat(mFakeExecutor.hasNext()).isTrue();
+        mFakeExecutor.runAll();
+        // Since we cannot verify the extension call directly, we just ensure it doesn't crash.
+    }
+
+    @Test
+    public void setKeyEntity_null_unsubscribes() throws Exception {
+        Entity entity = createGroupEntity();
+        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
+
+        mRuntime.setKeyEntity(entity);
+
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNotNull();
+
+        FakeCloseable keyEntityTransformCloseable =
+                (FakeCloseable) mRuntime.mKeyEntityTransformCloseable;
+
+        assertThat(node.getTransformListener()).isNotNull();
+        assertThat(node.getTransformExecutor()).isEqualTo(mFakeExecutor);
+        assertThat(keyEntityTransformCloseable.isClosed()).isFalse();
+
+        mRuntime.setKeyEntity(null);
+
+        assertThat(mRuntime.getKeyEntity()).isNull();
+        assertThat(keyEntityTransformCloseable.isClosed()).isTrue();
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNull();
+    }
+
+    @Test
+    public void setKeyEntity_sameEntity_doesNotResubscribe() {
+        Entity entity = createGroupEntity();
+        mRuntime.setKeyEntity(entity);
+        Closeable closeable1 = mRuntime.mKeyEntityTransformCloseable;
+
+        mRuntime.setKeyEntity(entity);
+        Closeable closeable2 = mRuntime.mKeyEntityTransformCloseable;
+
+        assertThat(closeable1).isSameInstanceAs(closeable2);
+    }
+
+    @Test
+    public void setKeyEntity_differentEntity_resubscribes() throws Exception {
+        Entity entity1 = createGroupEntity();
+        Entity entity2 = createGroupEntity();
+        ShadowNode node1 = ShadowNode.extract(((AndroidXrEntity) entity1).getNode());
+        ShadowNode node2 = ShadowNode.extract(((AndroidXrEntity) entity2).getNode());
+
+        mRuntime.setKeyEntity(entity1);
+        FakeCloseable closeable1 = (FakeCloseable) mRuntime.mKeyEntityTransformCloseable;
+        assertThat(closeable1.isClosed()).isFalse();
+        assertThat(node1.getTransformListener()).isNotNull();
+
+        mRuntime.setKeyEntity(entity2);
+        FakeCloseable closeable2 = (FakeCloseable) mRuntime.mKeyEntityTransformCloseable;
+
+        assertThat(closeable1.isClosed()).isTrue();
+        assertThat(closeable2).isNotSameInstanceAs(closeable1);
+        assertThat(closeable2.isClosed()).isFalse();
+        assertThat(node2.getTransformListener()).isNotNull();
+        assertThat(mRuntime.getKeyEntity()).isEqualTo(entity2);
+    }
+
+    @Test
+    public void setKeyEntity_nullWhenAlreadyNull_doesNothing() {
+        mRuntime.setKeyEntity(null);
+        assertThat(mRuntime.getKeyEntity()).isNull();
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNull();
     }
 }

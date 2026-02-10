@@ -25,6 +25,7 @@ import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.parcel.IExecutionCallback
 import androidx.glance.wear.parcel.IWearWidgetCallback
 import androidx.glance.wear.parcel.IWearWidgetProvider
+import androidx.glance.wear.parcel.WearWidgetEventBatchParcel
 import androidx.glance.wear.parcel.WearWidgetRequestParcel
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import com.google.common.truth.Truth.assertThat
@@ -218,6 +219,13 @@ class WearWidgetProviderClientTest {
             callback: IExecutionCallback?,
         ) {
             removedHandleParcel = handleParcel
+            callback?.onSuccess()
+        }
+
+        override fun onEvents(
+            eventBatchParcel: WearWidgetEventBatchParcel?,
+            callback: IExecutionCallback?,
+        ) {
             callback?.onSuccess()
         }
     }

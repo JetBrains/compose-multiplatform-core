@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
@@ -85,7 +86,7 @@ class MainPanelEntityTest {
     @Test
     fun addPerceivedResolutionChangedListener_withoutDeviceTracking_throwsIllegalStateException() {
         // Disable head tracking
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
+        session.configure(Config(deviceTracking = DeviceTrackingMode.DISABLED))
 
         val listener = Consumer<IntSize2d> {}
         val exception =

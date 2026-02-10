@@ -99,7 +99,7 @@ class GlanceWearWidgetServiceTest {
         }
     }
 
-    private class TestService() : GlanceWearWidgetService() {
+    private class TestService : GlanceWearWidgetService() {
         override val widget = TestWidget()
     }
 }

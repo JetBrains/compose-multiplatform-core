@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /** A [View] that renders in-progress "wet" text highlights over PDF content. */
@@ -71,6 +72,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private val inProgressTextHighlightsListeners =
         mutableListOf<InProgressTextHighlightsListener>()
     private val activeHighlights = mutableMapOf<InProgressHighlightId, HighlightState>()
+    private val highlightRequests = Channel<HighlightRequest>(Channel.CONFLATED)
 
     private val paint = Paint().apply { style = Paint.Style.FILL }
 
@@ -80,6 +82,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             CoroutineScope(
                 SupervisorJob() + HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher()
             )
+        viewScope?.launch {
+            for (request in highlightRequests) {
+                try {
+                    request.block()
+                } catch (e: RequestFailedException) {
+                    inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
+                }
+            }
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -179,7 +190,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     /** Finalizes the highlight gesture, converting it to a stamp annotation. */
     fun finishTextHighlight(id: InProgressHighlightId, finalPdfPoint: PointF) {
         val doc = pdfDocument ?: return
-        activeHighlights.remove(id)?.let { currentState ->
+        activeHighlights[id]?.let { currentState ->
             tryHighlighting {
                 val pageRects =
                     doc.calculateHighlightRects(
@@ -200,8 +211,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                         it.onTextHighlightFinished(mapOf(id to annotation))
                     }
                 }
+                activeHighlights.remove(id)
+                invalidate()
             }
-            invalidate()
         }
     }
 
@@ -212,12 +224,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     private fun tryHighlighting(block: suspend () -> Unit) {
-        viewScope?.launch {
-            try {
-                block()
-            } catch (e: RequestFailedException) {
-                inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
-            }
-        }
+        highlightRequests.trySend(HighlightRequest(block))
     }
+
+    @JvmInline private value class HighlightRequest(val block: suspend () -> Unit)
 }

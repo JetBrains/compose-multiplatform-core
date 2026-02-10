@@ -44,6 +44,12 @@ class FakeEntityTest {
     @Test
     fun initial_State() {
         assertThat(underTest.contentDescription).isEqualTo("")
+        assertThat(underTest.name).isEqualTo("")
+    }
+
+    @Test
+    fun name_isSet() {
+        assertThat(FakeEntity("test").name).isEqualTo("test")
     }
 
     @Test

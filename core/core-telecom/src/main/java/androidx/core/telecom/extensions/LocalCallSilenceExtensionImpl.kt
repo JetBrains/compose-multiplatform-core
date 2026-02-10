@@ -185,8 +185,5 @@ internal class LocalCallSilenceExtensionImpl(
         }
         // notify the voip application of the remote InCallService update
         onLocalSilenceUpdate(isSilenced)
-        // update all remote surfaces to be in sync with the new state
-        // and the isLocallySilenced state
-        updateIsLocallySilenced(isSilenced)
     }
 }

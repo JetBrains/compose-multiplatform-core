@@ -50,8 +50,8 @@ public abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements S
     @NonNull protected Vector3 mWorldSpaceScale = new Vector3(1f, 1f, 1f);
     // Visible for testing.
     Closeable mNodeTransformCloseable;
-    private Runnable mSpaceUpdatedListener;
-    private Executor mSpaceUpdatedExecutor;
+    private Runnable mOriginChangedListener;
+    private Executor mOriginChangedExecutor;
 
     SystemSpaceEntityImpl(
             Context context,
@@ -67,19 +67,19 @@ public abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements S
         subscribeToNodeTransform(node, executor);
     }
 
-    /** Called when the underlying space has changed. */
-    public void onSpaceUpdated() {
-        if (mSpaceUpdatedListener != null) {
-            mSpaceUpdatedExecutor.execute(() -> mSpaceUpdatedListener.run());
+    /** Called when the underlying space's origin has changed. */
+    public void onOriginChanged() {
+        if (mOriginChangedListener != null) {
+            mOriginChangedExecutor.execute(() -> mOriginChangedListener.run());
         }
     }
 
-    /** Registers the SDK layer / application's listener for space updates. */
+    /** Registers the SDK layer / application's listener for space origin updates. */
     @Override
-    public void setOnSpaceUpdatedListener(
+    public void setOnOriginChangedListener(
             @Nullable Runnable listener, @Nullable Executor executor) {
-        mSpaceUpdatedListener = listener;
-        mSpaceUpdatedExecutor = executor == null ? mExecutor : executor;
+        mOriginChangedListener = listener;
+        mOriginChangedExecutor = executor == null ? mExecutor : executor;
     }
 
     /**
@@ -98,7 +98,7 @@ public abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements S
 
     /**
      * Sets the pose and scale of the entity in an OpenXR reference space and should call the
-     * onSpaceUpdated() callback to signal a change in the underlying space.
+     * onOriginChanged() callback to signal a change in the underlying space.
      *
      * @param openXrReferenceSpaceTransform 4x4 transformation matrix of the entity in an OpenXR
      *     reference space. The OpenXR reference space is of the type defined by the {@link
@@ -120,7 +120,7 @@ public abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements S
         // thoroughly.
         mWorldSpaceScale = Vector3.abs(actualScale);
         this.setScaleInternal(mWorldSpaceScale.copy());
-        onSpaceUpdated();
+        onOriginChanged();
     }
 
     /**

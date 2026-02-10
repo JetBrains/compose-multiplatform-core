@@ -16,7 +16,7 @@
 
 package androidx.work.impl;
 
-import static androidx.work.OperationKt.launchOperation;
+import static androidx.work.impl.utils.EnqueueRunnableKt.launchEnqueue;
 
 import android.text.TextUtils;
 
@@ -30,13 +30,10 @@ import androidx.work.Operation;
 import androidx.work.WorkContinuation;
 import androidx.work.WorkInfo;
 import androidx.work.WorkRequest;
-import androidx.work.impl.utils.EnqueueRunnable;
 import androidx.work.impl.utils.StatusRunnable;
 import androidx.work.impl.workers.CombineContinuationsWorker;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import kotlin.Unit;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -186,14 +183,11 @@ public class WorkContinuationImpl extends WorkContinuation {
         if (!mEnqueued) {
             // The runnable walks the hierarchy of the continuations
             // and marks them enqueued using the markEnqueued() method, parent first.
-            mOperation = launchOperation(
+            mOperation = launchEnqueue(
                     mWorkManagerImpl.getConfiguration().getTracer(),
                     "EnqueueRunnable_" + getExistingWorkPolicy().name(),
                     mWorkManagerImpl.getWorkTaskExecutor().getSerialTaskExecutor(),
-                    () -> {
-                        EnqueueRunnable.enqueue(this);
-                        return Unit.INSTANCE;
-                    });
+                    this);
         } else {
             Logger.get().warning(TAG,
                     "Already enqueued work ids (" + TextUtils.join(", ", mIds) + ")");

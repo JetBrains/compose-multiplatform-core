@@ -19,6 +19,7 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
@@ -63,6 +64,20 @@ public open class FakeGltfEntity(
 
     override val gltfModelBoundingBox: BoundingBox =
         BoundingBox.fromMinMax(Vector3.Zero, Vector3.One)
+
+    private val _animations = mutableListOf<GltfAnimationFeature>()
+
+    override val animations: List<GltfAnimationFeature>
+        get() = (feature?.getAnimations(executor!!) ?: emptyList()) + _animations
+
+    /**
+     * Adds an animation to the list of animations.
+     *
+     * @param animation The animation to add.
+     */
+    public fun addAnimation(animation: GltfAnimationFeature) {
+        _animations.add(animation)
+    }
 
     /**
      * Indicates whether the animation is currently looping. In tests, you can

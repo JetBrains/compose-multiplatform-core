@@ -28,7 +28,7 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimeFace
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.FaceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState

@@ -25,6 +25,7 @@ import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakePerceptionRuntime
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
@@ -174,7 +175,7 @@ class MovableComponentTest {
         val result = Session.create(activity, testDispatcher)
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
         session = (result as SessionCreateSuccess).session
-        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager
@@ -193,7 +194,7 @@ class MovableComponentTest {
         session = (result as SessionCreateSuccess).session
         sceneRuntime = session.sceneRuntime
         fakeActivitySpace = sceneRuntime.activitySpace
-        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         mFakeRuntime = session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
         mFakeLifecycleManager = mFakeRuntime.lifecycleManager
         mFakePerceptionManager = mFakeRuntime.perceptionManager

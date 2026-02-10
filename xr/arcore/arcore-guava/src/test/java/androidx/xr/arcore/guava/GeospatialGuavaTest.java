@@ -43,7 +43,16 @@ import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException;
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException;
 import androidx.xr.arcore.testing.FakePerceptionManager;
 import androidx.xr.arcore.testing.FakeRuntimeGeospatial;
+import androidx.xr.runtime.AnchorPersistenceMode;
+import androidx.xr.runtime.CameraFacingDirection;
 import androidx.xr.runtime.Config;
+import androidx.xr.runtime.DepthEstimationMode;
+import androidx.xr.runtime.DeviceTrackingMode;
+import androidx.xr.runtime.EyeTrackingMode;
+import androidx.xr.runtime.FaceTrackingMode;
+import androidx.xr.runtime.GeospatialMode;
+import androidx.xr.runtime.HandTrackingMode;
+import androidx.xr.runtime.PlaneTrackingMode;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
 import androidx.xr.runtime.VpsAvailabilityAvailable;
@@ -270,16 +279,16 @@ public class GeospatialGuavaTest {
                                 SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
                         mSession.configure(
                                 new Config(
-                                        Config.PlaneTrackingMode.DISABLED,
+                                        PlaneTrackingMode.DISABLED,
                                         java.util.Collections.emptyList(),
-                                        Config.HandTrackingMode.DISABLED,
-                                        Config.DeviceTrackingMode.DISABLED,
-                                        Config.DepthEstimationMode.DISABLED,
-                                        Config.AnchorPersistenceMode.DISABLED,
-                                        Config.FaceTrackingMode.DISABLED,
-                                        Config.GeospatialMode.VPS_AND_GPS,
-                                        Config.EyeTrackingMode.DISABLED,
-                                        Config.CameraFacingDirection.WORLD));
+                                        HandTrackingMode.DISABLED,
+                                        DeviceTrackingMode.DISABLED,
+                                        DepthEstimationMode.DISABLED,
+                                        AnchorPersistenceMode.DISABLED,
+                                        FaceTrackingMode.DISABLED,
+                                        GeospatialMode.VPS_AND_GPS,
+                                        EyeTrackingMode.DISABLED,
+                                        CameraFacingDirection.WORLD));
 
                         try {
                             testBody.run();

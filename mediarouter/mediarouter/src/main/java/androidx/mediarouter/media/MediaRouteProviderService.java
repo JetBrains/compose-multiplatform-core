@@ -83,7 +83,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
-import androidx.core.os.BuildCompat;
 import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
@@ -211,7 +210,8 @@ public abstract class MediaRouteProviderService extends Service {
         mReceiveMessenger = new Messenger(mReceiveHandler);
         mPrivateHandler = new PrivateHandler();
 
-        if (BuildCompat.isAtLeastB_1()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1) {
             mImpl = new MediaRouteProviderServiceImplApi36_1(this);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             mImpl = new MediaRouteProviderServiceImplApi30(this);

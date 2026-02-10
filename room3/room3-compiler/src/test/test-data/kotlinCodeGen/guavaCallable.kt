@@ -7,6 +7,8 @@ import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.getLastInsertedRowId
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.prepare
+import androidx.sqlite.step
 import com.google.common.util.concurrent.ListenableFuture
 import java.lang.Void
 import javax.`annotation`.processing.Generated

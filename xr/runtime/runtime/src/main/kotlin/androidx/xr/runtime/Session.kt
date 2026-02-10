@@ -357,12 +357,12 @@ public constructor(
     @GuardedBy("lock")
     public var config: Config =
         Config(
-            Config.PlaneTrackingMode.DISABLED,
+            PlaneTrackingMode.DISABLED,
             augmentedObjectCategories = listOf(),
-            Config.HandTrackingMode.DISABLED,
-            Config.DeviceTrackingMode.DISABLED,
-            Config.DepthEstimationMode.DISABLED,
-            Config.AnchorPersistenceMode.DISABLED,
+            HandTrackingMode.DISABLED,
+            DeviceTrackingMode.DISABLED,
+            DepthEstimationMode.DISABLED,
+            AnchorPersistenceMode.DISABLED,
         )
         private set
 

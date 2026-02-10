@@ -296,6 +296,8 @@ package androidx.benchmark.macro {
     ctor public TraceSectionMetric(String sectionName, optional androidx.benchmark.macro.TraceSectionMetric.Mode mode, optional String label);
     ctor public TraceSectionMetric(String sectionName, optional androidx.benchmark.macro.TraceSectionMetric.Mode mode, optional String label, optional boolean targetPackageOnly);
     ctor @BytecodeOnly public TraceSectionMetric(String!, androidx.benchmark.macro.TraceSectionMetric.Mode!, String!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public TraceSectionMetric(java.util.List!, String!, androidx.benchmark.macro.TraceSectionMetric.Mode!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public TraceSectionMetric(java.util.List<java.lang.String> sectionNames, String label, optional androidx.benchmark.macro.TraceSectionMetric.Mode mode, optional boolean targetPackageOnly);
   }
 
   @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public abstract static sealed nonexhaustive class TraceSectionMetric.Mode {

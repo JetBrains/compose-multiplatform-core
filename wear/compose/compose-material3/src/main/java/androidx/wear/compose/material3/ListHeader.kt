@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
@@ -172,6 +173,22 @@ public object ListHeaderDefaults {
     /** The default content padding for ListSubHeader */
     public val SubHeaderContentPadding: PaddingValues =
         PaddingValues(HorizontalPadding, TopPadding, HorizontalPadding, SubHeaderBottomPadding)
+
+    /**
+     * The minimum recommended parent top content padding for a [ListHeader] in a list such as
+     * [TransformingLazyColumn], based on the screen height.
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     */
+    public val minimumListTopContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
+    /**
+     * The minimum recommended parent bottom content padding for a [ListHeader] in a list such as
+     * [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListBottomContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** The default color for ListHeader */
     public val contentColor: Color

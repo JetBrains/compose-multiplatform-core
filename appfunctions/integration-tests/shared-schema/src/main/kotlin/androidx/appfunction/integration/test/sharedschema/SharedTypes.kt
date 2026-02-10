@@ -256,8 +256,7 @@ sealed interface OneOfSealedInterface {
 }
 
 @AppFunctionSerializable
-data class ASubclass(override val interfaceProperty: String, val str: String) :
-    OneOfSealedInterface
+data class ASubclass(override val interfaceProperty: String, val str: String) : OneOfSealedInterface
 
 @AppFunctionSerializable
 data class BSubclass(

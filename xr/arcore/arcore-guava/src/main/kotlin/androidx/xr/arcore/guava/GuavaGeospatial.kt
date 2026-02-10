@@ -26,7 +26,6 @@ import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateResult
 import androidx.xr.arcore.Geospatial
 import androidx.xr.arcore.Geospatial.Surface
-import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Quaternion
@@ -56,7 +55,7 @@ import com.google.common.util.concurrent.ListenableFuture
  *
  * A Terrain anchor's tracking state will be [TrackingState.PAUSED] if Geospatial is not actively
  * tracking. Its tracking state will permanently become [TrackingState.STOPPED] if
- * [Config.GeospatialMode] is disabled, or if another full-space app uses Geospatial.
+ * [androidx.xr.runtime.GeospatialMode] is disabled, or if another full-space app uses Geospatial.
  *
  * Latitude and longitude are defined by the
  * [WGS84 specification](https://en.wikipedia.org/wiki/World_Geodetic_System), and the altitude

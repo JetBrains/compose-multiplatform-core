@@ -19,7 +19,6 @@ package androidx.health.connect.client.records
 import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
@@ -138,8 +137,8 @@ class ActivityIntensityRecord(
          * [HealthConnectFeatures.FEATURE_ACTIVITY_INTENSITY] as the argument.
          */
         @JvmField
-        val INTENSITY_MINUTES_TOTAL: AggregateMetric<Duration> =
-            AggregateMetric.durationMetric(
+        val INTENSITY_MINUTES_TOTAL: AggregateMetric<Long> =
+            AggregateMetric.longMetric(
                 "ActivityIntensity",
                 aggregationType = AggregateMetric.AggregationType.DURATION,
                 fieldName = "intensityMinutes",

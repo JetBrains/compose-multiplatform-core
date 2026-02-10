@@ -31,8 +31,6 @@ import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
-import androidx.xr.scenecore.testing.FakeRenderingRuntime
-import androidx.xr.scenecore.testing.FakeSceneRuntime
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.hours
@@ -110,16 +108,6 @@ class SessionTest {
 
         val stateExtender = underTest.stateExtenders.last() as FakeStateExtender
         assertThat(stateExtender.isInitialized).isTrue()
-    }
-
-    @Test
-    fun create_initializesRuntime() {
-        activityController.create()
-
-        underTest = createSession()
-
-        assertThat(getSceneRuntime()).isNotNull()
-        assertThat(getRenderingRuntime().state.name).isEqualTo("CREATED")
     }
 
     @Test
@@ -206,22 +194,22 @@ class SessionTest {
         check(
             lifecycleManager.config ==
                 Config(
-                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                     augmentedObjectCategories = AugmentedObjectCategory.all(),
-                    handTracking = Config.HandTrackingMode.BOTH,
-                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                    depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW,
-                    anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
+                    handTracking = HandTrackingMode.BOTH,
+                    deviceTracking = DeviceTrackingMode.LAST_KNOWN,
+                    depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW,
+                    anchorPersistence = AnchorPersistenceMode.LOCAL,
                 )
         )
         val newConfig =
             Config(
-                planeTracking = Config.PlaneTrackingMode.DISABLED,
+                planeTracking = PlaneTrackingMode.DISABLED,
                 augmentedObjectCategories = listOf<AugmentedObjectCategory>(),
-                handTracking = Config.HandTrackingMode.DISABLED,
-                deviceTracking = Config.DeviceTrackingMode.DISABLED,
-                depthEstimation = Config.DepthEstimationMode.DISABLED,
-                anchorPersistence = Config.AnchorPersistenceMode.DISABLED,
+                handTracking = HandTrackingMode.DISABLED,
+                deviceTracking = DeviceTrackingMode.DISABLED,
+                depthEstimation = DepthEstimationMode.DISABLED,
+                anchorPersistence = AnchorPersistenceMode.DISABLED,
             )
 
         val result = underTest.configure(newConfig)
@@ -237,14 +225,14 @@ class SessionTest {
         val lifecycleManager = getLifecycleManager()
 
         val currentConfig = lifecycleManager.config
-        check(currentConfig.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW)
+        check(currentConfig.depthEstimation == DepthEstimationMode.SMOOTH_AND_RAW)
         lifecycleManager.hasMissingPermission = true
 
         assertFailsWith<SecurityException> {
             underTest.configure(
                 underTest.config.copy(
-                    depthEstimation = Config.DepthEstimationMode.DISABLED,
-                    faceTracking = Config.FaceTrackingMode.DISABLED,
+                    depthEstimation = DepthEstimationMode.DISABLED,
+                    faceTracking = FaceTrackingMode.DISABLED,
                 )
             )
         }
@@ -262,7 +250,7 @@ class SessionTest {
 
         assertFailsWith<UnsupportedOperationException> {
             underTest.configure(
-                currentConfig.copy(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                currentConfig.copy(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
         }
         assertThat(underTest.config).isEqualTo(currentConfig)
@@ -279,17 +267,6 @@ class SessionTest {
         val lifecycleManager = getLifecycleManager()
 
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.RESUMED)
-    }
-
-    @Test
-    fun resume_returnsSuccessAndSetsPlatformAdapterToResumed() {
-        activityController.create().start()
-        underTest = createSession()
-
-        activityController.resume()
-
-        assertThat(getRenderingRuntime().state)
-            .isEqualTo(FakeRenderingRuntime.State.STARTED) // Corresponds to resumed
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -351,17 +328,6 @@ class SessionTest {
     }
 
     @Test
-    fun pause_setsRuntimeToPaused() {
-        activityController.create().start().resume()
-        underTest = createSession()
-
-        activityController.pause()
-
-        val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.PAUSED)
-    }
-
-    @Test
     fun destroy_initialized_setsLifecycleToStopped() {
         activityController.create() // Session is created here
         underTest = createSession()
@@ -381,17 +347,6 @@ class SessionTest {
 
         val lifecycleManager = getLifecycleManager()
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
-    }
-
-    @Test
-    fun destroy_setsRuntimeToDestroyed() {
-        activityController.create().start().resume()
-        underTest = createSession()
-
-        activityController.destroy()
-
-        val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.DESTROYED)
     }
 
     fun destroy_withMultiple_doesNotSetFinalActivity() {
@@ -472,14 +427,6 @@ class SessionTest {
 
     private fun getLifecycleManager(): FakeLifecycleManager {
         return underTest.runtimes.filterIsInstance<FakePerceptionRuntime>().first().lifecycleManager
-    }
-
-    private fun getSceneRuntime(): FakeSceneRuntime {
-        return underTest.runtimes.filterIsInstance<FakeSceneRuntime>().first()
-    }
-
-    private fun getRenderingRuntime(): FakeRenderingRuntime {
-        return underTest.runtimes.filterIsInstance<FakeRenderingRuntime>().first()
     }
 
     private companion object {

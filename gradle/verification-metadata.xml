@@ -18,25 +18,60 @@
          <trust group="com.android.tools" name="r8" reason="b/215430394"/>
          <trust group="com.android.tools.build" name="aapt2" version="8.1.1-10154469" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2" version="8.2.1-10154469" reason="old version, before signing"/>
-         <trust group="com.android.tools.build" name="aapt2" version="8.5.0-alpha05-11315950" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2-proto" version="8.1.1-10154469" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2-proto" version="8.2.1-10154469" reason="old version, before signing"/>
-         <trust group="com.android.tools.build" name="aapt2-proto" version="8.5.0-alpha05-11315950" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="bundletool" reason="b/215430394"/>
          <trust group="com.android.tools.build" name="transform-api" reason="b/215430394"/>
          <trust group="com.android.tools.build.jetifier" reason="b/215430394"/>
          <trust group="com.android.tools.metalava" reason="developed by our own team, not signed yet"/>
-         <trust group="com.google.ads.interactivemedia.v3" reason="b/303057272"/>
          <trust group="com.google.android.apps.common.testing.accessibility.framework" reason="b/359566848"/>
          <trust group="com.google.android.datatransport" reason="b/215442095"/>
-         <trust group="com.google.android.gms" reason="b/215442095"/>
-         <trust group="com.google.android.libraries.identity.googleid" reason="b/300156232"/>
+         <trust group="com.google.android.gms" name="play-services-ads-identifier" version="18.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-appindex" version="16.1.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-appsearch" version="16.0.1" reason="b/480207891"/>
+         <trust group="com.google.android.gms" name="play-services-appset" version="16.0.2" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-auth-blockstore" version="16.4.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-auth" version="21.1.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-auth-api-phone" version="18.0.2" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-auth-base" version="18.0.10" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="17.5.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="18.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="18.1.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="18.3.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-base" version="18.5.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="18.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="18.1.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="18.3.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="18.4.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-basement" version="18.5.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-cronet" version="18.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-deviceperformance" version="16.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-fido" version="20.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-fido" version="21.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-flags" version="18.1.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-iid" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-gcm" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-location" version="21.3.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-mlkit-barcode-scanning" version="18.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-mlkit-barcode-scanning" version="18.3.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-nearby" version="19.2.0" reason="b/480223397"/>
+         <trust group="com.google.android.gms" name="play-services-pal" version="20.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-stats" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="17.0.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="17.2.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="18.0.1" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="18.0.2" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="18.1.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-tasks" version="18.2.0" reason="old version, before signing"/>
+         <trust group="com.google.android.gms" name="play-services-wearable" version="17.1.0" reason="b/480223740"/>
          <trust group="com.google.android.material" reason="b/216192082"/>
          <trust group="com.google.android.play" reason="b/255621183"/>
-         <trust group="com.google.android.tv" reason="b/345483744"/>
          <trust group="com.google.ar" reason="b/378946732"/>
          <trust group="com.google.devsite" reason="developed by our own team, not signed yet"/>
          <trust group="com.google.firebase" reason="b/223907608"/>
+         <trust group="com.google.android.libraries.identity.googleid" reason="old version, before signing"/>
          <trust group="com.google.mlkit" reason="b/223907608"/>
          <trust group="com.google.prefab" reason="https://github.com/google/prefab/issues/157"/>
          <trust group="com.google.testing.platform" reason="b/215430394"/>
@@ -48,10 +83,8 @@
          <trust group="^androidx\..*" regex="true" reason="jetpad does not yet drop signed artifacts b/320540559"/>
          <trust group="^com[.]android($|([.].*))" version="31.1.1" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="31.2.1" regex="true" reason="old version, before signing"/>
-         <trust group="^com[.]android($|([.].*))" version="31.5.0-alpha05" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="8.1.1" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="8.2.1" regex="true" reason="old version, before signing"/>
-         <trust group="^com[.]android($|([.].*))" version="8.5.0-alpha05" regex="true" reason="old version, before signing"/>
          <trust group="com.google.guava" name="guava" version=".*[-]android" file="guava.*[-]jre[.]jar" regex="true" reason="https://github.com/google/guava/issues/7154"/>
          <trust group="com.google.guava" name="guava" version=".*[-]jre" file="guava.*[-]android[.]jar" regex="true" reason="https://github.com/google/guava/issues/7154"/>
          <trust group="org.jetbrains.kotlin" name="kotlin-compose-compiler-plugin-embeddable" version="[\d.]+-custom-branch-[\d]+" regex="true" reason="Internal Compose compiler build"/>
@@ -112,6 +145,7 @@
             <trusting group="com.android.tools.utp"/>
             <trusting group="com.google.ads.interactivemedia.v3"/>
             <trusting group="com.google.android.gms"/>
+            <trusting group="com.google.android.libraries.identity.googleid"/>
             <trusting group="^androidx\..*" regex="true"/>
          </trusted-key>
          <trusted-key id="0F07D1201BDDAB67CFB84EB479752DB6C966F0B8" group="com.google.android"/>
@@ -356,7 +390,7 @@
          <trusted-key id="7186BBF993566D8C2F4F7ED7D945E643368FEF62" group="io.github.eisop"/>
          <trusted-key id="719F7C29985A8E95F58F47194D8159D6A1159B69" group="dev.zacsweers.moshix"/>
          <trusted-key id="720746177725A89207A7075BFD5DEA07FCB690A8" group="org.codehaus.mojo"/>
-         <trusted-key id="73976C9C39C1479B84E2641A5A68A2249128E2C6" group="com.google.crypto.tink" name="tink-android"/>
+         <trusted-key id="73976C9C39C1479B84E2641A5A68A2249128E2C6" group="com.google.crypto.tink"/>
          <trusted-key id="7440F1F7D27BAC115F953D55EB095DA7D2F6AC0E" group="org.tensorflow"/>
          <trusted-key id="748F15B2CF9BA8F024155E6ED7C92B70FA1C814D" group="org.apache.logging.log4j"/>
          <trusted-key id="7615AD56144DF2376F49D98B1669C4BB543E0445" group="com.google.errorprone"/>
@@ -676,27 +710,6 @@
             <sha256 value="795f4793c375eedf4332a0381082981a5ce70b7a0a776221ca24ad9d40cbea1c" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
-      <component group="com.google.code.findbugs" name="jsr305" version="2.0.1">
-         <artifact name="jsr305-2.0.1.pom">
-            <sha256 value="02c12c3c2ae12dd475219ff691c82a4d9ea21f44bc594a181295bf6d43dcfbb0" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-      </component>
-      <component group="com.googlecode.json-simple" name="json-simple" version="1.1">
-         <artifact name="json-simple-1.1.jar">
-            <sha256 value="2d9484f4c649f708f47f9a479465fc729770ee65617dca3011836602264f6439" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-         <artifact name="json-simple-1.1.pom">
-            <sha256 value="47a89be0fa0fedd476db5fd2c83487654d2a119c391f83a142be876667cf7dab" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-      </component>
-      <component group="gradle.plugin.org.jetbrains.gradle.apple" name="apple-gradle-plugin" version="222.4550-0.22">
-         <artifact name="apple-gradle-plugin-222.4550-0.22.jar">
-            <sha256 value="eadef9e56f800110022fc6990bdc2402776d277b439a6158f78fceb80d473c39" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-         <artifact name="apple-gradle-plugin-222.4550-0.22.pom">
-            <sha256 value="aedb98f5d2837e0e1cece0aed54fb56069feb59704116e83c7d3b901ebc5449e" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-      </component>
       <component group="javax.inject" name="javax.inject" version="1">
          <artifact name="javax.inject-1.jar">
             <sha256 value="91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff" origin="Generated by Gradle" reason="Artifact is not signed"/>
@@ -752,38 +765,9 @@
             <sha256 value="8d25d21f7f2aca27dc10638ad417bbb08a189310274bc322aa620aafe7e82c92" origin="Generated by Gradle" reason="Unsigned. Used by media3. b/372529250"/>
          </artifact>
       </component>
-      <component group="org.jetbrains.kotlinx" name="kotlinx-benchmark-plugin" version="0.4.11">
-         <artifact name="kotlinx-benchmark-plugin-0.4.11.jar">
-            <sha256 value="5c337e082137eb3cdf64b27b11e16b97e5dd0a7905aa9c2d7c8c323601e5c31b" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-         <artifact name="kotlinx-benchmark-plugin-0.4.11.module">
-            <sha256 value="af5e8d80674cd6f5bce92451296f3238c6524b880179d56f08187cef3de723ec" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-      </component>
-      <component group="org.jetbrains.kotlinx" name="kotlinx-benchmark-plugin" version="0.4.14">
-         <artifact name="kotlinx-benchmark-plugin-0.4.14.jar">
-            <sha256 value="e0a1470200ef5108a949be5c10b4ed4c2725309b98baca076e7078e78f143401" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
-         </artifact>
-         <artifact name="kotlinx-benchmark-plugin-0.4.14.module">
-            <sha256 value="5fa2ae79e269dea351e8e9e4266ba4b2a6355b8026c403bdc6a7994a3abd1d15" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
-         </artifact>
-      </component>
-      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-bom" version="1.8.0">
-         <artifact name="kotlinx-serialization-bom-1.8.0.pom">
-            <ignored-keys>
-               <ignored-key id="E7DC75FC24FB3C8DFE8086AD3D5839A2262CBBFB" reason="PGP verification failed"/>
-            </ignored-keys>
-            <sha256 value="a0aa957501312969cfd20d51df573be1460e7b85b1580dd9288c9d188ee369c2" origin="Generated by Gradle" reason="PGP signature verification failed!"/>
-         </artifact>
-      </component>
-      <component group="org.jetbrains.kotlinx.benchmark" name="org.jetbrains.kotlinx.benchmark.gradle.plugin" version="0.4.11">
-         <artifact name="org.jetbrains.kotlinx.benchmark.gradle.plugin-0.4.11.pom">
-            <sha256 value="35428beab195a9a9df2afd6614ff1e4e4feac1a2c689006b1d649abe4a9391e7" origin="Generated by Gradle" reason="Artifact is not signed"/>
-         </artifact>
-      </component>
-      <component group="org.jetbrains.kotlinx.benchmark" name="org.jetbrains.kotlinx.benchmark.gradle.plugin" version="0.4.14">
-         <artifact name="org.jetbrains.kotlinx.benchmark.gradle.plugin-0.4.14.pom">
-            <sha256 value="e21ed736e0a429da86769a228931da856944df38a495bc49b3b6efb6e1d8e4e9" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
+      <component group="org.jetbrains.kotlinx.benchmark" name="org.jetbrains.kotlinx.benchmark.gradle.plugin" version="0.4.15">
+         <artifact name="org.jetbrains.kotlinx.benchmark.gradle.plugin-0.4.15.pom">
+            <sha256 value="ff7d15b453f99b22da52a7f9d31b2e8251b762823c9a83c88d84b9b47ddb0913" origin="Generated by Gradle" reason="https://github.com/Kotlin/kotlinx-benchmark/issues/115"/>
          </artifact>
       </component>
       <component group="org.nodejs" name="node" version="22.0.0">

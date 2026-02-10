@@ -35,6 +35,9 @@ package androidx.glance.wear {
     property public static int CONTAINER_TYPE_SMALL;
   }
 
+  public interface WearWidgetEvent {
+  }
+
   public final class WearWidgetParams {
     method @InaccessibleFromKotlin public int getContainerType();
     method @InaccessibleFromKotlin @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public float getHeightDp();
@@ -75,6 +78,15 @@ package androidx.glance.wear {
 
   public static final class WearWidgetProviderInfo.Companion {
     method @kotlin.jvm.Throws(exceptionClasses={PackageManager.NameNotFoundException::class, XmlPullParserException::class}) public androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws android.content.pm.PackageManager.NameNotFoundException, org.xmlpull.v1.XmlPullParserException;
+  }
+
+  public final class WearWidgetVisibleEvent implements androidx.glance.wear.WearWidgetEvent {
+    method @InaccessibleFromKotlin public java.time.Duration getDuration();
+    method @InaccessibleFromKotlin public androidx.glance.wear.WidgetInstanceId getInstanceId();
+    method @InaccessibleFromKotlin public java.time.Instant getStartTime();
+    property public java.time.Duration duration;
+    property public androidx.glance.wear.WidgetInstanceId instanceId;
+    property public java.time.Instant startTime;
   }
 
   public final class WidgetInstanceId {

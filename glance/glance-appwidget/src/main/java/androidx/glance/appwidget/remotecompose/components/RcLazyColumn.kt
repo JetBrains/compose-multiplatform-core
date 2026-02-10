@@ -17,7 +17,6 @@
 
 package androidx.glance.appwidget.remotecompose.components
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.RFloat
 import androidx.compose.remote.creation.Rc
@@ -30,9 +29,9 @@ import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.ScrollModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.Dp
 import androidx.glance.Emittable
 import androidx.glance.appwidget.lazy.EmittableLazyColumn
+import androidx.glance.appwidget.lazy.VerticalScrollMode
 import androidx.glance.appwidget.remotecompose.GlanceRemoteComposeTranslator
 import androidx.glance.appwidget.remotecompose.RemoteComposeConstants.DebugRemoteCompose
 import androidx.glance.appwidget.remotecompose.TranslationContext
@@ -40,15 +39,6 @@ import androidx.glance.appwidget.remotecompose.convertGlanceModifierToRemoteComp
 import androidx.glance.appwidget.remotecompose.custom.CustomScrollModifier
 import androidx.glance.appwidget.remotecompose.toColumnLayoutEnum
 import androidx.glance.appwidget.toPixels
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: unrestrict in next CL
-public sealed interface VerticalSnapScrollMode {
-    public object None : VerticalSnapScrollMode
-
-    public object SnapScroll : VerticalSnapScrollMode
-
-    public class SnapScrollMatchHeight(public val initialChildHeight: Dp) : VerticalSnapScrollMode
-}
 
 internal class RcLazyColumn(
     emittable: EmittableLazyColumn,
@@ -59,7 +49,7 @@ internal class RcLazyColumn(
         emittable.horizontalAlignment.toColumnLayoutEnum() // horizontal align
     private val children = mutableListOf<RcElement>()
 
-    private val snapScrollMode: VerticalSnapScrollMode?
+    private val snapScrollMode: VerticalScrollMode?
 
     // TODO vvvvvvv
     // workaround for match-parent sizing of snap scrollable children
@@ -93,17 +83,17 @@ internal class RcLazyColumn(
                 modifiers = emittable.modifier,
                 translationContext = translationContext,
             )
-        this.snapScrollMode = emittable.snapScrolling
+        this.snapScrollMode = emittable.verticalScrollMode
         val notches: Int =
-            when (emittable.snapScrolling) {
-                is VerticalSnapScrollMode.SnapScrollMatchHeight,
-                is VerticalSnapScrollMode.SnapScroll -> children.size - 1
-                is VerticalSnapScrollMode.None -> 0 // pass 1 to signify no snap scrolling
+            when (emittable.verticalScrollMode) {
+                is VerticalScrollMode.SnapScrollMatchHeight,
+                is VerticalScrollMode.SnapScroll -> children.size - 1
+                is VerticalScrollMode.Normal -> 0 // pass 1 to signify no snap scrolling
             }
 
         // this will only be referenced if we do snap scrolling .
         val defaultChildHeightF: Float =
-            if (snapScrollMode is VerticalSnapScrollMode.SnapScrollMatchHeight) {
+            if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
                 val defaultSizeDp = snapScrollMode.initialChildHeight
                 val f = defaultSizeDp.toPixels(translationContext.context).toFloat()
                 //                Log.i("~~~", "defaultSizeDp to F is $defaultSizeDp -> $f")
@@ -138,7 +128,7 @@ internal class RcLazyColumn(
              * for children of a scrollable container. This expression will grab the scrollable
              * column's height at runtime, and apply it to the child elements
              */
-            if (snapScrollMode is VerticalSnapScrollMode.SnapScrollMatchHeight) {
+            if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
                 val writer: RemoteComposeWriterAndroid =
                     translationContext.remoteComposeContext.writer as RemoteComposeWriterAndroid
 
@@ -278,7 +268,7 @@ internal class RcLazyColumn(
         } // end column
 
         //  TODO: snap scrolling  workaround (continued)
-        if (snapScrollMode is VerticalSnapScrollMode.SnapScrollMatchHeight) {
+        if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
             rcContext.startCanvas(
                 RecordingModifier().visibility(visFloatExpId.toIntId()).height(1).width(1)
             )

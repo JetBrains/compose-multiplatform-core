@@ -82,12 +82,20 @@ class ToolbarCoordinatorTest {
     }
 
     @Test
-    fun attachToolbar_setsInitialStateToBottom() {
+    fun attachToolbar_setsInitialStateOnTabAndPhone() {
         onIdle()
-        assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_BOTTOM)
-
-        val params = toolbar.layoutParams as FrameLayout.LayoutParams
-        assertThat(params.gravity).isEqualTo(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        val screenWidthDp = instrumentation.context.resources.configuration.smallestScreenWidthDp
+        if (screenWidthDp >= TABLET_SMALLEST_SCREEN_WIDTH_DP) {
+            // Assert for tablets
+            assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_END)
+            val params = toolbar.layoutParams as FrameLayout.LayoutParams
+            assertThat(params.gravity).isEqualTo(Gravity.END or Gravity.CENTER_VERTICAL)
+        } else {
+            // Assert for phones
+            assertThat(toolbar.dockState).isEqualTo(DOCK_STATE_BOTTOM)
+            val params = toolbar.layoutParams as FrameLayout.LayoutParams
+            assertThat(params.gravity).isEqualTo(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        }
     }
 
     @Test
@@ -138,5 +146,7 @@ class ToolbarCoordinatorTest {
     companion object {
         private const val COORDINATOR_VIEW_ID = 1001
         private const val TOOLBAR_VIEW_ID = 1002
+
+        private const val TABLET_SMALLEST_SCREEN_WIDTH_DP = 600
     }
 }

@@ -36,7 +36,7 @@ import androidx.lifecycle.lifecycleScope
  * }
  * ```
  */
-public abstract class GlanceWearWidgetService() : LifecycleService() {
+public abstract class GlanceWearWidgetService : LifecycleService() {
 
     /** Instance of [GlanceWearWidget] associated with this provider. */
     public abstract val widget: GlanceWearWidget

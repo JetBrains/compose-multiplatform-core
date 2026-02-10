@@ -23,10 +23,10 @@ import androidx.savedstate.SavedState
 import kotlin.test.Test
 import kotlin.test.fail
 
+@IgnoreAndroidHostTestTarget
 class NavigatorProviderTest {
 
     @Test
-<<<<<<<< HEAD:navigation/navigation-common/src/commonTest/kotlin/androidx/navigation/NavigatorProviderTest.kt
     fun addWithExplicitNameGetWithExplicitName() {
         val provider = NavigatorProvider()
         val navigator = EmptyNavigator()
@@ -42,8 +42,6 @@ class NavigatorProviderTest {
     }
 
     @Test
-========
->>>>>>>> integration-aosp/1.11.0-alpha04:navigation/navigation-common/src/androidTest/kotlin/androidx/navigation/NavigatorProviderTest.kt
     fun addWithAnnotationNameGetWithExplicitName() {
         val provider = NavigatorProvider()
         val navigator = EmptyNavigator()
@@ -97,7 +95,6 @@ class NavigatorProviderTest {
         val provider = NavigatorProvider()
         val navigatorA = EmptyNavigator()
 
-        class EmptyNavigator2 : EmptyNavigator()
         val navigatorB = EmptyNavigator2()
 
         assertThat(navigatorA).isNotEqualTo(navigatorB)
@@ -131,20 +128,15 @@ class NavigatorProviderTest {
     }
 }
 
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 internal expect class NoNameNavigator() : Navigator<NavDestination> {
     override fun createDestination(): NavDestination
-
-    override fun navigate(
-        destination: NavDestination,
-        args: SavedState?,
-        navOptions: NavOptions?,
-        navigatorExtras: Extras?,
-    ): NavDestination?
 
     override fun popBackStack(): Boolean
 }
 
 /** An empty [Navigator] used to test [NavigatorProvider]. */
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 internal expect open class EmptyNavigator() : Navigator<NavDestination> {
 
     companion object {
@@ -153,14 +145,9 @@ internal expect open class EmptyNavigator() : Navigator<NavDestination> {
 
     override fun createDestination(): NavDestination
 
-    override fun navigate(
-        destination: NavDestination,
-        args: SavedState?,
-        navOptions: NavOptions?,
-        navigatorExtras: Extras?,
-    ): NavDestination?
-
     override fun popBackStack(): Boolean
 }
+
+internal expect class EmptyNavigator2() : EmptyNavigator
 
 private const val NAME = "TEST"

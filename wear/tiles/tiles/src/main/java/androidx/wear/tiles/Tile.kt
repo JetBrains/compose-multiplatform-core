@@ -39,33 +39,36 @@ import kotlin.time.DurationUnit
  *
  * @param timeline The [Timeline] containing the layouts for the tiles to show in the carousel,
  *   along with their validity periods.
- * @param freshnessMillis How many milliseconds of elapsed time (**not** wall clock time) this tile
- *   can be considered to be "fresh". The platform will attempt to refresh your tile at some point
- *   in the future after this interval has lapsed. A value of 0 here signifies that auto-refreshes
- *   should not be used (i.e. you will manually request updates via [TileService.getUpdater]. This
- *   mechanism should not be used to update your tile more frequently than once a minute, and the
- *   system may throttle your updates if you request updates faster than this interval. This
- *   interval is also inexact; the system will generally update your tile if it is on-screen, or
- *   about to be on-screen, although this is not guaranteed due to system-level optimizations.
- *   Negative values will be ignored and considered as 0.
+ * @param freshness How many elapsed time (**not** wall clock time) this tile can be considered to
+ *   be "fresh". The platform will attempt to refresh your tile at some point in the future after
+ *   this interval has lapsed. A value of 0 here signifies that auto-refreshes should not be used
+ *   (i.e. you will manually request updates via [TileService.getUpdater]. This mechanism should not
+ *   be used to update your tile more frequently than once a minute, and the system may throttle
+ *   your updates if you request updates faster than this interval. This interval is also inexact;
+ *   the system will generally update your tile if it is on-screen, or about to be on-screen,
+ *   although this is not guaranteed due to system-level optimizations. Negative values will be
+ *   ignored and considered as 0.
  * @param state The [State] for this tile
  * @param resourcesVersion The resource version for tile's resources used for caching the resources
  *   in system. When using better resources handling via
  *   [androidx.wear.protolayout.ProtoLayoutScope] this can be omitted.
  */
 @SuppressLint("ProtoLayoutMinSchema")
-@Suppress("MissingJvmstatic") // Kotlin-friendly version of already available Java Apis
+@Suppress(
+    "MissingJvmstatic",
+    "ValueClassUsageWithoutJvmName",
+) // Kotlin-friendly version of already available Java Apis
 public fun tile(
     timeline: Timeline,
-    freshnessMillis: Long = -1,
+    freshness: Duration? = null,
     @RequiresSchemaVersion(major = 1, minor = 200) state: State? = null,
     resourcesVersion: String? = null,
 ): Tile =
     Tile.Builder()
         .setTileTimeline(timeline)
         .apply {
-            if (freshnessMillis >= 0) {
-                setFreshnessIntervalMillis(freshnessMillis)
+            freshness?.let {
+                setFreshnessIntervalMillis(it.toLong(unit = DurationUnit.MILLISECONDS))
             }
             state?.let { setState(it) }
             resourcesVersion?.let { setResourcesVersion(it) }

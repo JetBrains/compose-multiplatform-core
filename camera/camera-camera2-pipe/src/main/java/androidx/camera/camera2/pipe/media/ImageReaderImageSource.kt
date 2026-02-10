@@ -168,17 +168,22 @@ public class ImageReaderImageSource(
     }
 
     private val state = atomic(State.ACTIVE)
-    private val listener = atomic<ImageSourceListener?>(null)
     private val imageCount = atomic(0)
 
     override val surface: Surface = imageReader.surface
 
-    init {
-        imageReader.setOnImageListener(::onImage)
-    }
+    override var imageListener: ImageListener? by atomic(null)
+    override var expectedOutputsListener: ExpectedOutputsListener? by atomic(null)
 
-    override fun setListener(listener: ImageSourceListener) {
-        this.listener.value = listener
+    init {
+        imageReader.onImageListener =
+            ImageReaderWrapper.OnImageListener { streamId, outputId, image ->
+                onImage(streamId, outputId, image)
+            }
+        imageReader.onExpectedOutputsListener =
+            ImageReaderWrapper.OnExpectedOutputsListener { timestamp, outputIds ->
+                expectedOutputsListener?.onExpectedOutputs(timestamp, outputIds)
+            }
     }
 
     override fun <T : Any> unwrapAs(type: KClass<T>): T? = imageReader.unwrapAs(type)
@@ -198,7 +203,7 @@ public class ImageReaderImageSource(
         // Always increment the imageCount before acquireNextImage
         val currentImageCount = imageCount.incrementAndGet()
 
-        val outputListener = listener.value
+        val outputListener = imageListener
         if (outputListener == null) {
             // If there is nowhere to send the image, close it and decrement the imageCount.
             closeAndDecrementImageCount(image)

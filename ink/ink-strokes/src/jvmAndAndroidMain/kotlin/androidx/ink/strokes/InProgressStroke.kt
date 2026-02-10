@@ -176,6 +176,7 @@ public class InProgressStroke {
      * @throws [IllegalArgumentException] If [currentElapsedTimeMillis] is negative or decreased
      *   from a previous call to this method for the same in-progress stroke.
      */
+    @Suppress("MissingJvmstatic")
     public fun updateShape(currentElapsedTimeMillis: Long = Long.MAX_VALUE) {
         val success = InProgressStrokeNative.updateShape(nativePointer, currentElapsedTimeMillis)
         check(success) { "Should have thrown an exception if updateShape failed." }

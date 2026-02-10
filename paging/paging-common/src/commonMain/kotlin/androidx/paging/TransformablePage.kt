@@ -115,9 +115,6 @@ internal data class TransformablePage<T : Any>(
     }
 
     companion object {
-        @Suppress("UNCHECKED_CAST")
-        fun <T : Any> empty() = EMPTY_INITIAL_PAGE as TransformablePage<T>
-
-        val EMPTY_INITIAL_PAGE: TransformablePage<Any> = TransformablePage(0, emptyList())
+        fun <T : Any> empty(): TransformablePage<T> = TransformablePage(0, emptyList())
     }
 }

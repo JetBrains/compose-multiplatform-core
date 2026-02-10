@@ -976,8 +976,7 @@ private constructor(
      * input by other [Node]s, and may itself depend on zero or more inputs.
      */
     public abstract class ValueNode
-    internal constructor(nativePointer: Long, inputs: List<ValueNode>) :
-        Node(nativePointer, inputs)
+    internal constructor(nativePointer: Long, inputs: List<ValueNode>) : Node(nativePointer, inputs)
 
     /** A [ValueNode] that gets data from the stroke input batch. */
     public class SourceNode private constructor(nativePointer: Long) :

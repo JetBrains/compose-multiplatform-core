@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,15 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 
-public actual open class TestNavigator actual constructor(private val hasTransitions: Boolean) :
-    Navigator<TestNavigator.Destination>(TEST_NAVIGATOR_NAME) {
-
-    public actual val backStack: List<NavBackStackEntry>
+actual open class TestNavigator actual constructor(private val hasTransitions: Boolean) :
+    Navigator<TestNavigator.Destination>("test") {
+    val backStack: List<NavBackStackEntry>
         get() = state.backStack.value
 
-    public actual val current: NavBackStackEntry
-        get() = backStack.lastOrNull()
-            ?: throw IllegalStateException("Nothing on the back stack")
+    val current: NavBackStackEntry
+        get() = backStack.lastOrNull() ?: throw IllegalStateException("Nothing on the back stack")
 
-    public actual fun popCurrent() {
+    fun popCurrent() {
         state.pop(current, false)
     }
 
@@ -42,7 +40,7 @@ public actual open class TestNavigator actual constructor(private val hasTransit
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         entries.forEach { entry ->
             if (hasTransitions) {
@@ -61,11 +59,10 @@ public actual open class TestNavigator actual constructor(private val hasTransit
         }
     }
 
-    public actual fun onTransitionComplete(entry: NavBackStackEntry) {
+    public fun onTransitionComplete(entry: NavBackStackEntry) {
         state.markTransitionComplete(entry)
     }
 
-    public actual open class Destination actual constructor(
-        navigator: Navigator<out NavDestination>
-    ) : NavDestination(navigator)
+    actual open class Destination actual constructor(navigator: Navigator<out NavDestination>) :
+        NavDestination(navigator)
 }

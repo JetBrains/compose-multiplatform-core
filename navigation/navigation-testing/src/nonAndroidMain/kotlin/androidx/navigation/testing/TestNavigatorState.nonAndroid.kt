@@ -27,42 +27,50 @@ import androidx.navigation.SupportingPane
 import androidx.navigation.internal.NavContext
 import androidx.savedstate.SavedState
 import androidx.savedstate.savedState
+import kotlinx.coroutines.CoroutineDispatcher
 
-public actual class TestNavigatorState actual constructor() : NavigatorState() {
+public actual class TestNavigatorState
+actual constructor(coroutineDispatcher: CoroutineDispatcher) : NavigatorState() {
     internal val navContext = NavContext()
 
-    private val viewModelStoreProvider = object : NavViewModelStoreProvider {
-        private val viewModelStores = mutableMapOf<String, ViewModelStore>()
-        override fun getViewModelStore(
-            backStackEntryId: String
-        ) = viewModelStores.getOrPut(backStackEntryId) {
-            ViewModelStore()
+    private val viewModelStoreProvider =
+        object : NavViewModelStoreProvider {
+            private val viewModelStores = mutableMapOf<String, ViewModelStore>()
+
+            override fun getViewModelStore(backStackEntryId: String) =
+                viewModelStores.getOrPut(backStackEntryId) { ViewModelStore() }
         }
-    }
+
+    private val savedStates = mutableMapOf<String, SavedState>()
+    private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
     private val savedStates = mutableMapOf<String, SavedState>()
     private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
     public actual override fun createBackStackEntry(
         destination: NavDestination,
-        arguments: SavedState?
-    ): NavBackStackEntry = NavBackStackEntry.create(
-        context = navContext,
-        destination = destination,
-        arguments = arguments,
-        hostLifecycleState = Lifecycle.State.RESUMED,
-        viewModelStoreProvider = viewModelStoreProvider
-    )
+        arguments: SavedState?,
+    ): NavBackStackEntry =
+        NavBackStackEntry.create(
+            context = navContext,
+            destination = destination,
+            arguments = arguments,
+            hostLifecycleState = Lifecycle.State.RESUMED,
+            viewModelStoreProvider = viewModelStoreProvider,
+        )
 
     /**
-     * Restore a previously saved [NavBackStackEntry]. You must have previously called
-     * [pop] with [previouslySavedEntry] and `true`.
+     * Restore a previously saved [NavBackStackEntry]. You must have previously called [pop] with
+     * [previouslySavedEntry] and `true`.
      */
-    public actual fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
-        val savedState = checkNotNull(savedStates[previouslySavedEntry.id]) {
-            "restoreBackStackEntry(previouslySavedEntry) must be passed a NavBackStackEntry " +
-                "that was previously popped with popBackStack(previouslySavedEntry, true)"
-        }
+    public actual fun restoreBackStackEntry(
+        previouslySavedEntry: NavBackStackEntry
+    ): NavBackStackEntry {
+        val savedState =
+            checkNotNull(savedStates[previouslySavedEntry.id]) {
+                "restoreBackStackEntry(previouslySavedEntry) must be passed a NavBackStackEntry " +
+                    "that was previously popped with popBackStack(previouslySavedEntry, true)"
+            }
         return NavBackStackEntry.create(
             context = navContext,
             destination = previouslySavedEntry.destination,
@@ -70,7 +78,7 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
             hostLifecycleState = Lifecycle.State.RESUMED,
             viewModelStoreProvider = viewModelStoreProvider,
             id = previouslySavedEntry.id,
-            savedState = savedState
+            savedState = savedState,
         )
     }
 
@@ -109,14 +117,11 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
 
     private fun updateMaxLifecycle(
         poppedList: List<NavBackStackEntry> = emptyList(),
-        saveState: Boolean = false
+        saveState: Boolean = false,
     ) {
         // Mark all removed NavBackStackEntries as DESTROYED
         for (entry in poppedList.reversed()) {
-            if (
-                saveState &&
-                entry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-            ) {
+            if (saveState && entry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
                 // Move the NavBackStackEntry to the stopped state, then save its state
                 entry.maxLifecycle = Lifecycle.State.CREATED
                 val savedState = savedState()

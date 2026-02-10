@@ -304,6 +304,20 @@ private constructor(
         override fun toString(): String = name
     }
 
+    /** Specifies the blending mode of the content. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public class MediaBlendingMode private constructor(private val name: String) {
+        public companion object {
+            /** Content is alpha-blended with the background. */
+            @JvmField public val TRANSPARENT: MediaBlendingMode = MediaBlendingMode("TRANSPARENT")
+
+            /** Content is opaque and does not blend with the background. */
+            @JvmField public val OPAQUE: MediaBlendingMode = MediaBlendingMode("OPAQUE")
+        }
+
+        override fun toString(): String = name
+    }
+
     /**
      * Color information for the content drawn on a surface. This is used to hint to the system how
      * the content should be rendered depending on display settings.
@@ -527,6 +541,22 @@ private constructor(
             }
         }
 
+        private fun getRtMediaBlendingMode(mediaBlendingMode: MediaBlendingMode): Int {
+            return when (mediaBlendingMode) {
+                MediaBlendingMode.TRANSPARENT -> RtSurfaceEntity.MediaBlendingMode.TRANSPARENT
+                MediaBlendingMode.OPAQUE -> RtSurfaceEntity.MediaBlendingMode.OPAQUE
+                else -> RtSurfaceEntity.MediaBlendingMode.TRANSPARENT
+            }
+        }
+
+        private fun getMediaBlendingModeFromRt(mediaBlendingMode: Int): MediaBlendingMode {
+            return when (mediaBlendingMode) {
+                RtSurfaceEntity.MediaBlendingMode.TRANSPARENT -> MediaBlendingMode.TRANSPARENT
+                RtSurfaceEntity.MediaBlendingMode.OPAQUE -> MediaBlendingMode.OPAQUE
+                else -> MediaBlendingMode.TRANSPARENT
+            }
+        }
+
         private fun getRtSurfaceProtection(surfaceProtection: SurfaceProtection): Int {
             return when (surfaceProtection) {
                 SurfaceProtection.NONE -> RtSurfaceEntity.SurfaceProtection.NONE
@@ -559,6 +589,8 @@ private constructor(
          * @param renderingRuntime RenderingRuntime to use.
          * @param entityManager A SceneCore EntityManager
          * @param stereoMode An [Int] which defines how surface subregions map to eyes
+         * @param mediaBlendingMode The [MediaBlendingMode] which describes the blending mode of the
+         *   content.
          * @param pose Pose for this StereoSurface entity, relative to its parent.
          * @param shape The [Shape] which describes the spatialized shape of the canvas.
          * @param surfaceProtection The Int member of [SurfaceProtection] which describes whether
@@ -575,6 +607,7 @@ private constructor(
         internal fun create(
             session: Session,
             stereoMode: StereoMode = StereoMode.MONO,
+            mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
             pose: Pose = Pose.Identity,
             shape: Shape = Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
@@ -601,6 +634,7 @@ private constructor(
                     session.scene.perceptionSpace,
                     session.renderingRuntime.createSurfaceEntity(
                         getRtStereoMode(stereoMode),
+                        getRtMediaBlendingMode(mediaBlendingMode),
                         pose,
                         rtShape,
                         getRtSurfaceProtection(surfaceProtection),
@@ -649,6 +683,7 @@ private constructor(
             SurfaceEntity.create(
                 session,
                 stereoMode,
+                MediaBlendingMode.TRANSPARENT,
                 pose,
                 shape,
                 surfaceProtection,
@@ -664,6 +699,8 @@ private constructor(
          * @param shape The [Shape] which describes the spatialized shape of the canvas. The default
          *   value is [Shape.Quad] with a width and height of 1 meter.
          * @param stereoMode Stereo mode for the surface. The default value is [StereoMode.MONO].
+         * @param mediaBlendingMode The [MediaBlendingMode] which describes the blending mode of the
+         *   content. The default value is [MediaBlendingMode.TRANSPARENT].
          * @param superSampling The [SuperSampling] which describes whether super sampling is
          *   enabled for the surface. The default value is [SuperSampling.PENTAGON].
          * @param surfaceProtection The [SurfaceProtection] which describes whether the hosted
@@ -683,6 +720,7 @@ private constructor(
             pose: Pose = Pose.Identity,
             shape: Shape = Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             stereoMode: StereoMode = StereoMode.MONO,
+            mediaBlendingMode: MediaBlendingMode = MediaBlendingMode.TRANSPARENT,
             superSampling: SuperSampling = SuperSampling.PENTAGON,
             surfaceProtection: SurfaceProtection = SurfaceProtection.NONE,
             parent: Entity? = session.scene.activitySpace,
@@ -690,6 +728,7 @@ private constructor(
             SurfaceEntity.create(
                 session,
                 stereoMode,
+                mediaBlendingMode,
                 pose,
                 shape,
                 surfaceProtection,
@@ -715,6 +754,25 @@ private constructor(
         set(value) {
             checkNotDisposed()
             rtEntity!!.stereoMode = getRtStereoMode(value)
+        }
+
+    /**
+     * Controls the blending mode of the content.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
+     */
+    public var mediaBlendingMode: MediaBlendingMode
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        get() {
+            checkNotDisposed()
+            return getMediaBlendingModeFromRt(rtEntity!!.mediaBlendingMode)
+        }
+        @MainThread
+        @SuppressLint("HiddenTypeParameter")
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        set(value) {
+            checkNotDisposed()
+            rtEntity!!.mediaBlendingMode = getRtMediaBlendingMode(value)
         }
 
     /**

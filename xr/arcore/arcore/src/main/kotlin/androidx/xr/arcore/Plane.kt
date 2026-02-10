@@ -20,7 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
@@ -49,14 +49,14 @@ internal constructor(
          * long as they remain tracking.
          *
          * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.PlaneTrackingMode.DISABLED]
+         *   [androidx.xr.runtime.PlaneTrackingMode.DISABLED]
          *     @sample androidx.xr.arcore.samples.getPlanes
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Plane>> {
             check(
                 session.perceptionRuntime.lifecycleManager.config.planeTracking !=
-                    Config.PlaneTrackingMode.DISABLED
+                    PlaneTrackingMode.DISABLED
             ) {
                 "Config.PlaneTrackingMode is set to DISABLED."
             }
@@ -200,13 +200,11 @@ internal constructor(
      * Creates an [Anchor] that is attached to this trackable, using the given initial [pose] in the
      * world coordinate space.
      *
-     * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.PlaneTrackingMode.DISABLED].
+     * @throws [IllegalStateException] if [Session.config] is set to [PlaneTrackingMode.DISABLED].
      */
     override fun createAnchor(pose: Pose): AnchorCreateResult {
         check(
-            xrResourceManager.lifecycleManager.config.planeTracking !=
-                Config.PlaneTrackingMode.DISABLED
+            xrResourceManager.lifecycleManager.config.planeTracking != PlaneTrackingMode.DISABLED
         ) {
             "Config.PlaneTrackingMode is set to DISABLED."
         }

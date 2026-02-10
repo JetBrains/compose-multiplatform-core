@@ -35,7 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 
 /**
  * High level element that displays text and provides semantics / accessibility information.
@@ -306,4 +308,21 @@ public object TextConfigurationDefaults {
 
     /** Default max lines for [Text] */
     public val MaxLines: Int = Int.MAX_VALUE
+}
+
+/** Contains the default values used by [Text]. */
+public object TextDefaults {
+    /**
+     * The minimum recommended parent top content padding for [Text] in a list such as
+     * [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListTopContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
+    /**
+     * The minimum recommended parent bottom content padding for [Text] in a list such as
+     * [TransformingLazyColumn], based on the screen height.
+     */
+    public val minimumListBottomContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 }

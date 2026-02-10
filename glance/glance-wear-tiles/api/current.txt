@@ -142,7 +142,6 @@ package androidx.glance.wear.tiles.curved {
   }
 
   @Deprecated @androidx.compose.runtime.Immutable public final class CurvedTextStyle {
-    ctor @Deprecated public CurvedTextStyle();
     ctor @InaccessibleFromJava @Deprecated public CurvedTextStyle(optional androidx.glance.unit.ColorProvider? color, optional androidx.compose.ui.unit.TextUnit? fontSize, optional androidx.glance.text.FontWeight? fontWeight, optional androidx.glance.text.FontStyle? fontStyle);
     ctor @BytecodeOnly @Deprecated public CurvedTextStyle(androidx.glance.unit.ColorProvider!, androidx.compose.ui.unit.TextUnit!, androidx.glance.text.FontWeight!, androidx.glance.text.FontStyle!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin @Deprecated public androidx.glance.unit.ColorProvider? getColor();

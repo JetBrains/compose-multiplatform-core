@@ -22,7 +22,7 @@ import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
-import androidx.xr.runtime.Config.FaceTrackingMode
+import androidx.xr.runtime.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
