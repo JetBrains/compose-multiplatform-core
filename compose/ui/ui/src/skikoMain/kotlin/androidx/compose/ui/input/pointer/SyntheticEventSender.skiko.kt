@@ -21,6 +21,7 @@ import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 
@@ -57,6 +58,7 @@ internal class SyntheticEventSender(
 ) {
     private val _send: (PointerInputEvent) -> PointerEventResult = send
     private var previousEvent: PointerInputEvent? = null
+    private var isMouseInside: Boolean = false
 
     /**
      * If something happened with Compose content (it relayouted), we need to send an
@@ -82,18 +84,35 @@ internal class SyntheticEventSender(
         val syntheticPressesResult = sendMissingPresses(event)
         val eventResult = sendInternal(event)
 
-        // Clear `previousEvent` when the mouse exits to prevent any synthetic events from being
-        // sent accidentally.
-        if ((event.eventType == PointerEventType.Exit) &&
-            (event.pointers.fastAll { it.type == PointerType.Mouse })) {
-            previousEvent = null
-        }
+        trackPointerState(event)
 
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
             syntheticPressesResult,
             eventResult
         )
+    }
+
+    private fun trackPointerState(event: PointerInputEvent) {
+        when (event.eventType) {
+            // Mark isMouseInside as true not just on Enter, just in case the system didn't send
+            // us an Enter event (also, some tests don't bother sending it)
+            PointerEventType.Enter,
+            PointerEventType.Move,
+            PointerEventType.Press,
+            PointerEventType.Scroll,
+                -> isMouseInside = true
+            PointerEventType.Exit ->
+                isMouseInside = false
+        }
+
+        val mouseChange = event.pointers.fastFirstOrNull { it.type == PointerType.Mouse } ?: return
+        val isTargetOfMouseEvents = isMouseInside || mouseChange.down
+        if (!isTargetOfMouseEvents) {
+            // Clear `previousEvent` when we're no longer the target of mouse events, to prevent any
+            // synthetic events from being sent accidentally.
+            previousEvent = null
+        }
     }
 
     fun updatePointerPosition(): PointerEventResult {

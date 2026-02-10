@@ -598,26 +598,122 @@ class MouseMoveTest {
         height = 100,
     ).useInUiThread { scene ->
         val collector = EventCollector()
-        var boxSize by mutableStateOf(50.dp)
+        var yOffset by mutableStateOf(0.dp)
         scene.setContent {
             Box(
                 modifier = Modifier
+                    .size(50.dp)
+                    .offset(y = yOffset)
                     .collectPointerEvents(collector)
-                    .size(boxSize)
             )
         }
 
         scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
         collector.assertCounts(enter = 1, exit = 0, move = 0)
 
-        scene.sendPointerEvent(PointerEventType.Exit, Offset(0f, 50f))
+        // Deliberately send an exit event with coordinates still inside the box
+        scene.sendPointerEvent(PointerEventType.Exit, Offset(10f, 20f))
         collector.assertCounts(enter = 1, exit = 1, move = 0)
 
         // Trigger a layout, which then triggers SyntheticEventSender.updatePointerPosition
-        boxSize = 100.dp
+        yOffset = 10.dp
         scene.renderUntilIdle()
 
         collector.assertCounts(enter = 1, exit = 1, move = 0)
+    }
+
+    @Test
+    fun `window exit while pressed followed by layout triggers mouse move`() = ImageComposeScene(
+        width = 100,
+        height = 100,
+    ).useInUiThread { scene ->
+        val collector = EventCollector()
+        var yOffset by mutableStateOf(0.dp)
+        scene.setContent {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .offset(y = yOffset)
+                    .collectPointerEvents(collector)
+            )
+        }
+
+        scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0)
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0, press = 1)
+
+        scene.sendPointerEvent(PointerEventType.Exit, Offset(-10f, 20f))
+        collector.assertCounts(enter = 1, exit = 1, move = 0, press = 1)
+
+        // Trigger a layout, which then triggers SyntheticEventSender.updatePointerPosition
+        yOffset = 10.dp
+        scene.renderUntilIdle()
+
+        collector.assertCounts(enter = 1, exit = 1, move = 1, press = 1)
+    }
+
+    @Test
+    fun `window exit while pressed followed by mouse up and layout does not trigger mouse move`() = ImageComposeScene(
+        width = 100,
+        height = 100,
+    ).useInUiThread { scene ->
+        val collector = EventCollector()
+        var yOffset by mutableStateOf(0.dp)
+        scene.setContent {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .offset(y = yOffset)
+                    .collectPointerEvents(collector)
+            )
+        }
+
+        scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0)
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0, press = 1)
+
+        scene.sendPointerEvent(PointerEventType.Exit, Offset(-10f, 20f))
+        collector.assertCounts(enter = 1, exit = 1, move = 0, press = 1)
+
+        scene.sendPointerEvent(PointerEventType.Release, Offset(-10f, 20f))
+        collector.assertCounts(enter = 1, exit = 1, move = 0, press = 1, release = 1)
+
+        // Trigger a layout, which then triggers SyntheticEventSender.updatePointerPosition
+        yOffset = 10.dp
+        scene.renderUntilIdle()
+
+        collector.assertCounts(enter = 1, exit = 1, move = 0, press = 1, release = 1)
+    }
+
+    @Test
+    fun `window exit while pressed continues to send mouse events to target element`() = ImageComposeScene(
+        width = 100,
+        height = 100,
+    ).useInUiThread { scene ->
+        val collector = EventCollector()
+        scene.setContent {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .collectPointerEvents(collector)
+            )
+        }
+
+        scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0)
+
+        scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 20f))
+        collector.assertCounts(enter = 1, exit = 0, move = 0, press = 1)
+
+        scene.sendPointerEvent(PointerEventType.Exit, Offset(-10f, 20f))
+        collector.assertCounts(enter = 1, exit = 1, move = 0, press = 1)
+
+        scene.sendPointerEvent(PointerEventType.Move, Offset(-20f, 20f))
+        collector.assertCounts(enter = 1, exit = 1, move = 1, press = 1)
     }
 
     @Test
@@ -632,6 +728,7 @@ class MouseMoveTest {
         }
 
         scene.sendPointerEvent(PointerEventType.Enter, Offset(10f, 20f))
+        // Deliberately send an exit event with coordinates still inside the box
         scene.sendPointerEvent(PointerEventType.Exit, Offset(0f, 50f))
 
         assertNull(composeScene.lastKnownPointerPosition)
@@ -654,6 +751,7 @@ private class EventCollector {
     private var exitCount = 0
     private var moveCount = 0
     private var pressCount = 0
+    private var releaseCount = 0
     private var enterPosition: Offset? = null
     private var exitPosition: Offset? = null
     private var movePosition: Offset? = null
@@ -677,6 +775,10 @@ private class EventCollector {
                 pressCount++
                 pressPosition = event.changes[0].position
             }
+            PointerEventType.Release -> {
+                releaseCount++
+                pressPosition = null
+            }
         }
     }
 
@@ -685,6 +787,7 @@ private class EventCollector {
         exit: Int = -1,
         move: Int = -1,
         press: Int = -1,
+        release: Int = -1,
     ) {
         if (enter >= 0) {
             assertWithMessage("enter count").that(this.enterCount).isEqualTo(enter)
@@ -697,6 +800,9 @@ private class EventCollector {
         }
         if (press >= 0) {
             assertWithMessage("press count").that(this.pressCount).isEqualTo(press)
+        }
+        if (release >= 0) {
+            assertWithMessage("release count").that(this.releaseCount).isEqualTo(release)
         }
     }
 
