@@ -31,10 +31,12 @@ import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
@@ -154,18 +156,53 @@ class RootNodeOwnerTest {
         assertTrue(keyboardShowCalled)
         assertTrue(keyboardHideCalled)
     }
+
+    @Test
+    fun setSizeOnlyTriggersConstraintChangeWhenValueChanges() = runTest {
+        var measureAndLayoutCount = 0
+        
+        val owner = RootNodeOwner(
+            snapshotInvalidationTracker = SnapshotInvalidationTracker {
+                measureAndLayoutCount++
+            }
+        )
+
+        // Set initial size
+        owner.size = IntSize(100, 100)
+        val initialCount = measureAndLayoutCount
+
+        // Setting the same size should not trigger measure and layout
+        owner.size = IntSize(100, 100)
+        
+        // Count should remain the same
+        assertEquals(measureAndLayoutCount, initialCount)
+
+        // Setting a different size should trigger measure and layout
+        owner.size = IntSize(200, 200)
+        
+        // Count should increase
+        assertTrue(measureAndLayoutCount > initialCount)
+        val afterChangeCount = measureAndLayoutCount
+
+        // Setting the same size again should not trigger another measure and layout
+        owner.size = IntSize(200, 200)
+        
+        // Count should remain the same
+        assertEquals(measureAndLayoutCount, afterChangeCount)
+    }
 }
 
 private fun RootNodeOwner(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
     platformContext: PlatformContext = PlatformContext.Empty(),
+    snapshotInvalidationTracker: SnapshotInvalidationTracker = SnapshotInvalidationTracker {},
 ) = RootNodeOwner(
     density = Density(1f),
     layoutDirection = LayoutDirection.Ltr,
     size = null,
     coroutineContext = coroutineContext,
     platformContext = platformContext,
-    snapshotInvalidationTracker = SnapshotInvalidationTracker {},
+    snapshotInvalidationTracker = snapshotInvalidationTracker,
     inputHandler = ComposeSceneInputHandler(
         prepareForPointerInputEvent = {},
         processPointerInputEvent = { PointerEventResult(false) },

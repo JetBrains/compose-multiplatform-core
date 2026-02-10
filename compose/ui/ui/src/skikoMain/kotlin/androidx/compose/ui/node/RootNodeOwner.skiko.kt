@@ -146,8 +146,10 @@ internal class RootNodeOwner(
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
-            field = value
-            onRootConstrainsChanged(value?.toConstraints())
+            if (field != value) {
+                field = value
+                onRootConstrainsChanged(value?.toConstraints())
+            }
         }
     var density by mutableStateOf(density)
 
