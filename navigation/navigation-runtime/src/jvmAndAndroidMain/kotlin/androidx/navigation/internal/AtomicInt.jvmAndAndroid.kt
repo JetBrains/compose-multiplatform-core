@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package androidx.navigation.internal
+
 import java.util.concurrent.atomic.AtomicInteger
 
 internal actual class AtomicInt actual constructor(initial: Int) {

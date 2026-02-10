@@ -18,6 +18,7 @@ package androidx.navigation.compose.internal
 
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.Composable
+import java.lang.ref.WeakReference
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 
