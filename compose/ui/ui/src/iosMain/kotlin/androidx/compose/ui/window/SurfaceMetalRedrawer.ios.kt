@@ -554,7 +554,7 @@ private class SurfaceDisplayLinkProxy(
     }
 }
 
-private inline fun <T> NSLock.doLocked(block: () -> T): T {
+internal inline fun <T> NSLock.doLocked(block: () -> T): T {
     lock()
 
     try {

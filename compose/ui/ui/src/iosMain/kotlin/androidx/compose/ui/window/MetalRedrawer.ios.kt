@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
@@ -25,6 +26,7 @@ import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
 import org.jetbrains.skia.Rect
+import platform.Foundation.NSLock
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
@@ -32,9 +34,14 @@ import platform.QuartzCore.*
 import platform.darwin.*
 import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSTimeInterval
+import platform.Metal.MTLCommandBufferProtocol
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 
+/**
+ * Interface that hides the implementation of the render-based metal redrawer.
+ * Must be removed in the future: https://youtrack.jetbrains.com/issue/CMP-9722
+ */
 internal sealed interface MetalRedrawer {
     var isActive: Boolean
     fun draw(waitUntilCompletion: Boolean)
@@ -45,6 +52,27 @@ internal sealed interface MetalRedrawer {
     val currentTargetFrameDuration: NSTimeInterval?
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float)
     fun dispose()
+}
+
+internal class InflightCommandBuffers(
+    private val maxInflightCount: Int
+) {
+    private val lock = NSLock()
+    private val list = mutableListOf<MTLCommandBufferProtocol>()
+
+    fun waitUntilAllAreScheduled() = lock.doLocked {
+        list.fastForEach {
+            it.waitUntilScheduled()
+        }
+    }
+
+    fun add(commandBuffer: MTLCommandBufferProtocol) = lock.doLocked {
+        if (list.size == maxInflightCount) {
+            list.removeAt(0)
+        }
+
+        list.add(commandBuffer)
+    }
 }
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
@@ -72,7 +100,11 @@ internal class LegacyMetalRedrawer(
     private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
 
-    private val inflightCommandBuffersGroup = dispatch_group_create()
+    // Semaphore for preventing command buffers count more than swapchain size to be scheduled/executed at the same time
+    private val inflightSemaphore =
+        dispatch_semaphore_create(metalLayer.maximumDrawableCount.toLong())
+    private val inflightCommandBuffers =
+        InflightCommandBuffers(metalLayer.maximumDrawableCount.toInt())
 
     override var isForcedToPresentWithTransactionEveryFrame = false
 
@@ -174,10 +206,9 @@ internal class LegacyMetalRedrawer(
 
                 displayLinkConditions.isActive = newValue
                 if (!newValue) {
-                    // If an application enters the background, synchronously wait for inflightCommandBuffersGroup, as per
+                    // If an application enters the background, synchronously wait for inflightCommandBuffers, as per
                     // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
-                    // Set the expiration time to 1 second to ensure that the main thread does not get stuck when the app is suspended.
-                    dispatch_group_wait(inflightCommandBuffersGroup, dispatch_time(DISPATCH_TIME_NOW, 1L * NSEC_PER_SEC.toLong()))
+                    inflightCommandBuffers.waitUntilAllAreScheduled()
                 }
             }
         }
@@ -286,6 +317,10 @@ internal class LegacyMetalRedrawer(
                 currentFrameRate = Float.NaN
             }
 
+            trace("MetalRedrawer:draw:waitInflightSemaphore") {
+                dispatch_semaphore_wait(inflightSemaphore, DISPATCH_TIME_FOREVER)
+            }
+
             val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
                 metalDrawablesHandler.nextDrawable()
             }
@@ -294,6 +329,7 @@ internal class LegacyMetalRedrawer(
                 // TODO: anomaly, log
                 // Logger.warn { "'metalLayer.nextDrawable()' returned null. 'metalLayer.allowsNextDrawableTimeout' should be set to false. Skipping the frame." }
                 picture.close()
+                dispatch_semaphore_signal(inflightSemaphore)
                 return@autoreleasepool
             }
 
@@ -318,6 +354,7 @@ internal class LegacyMetalRedrawer(
                 picture.close()
                 renderTarget.close()
                 metalDrawablesHandler.releaseDrawable(metalDrawable)
+                dispatch_semaphore_signal(inflightSemaphore)
                 return@autoreleasepool
             }
 
@@ -350,9 +387,9 @@ internal class LegacyMetalRedrawer(
                     metalDrawablesHandler.scheduleDrawablePresentation(metalDrawable, commandBuffer)
                 }
 
-                dispatch_group_enter(inflightCommandBuffersGroup)
                 commandBuffer.addCompletedHandler {
-                    dispatch_group_leave(inflightCommandBuffersGroup)
+                    // Signal work finish, allow a new command buffer to be scheduled
+                    dispatch_semaphore_signal(inflightSemaphore)
                 }
                 commandBuffer.commit()
 
@@ -373,6 +410,9 @@ internal class LegacyMetalRedrawer(
                         isInteropActive = false
                     }
                 }
+
+                // Track current inflight command buffers to synchronously wait for their schedule in case app goes background
+                inflightCommandBuffers.add(commandBuffer)
 
                 if (waitUntilCompletion) {
                     trace("MetalRedrawer:draw:waitUntilCompleted") {
