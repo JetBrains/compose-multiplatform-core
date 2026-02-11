@@ -221,7 +221,7 @@ internal class RootNodeOwner(
                 height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
         }
     }
 
