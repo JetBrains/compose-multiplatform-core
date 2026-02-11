@@ -334,6 +334,7 @@ internal class MetalRedrawer(
             }
 
             if (width <= 0 || height <= 0) {
+                isDrawRecursiveCall = false
                 return@autoreleasepool
             }
 
