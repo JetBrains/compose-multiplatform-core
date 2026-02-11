@@ -128,6 +128,8 @@ internal class MetalRedrawer(
 
     private val inflightCommandBuffersGroup = dispatch_group_create()
     private val drawCanvasSemaphore = dispatch_semaphore_create(1)
+    // A guard flag to have proper assertion when draw() method is called recursively.
+    private var isDrawRecursiveCall = false
 
     var isForcedToPresentWithTransactionEveryFrame = false
 
@@ -319,6 +321,10 @@ internal class MetalRedrawer(
     @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
+        assert(!isDrawRecursiveCall) {
+            "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
+        }
+        isDrawRecursiveCall = true
 
         lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
 
@@ -358,6 +364,7 @@ internal class MetalRedrawer(
                 // TODO: anomaly, log
                 // Logger.warn { "'metalLayer.nextDrawable()' returned null. 'metalLayer.allowsNextDrawableTimeout' should be set to false. Skipping the frame." }
                 picture.close()
+                isDrawRecursiveCall = false
                 return@autoreleasepool
             }
 
@@ -382,6 +389,7 @@ internal class MetalRedrawer(
                 picture.close()
                 renderTarget.close()
                 metalDrawablesHandler.releaseDrawable(metalDrawable)
+                isDrawRecursiveCall = false
                 return@autoreleasepool
             }
 
@@ -467,6 +475,7 @@ internal class MetalRedrawer(
                 }
             }
         }
+        isDrawRecursiveCall = false
     }
 
     companion object {
