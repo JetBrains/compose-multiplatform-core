@@ -321,7 +321,7 @@ internal class MetalRedrawer(
     @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
-        assert(!isDrawRecursiveCall) {
+        check(!isDrawRecursiveCall) {
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
         }
         isDrawRecursiveCall = true
