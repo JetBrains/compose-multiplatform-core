@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.captureScreenshot
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.forEachPixel
 import androidx.compose.ui.window.Popup
@@ -33,16 +33,13 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.UIGraphicsImageRenderer
 import platform.UIKit.UIImage
-import platform.UIKit.UIWindow
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
 class LayersRenderingTest {
     @Test
-    fun testPopupDismissOnClickOutsideEnabled() = runUIKitInstrumentedTest {
+    fun testLayerContentOnFirstRender() = runUIKitInstrumentedTest {
         var showRed by mutableStateOf(false)
         var showGreen by mutableStateOf(false)
         var onRender = {}
@@ -52,7 +49,7 @@ class LayersRenderingTest {
             frameImage = null
             onRender = {
                 dispatch_async(dispatch_get_main_queue()) {
-                    frameImage = captureTopLayerImage()
+                    frameImage = captureScreenshot()
                 }
                 onRender = {}
             }
@@ -86,7 +83,11 @@ class LayersRenderingTest {
 
             assertNotNull(frameImage)
             frameImage!!.forEachPixel(step = 4) { _, _, actualColor ->
-                assertEquals(expectedColor, actualColor, "Expected to draw $expectedColor background")
+                assertEquals(
+                    expectedColor,
+                    actualColor,
+                    "Expected to draw $expectedColor background"
+                )
             }
         }
 
@@ -101,20 +102,5 @@ class LayersRenderingTest {
 
         showGreen = false
         assertNextFrameColor(Color.Blue)
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun UIKitInstrumentedTest.captureTopLayerImage(): UIImage {
-        val windows = appDelegate.window?.windowScene?.windows ?: error("No active window found")
-        val window = windows
-            .mapNotNull { it as? UIWindow }
-            .filter { !it.hidden }
-            .maxBy { it.windowLevel }
-
-        val renderer = UIGraphicsImageRenderer(bounds = window.bounds)
-        val image = renderer.imageWithActions {
-            window.drawViewHierarchyInRect(window.bounds, afterScreenUpdates = true)
-        }
-        return image
     }
 }
