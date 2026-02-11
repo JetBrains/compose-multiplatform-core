@@ -52,7 +52,7 @@ internal fun UIImage.forEachPixel(step: Int = 1, onPixel: (x: Int, y: Int, color
 
         CGContextDrawImage(context, CGRectMake(0.0, 0.0, width.toDouble(), height.toDouble()), cgImage)
 
-    c    for (y in 0 until height step step) {
+        for (y in 0 until height step step) {
             for (x in 0 until width step step) {
                 val offset = (y * bytesPerRow) + (x * bytesPerPixel)
                 val r = pinned.get()[offset].toUByte().toInt()
