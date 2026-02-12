@@ -159,36 +159,36 @@ class RootNodeOwnerTest {
 
     @Test
     fun setSizeOnlyTriggersConstraintChangeWhenValueChanges() = runTest {
-        var measureAndLayoutCount = 0
+        var invalidationCount = 0
         
         val owner = RootNodeOwner(
             snapshotInvalidationTracker = SnapshotInvalidationTracker {
-                measureAndLayoutCount++
+                invalidationCount++
             }
         )
 
-        // Set initial size
+        // Set the initial size
         owner.size = IntSize(100, 100)
-        val initialCount = measureAndLayoutCount
+        val initialCount = invalidationCount
 
-        // Setting the same size should not trigger measure and layout
+        // Setting the same size should not trigger invalidation
         owner.size = IntSize(100, 100)
         
         // Count should remain the same
-        assertEquals(measureAndLayoutCount, initialCount)
+        assertEquals(invalidationCount, initialCount)
 
-        // Setting a different size should trigger measure and layout
+        // Setting a different size should trigger invalidation
         owner.size = IntSize(200, 200)
         
         // Count should increase
-        assertTrue(measureAndLayoutCount > initialCount)
-        val afterChangeCount = measureAndLayoutCount
+        assertTrue(invalidationCount > initialCount)
+        val afterChangeCount = invalidationCount
 
-        // Setting the same size again should not trigger another measure and layout
+        // Setting the same size again should not trigger another invalidation
         owner.size = IntSize(200, 200)
         
         // Count should remain the same
-        assertEquals(measureAndLayoutCount, afterChangeCount)
+        assertEquals(invalidationCount, afterChangeCount)
     }
 }
 
