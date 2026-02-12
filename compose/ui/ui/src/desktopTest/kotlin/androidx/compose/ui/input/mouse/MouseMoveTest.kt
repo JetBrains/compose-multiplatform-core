@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
@@ -826,3 +827,20 @@ private class EventCollector {
         }
     }
 }
+
+/**
+ * Render the current content until there are no more invalidations.
+ *
+ * @param initialNanoTime The time to start rendering from.
+ * @param stepNanoTime The time to step rendering by.
+ */
+internal fun ImageComposeScene.renderUntilIdle(initialNanoTime: Long = 0, stepNanoTime: Long = 16L): Long {
+    var time = initialNanoTime
+    Snapshot.sendApplyNotifications()  // Needed for the scene to be notified of state changes
+    while (hasInvalidations()) {
+        render(time)
+        time += stepNanoTime
+    }
+    return time
+}
+
