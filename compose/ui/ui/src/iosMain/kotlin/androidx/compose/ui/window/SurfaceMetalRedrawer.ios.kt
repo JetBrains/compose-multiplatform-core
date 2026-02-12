@@ -495,7 +495,7 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
-    companion object {
+    private companion object {
         private val renderingDispatchQueue =
             dispatch_queue_create(
                 label = "RenderingDispatchQueue",
@@ -517,6 +517,7 @@ internal class SurfaceMetalRedrawer(
          * Assumed to be run on the main thread.
          */
         private fun getCachedCommandQueue(device: MTLDeviceProtocol): MTLCommandQueueProtocol {
+            check(NSThread.isMainThread) { "getCachedCommandQueue() must be called on main thread" }
             val cached = cachedCommandQueue
             if (cached != null) {
                 cached.refCount++
@@ -533,6 +534,7 @@ internal class SurfaceMetalRedrawer(
          * Assumed to be run on the main thread.
          */
         private fun releaseCachedCommandQueue(queue: MTLCommandQueueProtocol) {
+            check(NSThread.isMainThread) { "releaseCachedCommandQueue() must be called on main thread" }
             val cached = cachedCommandQueue ?: return
             if (cached.queue == queue) {
                 cached.refCount--
