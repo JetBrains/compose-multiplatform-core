@@ -20,6 +20,9 @@
 #import <CoreVideo/CoreVideo.h>
 
 static const NSUInteger kMaxDrawables = 3;
+static const NSTimeInterval kDrawablePollingInterval = 0.001;
+static const NSTimeInterval kDrawableAcquisitionTimeout = 1.0;
+static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 
 @implementation CMPMetalLayer {
     NSLock *_drawablesLock;
@@ -67,8 +70,7 @@ static const NSUInteger kMaxDrawables = 3;
         return NULL;
     }
 
-    NSUInteger bytesPerPixel = 4;
-    NSUInteger bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, width * bytesPerPixel);
+    NSUInteger bytesPerRow = IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, width * kBGRA32ColorFormatBytesPerPixel);
     NSUInteger allocSize = IOSurfaceAlignProperty(kIOSurfaceAllocSize, height * bytesPerRow);
 
     NSDictionary *properties = @{
@@ -77,7 +79,7 @@ static const NSUInteger kMaxDrawables = 3;
         (id)kIOSurfacePixelFormat: @(kCVPixelFormatType_32BGRA),
         (id)kIOSurfaceBytesPerRow: @(bytesPerRow),
         (id)kIOSurfaceAllocSize: @(allocSize),
-        (id)kIOSurfaceBytesPerElement: @(bytesPerPixel)
+        (id)kIOSurfaceBytesPerElement: @(kBGRA32ColorFormatBytesPerPixel)
     };
 
     return IOSurfaceCreate((__bridge CFDictionaryRef)properties);
@@ -135,10 +137,11 @@ static const NSUInteger kMaxDrawables = 3;
             }
         }
 
+        // Prefer oldest idle, fall back to oldest in-use
         CMPDrawable *bestDrawable = oldestIdle ?: oldestInUse;
-        // Prefer idle, fall back to in-use
+
         if (bestDrawable != nil) {
-            result = oldestIdle ?: oldestInUse;
+            result = bestDrawable;
             [_availableDrawables removeObject:bestDrawable];
         }
     }
@@ -148,7 +151,6 @@ static const NSUInteger kMaxDrawables = 3;
 }
 
 - (nullable CMPDrawable *)nextDrawable {
-    NSTimeInterval acquisitionTimeout = 1.0;
     NSTimeInterval startTime = CACurrentMediaTime();
 
     while (true) {
@@ -157,11 +159,11 @@ static const NSUInteger kMaxDrawables = 3;
             return drawable;
         }
 
-        if (CACurrentMediaTime() - startTime >= acquisitionTimeout) {
+        if (CACurrentMediaTime() - startTime >= kDrawableAcquisitionTimeout) {
             return nil;
         }
 
-        [NSThread sleepForTimeInterval:0.001];
+        [NSThread sleepForTimeInterval:kDrawablePollingInterval];
     }
 }
 
