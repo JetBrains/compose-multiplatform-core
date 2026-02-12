@@ -562,24 +562,6 @@ internal fun ComposeHostingView.waitForIdle() {
     UIKitInstrumentedTest.waitUntil { !this.hasInvalidations() }
 }
 
-
-@OptIn(ExperimentalForeignApi::class)
-private fun UIKitInstrumentedTest.captureTopLayerImage(): UIImage {
-
-
-    val windows = appDelegate.window?.windowScene?.windows ?: error("No active window found")
-    val window = windows
-        .mapNotNull { it as? UIWindow }
-        .filter { !it.hidden }
-        .maxBy { it.windowLevel }
-
-    val renderer = UIGraphicsImageRenderer(bounds = window.bounds)
-    val image = renderer.imageWithActions {
-        window.drawViewHierarchyInRect(window.bounds, afterScreenUpdates = true)
-    }
-    return image
-}
-
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIKitInstrumentedTest.captureScreenshot(): UIImage? {
     val scale = UIScreen.mainScreen.scale
