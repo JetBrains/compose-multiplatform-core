@@ -91,6 +91,9 @@ internal class DomInputStrategy(
                 // Compose logic will handle the focus movement or insert Tabs if necessary
                 evt.preventDefault()
             }
+
+            // Let Compose decide the selection right after a new key input
+            pauseSelectionChangeListener = true
         })
 
         htmlInput.addEventListener("keyup", { evt ->
@@ -125,7 +128,9 @@ internal class DomInputStrategy(
             val selection = lastMeaningfulUpdate.selection
 
             if (start != selection.min || end != selection.max) {
-                composeSender.sendEditCommand(SetSelectionCommand(start, end))
+                val normalizedStart = minOf(start, end)
+                val normalizedEnd = maxOf(start, end)
+                composeSender.sendEditCommand(SetSelectionCommand(normalizedStart, normalizedEnd))
             }
         }
         document.addEventListener("selectionchange", selectionChangeListener)
