@@ -118,7 +118,6 @@ internal class DomInputStrategy(
         })
 
         selectionChangeListener = listener@{ _ ->
-            println("scl - $pauseSelectionChangeListener ${isInputActive()}")
             if (pauseSelectionChangeListener || !isInputActive()) return@listener
             htmlInput as HTMLElementWithValue
             val start = htmlInput.selectionStart
