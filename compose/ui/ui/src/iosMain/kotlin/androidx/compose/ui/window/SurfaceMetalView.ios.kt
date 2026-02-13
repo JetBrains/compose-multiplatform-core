@@ -100,9 +100,7 @@ internal class SurfaceMetalView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        val window = window ?: return
-
-        val screen = window.screen
+        val screen = window?.screen ?: return
         contentScaleFactor = screen.scale
         redrawer.maximumFramesPerSecond = screen.maximumFramesPerSecond
         redrawer.preferredFramesPerSecond = screen.maximumFramesPerSecond

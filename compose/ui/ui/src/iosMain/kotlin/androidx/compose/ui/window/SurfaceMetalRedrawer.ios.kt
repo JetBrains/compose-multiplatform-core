@@ -325,12 +325,10 @@ internal class SurfaceMetalRedrawer(
             // Perform timestep and record all draw commands into [Picture]
             val picture = trace("MetalRedrawer:draw:pictureRecording") {
                 pictureRecorder.beginRecording(
-                    Rect(
-                        left = 0f,
-                        top = 0f,
-                        width.toFloat(),
-                        height.toFloat()
-                    )
+                    left = 0f,
+                    top = 0f,
+                    width = width.toFloat(),
+                    height = height.toFloat()
                 ).also { canvas ->
                     render(canvas, lastRenderTimestamp)
                 }
