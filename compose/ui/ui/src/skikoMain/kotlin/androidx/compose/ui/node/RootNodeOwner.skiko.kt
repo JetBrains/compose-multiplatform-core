@@ -146,8 +146,10 @@ internal class RootNodeOwner(
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
-            field = value
-            onRootConstrainsChanged(value?.toConstraints())
+            if (field != value) {
+                field = value
+                onRootConstrainsChanged(value?.toConstraints())
+            }
         }
     var density by mutableStateOf(density)
 
@@ -219,7 +221,7 @@ internal class RootNodeOwner(
                 height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
         }
     }
 
@@ -358,10 +360,10 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toIntRect()?.toRect()?.contains(localPosition) ?: true
+        size?.toRect()?.contains(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
-        val rect = size?.toIntRect()?.toRect() ?: return null
+        val rect = size?.toRect() ?: return null
         val p0 = platformContext.convertLocalToWindowPosition(Offset(rect.left, rect.top))
         val p1 = platformContext.convertLocalToWindowPosition(Offset(rect.left, rect.bottom))
         val p3 = platformContext.convertLocalToWindowPosition(Offset(rect.right, rect.top))
@@ -732,7 +734,7 @@ internal class RootNodeOwner(
         override val semanticsOwner get() = owner.semanticsOwner
         override val visibleBounds: Rect
             get() {
-                val windowRect = platformContext.windowInfo.containerSize.toIntRect().toRect()
+                val windowRect = platformContext.windowInfo.containerSize.toRect()
                 val ownerRect = calculateBoundsInWindow()
                 return ownerRect?.intersect(windowRect) ?: windowRect
             }

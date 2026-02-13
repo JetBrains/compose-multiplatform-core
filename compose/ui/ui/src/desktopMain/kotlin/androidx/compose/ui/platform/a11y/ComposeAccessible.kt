@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.internal.fastIndexOfFirst
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireCoordinator
 import androidx.compose.ui.semantics.AccessibilityAction
@@ -39,6 +40,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.asDpOffset
 import java.awt.Color
 import java.awt.Cursor
@@ -64,8 +68,6 @@ import javax.accessibility.AccessibleTextSequence
 import javax.accessibility.AccessibleValue
 import javax.swing.text.AttributeSet
 import javax.swing.text.SimpleAttributeSet
-import kotlin.math.roundToInt
-import kotlinx.atomicfu.atomic
 import org.jetbrains.skia.BreakIterator
 
 private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>
@@ -108,8 +110,6 @@ internal class ComposeAccessible(
             }
         }
 
-    private val isNativelyInitialized = atomic(false)
-
     val composeAccessibleContext: ComposeAccessibleComponent by lazy { ComposeAccessibleComponent() }
 
     private var disposed = false
@@ -121,14 +121,10 @@ internal class ComposeAccessible(
     override fun getAccessibleContext(): AccessibleContext? {
         if (disposed) {
             // The accessibility system keeps calling functions on the context even after the node
-            // has been removed. We return null so it doesn't do that.
+            // has been removed. We return `null` so it doesn't do that.
             return null
         }
 
-        // see doc for [nativeInitializeAccessible] for details, why this initialization is needed
-        if (isNativelyInitialized.compareAndSet(expect = false, update = true)) {
-            initializeAccessible(this)
-        }
         return composeAccessibleContext
     }
 
@@ -230,7 +226,7 @@ internal class ComposeAccessible(
             asDpOffset().toOffset(density)
 
         private fun Dp.toAwtPx() =
-            if (value.isInfinite()) Constraints.Infinity else value.roundToInt()
+            if (value.isInfinite()) Constraints.Infinity else value.fastRoundToInt()
 
         private fun Rect.toAwtRectangle() = with(density) {
             Rectangle(
@@ -272,7 +268,7 @@ internal class ComposeAccessible(
 
         override fun getAccessibleIndexInParent(): Int {
             val parent = semanticsNode.parent ?: return ownerAccessibility.indexInScene()
-            return parent.traversalOrderedChildren().indexOfFirst { it.id == semanticsNode.id }
+            return parent.traversalOrderedChildren().fastIndexOfFirst { it.id == semanticsNode.id }
         }
 
         override fun getAccessibleComponent(): AccessibleComponent? {
@@ -382,17 +378,17 @@ internal class ComposeAccessible(
 
         override fun getAccessibleAt(p: Point): Accessible? {
             val accessibleChildren = semanticsNode.traversalOrderedChildren()
-            for (child in accessibleChildren) {
-                val accessible = ownerAccessibility.accessibleByNodeId(child.id) as? Accessible ?: continue
-                val accessibleComponent = (accessible.accessibleContext as? AccessibleComponent) ?: continue
+            accessibleChildren.fastForEach { child ->
+                val accessible = ownerAccessibility.accessibleByNodeId(child.id) as? Accessible ?: return@fastForEach
+                val accessibleComponent = (accessible.accessibleContext as? AccessibleComponent) ?: return@fastForEach
                 accessibleComponent.getAccessibleAt(p)?.let {
                     return it
                 }
             }
 
-            for (accessibleChild in auxiliaryChildren) {
+            auxiliaryChildren.fastForEach { accessibleChild ->
                 val accessibleComponent =
-                    accessibleChild.accessibleContext as? AccessibleComponent ?: continue
+                    accessibleChild.accessibleContext as? AccessibleComponent ?: return@fastForEach
                 accessibleComponent.getAccessibleAt(p)?.let {
                     return it
                 }
@@ -807,11 +803,7 @@ internal class ComposeAccessible(
 
         override fun getAccessibleEditableText(): AccessibleEditableText? {
             val accessibleText = accessibleText
-            return if (accessibleText is AccessibleEditableText) {
-                accessibleText
-            } else {
-                null
-            }
+            return accessibleText as? AccessibleEditableText
         }
 
         // -----------------------------------
@@ -886,7 +878,7 @@ internal class ComposeAccessible(
             TODO("Not yet implemented")
         }
 
-        private fun List<CharSequence>.mergeText() = joinToString(", ")
+        private fun List<CharSequence>.mergeText() = fastJoinToString(", ")
     }
 }
 

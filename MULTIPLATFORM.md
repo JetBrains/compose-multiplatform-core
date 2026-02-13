@@ -2,6 +2,7 @@
 
 - Java 17 (should be specified in JAVA_HOME)
 - Android SDK downloaded from Android Studio and specified in `ANDROID_SDK_ROOT`
+- *(on Windows)* Git "symlinks" is enabled. Call `git config --global core.symlinks true` to set it globally. `core.symlinks` requires running git commands with admin priviligies, or with [Developer mode enabled](https://learn.microsoft.com/en-us/windows/advanced-settings/developer-mode)
 
 ## Developing in IDE
 
@@ -101,7 +102,7 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
 2. Publish core libraries
 
    ```bash
-   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all -Pjetbrains.publication.version.COMPOSE=0.1.0-dev1000 -Pjetbrains.publication.version.LIFECYCLE=0.1.0-dev1000
+   ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all -Pjetbrains.publication.version.COMPOSE=9999.0.0-alpha01 -Pjetbrains.publication.version.LIFECYCLE=9999.0.0-alpha01
    ```
 
    `-Pcompose.platforms=all` could be replace with comma-separated list of platforms, such as `js,jvm,androidDebug,androidRelease,macosx64,ios`.
@@ -178,7 +179,7 @@ To use a locally built compose in [KMP with Compose wizard project](https://kmp.
 
 - Checkout <https://github.com/JetBrains/compose-multiplatform>.
 - Open `gradle-plugins` in `compose-multiplatform`.
-- Update `gradle.properties` by setting `compose.version` and `deploy.version` to the version you've published (`0.1.0-dev1000` in example above).
+- Update `gradle.properties` by setting `compose.version` and `deploy.version` to the version you've published (`9999.0.0-alpha01` in example above).
 - Run `./gradlew publishToMavenLocal`.
 - Open `components` in `compose-multiplatform`.
 - Update `gradle.properties` by setting `compose.useMavenLocal` to `true` and `compose.version` to the version you've published.

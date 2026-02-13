@@ -56,11 +56,11 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":annotation:annotation"))
+
             api(project(":compose:ui:ui-unit"))
             implementation(project(":compose:runtime:runtime"))
             implementation(project(":compose:ui:ui-util"))
-            implementation(project(":compose:ui:ui-geometry"))
-            implementation(project(":annotation:annotation"))
             implementation(project(":collection:collection"))
         }
 
@@ -177,6 +177,16 @@ androidx {
     metalavaK2UastEnabled = false
     enableRobolectric()
     samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
+}
+
+// TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block
+tasks.withType(KotlinCompile).configureEach {
+    if (it.name != "compileAndroidMain") return
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
+    }
 }
 
 tasks.findByName("desktopTest").configure {

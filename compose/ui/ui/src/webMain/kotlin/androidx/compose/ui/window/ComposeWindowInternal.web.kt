@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toIntSize
@@ -93,6 +95,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
@@ -114,6 +117,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
+import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -311,10 +315,8 @@ internal class ComposeWindow(
         }
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
-        renderDelegate = object : SkikoRenderDelegate {
-            override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
-                scene.render(canvas.asComposeCanvas(), nanoTime)
-            }
+        renderDelegate = SkikoRenderDelegate { canvas, _, _, nanoTime ->
+            scene.render(canvas.asComposeCanvas(), nanoTime)
         }
     }
 
@@ -322,7 +324,7 @@ internal class ComposeWindow(
         coroutineContext = Dispatchers.Main,
         platformContext = platformContext,
         density = density,
-        invalidate = skiaLayer::needRedraw,
+        invalidate = skiaLayer::needRender,
     )
 
     private val systemThemeObserver = getSystemThemeObserver()
@@ -332,6 +334,14 @@ internal class ComposeWindow(
         handler: (event: T) -> Unit
     ) {
         canvasEvents.addDisposableEvent(type) { event -> handler(event as T) }
+    }
+
+    private fun <T : Event> addTypedEvent(
+        type: String,
+        passive: Boolean,
+        handler: (event: T) -> Unit
+    ) {
+        canvasEvents.addDisposableEvent(type, passive) { event -> handler(event as T) }
     }
 
     private fun processKeyboardEvent(keyboardEvent: KeyboardEvent) {
@@ -362,58 +372,51 @@ internal class ComposeWindow(
     }
 
     private fun initEvents(canvas: HTMLCanvasElement) {
-        var offset = Offset.Zero
+        var offsetX = 0f
+        var offsetY = 0f
 
-        /*
-         * CMP-9673 [Web] Double touch and mouse events
-         * If a touch event is followed by mouse events with the same timestamp, the mouse events are ignored.
-         */
-        var finalTouchEventTimestamp: Any? = null
-        fun MouseEvent.isReal() = timeStamp !== finalTouchEventTimestamp
-
-        addTypedEvent<TouchEvent>("touchstart") { event ->
+        addTypedEvent<TouchEvent>("touchstart", passive = false) { event ->
             canvas.getBoundingClientRect().apply {
-                offset = Offset(x = left.toFloat(), y = top.toFloat())
+                offsetX = left.toFloat()
+                offsetY = top.toFloat()
             }
 
-            onTouchEvent(event, offset)
+            onTouchEvent(event, offsetX, offsetY)
         }
 
-        addTypedEvent<TouchEvent>("touchmove") { event ->
-            onTouchEvent(event, offset)
+        addTypedEvent<TouchEvent>("touchmove", passive = false) { event ->
+            onTouchEvent(event, offsetX, offsetY)
         }
 
-        addTypedEvent<TouchEvent>("touchend") { event ->
-            onTouchEvent(event, offset)
-            finalTouchEventTimestamp = event.timeStamp
+        addTypedEvent<TouchEvent>("touchend", passive = false) { event ->
+            onTouchEvent(event, offsetX, offsetY)
         }
 
-        addTypedEvent<TouchEvent>("touchcancel") { event ->
-            onTouchEvent(event, offset)
-            finalTouchEventTimestamp = event.timeStamp
+        addTypedEvent<TouchEvent>("touchcancel", passive = false) { event ->
+            onTouchEvent(event, offsetX, offsetY)
         }
 
-        addTypedEvent<MouseEvent>("mousedown") { event ->
-            if (event.isReal()) onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerdown") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseup") { event ->
-            if (event.isReal()) onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerup") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mousemove") { event ->
-            if (event.isReal()) onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointermove") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseenter") { event ->
-            if (event.isReal()) onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerenter") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseleave") { event ->
-            if (event.isReal()) onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerleave") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<WheelEvent>("wheel") { event ->
+        addTypedEvent<WheelEvent>("wheel", passive = false) { event ->
             onWheelEvent(event)
         }
 
@@ -507,7 +510,7 @@ internal class ComposeWindow(
         // TODO: Align with Container/Mediator architecture
         skiaLayer.attachTo(canvas)
         scene.size = sizeInPx
-        skiaLayer.needRedraw()
+        skiaLayer.needRender()
     }
 
     // TODO: need to call .dispose() on window close.
@@ -531,7 +534,8 @@ internal class ComposeWindow(
 
     private fun onTouchEvent(
         event: TouchEvent,
-        offset: Offset,
+        offsetX: Float,
+        offsetY: Float
     ) {
         // iOS Safari doesn't request focus when the page is shown,
         // and the lifecycle doesn't trigger ON_RESUME.
@@ -565,9 +569,9 @@ internal class ComposeWindow(
             ComposeScenePointer(
                 id = PointerId(touch.identifier.toLong()),
                 position = Offset(
-                    x = touch.clientX - offset.x,
-                    y = touch.clientY - offset.y
-                ) * density.density,
+                    x = (touch.clientX - offsetX) * density.density,
+                    y = (touch.clientY - offsetY) * density.density
+                ),
                 pressed = pressed,
                 type = PointerType.Touch,
                 pressure = touchForce(touch).toFloat()
@@ -586,24 +590,30 @@ internal class ComposeWindow(
         )
         activeTouchOffset = null
 
-        if (result.anyChangeConsumed) {
+        if (result.anyChangeConsumed && event.cancelable) {
             event.preventDefault()
         }
     }
 
-    private fun onMouseEvent(
-        event: MouseEvent,
+    private fun onPointerEvent(
+        event: PointerEvent,
     ) {
+        // TODO: we need this guard so that we won't process touch events second time
+        // see https://youtrack.jetbrains.com/issue/CMP-9745/Switch-to-pointer-events-for-processing-touch-events
+        if (event.pointerType != "mouse") return
+
         keyboardModeState = KeyboardModeState.Hardware
+
         val eventType = when (event.type) {
-            "mousedown" -> PointerEventType.Press
-            "mousemove" -> PointerEventType.Move
-            "mouseup" -> PointerEventType.Release
-            "mouseenter" -> PointerEventType.Enter
-            "mouseleave" -> PointerEventType.Exit
+            "pointerdown" -> PointerEventType.Press
+            "pointermove" -> PointerEventType.Move
+            "pointerup" -> PointerEventType.Release
+            "pointerenter" -> PointerEventType.Enter
+            "pointerleave" -> PointerEventType.Exit
             else -> PointerEventType.Unknown
         }
-        scene.sendPointerEvent(
+
+        val result = scene.sendPointerEvent(
             eventType = eventType,
             position = event.offset,
             buttons = event.composeButtons,
@@ -616,6 +626,10 @@ internal class ComposeWindow(
             nativeEvent = event,
             button = event.composeButton,
         )
+
+        if (result.anyChangeConsumed && event.cancelable) {
+            event.preventDefault()
+        }
     }
 
     private fun onWheelEvent(
@@ -649,14 +663,16 @@ internal class ComposeWindow(
             button = event.composeButton,
         )
 
-        if (result.anyChangeConsumed) event.preventDefault()
+        if (result.anyChangeConsumed && event.cancelable) {
+            event.preventDefault()
+        }
     }
 
     private val MouseEvent.offset
         get() = Offset(
-            x = offsetX.toFloat(),
-            y = offsetY.toFloat()
-        ) * density.density
+            x = offsetX.toFloat() * density.density,
+            y = offsetY.toFloat() * density.density
+        )
 }
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState
@@ -671,7 +687,7 @@ internal fun onSkikoReady(block: () -> Unit) {
 
 internal fun onDomReady(block: () -> Unit) {
     // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
-    if (document.readyState == DocumentReadyState.Companion.LOADING) {
+    if (document.readyState == DocumentReadyState.LOADING) {
         document.addEventListener("DOMContentLoaded", {
             block()
         })
