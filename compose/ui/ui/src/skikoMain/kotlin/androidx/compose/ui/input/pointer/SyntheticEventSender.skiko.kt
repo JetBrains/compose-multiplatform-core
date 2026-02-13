@@ -58,7 +58,7 @@ internal class SyntheticEventSender(
 ) {
     private val _send: (PointerInputEvent) -> PointerEventResult = send
     private var previousEvent: PointerInputEvent? = null
-    private var isMouseInside: Boolean = false
+    private var isMousePointerInside: Boolean = false
 
     /**
      * If something happened with Compose content (it relayouted), we need to send an
@@ -79,13 +79,12 @@ internal class SyntheticEventSender(
      * Send [event] and synthetic events before it if needed. On each sent event we just call [send]
      */
     fun send(event: PointerInputEvent): PointerEventResult {
+        trackMousePointerState(event)
+
         val syntheticMoveForHoverResult = sendMissingMoveForHover(event)
         val syntheticReleasesResult = sendMissingReleases(event)
         val syntheticPressesResult = sendMissingPresses(event)
         val eventResult = sendInternal(event)
-
-        trackPointerState(event)
-
         return syntheticMoveForHoverResult.merging(
             syntheticReleasesResult,
             syntheticPressesResult,
@@ -93,41 +92,40 @@ internal class SyntheticEventSender(
         )
     }
 
-    private fun trackPointerState(event: PointerInputEvent) {
+    private fun trackMousePointerState(event: PointerInputEvent) {
+        if (!event.pointers.fastAny { it.type == PointerType.Mouse }) return
+
         when (event.eventType) {
-            // Mark isMouseInside as true not just on Enter, just in case the system didn't send
+            // Mark as true not just on Enter, just in case the system didn't send
             // us an Enter event (also, some tests don't bother sending it)
             PointerEventType.Enter,
             PointerEventType.Move,
             PointerEventType.Press,
             PointerEventType.Scroll,
-                -> isMouseInside = true
-            PointerEventType.Exit ->
-                isMouseInside = false
-        }
-
-        val mouseChange = event.pointers.fastFirstOrNull { it.type == PointerType.Mouse } ?: return
-        val isTargetOfMouseEvents = isMouseInside || mouseChange.down
-        if (!isTargetOfMouseEvents) {
-            // Clear `previousEvent` when we're no longer the target of mouse events, to prevent any
-            // synthetic events from being sent accidentally.
-            previousEvent = null
+                -> isMousePointerInside = true
+            PointerEventType.Exit
+                -> isMousePointerInside = false
         }
     }
 
     fun updatePointerPosition(): PointerEventResult {
-        if (needUpdatePointerPosition) {
-            needUpdatePointerPosition = false
+        val nothingConsumed = PointerEventResult(anyMovementConsumed = false)
 
-            previousEvent?.let { event ->
-                // Re-send pointer position update only for hover mouse events.
-                // Aligned with [AndroidComposeView.resendMotionEventOnLayout], but fixing b/397352507.
-                if (event.pointers.fastAny { it.type == PointerType.Mouse }) {
-                    return sendSyntheticMove(event)
-                }
-            }
+        if (!needUpdatePointerPosition) return nothingConsumed
+        needUpdatePointerPosition = false
+
+        // Re-send pointer position update only for mouse events.
+        // Aligned with [AndroidComposeView.resendMotionEventOnLayout], but fixing b/397352507.
+        val previousEvent = previousEvent ?: return nothingConsumed
+        val mousePointer = previousEvent.pointers.fastFirstOrNull { it.type == PointerType.Mouse }
+            ?: return nothingConsumed
+
+        // Send synthetic move only if the scene is the current "target" of mouse events
+        return if (isMousePointerInside || mousePointer.down) {
+            sendSyntheticMove(previousEvent)
+        } else {
+            nothingConsumed
         }
-        return PointerEventResult(anyMovementConsumed = false)
     }
 
     /**
