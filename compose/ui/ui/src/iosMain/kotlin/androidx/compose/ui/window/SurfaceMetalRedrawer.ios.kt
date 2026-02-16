@@ -521,7 +521,7 @@ internal class SurfaceMetalRedrawer(
         metalLayer.prepareDrawableForPresent(drawable, commandBuffer)
 
         dispatch_group_enter(inflightCommandBuffersGroup)
-        commandBuffer.addCompletedHandler {
+        commandBuffer.addScheduledHandler {
             dispatch_group_leave(inflightCommandBuffersGroup)
         }
         if (!frame.waitUntilCompletion) {
@@ -552,8 +552,8 @@ internal class SurfaceMetalRedrawer(
          * thread, we must wait until all tasks in the rendering dispatch queue are executed, which
          * guarantees that no new tasks are scheduled during this time, as they can only be scheduled
          * from the main thread. See [awaitRenderingQueueTasksCompletion].
-         * - [disposeDrawableAssociatedResources] is used to clear surfaces, associated with
-         * drawables, including. Call it in a thread-safe way.
+         * - [disposeDrawableAssociatedResources] is used to clear skia surfaces, associated with
+         * drawables. Call it in a thread-safe way.
          */
         private val renderingQueue =
             dispatch_queue_create(

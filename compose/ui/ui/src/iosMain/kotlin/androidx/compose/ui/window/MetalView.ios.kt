@@ -86,9 +86,6 @@ private class LegacyMetalView(
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
-    /**
-     * @see [LegacyMetalView.canBeOpaque]
-     */
     var canBeOpaque: Boolean
         get() = redrawer.canBeOpaque
         set(value) {

@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  * This increases every time the metal layer clears the active set of drawables.
  * The new generation guarantees that none of the drawables previously used will be returned by the nextDrawable method.
  */
-@property (nonatomic, assign) NSInteger drawablesGeneration;
+@property (nonatomic, readonly) NSInteger drawablesGeneration;
 
 /**
  * Acquires next drawable, blocking up to 1 second if pool is exhausted.

@@ -55,8 +55,8 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         [_availableDrawables removeAllObjects];
         _lastPresentedDrawable = nil;
         _totalDrawables = 0;
-        [_drawablesLock unlock];
         _drawablesGeneration++;
+        [_drawablesLock unlock];
     }
 }
 
@@ -66,8 +66,8 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
 }
 
 - (IOSurfaceRef)IOSurface {
-    NSUInteger width = (NSUInteger)_drawableSize.width;
-    NSUInteger height = (NSUInteger)_drawableSize.height;
+    NSInteger width = (NSInteger)_drawableSize.width;
+    NSInteger height = (NSInteger)_drawableSize.height;
 
     if (width <= 0 || height <= 0) {
         return NULL;

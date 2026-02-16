@@ -58,9 +58,6 @@ internal class SurfaceMetalView(
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
-    /**
-     * @see [SurfaceMetalView.canBeOpaque]
-     */
     var canBeOpaque: Boolean
         get() = redrawer.canBeOpaque
         set(value) {
