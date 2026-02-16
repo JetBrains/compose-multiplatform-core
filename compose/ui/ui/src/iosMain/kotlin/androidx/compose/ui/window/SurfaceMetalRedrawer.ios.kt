@@ -34,6 +34,8 @@ import platform.QuartzCore.*
 import platform.darwin.*
 import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSTimeInterval
+import platform.IOSurface.IOSurfaceGetHeight
+import platform.IOSurface.IOSurfaceGetWidth
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 import platform.posix.QOS_CLASS_USER_INTERACTIVE
@@ -362,7 +364,6 @@ internal class SurfaceMetalRedrawer(
 
                 val frame = Frame(
                     picture = picture,
-                    size = IntSize(width, height),
                     waitUntilCompletion = waitUntilCompletion,
                     interopTransaction = transactions
                 )
@@ -384,7 +385,6 @@ internal class SurfaceMetalRedrawer(
 
     private class Frame(
         val picture: Picture,
-        val size: IntSize,
         val waitUntilCompletion: Boolean,
         val interopTransaction: UIKitInteropTransaction,
     ) {
@@ -444,14 +444,14 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
-    private fun getSkiaSurface(frame: Frame, drawable: CMPDrawable): Surface? {
+    private fun getSkiaSurface(drawable: CMPDrawable): Surface? {
         (drawable.associatedSkiaSurface as? Surface)
             ?.takeIf { !it.isClosed }
             ?.let { return it }
 
         val renderTarget = BackendRenderTarget.makeMetal(
-            frame.size.width,
-            frame.size.height,
+            width = IOSurfaceGetWidth(drawable.surface).toInt(),
+            height = IOSurfaceGetHeight(drawable.surface).toInt(),
             texturePtr = drawable.texture.objcPtr()
         )
 
@@ -471,7 +471,7 @@ internal class SurfaceMetalRedrawer(
 
         drawable.associatedSkiaSurface = surface
 
-        activeDrawableAssociatedResources.add {
+        activeDrawableAssociatedResourcesDisposes.add {
             surface.close()
             renderTarget.close()
         }
@@ -480,13 +480,13 @@ internal class SurfaceMetalRedrawer(
     }
 
     private var activeDrawablesGeneration: Int? = null
-    private val activeDrawableAssociatedResources = mutableListOf<() -> Unit>()
+    private val activeDrawableAssociatedResourcesDisposes = mutableListOf<() -> Unit>()
     private fun disposeDrawableAssociatedResources(generation: Int?) {
         if (activeDrawablesGeneration != generation || generation == null) {
-            activeDrawableAssociatedResources.forEach {
+            activeDrawableAssociatedResourcesDisposes.forEach {
                 it.invoke()
             }
-            activeDrawableAssociatedResources.clear()
+            activeDrawableAssociatedResourcesDisposes.clear()
             activeDrawablesGeneration = generation
         }
     }
@@ -503,7 +503,7 @@ internal class SurfaceMetalRedrawer(
             return
         }
 
-        val surface = getSkiaSurface(frame, drawable)
+        val surface = getSkiaSurface(drawable)
 
         if (surface == null) {
             frame.dispose()
