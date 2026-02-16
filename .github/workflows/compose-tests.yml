@@ -12,7 +12,7 @@ env:
   # To reduce the memory pressure, we change some defaults:
   GRADLE_WEB_TESTS_FLAGS: >-
     --no-daemon --stacktrace --no-parallel --no-configuration-cache
-    -Dorg.gradle.jvmargs="-Xmx7g -XX:+UseParallelGC"
+    -Dorg.gradle.jvmargs="-Xmx6g -XX:+UseParallelGC"
     -Porg.gradle.workers.max=1
 
 jobs:
@@ -234,6 +234,17 @@ jobs:
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
+
+      - name: Memory snapshot
+        run: |
+          echo "=== free -h ==="
+          free -h
+          echo "=== meminfo ==="
+          head -n 5 /proc/meminfo
+
+      - name: Top memory consumers
+        run: |
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
       - name: Run Web Chrome Tests
         run: |
