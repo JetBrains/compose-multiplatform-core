@@ -38,6 +38,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Last presentation timestamp for pool management.
 @property (nonatomic, assign) CFTimeInterval presentedTime;
 
+/// Reference to the reusable associated skia surface.
+@property (nonatomic, weak, nullable) id associatedSkiaSurface;
+
 - (instancetype)initWithTexture:(id<MTLTexture>)texture surface:(IOSurfaceRef)surface;
 
 @end

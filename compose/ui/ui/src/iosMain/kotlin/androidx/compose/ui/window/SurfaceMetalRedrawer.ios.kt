@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
+import androidx.compose.ui.uikit.utils.CMPDrawable
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
@@ -25,7 +26,6 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
-import org.jetbrains.skia.Rect
 import platform.Foundation.NSLock
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSSelectorFromString
@@ -120,6 +120,8 @@ internal class SurfaceMetalRedrawer(
     private val pictureRecorder = PictureRecorder()
 
     private val inflightCommandBuffersGroup = dispatch_group_create()
+    // A guard flag to have proper assertion when draw() method is called recursively.
+    private var isDrawRecursiveCall = false
 
     var maximumFramesPerSecond: NSInteger = 0
 
@@ -223,7 +225,8 @@ internal class SurfaceMetalRedrawer(
                 if (isActive) {
                     setNeedsRedraw()
                 } else {
-                    dispatch_sync(renderingDispatchQueue) {}
+                    awaitRenderingQueueTasksCompletion()
+                    disposeDrawableAssociatedResources(metalLayer.drawablesGeneration.toInt())
                     // If an application enters the background, synchronously wait for inflightCommandBuffersGroup, as per
                     // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
                     // Set the expiration time to 1 second to ensure that the main thread does not get stuck when the app is suspended.
@@ -249,12 +252,8 @@ internal class SurfaceMetalRedrawer(
         caDisplayLink?.invalidate()
         caDisplayLink = null
 
-        // Wait until all scheduled rendering tasks are completed to eliminate race conditions
-        // when clearing the resources
-        trace("MetalRedrawer:dispose:waitForAsyncRenderingTasks") {
-            dispatch_sync(renderingDispatchQueue) {}
-        }
-
+        awaitRenderingQueueTasksCompletion()
+        disposeDrawableAssociatedResources(null)
         pictureRecorder.close()
         context.close()
     }
@@ -274,7 +273,9 @@ internal class SurfaceMetalRedrawer(
         if (caDisplayLink == null) {
             return
         }
-        draw(waitUntilCompletion, CACurrentMediaTime())
+        displayLinkConditions.onDisplayLinkTick {
+            draw(waitUntilCompletion, CACurrentMediaTime())
+        }
     }
 
     private var currentFrameRate: Float = Float.NaN
@@ -299,6 +300,15 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
+    private fun awaitRenderingQueueTasksCompletion() {
+        check(NSThread.isMainThread) { "MetalRedrawer.awaitRenderingQueueTasksCompletion() must be called on main thread" }
+
+        // Remove the currently scheduled frame, if any
+        submitNextFrameForRenderLoop(null)
+
+        dispatch_sync(renderingQueue) {}
+    }
+
     /**
      * Encodes the frame and presents it on the screen.
      *
@@ -311,57 +321,64 @@ internal class SurfaceMetalRedrawer(
         trace("MetalRedrawer:draw") {
             check(NSThread.isMainThread) { "MetalRedrawer.draw() must be called on main thread" }
             check(caDisplayLink != null) { "MetalRedrawer.draw() was called after dispose()" }
-
-            lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
-
-            val (width, height) = metalLayer.drawableSize.useContents {
-                width.roundToInt() to height.roundToInt()
+            check(!isDrawRecursiveCall) {
+                "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
             }
 
-            if (width <= 0 || height <= 0) {
-                return@trace
-            }
+            isDrawRecursiveCall = true
 
-            // Perform timestep and record all draw commands into [Picture]
-            val picture = trace("MetalRedrawer:draw:pictureRecording") {
-                pictureRecorder.beginRecording(
-                    left = 0f,
-                    top = 0f,
-                    width = width.toFloat(),
-                    height = height.toFloat()
-                ).also { canvas ->
-                    render(canvas, lastRenderTimestamp)
+            try {
+                lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
+
+                val (width, height) = metalLayer.drawableSize.useContents {
+                    width.roundToInt() to height.roundToInt()
                 }
 
-                pictureRecorder.finishRecordingAsPicture()
-            }
+                if (width <= 0 || height <= 0) {
+                    return@trace
+                }
 
-            if (!currentFrameRate.isNaN()) {
-                preferredFramesPerSecond = currentFrameRate.toLong()
-                currentFrameRate = Float.NaN
-            }
+                // Perform timestep and record all draw commands into [Picture]
+                val picture = trace("MetalRedrawer:draw:pictureRecording") {
+                    pictureRecorder.beginRecording(
+                        left = 0f,
+                        top = 0f,
+                        right = width.toFloat(),
+                        bottom = height.toFloat()
+                    ).also { canvas ->
+                        render(canvas, lastRenderTimestamp)
+                    }
 
-            val transactions = retrieveInteropTransaction()
-            isInteropActive = transactions.isInteropActive
+                    pictureRecorder.finishRecordingAsPicture()
+                }
 
-            val frame = Frame(
-                picture = picture,
-                size = IntSize(width, height),
-                waitUntilCompletion = waitUntilCompletion,
-                interopTransaction = transactions
-            )
+                if (!currentFrameRate.isNaN()) {
+                    preferredFramesPerSecond = currentFrameRate.toLong()
+                    currentFrameRate = Float.NaN
+                }
 
-            if (waitUntilCompletion) {
-                submitNextFrameForRenderLoop(null)
-                // Ensure render queue is idle before synchronous presentation
-                dispatch_sync(renderingDispatchQueue) {}
-                renderAndPresentFrame(frame)
-            } else {
-                if (submitNextFrameForRenderLoop(frame)) {
-                    dispatch_async(renderingDispatchQueue) {
-                        startRenderLoop()
+                val transactions = retrieveInteropTransaction()
+                isInteropActive = transactions.isInteropActive
+
+                val frame = Frame(
+                    picture = picture,
+                    size = IntSize(width, height),
+                    waitUntilCompletion = waitUntilCompletion,
+                    interopTransaction = transactions
+                )
+
+                if (waitUntilCompletion) {
+                    awaitRenderingQueueTasksCompletion()
+                    renderAndPresentFrame(frame)
+                } else {
+                    if (submitNextFrameForRenderLoop(frame)) {
+                        dispatch_async(renderingQueue) {
+                            startRenderLoop()
+                        }
                     }
                 }
+            } finally {
+                isDrawRecursiveCall = false
             }
         }
 
@@ -381,7 +398,7 @@ internal class SurfaceMetalRedrawer(
     private val nextFrameLock = NSLock()
 
     private fun getNextFrameForRenderLoop(): Frame? {
-        dispatch_assert_queue(renderingDispatchQueue)
+        dispatch_assert_queue(renderingQueue)
 
         var frame: Frame? = null
 
@@ -415,7 +432,7 @@ internal class SurfaceMetalRedrawer(
 
     @OptIn(BetaInteropApi::class)
     private fun startRenderLoop() {
-        dispatch_assert_queue(renderingDispatchQueue)
+        dispatch_assert_queue(renderingQueue)
 
         var frame = getNextFrameForRenderLoop()
         while (frame != null) {
@@ -427,15 +444,10 @@ internal class SurfaceMetalRedrawer(
         }
     }
 
-    private fun renderAndPresentFrame(frame: Frame) {
-        val drawable = trace("MetalRedrawer:draw:nextDrawable") {
-            metalLayer.nextDrawable()
-        }
-
-        if (drawable == null) {
-            frame.dispose()
-            return
-        }
+    private fun getSkiaSurface(frame: Frame, drawable: CMPDrawable): Surface? {
+        (drawable.associatedSkiaSurface as? Surface)
+            ?.takeIf { !it.isClosed }
+            ?.let { return it }
 
         val renderTarget = BackendRenderTarget.makeMetal(
             frame.size.width,
@@ -453,8 +465,48 @@ internal class SurfaceMetalRedrawer(
         )
 
         if (surface == null) {
-            frame.dispose()
             renderTarget.close()
+            return null
+        }
+
+        drawable.associatedSkiaSurface = surface
+
+        activeDrawableAssociatedResources.add {
+            surface.close()
+            renderTarget.close()
+        }
+
+        return surface
+    }
+
+    private var activeDrawablesGeneration: Int? = null
+    private val activeDrawableAssociatedResources = mutableListOf<() -> Unit>()
+    private fun disposeDrawableAssociatedResources(generation: Int?) {
+        if (activeDrawablesGeneration != generation || generation == null) {
+            activeDrawableAssociatedResources.forEach {
+                it.invoke()
+            }
+            activeDrawableAssociatedResources.clear()
+            activeDrawablesGeneration = generation
+        }
+    }
+
+    private fun renderAndPresentFrame(frame: Frame) {
+        disposeDrawableAssociatedResources(generation = metalLayer.drawablesGeneration.toInt())
+
+        val drawable = trace("MetalRedrawer:draw:nextDrawable") {
+            metalLayer.nextDrawable()
+        }
+
+        if (drawable == null) {
+            frame.dispose()
+            return
+        }
+
+        val surface = getSkiaSurface(frame, drawable)
+
+        if (surface == null) {
+            frame.dispose()
             metalLayer.releaseDrawable(drawable)
             return
         }
@@ -462,9 +514,6 @@ internal class SurfaceMetalRedrawer(
         surface.canvas.drawPicture(frame.picture)
         frame.dispose()
         surface.flushAndSubmit()
-
-        surface.close()
-        renderTarget.close()
 
         val commandBuffer = queue.commandBuffer()!!
         commandBuffer.label = "Present"
@@ -494,7 +543,19 @@ internal class SurfaceMetalRedrawer(
     }
 
     private companion object {
-        private val renderingDispatchQueue =
+        /**
+         * Important! Thread safety instructions.
+         *
+         * Skiko Context and Surface are not thread-safe by default. All calls to these objects must
+         * be synchronized. This is achieved by:
+         * - The [renderAndPresentFrame] function never runs in parallel. To call it from the main
+         * thread, we must wait until all tasks in the rendering dispatch queue are executed, which
+         * guarantees that no new tasks are scheduled during this time, as they can only be scheduled
+         * from the main thread. See [awaitRenderingQueueTasksCompletion].
+         * - [disposeDrawableAssociatedResources] is used to clear surfaces, associated with
+         * drawables, including. Call it in a thread-safe way.
+         */
+        private val renderingQueue =
             dispatch_queue_create(
                 label = "RenderingDispatchQueue",
                 attr = dispatch_queue_attr_make_with_qos_class(null, QOS_CLASS_USER_INTERACTIVE, 0)

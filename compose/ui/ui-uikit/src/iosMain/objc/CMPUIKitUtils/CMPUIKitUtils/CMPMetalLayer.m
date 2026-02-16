@@ -18,6 +18,7 @@
 #import "CMPDrawable.h"
 #import <IOSurface/IOSurfaceRef.h>
 #import <CoreVideo/CoreVideo.h>
+#import <UIKit/UIKit.h>
 
 static const NSUInteger kMaxDrawables = 3;
 static const NSTimeInterval kDrawablePollingInterval = 0.001;
@@ -41,6 +42,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         _totalDrawables = 0;
         _lastPresentedDrawable = nil;
         _drawableSize = CGSizeZero;
+        _drawablesGeneration = 0;
     }
     return self;
 }
@@ -54,6 +56,7 @@ static const NSUInteger kBGRA32ColorFormatBytesPerPixel = 4;
         _lastPresentedDrawable = nil;
         _totalDrawables = 0;
         [_drawablesLock unlock];
+        _drawablesGeneration++;
     }
 }
 

@@ -34,6 +34,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) CGSize drawableSize;
 
 /**
+ * This increases every time the metal layer clears the active set of drawables.
+ * The new generation guarantees that none of the drawables previously used will be returned by the nextDrawable method.
+ */
+@property (nonatomic, assign) NSInteger drawablesGeneration;
+
+/**
  * Acquires next drawable, blocking up to 1 second if pool is exhausted.
  * Returns nil on timeout or if last presented drawable is still in use by GPU.
  */

@@ -359,6 +359,23 @@ final class CMPMetalLayerTests: XCTestCase {
         }
     }
 
+    func testDrawablesGenerationChangeWhenSizeChanges() {
+        var previousGeneration = layer.drawablesGeneration
+        
+        layer.drawableSize = CGSize(width: 100, height: 120)
+        XCTAssertNotEqual(layer.drawablesGeneration, previousGeneration)
+        
+        previousGeneration = layer.drawablesGeneration
+        
+        layer.drawableSize = CGSize(width: 120, height: 200)
+        XCTAssertNotEqual(layer.drawablesGeneration, previousGeneration)
+        
+        previousGeneration = layer.drawablesGeneration
+        
+        layer.drawableSize = CGSize(width: 2000, height: 3000)
+        XCTAssertNotEqual(layer.drawablesGeneration, previousGeneration)
+    }
+
     func testReturnDrawableMultipleTimes() {
         layer.drawableSize = CGSize(width: 100, height: 100)
 
