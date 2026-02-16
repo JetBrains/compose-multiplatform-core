@@ -20,6 +20,7 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isDelayPressesUsingGestureConsumptionEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.assertModifierIsPure
@@ -1989,6 +1990,7 @@ class ScrollableTest {
         onNodeWithTag("childScrollable").performTouchInput {
             down(centerLeft)
             moveBy(Offset(100f, 0f))
+            move(100)
             up()
         }
 
@@ -2405,6 +2407,7 @@ class ScrollableTest {
         onNodeWithTag(scrollableBoxTag).performTouchInput {
             down(this.center)
             moveBy(Offset(115f, 0f))
+            move(100)
             up()
         }
         assertThat(flingCalled).isEqualTo(1)
@@ -2572,6 +2575,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isOuterInScrollableContainer: Boolean? = null
@@ -2605,6 +2609,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer_scrollDisabled() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isOuterInScrollableContainer: Boolean? = null
@@ -2642,6 +2647,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer_scrollUpdates() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isInnerInScrollableContainer: Boolean? = null
@@ -2981,6 +2987,7 @@ class ScrollableTest {
         onRoot().performTouchInput {
             down(center)
             moveBy(Offset(scrollDelta, 0f))
+            move(100)
             up()
         }
 

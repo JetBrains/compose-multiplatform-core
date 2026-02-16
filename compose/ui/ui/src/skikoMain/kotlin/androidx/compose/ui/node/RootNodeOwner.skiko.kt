@@ -146,8 +146,10 @@ internal class RootNodeOwner(
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
-            field = value
-            onRootConstrainsChanged(value?.toConstraints())
+            if (field != value) {
+                field = value
+                onRootConstrainsChanged(value?.toConstraints())
+            }
         }
     var density by mutableStateOf(density)
 
@@ -219,7 +221,7 @@ internal class RootNodeOwner(
                 height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
         }
     }
 
@@ -896,8 +898,6 @@ internal class RootNodeOwner(
         private var currentFrameRateCategory = 0f
 
         override fun voteFrameRate(frameRate: Float) {
-            if (!ComposeUiFlags.isAdaptiveRefreshRateEnabled) return
-
             val isCurrentFrameRateUnset = currentFrameRate.isNaN()
             val isCurrentFrameRateCategoryUnset = currentFrameRateCategory == 0f
 
@@ -944,7 +944,7 @@ internal class RootNodeOwner(
             }
 
             val isAnyCurrentFrameRateSet = !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
-            if (ComposeUiFlags.isAdaptiveRefreshRateEnabled && isAnyCurrentFrameRateSet) {
+            if (isAnyCurrentFrameRateSet) {
                 platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
                 currentFrameRate = Float.NaN
                 currentFrameRateCategory = 0f
