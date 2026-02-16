@@ -98,9 +98,11 @@ internal class SurfaceMetalView(
         super.didMoveToWindow()
 
         val screen = window?.screen ?: return
-        contentScaleFactor = screen.scale
         redrawer.maximumFramesPerSecond = screen.maximumFramesPerSecond
         redrawer.preferredFramesPerSecond = screen.maximumFramesPerSecond
+
+        contentScaleFactor = screen.scale
+        metalLayer.contentsScale = screen.scale
     }
 
     override fun layoutSubviews() {

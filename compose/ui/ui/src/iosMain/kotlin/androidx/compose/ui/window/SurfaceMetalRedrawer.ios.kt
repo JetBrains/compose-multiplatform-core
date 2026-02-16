@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.uikit.utils.CMPDrawable
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
@@ -124,6 +123,24 @@ internal class SurfaceMetalRedrawer(
     private val inflightCommandBuffersGroup = dispatch_group_create()
     // A guard flag to have proper assertion when draw() method is called recursively.
     private var isDrawRecursiveCall = false
+
+    /**
+     * Important! Thread safety instructions.
+     *
+     * Skiko Context and Surface are not thread-safe by default. All calls to these objects must
+     * be synchronized. This is achieved by:
+     * - The [renderAndPresentFrame] function never runs in parallel. To call it from the main
+     * thread, we must wait until all tasks in the rendering dispatch queue are executed, which
+     * guarantees that no new tasks are scheduled during this time, as they can only be scheduled
+     * from the main thread. See [awaitRenderingQueueTasksCompletion].
+     * - [disposeDrawableAssociatedResources] is used to clear skia surfaces, associated with
+     * drawables. Call it in a thread-safe way.
+     */
+    private val renderingQueue =
+        dispatch_queue_create(
+            label = "RenderingDispatchQueue",
+            attr = dispatch_queue_attr_make_with_qos_class(null, QOS_CLASS_USER_INTERACTIVE, 0)
+        )
 
     var maximumFramesPerSecond: NSInteger = 0
 
@@ -515,7 +532,12 @@ internal class SurfaceMetalRedrawer(
         frame.dispose()
         surface.flushAndSubmit()
 
-        val commandBuffer = queue.commandBuffer()!!
+        val commandBuffer = queue.commandBuffer()
+        if (commandBuffer == null) {
+            metalLayer.releaseDrawable(drawable)
+            return
+        }
+
         commandBuffer.label = "Present"
 
         metalLayer.prepareDrawableForPresent(drawable, commandBuffer)
@@ -543,24 +565,6 @@ internal class SurfaceMetalRedrawer(
     }
 
     private companion object {
-        /**
-         * Important! Thread safety instructions.
-         *
-         * Skiko Context and Surface are not thread-safe by default. All calls to these objects must
-         * be synchronized. This is achieved by:
-         * - The [renderAndPresentFrame] function never runs in parallel. To call it from the main
-         * thread, we must wait until all tasks in the rendering dispatch queue are executed, which
-         * guarantees that no new tasks are scheduled during this time, as they can only be scheduled
-         * from the main thread. See [awaitRenderingQueueTasksCompletion].
-         * - [disposeDrawableAssociatedResources] is used to clear skia surfaces, associated with
-         * drawables. Call it in a thread-safe way.
-         */
-        private val renderingQueue =
-            dispatch_queue_create(
-                label = "RenderingDispatchQueue",
-                attr = dispatch_queue_attr_make_with_qos_class(null, QOS_CLASS_USER_INTERACTIVE, 0)
-            )
-
         private class CachedCommandQueue(
             val queue: MTLCommandQueueProtocol,
             var refCount: Int = 1
