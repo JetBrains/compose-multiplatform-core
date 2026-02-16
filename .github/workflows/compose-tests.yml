@@ -261,6 +261,19 @@ jobs:
             -Pjetbrains.androidx.web.tests.enableFirefox=false \
             -Pjetbrains.androidx.web.tests.enableChrome=true
 
+      - name: Post-test memory snapshot
+        if: always()
+        run: |
+          echo "=== free -h ==="
+          free -h
+          echo "=== meminfo ==="
+          head -n 5 /proc/meminfo
+
+      - name: Post-test top memory consumers
+        if: always()
+        run: |
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
+
       - name: Test Summary
         uses: test-summary/action@v2
         with:
