@@ -20,6 +20,7 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ComposeFoundationFlags.isDelayPressesUsingGestureConsumptionEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.assertModifierIsPure
@@ -2572,6 +2573,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isOuterInScrollableContainer: Boolean? = null
@@ -2605,6 +2607,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer_scrollDisabled() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isOuterInScrollableContainer: Boolean? = null
@@ -2642,6 +2645,7 @@ class ScrollableTest {
 
     @Test
     fun scrollable_setsModifierLocalScrollableContainer_scrollUpdates() = runComposeUiTest {
+        if (isDelayPressesUsingGestureConsumptionEnabled) return@runComposeUiTest
         val controller = ScrollableState { it }
 
         var isInnerInScrollableContainer: Boolean? = null
