@@ -24,7 +24,6 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
-import org.jetbrains.skia.Rect
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
