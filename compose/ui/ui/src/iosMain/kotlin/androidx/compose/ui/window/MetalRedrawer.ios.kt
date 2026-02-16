@@ -73,6 +73,9 @@ internal class LegacyMetalRedrawer(
     private val pictureRecorder = PictureRecorder()
 
     private val inflightCommandBuffersGroup = dispatch_group_create()
+    private val drawCanvasSemaphore = dispatch_semaphore_create(1)
+    // A guard flag to have proper assertion when draw() method is called recursively.
+    private var isDrawRecursiveCall = false
 
     override var isForcedToPresentWithTransactionEveryFrame = false
 
@@ -253,131 +256,142 @@ internal class LegacyMetalRedrawer(
     @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
+        check(!isDrawRecursiveCall) {
+            "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
+        }
+        isDrawRecursiveCall = true
 
-        lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
+        try {
+            lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
 
-        autoreleasepool {
-            val (width, height) = metalLayer.drawableSize.useContents {
-                width.roundToInt() to height.roundToInt()
-            }
-
-            if (width <= 0 || height <= 0) {
-                return@autoreleasepool
-            }
-
-            // Perform timestep and record all draw commands into [Picture]
-            val picture = trace("MetalRedrawer:draw:pictureRecording") {
-                pictureRecorder.beginRecording(
-                    left = 0f,
-                    top = 0f,
-                    width.toFloat(),
-                    height.toFloat()
-                ).also { canvas ->
-                    render(canvas, lastRenderTimestamp)
+            autoreleasepool {
+                val (width, height) = metalLayer.drawableSize.useContents {
+                    width.roundToInt() to height.roundToInt()
                 }
 
-                pictureRecorder.finishRecordingAsPicture()
-            }
-
-            if (!currentFrameRate.isNaN()) {
-                preferredFramesPerSecond = currentFrameRate.toLong()
-                currentFrameRate = Float.NaN
-            }
-
-            val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
-                metalDrawablesHandler.nextDrawable()
-            }
-
-            if (metalDrawable == null) {
-                // TODO: anomaly, log
-                // Logger.warn { "'metalLayer.nextDrawable()' returned null. 'metalLayer.allowsNextDrawableTimeout' should be set to false. Skipping the frame." }
-                picture.close()
-                return@autoreleasepool
-            }
-
-            val renderTarget = BackendRenderTarget.makeMetal(
-                width,
-                height,
-                texturePtr = metalDrawablesHandler.drawableTexture(metalDrawable).rawValue
-            )
-
-            val surface = Surface.makeFromBackendRenderTarget(
-                context,
-                renderTarget,
-                SurfaceOrigin.TOP_LEFT,
-                SurfaceColorFormat.BGRA_8888,
-                ColorSpace.sRGB,
-                SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
-            )
-
-            if (surface == null) {
-                // TODO: anomaly, log
-                // Logger.warn { "'Surface.makeFromBackendRenderTarget' returned null. Skipping the frame." }
-                picture.close()
-                renderTarget.close()
-                metalDrawablesHandler.releaseDrawable(metalDrawable)
-                return@autoreleasepool
-            }
-
-            val interopTransaction = retrieveInteropTransaction()
-
-            val presentsWithTransaction =
-                isForcedToPresentWithTransactionEveryFrame
-                    || interopTransaction.actions.isNotEmpty()
-                    || isInteropActive != interopTransaction.isInteropActive
-            metalLayer.presentsWithTransaction = presentsWithTransaction
-
-            if (interopTransaction.isInteropActive) {
-                isInteropActive = true
-            }
-
-            trace("MetalRedrawer:draw:encodeAndPresent") {
-                surface.canvas.drawPicture(picture)
-                picture.close()
-                surface.flushAndSubmit()
-
-                surface.close()
-                renderTarget.close()
-
-                val commandBuffer = queue.commandBuffer()!!
-                commandBuffer.label = "Present"
-
-                if (!presentsWithTransaction) {
-                    // scheduleDrawablePresentation consumes metalDrawable
-                    // don't use metalDrawable after this call
-                    metalDrawablesHandler.scheduleDrawablePresentation(metalDrawable, commandBuffer)
+                if (width <= 0 || height <= 0) {
+                    return@autoreleasepool
                 }
 
-                dispatch_group_enter(inflightCommandBuffersGroup)
-                commandBuffer.addCompletedHandler {
-                    dispatch_group_leave(inflightCommandBuffersGroup)
-                }
-                commandBuffer.commit()
-
-                if (presentsWithTransaction) {
-                    // If there are pending changes in UIKit interop, [waitUntilScheduled](https://developer.apple.com/documentation/metal/mtlcommandbuffer/1443036-waituntilscheduled) is called
-                    // to ensure that transaction is available
-                    trace("MetalRedrawer:draw:waitTransaction") {
-                        commandBuffer.waitUntilScheduled()
+                // Perform timestep and record all draw commands into [Picture]
+                val picture = trace("MetalRedrawer:draw:pictureRecording") {
+                    pictureRecorder.beginRecording(
+                        left = 0f,
+                        top = 0f,
+                        width.toFloat(),
+                        height.toFloat()
+                    ).also { canvas ->
+                        render(canvas, lastRenderTimestamp)
                     }
 
-                    // presentDrawable consumes metalDrawable
-                    // don't use metalDrawable after this call
-                    metalDrawablesHandler.presentDrawable(metalDrawable)
-
-                    interopTransaction.performTransaction()
-
-                    if (interopTransaction.isInteropActive.not()) {
-                        isInteropActive = false
-                    }
+                    pictureRecorder.finishRecordingAsPicture()
                 }
 
-                if (waitUntilCompletion) {
-                    trace("MetalRedrawer:draw:waitUntilCompleted") {
-                        commandBuffer.waitUntilCompleted()
+                if (!currentFrameRate.isNaN()) {
+                    preferredFramesPerSecond = currentFrameRate.toLong()
+                    currentFrameRate = Float.NaN
+                }
+
+                val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
+                    metalDrawablesHandler.nextDrawable()
+                }
+
+                if (metalDrawable == null) {
+                    // TODO: anomaly, log
+                    // Logger.warn { "'metalLayer.nextDrawable()' returned null. 'metalLayer.allowsNextDrawableTimeout' should be set to false. Skipping the frame." }
+                    picture.close()
+                    return@autoreleasepool
+                }
+
+                val renderTarget = BackendRenderTarget.makeMetal(
+                    width,
+                    height,
+                    texturePtr = metalDrawablesHandler.drawableTexture(metalDrawable).rawValue
+                )
+
+                val surface = Surface.makeFromBackendRenderTarget(
+                    context,
+                    renderTarget,
+                    SurfaceOrigin.TOP_LEFT,
+                    SurfaceColorFormat.BGRA_8888,
+                    ColorSpace.sRGB,
+                    SurfaceProps(pixelGeometry = PixelGeometry.UNKNOWN)
+                )
+
+                if (surface == null) {
+                    // TODO: anomaly, log
+                    // Logger.warn { "'Surface.makeFromBackendRenderTarget' returned null. Skipping the frame." }
+                    picture.close()
+                    renderTarget.close()
+                    metalDrawablesHandler.releaseDrawable(metalDrawable)
+                    return@autoreleasepool
+                }
+
+                val interopTransaction = retrieveInteropTransaction()
+
+                val presentsWithTransaction =
+                    isForcedToPresentWithTransactionEveryFrame
+                        || interopTransaction.actions.isNotEmpty()
+                        || isInteropActive != interopTransaction.isInteropActive
+                metalLayer.presentsWithTransaction = presentsWithTransaction
+
+                if (interopTransaction.isInteropActive) {
+                    isInteropActive = true
+                }
+
+                trace("MetalRedrawer:draw:encodeAndPresent") {
+                    surface.canvas.drawPicture(picture)
+                    picture.close()
+                    surface.flushAndSubmit()
+
+                    surface.close()
+                    renderTarget.close()
+
+                    val commandBuffer = queue.commandBuffer()!!
+                    commandBuffer.label = "Present"
+
+                    if (!presentsWithTransaction) {
+                        // scheduleDrawablePresentation consumes metalDrawable
+                        // don't use metalDrawable after this call
+                        metalDrawablesHandler.scheduleDrawablePresentation(
+                            metalDrawable,
+                            commandBuffer
+                        )
+                    }
+
+                    dispatch_group_enter(inflightCommandBuffersGroup)
+                    commandBuffer.addScheduledHandler {
+                        dispatch_group_leave(inflightCommandBuffersGroup)
+                    }
+                    commandBuffer.commit()
+
+                    if (presentsWithTransaction) {
+                        // If there are pending changes in UIKit interop, [waitUntilScheduled](https://developer.apple.com/documentation/metal/mtlcommandbuffer/1443036-waituntilscheduled) is called
+                        // to ensure that transaction is available
+                        trace("MetalRedrawer:draw:waitTransaction") {
+                            commandBuffer.waitUntilScheduled()
+                        }
+
+                        // presentDrawable consumes metalDrawable
+                        // don't use metalDrawable after this call
+                        metalDrawablesHandler.presentDrawable(metalDrawable)
+
+                        interopTransaction.performTransaction()
+
+                        if (interopTransaction.isInteropActive.not()) {
+                            isInteropActive = false
+                        }
+                    }
+
+                    if (waitUntilCompletion) {
+                        trace("MetalRedrawer:draw:waitUntilCompleted") {
+                            commandBuffer.waitUntilCompleted()
+                        }
                     }
                 }
             }
+        } finally {
+            isDrawRecursiveCall = false
         }
     }
 
