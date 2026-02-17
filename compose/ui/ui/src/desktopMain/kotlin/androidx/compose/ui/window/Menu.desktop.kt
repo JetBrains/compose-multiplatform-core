@@ -35,7 +35,6 @@ import androidx.compose.ui.input.key.toSwingKeyStroke
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.util.AddRemoveMutableList
 import java.awt.CheckboxMenuItem
 import java.awt.Menu
 import java.awt.MenuItem
@@ -70,7 +69,7 @@ fun JMenuBar.setContent(
     parentComposition: CompositionContext,
     content: @Composable @MenuComposable (MenuBarScope.() -> Unit)
 ): Composition {
-    val applier = MutableListApplier(asMutableList())
+    val applier = SwingApplier(this)
     val composition = Composition(applier, parentComposition)
     val scope = MenuBarScope()
     composition.setContent {
@@ -162,7 +161,7 @@ class MenuBarScope internal constructor() {
             }
         }
 
-        ComposeNode<JMenu, MutableListApplier<JComponent>>(
+        ComposeNode<JMenu, SwingApplier>(
             factory = { menu },
             update = {
                 set(text, JMenu::setText)
@@ -633,33 +632,6 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
     )
 }
 
-private class MutableListApplier<T>(
-    private val list: MutableList<T>
-) : AbstractApplier<T?>(null) {
-    override fun insertTopDown(index: Int, instance: T?) {
-        list.add(index, instance!!)
-    }
-
-    override fun insertBottomUp(index: Int, instance: T?) {
-        // Ignore, we have plain list
-    }
-
-    override fun remove(index: Int, count: Int) {
-        for (i in index + count - 1 downTo index) {
-            list.removeAt(i)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun move(from: Int, to: Int, count: Int) {
-        (list as MutableList<T?>).move(from, to, count)
-    }
-
-    override fun onClear() {
-        list.clear()
-    }
-}
-
 // Copied from androidx/compose/ui/graphics/vector/Vector.kt
 private inline fun <T> performMove(
     from: Int,
@@ -686,7 +658,7 @@ private inline fun <T> performMove(
     }
 }
 
-internal abstract class JComponentApplier(root: JComponent) : AbstractApplier<JComponent>(root) {
+internal open class SwingApplier(root: JComponent) : AbstractApplier<JComponent>(root) {
     override fun onClear() {
         root.removeAll()
     }
@@ -718,7 +690,7 @@ internal abstract class JComponentApplier(root: JComponent) : AbstractApplier<JC
     }
 }
 
-internal class JMenuItemApplier(root: JMenu) : JComponentApplier(root) {
+internal class JMenuItemApplier(root: JMenu) : SwingApplier(root) {
     override fun onEndChanges() {
         // If the menu is changed while the popup is open, we need to ask the popup to remeasure
         // itself.
@@ -775,21 +747,6 @@ internal class MenuItemApplier(private val root: Menu) : Applier<MenuItem> {
         return when (this) {
             is Menu -> this
             else -> error("Can only insert MenuItem into Menu, not ${this::class}")
-        }
-    }
-}
-
-private fun JMenuBar.asMutableList(): MutableList<JComponent> {
-    return object : AddRemoveMutableList<JComponent>() {
-        override val size: Int get() = this@asMutableList.menuCount
-        override fun get(index: Int) = this@asMutableList.getMenu(index)
-
-        override fun performAdd(element: JComponent) {
-            this@asMutableList.add(element)
-        }
-
-        override fun performRemove(index: Int) {
-            this@asMutableList.remove(index)
         }
     }
 }
