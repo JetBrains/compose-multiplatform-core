@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import org.jetbrains.skia.Matrix33
 import org.jetbrains.skia.PathDirection
+import org.jetbrains.skia.PathBuilder
 import org.jetbrains.skia.PathFillMode
 import org.jetbrains.skia.PathOp
 
@@ -50,6 +51,10 @@ internal class SkiaBackedPath(
     var internalPath = internalPath
         private set
 
+    private inline fun mutatePath(block: PathBuilder.() -> Unit) {
+        internalPath = PathBuilder(internalPath).apply(block).detach()
+    }
+
     override var fillType: PathFillType
         get() {
             return if (internalPath.fillMode == PathFillMode.EVEN_ODD) {
@@ -68,45 +73,53 @@ internal class SkiaBackedPath(
                 }
         }
 
-    override fun moveTo(x: Float, y: Float) {
-        internalPath.moveTo(x, y)
+    override fun moveTo(x: Float, y: Float) = mutatePath {
+        moveTo(x, y)
     }
 
-    override fun relativeMoveTo(dx: Float, dy: Float) {
-        internalPath.rMoveTo(dx, dy)
+    override fun relativeMoveTo(dx: Float, dy: Float) = mutatePath {
+        rMoveTo(dx, dy)
     }
 
-    override fun lineTo(x: Float, y: Float) {
-        internalPath.lineTo(x, y)
+    override fun lineTo(x: Float, y: Float) = mutatePath {
+        lineTo(x, y)
     }
 
-    override fun relativeLineTo(dx: Float, dy: Float) {
-        internalPath.rLineTo(dx, dy)
+    override fun relativeLineTo(dx: Float, dy: Float) = mutatePath {
+        rLineTo(dx, dy)
     }
 
-    override fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float) {
-        internalPath.quadTo(x1, y1, x2, y2)
-    }
+    @Deprecated(
+        "Use quadraticTo() for consistency with cubicTo()",
+        replaceWith = ReplaceWith("quadraticTo(x1, y1, x2, y2)"),
+        level = DeprecationLevel.WARNING,
+    )
+    override fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float) =
+        mutatePath { quadTo(x1, y1, x2, y2) }
 
-    override fun quadraticTo(x1: Float, y1: Float, x2: Float, y2: Float) {
-        internalPath.quadTo(x1, y1, x2, y2)
-    }
+    override fun quadraticTo(x1: Float, y1: Float, x2: Float, y2: Float) =
+        mutatePath { quadTo(x1, y1, x2, y2) }
 
-    override fun relativeQuadraticBezierTo(dx1: Float, dy1: Float, dx2: Float, dy2: Float) {
-        internalPath.rQuadTo(dx1, dy1, dx2, dy2)
-    }
+    @Deprecated(
+        "Use relativeQuadraticTo() for consistency with relativeCubicTo()",
+        replaceWith = ReplaceWith("relativeQuadraticTo(dx1, dy1, dx2, dy2)"),
+        level = DeprecationLevel.WARNING,
+    )
+    override fun relativeQuadraticBezierTo(dx1: Float, dy1: Float, dx2: Float, dy2: Float) =
+        mutatePath { rQuadTo(dx1, dy1, dx2, dy2) }
 
     override fun relativeQuadraticTo(dx1: Float, dy1: Float, dx2: Float, dy2: Float) {
-        internalPath.rQuadTo(dx1, dy1, dx2, dy2)
+        mutatePath { rQuadTo(dx1, dy1, dx2, dy2) }
     }
 
-    override fun cubicTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) {
-        internalPath.cubicTo(
-            x1, y1,
-            x2, y2,
-            x3, y3
-        )
-    }
+    override fun cubicTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) =
+        mutatePath {
+            cubicTo(
+                x1, y1,
+                x2, y2,
+                x3, y3
+            )
+        }
 
     override fun relativeCubicTo(
         dx1: Float,
@@ -115,8 +128,8 @@ internal class SkiaBackedPath(
         dy2: Float,
         dx3: Float,
         dy3: Float
-    ) {
-        internalPath.rCubicTo(
+    ) = mutatePath {
+        rCubicTo(
             dx1, dy1,
             dx2, dy2,
             dx3, dy3
@@ -128,8 +141,8 @@ internal class SkiaBackedPath(
         startAngleDegrees: Float,
         sweepAngleDegrees: Float,
         forceMoveTo: Boolean
-    ) {
-        internalPath.arcTo(
+    ) = mutatePath {
+        arcTo(
             rect.left,
             rect.top,
             rect.right,
@@ -140,8 +153,13 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addRect(rect: Rect) {
-        internalPath.addRect(
+    @Deprecated(
+        "Prefer usage of addRect() with a winding direction",
+        replaceWith = ReplaceWith("addRect(rect)"),
+        level = DeprecationLevel.HIDDEN,
+    )
+    override fun addRect(rect: Rect) = mutatePath {
+        addRect(
             rect.left,
             rect.top,
             rect.right,
@@ -150,8 +168,8 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addRect(rect: Rect, direction: Path.Direction) {
-        internalPath.addRect(
+    override fun addRect(rect: Rect, direction: Path.Direction) = mutatePath {
+        addRect(
             rect.left,
             rect.top,
             rect.right,
@@ -160,8 +178,8 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addOval(oval: Rect) {
-        internalPath.addOval(
+    override fun addOval(oval: Rect) = mutatePath {
+        addOval(
             oval.left,
             oval.top,
             oval.right,
@@ -170,8 +188,8 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addOval(oval: Rect, direction: Path.Direction) {
-        internalPath.addOval(
+    override fun addOval(oval: Rect, direction: Path.Direction) = mutatePath {
+        addOval(
             oval.left,
             oval.top,
             oval.right,
@@ -180,8 +198,8 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addRoundRect(roundRect: RoundRect) {
-        internalPath.addRRect(
+    override fun addRoundRect(roundRect: RoundRect) = mutatePath {
+        addRRect(
             roundRect.left,
             roundRect.top,
             roundRect.right,
@@ -200,8 +218,8 @@ internal class SkiaBackedPath(
         )
     }
 
-    override fun addRoundRect(roundRect: RoundRect, direction: Path.Direction) {
-        internalPath.addRRect(
+    override fun addRoundRect(roundRect: RoundRect, direction: Path.Direction) = mutatePath {
+        addRRect(
             roundRect.left,
             roundRect.top,
             roundRect.right,
@@ -224,42 +242,49 @@ internal class SkiaBackedPath(
         addArc(oval, degrees(startAngleRadians), degrees(sweepAngleRadians))
     }
 
-    override fun addArc(oval: Rect, startAngleDegrees: Float, sweepAngleDegrees: Float) {
-        internalPath.addArc(
+    override fun addArc(oval: Rect, startAngleDegrees: Float, sweepAngleDegrees: Float) = mutatePath {
+        addArc(
             oval.left,
             oval.top,
             oval.right,
             oval.bottom,
-            startAngleDegrees, sweepAngleDegrees
+            startAngleDegrees,
+            sweepAngleDegrees
         )
     }
 
-    override fun addPath(path: Path, offset: Offset) {
-        internalPath.addPath(path.asSkiaPath(), offset.x, offset.y)
-    }
+    override fun addPath(path: Path, offset: Offset) =
+        mutatePath { addPath(path.asSkiaPath(), offset.x, offset.y) }
 
-    override fun close() {
-        internalPath.closePath()
+    override fun close() = mutatePath {
+        closePath()
     }
 
     override fun reset() {
         // preserve fillType to match the Android behavior
         // see https://cs.android.com/android/_/android/platform/frameworks/base/+/d0f379c1976c600313f1f4c39f2587a649e3a4fc
         val fillType = this.fillType
-        internalPath.reset()
+        internalPath = org.jetbrains.skia.Path()
         this.fillType = fillType
     }
 
     override fun rewind() {
-        internalPath.rewind()
+        val fillMode = internalPath.fillMode
+        internalPath = org.jetbrains.skia.Path()
+        internalPath.fillMode = fillMode
     }
 
     override fun translate(offset: Offset) {
-        internalPath.transform(Matrix33.makeTranslate(offset.x, offset.y))
+        internalPath = PathBuilder(internalPath.fillMode)
+            .addPath(internalPath, offset.x, offset.y)
+            .detach()
     }
 
     override fun transform(matrix: Matrix) {
-        internalPath.transform(Matrix33.makeTranslate(0f, 0f).apply { setFrom(matrix) })
+        val skiaMatrix = Matrix33.makeTranslate(0f, 0f).apply { setFrom(matrix) }
+        internalPath = PathBuilder(internalPath.fillMode)
+            .addPath(internalPath, skiaMatrix)
+            .detach()
     }
 
     override fun getBounds(): Rect {
