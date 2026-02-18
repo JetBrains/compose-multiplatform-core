@@ -50,9 +50,16 @@ internal class SkiaBackedPath(
 ) : Path {
     var internalPath = internalPath
         private set
+    private var pathBuilder = PathBuilder(internalPath)
 
     private inline fun mutatePath(block: PathBuilder.() -> Unit) {
-        internalPath = PathBuilder(internalPath).apply(block).detach()
+        pathBuilder.apply(block)
+        internalPath = pathBuilder.snapshot()
+    }
+
+    private fun replacePath(path: org.jetbrains.skia.Path) {
+        internalPath = path
+        pathBuilder = PathBuilder(path)
     }
 
     override var fillType: PathFillType
@@ -65,12 +72,14 @@ internal class SkiaBackedPath(
         }
 
         set(value) {
-            internalPath.fillMode =
+            pathBuilder.setFillType(
                 if (value == PathFillType.EvenOdd) {
                     PathFillMode.EVEN_ODD
                 } else {
                     PathFillMode.WINDING
                 }
+            )
+            internalPath = pathBuilder.snapshot()
         }
 
     override fun moveTo(x: Float, y: Float) = mutatePath {
@@ -264,27 +273,27 @@ internal class SkiaBackedPath(
         // preserve fillType to match the Android behavior
         // see https://cs.android.com/android/_/android/platform/frameworks/base/+/d0f379c1976c600313f1f4c39f2587a649e3a4fc
         val fillType = this.fillType
-        internalPath = org.jetbrains.skia.Path()
+        pathBuilder.reset()
         this.fillType = fillType
     }
 
     override fun rewind() {
         val fillMode = internalPath.fillMode
-        internalPath = org.jetbrains.skia.Path()
-        internalPath.fillMode = fillMode
+        pathBuilder.reset().setFillType(fillMode)
+        internalPath = pathBuilder.snapshot()
     }
 
     override fun translate(offset: Offset) {
-        internalPath = PathBuilder(internalPath.fillMode)
+        pathBuilder = PathBuilder(internalPath.fillMode)
             .addPath(internalPath, offset.x, offset.y)
-            .detach()
+        internalPath = pathBuilder.snapshot()
     }
 
     override fun transform(matrix: Matrix) {
         val skiaMatrix = Matrix33.makeTranslate(0f, 0f).apply { setFrom(matrix) }
-        internalPath = PathBuilder(internalPath.fillMode)
+        pathBuilder = PathBuilder(internalPath.fillMode)
             .addPath(internalPath, skiaMatrix)
-            .detach()
+        internalPath = pathBuilder.snapshot()
     }
 
     override fun getBounds(): Rect {
@@ -308,7 +317,9 @@ internal class SkiaBackedPath(
             operation.toSkiaOperation()
         )
 
-        internalPath = path ?: internalPath
+        if (path != null) {
+            replacePath(path)
+        }
         return path != null
     }
 
