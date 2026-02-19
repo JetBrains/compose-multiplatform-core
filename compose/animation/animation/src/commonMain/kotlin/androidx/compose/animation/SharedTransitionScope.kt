@@ -1338,17 +1338,18 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
 
     internal var root: LayoutCoordinates
         get() =
-            requireNotNull(_nullableRoot) {
+            requireNotNull(nullableRoot) {
                 "Error: Uninitialized LayoutCoordinates." +
                     " Please make sure when using the SharedTransitionScope composable function," +
                     " the modifier passed to the child content is being used, or use" +
                     " SharedTransitionLayout instead."
             }
         set(value) {
-            _nullableRoot = value
+            nullableRoot = value
         }
 
-    private var _nullableRoot: LayoutCoordinates? = null
+    internal var nullableRoot: LayoutCoordinates? = null
+        private set
 
     internal var lookaheadRoot: LayoutCoordinates
         get() =
