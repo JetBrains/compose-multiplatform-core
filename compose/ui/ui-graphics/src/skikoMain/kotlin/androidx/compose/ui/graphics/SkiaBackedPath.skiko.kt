@@ -270,14 +270,6 @@ internal class SkiaBackedPath(
     }
 
     override fun reset() {
-        // preserve fillType to match the Android behavior
-        // see https://cs.android.com/android/_/android/platform/frameworks/base/+/d0f379c1976c600313f1f4c39f2587a649e3a4fc
-        val fillType = this.fillType
-        pathBuilder.reset()
-        this.fillType = fillType
-    }
-
-    override fun rewind() {
         val fillMode = internalPath.fillMode
         pathBuilder.reset().setFillType(fillMode)
         internalPath = pathBuilder.snapshot()
