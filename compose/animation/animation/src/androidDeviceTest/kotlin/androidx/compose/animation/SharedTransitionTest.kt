@@ -5292,6 +5292,139 @@ class SharedTransitionTest {
         assertTrue(animatingFrames > 3)
         assertEquals(false, scope?.isTransitionActive)
     }
+
+    @Test
+    fun removeSharedTransitionLayout() {
+        var removeScope by mutableStateOf(false)
+        rule.setContent {
+            val movable = remember {
+                movableContentOf<SharedTransitionScope?> { scope ->
+                    AnimatedVisibility(true) {
+                        Box(
+                            Modifier.fillMaxSize()
+                                .then(
+                                    if (scope != null) {
+                                        with(scope) {
+                                            Modifier.sharedElement(
+                                                rememberSharedContentState("test"),
+                                                this@AnimatedVisibility,
+                                            )
+                                        }
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .size(100.dp)
+                        )
+                    }
+                }
+            }
+            if (!removeScope) {
+                SharedTransitionLayout(modifier = Modifier.fillMaxSize()) { movable(this) }
+            } else {
+                movable(null)
+            }
+        }
+        rule.waitForIdle()
+        removeScope = true
+        rule.waitForIdle()
+    }
+
+    @Test
+    fun testSkipSharedTransitionPlacement() {
+        var state by mutableIntStateOf(0)
+
+        var detach by mutableStateOf(false)
+
+        rule.setContent {
+            SharedTransitionLayout(
+                Modifier.size(100.dp).layout { m, c ->
+                    m.measure(c).run {
+                        layout(width, height) {
+                            // Skip placement.
+                        }
+                    }
+                }
+            ) {
+                if (!detach) {
+                    AnimatedContent(
+                        targetState = state,
+                        transitionSpec = {
+                            // Add a delay to the animation just so that it takes a known time
+                            // to
+                            // complete
+                            fadeIn(snap()).togetherWith(fadeOut(snap()))
+                        },
+                    ) {
+                        Box(
+                            Modifier
+                                // Using shared bounds so that we control when the item enters
+                                // and leaves in every case. Particularly, we want the target to
+                                // show immediately
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "key"),
+                                    animatedVisibilityScope = this,
+                                    enter = fadeIn(tween(500)),
+                                    exit = fadeOut(tween(500)),
+                                )
+                                .fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        detach = true
+
+        rule.waitForIdle()
+    }
+
+    @Test
+    fun testSkipSharedBoundsModifierPlacement() {
+        var state by mutableIntStateOf(0)
+        var detach by mutableStateOf(false)
+
+        rule.setContent {
+            SharedTransitionLayout(Modifier.size(100.dp)) {
+                if (!detach) {
+                    AnimatedContent(
+                        targetState = state,
+                        modifier =
+                            Modifier.layout { m, c ->
+                                m.measure(c).run {
+                                    layout(width, height) {
+                                        // Skip placement for the sharedBounds modifier below,
+                                        // to verify that when detach is called, the bounds
+                                        // calculation functions correctly.
+                                    }
+                                }
+                            },
+                        transitionSpec = { fadeIn(snap()).togetherWith(fadeOut(snap())) },
+                    ) {
+                        Box(
+                            Modifier
+                                // Using shared bounds so that we control when the item enters
+                                // and leaves in every case. Particularly, we want the target to
+                                // show immediately
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "key"),
+                                    animatedVisibilityScope = this,
+                                    enter = fadeIn(tween(500)),
+                                    exit = fadeOut(tween(500)),
+                                )
+                                .fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        detach = true
+
+        rule.waitForIdle()
+    }
 }
 
 private fun assertEquals(a: IntSize, b: IntSize, delta: IntSize) {
