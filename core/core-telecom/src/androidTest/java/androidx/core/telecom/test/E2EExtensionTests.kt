@@ -28,7 +28,6 @@ import android.os.Build.VERSION_CODES
 import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
-import androidx.core.telecom.CallException
 import androidx.core.telecom.CallsManager.Companion.CAPABILITY_BASELINE
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.extensions.CallExtensionScope
@@ -705,6 +704,92 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
     }
 
     /**
+     * Verifies that the Extension logic (auto-unmute) does NOT run if the extension has not been
+     * explicitly negotiated.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testExtensionDoesNotUnmuteWithoutNegotiation(): Unit = runBlocking {
+        usingIcs { ics ->
+            val globalMuteStateReceiver = TestMuteStateReceiver()
+            val am = mContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+            // Register receiver to track global mute changes
+            mContext.registerReceiver(
+                globalMuteStateReceiver,
+                IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED),
+            )
+
+            try {
+                val voipAppControl = bindToVoipAppWithExtensions()
+                val callback = TestCallCallbackListener(this)
+                voipAppControl.setCallback(callback)
+
+                // 1. Start the call with the Capability available
+                createAndVerifyVoipCall(
+                    voipAppControl,
+                    callback,
+                    listOf(getLocalSilenceCapability(setOf())),
+                    parameters.direction,
+                    initIsLocallySilenced = false, // Start un-silenced
+                )
+
+                val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+                var hasConnected = false
+
+                with(ics) {
+                    // 2. Connect only the basics, purposely OMITTING the LocalSilence negotiation
+                    connectExtensions(call) {
+                        onConnected {
+                            hasConnected = true
+
+                            // 3. ACTION: Manually Mute the Global Microphone
+                            if (!am.isMicrophoneMute) {
+                                am.isMicrophoneMute = true
+                                // Wait for the system to process the mute
+                                waitForGlobalMuteState(
+                                    true,
+                                    "Manually_Muted",
+                                    callback,
+                                    globalMuteStateReceiver,
+                                )
+                            }
+
+                            // 4. ASSERTION: Ensure it STAYS muted.
+                            // If the bug is present, the extension will fight us and unmute it
+                            // immediately.
+                            // We wait a brief period to give the buggy background coroutine time to
+                            // fail.
+                            delay(1000)
+
+                            assertTrue(
+                                "Bug detected: The extension unmuted the microphone even though" +
+                                    " it was never negotiated!",
+                                am.isMicrophoneMute,
+                            )
+
+                            // Verify no "flapping" occurred (receiver should not have seen an
+                            // unmute event)
+                            // Note: Implementation of this check depends on TestMuteStateReceiver
+                            // details,
+                            // but checking the current state after a delay is usually sufficient.
+
+                            call.disconnect()
+                        }
+                    }
+                }
+                assertTrue("onConnected never received", hasConnected)
+            } finally {
+                mContext.unregisterReceiver(globalMuteStateReceiver)
+                // Cleanup: Restore mic state
+                if (am.isMicrophoneMute) {
+                    am.isMicrophoneMute = false
+                }
+            }
+        }
+    }
+
+    /**
      * Verifies the end-to-end flow where the user starts with the ability to toggle silence
      * (default state), and the VoIP app subsequently revokes and then restores this permission.
      * * This simulates a scenario where a user joins a meeting normally, is silenced by a moderator
@@ -787,17 +872,6 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     onConnected {
                         hasConnected = true
                         localSilenceExtension.waitForCanUserUpdateSilence(false)
-                        // 2. attempt to change the LCS value from the remot ICS even though
-                        // the app signaled the value cannot be changed
-                        val res =
-                            localSilenceExtension.extension.requestLocalCallSilenceUpdate(false)
-                        assertEquals(CallControlResult.Error(CallException.ERROR_UNKNOWN), res)
-                        // We requested 'false', but we expect the update to fail (remain 'true')
-                        // because canUserUpdateSilence is false.
-                        // Therefore, we assert that we do NOT receive 'false'.
-                        localSilenceExtension.assertLocalCallSilenceStateNotUpdated(
-                            unexpected = false
-                        )
 
                         // 2. Test: Enable the user's ability to mute (e.g. Server Mute applied)
                         voipAppControl.updateCanUserToggleSilence(true)

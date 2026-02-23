@@ -115,15 +115,15 @@ androidXMultiplatform {
             implementation(libs.testRunner)
         }
 
-        nonAndroidMain {}.dependsOn(commonMain)
+        create("nonAndroidMain").dependsOn(commonMain)
         desktopMain.dependsOn(nonAndroidMain)
         nativeMain.dependsOn(nonAndroidMain)
-        webMain {}.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
 
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidTest").dependsOn(commonTest)
         desktopTest.dependsOn(nonAndroidTest)
         nativeTest.dependsOn(nonAndroidTest)
-        webTest {}.dependsOn(nonAndroidTest)
+        webTest.dependsOn(nonAndroidTest)
     }
 }
 

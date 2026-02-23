@@ -63,7 +63,7 @@ internal class SpatialEnvironmentFeatureImpl(
     private lateinit var rootEnvironmentNode: Node
     private lateinit var geometryImpressNode: ImpressNode
     private lateinit var materialOverride: Material
-    private lateinit var overriddenNodeName: String
+    private var overriddenImpressNode: ImpressNode? = null
     private var onBeforeNodeAttachedListener: Consumer<Node>? = null
     private var isDisposed = false
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -82,6 +82,17 @@ internal class SpatialEnvironmentFeatureImpl(
         if (skybox != null) {
             impressApi.setPreferredEnvironmentLight((skybox as ExrImage).nativeHandle)
         }
+    }
+
+    private fun findNodeByName(parentNode: ImpressNode, name: String): ImpressNode? {
+        val count = impressApi.getImpressNodeChildCount(parentNode)
+        for (i in 0 until count) {
+            val child = impressApi.getImpressNodeChildAt(parentNode, i)
+            if (impressApi.getImpressNodeName(child) == name) {
+                return child
+            }
+        }
+        return null
     }
 
     private suspend fun applyGeometry(
@@ -121,13 +132,14 @@ internal class SpatialEnvironmentFeatureImpl(
 
             if (material != null && nodeName != null) {
                 materialOverride = material as Material
-                overriddenNodeName = nodeName
-                impressApi.setMaterialOverride(
-                    geometryImpressNode,
-                    material.nativeHandle,
-                    nodeName,
-                    /* primitiveIndex= */ 0,
-                )
+                overriddenImpressNode = findNodeByName(geometryImpressNode, nodeName)
+                overriddenImpressNode?.let {
+                    impressApi.setGltfModelNodeMaterialOverride(
+                        it,
+                        material.nativeHandle,
+                        /* primitiveIndex= */ 0,
+                    )
+                }
             }
             if (animationName != null) {
                 // animateGltfModel is itself an asynchronous call, and it blocks execution
@@ -229,11 +241,9 @@ internal class SpatialEnvironmentFeatureImpl(
         super.dispose()
         if (geometrySubspaceSplitEngine != null) {
             if (::materialOverride.isInitialized) {
-                impressApi.clearMaterialOverride(
-                    geometryImpressNode,
-                    overriddenNodeName,
-                    /* primitiveIndex= */ 0,
-                )
+                overriddenImpressNode?.let {
+                    impressApi.clearGltfModelNodeMaterialOverride(it, /* primitiveIndex= */ 0)
+                }
             }
             extensions.createNodeTransaction().use { transaction ->
                 transaction.setParent(geometrySubspaceSplitEngine!!.subspaceNode, null).apply()
@@ -245,6 +255,7 @@ internal class SpatialEnvironmentFeatureImpl(
 
         geometrySubspaceSplitEngine = null
         geometrySubspaceImpressNode = null
+        overriddenImpressNode = null
         _spatialEnvironmentPreference.set(null)
         // TODO: b/376934871 - Check async results.
         extensions.detachSpatialEnvironment(activity, Runnable::run) {}

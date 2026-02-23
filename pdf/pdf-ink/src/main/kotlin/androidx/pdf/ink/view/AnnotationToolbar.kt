@@ -511,19 +511,30 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         }
                     )
                 }
-                .doOnCancel {
-                    /**
-                     * If a new animation starts on the [AnnotationToolbar] before a previous one
-                     * finishes, the existing transition is canceled. As a defensive mechanism,
-                     * update views to their final visibility.
-                     */
-                    with(viewModel.state.value) {
-                        colorPaletteView.isVisible = showColorPalette
-                        brushSizeSelectorView.isVisible = showBrushSizeSlider
-                        toolTray.isVisible = isExpanded
-                        collapsedIcon.isVisible = !isExpanded
-                    }
-                }
+                .setListener(
+                    onEnd = {
+                        if (brushSizeSelectorView.isVisible) {
+                            val slider = brushSizeSelectorView.brushSizeSlider
+                            slider.post { slider.requestFocus() }
+                        }
+                        if (colorPaletteView.isVisible) {
+                            colorPaletteView.requestFocusOnSelectedItem()
+                        }
+                    },
+                    onCancel = {
+                        /**
+                         * If a new animation starts on the [AnnotationToolbar] before a previous
+                         * one finishes, the existing transition is canceled. As a defensive
+                         * mechanism, update views to their final visibility.
+                         */
+                        with(viewModel.state.value) {
+                            colorPaletteView.isVisible = showColorPalette
+                            brushSizeSelectorView.isVisible = showBrushSizeSlider
+                            toolTray.isVisible = isExpanded
+                            collapsedIcon.isVisible = !isExpanded
+                        }
+                    },
+                )
 
         TransitionManager.beginDelayedTransition(this@AnnotationToolbar, transition)
     }
@@ -616,16 +627,17 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         return this.toFloat() * context.resources.displayMetrics.density
     }
 
-    private inline fun Transition.doOnCancel(
-        crossinline action: (transition: Transition) -> Unit
+    private inline fun Transition.setListener(
+        crossinline onEnd: (transition: Transition) -> Unit = {},
+        crossinline onCancel: (transition: Transition) -> Unit = {},
     ): Transition {
         addListener(
             object : Transition.TransitionListener {
-                override fun onTransitionCancel(transition: Transition) = action(transition)
+                override fun onTransitionEnd(transition: Transition) = onEnd(transition)
+
+                override fun onTransitionCancel(transition: Transition) = onCancel(transition)
 
                 override fun onTransitionStart(transition: Transition) {}
-
-                override fun onTransitionEnd(transition: Transition) {}
 
                 override fun onTransitionPause(transition: Transition) {}
 

@@ -58,6 +58,8 @@ private constructor(
                             trySend(ProjectedInputEvent(projectedInputAction))
                         } catch (_: Exception) {}
                     }
+
+                    override fun getInterfaceVersion(): Int = VERSION
                 }
 
             val job = launch {

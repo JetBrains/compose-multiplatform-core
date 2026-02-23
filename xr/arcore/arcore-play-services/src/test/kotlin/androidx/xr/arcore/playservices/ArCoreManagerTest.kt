@@ -91,7 +91,7 @@ class ArCoreManagerTest {
         activityRule.scenario.onActivity {
             val perceptionManager = ArCorePerceptionManager(timeSource)
             mockArCoreApk = mock<ArCoreApk>()
-            underTest = ArCoreManager(activity = it, perceptionManager, timeSource, mockArCoreApk)
+            underTest = ArCoreManager(it, perceptionManager, timeSource, mockArCoreApk)
         }
 
         mockSession = mock<Session>()

@@ -182,6 +182,8 @@ public class ProjectedGeospatial internal constructor(private val xrResources: X
                         }
                     continuation.resume(vpsResult)
                 }
+
+                override fun getInterfaceVersion(): Int = VERSION
             }
         try {
             xrResources.service.checkVpsAvailability(latitude, longitude, callback)

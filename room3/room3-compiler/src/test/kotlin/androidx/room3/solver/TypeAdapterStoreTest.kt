@@ -29,14 +29,11 @@ import androidx.room3.compiler.processing.XRawType
 import androidx.room3.compiler.processing.isTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames
-import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.PagingTypeNames
-import androidx.room3.ext.ReactiveStreamsTypeNames
 import androidx.room3.ext.RoomTypeNames.ROOM_DB
 import androidx.room3.ext.RoomTypeNames.STRING_UTIL
 import androidx.room3.ext.RxJava3TypeNames
@@ -48,10 +45,8 @@ import androidx.room3.processor.DaoProcessor
 import androidx.room3.processor.DaoProcessorTest
 import androidx.room3.processor.ProcessorErrors
 import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.LiveDataQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.PagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.RxJava3PagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxQueryResultBinderProvider
 import androidx.room3.solver.query.parameter.CollectionQueryParameterAdapter
 import androidx.room3.solver.query.result.MultiTypePagingSourceQueryResultBinder
 import androidx.room3.solver.shortcut.binderprovider.GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider
@@ -626,24 +621,6 @@ class TypeAdapterStoreTest {
     }
 
     @Test
-    fun testMissingRx3Room() {
-        runKspTest(sources = listOf(COMMON.PUBLISHER, COMMON.RX3_FLOWABLE)) { invocation ->
-            val publisherElement =
-                invocation.processingEnv.requireTypeElement(ReactiveStreamsTypeNames.PUBLISHER)
-            assertThat(publisherElement, notNullValue())
-            assertThat(
-                RxQueryResultBinderProvider.getAll(invocation.context).any {
-                    it.matches(publisherElement.type)
-                },
-                `is`(true),
-            )
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.MISSING_ROOM_RXJAVA3_ARTIFACT)
-            }
-        }
-    }
-
-    @Test
     fun testMissingRoomPaging() {
         runProcessorTest { invocation ->
             val pagingSourceElement =
@@ -710,93 +687,6 @@ class TypeAdapterStoreTest {
                 hasError(ProcessorErrors.MISSING_ROOM_PAGING_RXJAVA3_ARTIFACT)
             }
         }
-    }
-
-    @Test
-    fun testFindPublisher() {
-        listOf(COMMON.RX3_FLOWABLE to COMMON.RX3_ROOM).forEach { (rxTypeSrc, rxRoomSrc) ->
-            runKspTest(
-                sources = listOf(rxTypeSrc, rxRoomSrc),
-                classpath =
-                    compileFiles(
-                        listOf(
-                            COMMON.RX3_SINGLE,
-                            COMMON.RX3_MAYBE,
-                            COMMON.RX3_COMPLETABLE,
-                            COMMON.RX3_OBSERVABLE,
-                            COMMON.PUBLISHER,
-                        )
-                    ),
-            ) { invocation ->
-                val publisher =
-                    invocation.processingEnv.requireTypeElement(ReactiveStreamsTypeNames.PUBLISHER)
-                assertThat(publisher, notNullValue())
-                assertThat(
-                    RxQueryResultBinderProvider.getAll(invocation.context).any {
-                        it.matches(publisher.type)
-                    },
-                    `is`(true),
-                )
-            }
-        }
-    }
-
-    @Test
-    fun testFindFlowable() {
-        listOf(Triple(COMMON.RX3_FLOWABLE, COMMON.RX3_ROOM, RxJava3TypeNames.FLOWABLE)).forEach {
-            (rxTypeSrc, rxRoomSrc, rxTypeClassName) ->
-            runKspTest(
-                sources = listOf(rxTypeSrc, rxRoomSrc),
-                classpath =
-                    compileFiles(
-                        listOf(
-                            COMMON.RX3_SINGLE,
-                            COMMON.RX3_MAYBE,
-                            COMMON.RX3_COMPLETABLE,
-                            COMMON.RX3_OBSERVABLE,
-                            COMMON.PUBLISHER,
-                        )
-                    ),
-            ) { invocation ->
-                val flowable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                assertThat(
-                    RxQueryResultBinderProvider.getAll(invocation.context).any {
-                        it.matches(flowable.type)
-                    },
-                    `is`(true),
-                )
-            }
-        }
-    }
-
-    @Test
-    fun testFindObservable() {
-        listOf(Triple(COMMON.RX3_OBSERVABLE, COMMON.RX3_ROOM, RxJava3TypeNames.OBSERVABLE))
-            .forEach { (rxTypeSrc, rxRoomSrc, rxTypeClassName) ->
-                runKspTest(
-                    sources = listOf(rxTypeSrc, rxRoomSrc),
-                    classpath =
-                        compileFiles(
-                            listOf(
-                                COMMON.RX3_SINGLE,
-                                COMMON.RX3_MAYBE,
-                                COMMON.RX3_COMPLETABLE,
-                                COMMON.RX3_OBSERVABLE,
-                                COMMON.RX3_FLOWABLE,
-                                COMMON.PUBLISHER,
-                            )
-                        ),
-                ) { invocation ->
-                    val observable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(observable, notNullValue())
-                    assertThat(
-                        RxQueryResultBinderProvider.getAll(invocation.context).any {
-                            it.matches(observable.type)
-                        },
-                        `is`(true),
-                    )
-                }
-            }
     }
 
     @Test
@@ -981,19 +871,6 @@ class TypeAdapterStoreTest {
                         .matches(future.type)
                 )
                 .isTrue()
-        }
-    }
-
-    @Test
-    fun testFindLiveData() {
-        runKspTest(sources = listOf(COMMON.COMPUTABLE_LIVE_DATA, COMMON.LIVE_DATA)) { invocation ->
-            val liveData =
-                invocation.processingEnv.requireTypeElement(LifecyclesTypeNames.LIVE_DATA)
-            assertThat(liveData, notNullValue())
-            assertThat(
-                LiveDataQueryResultBinderProvider(invocation.context).matches(liveData.type),
-                `is`(true),
-            )
         }
     }
 

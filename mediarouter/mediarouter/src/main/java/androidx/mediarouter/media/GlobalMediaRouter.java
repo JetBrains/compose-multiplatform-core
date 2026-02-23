@@ -64,6 +64,7 @@ import androidx.core.app.ActivityManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.flagging.Flags;
 import androidx.core.hardware.display.DisplayManagerCompat;
+import androidx.core.util.Function;
 import androidx.core.util.Pair;
 import androidx.core.util.Preconditions;
 import androidx.media.VolumeProviderCompat;
@@ -97,6 +98,14 @@ import java.util.concurrent.Executor;
 
     static final String TAG = MediaRouter.TAG;
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+
+    /**
+     * Reference layer to mimic manifest {@link MediaTransferReceiver} configurations in the
+     * manifest during testing.
+     */
+    @VisibleForTesting
+    /* package */ static Function<Context, Boolean> sMediaTransferDeclarationChecker =
+            MediaTransferReceiver::isDeclared;
 
     final CallbackHandler mCallbackHandler = new CallbackHandler();
     // A map from unique route ID to RouteController for the member routes in the currently
@@ -151,7 +160,7 @@ import java.util.concurrent.Executor;
 
         mTransferReceiverDeclared =
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                        && MediaTransferReceiver.isDeclared(mApplicationContext);
+                        && sMediaTransferDeclarationChecker.apply(mApplicationContext);
         mUseMediaRouter2ForSystemRouting =
                 SystemRoutingUsingMediaRouter2Receiver.isDeclared(mApplicationContext);
 
@@ -901,10 +910,23 @@ import java.util.concurrent.Executor;
         return mCallbackCount;
     }
 
+    /**
+     * Gets whether to enable {@link MediaRoute2Provider}.
+     *
+     * <p>{@link MediaRoute2Provider} uses the Android platform's {@link android.media.MediaRouter2}
+     * in order to connect to {@link MediaRouteProviderService provider services}. Which is in turn
+     * necessary for any features that rely on MediaRouter2. Such as Output Switcher, routing
+     * controls on wearable devices, and SysUI intelligent device suggestions.
+     */
     /* package */ boolean isMediaTransferEnabled() {
-        // The default value for isMediaTransferReceiverEnabled() is {@code true}.
-        return mTransferReceiverDeclared
-                && (mRouterParams == null || mRouterParams.isMediaTransferReceiverEnabled());
+        if (mTransferReceiverDeclared) {
+            return mRouterParams == null || mRouterParams.isMediaTransferReceiverEnabled();
+        } else if (mRouterParams != null
+                && mRouterParams.isMediaTransferReceiverEnabledExplicitlySet()) {
+            return mRouterParams.isMediaTransferReceiverEnabled();
+        } else {
+            return false;
+        }
     }
 
     /* package */ boolean isTransferToLocalEnabled() {

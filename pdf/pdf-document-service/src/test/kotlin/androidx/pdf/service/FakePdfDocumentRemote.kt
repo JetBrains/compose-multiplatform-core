@@ -170,4 +170,6 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     ): PdfObject? {
         TODO("Not yet implemented")
     }
+
+    override fun getInterfaceVersion(): Int = VERSION
 }

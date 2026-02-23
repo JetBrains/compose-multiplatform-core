@@ -104,6 +104,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             stepSize = 1f
             labelBehavior = LabelFormatter.LABEL_GONE
             contentDescription = context.getString(R.string.pdf_brush_slider_content_description)
+            isFocusableInTouchMode = true
         }
 
     private fun createBrushPreviewView(): BrushPreviewView =

@@ -53,6 +53,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
@@ -112,6 +113,15 @@ class GltfFeatureImplTest {
         `when`(mockImpressApi.instanceGltfModel(modelToken)).thenReturn(modelImpressNode)
         `when`(mockImpressApi.getGltfModelBoundingBox(modelImpressNode))
             .thenReturn(fakeImpressApi.getGltfModelBoundingBox(modelImpressNode))
+        `when`(mockImpressApi.getImpressNodeChildCount(anyNotNull())).thenAnswer {
+            fakeImpressApi.getImpressNodeChildCount(it.getArgument(0))
+        }
+        `when`(mockImpressApi.getImpressNodeChildAt(anyNotNull(), anyInt())).thenAnswer {
+            fakeImpressApi.getImpressNodeChildAt(it.getArgument(0), it.getArgument(1))
+        }
+        `when`(mockImpressApi.getImpressNodeName(anyNotNull())).thenAnswer {
+            fakeImpressApi.getImpressNodeName(it.getArgument(0))
+        }
 
         return GltfFeatureImpl(
             model,
@@ -359,6 +369,24 @@ class GltfFeatureImplTest {
         verify(mockImpressApi).clearMaterialOverride(modelImpressNode, nodeName2, primitiveIndex2)
         verify(splitEngineSubspaceManager).deleteSubspace(SUBSPACE_ID)
         verify(mockRenderer).frameListener = null
+    }
+
+    @Test
+    fun nodes_returnsFlattenedListOfNodesFromImpress() {
+        val node1 = fakeImpressApi.createImpressNode()
+        val node2 = fakeImpressApi.createImpressNode()
+        fakeImpressApi.setImpressNodeParent(node1, modelImpressNode)
+        fakeImpressApi.setImpressNodeParent(node2, modelImpressNode)
+
+        val resultNodes = gltfFeature.nodes
+
+        assertThat(resultNodes).hasSize(2)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyNotNull(): T {
+        val mockitoAny = any<T>()
+        return mockitoAny ?: (null as T)
     }
 
     companion object {

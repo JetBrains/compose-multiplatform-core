@@ -37,6 +37,7 @@ import kotlin.test.Test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @IgnoreAndroidHostTest // Runs on all targets EXCEPT AndroidHost; still runs on AndroidDevice.
+@IgnoreLinuxTest // Runs on all targets EXCEPT Linux.
 internal class TestNavigatorStateTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) private val state = TestNavigatorState()

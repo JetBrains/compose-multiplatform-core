@@ -219,28 +219,30 @@ class ActivityPanelEntityImplTest {
     }
 
     @Test
-    fun transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+    fun transformPixelCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
         val activityPanelEntity = createActivityPanelEntity()
         activityPanelEntity.size = Dimensions(1f, 1f, 0f)
-        val pose = activityPanelEntity.transformPixelCoordinatesToPose(Vector2(0f, 0f))
+        val position = activityPanelEntity.transformPixelCoordinatesToLocalPosition(Vector2(0f, 0f))
         val expected = Vector3(-0.5f, 0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+    fun transformNormalizedCoordinatesToLocalPosition_center_returnsZeroVector() {
         val activityPanelEntity = createActivityPanelEntity()
-        val pose = activityPanelEntity.transformNormalizedCoordinatesToPose(Vector2(0f, 0f))
-        Truth.assertThat(pose).isEqualTo(Pose.Identity)
+        val position =
+            activityPanelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(0f, 0f))
+        Truth.assertThat(position).isEqualTo(Vector3.Zero)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+    fun transformNormalizedCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
         val activityPanelEntity = createActivityPanelEntity()
         activityPanelEntity.size = Dimensions(1f, 1f, 0f)
-        val pose = activityPanelEntity.transformNormalizedCoordinatesToPose(Vector2(-1f, 1f))
+        val position =
+            activityPanelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(-1f, 1f))
         val expected = Vector3(-0.5f, 0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test

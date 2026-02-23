@@ -32,8 +32,7 @@ class ProcessGlobalConfigActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
         setTitle(R.string.process_global_config_activity_title)
-        WebkitHelpers.enableEdgeToEdge(this)
-        WebkitHelpers.appendWebViewVersionToTitle(this)
+        setUpDemoAppActivity()
 
         findViewById<MenuListView>(R.id.top_level_list)
             .setItems(

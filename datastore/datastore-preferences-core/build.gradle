@@ -74,7 +74,7 @@ androidXMultiplatform {
             implementation(project(":datastore:datastore-preferences-proto"))
         }
 
-        nonWebCommonTest {}.dependsOn(commonTest)
+        create("nonWebCommonTest").dependsOn(commonTest)
 
         jvmAndAndroidTest {
             dependsOn(nonWebCommonTest)
@@ -87,7 +87,7 @@ androidXMultiplatform {
             implementation(libs.kotlinSerializationProtobuf)
         }
 
-        webMain {}.dependencies {
+        webMain.dependencies {
             implementation(libs.kotlinSerializationJson)
             implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
         }

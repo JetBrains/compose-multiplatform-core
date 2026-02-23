@@ -45,7 +45,8 @@ package androidx.xr.runtime {
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.AnchorPersistenceMode anchorPersistence);
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.FaceTrackingMode faceTracking);
     ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.FaceTrackingMode faceTracking, optional androidx.xr.runtime.GeospatialMode geospatial);
-    ctor @BytecodeOnly public Config(androidx.xr.runtime.PlaneTrackingMode!, androidx.xr.runtime.HandTrackingMode!, androidx.xr.runtime.DeviceTrackingMode!, androidx.xr.runtime.DepthEstimationMode!, androidx.xr.runtime.AnchorPersistenceMode!, androidx.xr.runtime.FaceTrackingMode!, androidx.xr.runtime.GeospatialMode!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public Config(androidx.xr.runtime.PlaneTrackingMode!, androidx.xr.runtime.HandTrackingMode!, androidx.xr.runtime.DeviceTrackingMode!, androidx.xr.runtime.DepthEstimationMode!, androidx.xr.runtime.AnchorPersistenceMode!, androidx.xr.runtime.FaceTrackingMode!, androidx.xr.runtime.GeospatialMode!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public Config(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.FaceTrackingMode faceTracking, optional androidx.xr.runtime.GeospatialMode geospatial, optional java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories);
     method public androidx.xr.runtime.Config copy();
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.PlaneTrackingMode planeTracking);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking);
@@ -54,6 +55,7 @@ package androidx.xr.runtime {
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.HandTrackingMode handTracking, optional androidx.xr.runtime.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.AnchorPersistenceMode anchorPersistence);
     method @BytecodeOnly public static androidx.xr.runtime.Config! copy$default(androidx.xr.runtime.Config!, androidx.xr.runtime.PlaneTrackingMode!, androidx.xr.runtime.HandTrackingMode!, androidx.xr.runtime.DeviceTrackingMode!, androidx.xr.runtime.DepthEstimationMode!, androidx.xr.runtime.AnchorPersistenceMode!, int, Object!);
     method @InaccessibleFromKotlin public androidx.xr.runtime.AnchorPersistenceMode getAnchorPersistence();
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.AugmentedObjectCategory> getAugmentedObjectCategories();
     method @InaccessibleFromKotlin public androidx.xr.runtime.DepthEstimationMode getDepthEstimation();
     method @InaccessibleFromKotlin public androidx.xr.runtime.DeviceTrackingMode getDeviceTracking();
     method @InaccessibleFromKotlin public androidx.xr.runtime.FaceTrackingMode getFaceTracking();
@@ -61,6 +63,7 @@ package androidx.xr.runtime {
     method @InaccessibleFromKotlin public androidx.xr.runtime.HandTrackingMode getHandTracking();
     method @InaccessibleFromKotlin public androidx.xr.runtime.PlaneTrackingMode getPlaneTracking();
     property public androidx.xr.runtime.AnchorPersistenceMode anchorPersistence;
+    property public java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories;
     property public androidx.xr.runtime.DepthEstimationMode depthEstimation;
     property public androidx.xr.runtime.DeviceTrackingMode deviceTracking;
     property public androidx.xr.runtime.FaceTrackingMode faceTracking;
@@ -468,6 +471,7 @@ package androidx.xr.runtime.math {
     method @InaccessibleFromKotlin public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
     method public operator androidx.xr.runtime.math.FloatSize2d times(int scalar);
+    method public androidx.xr.runtime.math.FloatSize3d to3d();
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
     method @BytecodeOnly public static androidx.xr.runtime.math.FloatSize3d! to3d$default(androidx.xr.runtime.math.FloatSize2d!, float, int, Object!);
     property public float height;
@@ -531,6 +535,7 @@ package androidx.xr.runtime.math {
   public final class Matrix3 {
     ctor public Matrix3(androidx.xr.runtime.math.Matrix3 other);
     ctor public Matrix3(float[] dataToCopy);
+    method public androidx.xr.runtime.math.Matrix3 copy();
     method public androidx.xr.runtime.math.Matrix3 copy(optional float[] data);
     method @BytecodeOnly public static androidx.xr.runtime.math.Matrix3! copy$default(androidx.xr.runtime.math.Matrix3!, float[]!, int, Object!);
     method public static androidx.xr.runtime.math.Matrix3 fromQuaternion(androidx.xr.runtime.math.Quaternion quaternion);
@@ -565,6 +570,7 @@ package androidx.xr.runtime.math {
   public final class Matrix4 {
     ctor public Matrix4(androidx.xr.runtime.math.Matrix4 other);
     ctor public Matrix4(float[] dataToCopy);
+    method public androidx.xr.runtime.math.Matrix4 copy();
     method public androidx.xr.runtime.math.Matrix4 copy(optional float[] data);
     method @BytecodeOnly public static androidx.xr.runtime.math.Matrix4! copy$default(androidx.xr.runtime.math.Matrix4!, float[]!, int, Object!);
     method public static androidx.xr.runtime.math.Matrix4 fromPose(androidx.xr.runtime.math.Pose pose);

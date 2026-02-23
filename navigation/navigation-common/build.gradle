@@ -112,19 +112,19 @@ androidXMultiplatform {
             implementation(libs.dexmakerMockito)
         }
 
-        androidTest {}.dependsOn(jvmAndAndroidTest)
+        create("androidTest").dependsOn(jvmAndAndroidTest)
         androidDeviceTest.dependsOn(androidTest)
         androidHostTest.dependsOn(androidTest)
 
-        nonAndroidMain {}.dependsOn(commonMain)
+        create("nonAndroidMain").dependsOn(commonMain)
         desktopMain.dependsOn(nonAndroidMain)
         nativeMain.dependsOn(nonAndroidMain)
-        webMain {}.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
 
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidTest").dependsOn(commonTest)
         desktopTest.dependsOn(nonAndroidTest)
         nativeTest.dependsOn(nonAndroidTest)
-        webTest {}.dependsOn(nonAndroidTest)
+        webTest.dependsOn(nonAndroidTest)
     }
 }
 

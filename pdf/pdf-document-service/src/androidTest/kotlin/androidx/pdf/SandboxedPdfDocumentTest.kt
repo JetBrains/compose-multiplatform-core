@@ -48,8 +48,14 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.fail
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -180,6 +186,40 @@ class SandboxedPdfDocumentTest {
             assertThat(results[0].size == expectedFirstPageResults).isTrue()
             assertThat(results[1].size == expectedSecondPageResults).isTrue()
             assertThat(results[2].size == expectedThirdPageResults).isTrue()
+        }
+    }
+
+    @Test
+    fun searchDocument_whenCancelled_throwsCancellationExceptionAndStops() = runTest {
+        withDocument(PDF_DOCUMENT) { document ->
+            val query = "lorem"
+            val pageRange = 0..2
+
+            // Mechanism to signal that the coroutine has actually started
+            val searchStarted = MutableStateFlow(false)
+
+            val job = launch {
+                try {
+                    searchStarted.value = true
+
+                    document.searchDocument(query, pageRange)
+
+                    // Fail the test if we reach this line!
+                    fail("Expected CancellationException was not thrown")
+                } catch (e: Exception) {
+                    // Verify it is specifically a CancellationException
+                    assertThat(e).isInstanceOf(kotlinx.coroutines.CancellationException::class.java)
+                }
+            }
+
+            // Wait for the coroutine to actually start running
+            searchStarted.first { it }
+
+            // Yield to allow the searchDocument to progress slightly (hit a suspension point)
+            yield()
+
+            // Now cancel
+            job.cancelAndJoin()
         }
     }
 

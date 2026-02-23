@@ -31,7 +31,6 @@ import androidx.work.testutils.TestEnv
 import androidx.work.testutils.WorkManager
 import androidx.work.worker.TestWorker
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -59,7 +58,7 @@ class EnqueueRunnableTest {
         )
 
     @Test
-    fun testCheckScheduling() = runBlocking {
+    fun testCheckScheduling() {
         val request1 = OneTimeWorkRequest.Builder(TestWorker::class.java).build()
         val impl1 = WorkContinuationImpl(wm, "name", ExistingWorkPolicy.KEEP, listOf(request1))
         EnqueueRunnable.enqueue(impl1)

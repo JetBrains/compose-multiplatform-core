@@ -72,7 +72,7 @@ androidXMultiplatform {
             implementation(libs.espressoCore)
         }
 
-        wasmJsMain {}.dependencies {
+        wasmJsMain.dependencies {
             implementation(libs.kotlinXw3c)
         }
     }

@@ -70,7 +70,7 @@ constructor(private val rendererVersionInfo: VersionInfo = DEFAULT_RENDERER_VERS
      * Support for each feature requires a certain minimum renderer version, which must be checked
      * against the current [VersionInfo].
      */
-    enum class RendererCapability(private val minMinorVersion: Int) {
+    public enum class RendererCapability(private val minMinorVersion: Int) {
         /** Indicates support for clickable response with PendingIntent. */
         PENDING_INTENT_ACTION(526),
         /** Indicates support for customizing Lottie animation by specifying color for slot. */
@@ -139,7 +139,7 @@ constructor(private val rendererVersionInfo: VersionInfo = DEFAULT_RENDERER_VERS
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
     /** Returns whether this scope has any registered [Resources] or not. */
-    public fun hasResources() = !resources.isEmpty()
+    public fun hasResources(): Boolean = !resources.isEmpty()
 
     /**
      * Generates String version of hash codes for all [resources].
@@ -152,6 +152,6 @@ constructor(private val rendererVersionInfo: VersionInfo = DEFAULT_RENDERER_VERS
             .toString()
 
     private companion object {
-        val DEFAULT_RENDERER_VERSION = VersionInfo.Builder().setMajor(1).setMajor(0).build()
+        private val DEFAULT_RENDERER_VERSION = VersionInfo.Builder().setMajor(1).setMajor(0).build()
     }
 }

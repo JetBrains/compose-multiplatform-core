@@ -33,12 +33,12 @@ class AssetLoaderSimpleActivityTestAppTest {
 
     @Before
     fun setUp() {
-        WebkitTestHelpers.enableJavaScript(R.id.webview_asset_loader_webview)
+        enableJavaScript(R.id.webview_asset_loader_webview)
     }
 
     @Test
     fun testAssetLoaderSimpleActivity() {
-        WebkitTestHelpers.assertHtmlElementContainsText(
+        assertHtmlElementContainsText(
             R.id.webview_asset_loader_webview,
             "assets_success_msg",
             "Successfully loaded html from assets!",

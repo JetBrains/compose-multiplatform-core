@@ -202,7 +202,7 @@ constructor(
          * @return A fully constructed URL pointing to the specific vulnerability report for this
          *   device.
          */
-        @Suppress("MissingJvmstatic")
+        @JvmOverloads
         @JvmStatic
         @RequiresApi(26)
         public fun getVulnerabilityReportUrl(
@@ -569,16 +569,36 @@ constructor(
     }
 
     /**
-     * Returns min SPL of the unpatched system modules, or max SPL of the system modules if all of
-     * them are fully patched.
+     * Returns the effective Security Patch Level (SPL) for System Modules (Mainline).
+     *
+     * This method determines the SPL based on the compliance of the device's installed modules
+     * against the loaded Vulnerability Report.
+     *
+     * Behavior:
+     * 1. **Outdated:** If any monitored system module is older than its required version in the
+     *    Vulnerability Report, this returns the version of the *oldest* module (the limiting
+     *    factor).
+     * 2. **Compliant:** If all monitored modules are up-to-date with their specific requirements,
+     *    this returns the **Latest SPL from the entire Vulnerability Report (Global Max)**.
+     *
+     * This "Global Max" behavior ensures that in months where the Bulletin does not list specific
+     * Mainline updates (e.g., due to Risk Based Update System (RBUS) policies), the reported SPL
+     * "upgrades" to the current Bulletin date to signal ongoing compliance.
+     *
+     * @throws IllegalStateException if the vulnerability report is not loaded or contains no data.
      */
     private fun getSystemModulesSecurityPatchLevel(): DateBasedSecurityPatchLevel {
         checkVulnerabilityReport()
 
         val modules: List<String> = getSystemModules()
         var minSpl = DateBasedSecurityPatchLevel(1970, 1, 1)
-        var maxSpl = DateBasedSecurityPatchLevel(1970, 1, 1)
         var unpatched = false
+
+        // Determine the target "Upgraded" SPL (Global Max) from the Bulletin
+        val globalMaxSpl =
+            getLatestBulletinDate()
+                ?: throw IllegalStateException("No SPL data available for system modules.")
+
         modules.forEach { module ->
             val maxComponentSpl = getMaxComponentSecurityPatchLevel(module) ?: return@forEach
             val packageSpl: DateBasedSecurityPatchLevel
@@ -592,6 +612,7 @@ constructor(
                 return@forEach
             }
 
+            // Check if the specific module is outdated relative to its last KNOWN update
             if (packageSpl < maxComponentSpl) {
                 if (unpatched) {
                     if (minSpl > packageSpl) minSpl = packageSpl
@@ -600,33 +621,66 @@ constructor(
                     unpatched = true
                 }
             }
-            if (maxComponentSpl > maxSpl) {
-                maxSpl = maxComponentSpl
-            }
         }
 
+        // If any module is outdated, return the lowest version found (Device State).
         if (unpatched) {
             return minSpl
         }
-        if (maxSpl.getYear() == 1970) {
-            throw IllegalStateException("No SPL data available for system modules.")
-        }
-        return maxSpl
+
+        // If all modules meet their requirements, "Upgrade" the reported SPL to the
+        // Global Max (Bulletin Date). This handles Risk Based Update System (RBUS) months
+        // (hidden patches) and empty bulletins correctly.
+        return globalMaxSpl
     }
 
+    /**
+     * Returns the Published Security Patch Level (PSPL) for System Modules (Mainline).
+     *
+     * Unlike the Device SPL, which reflects the version installed on the device, this value
+     * reflects the latest known security baseline documented in the Android Security Bulletin.
+     *
+     * Under the "Global Max" strategy, this returns the latest date found in the Vulnerability
+     * Report, regardless of whether that specific date included updates for Mainline modules. This
+     * ensures that the Published SPL aligns with the overall Bulletin date (e.g. 2026-01-05),
+     * preventing confusion when Mainline updates are released on a monthly cadence (e.g.
+     * 2026-01-01) but the Bulletin only lists System/Vendor patches for that month.
+     *
+     * @return The latest published [DateBasedSecurityPatchLevel].
+     * @throws IllegalStateException if the vulnerability report is not loaded or contains no data.
+     */
     private fun getSystemModulesPublishedSecurityPatchLevel(): DateBasedSecurityPatchLevel {
         checkVulnerabilityReport()
 
-        val modules: List<String> = getSystemModules()
-        var maxSpl = DateBasedSecurityPatchLevel(1970, 1, 1)
-        modules.forEach { module ->
-            val maxComponentSpl = getMaxComponentSecurityPatchLevel(module) ?: return@forEach
+        // Use the Global Max (Latest Bulletin Date) as the authoritative Published SPL.
+        // This decouples the signal from specific module entries in the JSON, which may be
+        // missing in non-quarterly months due to Risk Based Update System (RBUS) policies.
+        return getLatestBulletinDate()
+            ?: throw IllegalStateException("No SPL data available in Vulnerability Report.")
+    }
 
-            if (maxComponentSpl > maxSpl) {
-                maxSpl = maxComponentSpl
-            }
-        }
-        return maxSpl
+    /**
+     * Retrieves the latest security patch level date found in the entire vulnerability report.
+     *
+     * This date represents the "Global Maximum" SPL for the bulletin, effectively acting as the
+     * compliance baseline for the device. It is determined by finding the maximum date key in the
+     * vulnerabilities map, regardless of which specific components (System, Vendor, Kernel, or
+     * System Modules) are included in that date's entry.
+     *
+     * This value is used to "upgrade" the reported SPL for components that are fully compliant with
+     * their specific requirements but may not have had an update in the most recent bulletin (e.g.,
+     * due to Risk Based Update System (RBUS) policies).
+     *
+     * @return The latest [DateBasedSecurityPatchLevel] found in the report, or null if the report
+     *   is not loaded or contains no dates.
+     */
+    private fun getLatestBulletinDate(): DateBasedSecurityPatchLevel? {
+        if (vulnerabilityReport == null) return null
+        return vulnerabilityReport!!
+            .vulnerabilities
+            .keys
+            .maxByOrNull { it }
+            ?.let { DateBasedSecurityPatchLevel.fromString(it) }
     }
 
     /**

@@ -692,7 +692,7 @@ public class MutableIntList(initialCapacity: Int = 16) : IntList(initialCapacity
      *
      * @see ensureCapacity
      */
-    @Suppress("MissingJvmstatic")
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {

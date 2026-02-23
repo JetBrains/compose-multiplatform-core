@@ -24,10 +24,13 @@ dependencies {
 }
 
 android {
-    sourceSets {
-        main.res.srcDir "res"
-    }
     namespace = "androidx.percentlayout"
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.res.addStaticSourceDirectory("res")
+    }
 }
 
 androidx {

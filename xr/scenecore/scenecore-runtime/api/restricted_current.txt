@@ -145,6 +145,7 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public int getAnimationState();
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.GltfAnimationFeature> getAnimations();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> getNodes();
     method public void pauseAnimation();
     method public void removeAnimationStateListener(java.util.function.Consumer<java.lang.Integer> listener);
     method public void resumeAnimation();
@@ -154,6 +155,7 @@ package androidx.xr.scenecore.runtime {
     property @androidx.xr.scenecore.runtime.GltfEntity.AnimationStateValue public abstract int animationState;
     property public abstract java.util.List<androidx.xr.scenecore.runtime.GltfAnimationFeature> animations;
     property public abstract androidx.xr.runtime.math.BoundingBox gltfModelBoundingBox;
+    property public abstract java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> nodes;
   }
 
   public static final class GltfEntity.AnimationState {
@@ -176,6 +178,7 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public int getAnimationState();
     method @MainThread public java.util.List<androidx.xr.scenecore.runtime.GltfAnimationFeature> getAnimations(java.util.concurrent.Executor executor);
     method @MainThread public androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox();
+    method @InaccessibleFromKotlin @MainThread public java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> getNodes();
     method @InaccessibleFromKotlin @MainThread public androidx.xr.runtime.math.FloatSize3d getSize();
     method @MainThread public void pauseAnimation();
     method @MainThread public void removeAnimationStateListener(java.util.function.Consumer<java.lang.Integer> listener);
@@ -187,7 +190,27 @@ package androidx.xr.scenecore.runtime {
     method @MainThread public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
     method @MainThread public void stopAnimation();
     property public abstract int animationState;
+    property @MainThread public abstract java.util.List<androidx.xr.scenecore.runtime.GltfModelNodeFeature> nodes;
     property @MainThread public abstract androidx.xr.runtime.math.FloatSize3d size;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface GltfModelNodeFeature {
+    method @MainThread public void clearMaterialOverride(int primitiveIndex);
+    method @InaccessibleFromKotlin @MainThread public androidx.xr.runtime.math.Pose getLocalPose();
+    method @InaccessibleFromKotlin @MainThread public androidx.xr.runtime.math.Vector3 getLocalScale();
+    method @InaccessibleFromKotlin @MainThread public androidx.xr.runtime.math.Pose getModelPose();
+    method @InaccessibleFromKotlin @MainThread public androidx.xr.runtime.math.Vector3 getModelScale();
+    method @InaccessibleFromKotlin public String? getName();
+    method @InaccessibleFromKotlin @MainThread public void setLocalPose(androidx.xr.runtime.math.Pose);
+    method @InaccessibleFromKotlin @MainThread public void setLocalScale(androidx.xr.runtime.math.Vector3);
+    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.runtime.MaterialResource material, int primitiveIndex);
+    method @InaccessibleFromKotlin @MainThread public void setModelPose(androidx.xr.runtime.math.Pose);
+    method @InaccessibleFromKotlin @MainThread public void setModelScale(androidx.xr.runtime.math.Vector3);
+    property @MainThread public abstract androidx.xr.runtime.math.Pose localPose;
+    property @MainThread public abstract androidx.xr.runtime.math.Vector3 localScale;
+    property @MainThread public abstract androidx.xr.runtime.math.Pose modelPose;
+    property @MainThread public abstract androidx.xr.runtime.math.Vector3 modelScale;
+    property public abstract String? name;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface GltfModelResource extends androidx.xr.scenecore.runtime.Resource {
@@ -456,8 +479,8 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public void setCornerRadius(float);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
     method @InaccessibleFromKotlin public void setSizeInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
-    method public androidx.xr.runtime.math.Pose transformNormalizedCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
-    method public androidx.xr.runtime.math.Pose transformPixelCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
+    method public androidx.xr.runtime.math.Vector3 transformNormalizedCoordinatesToLocalPosition(androidx.xr.runtime.math.Vector2 coordinates);
+    method public androidx.xr.runtime.math.Vector3 transformPixelCoordinatesToLocalPosition(androidx.xr.runtime.math.Vector2 coordinates);
     property public abstract float cornerRadius;
     property public abstract androidx.xr.scenecore.runtime.Dimensions size;
     property public abstract androidx.xr.scenecore.runtime.PixelDimensions sizeInPixels;
@@ -659,10 +682,10 @@ package androidx.xr.scenecore.runtime {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
     method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.HitTestResult>);
-    method public default androidx.xr.runtime.math.Vector3 transformDirectionTo(androidx.xr.runtime.math.Vector3 direction, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Vector3 transformDirectionTo(androidx.xr.runtime.math.Vector3 direction, androidx.xr.scenecore.runtime.ScenePose destination);
     method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ScenePose destination);
-    method public default androidx.xr.runtime.math.Vector3 transformPositionTo(androidx.xr.runtime.math.Vector3 position, androidx.xr.scenecore.runtime.ScenePose destination);
-    method public default androidx.xr.runtime.math.Vector3 transformVectorTo(androidx.xr.runtime.math.Vector3 vector, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Vector3 transformPositionTo(androidx.xr.runtime.math.Vector3 position, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Vector3 transformVectorTo(androidx.xr.runtime.math.Vector3 vector, androidx.xr.scenecore.runtime.ScenePose destination);
     property public abstract androidx.xr.runtime.math.Pose activitySpacePose;
     property public abstract androidx.xr.runtime.math.Vector3 activitySpaceScale;
     property public abstract androidx.xr.runtime.math.Vector3 worldSpaceScale;
@@ -1398,6 +1421,27 @@ package androidx.xr.scenecore.runtime.extensions {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class XrExtensionsProvider {
     method public static com.android.extensions.xr.XrExtensions? getXrExtensions();
     field public static final androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider INSTANCE;
+  }
+
+}
+
+package androidx.xr.scenecore.runtime.impl {
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseScenePose implements androidx.xr.scenecore.runtime.ScenePose {
+    ctor public BaseScenePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPoseInActivitySpace();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
+    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.HitTestResult>);
+    method public androidx.xr.runtime.math.Vector3 transformDirectionTo(androidx.xr.runtime.math.Vector3 direction, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Vector3 transformPositionTo(androidx.xr.runtime.math.Vector3 position, androidx.xr.scenecore.runtime.ScenePose destination);
+    method public androidx.xr.runtime.math.Vector3 transformVectorTo(androidx.xr.runtime.math.Vector3 vector, androidx.xr.scenecore.runtime.ScenePose destination);
+    property public androidx.xr.runtime.math.Pose activitySpacePose;
+    property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
+    property public androidx.xr.runtime.math.Pose poseInActivitySpace;
+    property public androidx.xr.runtime.math.Vector3 worldSpaceScale;
   }
 
 }

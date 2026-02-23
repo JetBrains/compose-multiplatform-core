@@ -23,6 +23,8 @@
 
 import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
@@ -69,18 +71,21 @@ android {
     defaultConfig {
         minSdk = 24
     }
-    sourceSets {
-        test {
-            assets {
-                srcDirs += ["src/test/java/androidx/xr/scenecore/spatial/rendering/fake_assets"]
-            }
-        }
-        androidTest {
-            jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
-        }
-    }
-
     namespace = "androidx.xr.scenecore.spatial.rendering"
+}
+
+androidComponents {
+    def prebuiltsRoot = AndroidXConfig.getPrebuiltsRoot(project)
+    def nativeTestPath = new File(prebuiltsRoot, "androidx/xr/native/androidTest").absolutePath
+    def fakeAssetsPath = layout.projectDirectory
+            .dir("src/test/java/androidx/xr/scenecore/spatial/rendering/fake_assets")
+            .asFile
+            .absolutePath
+
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.jniLibs.addStaticSourceDirectory(nativeTestPath)
+        (variant as HasUnitTest).unitTest.sources.assets.addStaticSourceDirectory(fakeAssetsPath)
+    }
 }
 
 androidx {

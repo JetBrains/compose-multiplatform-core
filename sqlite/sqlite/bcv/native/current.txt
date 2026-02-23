@@ -69,6 +69,7 @@ final const val androidx.sqlite/SQLITE_DATA_TEXT // androidx.sqlite/SQLITE_DATA_
     final fun <get-SQLITE_DATA_TEXT>(): kotlin/Int // androidx.sqlite/SQLITE_DATA_TEXT.<get-SQLITE_DATA_TEXT>|<get-SQLITE_DATA_TEXT>(){}[0]
 
 final fun (androidx.sqlite/SQLiteConnection).androidx.sqlite/execSQL(kotlin/String) // androidx.sqlite/execSQL|execSQL@androidx.sqlite.SQLiteConnection(kotlin.String){}[0]
+final fun androidx.sqlite.util/getStatementPrefix(kotlin/String): kotlin/String? // androidx.sqlite.util/getStatementPrefix|getStatementPrefix(kotlin.String){}[0]
 final fun androidx.sqlite/throwSQLiteException(kotlin/Int, kotlin/String?): kotlin/Nothing // androidx.sqlite/throwSQLiteException|throwSQLiteException(kotlin.Int;kotlin.String?){}[0]
 final suspend fun (androidx.sqlite/SQLiteConnection).androidx.sqlite/executeSQL(kotlin/String) // androidx.sqlite/executeSQL|executeSQL@androidx.sqlite.SQLiteConnection(kotlin.String){}[0]
 final suspend fun (androidx.sqlite/SQLiteConnection).androidx.sqlite/prepare(kotlin/String): androidx.sqlite/SQLiteStatement // androidx.sqlite/prepare|prepare@androidx.sqlite.SQLiteConnection(kotlin.String){}[0]

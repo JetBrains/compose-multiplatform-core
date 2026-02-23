@@ -93,11 +93,16 @@ public class FakeLifecycleManager(
     override var config: Config =
         Config(
             PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-            augmentedObjectCategories = AugmentedObjectCategory.Companion.all(),
             HandTrackingMode.BOTH,
             DeviceTrackingMode.LAST_KNOWN,
             DepthEstimationMode.SMOOTH_AND_RAW,
             AnchorPersistenceMode.LOCAL,
+            augmentedObjectCategories =
+                listOf(
+                    AugmentedObjectCategory.KEYBOARD,
+                    AugmentedObjectCategory.MOUSE,
+                    AugmentedObjectCategory.LAPTOP,
+                ),
         )
 
     override fun configure(config: Config) {

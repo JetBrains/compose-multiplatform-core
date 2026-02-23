@@ -22,7 +22,14 @@ import kotlin.jvm.JvmInline
 actual value class Key(val keyCode: Long) {
     actual companion object {
         actual val Unknown: Key = implementedInJetBrainsFork()
+        @Deprecated(
+            "`Key.Home` is never delivered to applications. For the keyboard \"Home\" key " +
+                "use `Key.MoveHome`. For the system \"Home\" key (unlikely to be needed), use " +
+                "`Key.SystemHome`",
+            level = DeprecationLevel.ERROR,
+        )
         actual val Home: Key = implementedInJetBrainsFork()
+        actual val SystemHome: Key = implementedInJetBrainsFork()
         actual val Help: Key = implementedInJetBrainsFork()
         actual val DirectionUp: Key = implementedInJetBrainsFork()
         actual val DirectionDown: Key = implementedInJetBrainsFork()
@@ -144,6 +151,7 @@ actual value class Key(val keyCode: Long) {
         actual val NumPadPageUp: Key = implementedInJetBrainsFork()
         actual val NumPadPageDown: Key = implementedInJetBrainsFork()
         actual val NumPadInsert: Key = implementedInJetBrainsFork()
+        actual val NumPadDelete: Key = implementedInJetBrainsFork()
         actual val MoveHome: Key = implementedInJetBrainsFork()
         actual val MoveEnd: Key = implementedInJetBrainsFork()
         actual val SoftLeft: Key = implementedInJetBrainsFork()

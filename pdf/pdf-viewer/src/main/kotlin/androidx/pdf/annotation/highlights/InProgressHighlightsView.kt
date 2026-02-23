@@ -72,7 +72,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private val inProgressTextHighlightsListeners =
         mutableListOf<InProgressTextHighlightsListener>()
     private val activeHighlights = mutableMapOf<InProgressHighlightId, HighlightState>()
-    private val highlightRequests = Channel<HighlightRequest>(Channel.CONFLATED)
+    private val updateRequests = Channel<HighlightRequest>(Channel.CONFLATED)
 
     private val paint = Paint().apply { style = Paint.Style.FILL }
 
@@ -83,12 +83,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 SupervisorJob() + HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher()
             )
         viewScope?.launch {
-            for (request in highlightRequests) {
-                try {
-                    request.block()
-                } catch (e: RequestFailedException) {
-                    inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
-                }
+            for (request in updateRequests) {
+                processRequest(request.block)
             }
         }
     }
@@ -166,24 +162,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun addToTextHighlight(id: InProgressHighlightId, currentPdfPoint: PointF) {
         val doc = pdfDocument ?: return
         activeHighlights[id]?.let { currentState ->
-            tryHighlighting {
-                val pageRects =
-                    doc.calculateHighlightRects(
-                        currentState.pageNum,
-                        currentState.startPdfPoint,
-                        currentPdfPoint,
-                    )
-                val newViewRects =
-                    pageRects.map { pageRect ->
-                        RectF().apply { currentState.pageToViewTransform.mapRect(this, pageRect) }
-                    }
+            updateRequests.trySend(
+                HighlightRequest({
+                    val pageRects =
+                        doc.calculateHighlightRects(
+                            currentState.pageNum,
+                            currentState.startPdfPoint,
+                            currentPdfPoint,
+                        )
+                    val newViewRects =
+                        pageRects.map { pageRect ->
+                            RectF().apply {
+                                currentState.pageToViewTransform.mapRect(this, pageRect)
+                            }
+                        }
 
-                // Check if the highlight is still active before updating the viewRects.
-                if (activeHighlights.contains(id)) {
-                    activeHighlights[id] = currentState.copy(selectionRects = newViewRects)
-                    invalidate()
-                }
-            }
+                    // Check if the highlight is still active before updating the viewRects.
+                    if (activeHighlights.contains(id)) {
+                        activeHighlights[id] = currentState.copy(selectionRects = newViewRects)
+                        invalidate()
+                    }
+                })
+            )
         }
     }
 
@@ -224,7 +224,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     private fun tryHighlighting(block: suspend () -> Unit) {
-        highlightRequests.trySend(HighlightRequest(block))
+        viewScope?.launch { processRequest(block) }
+    }
+
+    private suspend fun processRequest(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: RequestFailedException) {
+            inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
+        }
     }
 
     @JvmInline private value class HighlightRequest(val block: suspend () -> Unit)

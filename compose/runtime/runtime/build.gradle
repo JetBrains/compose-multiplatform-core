@@ -68,8 +68,8 @@ androidXMultiplatform {
             implementation(project(":compose:runtime:runtime-test-utils"))
         }
 
-        nonEmulatorCommonTest {}.dependsOn(commonTest)
-        nonEmulatorJvmTest {}.dependsOn(nonEmulatorCommonTest)
+        create("nonEmulatorCommonTest").dependsOn(commonTest)
+        create("nonEmulatorJvmTest").dependsOn(nonEmulatorCommonTest)
 
         androidMain.dependencies {
             api(libs.kotlinCoroutinesAndroid)
@@ -86,8 +86,8 @@ androidXMultiplatform {
 
         androidHostTest.dependsOn(nonEmulatorJvmTest)
 
-        nonAndroidMain {}.dependsOn(commonMain)
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
 
         desktopMain.dependsOn(nonAndroidMain)
 
@@ -110,17 +110,11 @@ androidXMultiplatform {
             dependsOn(nonEmulatorCommonTest)
         }
 
-        webTest {}.dependsOn(nonEmulatorCommonTest)
+        webTest.dependsOn(nonEmulatorCommonTest)
 
-        wasmJsMain {}.dependencies {
+        wasmJsMain.dependencies {
             implementation(libs.kotlinXw3c)
         }
-
-        unixMain {}.dependsOn(nativeMain)
-
-        appleMain {}.dependsOn(unixMain)
-
-        linuxMain.dependsOn(unixMain)
     }
 }
 

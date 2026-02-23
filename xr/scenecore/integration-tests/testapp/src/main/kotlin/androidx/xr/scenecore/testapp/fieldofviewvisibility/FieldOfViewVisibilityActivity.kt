@@ -128,7 +128,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
                     "adb root\n" +
                     "adb shell setprop persist.spaceflinger.fov.visualize_bounds 1\n" +
                     "adb shell setprop persist.ix.sysui.editor_enabled 1\n" +
-                    "adb reboot"
+                    "adb shell stop && adb shell start"
         }
     }
 

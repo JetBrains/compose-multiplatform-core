@@ -23,6 +23,9 @@ import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.concurrent.futures.ResolvableFuture
+import androidx.xr.runtime.math.Matrix4
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorTransfer
@@ -106,6 +109,11 @@ public class FakeImpressApiImpl : ImpressApi {
     public class GltfNodeData {
         public var entityId: Int = 0
         public var materialOverride: MaterialData? = null
+        public var name: String = ""
+        public val children: MutableList<GltfNodeData> = ArrayList()
+        public val transform: FloatArray = floatArrayOf(0f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, 1f)
+        public var isReskinningScheduled: Boolean = false
+        public val nodeMaterialOverrides: MutableMap<Int, MaterialData> = HashMap()
 
         /** Sets the material override for a specific mesh of a node */
         public fun setMaterialOverride(
@@ -119,6 +127,19 @@ public class FakeImpressApiImpl : ImpressApi {
         /** Clears a material override for a specific mesh of a node. */
         public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
             this.materialOverride = null
+        }
+
+        /** Sets the material override for a specific mesh of a specific node */
+        public fun setGltfModelNodeMaterialOverride(
+            materialData: MaterialData,
+            primitiveIndex: Int,
+        ) {
+            nodeMaterialOverrides[primitiveIndex] = materialData
+        }
+
+        /** Clears a material override for a specific mesh of a specific node. */
+        public fun clearGltfModelNodeMaterialOverride(primitiveIndex: Int) {
+            nodeMaterialOverrides.remove(primitiveIndex)
         }
     }
 
@@ -153,6 +174,7 @@ public class FakeImpressApiImpl : ImpressApi {
     private var nextMaterialId: Long = 1
     private var currentEnvironmentLightId: Long = -1
     private val activeAnimations = mutableMapOf<ImpressNode, CompletableDeferred<Unit>>()
+    private val modelHierarchies = mutableMapOf<Long, List<String>>()
 
     override fun setup(view: View?) {}
 
@@ -222,7 +244,18 @@ public class FakeImpressApiImpl : ImpressApi {
         gltfModels[gltfToken]?.add(entityId)
         val gltfNodeData = GltfNodeData().apply { this.entityId = entityId }
         impressNodes[gltfNodeData] = null
-        return ImpressNode(entityId)
+        val rootNode = ImpressNode(entityId)
+        modelHierarchies[gltfToken]?.forEach { childName ->
+            val childId = nextNodeId++
+            val childNodeData =
+                GltfNodeData().apply {
+                    this.entityId = childId
+                    this.name = childName
+                }
+            impressNodes[childNodeData] = gltfNodeData
+            gltfNodeData.children.add(childNodeData)
+        }
+        return rootNode
     }
 
     override fun setGltfModelColliderEnabled(impressNode: ImpressNode, enableCollider: Boolean) {
@@ -402,6 +435,7 @@ public class FakeImpressApiImpl : ImpressApi {
         stereoSurfaceEntities.remove(impressNode)
     }
 
+    /** This method parents an Impress node to another using their respective node objects. */
     override fun setImpressNodeParent(
         impressNodeChild: ImpressNode,
         impressNodeParent: ImpressNode,
@@ -411,7 +445,161 @@ public class FakeImpressApiImpl : ImpressApi {
         require(childGltfNodeData != null && parentGltfNodeData != null) {
             "Impress node(s) not found"
         }
+
+        val oldParent = impressNodes[childGltfNodeData]
+        oldParent?.children?.remove(childGltfNodeData)
+
         impressNodes[childGltfNodeData] = parentGltfNodeData
+        parentGltfNodeData.children.add(childGltfNodeData)
+    }
+
+    /** Returns the parent node of the given Impress node. */
+    override fun getImpressNodeParent(impressNode: ImpressNode): ImpressNode {
+        val gltfNodeData = getGltfNodeData(impressNode)
+        val parentGltfNodeData = impressNodes[gltfNodeData]
+
+        return if (gltfNodeData == null || parentGltfNodeData == null) {
+            ImpressNode(-1)
+        } else {
+            ImpressNode(parentGltfNodeData.entityId)
+        }
+    }
+
+    /** This method returns the number of child node of a given Impress node. */
+    override fun getImpressNodeChildCount(impressNode: ImpressNode): Int {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        return nodeData.children.size
+    }
+
+    /** This method returns the child node of an Impress node at a specific index. */
+    override fun getImpressNodeChildAt(impressNode: ImpressNode, childIndex: Int): ImpressNode {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        if (childIndex < 0 || childIndex >= nodeData.children.size) {
+            throw IllegalArgumentException("Invalid child index")
+        }
+        return ImpressNode(nodeData.children[childIndex].entityId)
+    }
+
+    /**
+     * This method returns the name of the Impress node. An empty string will be returned if the
+     * node does not have a name.
+     */
+    override fun getImpressNodeName(impressNode: ImpressNode): String {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        return nodeData.name
+    }
+
+    /** Sets the local transform (TRS) of an Impress node. */
+    override fun setImpressNodeLocalTransform(impressNode: ImpressNode, transform: Matrix4) {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        val pose = transform.pose
+        val scale = transform.scale
+        nodeData.transform[0] = pose.translation.x
+        nodeData.transform[1] = pose.translation.y
+        nodeData.transform[2] = pose.translation.z
+        nodeData.transform[3] = pose.rotation.x
+        nodeData.transform[4] = pose.rotation.y
+        nodeData.transform[5] = pose.rotation.z
+        nodeData.transform[6] = pose.rotation.w
+        nodeData.transform[7] = scale.x
+        nodeData.transform[8] = scale.y
+        nodeData.transform[9] = scale.z
+    }
+
+    /** Retrieves the local transform (TRS) of an Impress node. */
+    override fun getImpressNodeLocalTransform(impressNode: ImpressNode): Matrix4 {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        return Matrix4.fromTrs(
+            Vector3(nodeData.transform[0], nodeData.transform[1], nodeData.transform[2]),
+            Quaternion(
+                nodeData.transform[3],
+                nodeData.transform[4],
+                nodeData.transform[5],
+                nodeData.transform[6],
+            ),
+            Vector3(nodeData.transform[7], nodeData.transform[8], nodeData.transform[9]),
+        )
+    }
+
+    /** Sets the transform (TRS) of an Impress node relative to an relative node. */
+    override fun setImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+        transform: Matrix4,
+    ) {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        val pose = transform.pose
+        val scale = transform.scale
+        nodeData.transform[0] = pose.translation.x
+        nodeData.transform[1] = pose.translation.y
+        nodeData.transform[2] = pose.translation.z
+        nodeData.transform[3] = pose.rotation.x
+        nodeData.transform[4] = pose.rotation.y
+        nodeData.transform[5] = pose.rotation.z
+        nodeData.transform[6] = pose.rotation.w
+        nodeData.transform[7] = scale.x
+        nodeData.transform[8] = scale.y
+        nodeData.transform[9] = scale.z
+    }
+
+    /** Retrieves the transform (TRS) of an Impress node relative to an relative node. */
+    override fun getImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+    ): Matrix4 {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+
+        if (impressNode == relativeNode) {
+            return Matrix4.Identity
+        } else {
+            return Matrix4.fromTrs(
+                Vector3(nodeData.transform[0], nodeData.transform[1], nodeData.transform[2]),
+                Quaternion(
+                    nodeData.transform[3],
+                    nodeData.transform[4],
+                    nodeData.transform[5],
+                    nodeData.transform[6],
+                ),
+                Vector3(nodeData.transform[7], nodeData.transform[8], nodeData.transform[9]),
+            )
+        }
+    }
+
+    /**
+     * Schedules reskinning of a glTF model. This should be called after modifying node transforms
+     * that affect skinned meshes.
+     */
+    override fun scheduleGltfReskinning(impressNode: ImpressNode) {
+        val nodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        nodeData.isReskinningScheduled = true
+    }
+
+    /** Sets a material override for a specific primitive of a specific glTF model node. */
+    override fun setGltfModelNodeMaterialOverride(
+        impressNode: ImpressNode,
+        nativeMaterial: Long,
+        primitiveIndex: Int,
+    ) {
+        val gltfNodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        val materialData =
+            materials[nativeMaterial] ?: throw IllegalArgumentException("Material not found")
+        gltfNodeData.setGltfModelNodeMaterialOverride(materialData, primitiveIndex)
+    }
+
+    /** Clears a material override for a specific primitive of a specific glTF model node. */
+    override fun clearGltfModelNodeMaterialOverride(impressNode: ImpressNode, primitiveIndex: Int) {
+        val gltfNodeData =
+            getGltfNodeData(impressNode) ?: throw IllegalArgumentException("Impress node not found")
+        gltfNodeData.clearGltfModelNodeMaterialOverride(primitiveIndex)
     }
 
     /** Gets the impress nodes for glTF models that match the given token. */
@@ -421,14 +609,6 @@ public class FakeImpressApiImpl : ImpressApi {
     public fun impressNodeHasParent(impressNode: ImpressNode): Boolean {
         val gltfNodeData = getGltfNodeData(impressNode) ?: return false
         return impressNodes[gltfNodeData] != null
-    }
-
-    /** Returns the parent impress node for the given impress node. */
-    public fun getImpressNodeParent(impressNode: ImpressNode): Int {
-        val gltfNodeData = getGltfNodeData(impressNode)
-        val parentGltfNodeData = impressNodes[gltfNodeData]
-        return if (gltfNodeData == null || parentGltfNodeData == null) -1
-        else parentGltfNodeData.entityId
     }
 
     /** Returns the number of impress nodes that are currently animating. */
@@ -1089,6 +1269,10 @@ public class FakeImpressApiImpl : ImpressApi {
 
     public fun getStereoSurfaceEntities(): MutableMap<ImpressNode, StereoSurfaceEntityData> {
         return stereoSurfaceEntities
+    }
+
+    public fun registerModelHierarchy(gltfToken: Long, nodeNames: List<String>) {
+        modelHierarchies[gltfToken] = nodeNames
     }
 
     private fun getGltfNodeData(impressNode: ImpressNode): GltfNodeData? {

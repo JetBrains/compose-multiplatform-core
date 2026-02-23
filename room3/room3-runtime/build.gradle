@@ -130,7 +130,6 @@ androidXMultiplatform {
                 api(libs.jspecify)
                 api(project(":sqlite:sqlite-framework"))
                 api(libs.kotlinCoroutinesAndroid)
-                compileOnly("androidx.lifecycle:lifecycle-livedata:2.9.4")
                 implementation("androidx.annotation:annotation-experimental:1.5.0")
             }
         }
@@ -141,7 +140,6 @@ androidXMultiplatform {
                 implementation(libs.byteBuddy)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
-                implementation("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
                 implementation(libs.testRunner) // Needed for @FlakyTest and @Ignore
             }
         }

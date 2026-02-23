@@ -121,7 +121,7 @@ constructor(
      * @return A Bundle containing keys and values representing the security state of the system,
      *   vendor, and kernel.
      */
-    @Suppress("MissingJvmstatic")
+    @JvmOverloads
     public open fun getGlobalSecurityState(
         moduleMetadataProviderPackageName: String = ANDROID_MODULE_METADATA_PROVIDER
     ): Bundle {

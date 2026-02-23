@@ -15,7 +15,6 @@
  */
 package androidx.xr.arcore.projected
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -48,7 +47,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /**
  * Manages the lifecycle of a Projected session.
  *
- * @property activity The [Activity] instance.
+ * @property context The [Context] instance.
  * @property perceptionManager The [ProjectedPerceptionManager] instance.
  * @property timeSource The [ProjectedTimeSource] instance.
  * @property coroutineContext The [CoroutineContext] for this manager.
@@ -58,7 +57,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedManager
 internal constructor(
-    private val activity: Activity,
+    private val context: Context,
     internal val perceptionManager: ProjectedPerceptionManager,
     internal val timeSource: ProjectedTimeSource,
     private val coroutineContext: CoroutineContext,
@@ -82,9 +81,9 @@ internal constructor(
      */
     override fun create() {
         runBlocking {
-            checkProjectedSupportedAndUpToDate(activity)
+            checkProjectedSupportedAndUpToDate(context)
             if (testPerceptionService == null) {
-                bindPerceptionService(activity)
+                bindPerceptionService(context)
             } else {
                 perceptionManager.xrResources.service = testPerceptionService
                 serviceConnection =
@@ -254,7 +253,7 @@ internal constructor(
         running.set(false)
         try {
             if (::serviceConnection.isInitialized) {
-                activity.unbindService(serviceConnection)
+                context.unbindService(serviceConnection)
                 serviceBinder?.unlinkToDeath(serviceDeathRecipient, /* flags= */ 0)
             }
         } catch (e: IllegalArgumentException) {
@@ -266,7 +265,7 @@ internal constructor(
     }
 
     // Verify that Projected is installed and using the current version.
-    internal fun checkProjectedSupportedAndUpToDate(activity: Activity) {}
+    internal fun checkProjectedSupportedAndUpToDate(context: Context) {}
 
     /**
      * Binds to a perception projected service using provided [ServiceConnection].

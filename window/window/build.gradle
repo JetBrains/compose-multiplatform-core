@@ -22,7 +22,8 @@
  */
 
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
@@ -33,18 +34,20 @@ plugins {
 
 android {
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
-    sourceSets {
-        String testUtilDir = 'src/testUtil/java'
-        test {
-            java.srcDir testUtilDir
-            kotlin.directories.add(testUtilDir)
-        }
-        androidTest {
-            java.srcDir testUtilDir
-            kotlin.directories.add(testUtilDir)
-        }
-    }
     namespace = "androidx.window"
+}
+
+androidComponents {
+    def testUtilDir = "src/testUtil/java"
+    onVariants(selector().all()) { variant ->
+        def unitTestSources = (variant as HasUnitTest).unitTest.sources
+        unitTestSources.java.addStaticSourceDirectory(testUtilDir)
+        unitTestSources.kotlin.addStaticSourceDirectory(testUtilDir)
+
+        def androidTestSources = (variant as HasAndroidTest).androidTest.sources
+        androidTestSources.java.addStaticSourceDirectory(testUtilDir)
+        androidTestSources.kotlin.addStaticSourceDirectory(testUtilDir)
+    }
 }
 
 dependencies {

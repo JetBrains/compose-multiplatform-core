@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.testing
 
-import android.app.Activity
+import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
@@ -43,11 +43,11 @@ public class FakePerceptionRuntimeFactory() : PerceptionRuntimeFactory {
     override val requirements: Set<Feature> = emptySet()
 
     // TODO b/438853896 - migrate all tests to use the coroutine context
-    public fun createRuntime(activity: Activity): FakePerceptionRuntime =
-        createRuntime(activity, EmptyCoroutineContext)
+    public fun createRuntime(context: Context): FakePerceptionRuntime =
+        createRuntime(context, EmptyCoroutineContext)
 
     override fun createRuntime(
-        activity: Activity,
+        context: Context,
         coroutineContext: CoroutineContext,
     ): FakePerceptionRuntime =
         FakePerceptionRuntime(FakeLifecycleManager(hasCreatePermission), FakePerceptionManager())

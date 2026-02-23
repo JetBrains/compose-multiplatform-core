@@ -15,7 +15,7 @@
  */
 package androidx.xr.runtime.internal
 
-import android.app.Activity
+import android.content.Context
 import androidx.annotation.RestrictTo
 import kotlin.coroutines.CoroutineContext
 
@@ -28,8 +28,8 @@ public interface PerceptionRuntimeFactory : Service {
      * The provided [coroutineContext] will be used for any asynchronous operations initiated by the
      * runtime.
      *
-     * @param activity The host [Activity].
+     * @param context The host [Context].
      * @param coroutineContext The [CoroutineContext] for the runtime to use.
      */
-    public fun createRuntime(activity: Activity, coroutineContext: CoroutineContext): JxrRuntime
+    public fun createRuntime(context: Context, coroutineContext: CoroutineContext): JxrRuntime
 }

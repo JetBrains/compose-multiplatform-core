@@ -19,6 +19,9 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Context
 import androidx.annotation.MainThread
+import androidx.glance.wear.core.ActiveWearWidgetHandle
+import androidx.glance.wear.core.WearWidgetEvent
+import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.glance.wear.parcel.WidgetUpdateClientImpl
 

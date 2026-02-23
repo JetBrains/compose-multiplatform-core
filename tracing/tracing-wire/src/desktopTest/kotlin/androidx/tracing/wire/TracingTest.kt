@@ -23,6 +23,10 @@ import androidx.tracing.TRACE_PACKET_POOL_ARRAY_POOL_SIZE
 import androidx.tracing.TraceDriver
 import androidx.tracing.TraceSink
 import androidx.tracing.Tracer
+import androidx.tracing.wire.protos.MutableCallstack
+import androidx.tracing.wire.protos.MutableTracePacket
+import androidx.tracing.wire.protos.MutableTrackDescriptor
+import androidx.tracing.wire.protos.MutableTrackEvent
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -38,10 +42,6 @@ import kotlinx.coroutines.test.runTest
 import okio.blackholeSink
 import okio.buffer
 import org.junit.Before
-import perfetto.protos.MutableCallstack
-import perfetto.protos.MutableTracePacket
-import perfetto.protos.MutableTrackDescriptor
-import perfetto.protos.MutableTrackEvent
 
 class TestSink : TraceSink() {
     internal val packets = mutableListOf<MutableTracePacket>()

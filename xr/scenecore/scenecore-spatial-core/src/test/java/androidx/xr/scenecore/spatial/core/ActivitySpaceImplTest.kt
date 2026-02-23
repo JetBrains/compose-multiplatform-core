@@ -115,15 +115,18 @@ class ActivitySpaceImplTest : SystemSpaceEntityImplTest() {
         FakeSpatialApiVersionProvider.testSpatialApiVersion = null
     }
 
-    override fun getSystemSpaceEntityImpl(): SystemSpaceEntityImpl = activitySpace
+    override val systemSpaceEntityImpl: SystemSpaceEntityImpl
+        get() = activitySpace
 
-    override fun getDefaultFakeExecutor(): FakeScheduledExecutorService = fakeExecutor
+    override val defaultFakeExecutor: FakeScheduledExecutorService
+        get() = fakeExecutor
 
     override fun createChildAndroidXrEntity(): AndroidXrEntity {
         return testRuntime.createGroupEntity(Pose(), "child", activitySpace) as AndroidXrEntity
     }
 
-    override fun getActivitySpaceEntity(): ActivitySpaceImpl = activitySpace
+    override val activitySpaceEntity: ActivitySpaceImpl
+        get() = activitySpace
 
     private fun createSpatialState(bounds: Bounds): SpatialState {
         val isUnbounded =

@@ -75,7 +75,6 @@ import androidx.work.ListenableWorker;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.ProgressUpdater;
-import androidx.work.ScheduleEventListener;
 import androidx.work.Tracer;
 import androidx.work.WorkInfo;
 import androidx.work.WorkRequest;
@@ -140,14 +139,12 @@ public class WorkerWrapperTest extends DatabaseTest {
     private TestWorkerExceptionHandler mWorkerExceptionHandler;
     private Tracer mTracer;
     private ExecutionEventListener mWorkExecutionListener;
-    private ScheduleEventListener mWorkSchedulingListener;
 
     @Before
     public void setUp() {
         mContext = ApplicationProvider.getApplicationContext();
         mTracer = mock(Tracer.class);
         mWorkExecutionListener = mock(ExecutionEventListener.class);
-        mWorkSchedulingListener = mock(ScheduleEventListener.class);
         // Turn on tracing so we can ensure trace sections are correctly emitted.
         when(mTracer.isEnabled()).thenReturn(true);
         mWorkerExceptionHandler = new TestWorkerExceptionHandler();
@@ -158,7 +155,6 @@ public class WorkerWrapperTest extends DatabaseTest {
                 .setWorkerExecutionExceptionHandler(mWorkerExceptionHandler)
                 .setTracer(mTracer)
                 .setExecutionEventListener(mWorkExecutionListener)
-                .setScheduleEventListener(mWorkSchedulingListener)
                 .build();
         mWorkTaskExecutor = new WorkManagerTaskExecutor(mConfiguration.getTaskExecutor());
         mWorkSpecDao = mDatabase.workSpecDao();
@@ -580,12 +576,6 @@ public class WorkerWrapperTest extends DatabaseTest {
                 isOneOf(ENQUEUED, RUNNING, SUCCEEDED));
         assertThat(mWorkSpecDao.getState(cancelledWork.getStringId()), is(CANCELLED));
         assertBeginEndTraceSpans(prerequisiteWork.getWorkSpec());
-        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        verify(mWorkSchedulingListener, times(1)).onUnblocked(workSnapshotCaptor.capture(),
-                null);
-        WorkInfo unblockSnapshot = workSnapshotCaptor.getValue();
-        assertThat(unblockSnapshot.getId(), is(work.getId()));
-        assertThat(unblockSnapshot.getState(), is(ENQUEUED));
     }
 
     @Test
@@ -624,12 +614,6 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(mWorkSpecDao.getState(prerequisiteWork.getStringId()), is(FAILED));
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
         assertThat(mWorkSpecDao.getState(cancelledWork.getStringId()), is(CANCELLED));
-        ArgumentCaptor<WorkInfo> workSnapshotCaptor = ArgumentCaptor.forClass(WorkInfo.class);
-        verify(mWorkSchedulingListener, times(1)).onPrerequisiteFailed(workSnapshotCaptor.capture(),
-                null);
-        WorkInfo failSnapshot = workSnapshotCaptor.getValue();
-        assertThat(failSnapshot.getId(), is(work.getId()));
-        assertThat(failSnapshot.getState(), is(FAILED));
     }
 
     @Test

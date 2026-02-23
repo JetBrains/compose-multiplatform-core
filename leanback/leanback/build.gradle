@@ -50,6 +50,15 @@ android {
     namespace = "androidx.leanback"
 }
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def extraDirs = ["common", "kitkat", "api21"]
+        extraDirs.each { dir ->
+            variant.sources.java.addStaticSourceDirectory(dir)
+        }
+    }
+}
+
 androidx {
     name = "Leanback"
     type = SoftwareType.PUBLISHED_LIBRARY

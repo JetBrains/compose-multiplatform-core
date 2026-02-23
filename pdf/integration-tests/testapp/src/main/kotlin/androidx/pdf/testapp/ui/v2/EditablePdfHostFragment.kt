@@ -35,7 +35,9 @@ import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
 import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.pdf.PdfWriteHandle
 import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.pdf.ink.R
@@ -84,35 +86,54 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupBackPressedCallback()
+
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.saveState.collect { state ->
-                when (state) {
-                    is SaveState.Success -> {
-                        isEditModeEnabled = false
-                        viewModel.resetSaveState()
-                        loadingProgressBar.isVisible = false
-                    }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.saveState.collect { state ->
+                        when (state) {
+                            is SaveState.Success -> {
+                                isEditModeEnabled = false
+                                viewModel.resetSaveState()
+                                loadingProgressBar.isVisible = false
+                            }
 
-                    is SaveState.Error -> {
-                        viewModel.resetSaveState()
-                        loadingProgressBar.isVisible = false
-                        Snackbar.make(
-                            requireView(),
-                            getString(
-                                testR.string.write_error_message,
-                                state.error.message.toString(),
-                            ),
-                            Snackbar.LENGTH_SHORT,
-                        )
-                        // Show error dialog or log error
-                    }
+                            is SaveState.Error -> {
+                                viewModel.resetSaveState()
+                                loadingProgressBar.isVisible = false
+                                Snackbar.make(
+                                    requireView(),
+                                    getString(
+                                        testR.string.write_error_message,
+                                        state.error.message.toString(),
+                                    ),
+                                    Snackbar.LENGTH_SHORT,
+                                )
+                                // Show error dialog or log error
+                            }
 
-                    SaveState.Ready -> {
-                        // Re-enable the save button
-                        fragmentListener?.onSaveComplete()
+                            SaveState.Ready -> {
+                                // Re-enable the save button
+                                fragmentListener?.onSaveComplete()
+                            }
+                            SaveState.Saving -> {
+                                loadingProgressBar.isVisible = true
+                            }
+                        }
                     }
-                    SaveState.Saving -> {
-                        loadingProgressBar.isVisible = true
+                }
+
+                launch {
+                    viewModel.isDiscardDialogShown.collect { isShown ->
+                        if (isShown) {
+                            if (!discardDialog.isShowing) {
+                                discardDialog.show()
+                            }
+                        } else {
+                            if (discardDialog.isShowing) {
+                                discardDialog.dismiss()
+                            }
+                        }
                     }
                 }
             }
@@ -197,7 +218,7 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
             object : OnBackPressedCallback(enabled = false) {
                 override fun handleOnBackPressed() {
                     if (hasUnsavedChanges) {
-                        discardDialog.show()
+                        viewModel.showDiscardDialog(true)
                     } else {
                         isEditModeEnabled = false
                     }
@@ -216,12 +237,13 @@ class EditablePdfHostFragment : EditablePdfViewerFragment() {
             .setTitle(getString(R.string.discard_changes_dialog_title))
             .setMessage(getString(R.string.discard_changes_dialog_message))
             .setNegativeButton(getString(R.string.keep_editing_button)) { dialog, _ ->
-                dialog.dismiss()
+                viewModel.showDiscardDialog(false)
             }
             .setPositiveButton(getString(R.string.discard_button)) { dialog, _ ->
-                dialog.dismiss()
+                viewModel.showDiscardDialog(false)
                 isEditModeEnabled = false
             }
+            .setOnCancelListener { viewModel.showDiscardDialog(false) }
             .create()
 
     private fun getParcelFileDescriptorFromUri(

@@ -30,6 +30,7 @@ import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.annotation.models.ImagePdfObject
 import androidx.pdf.annotation.models.toImageSelection
+import androidx.pdf.centerPoint
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageContent
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -44,8 +45,6 @@ import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import androidx.pdf.view.PageManager
 import androidx.pdf.view.layout.PageLayoutManager
-import kotlin.collections.List
-import kotlin.collections.firstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -68,10 +67,39 @@ internal class SelectionStateManager(
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
-    @VisibleForTesting val _selectionModel = MutableStateFlow<SelectionModel?>(initialSelection)
+    @VisibleForTesting
+    val _selectionModel = MutableStateFlow(processInitialSelection(initialSelection))
 
     val selectionModel: StateFlow<SelectionModel?>
         get() = _selectionModel
+
+    /**
+     * Processes the initial selection.
+     *
+     * Placeholder [ImageSelection]s are filtered out and returned as null to initiate an
+     * asynchronous re-fetch of the actual bitmap data. All other selection types are returned
+     * as-is.
+     *
+     * @param initialSelection The selection to process.
+     * @return The sanitized [SelectionModel], or null if it requires a re-fetch.
+     */
+    private fun processInitialSelection(initialSelection: SelectionModel?): SelectionModel? {
+        if (initialSelection == null) return null
+
+        val selection = initialSelection.documentSelection.selection
+        if (selection is ImageSelection && selection.isPlaceholder) {
+            // This is a placeholder from a restored state.
+            // We need to re-fetch the image content asynchronously.
+            val bounds = selection.bounds.first()
+            backgroundScope.launch { maybeSelectImageAtPoint(bounds.pageNum, bounds.centerPoint) }
+
+            // Return null for the initial state, as the real selection will be set later.
+            return null
+        }
+
+        // For all other selection types, accept the initial value.
+        return initialSelection
+    }
 
     /** Replay at few values in case of an UI signal issued while [PdfView] is not collecting */
     private val _selectionUiSignalBus = MutableSharedFlow<SelectionUiSignal>(replay = 3)

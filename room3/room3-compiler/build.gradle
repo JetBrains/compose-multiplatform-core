@@ -87,6 +87,8 @@ dependencies {
     testImplementation(libs.antlr4)
     testImplementation(SdkHelperKt.getSdkDependency(project))
     testImplementationAarAsJar(project(":room3:room3-runtime"))
+    testImplementationAarAsJar(project(":room3:room3-rxjava3"))
+    testImplementationAarAsJar(project(":room3:room3-livedata"))
     testImplementationAarAsJar(project(":sqlite:sqlite"))
     testImplementation(project(":internal-testutils-common"))
 }

@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -74,7 +75,6 @@ import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.runtime.DeviceTrackingMode
 import java.time.LocalDate
 import java.time.format.TextStyle
-import java.util.Locale
 
 data class TodoItem(val description: String, val isCompleted: Boolean)
 
@@ -269,7 +269,8 @@ class FollowingSubspaceActivity : ComponentActivity() {
     @Composable
     private fun CalendarCard() {
         val currentDate = LocalDate.now()
-        val currentMonth = currentDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+        val currentMonth =
+            currentDate.month.getDisplayName(TextStyle.FULL, LocalLocale.current.platformLocale)
         val currentYear = currentDate.year
         val currentDay = currentDate.dayOfMonth
         val daysInMonth = currentDate.lengthOfMonth()

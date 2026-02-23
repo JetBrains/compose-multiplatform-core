@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.arcore.ExperimentalGesturesApi
 import androidx.xr.arcore.TiltGesture
 import androidx.xr.glimmer.Button
 import androidx.xr.glimmer.GlimmerTheme
@@ -63,8 +64,10 @@ class TiltGestureTrackingActivity : ComponentActivity() {
 
     private lateinit var session: Session
     private val sessionInitialized = CompletableDeferred<Unit>()
+    @OptIn(ExperimentalGesturesApi::class)
     private var tiltFlow by mutableStateOf<Flow<TiltGesture.State>?>(null)
 
+    @OptIn(ExperimentalGesturesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch(Dispatchers.IO) {
@@ -87,6 +90,7 @@ class TiltGestureTrackingActivity : ComponentActivity() {
             }
     }
 
+    @OptIn(ExperimentalGesturesApi::class)
     @Composable
     private fun TiltDemoApp(state: TiltGesture.State) {
         Column(

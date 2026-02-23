@@ -265,6 +265,8 @@ internal constructor(
             AnchorCreateSuccess(anchor)
         } catch (e: AnchorResourcesExhaustedException) {
             AnchorCreateResourcesExhausted()
+        } catch (e: IllegalStateException) {
+            AnchorCreateIllegalState()
         }
     }
 
@@ -338,6 +340,8 @@ internal constructor(
             AnchorCreateNotAuthorized()
         } catch (e: AnchorUnsupportedLocationException) {
             AnchorCreateUnsupportedLocation()
+        } catch (e: IllegalStateException) {
+            AnchorCreateIllegalState()
         }
     }
 

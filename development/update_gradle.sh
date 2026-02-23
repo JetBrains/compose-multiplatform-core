@@ -14,6 +14,7 @@ WRAPPER_FILES=("gradle/wrapper/gradle-wrapper.properties" "playground-common/gra
 
 BASE_URL="https://services.gradle.org/distributions"
 ZIP_FILE="gradle-${VERSION}-bin.zip"
+SRC_FILE="gradle-${VERSION}-src.zip"
 SIGNATURE_FILE="$ZIP_FILE.asc"
 SHA_FILE="${ZIP_FILE}.sha256"
 
@@ -34,6 +35,7 @@ check_url() {
 }
 
 check_url "$BASE_URL/$ZIP_FILE"
+check_url "$BASE_URL/$SRC_FILE"
 check_url "$BASE_URL/$SIGNATURE_FILE"
 check_url "$BASE_URL/$SHA_FILE"
 
@@ -43,6 +45,7 @@ mkdir -p "$DEST_DIR"
 
 echo "Downloading Gradle ${VERSION}..."
 curl -Lo "$DEST_DIR/$ZIP_FILE" "$BASE_URL/$ZIP_FILE"
+curl -Lo "$DEST_DIR/$SRC_FILE" "$BASE_URL/$SRC_FILE"
 curl -Lo "$DEST_DIR/$SIGNATURE_FILE" "$BASE_URL/$SIGNATURE_FILE"
 curl -Lo "$DEST_DIR/$SHA_FILE" "$BASE_URL/$SHA_FILE"
 

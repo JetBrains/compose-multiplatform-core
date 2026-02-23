@@ -30,6 +30,7 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature;
 import androidx.xr.scenecore.runtime.MaterialResource;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
@@ -50,6 +51,9 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -235,5 +239,28 @@ public class GltfEntityImplTest {
     public void getPoseInRealWorldSpace_nullParent_throwsException() {
         mGltfEntity.setParent(null);
         assertThrows(IllegalStateException.class, () -> mGltfEntity.getPose(Space.REAL_WORLD));
+    }
+
+    @Test
+    public void getNodes_returnsNodesFromFeature() {
+        List<GltfModelNodeFeature> fakeNodes = new ArrayList<>();
+        GltfModelNodeFeature mockNodeFeature = Mockito.mock(GltfModelNodeFeature.class);
+        fakeNodes.add(mockNodeFeature);
+        when(mMockGltfFeature.getNodes()).thenReturn(fakeNodes);
+
+        List<GltfModelNodeFeature> result = mGltfEntity.getNodes();
+
+        verify(mMockGltfFeature).getNodes();
+        assertThat(result).isSameInstanceAs(fakeNodes);
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    public void getNodes_returnsEmptyList_whenFeatureHasNoNodes() {
+        when(mMockGltfFeature.getNodes()).thenReturn(Collections.emptyList());
+
+        List<GltfModelNodeFeature> result = mGltfEntity.getNodes();
+
+        assertThat(result).isEmpty();
     }
 }

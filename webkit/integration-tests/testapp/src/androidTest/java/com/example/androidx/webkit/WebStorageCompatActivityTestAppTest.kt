@@ -36,8 +36,8 @@ class WebStorageCompatActivityTestAppTest {
 
     @Before
     fun setUp() {
-        WebkitTestHelpers.assumeFeature(WebViewFeature.DELETE_BROWSING_DATA)
-        WebkitTestHelpers.enableJavaScript(R.id.web_storage_webview)
+        assumeFeature(WebViewFeature.DELETE_BROWSING_DATA)
+        enableJavaScript(R.id.web_storage_webview)
     }
 
     @Test
@@ -45,10 +45,6 @@ class WebStorageCompatActivityTestAppTest {
         // TODO: test is flaky b/480026182
         val format = SimpleDateFormat("yyyy.MM.dd")
         val dateString: String = format.format(Date())
-        WebkitTestHelpers.assertHtmlElementContainsText(
-            R.id.web_storage_webview,
-            "timestamp",
-            dateString,
-        )
+        assertHtmlElementContainsText(R.id.web_storage_webview, "timestamp", dateString)
     }
 }

@@ -18,7 +18,6 @@
 package androidx.work.impl
 
 import androidx.annotation.RestrictTo
-import androidx.room.withTransaction
 import androidx.work.Configuration
 import androidx.work.ExistingWorkPolicy
 import androidx.work.Operation
@@ -26,15 +25,14 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager.UpdateResult
 import androidx.work.WorkManager.UpdateResult.APPLIED_FOR_NEXT_RUN
 import androidx.work.WorkRequest
+import androidx.work.executeAsync
 import androidx.work.impl.model.WorkSpec
-import androidx.work.impl.model.getWorkInfo
 import androidx.work.impl.utils.EnqueueRunnable
 import androidx.work.impl.utils.wrapWorkSpecIfNeeded
-import androidx.work.launchFuture
 import androidx.work.launchOperation
 import com.google.common.util.concurrent.ListenableFuture
 
-private suspend fun updateWorkImpl(
+private fun updateWorkImpl(
     processor: Processor,
     workDatabase: WorkDatabase,
     configuration: Configuration,
@@ -56,12 +54,9 @@ private suspend fun updateWorkImpl(
     }
     val isEnqueued = processor.isEnqueued(workSpecId)
     if (!isEnqueued) schedulers.forEach { scheduler -> scheduler.cancel(workSpecId) }
-    val scheduleListener = configuration.getScheduleEventListener()
-    workDatabase.withTransaction {
+    workDatabase.runInTransaction {
         val workSpecDao = workDatabase.workSpecDao()
         val workTagDao = workDatabase.workTagDao()
-        val oldWorkInfo =
-            if (scheduleListener != null) workSpecDao.getWorkInfo(workSpecId) else null
 
         // should keep state BLOCKING, preserving the chain, or possibly RUNNING
         // preserving run attempt count, to calculate back off correctly, and enqueue/override time
@@ -93,7 +88,6 @@ private suspend fun updateWorkImpl(
             workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
             workDatabase.workProgressDao().delete(workSpecId)
         }
-        scheduleListener?.onUpdated(oldWorkInfo!!, workSpecDao.getWorkInfo(workSpecId)!!)
     }
     if (!isEnqueued) Schedulers.schedule(configuration, workDatabase, schedulers)
     return if (isEnqueued) APPLIED_FOR_NEXT_RUN else UpdateResult.APPLIED_IMMEDIATELY
@@ -102,7 +96,7 @@ private suspend fun updateWorkImpl(
 internal fun WorkManagerImpl.updateWorkImpl(
     workRequest: WorkRequest
 ): ListenableFuture<UpdateResult> {
-    return launchFuture(workTaskExecutor.taskCoroutineDispatcher) {
+    return workTaskExecutor.serialTaskExecutor.executeAsync("updateWorkImpl") {
         updateWorkImpl(
             processor,
             workDatabase,
@@ -125,15 +119,9 @@ public fun WorkManagerImpl.enqueueUniquelyNamedPeriodic(
         "enqueueUniquePeriodic_$name",
         workTaskExecutor.serialTaskExecutor,
     ) {
-        val enqueueNew = suspend {
+        val enqueueNew = {
             val requests = listOf(workRequest)
-            val continuation =
-                WorkContinuationImpl(
-                    this@enqueueUniquelyNamedPeriodic,
-                    name,
-                    ExistingWorkPolicy.KEEP,
-                    requests,
-                )
+            val continuation = WorkContinuationImpl(this, name, ExistingWorkPolicy.KEEP, requests)
             EnqueueRunnable.enqueue(continuation)
         }
 

@@ -16,10 +16,14 @@ ext {
 }
 
 android {
-    sourceSets {
-        main.assets.srcDirs new File(fontDir, "font").getAbsolutePath()
-    }
     namespace = "androidx.emoji.bundled"
+}
+
+androidComponents {
+    def fontAssetsPath = new File(fontDir, "font").getAbsolutePath()
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets.addStaticSourceDirectory(fontAssetsPath)
+    }
 }
 
 dependencies {

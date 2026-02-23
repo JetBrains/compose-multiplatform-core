@@ -91,9 +91,7 @@ androidXMultiplatform {
             implementation(libs.kotlinSerializationCore)
         }
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
+        create("nonAndroidMain").dependsOn(commonMain)
 
         nonAndroidTest {
             dependsOn(commonTest)

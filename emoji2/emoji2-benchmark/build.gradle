@@ -21,6 +21,7 @@
  * modifying its settings.
  */
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
 
 plugins {
     id("AndroidXPlugin")
@@ -35,15 +36,14 @@ ext {
 }
 
 android {
-    sourceSets {
-        androidTest {
-            assets {
-                srcDirs = [new File(fontDir, "supported-emojis").getAbsolutePath()]
-            }
-        }
-    }
     namespace = "androidx.emoji2.benchmark"
+}
 
+androidComponents {
+    def emojiAssetsPath = new File(fontDir, "supported-emojis").getAbsolutePath()
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.assets.addStaticSourceDirectory(emojiAssetsPath)
+    }
 }
 
 dependencies {

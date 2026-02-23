@@ -60,9 +60,10 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /** A container for parsed static complication preview data. */
-class PreviewData internal constructor(private val data: Map<ComplicationType, ComplicationData>) {
+public class PreviewData
+internal constructor(private val data: Map<ComplicationType, ComplicationData>) {
     /** Returns the [ComplicationData] for the given type, or `null` if not found. */
-    operator fun get(type: ComplicationType): ComplicationData? = data[type]
+    public operator fun get(type: ComplicationType): ComplicationData? = data[type]
 
     internal companion object {
         private const val TAG = "PreviewData"

@@ -219,7 +219,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.validateAllArchiveInputsRecognized()
         project.afterEvaluate {
             if (androidXExtension.shouldPublishSbom().get()) {
-                project.configureSbomPublishing(androidXExtension.isIsolatedProjectsEnabled())
+                project.configureSbomPublishing()
             }
             if (androidXExtension.shouldPublish.get()) {
                 project.validatePublishedMultiplatformHasDefault()
@@ -725,6 +725,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             )
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
+            project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -867,7 +869,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         project.configureVersionFileWriter(libraryAndroidComponentsExtension, androidXExtension)
 
-        val prebuiltLibraries = listOf("libtracing_perfetto.so", "libc++_shared.so")
         libraryAndroidComponentsExtension.onVariants { variant ->
             if (variant.buildType == DEFAULT_PUBLISH_CONFIG) {
                 // Standard docs, resource API, and Metalava configuration for AndroidX projects.
@@ -887,22 +888,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     taskProvider.configure { task -> task.dependsOn("compileReleaseJavaWithJavac") }
                 }
             }
-            val verifyELFRegionAlignmentTaskProvider =
-                project.tasks.register(
-                    variant.name + "VerifyELFRegionAlignment",
-                    VerifyELFRegionAlignmentTask::class.java,
-                ) { task ->
-                    task.files.from(
-                        variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS).map { dir ->
-                            dir.asFileTree.files
-                                .filter { it.extension == "so" }
-                                .filter { it.path.contains("arm64-v8a") }
-                                .filterNot { prebuiltLibraries.contains(it.name) }
-                        }
-                    )
-                    task.cacheEvenIfNoOutputs()
-                }
-            project.addToBuildOnServer(verifyELFRegionAlignmentTaskProvider)
+            project.configureVerifyELFRegionAlignment(variant)
+            variant.aarMetadata.configureMinAgpVersion()
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
@@ -1371,6 +1358,18 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
         }
+    }
+
+    private fun Project.configureVerifyELFRegionAlignment(variant: LibraryVariant) {
+        val verifyELFRegionAlignmentTaskProvider =
+            project.tasks.register(
+                variant.name + "VerifyELFRegionAlignment",
+                VerifyELFRegionAlignmentTask::class.java,
+            ) { task ->
+                task.mergedNativeLibs.set(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
+                task.cacheEvenIfNoOutputs()
+            }
+        project.addToBuildOnServer(verifyELFRegionAlignmentTaskProvider)
     }
 
     /**

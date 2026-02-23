@@ -22,6 +22,7 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
@@ -431,6 +432,81 @@ public interface ImpressApi {
 
     /** This method parents an Impress node to another using their respective node objects. */
     public fun setImpressNodeParent(impressNodeChild: ImpressNode, impressNodeParent: ImpressNode)
+
+    /**
+     * Returns the parent node of the given Impress node.
+     *
+     * @param impressNode The node for which we want to get the parent.
+     * @return An ImpressNode representing the parent of the given node.
+     */
+    public fun getImpressNodeParent(impressNode: ImpressNode): ImpressNode
+
+    /**
+     * This method returns the number of child node of a given Impress node.
+     *
+     * @param impressNode The node for which we want to query the number of child nodes.
+     * @return An Int for the amount of child nodes for the given Impress node.
+     */
+    public fun getImpressNodeChildCount(impressNode: ImpressNode): Int
+
+    /**
+     * This method returns the child node of an Impress node at a specific index.
+     *
+     * @param impressNode The parent Impress node.
+     * @param childIndex The index (unique ID) of the child Impress node to get.
+     * @return An ImpressNode for the child Impress node at that index.
+     */
+    public fun getImpressNodeChildAt(impressNode: ImpressNode, childIndex: Int): ImpressNode
+
+    /**
+     * This method returns the name of the Impress node. An empty string will be returned if the
+     * node does not have a name.
+     *
+     * @param impressNode The node for which we want to get the name.
+     * @return A String for the name of the node.
+     */
+    public fun getImpressNodeName(impressNode: ImpressNode): String
+
+    /**
+     * Sets the local transform (TRS) of an Impress node relative to its direct parent.
+     *
+     * @param impressNode The node for which we want to set the local transform.
+     * @param transform The [Matrix4] representing the new local transform.
+     */
+    public fun setImpressNodeLocalTransform(impressNode: ImpressNode, transform: Matrix4)
+
+    /**
+     * Retrieves the local transform (TRS) of an Impress node relative to its direct parent.
+     *
+     * @param impressNode The node for which we want to get the local transform.
+     * @return A [Matrix4] representing the local transform.
+     */
+    public fun getImpressNodeLocalTransform(impressNode: ImpressNode): Matrix4
+
+    /**
+     * Sets the transform (TRS) of an Impress node relative to another Impress node.
+     *
+     * @param impressNode The node for which we want to set the transform.
+     * @param relativeNode The relative node to act as the coordinate space origin.
+     * @param transform The [Matrix4] representing the new relative transform.
+     */
+    public fun setImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+        transform: Matrix4,
+    )
+
+    /**
+     * Retrieves the transform (TRS) of an Impress node relative to another Impress node.
+     *
+     * @param impressNode The node for which we want to get the relative transform.
+     * @param relativeNode The relative node to act as the coordinate space origin.
+     * @return A [Matrix4] representing the relative transform.
+     */
+    public fun getImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+    ): Matrix4
 
     /**
      * This method creates an Impress node with a stereo panel and returns the node object. Note
@@ -1257,6 +1333,35 @@ public interface ImpressApi {
         nodeName: String,
         primitiveIndex: Int,
     )
+
+    /**
+     * Schedules reskinning of a glTF model. This should be called after modifying node transforms
+     * that affect skinned meshes.
+     *
+     * @param impressNode The root node of the glTF model or the specific node to reskin.
+     */
+    public fun scheduleGltfReskinning(impressNode: ImpressNode)
+
+    /**
+     * Sets a material override for a specific primitive of a specific glTF model node.
+     *
+     * @param impressNode The specific Impress node (retrieved via introspection) to override.
+     * @param nativeMaterial The native handle of the material to be used as the override.
+     * @param primitiveIndex The zero-based index of the primitive to override within the mesh.
+     */
+    public fun setGltfModelNodeMaterialOverride(
+        impressNode: ImpressNode,
+        nativeMaterial: Long,
+        primitiveIndex: Int,
+    )
+
+    /**
+     * Clears a material override for a specific primitive of a specific glTF model node.
+     *
+     * @param impressNode The specific Impress node (retrieved via introspection) to clear.
+     * @param primitiveIndex The zero-based index of the primitive to clear within the mesh.
+     */
+    public fun clearGltfModelNodeMaterialOverride(impressNode: ImpressNode, primitiveIndex: Int)
 
     /**
      * This method sets the IBL asset preference of the client to be set by the system.

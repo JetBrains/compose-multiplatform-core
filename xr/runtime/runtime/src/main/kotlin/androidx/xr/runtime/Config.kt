@@ -36,14 +36,14 @@ import androidx.annotation.RestrictTo
  *   [androidx.xr.runtime.AnchorPersistenceMode].
  * @property geospatial Feature that allows geospatial localization and tracking. See
  *   [androidx.xr.runtime.GeospatialMode].
+ * @property augmentedObjectCategories Feature that allows tracking of recognizable objects in the
+ *   environment. See [androidx.xr.runtime.AugmentedObjectCategory].
  */
 public class Config
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 constructor(
     public val planeTracking: androidx.xr.runtime.PlaneTrackingMode =
         androidx.xr.runtime.PlaneTrackingMode.DISABLED,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
     public val handTracking: androidx.xr.runtime.HandTrackingMode =
         androidx.xr.runtime.HandTrackingMode.DISABLED,
     public val deviceTracking: androidx.xr.runtime.DeviceTrackingMode =
@@ -56,6 +56,7 @@ constructor(
         androidx.xr.runtime.FaceTrackingMode.DISABLED,
     public val geospatial: androidx.xr.runtime.GeospatialMode =
         androidx.xr.runtime.GeospatialMode.DISABLED,
+    public val augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val eyeTracking: EyeTrackingMode = EyeTrackingMode.DISABLED,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -83,6 +84,8 @@ constructor(
      *   [androidx.xr.runtime.FaceTrackingMode].
      * @param geospatial Feature that allows geospatial localization and tracking. See
      *   [androidx.xr.runtime.GeospatialMode].
+     * @param augmentedObjectCategories Feature that allows tracking of recognizable objects in the
+     *   environment. See [androidx.xr.runtime.AugmentedObjectCategory].
      */
     @JvmOverloads
     public constructor(
@@ -98,16 +101,18 @@ constructor(
             androidx.xr.runtime.AnchorPersistenceMode.DISABLED,
         faceTracking: androidx.xr.runtime.FaceTrackingMode =
             androidx.xr.runtime.FaceTrackingMode.DISABLED,
-        geospatial: androidx.xr.runtime.GeospatialMode = androidx.xr.runtime.GeospatialMode.DISABLED,
+        geospatial: androidx.xr.runtime.GeospatialMode =
+            androidx.xr.runtime.GeospatialMode.DISABLED,
+        augmentedObjectCategories: List<AugmentedObjectCategory> = listOf(),
     ) : this(
         planeTracking,
-        /* augmentedObjectCategories= */ listOf(),
         handTracking,
         deviceTracking,
         depthEstimation,
         anchorPersistence,
         faceTracking,
         geospatial,
+        augmentedObjectCategories,
         eyeTracking = EyeTrackingMode.DISABLED,
     )
 

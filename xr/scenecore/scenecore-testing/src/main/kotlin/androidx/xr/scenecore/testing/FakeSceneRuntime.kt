@@ -74,6 +74,10 @@ public class FakeSceneRuntime(
 
     private var _state: Enum<State> = State.CREATED
 
+    /** The last [FakeMovableComponent] created or injected via [createMovableComponent]. */
+    public var lastMovableComponent: FakeMovableComponent? = null
+        private set
+
     /**
      * The current state of the adapter will transition based on the lifecycle of the adapter. It
      * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
@@ -361,6 +365,7 @@ public class FakeSceneRuntime(
         movableComponent.systemMovable = systemMovable
         movableComponent.scaleInZ = scaleInZ
         movableComponent.userAnchorable = userAnchorable
+        lastMovableComponent = movableComponent
         return movableComponent
     }
 

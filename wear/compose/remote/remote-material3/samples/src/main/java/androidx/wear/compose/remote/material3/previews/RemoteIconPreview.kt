@@ -26,7 +26,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.rememberRemoteColor
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteColor
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.vector.RemotePathData
 import androidx.compose.remote.creation.profile.Profile
@@ -72,7 +72,7 @@ private fun RemoteIconColorPreview(
 ) =
     RemotePreview(profile = profile) {
         Container {
-            val color = rememberRemoteColor("testColor") { Color.Red }
+            val color = rememberNamedRemoteColor("testColor", Color.Red)
             RemoteIcon(imageVector = VolumeUp, contentDescription = null, tint = color)
         }
     }

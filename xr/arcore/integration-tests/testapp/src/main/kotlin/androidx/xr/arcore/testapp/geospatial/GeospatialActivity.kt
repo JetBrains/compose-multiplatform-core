@@ -301,7 +301,7 @@ class GeospatialActivity : ComponentActivity() {
                                             .getScenePoseFromPerceptionPose(
                                                 arDevice.state.value.devicePose
                                             )
-                                    val up = headScenePose.activitySpacePose.up
+                                    val up = headScenePose.poseInActivitySpace.up
                                     val perceptionRayPose =
                                         session.scene.activitySpace.transformPoseTo(
                                             Pose(

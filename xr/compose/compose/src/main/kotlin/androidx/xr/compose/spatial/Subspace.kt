@@ -53,7 +53,6 @@ import androidx.xr.compose.subspace.AnchorTarget
 import androidx.xr.compose.subspace.ArDeviceTarget
 import androidx.xr.compose.subspace.FollowBehavior
 import androidx.xr.compose.subspace.FollowTarget
-import androidx.xr.compose.subspace.FollowTargetFlow
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -63,8 +62,9 @@ import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.recommendedSizeIfUnbounded
+import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
@@ -471,17 +471,29 @@ public fun FollowingSubspace(
             )
         }
 
-        var offset = 0f.meters
-        if (target is FollowTargetFlow) offset = target.offset
+        val offsetPose = getInitialSubspaceOffset(target)
 
         Subspace(
             modifier = modifier,
             allowUnboundedSubspace = allowUnboundedSubspace,
             subspaceRootNode = subspaceRoot,
         ) {
-            SpatialBox(modifier = SubspaceModifier.offset(z = offset.toDp()), content = content)
+            SpatialBox(
+                modifier =
+                    SubspaceModifier.offset(
+                            Meter(offsetPose.translation.x).toDp(),
+                            Meter(offsetPose.translation.y).toDp(),
+                            Meter(offsetPose.translation.z).toDp(),
+                        )
+                        .rotate(offsetPose.rotation),
+                content = content,
+            )
         }
     }
+}
+
+private fun getInitialSubspaceOffset(target: FollowTarget): Pose {
+    return if (target is ArDeviceTarget) target.offset else Pose.Identity
 }
 
 /** Validates the configuration for [FollowingSubspace]. */

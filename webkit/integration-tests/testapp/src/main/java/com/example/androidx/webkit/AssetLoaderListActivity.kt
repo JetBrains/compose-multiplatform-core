@@ -32,8 +32,7 @@ class AssetLoaderListActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_asset_loader_list)
         setTitle(R.string.asset_loader_list_activity_title)
-        WebkitHelpers.enableEdgeToEdge(this)
-        WebkitHelpers.appendWebViewVersionToTitle(this)
+        setUpDemoAppActivity()
 
         findViewById<MenuListView>(R.id.asset_loader_list)
             .setItems(

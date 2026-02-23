@@ -200,7 +200,7 @@ public class ActivitySpaceImpl(
      * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
      */
     public fun handleOriginUpdate(newTransform: Matrix4) {
-        mOpenXrReferenceSpaceTransform.set(newTransform)
+        openXrReferenceSpaceTransform.set(newTransform)
         var transformScaleAbsolute = Vector3(1.0f, 1.0f, 1.0f)
         var activitySpaceRotation = Quaternion.Identity
 

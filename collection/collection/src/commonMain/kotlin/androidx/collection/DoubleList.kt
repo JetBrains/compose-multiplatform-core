@@ -698,7 +698,7 @@ public class MutableDoubleList(initialCapacity: Int = 16) : DoubleList(initialCa
      *
      * @see ensureCapacity
      */
-    @Suppress("MissingJvmstatic")
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {

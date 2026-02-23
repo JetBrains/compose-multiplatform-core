@@ -43,14 +43,14 @@ import kotlinx.coroutines.delay
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrManager
 internal constructor(
-    private val activity: Activity,
+    private val context: Context,
     private val perceptionManager: OpenXrPerceptionManager,
     internal val timeSource: OpenXrTimeSource,
 ) : LifecycleManager {
 
     private companion object {
         private const val KEY_API_KEY = "com.google.android.ar.API_KEY"
-        private val activityList = mutableListOf<Activity>()
+        private val contextList = mutableListOf<Context>()
     }
 
     /**
@@ -79,9 +79,9 @@ internal constructor(
     override fun create() {
         nativePointer = nativeGetPointer()
         // Only initialize the OpenXrManager and bring up resources.
-        check(nativeInit(activity, startPollingThread = false))
-        activityList.add(activity)
-        setAuthentication(activity)
+        check(nativeInit(context, startPollingThread = false))
+        contextList.add(context)
+        setAuthentication(context)
         sessionPointer = nativeGetXrSessionHandle()
         instancePointer = nativeGetXrInstanceHandle()
     }
@@ -91,7 +91,6 @@ internal constructor(
     override var config: Config =
         Config(
             PlaneTrackingMode.DISABLED,
-            augmentedObjectCategories = listOf(),
             HandTrackingMode.DISABLED,
             DeviceTrackingMode.DISABLED,
             DepthEstimationMode.DISABLED,
@@ -111,7 +110,7 @@ internal constructor(
         // granted, so we manually check it here.
         if (
             config.handTracking != HandTrackingMode.DISABLED &&
-                ContextCompat.checkSelfPermission(activity, HAND_TRACKING) !=
+                ContextCompat.checkSelfPermission(context, HAND_TRACKING) !=
                     PackageManager.PERMISSION_GRANTED
         ) {
             throw SecurityException()
@@ -228,7 +227,7 @@ internal constructor(
         // lifecycle. Ideally make this two different functions.
         // The initialization will be a no-op but it will start the polling loop for the resumed
         // lifecycle.
-        check(nativeInit(activity, startPollingThread = true))
+        check(nativeInit(context, startPollingThread = true))
     }
 
     override suspend fun update(): ComparableTimeMark {
@@ -265,8 +264,8 @@ internal constructor(
 
     override fun stop() {
         // TODO: b/422830134 - Remove this check once there are multiple OpenXrManagers.
-        activityList.remove(activity)
-        if (activityList.isEmpty()) {
+        contextList.remove(context)
+        if (contextList.isEmpty()) {
             nativeDeInit()
             nativePointer = 0L
             sessionPointer = 0L
@@ -275,12 +274,12 @@ internal constructor(
         }
     }
 
-    private fun setAuthentication(activity: Activity) {
+    private fun setAuthentication(context: Context) {
         var apiKey: String? = null
         try {
             val appInfo =
-                activity.packageManager.getApplicationInfo(
-                    activity.packageName,
+                context.packageManager.getApplicationInfo(
+                    context.packageName,
                     PackageManager.GET_META_DATA,
                 )
             apiKey = appInfo.metaData?.getString(KEY_API_KEY)?.takeIf { it.isNotEmpty() }
@@ -288,11 +287,11 @@ internal constructor(
             // Did not read an API key from Application
         }
 
-        if (apiKey == null) {
+        if (apiKey == null && context is Activity) {
             try {
                 val activityInfo =
-                    activity.packageManager.getActivityInfo(
-                        activity.componentName,
+                    context.packageManager.getActivityInfo(
+                        context.componentName,
                         PackageManager.GET_META_DATA,
                     )
                 apiKey = activityInfo.metaData?.getString(KEY_API_KEY)?.takeIf { it.isNotEmpty() }

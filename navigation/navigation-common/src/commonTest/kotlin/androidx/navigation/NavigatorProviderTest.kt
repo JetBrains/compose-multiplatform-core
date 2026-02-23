@@ -22,6 +22,7 @@ import androidx.navigation.testing.TestNavigatorState
 import androidx.savedstate.SavedState
 import kotlin.test.Test
 import kotlin.test.fail
+import kotlinx.coroutines.Dispatchers
 
 @IgnoreAndroidHostTestTarget
 class NavigatorProviderTest {
@@ -51,7 +52,7 @@ class NavigatorProviderTest {
 
     @Test
     fun addExistingNavigatorDoesntReplace() {
-        val navigatorState = TestNavigatorState()
+        val navigatorState = TestNavigatorState(Dispatchers.Unconfined)
         val provider = NavigatorProvider()
         val navigator = EmptyNavigator()
 

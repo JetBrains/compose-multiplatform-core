@@ -82,6 +82,7 @@ import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
@@ -1023,8 +1024,8 @@ class SubspaceTest {
             }
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val headPanelTranslation = getSemanticsNodeWorldPose("HeadPanel").translation
-            assertThat(headPanelTranslation.z).isEqualTo(ArDeviceTarget.DEFAULT_OFFSET)
+            val headPanelPose = getSemanticsNodeWorldPose("HeadPanel")
+            assertThat(headPanelPose).isEqualTo(ArDeviceTarget.DEFAULT_OFFSET)
         }
 
     @Test
@@ -1623,7 +1624,11 @@ class SubspaceTest {
 
         composeTestRule
             .onSubspaceNodeWithTag("box")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, (-500).dp)
+            .assertPositionInRootIsEqualTo(
+                0.dp,
+                0.dp,
+                ArDeviceTarget.DEFAULT_OFFSET.translation.z.meters.toDp(),
+            )
             .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
             .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
             .assertDepthIsNotEqualTo(VolumeConstraints().maxDepth.toDp())

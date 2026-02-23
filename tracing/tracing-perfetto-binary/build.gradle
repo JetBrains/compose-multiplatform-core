@@ -66,11 +66,8 @@ if (reusePrebuiltsAar) {
 }
 
 android {
-    if (reusePrebuiltsAar) {
-        sourceSets {
-            main.jniLibs.srcDirs += new File(unzippedPrebuiltsAarDir, "jni")
-        }
-    } else { // build .so files from scratch
+    // build .so files from scratch
+    if (!reusePrebuiltsAar) {
         externalNativeBuild {
             cmake {
                 path "src/main/cpp/CMakeLists.txt"
@@ -79,6 +76,15 @@ android {
         }
     }
     namespace = "androidx.tracing.perfetto.binary"
+}
+
+if (reusePrebuiltsAar) {
+    androidComponents {
+        def jniLibsPath = new File(unzippedPrebuiltsAarDir, "jni").absolutePath
+        onVariants(selector().all()) { variant ->
+            variant.sources.jniLibs.addStaticSourceDirectory(jniLibsPath)
+        }
+    }
 }
 
 dependencies {

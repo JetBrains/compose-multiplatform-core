@@ -56,6 +56,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -160,10 +162,12 @@ public class SandboxedPdfDocument(
     override suspend fun searchDocument(
         query: String,
         pageRange: IntRange,
-    ): SparseArray<List<PageMatchBounds>> {
-        return withDocument { document ->
+    ): SparseArray<List<PageMatchBounds>> = coroutineScope {
+        return@coroutineScope withDocument { document ->
             SparseArray<List<PageMatchBounds>>(pageRange.last + 1).apply {
                 pageRange.forEach { pageNum ->
+                    // Check for cancellation at the start of new page search
+                    ensureActive()
                     (document.searchPageText(pageNum, query) ?: listOf())
                         .takeIf { it.isNotEmpty() }
                         ?.let { put(pageNum, it.map { result -> result.toContentClass() }) }

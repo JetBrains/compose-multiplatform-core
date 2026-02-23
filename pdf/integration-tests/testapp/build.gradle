@@ -16,10 +16,6 @@ android {
         compileSdkExtension = 19
     }
 
-    sourceSets {
-        androidTest.assets.srcDirs += files("src/androidTest/assets/".toString())
-    }
-
     viewBinding {
         enabled = true
     }

@@ -130,6 +130,9 @@ public open class PdfDocumentViewModel(
     internal val isTextSearchActiveFromState: Boolean
         get() = state[TEXT_SEARCH_STATE_KEY] ?: false
 
+    protected val isTextSearchActiveFlow: StateFlow<Boolean> =
+        state.getStateFlow(TEXT_SEARCH_STATE_KEY, false)
+
     /** isImmersiveModeFromState as set in [state] */
     internal val isImmersiveModeDesired: Boolean
         get() = state[IMMERSIVE_MODE_STATE_KEY] ?: false

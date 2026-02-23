@@ -63,7 +63,7 @@ public class FakeRuntimePlane(
 
     /** Creates a new [FakeRuntimeAnchor] and adds it to the [anchors] property. */
     override fun createAnchor(pose: Pose): RuntimeAnchor {
-        val anchor = FakeRuntimeAnchor(pose, this)
+        val anchor = FakeRuntimeAnchor(centerPose.compose(pose), this)
         anchors.add(anchor)
         return anchor
     }

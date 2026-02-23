@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.max
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.FilledIconButtonTokens
 import androidx.wear.compose.material3.tokens.FilledTonalIconButtonTokens
 import androidx.wear.compose.material3.tokens.IconButtonTokens
@@ -386,10 +387,13 @@ public object IconButtonDefaults {
         @Composable get() = MaterialTheme.shapes.small
 
     /**
-     * The minimum recommended parent top and bottom content padding for an [IconButton] in a list
-     * such as [TransformingLazyColumn], based on the screen height.
+     * The minimum vertical content padding for the list when an [IconButton] is placed at the top
+     * or bottom edge. Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      */
-    public val minimumListVerticalContentPadding: Dp
+    public val minimumVerticalListContentPadding: Dp
         @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** Recommended alpha to apply to an IconButton with Image content with disabled */

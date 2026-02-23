@@ -151,8 +151,8 @@ public sealed interface TransformingLazyColumnLayoutInfo {
     /**
      * The content padding in pixels applied before the first item in the direction of scrolling.
      *
-     * When the first item is visible and uses [Modifier.responsiveVerticalPadding], this value is
-     * the maximum of the `contentPadding` parameter provided to the [TransformingLazyColumn] and
+     * When the first item is visible and uses [Modifier.minimumVerticalContentPadding], this value
+     * is the maximum of the `contentPadding` parameter provided to the [TransformingLazyColumn] and
      * the responsive padding calculated for the item.
      *
      * When the first item is not visible, this value reflects the `contentPadding` parameter.
@@ -162,8 +162,8 @@ public sealed interface TransformingLazyColumnLayoutInfo {
     /**
      * The content padding in pixels applied after the last item in the direction of scrolling.
      *
-     * When the last item is visible and uses [Modifier.responsiveVerticalPadding], this value is
-     * the maximum of the `contentPadding` parameter provided to the [TransformingLazyColumn] and
+     * When the last item is visible and uses [Modifier.minimumVerticalContentPadding], this value
+     * is the maximum of the `contentPadding` parameter provided to the [TransformingLazyColumn] and
      * the responsive padding calculated for the item.
      *
      * When the last item is not visible, this value reflects the `contentPadding` parameter.

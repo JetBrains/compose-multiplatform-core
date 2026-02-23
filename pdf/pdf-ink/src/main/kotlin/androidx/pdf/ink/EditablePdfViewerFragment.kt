@@ -24,7 +24,6 @@ import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
 import android.util.SparseArray
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -36,6 +35,7 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesView
@@ -220,7 +220,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     private val toolbarLayoutChangeListener =
         View.OnLayoutChangeListener {
-            v,
+            _,
             left,
             top,
             right,
@@ -388,6 +388,12 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     private fun setupUiStateCollectors() {
         collectFlowOnLifecycleScope {
+            documentViewModel.shouldShowAnnotationToolbar.collect {
+                updateAnnotationToolbarVisibility(it)
+            }
+        }
+
+        collectFlowOnLifecycleScope {
             documentViewModel.pdfEditModeFlow.collect { editMode ->
                 if (editMode is PdfEditMode.Enabled) onEnterEditMode() else onExitEditMode()
                 updateUiForEditMode(editMode)
@@ -456,13 +462,17 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         }
     }
 
+    private fun updateAnnotationToolbarVisibility(isAnnotationToolbarVisible: Boolean) {
+        toolbarCoordinator.isVisible = isAnnotationToolbarVisible
+        annotationToolbar.isVisible = isAnnotationToolbarVisible
+    }
+
     private fun updateUiForAnnotationsEditMode(isEnabled: Boolean) {
         PdfFeatureFlags.isMultiTouchScrollEnabled = isEnabled
 
-        annotationToolbar.visibility = if (isEnabled) VISIBLE else GONE
-
         if (isEnabled) {
             pdfView.clearCurrentSelection()
+
             // Wait for the toolbar to be laid out, as we need to utilize its width and height
             annotationToolbar.post { wetStrokesView.maskPath = createToolbarMaskPath() }
         } else {
@@ -483,19 +493,12 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                 strokeIdToPageNumMap = strokeIdToPageNumMap,
                 annotationsViewModel = documentViewModel,
             )
-        val touchTolerancePx =
-            TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                TOUCH_TOLERANCE_IN_DP,
-                resources.displayMetrics,
-            )
         wetStrokesView.apply {
             addFinishedStrokesListener(wetStrokesOnFinishedListener)
             wetStrokesViewTouchHandler =
-                WetStrokesViewTouchHandler(
-                    pageInfoProvider::getPageInfoFromViewCoordinates,
-                    touchTolerancePx,
-                ) { strokeId, pageNum ->
+                WetStrokesViewTouchHandler(pageInfoProvider::getPageInfoFromViewCoordinates) {
+                    strokeId,
+                    pageNum ->
                     strokeIdToPageNumMap[strokeId] = pageNum
                 }
             setOnTouchListener(wetStrokesViewTouchHandler)

@@ -50,6 +50,7 @@ import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -85,6 +86,21 @@ class CallExtensionScopeImplTest {
         mFakeCallProxy.detailsToReturn = null
 
         // The method should wait for details (with timeout) and safely return NONE if still null.
+        val type = mCallExtensionScope.resolveCallExtensionsType()
+        assertEquals(NONE, type)
+    }
+
+    @Test
+    fun testResolveCallExtensionsType_Managed_ReturnsNone() = runBlocking {
+        mFakeCallProxy.detailsToReturn =
+            ExtensionCallDetails(
+                hasTransactionalProperty = false,
+                isSelfManagedProperty = false,
+                accountHandle = null,
+                extras = Bundle(),
+            )
+        assertNotNull(mFakeCallProxy.getExtensionDetails())
+        assertFalse(mFakeCallProxy.getExtensionDetails()!!.isSelfManagedProperty)
         val type = mCallExtensionScope.resolveCallExtensionsType()
         assertEquals(NONE, type)
     }
@@ -160,7 +176,7 @@ class CallExtensionScopeImplTest {
     }
 
     // Helper to keep the test body clean
-    private fun createDetails(extras: Bundle) = ExtensionCallDetails(false, null, extras)
+    private fun createDetails(extras: Bundle) = ExtensionCallDetails(false, true, null, extras)
 
     internal class FakeCallProxy : CallProxy {
         var detailsToReturn: ExtensionCallDetails? = null

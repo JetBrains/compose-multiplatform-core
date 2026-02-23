@@ -38,7 +38,7 @@ class ProcessGlobalConfigActivityTestAppTest {
 
     @Test
     fun testSetDataDirectorySuffix() {
-        WebkitTestHelpers.assumeStartupFeature(
+        assumeStartupFeature(
             WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             ApplicationProvider.getApplicationContext(),
         )
@@ -59,7 +59,7 @@ class ProcessGlobalConfigActivityTestAppTest {
             file.exists(),
         )
 
-        WebkitTestHelpers.clickMenuListItemWithString(R.string.data_directory_suffix_activity_title)
+        clickMenuListItemWithString(R.string.data_directory_suffix_activity_title)
 
         // We need to wait for the WebView to finish loading on a different process.
         @SuppressLint("BanThreadSleep") Thread.sleep(5000)
@@ -69,7 +69,7 @@ class ProcessGlobalConfigActivityTestAppTest {
 
     @Test
     fun testSetDirectoryBasePaths() {
-        WebkitTestHelpers.assumeStartupFeature(
+        assumeStartupFeature(
             WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             ApplicationProvider.getApplicationContext(),
         )
@@ -91,7 +91,7 @@ class ProcessGlobalConfigActivityTestAppTest {
             dataBasePath.exists() || cacheBasePath.exists() || dataSuffixedPath.exists(),
         )
 
-        WebkitTestHelpers.clickMenuListItemWithString(R.string.directory_base_path_activity_title)
+        clickMenuListItemWithString(R.string.directory_base_path_activity_title)
 
         // We need to wait for the WebView to finish loading on a different process.
         @SuppressLint("BanThreadSleep") Thread.sleep(5000)

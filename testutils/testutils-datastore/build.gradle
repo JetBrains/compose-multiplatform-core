@@ -51,8 +51,8 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
         }
 
-        nonWebCommonMain {}.dependsOn(commonMain)
-        nonWebCommonTest {}.dependsOn(commonTest)
+        create("nonWebCommonMain").dependsOn(commonMain)
+        create("nonWebCommonTest").dependsOn(commonTest)
         nativeMain.dependsOn(nonWebCommonMain)
 
         jvmMain {

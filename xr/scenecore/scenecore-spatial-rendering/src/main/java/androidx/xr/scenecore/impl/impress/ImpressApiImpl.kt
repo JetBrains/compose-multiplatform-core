@@ -23,6 +23,8 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.Matrix4
+import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange
 import androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace
@@ -645,6 +647,118 @@ public class ImpressApiImpl : ImpressApi {
             impressNodeChild.handle,
             impressNodeParent.handle,
         )
+
+    override fun getImpressNodeParent(impressNode: ImpressNode): ImpressNode =
+        ImpressNode(nGetImpressNodeParent(getViewNativeHandle(view), impressNode.handle))
+
+    override fun getImpressNodeChildCount(impressNode: ImpressNode): Int =
+        nGetImpressNodeChildCount(getViewNativeHandle(view), impressNode.handle)
+
+    override fun getImpressNodeChildAt(impressNode: ImpressNode, childIndex: Int): ImpressNode =
+        ImpressNode(
+            nGetImpressNodeChildAt(getViewNativeHandle(view), impressNode.handle, childIndex)
+        )
+
+    override fun getImpressNodeName(impressNode: ImpressNode): String =
+        nGetImpressNodeName(getViewNativeHandle(view), impressNode.handle)
+
+    override fun setImpressNodeLocalTransform(impressNode: ImpressNode, transform: Matrix4) {
+        val pose = transform.pose
+        val scale = transform.scale
+        nSetImpressNodeLocalTransform(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            pose.translation.x,
+            pose.translation.y,
+            pose.translation.z,
+            pose.rotation.x,
+            pose.rotation.y,
+            pose.rotation.z,
+            pose.rotation.w,
+            scale.x,
+            scale.y,
+            scale.z,
+        )
+    }
+
+    override fun getImpressNodeLocalTransform(impressNode: ImpressNode): Matrix4 {
+        val buffer = FloatArray(10)
+        nGetImpressNodeLocalTransform(getViewNativeHandle(view), impressNode.handle, buffer)
+
+        return Matrix4.fromTrs(
+            Vector3(buffer[0], buffer[1], buffer[2]),
+            Quaternion(buffer[3], buffer[4], buffer[5], buffer[6]),
+            Vector3(buffer[7], buffer[8], buffer[9]),
+        )
+    }
+
+    override fun setImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+        transform: Matrix4,
+    ) {
+        val pose = transform.pose
+        val scale = transform.scale
+        nSetImpressNodeRelativeTransform(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            relativeNode.handle,
+            pose.translation.x,
+            pose.translation.y,
+            pose.translation.z,
+            pose.rotation.x,
+            pose.rotation.y,
+            pose.rotation.z,
+            pose.rotation.w,
+            scale.x,
+            scale.y,
+            scale.z,
+        )
+    }
+
+    override fun getImpressNodeRelativeTransform(
+        impressNode: ImpressNode,
+        relativeNode: ImpressNode,
+    ): Matrix4 {
+        val buffer = FloatArray(10)
+        nGetImpressNodeRelativeTransform(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            relativeNode.handle,
+            buffer,
+        )
+
+        return Matrix4.fromTrs(
+            Vector3(buffer[0], buffer[1], buffer[2]),
+            Quaternion(buffer[3], buffer[4], buffer[5], buffer[6]),
+            Vector3(buffer[7], buffer[8], buffer[9]),
+        )
+    }
+
+    override fun scheduleGltfReskinning(impressNode: ImpressNode) {
+        nScheduleGltfReskinning(getViewNativeHandle(view), impressNode.handle)
+    }
+
+    override fun setGltfModelNodeMaterialOverride(
+        impressNode: ImpressNode,
+        nativeMaterial: Long,
+        primitiveIndex: Int,
+    ) {
+        nSetGltfModelNodeMaterialOverride(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            nativeMaterial,
+            primitiveIndex,
+        )
+    }
+
+    override fun clearGltfModelNodeMaterialOverride(impressNode: ImpressNode, primitiveIndex: Int) {
+        nClearGltfModelNodeMaterialOverride(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            primitiveIndex,
+        )
+    }
 
     override fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode =
         createStereoSurface(stereoMode, ContentSecurityLevel.NONE)
@@ -1637,7 +1751,10 @@ public class ImpressApiImpl : ImpressApi {
     override fun clearPreferredEnvironmentIblAsset(): Unit =
         nClearEnvironmentLight(getViewNativeHandle(view))
 
-    override fun disposeAllResources(): Unit = nDisposeAllResources(getViewNativeHandle(view))
+    override fun disposeAllResources(): Unit {
+        resourceManager.disable()
+        nDisposeAllResources(getViewNativeHandle(view))
+    }
 
     private fun getViewNativeHandle(view: View?): Long {
         if (view != null) {
@@ -1777,6 +1894,73 @@ public class ImpressApiImpl : ImpressApi {
         view: Long,
         impressNodeChild: Int,
         impressNodeParent: Int,
+    )
+
+    private external fun nGetImpressNodeParent(view: Long, impressNode: Int): Int
+
+    private external fun nGetImpressNodeChildCount(view: Long, impressNode: Int): Int
+
+    private external fun nGetImpressNodeChildAt(view: Long, impressNode: Int, index: Int): Int
+
+    private external fun nGetImpressNodeName(view: Long, impressNode: Int): String
+
+    private external fun nSetImpressNodeLocalTransform(
+        view: Long,
+        impressNode: Int,
+        tx: Float,
+        ty: Float,
+        tz: Float,
+        qx: Float,
+        qy: Float,
+        qz: Float,
+        qw: Float,
+        sx: Float,
+        sy: Float,
+        sz: Float,
+    )
+
+    private external fun nGetImpressNodeLocalTransform(
+        view: Long,
+        impressNode: Int,
+        outTransform: FloatArray,
+    )
+
+    private external fun nSetImpressNodeRelativeTransform(
+        view: Long,
+        impressNode: Int,
+        relativeNode: Int,
+        tx: Float,
+        ty: Float,
+        tz: Float,
+        qx: Float,
+        qy: Float,
+        qz: Float,
+        qw: Float,
+        sx: Float,
+        sy: Float,
+        sz: Float,
+    )
+
+    private external fun nGetImpressNodeRelativeTransform(
+        view: Long,
+        impressNode: Int,
+        relativeNode: Int,
+        outTransform: FloatArray,
+    )
+
+    private external fun nScheduleGltfReskinning(view: Long, impressNode: Int)
+
+    private external fun nSetGltfModelNodeMaterialOverride(
+        view: Long,
+        impressNode: Int,
+        material: Long,
+        primitiveIndex: Int,
+    )
+
+    private external fun nClearGltfModelNodeMaterialOverride(
+        view: Long,
+        impressNode: Int,
+        primitiveIndex: Int,
     )
 
     private external fun nCreateStereoSurfaceEntity(

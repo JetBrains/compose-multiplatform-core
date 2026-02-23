@@ -20,6 +20,7 @@ import android.app.Activity
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
 import androidx.xr.scenecore.impl.impress.GltfModel
 import androidx.xr.scenecore.impl.impress.ImpressNode
+import androidx.xr.scenecore.impl.impress.Material
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.MaterialResource
@@ -322,6 +323,9 @@ class SpatialEnvironmentFeatureImplTest {
             val material = fakeLoadMaterial(false)
             val nodeName = "fakeNode"
             val animationName = "fakeAnimation"
+            val gltfHandle = (gltf as GltfModel).nativeHandle
+            val materialHandle = (material as Material).nativeHandle
+            fakeImpressApi.registerModelHierarchy(gltfHandle, listOf(nodeName))
 
             // Ensure that an environment is set.
             environment.preferredSpatialEnvironment =
@@ -331,22 +335,16 @@ class SpatialEnvironmentFeatureImplTest {
             val materials = fakeImpressApi.getMaterials()
             val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
 
-            assertThat(
-                    fakeImpressApi
-                        .getImpressNodes()
-                        .keys
-                        .stream()
-                        .filter { node ->
-                            node.materialOverride != null &&
-                                node.materialOverride!!.type ==
-                                    FakeImpressApiImpl.MaterialData.Type.WATER
-                        }
-                        .toArray()
-                )
-                .hasLength(1) // 1 glTF node that should be overridden with the water material.
+            val overriddenNodes =
+                fakeImpressApi.getImpressNodes().keys.filter { node ->
+                    val override = node.nodeMaterialOverrides[0]
+                    override != null && override.materialHandle == materialHandle
+                }
+
+            assertThat(overriddenNodes).hasSize(1)
             assertThat(materials).isNotEmpty()
-            assertThat(materials.keys.toTypedArray()[0]).isEqualTo(WATER_MATERIAL_ID)
-            assertThat(materials[WATER_MATERIAL_ID]!!.type)
+            assertThat(materials.containsKey(materialHandle)).isTrue()
+            assertThat(materials[materialHandle]!!.type)
                 .isEqualTo(FakeImpressApiImpl.MaterialData.Type.WATER)
             assertThat(loopingAnimatingNodes).isEqualTo(1)
         }
@@ -374,7 +372,7 @@ class SpatialEnvironmentFeatureImplTest {
                         .getImpressNodes()
                         .keys
                         .stream()
-                        .filter { node -> node.materialOverride == null }
+                        .filter { node -> node.nodeMaterialOverrides.size == 0 }
                         .toArray()
                 )
                 .hasLength(2)
@@ -406,7 +404,7 @@ class SpatialEnvironmentFeatureImplTest {
                         .getImpressNodes()
                         .keys
                         .stream()
-                        .filter { node -> node.materialOverride == null }
+                        .filter { node -> node.nodeMaterialOverrides.size == 0 }
                         .toArray()
                 )
                 .hasLength(2)
@@ -436,7 +434,7 @@ class SpatialEnvironmentFeatureImplTest {
                         .getImpressNodes()
                         .keys
                         .stream()
-                        .filter { node -> node.materialOverride == null }
+                        .filter { node -> node.nodeMaterialOverrides.size == 0 }
                         .toArray()
                 )
                 .hasLength(2)
@@ -456,7 +454,7 @@ class SpatialEnvironmentFeatureImplTest {
         val expectedParentHandle = subspaceHandleCaptor.value
         val geometryNodes = fakeImpressApi.getImpressNodesForToken((gltf as GltfModel).nativeHandle)
         val gltfNode = ImpressNode(geometryNodes!![0])
-        val actualParentHandle = fakeImpressApi.getImpressNodeParent(gltfNode)
+        val actualParentHandle = fakeImpressApi.getImpressNodeParent(gltfNode).handle
 
         assertThat(actualParentHandle).isNotEqualTo(-1)
         assertThat(actualParentHandle).isNotEqualTo(gltfNode.handle)

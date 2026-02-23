@@ -59,8 +59,8 @@ class FeatureNotAvailableTestAppTest(featureActivity: Pair<String, Int>) {
 
     @Before
     fun setUp() {
-        WebkitTestHelpers.assumeFeatureNotAvailable(feature)
-        WebkitTestHelpers.clickMenuListItemWithString(titleResourceId)
+        assumeFeatureNotAvailable(feature)
+        clickMenuListItemWithString(titleResourceId)
     }
 
     @Test

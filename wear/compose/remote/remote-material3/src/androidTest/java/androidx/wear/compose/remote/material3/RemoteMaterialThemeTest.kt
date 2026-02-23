@@ -17,7 +17,7 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.rememberRemoteColor
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteColor
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -59,7 +59,7 @@ class RemoteMaterialThemeTest {
         val remoteColorScheme: RemoteColorScheme =
             object : RemoteColorScheme() {
                 override val onSurface: RemoteColor
-                    @Composable get() = rememberRemoteColor("OverrideValue") { Color.Yellow }
+                    @Composable get() = rememberNamedRemoteColor("OverrideValue", Color.Yellow)
             }
 
         remoteComposeTestRule.runTest {

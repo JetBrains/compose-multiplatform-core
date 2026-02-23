@@ -61,7 +61,7 @@ fun TransformingLazyColumnButtonsSample() {
                         onClick = {},
                         modifier =
                             Modifier.minimumVerticalContentPadding(
-                                    ButtonDefaults.minimumListVerticalContentPadding
+                                    ButtonDefaults.minimumVerticalListContentPadding
                                 )
                                 .fillMaxWidth()
                                 .transformedHeight(this, transformationSpec),
@@ -109,7 +109,7 @@ fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
                             onClick = { removeElementAt(index) },
                             modifier =
                                 Modifier.minimumVerticalContentPadding(
-                                        CompactButtonDefaults.minimumListVerticalContentPadding
+                                        CompactButtonDefaults.minimumVerticalListContentPadding
                                     )
                                     .transformedHeight(this, transformationSpec)
                                     .animateItem(),
@@ -121,8 +121,8 @@ fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
                         ListHeader(
                             modifier =
                                 Modifier.minimumVerticalContentPadding(
-                                    ListHeaderDefaults.minimumListTopContentPadding,
-                                    ListHeaderDefaults.minimumListBottomContentPadding,
+                                    ListHeaderDefaults.minimumTopListContentPadding,
+                                    ListHeaderDefaults.minimumBottomListContentPadding,
                                 )
                         ) {
                             Text("ListHeader heading")
@@ -133,7 +133,7 @@ fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
                             modifier =
                                 Modifier.fillMaxWidth()
                                     .minimumVerticalContentPadding(
-                                        CardDefaults.minimumListVerticalContentPadding
+                                        CardDefaults.minimumVerticalListContentPadding
                                     )
                                     .transformedHeight(this, transformationSpec)
                                     .animateItem(),

@@ -16,7 +16,6 @@
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
-import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion.testSpatialApiVersion
@@ -109,24 +108,26 @@ class MainPanelEntityImplTest {
     }
 
     @Test
-    fun transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
-        val pose = mainPanelEntity.transformPixelCoordinatesToPose(Vector2(0f, 0f))
+    fun transformPixelCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
+        val position = mainPanelEntity.transformPixelCoordinatesToLocalPosition(Vector2(0f, 0f))
         val expected =
             Vector3(mainPanelEntity.size.width * -0.5f, mainPanelEntity.size.height * 0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_center_returnsIdentity() {
-        val pose = mainPanelEntity.transformNormalizedCoordinatesToPose(Vector2(0f, 0f))
-        Truth.assertThat(pose).isEqualTo(Pose.Identity)
+    fun transformNormalizedCoordinatesToLocalPosition_center_returnsZeroVector() {
+        val position =
+            mainPanelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(0f, 0f))
+        Truth.assertThat(position).isEqualTo(Vector3.Zero)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
-        val pose = mainPanelEntity.transformNormalizedCoordinatesToPose(Vector2(-1f, 1f))
+    fun transformNormalizedCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
+        val position =
+            mainPanelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(-1f, 1f))
         val expected =
             Vector3(mainPanelEntity.size.width * -0.5f, mainPanelEntity.size.height * 0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 }

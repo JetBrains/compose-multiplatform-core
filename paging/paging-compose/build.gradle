@@ -72,7 +72,7 @@ androidXMultiplatform {
             implementation(libs.truth)
         }
 
-        nonAndroidMain {}.dependsOn(commonMain)
+        create("nonAndroidMain").dependsOn(commonMain)
         desktopMain.dependsOn(nonAndroidMain)
         nonJvmMain.dependsOn(nonAndroidMain)
     }

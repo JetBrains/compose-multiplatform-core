@@ -41,7 +41,7 @@ private val DEBUG_TLC_LAYOUT = false
 
 internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     contentPadding: PaddingValues,
-    density: Density,
+    private val density: Density,
     layoutDirection: LayoutDirection,
     private val graphicsContext: GraphicsContext,
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>,
@@ -54,14 +54,13 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     override val leftContentPadding: Int =
         with(density) { contentPadding.calculateLeftPadding(layoutDirection).roundToPx() }
 
-    class MeasurementScope(
+    inner class MeasurementScope(
         var visibleItems: ArrayDeque<TransformingLazyColumnMeasuredItem>,
         var itemSpacing: Int,
         var beforeContentPadding: Int,
         var afterContentPadding: Int,
         var itemsCount: Int,
         var maxHeight: Int,
-        var reverseLayout: Boolean,
     ) {
         val isAtStartOrOverscrolledBackwards: Boolean
             get() = with(visibleItems.first()) { index == 0 && offset >= beforeContentPadding }
@@ -93,6 +92,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                     topOffset -= additionalItem.transformedHeight + itemSpacing
                     topPassIndex -= 1 // Indexes must be incremental.
                 }
+                recalculateBeforePaddings()
             }
 
         fun addVisibleItemsAfter(measuredItemProvider: MeasuredItemProvider): Unit =
@@ -114,7 +114,42 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                     add(additionalItem)
                     bottomPassIndex += 1 // Indexes must be incremental.
                 }
+                recalculateAfterPaddings()
             }
+
+        private fun recalculateBeforePaddings() {
+            val minimumBeforeContentPadding =
+                visibleItems
+                    .firstOrNull()
+                    ?.takeIf { it.index == 0 }
+                    ?.let {
+                        with(density) {
+                            if (!reverseLayout) {
+                                it.minimumTopContentPadding?.roundToPx() ?: 0
+                            } else {
+                                it.minimumBottomContentPadding?.roundToPx() ?: 0
+                            }
+                        }
+                    } ?: initialBeforeContentPadding
+            beforeContentPadding = max(initialBeforeContentPadding, minimumBeforeContentPadding)
+        }
+
+        private fun recalculateAfterPaddings() {
+            val minimumAfterContentPadding =
+                visibleItems
+                    .lastOrNull()
+                    ?.takeIf { it.index == itemsCount - 1 }
+                    ?.let {
+                        with(density) {
+                            if (!reverseLayout) {
+                                it.minimumBottomContentPadding?.roundToPx() ?: 0
+                            } else {
+                                it.minimumTopContentPadding?.roundToPx() ?: 0
+                            }
+                        }
+                    } ?: initialAfterContentPadding
+            afterContentPadding = max(initialAfterContentPadding, minimumAfterContentPadding)
+        }
 
         fun correctLayout(anchorItem: TransformingLazyColumnMeasuredItem): Unit =
             with(visibleItems) {
@@ -232,7 +267,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             }
     }
 
-    private var measurementScope = MeasurementScope(ArrayDeque(), 0, 0, 0, 0, 0, reverseLayout)
+    private var measurementScope = MeasurementScope(ArrayDeque(), 0, 0, 0, 0, 0)
 
     override fun measure(
         itemsCount: Int,
@@ -332,38 +367,6 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             // Add the rest of the items.
             addVisibleItemsAfter(measuredItemProvider)
             addVisibleItemsBefore(measuredItemProvider)
-
-            val minimumBeforeContentPadding =
-                visibleItems
-                    .firstOrNull()
-                    ?.takeIf { it.index == 0 }
-                    ?.let {
-                        with(density) {
-                            if (!reverseLayout) {
-                                it.minimumTopContentPadding?.roundToPx() ?: 0
-                            } else {
-                                it.minimumBottomContentPadding?.roundToPx() ?: 0
-                            }
-                        }
-                    } ?: initialBeforeContentPadding
-
-            val minimumAfterContentPadding =
-                visibleItems
-                    .lastOrNull()
-                    ?.takeIf { it.index == itemsCount - 1 }
-                    ?.let {
-                        with(density) {
-                            if (!reverseLayout) {
-                                it.minimumBottomContentPadding?.roundToPx() ?: 0
-                            } else {
-                                it.minimumTopContentPadding?.roundToPx() ?: 0
-                            }
-                        }
-                    } ?: initialAfterContentPadding
-
-            this.beforeContentPadding =
-                max(initialBeforeContentPadding, minimumBeforeContentPadding)
-            this.afterContentPadding = max(initialAfterContentPadding, minimumAfterContentPadding)
 
             fun restoreLayoutIfNeeded() {
                 if (fitsScreen()) {

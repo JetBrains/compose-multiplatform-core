@@ -19,12 +19,12 @@
 
 package androidx.work
 
+import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.concurrent.futures.await
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
-import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
  * Awaits an [Operation] without blocking a thread.
@@ -39,19 +39,21 @@ internal fun launchOperation(
     tracer: Tracer,
     label: String,
     executor: Executor,
-    block: suspend () -> Unit,
+    block: () -> Unit,
 ): Operation {
     val liveData = MutableLiveData<Operation.State>(Operation.IN_PROGRESS)
     val future =
-        launchFuture(executor.asCoroutineDispatcher()) {
-            tracer.traced(label) {
-                try {
-                    block()
-                    liveData.postValue(Operation.SUCCESS)
-                    Operation.SUCCESS
-                } catch (t: Throwable) {
-                    liveData.postValue(Operation.State.FAILURE(t))
-                    throw t
+        CallbackToFutureAdapter.getFuture { completer ->
+            executor.execute {
+                tracer.traced(label) {
+                    try {
+                        block()
+                        liveData.postValue(Operation.SUCCESS)
+                        completer.set(Operation.SUCCESS)
+                    } catch (t: Throwable) {
+                        liveData.postValue(Operation.State.FAILURE(t))
+                        completer.setException(t)
+                    }
                 }
             }
         }

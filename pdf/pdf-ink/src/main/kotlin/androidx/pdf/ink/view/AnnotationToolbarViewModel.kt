@@ -16,8 +16,6 @@
 
 package androidx.pdf.ink.view
 
-import androidx.core.graphics.ColorUtils
-import androidx.pdf.ink.util.InkDefaults
 import androidx.pdf.ink.view.brush.model.BrushSizes
 import androidx.pdf.ink.view.colorpalette.model.Color
 import androidx.pdf.ink.view.colorpalette.model.Emoji
@@ -246,14 +244,8 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
                         BrushSizes.highlightBrushSizes[
                                 state.highlighterState.selectedBrushSizeIndex]
                     val color = (state.highlighterState.paletteItem as? Color)?.color
-                    val colorWithAlpha =
-                        color?.let {
-                            ColorUtils.setAlphaComponent(it, InkDefaults.HIGHLIGHTER_ALPHA)
-                        }
                     val emoji = (state.highlighterState.paletteItem as? Emoji)?.emoji
-                    ToolbarEffect.ToolUpdated(
-                        Highlighter(brushSize.toFloat(), colorWithAlpha, emoji)
-                    )
+                    ToolbarEffect.ToolUpdated(Highlighter(brushSize.toFloat(), color, emoji))
                 }
                 AnnotationToolsKey.ERASER -> {
                     ToolbarEffect.ToolUpdated(Eraser)

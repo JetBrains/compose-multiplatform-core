@@ -38,6 +38,8 @@ class CustomMetadataRules : ComponentMetadataRule {
                 it.addFile("${id.name}-${id.version}.klib")
                 // pom.asc files are not always resolved when .module files are present
                 it.addFile("${id.name}-${id.version}.pom.asc")
+                it.addFile("${id.name}-${id.version}.module.asc")
+                it.addFile("${id.name}-${id.version}.jar.asc")
             }
         }
     }

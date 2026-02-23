@@ -863,7 +863,7 @@ class PowerMetric(private val type: Type) : Metric() {
             return Type.Battery()
         }
 
-        @Suppress("MissingJvmstatic")
+        @JvmOverloads
         @JvmStatic
         fun Energy(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()
@@ -871,7 +871,7 @@ class PowerMetric(private val type: Type) : Metric() {
             return Type.Energy(categories)
         }
 
-        @Suppress("MissingJvmstatic")
+        @JvmOverloads
         @JvmStatic
         fun Power(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()

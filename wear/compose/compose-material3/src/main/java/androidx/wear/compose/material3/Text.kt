@@ -313,16 +313,22 @@ public object TextConfigurationDefaults {
 /** Contains the default values used by [Text]. */
 public object TextDefaults {
     /**
-     * The minimum recommended parent top content padding for [Text] in a list such as
-     * [TransformingLazyColumn], based on the screen height.
+     * The minimum top content padding for the list when a [Text] is placed at the top. Recommended
+     * for use with [TransformingLazyColumnItemScope]'s [Modifier.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
      */
-    public val minimumListTopContentPadding: Dp
+    public val minimumTopListContentPadding: Dp
         @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /**
-     * The minimum recommended parent bottom content padding for [Text] in a list such as
-     * [TransformingLazyColumn], based on the screen height.
+     * The minimum bottom content padding for the list when a [Text] is placed at the bottom.
+     * Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      */
-    public val minimumListBottomContentPadding: Dp
+    public val minimumBottomListContentPadding: Dp
         @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 }

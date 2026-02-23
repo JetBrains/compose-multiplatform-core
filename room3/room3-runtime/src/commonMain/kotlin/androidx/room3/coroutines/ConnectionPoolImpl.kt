@@ -218,6 +218,7 @@ private class Pool(
     val statementCacheSize: Int,
 ) {
     private val lock = ReentrantLock()
+    private val mutex = Mutex()
     private var size = 0
     private var isClosed = false
     private val connections = arrayOfNulls<ConnectionWrapper>(capacity)
@@ -256,29 +257,36 @@ private class Pool(
     suspend fun acquire(): ConnectionWrapper {
         connectionPermits.acquire()
         try {
-            return lock.withLock {
+            lock.withLock {
                 if (isClosed) {
                     throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
                 }
-                if (availableConnections.isEmpty()) {
-                    tryOpenNewConnectionLocked()
+                if (availableConnections.isNotEmpty()) {
+                    return availableConnections.removeLast()
                 }
-                availableConnections.removeLast()
+            }
+            // At this point a permit was acquired but there is no available connections therefore
+            // the pool is not at capacity and a new connection is needed to satisfy the permit.
+            check(size < capacity)
+            val newConnection =
+                mutex.withReentrantLock {
+                    newConnectionWrapper(connectionFactory.invoke(), statementCacheSize)
+                }
+            lock.withLock {
+                if (isClosed) {
+                    // Pool was closed in-between opening a new connection, close it and throw.
+                    newConnection.close()
+                    throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
+                }
+                // Add the new connection to the pool and return it, once recycled it will be
+                // added to the available stack.
+                connections[size++] = newConnection
+                return newConnection
             }
         } catch (ex: Throwable) {
             connectionPermits.release()
             throw ex
         }
-    }
-
-    private suspend fun tryOpenNewConnectionLocked() {
-        if (size >= capacity) {
-            // Capacity reached
-            return
-        }
-        val newConnection = newConnectionWrapper(connectionFactory.invoke(), statementCacheSize)
-        connections[size++] = newConnection
-        availableConnections.addLast(newConnection)
     }
 
     fun recycle(connection: ConnectionWrapper) {

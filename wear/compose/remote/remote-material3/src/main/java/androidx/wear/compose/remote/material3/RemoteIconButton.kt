@@ -92,7 +92,7 @@ public fun RemoteIconButton(
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
-                LocalRemoteTypography.current.typography.labelMedium,
+                LocalRemoteTypography.current.labelMedium,
                 content,
             ),
     )
@@ -152,14 +152,13 @@ public object RemoteIconButtonDefaults {
      * @param buttonSize The size of the icon button
      */
     public fun iconSizeFor(buttonSize: RemoteDp): RemoteDp =
-        RemoteDp(
-            buttonSize.value
-                .gt(LargeButtonSize.value)
-                .select(
-                    ifTrue = LargeIconSize.value,
-                    ifFalse = max(SmallIconSize.value, buttonSize.value / 2f),
-                )
-        )
+        buttonSize.value
+            .gt(LargeButtonSize.value)
+            .select(
+                ifTrue = LargeIconSize.value,
+                ifFalse = max(SmallIconSize.value, buttonSize.value / 2f),
+            )
+            .asRemoteDp()
 
     /**
      * The recommended size of an icon when used inside an icon button with size [SmallButtonSize]

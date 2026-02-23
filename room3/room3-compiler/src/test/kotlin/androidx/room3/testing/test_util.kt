@@ -81,6 +81,7 @@ object COMMON {
     val LIVE_DATA by lazy {
         loadJavaCode("common/input/LiveData.java", LifecyclesTypeNames.LIVE_DATA.canonicalName)
     }
+    val FLOW_LIVE_DATA by lazy { loadKotlinCode("common/input/FlowLiveData.kt") }
     val COMPUTABLE_LIVE_DATA by lazy {
         loadJavaCode(
             "common/input/ComputableLiveData.java",

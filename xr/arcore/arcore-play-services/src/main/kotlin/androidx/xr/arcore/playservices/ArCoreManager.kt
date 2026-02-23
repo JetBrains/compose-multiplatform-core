@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.playservices
 
-import android.app.Activity
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -53,7 +53,7 @@ import kotlinx.coroutines.delay
 /**
  * Manages the lifecycle of an ARCore session.
  *
- * @property activity The [Activity] instance.
+ * @property context The [Context] instance.
  * @property perceptionManager The [ArCorePerceptionManager] instance.
  * @property timeSource The [ArCoreTimeSource] instance.
  */
@@ -61,7 +61,7 @@ import kotlinx.coroutines.delay
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreManager
 internal constructor(
-    private val activity: Activity,
+    private val context: Context,
     internal val perceptionManager: ArCorePerceptionManager,
     internal val timeSource: ArCoreTimeSource,
     private val arCoreApkInstance: ArCoreApk = ArCoreApk.getInstance(),
@@ -83,8 +83,8 @@ internal constructor(
      * [ArCorePerceptionManager].
      */
     override fun create() {
-        checkARCoreSupportedAndUpToDate(activity)
-        _session = Session(activity)
+        checkARCoreSupportedAndUpToDate(context)
+        _session = Session(context)
         perceptionManager.session = _session
     }
 
@@ -202,8 +202,8 @@ internal constructor(
     // Verify that ARCore is installed and using the current version.
     // This implementation is derived from
     // https://developers.google.com/ar/develop/java/session-config#verify_that_arcore_is_installed_and_up_to_date
-    internal fun checkARCoreSupportedAndUpToDate(activity: Activity) {
-        when (arCoreApkInstance.checkAvailability(activity)) {
+    internal fun checkARCoreSupportedAndUpToDate(context: Context) {
+        when (arCoreApkInstance.checkAvailability(context)) {
             Availability.SUPPORTED_INSTALLED -> {
                 return
             }

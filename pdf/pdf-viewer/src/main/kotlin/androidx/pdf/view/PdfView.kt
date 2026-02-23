@@ -27,6 +27,7 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Looper
 import android.os.Parcelable
 import android.util.AttributeSet
@@ -1209,7 +1210,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 formWidgetMetadataLoader?.let { loader ->
                     pageManager?.maybeUpdateFormWidgetMetadata(pageNumber, loader)
                 }
-                formFillingEditText = null
             }
         }
 
@@ -1374,6 +1374,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (t != oldt) {
             maybeShowFastScroller()
         }
+        manageActionModeOnScroll()
         onViewportChanged()
     }
 
@@ -1493,6 +1494,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         pdfDocument?.removeOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
         accessibilityManager.removeAccessibilityStateChangeListener(accessibilityStateChangeHandler)
+        removeCallbacks(showSelectionActionModeRunnable)
     }
 
     override fun onSaveInstanceState(): Parcelable? {
@@ -1560,6 +1562,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         val cappedX = x.coerceIn(0..computeHorizontalScrollRange())
         val cappedY = y.coerceIn(minVerticalScrollPosition..computeVerticalScrollRange())
         super.scrollTo(cappedX, cappedY)
+    }
+
+    /**
+     * Manages the visibility of the selection action mode during scrolling. The action mode is
+     * immediately hidden when scrolling starts and a delayed runnable is posted to potentially show
+     * it again after scrolling has settled.
+     */
+    private fun manageActionModeOnScroll() {
+        // Immediately hide the action mode as soon as scrolling begins.
+        hideActionMode()
+        // Always remove any pending show runnables. This prevents the action mode
+        // from flickering or reappearing during continuous scrolling.
+        removeCallbacks(showSelectionActionModeRunnable)
+        // Post a runnable to potentially show the action mode after a delay.
+        // This ensures the action mode only reappears after scrolling has settled.
+        postDelayed(showSelectionActionModeRunnable, ACTION_MODE_REAPPEAR_DELAY_MS)
     }
 
     override fun computeHorizontalScrollRange(): Int {
@@ -1638,7 +1656,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     layoutStrategy = requireNotNull(localStateToRestore.layoutStrategy),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
                     errorFlow = errorFlow,
-                    isFormFillingEnabled = isFormFillingEnabled,
+                    isFormFillingEnabled = { isFormFillingEnabled },
                 )
                 .apply { onViewportChanged() }
         selectionStateManager =
@@ -1930,7 +1948,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         horizontalPageSpacingPx = horizontalPageSpacing.toFloat(),
                         verticalPageSpacingPx = verticalPageSpacing.toFloat(),
                         errorFlow = errorFlow,
-                        isFormFillingEnabled = isFormFillingEnabled,
+                        isFormFillingEnabled = { isFormFillingEnabled },
                     )
                     .apply { onViewportChanged() }
             selectionStateManager =
@@ -2056,6 +2074,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             pageLocationsPool.release(location)
         }
     }
+
+    private val showSelectionActionModeRunnable = Runnable { updateSelectionActionModeVisibility() }
 
     /**
      * Shows or hides the selection action mode, as appropriate. If the current selection is visible
@@ -2268,8 +2288,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         ViewCompat.setAccessibilityDelegate(this, pdfViewAccessibilityManager)
     }
 
-    private fun commitFormFillingEditText() {
-        formFillingEditText?.let { formWidgetInteractionHandler?.commitEditTextValue(it) }
+    internal fun commitFormFillingEditText() {
+        formFillingEditText?.let { formWidgetInteractionHandler?.finishTextEditing(it) }
     }
 
     private val shouldShowFormFillingTooltip: Boolean
@@ -2630,18 +2650,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         ): Boolean {
             links.externalLinks.forEach { externalLink ->
                 if (externalLink.bounds.any { it.contains(pdfCoordinates.x, pdfCoordinates.y) }) {
-                    val link = ExternalLink(externalLink.uri)
-                    if (linkClickListener?.onLinkClicked(link) == true) {
-                        return true
-                    } else {
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW, link.uri)
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            return false
-                        }
-                    }
-                    return true
+                    return openExternalLink(externalLink.uri)
                 }
             }
             return false
@@ -2664,6 +2673,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 }
             }
             return false
+        }
+    }
+
+    internal fun openExternalLink(uri: Uri): Boolean {
+        val externalLink = ExternalLink(uri)
+        if (linkClickListener?.onLinkClicked(externalLink) == true) {
+            return true
+        } else {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, externalLink.uri)
+                context.startActivity(intent)
+                return true
+            } catch (_: Exception) {
+                return false
+            }
         }
     }
 
@@ -2728,6 +2752,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         /** The amount of delay between two scroll events */
         private const val AUTO_SCROLL_DELAY_IN_MILLIS = 5L
+
+        /** The amount of delay for actionMode to show after scroll event */
+        private const val ACTION_MODE_REAPPEAR_DELAY_MS = 500L
 
         /**
          * The tolerance in percentage to control how close the touch point needs to be to the

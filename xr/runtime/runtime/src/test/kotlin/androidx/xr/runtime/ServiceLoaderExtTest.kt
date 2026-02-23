@@ -64,7 +64,13 @@ class ServiceLoaderExtTest {
     @Test
     fun loadProviders_combinesFastAndLoaderProviders() {
         val stateExtenders =
-            loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
+            loadProviders(
+                StateExtender::class.java,
+                listOf(
+                    FakeStateExtender::class.java.name,
+                    AnotherFakeStateExtender::class.java.name,
+                ),
+            )
 
         assertThat(stateExtenders.size).isEqualTo(2)
 

@@ -60,7 +60,7 @@ androidXMultiplatform {
             api(libs.okio)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.8.1")
         }
-        webMain {}.dependencies {
+        webMain.dependencies {
             api(libs.okio)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.8.1")
         }

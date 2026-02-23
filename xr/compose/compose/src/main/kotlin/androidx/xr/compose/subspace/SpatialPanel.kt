@@ -409,10 +409,12 @@ private fun <T : View> AndroidViewPanel(
                     dimensions = SpatialPanelDimensions.minimumPanelDimension,
                     name = "ViewPanel:${view.id}",
                     pose = Pose.Identity,
+                    parent = null,
                 )
             )
             .also {
                 it.setShape(shape, density)
+                it.enabled = false
                 view.setTag(R.id.compose_xr_local_view_entity, it)
             }
     }
@@ -731,12 +733,18 @@ public fun SpatialActivityPanel(
     val dialogManager = LocalDialogManager.current
     val density = LocalDensity.current
 
-    val pixelDimensions = IntSize2d(DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)
+    val pixelDimensions = IntSize2d(0, 0)
 
     val corePanelEntity: CoreActivityPanelEntity = remember {
         CoreActivityPanelEntity(
-            ActivityPanelEntity.create(session, pixelDimensions, "ActivityPanel-${intent.action}")
-        )
+                ActivityPanelEntity.create(
+                    session,
+                    pixelDimensions,
+                    "ActivityPanel-${intent.action}",
+                    parent = null,
+                )
+            )
+            .apply { enabled = false }
     }
 
     SideEffect { corePanelEntity.setShape(shape, density) }
@@ -856,14 +864,15 @@ internal fun buildSpatialPanelModifier(
                 )
 
             is MovePolicy ->
-                baseModifier.movable(
-                    enabled = dragPolicy.isEnabled,
-                    stickyPose = dragPolicy.isStickyPose,
-                    scaleWithDistance = dragPolicy.shouldScaleWithDistance,
-                    onMoveStart = dragPolicy.onMoveStart,
-                    onMoveEnd = dragPolicy.onMoveEnd,
-                    onMove = dragPolicy.onMove,
-                )
+                SubspaceModifier.movable(
+                        enabled = dragPolicy.isEnabled,
+                        stickyPose = dragPolicy.isStickyPose,
+                        scaleWithDistance = dragPolicy.shouldScaleWithDistance,
+                        onMoveStart = dragPolicy.onMoveStart,
+                        onMoveEnd = dragPolicy.onMoveEnd,
+                        onMove = dragPolicy.onMove,
+                    )
+                    .then(baseModifier)
 
             else -> {
                 baseModifier

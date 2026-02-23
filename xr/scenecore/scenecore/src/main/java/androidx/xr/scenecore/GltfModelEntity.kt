@@ -16,7 +16,9 @@
 
 package androidx.xr.scenecore
 
+import android.os.Build
 import androidx.annotation.MainThread
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
@@ -27,6 +29,7 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.Collections
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -44,6 +47,81 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
 
     private val mAnimationStateListeners: MutableMap<Consumer<AnimationState>, Executor> =
         Collections.synchronizedMap(mutableMapOf())
+
+    private val _nodes: List<GltfModelNode> by lazy {
+        // The unique identifier of a node is their index so we first get the
+        // count of the nodes in the model from the native side.
+        val features = rtEntity!!.nodes
+        val list = ArrayList<GltfModelNode>(features.size)
+
+        for (i in features.indices) {
+            // For each node index in the model, query its name from the native side
+            // and create a [GltfModelNode]. A node may have no name (`null`).
+            val feature = features[i]
+            list.add(GltfModelNode(this, feature, i, feature.name))
+        }
+        list.toList()
+    }
+
+    /**
+     * A list of all [GltfModelNode]s defined in the [GltfModelEntity]. The list is lazily
+     * initialized on the first access.
+     *
+     * The returned list corresponds to the flattened array of nodes defined in the source glTF
+     * file. The order of elements in this list is guaranteed to match the order of nodes in the
+     * glTF file's `nodes` array.
+     */
+    public val nodes: List<GltfModelNode>
+        @MainThread
+        get() {
+            checkNotDisposed()
+            return _nodes
+        }
+
+    @delegate:RequiresApi(Build.VERSION_CODES.O)
+    private val _animations: List<GltfAnimation> by lazy {
+        // The unique identifier of an animation is their index so we first get the
+        // count of the nodes in the model from the native side.
+        val features = rtEntity.animations
+        val list = ArrayList<GltfAnimation>(features.size)
+
+        for (i in features.indices) {
+            // For each animation index in the model, query its name from the native side
+            // and create a [GltfAnimation]. An animation may have no name ("").
+            val feature = features[i]
+            list.add(
+                GltfAnimation(
+                    rtGltfEntity = rtEntity,
+                    rtGltfAnimation = feature,
+                    index = feature.animationIndex,
+                    name = feature.animationName,
+                    // The animation duration is in seconds [Float]. We convert it to the [Duration]
+                    // datatype.
+                    duration =
+                        java.time.Duration.ofMillis(
+                            (feature.animationDuration * TimeUnit.SECONDS.toMillis(1)).toLong()
+                        ),
+                )
+            )
+        }
+        Collections.unmodifiableList(list)
+    }
+
+    /**
+     * A list of all [GltfAnimation]s defined in the [GltfModelEntity]. The list is lazily
+     * initialized on the first access.
+     *
+     * The returned list corresponds to the array of animations defined in the source glTF file. The
+     * order of elements in this list is guaranteed to match the order of animations in the glTF
+     * file's `animations` array.
+     */
+    @get:RequiresApi(Build.VERSION_CODES.O)
+    public val animations: List<GltfAnimation>
+        @MainThread
+        get() {
+            checkNotDisposed()
+            return _animations
+        }
 
     /** Specifies the current animation state of the GltfModelEntity. */
     public class AnimationState private constructor(private val name: String) {
