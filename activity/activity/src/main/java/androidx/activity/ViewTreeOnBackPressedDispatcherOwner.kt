@@ -19,6 +19,7 @@
 package androidx.activity
 
 import android.view.View
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 
 /**
  * Set the [OnBackPressedDispatcherOwner] associated with the given [View]. Calls to
@@ -32,7 +33,7 @@ import android.view.View
  * @param onBackPressedDispatcherOwner [OnBackPressedDispatcherOwner] associated with the [View]
  */
 @JvmName("set")
-fun View.setViewTreeOnBackPressedDispatcherOwner(
+public fun View.setViewTreeOnBackPressedDispatcherOwner(
     onBackPressedDispatcherOwner: OnBackPressedDispatcherOwner
 ) {
     setTag(R.id.view_tree_on_back_pressed_dispatcher_owner, onBackPressedDispatcherOwner)
@@ -46,11 +47,16 @@ fun View.setViewTreeOnBackPressedDispatcherOwner(
  *   ancestors
  */
 @JvmName("get")
-fun View.findViewTreeOnBackPressedDispatcherOwner(): OnBackPressedDispatcherOwner? {
-    return generateSequence(this) { it.parent as? View }
-        .mapNotNull {
-            it.getTag(R.id.view_tree_on_back_pressed_dispatcher_owner)
+public fun View.findViewTreeOnBackPressedDispatcherOwner(): OnBackPressedDispatcherOwner? {
+    var currentView: View? = this
+    while (currentView != null) {
+        val dispatchOwner =
+            currentView.getTag(R.id.view_tree_on_back_pressed_dispatcher_owner)
                 as? OnBackPressedDispatcherOwner
+        if (dispatchOwner != null) {
+            return dispatchOwner
         }
-        .firstOrNull()
+        currentView = currentView.getParentOrViewTreeDisjointParent() as? View
+    }
+    return null
 }

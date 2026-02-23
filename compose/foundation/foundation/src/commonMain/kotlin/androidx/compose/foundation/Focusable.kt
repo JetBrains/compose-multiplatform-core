@@ -19,8 +19,6 @@ package androidx.compose.foundation
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.relocation.findBringIntoViewParent
-import androidx.compose.foundation.relocation.scrollIntoView
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
@@ -40,8 +38,8 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.observeReads
-import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.requestFocus
@@ -145,10 +143,16 @@ private class FocusableElement(private val interactionSource: MutableInteraction
     }
 }
 
+/**
+ * The node that adds functionality on top of the underlying focus system.
+ *
+ * When making changes here, consider adding similar functionality to the FocusTargetInteropNode for
+ * View-Compose interop cases.
+ */
 internal class FocusableNode(
     private var interactionSource: MutableInteractionSource?,
     focusability: Focusability = Focusability.Always,
-    private val onFocusChange: ((Boolean) -> Unit)? = null
+    private val onFocusChange: ((Boolean) -> Unit)? = null,
 ) :
     DelegatingNode(),
     SemanticsModifierNode,
@@ -171,11 +175,13 @@ internal class FocusableNode(
         delegate(
             FocusTargetModifierNode(
                 focusability = focusability,
-                onFocusChange = ::onFocusStateChange
+                onFocusChange = ::onFocusStateChange,
             )
         )
 
-    private var requestFocus: (() -> Boolean)? = null
+    fun requestFocus(): Boolean {
+        return focusTargetNode.requestFocus()
+    }
 
     private val focusedBoundsObserver: FocusedBoundsObserverNode?
         get() =
@@ -204,6 +210,9 @@ internal class FocusableNode(
         }
     }
 
+    val focusState: FocusState
+        get() = focusTargetNode.focusState
+
     private fun onFocusStateChange(previousState: FocusState, currentState: FocusState) {
         if (!isAttached) return
         val isFocused = currentState.isFocused
@@ -213,15 +222,7 @@ internal class FocusableNode(
         if (isFocused == wasFocused) return
         onFocusChange?.invoke(isFocused)
         if (isFocused) {
-            val parent = findBringIntoViewParent()
-            if (parent != null) {
-                val layoutCoordinates = requireLayoutCoordinates()
-                coroutineScope.launch {
-                    if (isAttached) {
-                        parent.scrollIntoView(layoutCoordinates)
-                    }
-                }
-            }
+            coroutineScope.launch { bringIntoView() }
             val pinnableContainer = retrievePinnableContainer()
             pinnedHandle = pinnableContainer?.pin()
             notifyObserverWhenAttached()
@@ -236,10 +237,7 @@ internal class FocusableNode(
 
     override fun SemanticsPropertyReceiver.applySemantics() {
         focused = focusTargetNode.focusState.isFocused
-        if (requestFocus == null) {
-            requestFocus = { focusTargetNode.requestFocus() }
-        }
-        requestFocus(action = requestFocus)
+        requestFocus(action = ::requestFocus)
     }
 
     override fun onReset() {

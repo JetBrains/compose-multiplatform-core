@@ -25,7 +25,6 @@ import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PAR
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Resources;
@@ -33,7 +32,6 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
@@ -41,8 +39,6 @@ import android.util.SparseIntArray;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.constraintlayout.core.LinearSystem;
 import androidx.constraintlayout.core.Metrics;
 import androidx.constraintlayout.core.widgets.ConstraintAnchor;
@@ -51,6 +47,9 @@ import androidx.constraintlayout.core.widgets.ConstraintWidgetContainer;
 import androidx.constraintlayout.core.widgets.Guideline;
 import androidx.constraintlayout.core.widgets.Optimizer;
 import androidx.constraintlayout.core.widgets.analyzer.BasicMeasure;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -464,11 +463,11 @@ import java.util.HashMap;
  * <p>In addition to the intrinsic capabilities detailed previously,
  * you can also use special helper objects
  * in {@code ConstraintLayout} to help you with your layout. Currently, the
- * {@code Guideline}{@see Guideline} object allows you to create
- * Horizontal and Vertical guidelines which are positioned relative to the
- * {@code ConstraintLayout} container. Widgets can
- * then be positioned by constraining them to such guidelines. In <b>1.1</b>,
- * {@code Barrier} and {@code Group} were added too.</p>
+ * {@link Guideline} object allows you to create Horizontal and Vertical
+ * guidelines which are positioned relative to the {@code ConstraintLayout}
+ * container. Widgets can then be positioned by constraining them to such
+ * guidelines. In <b>1.1</b>, {@link Barrier} and {@link Group} were added too.
+ * </p>
  *
  * <h3 id="Optimizer">Optimizer (<i><b>in 1.1</b></i>)</h3>
  * <p>
@@ -602,7 +601,6 @@ public class ConstraintLayout extends ViewGroup {
         init(attrs, defStyleAttr, 0);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public ConstraintLayout(@NonNull Context context,
                             @Nullable AttributeSet attrs,
                             int defStyleAttr,
@@ -2775,7 +2773,6 @@ public class ConstraintLayout extends ViewGroup {
          *
          * @param params the Layout Params to be copied
          */
-        @SuppressLint("ClassVerificationFailure")
         public LayoutParams(ViewGroup.LayoutParams params) {
             super(params);
 

@@ -35,8 +35,6 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.MenuItemCompat;
@@ -56,6 +54,9 @@ import com.example.androidx.mediarouting.providers.SampleMediaRouteProvider;
 import com.example.androidx.mediarouting.ui.UiUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.collect.ImmutableList;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -280,8 +281,8 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
         mRoutesManager.setRouteListingPreferenceItems(newRouteListingPreference);
     }
 
-    @NonNull
-    private ImmutableList<MediaRouter.RouteInfo> getRoutesWithNoAssociatedListingPreferenceItem() {
+    private @NonNull ImmutableList<MediaRouter.RouteInfo>
+            getRoutesWithNoAssociatedListingPreferenceItem() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             return ImmutableList.of();
         }
@@ -319,8 +320,8 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
         @Override
         public boolean onMove(
                 @NonNull RecyclerView recyclerView,
-                @NonNull RecyclerView.ViewHolder origin,
-                @NonNull RecyclerView.ViewHolder target) {
+                RecyclerView.@NonNull ViewHolder origin,
+                RecyclerView.@NonNull ViewHolder target) {
             int fromPosition = origin.getBindingAdapterPosition();
             int toPosition = target.getBindingAdapterPosition();
             if (mDraggingFromPosition == INDEX_UNSET) {
@@ -334,7 +335,7 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+        public void onSwiped(RecyclerView.@NonNull ViewHolder viewHolder, int direction) {
             ArrayList<RouteListingPreferenceItemHolder> newRouteListingPreference =
                     new ArrayList<>(mRoutesManager.getRouteListingPreferenceItems());
             int itemPosition = viewHolder.getBindingAdapterPosition();
@@ -345,7 +346,7 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
 
         @Override
         public void clearView(
-                @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                @NonNull RecyclerView recyclerView, RecyclerView.@NonNull ViewHolder viewHolder) {
             super.clearView(recyclerView, viewHolder);
             if (mDraggingFromPosition != INDEX_UNSET) {
                 ArrayList<RouteListingPreferenceItemHolder> newRouteListingPreference =
@@ -362,9 +363,8 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
 
     private class RouteListingPreferenceRecyclerViewAdapter
             extends RecyclerView.Adapter<RecyclerViewItemViewHolder> {
-        @NonNull
         @Override
-        public RecyclerViewItemViewHolder onCreateViewHolder(
+        public @NonNull RecyclerViewItemViewHolder onCreateViewHolder(
                 @NonNull ViewGroup parent, int viewType) {
             TextView textView =
                     (TextView)
@@ -421,9 +421,8 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
             mHumanReadableString = humanReadableString;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mHumanReadableString;
         }
 
@@ -460,16 +459,15 @@ public class RouteListingPreferenceActivity extends AppCompatActivity {
                 RouteListingPreference.Item.SUBTEXT_CUSTOM, "Custom text (placeholder value)");
 
         public final int mConstant;
-        @NonNull public final String mHumanReadableString;
+        public final @NonNull String mHumanReadableString;
 
         RouteListingPreferenceItemSubtext(int constant, @NonNull String humanReadableString) {
             mConstant = constant;
             mHumanReadableString = humanReadableString;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mHumanReadableString;
         }
 

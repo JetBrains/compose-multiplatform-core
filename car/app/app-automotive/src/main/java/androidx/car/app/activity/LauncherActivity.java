@@ -17,8 +17,6 @@
 package androidx.car.app.activity;
 
 import android.annotation.SuppressLint;
-import android.car.Car;
-import android.car.drivingstate.CarUxRestrictionsManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -26,16 +24,17 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.fragment.app.FragmentActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p> This class handles providing the right launcher activity when running native
  * applications and Car App Library applications.
  *
- * If distraction optimized is mandated {@link CarAppActivity} will be launched.
+ * If it is an Automotive system {@link CarAppActivity} will be launched.
  * otherwise the activity with action {@link Intent#ACTION_MAIN} and category
  * {@link Intent#CATEGORY_DEFAULT} will be launched.
  */
@@ -82,18 +81,6 @@ public final class LauncherActivity extends FragmentActivity {
 
     @VisibleForTesting
     static boolean isDistractionOptimizedActivityRequired(Context context) {
-        if (!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
-            return false;
-        }
-
-        Car car = Car.createCar(context);
-        boolean isDistractionOptimizedRequired = ((CarUxRestrictionsManager) car.getCarManager(
-                Car.CAR_UX_RESTRICTION_SERVICE))
-                .getCurrentCarUxRestrictions().
-                isRequiresDistractionOptimization();
-        car.disconnect();
-        car = null;
-        return isDistractionOptimizedRequired;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
     }
-
 }

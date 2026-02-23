@@ -19,7 +19,7 @@ package androidx.core.view;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An OnPreDrawListener that will remove itself after one OnPreDraw call. Typical
@@ -53,9 +53,9 @@ public final class OneShotPreDrawListener implements ViewTreeObserver.OnPreDrawL
      * @return The added OneShotPreDrawListener. It can be removed prior to
      * the onPreDraw by calling {@link #removeListener()}.
      */
-    @NonNull
     @SuppressWarnings("ConstantConditions") // Validating nullability contracts.
-    public static OneShotPreDrawListener add(@NonNull View view, @NonNull Runnable runnable) {
+    public static @NonNull OneShotPreDrawListener add(@NonNull View view,
+            @NonNull Runnable runnable) {
         if (view == null) throw new NullPointerException("view == null");
         if (runnable == null) throw new NullPointerException("runnable == null");
 

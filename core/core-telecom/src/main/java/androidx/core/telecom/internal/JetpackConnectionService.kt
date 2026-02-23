@@ -15,7 +15,10 @@
  */
 package androidx.core.telecom.internal
 
+import android.content.Context
+import android.net.Uri
 import android.os.Build
+import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.os.ParcelUuid
 import android.telecom.CallException
@@ -34,8 +37,10 @@ import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallsManager
 import androidx.core.telecom.internal.utils.Utils
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 internal class JetpackConnectionService : ConnectionService() {
@@ -53,7 +58,8 @@ internal class JetpackConnectionService : ConnectionService() {
          * gets from the platform.
          */
         val requestIdMatcher: String,
-        val callAttributes: CallAttributesCompat,
+        val context: Context,
+        var callAttributes: CallAttributesCompat,
         val callChannel: CallChannels,
         val coroutineContext: CoroutineContext,
         val completableDeferred: CompletableDeferred<AddCallResult>?,
@@ -62,9 +68,9 @@ internal class JetpackConnectionService : ConnectionService() {
         val onSetActive: suspend () -> Unit,
         val onSetInactive: suspend () -> Unit,
         val onEvent: suspend (event: String, extras: Bundle) -> Unit,
+        val onStateChangedCallback: MutableSharedFlow<CallStateEvent>,
         val preferredStartingCallEndpoint: CallEndpointCompat? = null,
-        val preCallEndpointMapping: PreCallEndpoints? = null,
-        val execution: CompletableDeferred<Unit>
+        val execution: CompletableDeferred<Unit>,
     )
 
     companion object {
@@ -72,7 +78,9 @@ internal class JetpackConnectionService : ConnectionService() {
         const val KEY_NOT_FOUND = "requestIdMatcher KEY NOT FOUND"
         const val TAG = "JetpackCS"
         const val CONNECTION_CREATION_TIMEOUT: Long = 5000 // time in milli-seconds
-        var mPendingConnectionRequests: ArrayList<PendingConnectionRequest> = ArrayList()
+        const val SDK_26_AND_27_ADDRESS_PREFIX = "sip:"
+        var mPendingConnectionRequests: CopyOnWriteArrayList<PendingConnectionRequest> =
+            CopyOnWriteArrayList()
     }
 
     /**
@@ -89,19 +97,21 @@ internal class JetpackConnectionService : ConnectionService() {
             TAG,
             "CreationConnectionRequest:" +
                 " requestIdMatcher=[${pendingConnectionRequest.requestIdMatcher}]" +
-                " phoneAccountHandle=[${pendingConnectionRequest.callAttributes.mHandle}]"
+                " phoneAccountHandle=[${pendingConnectionRequest.callAttributes.mHandle}]",
         )
-
+        maybeReplaceAddress(pendingConnectionRequest)
         mPendingConnectionRequests.add(pendingConnectionRequest)
 
         val extras =
             Utils.getBundleWithPhoneAccountHandle(
                 pendingConnectionRequest.callAttributes,
-                pendingConnectionRequest.callAttributes.mHandle!!
+                pendingConnectionRequest.callAttributes.mHandle!!,
             )
 
         val idBundle = Bundle()
         idBundle.putString(REQUEST_ID_MATCHER_KEY, pendingConnectionRequest.requestIdMatcher)
+
+        injectSpeakerSettings(pendingConnectionRequest.preferredStartingCallEndpoint, extras)
 
         // Call into the platform to start call
         if (pendingConnectionRequest.callAttributes.isOutgoingCall()) {
@@ -111,20 +121,55 @@ internal class JetpackConnectionService : ConnectionService() {
             extras.putBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, idBundle)
             telecomManager.addNewIncomingCall(
                 pendingConnectionRequest.callAttributes.mHandle,
-                extras
+                extras,
             )
         }
+    }
+
+    fun injectSpeakerSettings(preferredStartingCallEndpoint: CallEndpointCompat?, extras: Bundle) {
+        preferredStartingCallEndpoint?.let { endpoint ->
+            val useSpeaker = endpoint.type == CallEndpointCompat.TYPE_SPEAKER
+            extras.putBoolean(TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, useSpeaker)
+            Log.v(TAG, "injectSpeakerSettings: useSpeaker=[$useSpeaker]")
+        }
+    }
+
+    fun maybeReplaceAddress(
+        pendingConnectionRequest: PendingConnectionRequest
+    ): PendingConnectionRequest {
+        val attributes: CallAttributesCompat = pendingConnectionRequest.callAttributes
+        if (Build.VERSION.SDK_INT < VERSION_CODES.P && attributes.isOutgoingCall()) {
+            pendingConnectionRequest.callAttributes =
+                CallAttributesCompat(
+                    attributes.displayName,
+                    Uri.parse(
+                        SDK_26_AND_27_ADDRESS_PREFIX +
+                            attributes.mHandle!!.componentName.packageName
+                    ),
+                    attributes.direction,
+                    attributes.callType,
+                    attributes.callCapabilities,
+                    attributes.preferredStartingCallEndpoint,
+                )
+            pendingConnectionRequest.callAttributes.mHandle = attributes.mHandle
+            Log.i(
+                TAG,
+                "maybeReplaceAddress: " +
+                    "address=[${pendingConnectionRequest.callAttributes.address}]",
+            )
+        }
+        return pendingConnectionRequest
     }
 
     /** Outgoing Connections */
     override fun onCreateOutgoingConnection(
         connectionManagerAccount: PhoneAccountHandle?,
-        request: ConnectionRequest?
+        request: ConnectionRequest?,
     ): Connection? {
         Log.i(
             TAG,
             "onCreateOutgoingConnection: " +
-                "connectionMgrAcct=[$connectionManagerAccount], request=[$request]"
+                "connectionMgrAcct=[$connectionManagerAccount], request=[$request]",
         )
         if (request == null) {
             // if the Platform provides a null request, there is no way to complete the new request
@@ -135,7 +180,7 @@ internal class JetpackConnectionService : ConnectionService() {
             return Connection.createFailedConnection(
                 DisconnectCause(
                     DisconnectCause.ERROR,
-                    "ConnectionRequest is null, cannot complete the addCall request"
+                    "ConnectionRequest is null, cannot complete the addCall request",
                 )
             )
         }
@@ -144,12 +189,12 @@ internal class JetpackConnectionService : ConnectionService() {
 
     override fun onCreateOutgoingConnectionFailed(
         connectionManagerPhoneAccount: PhoneAccountHandle?,
-        request: ConnectionRequest?
+        request: ConnectionRequest?,
     ) {
         Log.i(
             TAG,
             "onCreateOutgoingConnectionFailed: " +
-                "connectionMgrAcct=[$connectionManagerPhoneAccount], request=[$request]"
+                "connectionMgrAcct=[$connectionManagerPhoneAccount], request=[$request]",
         )
         if (request == null) {
             return
@@ -164,12 +209,12 @@ internal class JetpackConnectionService : ConnectionService() {
     /** Incoming Connections */
     override fun onCreateIncomingConnection(
         connectionManagerPhoneAccount: PhoneAccountHandle?,
-        request: ConnectionRequest?
+        request: ConnectionRequest?,
     ): Connection? {
         Log.i(
             TAG,
             "onCreateIncomingConnection: " +
-                "connectionManagerPhoneAccount=[$connectionManagerPhoneAccount], request=[$request]"
+                "connectionManagerPhoneAccount=[$connectionManagerPhoneAccount], request=[$request]",
         )
         if (request == null) {
             // if the Platform provides a null request, there is no way to complete the new request
@@ -180,7 +225,7 @@ internal class JetpackConnectionService : ConnectionService() {
             return Connection.createFailedConnection(
                 DisconnectCause(
                     DisconnectCause.ERROR,
-                    "ConnectionRequest is null, cannot complete the addCall request"
+                    "ConnectionRequest is null, cannot complete the addCall request",
                 )
             )
         }
@@ -189,12 +234,12 @@ internal class JetpackConnectionService : ConnectionService() {
 
     override fun onCreateIncomingConnectionFailed(
         connectionManagerPhoneAccount: PhoneAccountHandle?,
-        request: ConnectionRequest?
+        request: ConnectionRequest?,
     ) {
         Log.i(
             TAG,
             "onCreateIncomingConnectionFailed: " +
-                "connectionMgrAcct=[$connectionManagerPhoneAccount], request=[$request]"
+                "connectionMgrAcct=[$connectionManagerPhoneAccount], request=[$request]",
         )
         if (request == null) {
             return
@@ -209,7 +254,7 @@ internal class JetpackConnectionService : ConnectionService() {
     /** Helper methods */
     internal fun createSelfManagedConnection(
         request: ConnectionRequest,
-        direction: Int
+        direction: Int,
     ): Connection? {
         val targetRequest: PendingConnectionRequest =
             getPendingConnectionRequest(request) ?: return null
@@ -217,6 +262,7 @@ internal class JetpackConnectionService : ConnectionService() {
         val jetpackConnection =
             CallSessionLegacy(
                 ParcelUuid.fromString(UUID.randomUUID().toString()),
+                targetRequest.context,
                 targetRequest.callAttributes,
                 targetRequest.callChannel,
                 targetRequest.coroutineContext,
@@ -225,21 +271,21 @@ internal class JetpackConnectionService : ConnectionService() {
                 targetRequest.onSetActive,
                 targetRequest.onSetInactive,
                 targetRequest.onEvent,
+                targetRequest.onStateChangedCallback,
                 targetRequest.preferredStartingCallEndpoint,
-                targetRequest.preCallEndpointMapping,
-                targetRequest.execution
+                targetRequest.execution,
             )
 
         // set display name
         jetpackConnection.setCallerDisplayName(
             targetRequest.callAttributes.displayName.toString(),
-            TelecomManager.PRESENTATION_ALLOWED
+            TelecomManager.PRESENTATION_ALLOWED,
         )
 
         // set address
         jetpackConnection.setAddress(
             targetRequest.callAttributes.address,
-            TelecomManager.PRESENTATION_ALLOWED
+            TelecomManager.PRESENTATION_ALLOWED,
         )
 
         // set the extra EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED to true

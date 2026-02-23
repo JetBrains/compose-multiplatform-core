@@ -32,13 +32,14 @@ import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.R;
 import androidx.appcompat.graphics.drawable.DrawableWrapperCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewPropertyAnimatorCompat;
 import androidx.core.widget.ListViewAutoScrollHelper;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -660,9 +661,7 @@ class DropDownListView extends ListView {
         mDrawsInPressedState = true;
 
         // Ordering is essential. First, update the container's pressed state.
-        if (SDK_INT >= 21) {
-            Api21Impl.drawableHotspotChanged(this, x, y);
-        }
+        drawableHotspotChanged(x, y);
         if (!isPressed()) {
             setPressed(true);
         }
@@ -683,9 +682,7 @@ class DropDownListView extends ListView {
         // Offset for child coordinates.
         final float childX = x - child.getLeft();
         final float childY = y - child.getTop();
-        if (SDK_INT >= 21) {
-            Api21Impl.drawableHotspotChanged(child, childX, childY);
-        }
+        child.drawableHotspotChanged(childX, childY);
         if (!child.isPressed()) {
             child.setPressed(true);
         }
@@ -789,17 +786,6 @@ class DropDownListView extends ListView {
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static void drawableHotspotChanged(View view, float x, float y) {
-            view.drawableHotspotChanged(x, y);
         }
     }
 

@@ -22,11 +22,12 @@ import android.app.slice.SliceSpec;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.autofill.inline.UiVersions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class representing a type that encodes the content information, and can be
@@ -42,8 +43,7 @@ public abstract class SlicedContent implements UiVersions.Content {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    protected final Slice mSlice;
+    protected final @NonNull Slice mSlice;
 
     /**
      */
@@ -55,9 +55,8 @@ public abstract class SlicedContent implements UiVersions.Content {
     /**
      * Returns the wrapped slice containing the UI content.
      */
-    @NonNull
     @Override
-    public final Slice getSlice() {
+    public final @NonNull Slice getSlice() {
         return mSlice;
     }
 
@@ -65,8 +64,7 @@ public abstract class SlicedContent implements UiVersions.Content {
      * @see androidx.autofill.inline.Renderer#getAttributionIntent(Slice)
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Nullable
-    public abstract PendingIntent getAttributionIntent();
+    public abstract @Nullable PendingIntent getAttributionIntent();
 
     /**
      * Returns true if the wrapped slice is valid according to the slice version.
@@ -80,8 +78,7 @@ public abstract class SlicedContent implements UiVersions.Content {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public static String getVersion(@NonNull Slice slice) {
+    public static @NonNull String getVersion(@NonNull Slice slice) {
         return slice.getSpec().getType();
     }
 
@@ -93,8 +90,7 @@ public abstract class SlicedContent implements UiVersions.Content {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public abstract static class Builder<T extends SlicedContent> {
 
-        @NonNull
-        protected final Slice.Builder mSliceBuilder;
+        protected final Slice.@NonNull Builder mSliceBuilder;
 
         protected Builder(@NonNull String version) {
             mSliceBuilder = new Slice.Builder(INLINE_SLICE_URI, new SliceSpec(version, 1));
@@ -103,7 +99,6 @@ public abstract class SlicedContent implements UiVersions.Content {
         /**
          * Returns a subclass of {@link SlicedContent} built by this builder.
          */
-        @NonNull
-        public abstract T build();
+        public abstract @NonNull T build();
     }
 }

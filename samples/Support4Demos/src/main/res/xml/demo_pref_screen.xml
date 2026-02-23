@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (C) 2024 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<android:PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="apps_screen"
+    android:title="apps_dashboard_title">
+
+    <Preference
+        android:key="all_app_infos"
+        android:title="All Apps Demo"
+        android:summary="Summary Placeholder"
+        android:order="-999"
+        android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment"
+        />
+
+    <PreferenceCategory
+        android:key="recent_apps_category"
+        android:title="Recent App Category Title"
+        android:order="-998">
+        <!-- Placeholder for a list of recent apps -->
+        <Preference
+            android:key="see_all_apps"
+            android:title="See all Apps Title"
+            android:icon="@drawable/ic_star_on"
+            android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment"
+            android:order="5">
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="general_category"
+        android:title="Category Name General"
+        android:order="-997"
+        android:visibility="gone"/>
+
+    <Preference
+        android:key="default_apps"
+        android:title="App Default Dashboard"
+        android:order="-996"/>
+
+    <Preference
+        android:key="cloned_apps"
+        android:title="Cloned Apps Dashboard"
+        android:summary="Summary Placeholder"
+        android:order="-995"
+        android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment">
+    </Preference>
+
+    <PreferenceCategory
+        android:key="dashboard_tile_placeholder"
+        android:order="10"/>
+
+    <Preference
+        android:key="contacts_storage"
+        android:title="Contacts Storage Settings"
+        android:summary="Summary Placeholder"
+        android:order="13"
+        android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment"
+        >
+    </Preference>
+
+    <Preference
+        android:key="hibernated_apps"
+        android:title="Unused Apps"
+        android:summary="Summary Placeholder"
+        android:order="15"
+        />
+
+    <Preference
+        android:key="app_battery_usage"
+        android:order="17"
+        android:title="App Battery Usage"
+        android:summary="Summary Placeholder"
+        android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment">
+    </Preference>
+
+    <Preference
+        android:key="special_access"
+        android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment"
+        android:title="Special Access"
+        android:order="20"/>
+
+    <PreferenceCategory
+        android:key="advanced_category"
+        android:title="Advanced Apps"
+        android:order="21">
+
+        <Preference
+            android:key="aspect_ratio_apps"
+            android:title="Aspect Ratio Experimental"
+            android:summary="Summary Placeholder"
+            android:order="22"
+            android:fragment="com.example.android.supportv4.widget.PreferenceScreenDetailsTemplateFragment">
+        </Preference>
+    </PreferenceCategory>
+</android:PreferenceScreen>

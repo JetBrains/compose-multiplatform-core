@@ -20,11 +20,12 @@ import android.content.Context;
 import android.graphics.PointF;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.input.WearableButtonsProvider;
 
 import com.google.android.wearable.input.WearableInputDevice;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -88,8 +89,7 @@ public class TestWearableButtonsProvider implements WearableButtonsProvider {
          *
          * @return A point specifying the location of this button.
          */
-        @NonNull
-        public PointF getLocation() {
+        public @NonNull PointF getLocation() {
             return mLocation;
         }
 
@@ -98,8 +98,7 @@ public class TestWearableButtonsProvider implements WearableButtonsProvider {
          *
          * @return A point specifying the location of this button when the device is rotated.
          */
-        @Nullable
-        public PointF getRotatedLocation() {
+        public @Nullable PointF getRotatedLocation() {
             return mRotatedLocation;
         }
     }
@@ -115,9 +114,8 @@ public class TestWearableButtonsProvider implements WearableButtonsProvider {
         mButtons = buttons;
     }
 
-    @NonNull
     @Override
-    public Bundle getButtonInfo(@NonNull Context context, int keycode) {
+    public @NonNull Bundle getButtonInfo(@NonNull Context context, int keycode) {
         Bundle bundle = new Bundle();
 
         TestWearableButtonLocation location = mButtons.get(keycode);
@@ -134,9 +132,8 @@ public class TestWearableButtonsProvider implements WearableButtonsProvider {
         return bundle;
     }
 
-    @Nullable
     @Override
-    public int[] getAvailableButtonKeyCodes(@NonNull Context context) {
+    public int @Nullable [] getAvailableButtonKeyCodes(@NonNull Context context) {
         int[] keys = new int[mButtons.size()];
 
         int i = 0;

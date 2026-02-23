@@ -29,7 +29,6 @@ import android.hardware.display.DisplayManager;
 import android.view.Display;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.uiautomator.By;
@@ -37,6 +36,7 @@ import androidx.test.uiautomator.BySelector;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -18,21 +18,20 @@ package androidx.compose.material3.benchmark
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.DismissibleModalWideNavigationRail
-import androidx.compose.material3.DismissibleModalWideNavigationRailState
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalWideNavigationRail
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
-import androidx.compose.material3.rememberDismissibleModalWideNavigationRailState
+import androidx.compose.material3.WideNavigationRailState
+import androidx.compose.material3.WideNavigationRailValue
+import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.LayeredComposeTestCase
@@ -44,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Rule
@@ -52,13 +52,19 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class NavigationRailBenchmark {
     @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val testCaseFactory = { NavigationRailTestCase() }
     private val collapsedWideRailTestCaseFactory = { NavigationRailTestCase(true) }
-    private val expandedWideRailTestCaseFactory = { NavigationRailTestCase(true, true) }
-    private val modalExpandedRailTestCaseFactory = { ModalExpandedRailTestCase() }
+    private val expandedWideRailTestCaseFactory = {
+        NavigationRailTestCase(true, WideNavigationRailValue.Expanded)
+    }
+    private val modalWideRailTestCaseFactory = { ModalWideNavigationRailTestCase() }
+    private val dismissibleModalWideRailTestCaseFactory = {
+        ModalWideNavigationRailTestCase(true, WideNavigationRailValue.Expanded)
+    }
 
     @Test
     fun firstPixel() {
@@ -75,7 +81,7 @@ class NavigationRailBenchmark {
 
     @Test
     fun wideNavigationRail_collapsed_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(collapsedWideRailTestCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(collapsedWideRailTestCaseFactory)
     }
 
     @Test
@@ -113,8 +119,8 @@ class NavigationRailBenchmark {
             {
                 NavigationRailTestCase(
                     isWideNavRail = true,
-                    expanded = true,
-                    changeSelectionToggleTestCase = false
+                    initialStateValue = WideNavigationRailValue.Expanded,
+                    changeSelectionToggleTestCase = false,
                 )
             },
             assertOneRecomposition = false,
@@ -122,14 +128,28 @@ class NavigationRailBenchmark {
     }
 
     @Test
-    fun modalExpandedNavigationRail_firstPixel() {
-        benchmarkRule.benchmarkToFirstPixel(modalExpandedRailTestCaseFactory)
+    fun modalWideNavigationRail_firstPixel() {
+        benchmarkRule.benchmarkToFirstPixel(modalWideRailTestCaseFactory)
     }
 
     @Test
-    fun modalExpandedNavigationRail_stateChange() {
+    fun modalWideNavigationRail_stateChange() {
         benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
-            modalExpandedRailTestCaseFactory,
+            modalWideRailTestCaseFactory,
+            assertOneRecomposition = false,
+        )
+    }
+
+    @Test
+    fun modalWideNavigationRail_dismissible_firstPixel() {
+        benchmarkRule.benchmarkToFirstPixel(dismissibleModalWideRailTestCaseFactory)
+    }
+
+    @SdkSuppress(minSdkVersion = 24) // fails in API 23 emulator
+    @Test
+    fun modalWideNavigationRail_dismissible_stateChange() {
+        benchmarkRule.toggleStateBenchmarkComposeMeasureLayout(
+            dismissibleModalWideRailTestCaseFactory,
             assertOneRecomposition = false,
         )
     }
@@ -138,32 +158,34 @@ class NavigationRailBenchmark {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class NavigationRailTestCase(
     private val isWideNavRail: Boolean = false,
-    private var expanded: Boolean = false,
+    private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Expanded,
     private val changeSelectionToggleTestCase: Boolean = true,
 ) : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var selectedIndexState: MutableIntState
-    private lateinit var actualExpanded: MutableState<Boolean>
+    private lateinit var state: WideNavigationRailState
+    private lateinit var scope: CoroutineScope
 
     @Composable
     override fun MeasuredContent() {
         selectedIndexState = remember { mutableIntStateOf(0) }
-        actualExpanded = remember { mutableStateOf(expanded) }
+        state = rememberWideNavigationRailState(initialStateValue)
+        scope = rememberCoroutineScope()
 
         if (isWideNavRail) {
-            WideNavigationRail(expanded = actualExpanded.value) {
+            WideNavigationRail(state = state) {
                 WideNavigationRailItem(
                     selected = selectedIndexState.value == 0,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    railExpanded = actualExpanded.value,
-                    label = { Spacer(Modifier.size(24.dp)) }
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
+                    label = { Spacer(Modifier.size(24.dp)) },
                 )
                 WideNavigationRailItem(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    railExpanded = actualExpanded.value,
-                    label = { Spacer(Modifier.size(24.dp)) }
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
+                    label = { Spacer(Modifier.size(24.dp)) },
                 )
             }
         } else {
@@ -197,38 +219,40 @@ internal class NavigationRailTestCase(
             selectedIndexState.value = if (selectedIndexState.value == 0) 1 else 0
         } else {
             // Case where rail expands if it's collapsed, or collapses if it's expanded.
-            actualExpanded.value = !actualExpanded.value
+            scope.launch { state.toggle() }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal class ModalExpandedRailTestCase() : LayeredComposeTestCase(), ToggleableTestCase {
-    private lateinit var state: DismissibleModalWideNavigationRailState
+internal class ModalWideNavigationRailTestCase(
+    private val isDismissible: Boolean = false,
+    private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Collapsed,
+) : LayeredComposeTestCase(), ToggleableTestCase {
+    private lateinit var state: WideNavigationRailState
     private lateinit var scope: CoroutineScope
 
     @Composable
     override fun MeasuredContent() {
-        state = rememberDismissibleModalWideNavigationRailState()
+        state = rememberWideNavigationRailState(initialStateValue)
         scope = rememberCoroutineScope()
 
-        DismissibleModalWideNavigationRail(
-            onDismissRequest = {},
-            railState = state,
-        ) {
+        ModalWideNavigationRail(state = state, hideOnCollapse = isDismissible) {
             WideNavigationRailItem(
                 selected = true,
                 onClick = {},
                 icon = { Spacer(Modifier.size(24.dp)) },
-                railExpanded = true,
-                label = { Spacer(Modifier.size(24.dp)) }
+                railExpanded =
+                    isDismissible || state.targetValue == WideNavigationRailValue.Expanded,
+                label = { Spacer(Modifier.size(24.dp)) },
             )
             WideNavigationRailItem(
                 selected = false,
                 onClick = {},
                 icon = { Spacer(Modifier.size(24.dp)) },
-                railExpanded = true,
-                label = { Spacer(Modifier.size(24.dp)) }
+                railExpanded =
+                    isDismissible || state.targetValue == WideNavigationRailValue.Expanded,
+                label = { Spacer(Modifier.size(24.dp)) },
             )
         }
     }
@@ -239,10 +263,6 @@ internal class ModalExpandedRailTestCase() : LayeredComposeTestCase(), Toggleabl
     }
 
     override fun toggleState() {
-        if (state.isOpen) {
-            scope.launch { state.close() }
-        } else {
-            scope.launch { state.open() }
-        }
+        scope.launch { state.toggle() }
     }
 }

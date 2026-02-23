@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.collection
 
 import androidx.collection.internal.binarySearch
@@ -215,25 +217,24 @@ public expect open class LongSparseArray<E> public constructor(initialCapacity: 
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonGet(key: Long): E? {
-    return commonGetInternal(key, null)
+    @Suppress("UNCHECKED_CAST")
+    return commonGetInternal(key, null) as E?
 }
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonGet(key: Long, defaultValue: E): E {
-    return commonGetInternal(key, defaultValue)
+    @Suppress("UNCHECKED_CAST")
+    return commonGetInternal(key, defaultValue) as E
 }
 
+// TODO(b/375562182) revert the type change done in aosp/375562182 after collection targets K2
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun <T : E?, E> LongSparseArray<E>.commonGetInternal(
-    key: Long,
-    defaultValue: T
-): T {
+internal inline fun LongSparseArray<*>.commonGetInternal(key: Long, defaultValue: Any?): Any? {
     val i = binarySearch(keys, size, key)
     return if (i < 0 || values[i] === DELETED) {
         defaultValue
     } else {
-        @Suppress("UNCHECKED_CAST")
-        values[i] as T
+        values[i]
     }
 }
 
@@ -284,7 +285,7 @@ internal inline fun <E> LongSparseArray<E>.commonReplace(key: Long, value: E): E
 internal inline fun <E> LongSparseArray<E>.commonReplace(
     key: Long,
     oldValue: E,
-    newValue: E
+    newValue: E,
 ): Boolean {
     val index = indexOfKey(key)
     if (index >= 0) {
@@ -347,7 +348,7 @@ internal inline fun <E> LongSparseArray<E>.commonPut(key: Long, value: E) {
                 values,
                 destinationOffset = index + 1,
                 startIndex = index,
-                endIndex = size
+                endIndex = size,
             )
         }
         keys[index] = key
@@ -404,7 +405,8 @@ internal inline fun <E> LongSparseArray<E>.commonValueAt(index: Int): E {
         commonGc()
     }
 
-    @Suppress("UNCHECKED_CAST") return values[index] as E
+    @Suppress("UNCHECKED_CAST")
+    return values[index] as E
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -507,7 +509,7 @@ internal inline fun <E> LongSparseArray<E>.commonToString(): String {
 }
 
 /** Returns the number of key/value pairs in the collection. */
-@Suppress("NOTHING_TO_INLINE")
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 public inline val <T> LongSparseArray<T>.size: Int
     get() = size()
 

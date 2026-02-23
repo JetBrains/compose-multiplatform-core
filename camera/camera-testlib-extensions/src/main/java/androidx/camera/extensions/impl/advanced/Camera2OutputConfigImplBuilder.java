@@ -16,12 +16,13 @@
 
 package androidx.camera.extensions.impl.advanced;
 
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class Camera2OutputConfigImplBuilder {
     private int mOutputConfigId = -1;
     private String mPhysicalCameraId;
     private List<Camera2OutputConfigImpl> mSurfaceSharingConfigs;
-
+    private long mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
     private Camera2OutputConfigImplBuilder(@NonNull OutputConfigImplImpl outputConfig) {
         mOutputConfig = outputConfig;
     }
@@ -50,19 +51,28 @@ public class Camera2OutputConfigImplBuilder {
      * Creates a {@link Camera2OutputConfigImpl} that represents a {@link android.media.ImageReader}
      * with the given parameters.
      */
-    @NonNull
-    public static Camera2OutputConfigImplBuilder newImageReaderConfig(
+    public static @NonNull Camera2OutputConfigImplBuilder newImageReaderConfig(
             @NonNull Size size, int imageFormat, int maxImages) {
         return new Camera2OutputConfigImplBuilder(
                 new ImageReaderOutputConfigImplImpl(size, imageFormat, maxImages));
+    }
+
+
+    /**
+     * Creates a {@link Camera2OutputConfigImpl} that represents a {@link android.media.ImageReader}
+     * with the given parameters.
+     */
+    public static @NonNull Camera2OutputConfigImplBuilder newImageReaderConfig(
+            @NonNull Size size, int imageFormat, int maxImages, long usage) {
+        return new Camera2OutputConfigImplBuilder(
+                new ImageReaderOutputConfigImplImpl(size, imageFormat, maxImages, usage));
     }
 
     /**
      * Creates a {@link Camera2OutputConfigImpl} that represents a MultiResolutionImageReader with
      * the given parameters.
      */
-    @NonNull
-    public static Camera2OutputConfigImplBuilder newMultiResolutionImageReaderConfig(
+    public static @NonNull Camera2OutputConfigImplBuilder newMultiResolutionImageReaderConfig(
             int imageFormat, int maxImages) {
         return new Camera2OutputConfigImplBuilder(
                 new MultiResolutionImageReaderOutputConfigImplImpl(imageFormat, maxImages));
@@ -71,16 +81,15 @@ public class Camera2OutputConfigImplBuilder {
     /**
      * Creates a {@link Camera2OutputConfigImpl} that contains the Surface directly.
      */
-    @NonNull
-    public static Camera2OutputConfigImplBuilder newSurfaceConfig(@NonNull Surface surface) {
+    public static @NonNull Camera2OutputConfigImplBuilder newSurfaceConfig(
+            @NonNull Surface surface) {
         return new Camera2OutputConfigImplBuilder(new SurfaceOutputConfigImplImpl(surface));
     }
 
     /**
      * Adds a {@link Camera2SessionConfigImpl} to be shared with current config.
      */
-    @NonNull
-    public Camera2OutputConfigImplBuilder addSurfaceSharingOutputConfig(
+    public @NonNull Camera2OutputConfigImplBuilder addSurfaceSharingOutputConfig(
             @NonNull Camera2OutputConfigImpl camera2OutputConfig) {
         if (mSurfaceSharingConfigs == null) {
             mSurfaceSharingConfigs = new ArrayList<>();
@@ -93,8 +102,8 @@ public class Camera2OutputConfigImplBuilder {
     /**
      * Sets a physical camera id.
      */
-    @NonNull
-    public Camera2OutputConfigImplBuilder setPhysicalCameraId(@Nullable String physicalCameraId) {
+    public @NonNull Camera2OutputConfigImplBuilder setPhysicalCameraId(
+            @Nullable String physicalCameraId) {
         mPhysicalCameraId = physicalCameraId;
         return this;
     }
@@ -102,8 +111,7 @@ public class Camera2OutputConfigImplBuilder {
     /**
      * Sets surface group id.
      */
-    @NonNull
-    public Camera2OutputConfigImplBuilder setSurfaceGroupId(int surfaceGroupId) {
+    public @NonNull Camera2OutputConfigImplBuilder setSurfaceGroupId(int surfaceGroupId) {
         mSurfaceGroupId = surfaceGroupId;
         return this;
     }
@@ -111,17 +119,24 @@ public class Camera2OutputConfigImplBuilder {
     /**
      * Sets Output Config id (Optional: Atomic Integer will be used if this function is not called)
      */
-    @NonNull
-    public Camera2OutputConfigImplBuilder setOutputConfigId(int outputConfigId) {
+    public @NonNull Camera2OutputConfigImplBuilder setOutputConfigId(int outputConfigId) {
         mOutputConfigId = outputConfigId;
+        return this;
+    }
+
+    /**
+     * Set dynamic range profile.
+     */
+    public @NonNull Camera2OutputConfigImplBuilder setDynamicRangeProfile(
+            long dynamicRangeProfile) {
+        mDynamicRangeProfile = dynamicRangeProfile;
         return this;
     }
 
     /**
      * Build a {@link Camera2OutputConfigImpl} instance.
      */
-    @NonNull
-    public Camera2OutputConfigImpl build() {
+    public @NonNull Camera2OutputConfigImpl build() {
         // Sets an output config id otherwise an output config id will be generated
         if (mOutputConfigId == -1) {
             mOutputConfig.setId(getNextId());
@@ -131,6 +146,7 @@ public class Camera2OutputConfigImplBuilder {
         mOutputConfig.setPhysicalCameraId(mPhysicalCameraId);
         mOutputConfig.setSurfaceGroup(mSurfaceGroupId);
         mOutputConfig.setSurfaceSharingConfigs(mSurfaceSharingConfigs);
+        mOutputConfig.setDynamicRangeProfile(mDynamicRangeProfile);
         return mOutputConfig;
     }
 
@@ -138,6 +154,7 @@ public class Camera2OutputConfigImplBuilder {
         private int mId;
         private int mSurfaceGroup;
         private String mPhysicalCameraId;
+        private long mDynamicRangeProfile;
         private List<Camera2OutputConfigImpl> mSurfaceSharingConfigs;
 
         OutputConfigImplImpl() {
@@ -145,6 +162,7 @@ public class Camera2OutputConfigImplBuilder {
             mSurfaceGroup = 0;
             mPhysicalCameraId = null;
             mSurfaceSharingConfigs = null;
+            mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
         }
 
         @Override
@@ -158,14 +176,17 @@ public class Camera2OutputConfigImplBuilder {
         }
 
         @Override
-        @Nullable
-        public String getPhysicalCameraId() {
+        public @Nullable String getPhysicalCameraId() {
             return mPhysicalCameraId;
         }
 
         @Override
-        @Nullable
-        public List<Camera2OutputConfigImpl> getSurfaceSharingOutputConfigs() {
+        public long getDynamicRangeProfile() {
+            return mDynamicRangeProfile;
+        }
+
+        @Override
+        public @Nullable List<Camera2OutputConfigImpl> getSurfaceSharingOutputConfigs() {
             return mSurfaceSharingConfigs;
         }
 
@@ -181,8 +202,15 @@ public class Camera2OutputConfigImplBuilder {
             mPhysicalCameraId = physicalCameraId;
         }
 
+        public void setDynamicRangeProfile(long dynamicRangeProfile) {
+            mDynamicRangeProfile = dynamicRangeProfile;
+        }
+
         public void setSurfaceSharingConfigs(
                 @Nullable List<Camera2OutputConfigImpl> surfaceSharingConfigs) {
+            if (surfaceSharingConfigs != null) {
+                surfaceSharingConfigs = new ArrayList<>(surfaceSharingConfigs);
+            }
             mSurfaceSharingConfigs = surfaceSharingConfigs;
         }
     }
@@ -196,27 +224,33 @@ public class Camera2OutputConfigImplBuilder {
         }
 
         @Override
-        @NonNull
-        public Surface getSurface() {
+        public @NonNull Surface getSurface() {
             return mSurface;
         }
     }
 
     private static class ImageReaderOutputConfigImplImpl extends OutputConfigImplImpl
             implements ImageReaderOutputConfigImpl {
+        private static final long USAGE_UNSPECIFIED = -1;
         private final Size mSize;
         private final int mImageFormat;
         private final int mMaxImages;
+        private final long mUsage;
 
         ImageReaderOutputConfigImplImpl(@NonNull Size size, int imageFormat, int maxImages) {
+            this(size, imageFormat, maxImages, USAGE_UNSPECIFIED);
+        }
+
+        ImageReaderOutputConfigImplImpl(@NonNull Size size, int imageFormat, int maxImages,
+                long usage) {
             mSize = size;
             mImageFormat = imageFormat;
             mMaxImages = maxImages;
+            mUsage = usage;
         }
 
         @Override
-        @NonNull
-        public Size getSize() {
+        public @NonNull Size getSize() {
             return mSize;
         }
 
@@ -228,6 +262,14 @@ public class Camera2OutputConfigImplBuilder {
         @Override
         public int getMaxImages() {
             return mMaxImages;
+        }
+
+        @Override
+        public long getUsage() {
+            if (mUsage == USAGE_UNSPECIFIED) {
+                return ImageReaderOutputConfigImpl.super.getUsage();
+            }
+            return mUsage;
         }
     }
 

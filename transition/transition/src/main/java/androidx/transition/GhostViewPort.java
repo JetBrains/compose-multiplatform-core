@@ -23,8 +23,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Backport of android.view.GhostView introduced in API level 21.
@@ -44,8 +44,7 @@ class GhostViewPort extends ViewGroup implements GhostView {
     /** The number of references to this ghost view */
     int mReferences;
 
-    @Nullable
-    private Matrix mMatrix;
+    private @Nullable Matrix mMatrix;
 
     private final ViewTreeObserver.OnPreDrawListener mOnPreDrawListener =
             new ViewTreeObserver.OnPreDrawListener() {

@@ -31,7 +31,6 @@ import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.ViewAction;
@@ -42,11 +41,13 @@ import androidx.test.espresso.action.Swipe;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.wear.test.R;
 import androidx.wear.widget.util.FrameLocationAvoidingEdges;
 import androidx.wear.widget.util.WakeLockRule;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,6 +68,7 @@ public class DismissibleFrameLayoutTest {
     @Rule
     public final WakeLockRule wakeLock = new WakeLockRule();
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454427971
     @Test
     public void testBackDismiss() {
         assumeNotCuttlefishWear();
@@ -87,6 +89,7 @@ public class DismissibleFrameLayoutTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454427971
     @Test
     public void testBackNotDismissIfDisabled() {
         assumeNotCuttlefishWear();
@@ -138,6 +141,7 @@ public class DismissibleFrameLayoutTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454427971
     @Test
     public void testDisableThenEnableBackDismiss() {
         assumeNotCuttlefishWear();
@@ -189,6 +193,7 @@ public class DismissibleFrameLayoutTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454427971
     @Test
     public void testBackDismissWithRecyclerView() {
         assumeNotCuttlefishWear();
@@ -254,7 +259,7 @@ public class DismissibleFrameLayoutTest {
             ActivityScenario<DismissibleFrameLayoutTestActivity> scenario,
             boolean backDismissible,
             boolean swipeable,
-            @Nullable DismissibleFrameLayout.Callback callback) {
+            DismissibleFrameLayout.@Nullable Callback callback) {
         scenario.onActivity(activity -> {
             DismissibleFrameLayout testLayout = activity.findViewById(R.id.dismissible_root);
             testLayout.setBackButtonDismissible(backDismissible);

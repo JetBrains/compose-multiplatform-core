@@ -20,10 +20,11 @@ import android.content.Intent;
 import android.content.LocusId;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An identifier for an unique state (locus) in the application. Should be stable across reboots and
@@ -89,8 +90,7 @@ public final class LocusIdCompat {
     /**
      * Gets the canonical {@code id} associated with the locus.
      */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
@@ -103,7 +103,7 @@ public final class LocusIdCompat {
     }
 
     @Override
-    public boolean equals(@Nullable final Object obj) {
+    public boolean equals(final @Nullable Object obj) {
         if (this == obj) return true;
         if (obj == null) return false;
         if (getClass() != obj.getClass()) return false;
@@ -115,34 +115,30 @@ public final class LocusIdCompat {
         }
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "LocusIdCompat[" + getSanitizedId() + "]";
     }
 
     /**
      * @return {@link LocusId} object from this compat object.
      */
-    @NonNull
     @RequiresApi(29)
-    public LocusId toLocusId() {
+    public @NonNull LocusId toLocusId() {
         return mWrapped;
     }
 
     /**
      * Returns an instance of LocusIdCompat from given {@link LocusId}.
      */
-    @NonNull
     @RequiresApi(29)
-    public static LocusIdCompat toLocusIdCompat(@NonNull final LocusId locusId) {
+    public static @NonNull LocusIdCompat toLocusIdCompat(final @NonNull LocusId locusId) {
         Preconditions.checkNotNull(locusId, "locusId cannot be null");
         return new LocusIdCompat(Preconditions.checkStringNotEmpty(Api29Impl.getId(locusId),
                 "id cannot be empty"));
     }
 
-    @NonNull
-    private String getSanitizedId() {
+    private @NonNull String getSanitizedId() {
         final int size = mId.length();
         return size + "_chars";
     }
@@ -154,16 +150,14 @@ public final class LocusIdCompat {
         /**
          * @return {@link LocusId} object from this compat object.
          */
-        @NonNull
-        static LocusId create(@NonNull final String id) {
+        static @NonNull LocusId create(final @NonNull String id) {
             return new LocusId(id);
         }
 
         /**
          * @return {@code id} from the LocusId object.
          */
-        @NonNull
-        static String getId(@NonNull final LocusId obj) {
+        static @NonNull String getId(final @NonNull LocusId obj) {
             return obj.getId();
         }
     }

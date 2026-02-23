@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -29,26 +28,27 @@ import android.view.View;
 import androidx.pdf.ViewState;
 import androidx.pdf.data.Range;
 import androidx.pdf.find.FindInFileView;
+import androidx.pdf.models.PageSelection;
 import androidx.pdf.select.SelectionActionMode;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.Observables;
-import androidx.pdf.widget.FastScrollView;
 import androidx.pdf.widget.ZoomView;
-import androidx.test.filters.SmallTest;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.ArrayList;
+import java.util.List;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class ZoomScrollValueObserverTest {
     private static final ObservableValue<ViewState>
             VIEW_STATE_EXPOSED_VALUE =
@@ -65,14 +65,14 @@ public class ZoomScrollValueObserverTest {
     private final LayoutHandler mMockLayoutHandler = mock(LayoutHandler.class);
     private final FloatingActionButton mMockAnnotationButton = mock(FloatingActionButton.class);
     private final FindInFileView mMockFindInFileView = mock(FindInFileView.class);
-    private final FastScrollView mMockFastScrollView = mock(FastScrollView.class);
     private final PageRangeHandler mPageRangeHandler = mock(PageRangeHandler.class);
     private final SelectionActionMode mMockSelectionActionMode = mock(SelectionActionMode.class);
-
+    private final PdfSelectionModel mMockSelectionModel = mock(PdfSelectionModel.class);
+    private final PageSelection mMockPageSelection = mock(PageSelection.class);
+    private final ImmersiveModeRequester mMockImmersiveModeRequester = mock(
+            ImmersiveModeRequester.class);
     private boolean mIsAnnotationIntentResolvable;
     private ZoomView.ZoomScroll mNewPosition;
-    private ZoomView.ZoomScroll mOldPosition;
-
 
     @Before
     public void setUp() {
@@ -82,53 +82,54 @@ public class ZoomScrollValueObserverTest {
         when(mMockPaginatedView.getPageRangeHandler()).thenReturn(mPageRangeHandler);
         when(mMockPaginatedView.getModel()).thenReturn(mMockPaginationModel);
         when(mMockPaginationModel.isInitialized()).thenReturn(true);
-        when(mMockZoomView.getHeight()).thenReturn(100);
         when(mPageRangeHandler.computeVisibleRange(0, 1.0f, 100, false)).thenReturn(PAGE_RANGE);
-        when(mMockZoomView.getStableZoom()).thenReturn(1.0f);
-        when(mMockZoomView.getVisibleAreaInContentCoords()).thenReturn(RECT);
         when(mMockPaginatedView.createPageViewsForVisiblePageRange()).thenReturn(false);
         when(mPageRangeHandler.getVisiblePages()).thenReturn(PAGE_RANGE);
         when(mMockPaginationModel.isInitialized()).thenReturn(true);
         when(mMockPaginationModel.getSize()).thenReturn(1);
+        when(mMockPaginatedView.getSelectionModel()).thenReturn(mMockSelectionModel);
+        when(mMockSelectionModel.selection()).thenReturn(new ObservableValue<PageSelection>() {
+            @Override
+            public @Nullable PageSelection get() {
+                return mMockPageSelection;
+            }
+
+            @Override
+            public @NonNull Object addObserver(ValueObserver<PageSelection> observer) {
+                return 1;
+            }
+
+            @Override
+            public void removeObserver(@NonNull Object observerKey) {
+
+            }
+        });
+        List<Rect> selectionBoundaries = new ArrayList<>();
+        selectionBoundaries.add(new Rect(0, 0, 10, 10));
+        selectionBoundaries.add(new Rect(90, 90, 100, 100));
+        when(mMockPageSelection.getRects()).thenReturn(selectionBoundaries);
+        when(mMockPaginatedView.getViewArea()).thenReturn(RECT);
+        when(mMockPaginationModel.getLookAtX(0, 0)).thenReturn(1);
+        when(mMockPaginationModel.getLookAtX(0, 100)).thenReturn(50);
+        when(mMockPaginationModel.getLookAtY(0, 0)).thenReturn(1);
+        when(mMockPaginationModel.getLookAtY(0, 100)).thenReturn(50);
     }
 
     @Test
-    public void onChange_loadPageAssets_stablePosition() {
+    public void onChange_stablePosition() {
         mNewPosition = new ZoomView.ZoomScroll(1.0f, 0, 0, true);
 
         ZoomScrollValueObserver zoomScrollValueObserver = new ZoomScrollValueObserver(mMockZoomView,
                 mMockPaginatedView, mMockLayoutHandler, mMockAnnotationButton,
                 mMockFindInFileView, mIsAnnotationIntentResolvable, mMockSelectionActionMode,
-                VIEW_STATE_EXPOSED_VALUE);
+                VIEW_STATE_EXPOSED_VALUE, mMockImmersiveModeRequester);
         zoomScrollValueObserver.onChange(OLD_POSITION, mNewPosition);
 
-        verify(mMockZoomView).setStableZoom(1.0f);
-        verify(mMockPaginatedView).setViewArea(RECT);
-        verify(mMockPaginatedView).refreshPageRangeInVisibleArea(mNewPosition, 100);
-        verify(mMockPaginatedView).handleGonePages(false);
-        verify(mMockPaginatedView).loadInvisibleNearPageRange(1.0f);
-        verify(mMockPaginatedView).refreshVisiblePages(false,
-                ViewState.NO_VIEW, 1.0f);
-        verify(mMockPaginatedView).handleGonePages(true);
-        verify(mMockLayoutHandler).maybeLayoutPages(100);
+        verify(mMockSelectionActionMode).resume();
     }
 
     @Test
-    public void onChange_loadPageAssets_stableZoom() {
-        mNewPosition = new ZoomView.ZoomScroll(2.0f, 0, 0, false);
-        when(mMockZoomView.getStableZoom()).thenReturn(2.0f);
-
-        ZoomScrollValueObserver zoomScrollValueObserver = new ZoomScrollValueObserver(mMockZoomView,
-                mMockPaginatedView, mMockLayoutHandler, mMockAnnotationButton, mMockFindInFileView,
-                mIsAnnotationIntentResolvable, mMockSelectionActionMode,
-                VIEW_STATE_EXPOSED_VALUE);
-        zoomScrollValueObserver.onChange(OLD_POSITION, mNewPosition);
-
-        verify(mMockPaginatedView).refreshVisibleTiles(false, ViewState.NO_VIEW);
-    }
-
-    @Test
-    public void onChange_showAnnotationButton() {
+    public void onChange_exitImmersiveMode() {
         mIsAnnotationIntentResolvable = true;
         when(mMockAnnotationButton.getVisibility()).thenReturn(View.GONE);
         when(mMockFindInFileView.getVisibility()).thenReturn(View.GONE);
@@ -137,29 +138,29 @@ public class ZoomScrollValueObserverTest {
                 mMockPaginatedView, mMockLayoutHandler, mMockAnnotationButton,
                 mMockFindInFileView,
                 mIsAnnotationIntentResolvable, mMockSelectionActionMode,
-                VIEW_STATE_EXPOSED_VALUE);
+                VIEW_STATE_EXPOSED_VALUE, mMockImmersiveModeRequester);
         zoomScrollValueObserver.onChange(OLD_POSITION, mNewPosition);
 
-        verify(mMockAnnotationButton).setVisibility(View.VISIBLE);
+        verify(mMockImmersiveModeRequester).requestImmersiveModeChange(false);
     }
 
     @Test
-    public void onChange_hideAnnotationButton() {
+    public void onChange_enterImmersiveMode() {
         mIsAnnotationIntentResolvable = true;
         mNewPosition = new ZoomView.ZoomScroll(1.0f, 0, 10, false);
-        mOldPosition = new ZoomView.ZoomScroll(1.0f, 0, 10, false);
+        ZoomView.ZoomScroll oldPosition = new ZoomView.ZoomScroll(1.0f, 0, 10, false);
         when(mMockAnnotationButton.getVisibility()).thenReturn(View.VISIBLE);
 
         ZoomScrollValueObserver zoomScrollValueObserver = new ZoomScrollValueObserver(mMockZoomView,
                 mMockPaginatedView, mMockLayoutHandler, mMockAnnotationButton,
                 mMockFindInFileView,
                 mIsAnnotationIntentResolvable, mMockSelectionActionMode,
-                VIEW_STATE_EXPOSED_VALUE);
-        zoomScrollValueObserver.onChange(mOldPosition, mNewPosition);
+                VIEW_STATE_EXPOSED_VALUE, mMockImmersiveModeRequester);
+        zoomScrollValueObserver.onChange(oldPosition, mNewPosition);
 //        TODO: Remove this hardcode dependency.
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            verify(mMockAnnotationButton).setVisibility(View.GONE);
-        }, ANIMATION_DELAY_MILLIS);
+        new Handler(Looper.getMainLooper()).postDelayed(
+                () -> verify(mMockImmersiveModeRequester).requestImmersiveModeChange(true),
+                ANIMATION_DELAY_MILLIS);
     }
 
 }

@@ -19,11 +19,11 @@ package androidx.compose.ui.text
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastMaxBy
 
 /**
@@ -46,7 +46,7 @@ class MultiParagraphIntrinsics(
     style: TextStyle,
     val placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ) : ParagraphIntrinsics {
 
     @Suppress("DEPRECATION")
@@ -56,20 +56,20 @@ class MultiParagraphIntrinsics(
             ReplaceWith(
                 "MultiParagraphIntrinsics(annotatedString, style, " +
                     "placeholders, density, fontFamilyResolver)"
-            )
+            ),
     )
     constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
         density: Density,
-        resourceLoader: Font.ResourceLoader
+        resourceLoader: Font.ResourceLoader,
     ) : this(
         annotatedString,
         style,
         placeholders,
         density,
-        createFontFamilyResolver(resourceLoader)
+        createFontFamilyResolver(resourceLoader),
     )
 
     // NOTE(text-perf-review): why are we using lazy here? Are there cases where these
@@ -106,17 +106,17 @@ class MultiParagraphIntrinsics(
                         ParagraphIntrinsics(
                             text = annotatedString.text,
                             style = style.merge(currentParagraphStyle),
-                            spanStyles = annotatedString.spanStyles,
+                            annotations = annotatedString.annotations ?: emptyList(),
                             placeholders =
                                 placeholders.getLocalPlaceholders(
                                     paragraphStyleItem.start,
-                                    paragraphStyleItem.end
+                                    paragraphStyleItem.end,
                                 ),
                             density = density,
-                            fontFamilyResolver = fontFamilyResolver
+                            fontFamilyResolver = fontFamilyResolver,
                         ),
                     startIndex = paragraphStyleItem.start,
-                    endIndex = paragraphStyleItem.end
+                    endIndex = paragraphStyleItem.end,
                 )
             }
     }
@@ -134,7 +134,7 @@ class MultiParagraphIntrinsics(
      */
     private fun resolveTextDirection(
         style: ParagraphStyle,
-        defaultStyle: ParagraphStyle
+        defaultStyle: ParagraphStyle,
     ): ParagraphStyle {
         return if (style.textDirection != TextDirection.Unspecified) style
         else style.copy(textDirection = defaultStyle.textDirection)
@@ -142,16 +142,15 @@ class MultiParagraphIntrinsics(
 }
 
 private fun List<AnnotatedString.Range<Placeholder>>.getLocalPlaceholders(start: Int, end: Int) =
-    fastFilter { intersect(start, end, it.start, it.end) }
-        .fastMap {
-            require(start <= it.start && it.end <= end) {
-                "placeholder can not overlap with paragraph."
-            }
-            AnnotatedString.Range(it.item, it.start - start, it.end - start)
+    fastFilteredMap({ intersect(start, end, it.start, it.end) }) {
+        requirePrecondition(start <= it.start && it.end <= end) {
+            "placeholder can not overlap with paragraph."
         }
+        AnnotatedString.Range(it.item, it.start - start, it.end - start)
+    }
 
 internal data class ParagraphIntrinsicInfo(
     val intrinsics: ParagraphIntrinsics,
     val startIndex: Int,
-    val endIndex: Int
+    val endIndex: Int,
 )

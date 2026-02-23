@@ -25,10 +25,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseIntArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -37,17 +38,13 @@ import java.lang.reflect.Method;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class VersionedParcelParcel extends VersionedParcel {
     private static final boolean DEBUG = false;
-    @NonNull
-    private static final String TAG = "VersionedParcelParcel";
+    private static final @NonNull String TAG = "VersionedParcelParcel";
 
-    @NonNull
-    private final SparseIntArray mPositionLookup = new SparseIntArray();
-    @NonNull
-    private final Parcel mParcel;
+    private final @NonNull SparseIntArray mPositionLookup = new SparseIntArray();
+    private final @NonNull Parcel mParcel;
     private final int mOffset;
     private final int mEnd;
-    @NonNull
-    private final String mPrefix;
+    private final @NonNull String mPrefix;
     private int mCurrentField = -1;
     private int mNextRead = 0;
     private int mFieldId = -1;
@@ -206,8 +203,7 @@ class VersionedParcelParcel extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    protected CharSequence readCharSequence() {
+    protected @Nullable CharSequence readCharSequence() {
         return TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(mParcel);
     }
 
@@ -232,20 +228,17 @@ class VersionedParcelParcel extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    public String readString() {
+    public @Nullable String readString() {
         return mParcel.readString();
     }
 
     @Override
-    @Nullable
-    public IBinder readStrongBinder() {
+    public @Nullable IBinder readStrongBinder() {
         return mParcel.readStrongBinder();
     }
 
     @Override
-    @Nullable
-    public byte[] readByteArray() {
+    public byte @Nullable [] readByteArray() {
         int len = mParcel.readInt();
         if (len < 0) {
             return null;
@@ -257,14 +250,12 @@ class VersionedParcelParcel extends VersionedParcel {
 
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "deprecation"})
-    @Nullable
-    public <T extends Parcelable> T readParcelable() {
+    public <T extends Parcelable> @Nullable T readParcelable() {
         return mParcel.readParcelable(getClass().getClassLoader());
     }
 
     @Override
-    @Nullable
-    public Bundle readBundle() {
+    public @Nullable Bundle readBundle() {
         return mParcel.readBundle(getClass().getClassLoader());
     }
 

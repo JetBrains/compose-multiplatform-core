@@ -22,10 +22,11 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.widget.GuidedActionAdapter.EditListener;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -57,8 +58,7 @@ public class GuidedActionAdapterGroup {
         }
     }
 
-    @Nullable
-    public GuidedActionAdapter getNextAdapter(@NonNull GuidedActionAdapter adapter) {
+    public @Nullable GuidedActionAdapter getNextAdapter(@NonNull GuidedActionAdapter adapter) {
         for (int i = 0; i < mAdapters.size(); i++) {
             Pair<GuidedActionAdapter, GuidedActionAdapter> pair = mAdapters.get(i);
             if (pair.first == adapter) {
@@ -126,7 +126,7 @@ public class GuidedActionAdapterGroup {
 
     public void openIme(
             @NonNull GuidedActionAdapter adapter,
-            @NonNull GuidedActionsStylist.ViewHolder avh
+            GuidedActionsStylist.@NonNull ViewHolder avh
     ) {
         adapter.getGuidedActionsStylist().setEditingMode(avh, true);
         View v = avh.getEditingView();

@@ -18,13 +18,14 @@ package androidx.pdf.viewer;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.Range;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.PaginationUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PageSelectionValueObserver implements ObservableValue.ValueObserver<PageSelection> {

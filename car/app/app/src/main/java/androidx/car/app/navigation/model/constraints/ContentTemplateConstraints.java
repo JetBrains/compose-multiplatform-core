@@ -16,17 +16,20 @@
 
 package androidx.car.app.navigation.model.constraints;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.GridTemplate;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.PaneTemplate;
 import androidx.car.app.model.SearchTemplate;
+import androidx.car.app.model.SectionedItemTemplate;
 import androidx.car.app.model.Template;
 
 import com.google.common.collect.ImmutableSet;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Encapsulates the constraints to apply when creating a Content {@link Template} within a parent
@@ -35,9 +38,12 @@ import com.google.common.collect.ImmutableSet;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @RequiresCarApi(7)
 public class ContentTemplateConstraints {
-    /** Allowed templates for Map with Content Templates */
-    @NonNull
-    public static final ContentTemplateConstraints MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS =
+    /**
+     * The set of allowed templates as content within a map with content template since the
+     * introduction of the map with content template (API 7).
+     */
+    public static final @NonNull ContentTemplateConstraints
+        MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS =
             new ContentTemplateConstraints(ImmutableSet.of(
                     GridTemplate.class,
                     MessageTemplate.class,
@@ -45,9 +51,21 @@ public class ContentTemplateConstraints {
                     PaneTemplate.class
             ));
 
+    /** The set of allowed templates as content within a map with content template since API 8. */
+    @ExperimentalCarApi
+    @RequiresCarApi(8)
+    public static final @NonNull ContentTemplateConstraints
+        MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS_API_8 =
+            new ContentTemplateConstraints(ImmutableSet.of(
+                    GridTemplate.class,
+                    MessageTemplate.class,
+                    ListTemplate.class,
+                    PaneTemplate.class,
+                    SectionedItemTemplate.class
+            ));
+
     /** Allowed templates for TabContents */
-    @NonNull
-    public static final ContentTemplateConstraints TAB_CONTENTS_CONSTRAINTS =
+    public static final @NonNull ContentTemplateConstraints TAB_CONTENTS_CONSTRAINTS =
             new ContentTemplateConstraints(ImmutableSet.of(
                     ListTemplate.class,
                     PaneTemplate.class,

@@ -27,10 +27,12 @@ import androidx.car.app.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link PaneTemplate}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class PaneTemplateTest {
     Header mHeader = new Header.Builder()
@@ -54,11 +56,17 @@ public class PaneTemplateTest {
     @Test
     public void paneTemplate_title_unsupportedSpans_throws() {
         CharSequence title1 = TestUtils.getCharSequenceWithClickableSpan("Title");
+        CharSequence titleWithIconSpan = TestUtils.getCharSequenceWithIconSpan("Title");
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new PaneTemplate.Builder(TestUtils.createPane(2, 2))
                         .setHeader(createHeaderWithCustomTitle(title1)).build());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new PaneTemplate.Builder(TestUtils.createPane(2, 2))
+                        .setHeader(createHeaderWithCustomTitle(titleWithIconSpan)).build());
 
         CharSequence title2 = TestUtils.getCharSequenceWithColorSpan("Title");
         assertThrows(
@@ -70,6 +78,15 @@ public class PaneTemplateTest {
         CharSequence title4 = TestUtils.getCharSequenceWithDistanceAndDurationSpans("Title");
         new PaneTemplate.Builder(TestUtils.createPane(2, 2))
                 .setHeader(createHeaderWithCustomTitle(title4)).build();
+    }
+
+    @Test
+    public void paneTemplate_unsupportedIconSpanInTitle_convertToString_rendersTextOnlyTitle() {
+        CharSequence titleWithIconSpan = TestUtils.getCharSequenceWithIconSpan("Title").toString();
+
+        // CarIconSpan with title.toString(), assert no exceptions
+        new PaneTemplate.Builder(TestUtils.createPane(2, 2))
+                        .setHeader(createHeaderWithCustomTitle(titleWithIconSpan)).build();
     }
 
     @Test

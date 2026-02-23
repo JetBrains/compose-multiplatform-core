@@ -28,7 +28,6 @@ import android.content.Context;
 import android.graphics.Color;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.ActionBuilders.LaunchAction;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.protolayout.LayoutElementBuilders;
@@ -55,6 +54,8 @@ import androidx.wear.protolayout.material.Text;
 import androidx.wear.protolayout.material.TitleChip;
 import androidx.wear.protolayout.material.Typography;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,8 +71,7 @@ public class TestCasesGenerator {
      * different for different user font sizes. Note that some of the golden will have the same name
      * as it should point on the same size independent image.
      */
-    @NonNull
-    static Map<String, Layout> generateTestCases(
+    static @NonNull Map<String, Layout> generateTestCases(
             @NonNull Context context,
             @NonNull DeviceParameters deviceParameters,
             @NonNull String goldenSuffix) {
@@ -923,16 +923,14 @@ public class TestCasesGenerator {
                                 entry -> Layout.fromLayoutElement(entry.getValue())));
     }
 
-    @NonNull
-    private static Text buildTextLabel(@NonNull Context context, @NonNull String text) {
+    private static @NonNull Text buildTextLabel(@NonNull Context context, @NonNull String text) {
         return new Text.Builder(context, text)
                 .setTypography(Typography.TYPOGRAPHY_CAPTION1)
                 .setColor(argb(Color.WHITE))
                 .build();
     }
 
-    @NonNull
-    private static Box buildColoredBoxMSL(int color) {
+    private static @NonNull Box buildColoredBoxMSL(int color) {
         return new Box.Builder()
                 .setWidth(dp(45))
                 .setHeight(dp(45))
@@ -944,8 +942,7 @@ public class TestCasesGenerator {
                 .build();
     }
 
-    @NonNull
-    private static Box buildColoredBoxPLL(int color) {
+    private static @NonNull Box buildColoredBoxPLL(int color) {
         return new Box.Builder()
                 .setWidth(expand())
                 .setHeight(dp(60))

@@ -17,11 +17,12 @@
 package androidx.credentials.registry.digitalcredentials.mdoc
 
 import android.graphics.Bitmap
-import androidx.credentials.registry.provider.digitalcredentials.VerificationEntryDisplayData
-import androidx.credentials.registry.provider.digitalcredentials.VerificationFieldDisplayData
+import androidx.credentials.registry.provider.digitalcredentials.VerificationEntryDisplayProperties
+import androidx.credentials.registry.provider.digitalcredentials.VerificationFieldDisplayProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -30,35 +31,53 @@ import org.junit.runner.RunWith
 class MdocEntryTest {
     companion object {
         val ENTRY_DISPLAY_DATA =
-            VerificationEntryDisplayData(
+            VerificationEntryDisplayProperties(
                 title = "test-title",
                 subtitle = "test-subtitle",
-                icon = Bitmap.createBitmap(4, 4, Bitmap.Config.ALPHA_8)
+                icon = Bitmap.createBitmap(4, 4, Bitmap.Config.ALPHA_8),
             )
+    }
+
+    @Test
+    fun construction_longId_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            MdocEntry(
+                docType = "org.iso.18013.5.1.mDL",
+                fields = listOf(),
+                entryDisplayPropertySet = setOf(ENTRY_DISPLAY_DATA),
+                id = "a".repeat(65),
+            )
+        }
     }
 
     @Test
     fun construction_success() {
         val mdocField1 =
             MdocField(
-                "fieldName1",
+                "namespace1",
+                "id1",
                 "fieldVal1",
-                setOf(VerificationFieldDisplayData("displayName1"))
+                setOf(VerificationFieldDisplayProperties("displayName1")),
             )
         val mdocField2 =
-            MdocField("fieldName2", null, setOf(VerificationFieldDisplayData("displayName2")))
+            MdocField(
+                "namespace2",
+                "id2",
+                null,
+                setOf(VerificationFieldDisplayProperties("displayName2")),
+            )
 
         val entry =
             MdocEntry(
                 docType = "org.iso.18013.5.1.mDL",
                 fields = listOf(mdocField1, mdocField2),
-                entryDisplayData = setOf(ENTRY_DISPLAY_DATA),
-                id = "id"
+                entryDisplayPropertySet = setOf(ENTRY_DISPLAY_DATA),
+                id = "id",
             )
 
         assertThat(entry.docType).isEqualTo("org.iso.18013.5.1.mDL")
         assertThat(entry.fields).containsExactly(mdocField1, mdocField2).inOrder()
-        assertThat(entry.entryDisplayData).containsExactly(ENTRY_DISPLAY_DATA)
+        assertThat(entry.entryDisplayPropertySet).containsExactly(ENTRY_DISPLAY_DATA)
         assertThat(entry.id).isEqualTo("id")
     }
 }

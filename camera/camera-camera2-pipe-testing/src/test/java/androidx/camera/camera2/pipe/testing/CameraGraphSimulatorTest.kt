@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.testing
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
@@ -53,7 +52,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraGraphSimulatorTest {
     private val testScope = TestScope()
     private val metadata =
@@ -122,7 +121,7 @@ class CameraGraphSimulatorTest {
 
                 frame.simulateComplete(
                     resultMetadata,
-                    extraMetadata = mapOf(CaptureResult.LENS_APERTURE to 4.0f)
+                    extraMetadata = mapOf(CaptureResult.LENS_APERTURE to 4.0f),
                 )
             }
 
@@ -176,6 +175,7 @@ class CameraGraphSimulatorTest {
     fun simulatorCanIssueBufferLoss() =
         testScope.runTest {
             val stream = simulator.streams[streamConfig]!!
+            val outputId = stream.outputs.single().id
             val listener = FakeRequestListener()
             val request = Request(streams = listOf(stream.id), listeners = listOf(listener))
 
@@ -189,11 +189,12 @@ class CameraGraphSimulatorTest {
             val frame = simulator.simulateNextFrame()
             assertThat(frame.request).isSameInstanceAs(request)
 
-            frame.simulateBufferLoss(stream.id)
+            frame.simulateBufferLoss(stream.id, outputId)
             val lossEvent = listener.onBufferLostFlow.first()
             assertThat(lossEvent.frameNumber).isEqualTo(frame.frameNumber)
             assertThat(lossEvent.requestMetadata.request).isSameInstanceAs(request)
             assertThat(lossEvent.streamId).isEqualTo(stream.id)
+            assertThat(lossEvent.outputId).isEqualTo(outputId)
         }
 
     @Test

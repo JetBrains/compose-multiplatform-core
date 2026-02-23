@@ -17,6 +17,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.node.findNearestAncestor
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 
@@ -48,19 +49,84 @@ import kotlin.jvm.JvmName
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeUiFlags {
+ *      -assumevalues class androidx.compose.ui.ComposeUiFlags {
  *          public static int isRectTrackingEnabled return false
  *      }
  */
 @ExperimentalComposeUiApi
 object ComposeUiFlags {
     /**
-     * With this flag on, during layout we will do some additional work to store the minimum
-     * bounding rectangles for all Layout Nodes. This introduces some additional maintenance burden,
-     * but will be used in the future to enable certain features that are not possible to do
-     * efficiently at this point, as well as speed up some other areas of the system such as
-     * semantics, focus, pointer input, etc. If significant performance overhead is noticed during
-     * layout phases, it is possible that the addition of this tracking is the culprit.
+     * This enables fixes for View focus. The changes are large enough to require a flag to allow
+     * disabling them.
      */
-    @Suppress("MutableBareField") @JvmField var isRectTrackingEnabled: Boolean = true
+    @field:Suppress("MutableBareField") @JvmField var isViewFocusFixEnabled: Boolean = false
+
+    /**
+     * This flag enables an alternate approach to fixing the issues addressed by the
+     * [isViewFocusFixEnabled] flag.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isBypassUnfocusableComposeViewEnabled: Boolean = true
+
+    /** Enable initial focus when a focusable is added to a screen with no focusable content. */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isInitialFocusOnFocusableAvailable: Boolean = false
+
+    /**
+     * Enable focus restoration, by always saving focus. This flag depends on
+     * [isInitialFocusOnFocusableAvailable] also being true.
+     */
+    @field:Suppress("MutableBareField") @JvmField var isFocusRestorationEnabled: Boolean = false
+
+    /** Flag for enabling indirect pointer event navigation gestures in Compose. */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
+
+    /** Flag enables optimized focus change dispatching logic. */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isOptimizedFocusEventDispatchEnabled: Boolean = true
+
+    /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
+
+    /**
+     * Enables a fix where [TraversableNode] traversal method [findNearestAncestor] will take into
+     * consideration any delegates that might also be traversable.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTraversableDelegatesFixEnabled: Boolean = true
+
+    /**
+     * Enables a change where off-screen children of the partially visible merging nodes (e.g. a
+     * Text node of a Button) inside scrollable container are now also reported in the semantics
+     * tree for Accessibility needs.
+     *
+     * Enabled is correct, and it should be enabled in all apps.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isAccessibilityShouldIncludeOffscreenChildrenEnabled: Boolean = true
+
+    /**
+     * Enables support of trackpad gesture events.
+     *
+     * If enabled, [androidx.compose.ui.input.pointer.PointerEvent]s can have type of
+     * [androidx.compose.ui.input.pointer.PointerEventType.Pan] and
+     * [androidx.compose.ui.input.pointer.PointerEventType.Scale], corresponding to gestures on a
+     * trackpad.
+     *
+     * These trackpad gestures will also generally be treated as mouse, with the exact behavior
+     * depending on platform specifics.
+     */
+    // TODO: b/475634969 remove the temporary flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTrackpadGestureHandlingEnabled: Boolean = true
 }

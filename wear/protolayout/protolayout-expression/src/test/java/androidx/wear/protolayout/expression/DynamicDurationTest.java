@@ -16,9 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicDurationFromProto;
+
+import static com.google.common.truth.Truth.assertThat;
 
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicDuration;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
@@ -27,10 +27,12 @@ import androidx.wear.protolayout.proto.FingerprintProto.NodeFingerprint;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.time.Duration;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class DynamicDurationTest {
     private static final String STATE_KEY = "state-key";
 

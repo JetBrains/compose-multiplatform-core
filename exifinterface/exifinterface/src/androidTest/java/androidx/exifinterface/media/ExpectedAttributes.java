@@ -18,13 +18,14 @@ package androidx.exifinterface.media;
 
 import android.content.res.Resources;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.exifinterface.test.R;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
+
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,6 +48,7 @@ final class ExpectedAttributes {
                     .setFocalLength("413/100")
                     .setImageSize(640, 480)
                     .setIso("50")
+                    .setPixelYDimension(480)
                     .setOrientation(ExifInterface.ORIENTATION_ROTATE_90)
                     .build();
 
@@ -85,6 +87,7 @@ final class ExpectedAttributes {
                     .setGpsTimestamp("00:00:00")
                     .setImageSize(144, 176)
                     .setIso("146")
+                    .setPixelYDimension(176)
                     .build();
 
     /**
@@ -108,6 +111,52 @@ final class ExpectedAttributes {
                     .setExposureTime(0)
                     .setFocalLength(null)
                     .setIso(null)
+                    .setPixelYDimension(0)
+                    .build();
+
+    /** Expected attributes for {@link R.raw#jpeg_with_fill_1byte}. */
+    public static final ExpectedAttributes JPEG_WITH_FILL_1BYTE =
+            new Builder()
+                    .setThumbnailOffsetAndLength(3501, 6265)
+                    .setThumbnailSize(512, 288)
+                    .setIsThumbnailCompressed(true)
+                    .setMake("SAMSUNG")
+                    .setMakeOffset(161)
+                    .setModel("SM-N900S")
+                    .setAperture(2.2)
+                    .setDateTimeOriginal("2016:01:29 18:32:27")
+                    .setExposureTime(1.0 / 30)
+                    .setFocalLength("413/100")
+                    .setImageSize(640, 480)
+                    .setIso("50")
+                    .setPixelYDimension(480)
+                    .setOrientation(ExifInterface.ORIENTATION_ROTATE_90)
+                    .build();
+
+    /** Expected attributes for {@link R.raw#jpeg_with_fill_2bytes}. */
+    public static final ExpectedAttributes JPEG_WITH_FILL_2BYTES =
+            new Builder()
+                    .setThumbnailOffsetAndLength(3502, 6265)
+                    .setThumbnailSize(512, 288)
+                    .setIsThumbnailCompressed(true)
+                    .setMake("SAMSUNG")
+                    .setMakeOffset(162)
+                    .setModel("SM-N900S")
+                    .setAperture(2.2)
+                    .setDateTimeOriginal("2016:01:29 18:32:27")
+                    .setExposureTime(1.0 / 30)
+                    .setFocalLength("413/100")
+                    .setImageSize(640, 480)
+                    .setIso("50")
+                    .setPixelYDimension(480)
+                    .setOrientation(ExifInterface.ORIENTATION_ROTATE_90)
+                    .build();
+
+    public static final ExpectedAttributes JPEG_WITH_APP1_AFTER_DQT =
+            JPEG_WITH_EXIF_BYTE_ORDER_II
+                    .buildUpon()
+                    .setMakeOffset(294)
+                    .setThumbnailOffset(3634)
                     .build();
 
     /** Expected attributes for {@link R.raw#dng_with_exif_with_xmp}. */
@@ -150,13 +199,15 @@ final class ExpectedAttributes {
                     .setXmpOffsetAndLength(1809, 13197)
                     .build();
 
-    /** Expected attributes for {@link R.raw#png_with_exif_byte_order_ii}. */
-    public static final ExpectedAttributes PNG_WITH_EXIF_BYTE_ORDER_II =
+    /** Expected attributes for {@link R.raw#png_with_exif_and_xmp_byte_order_ii}. */
+    public static final ExpectedAttributes PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II =
             JPEG_WITH_EXIF_BYTE_ORDER_II
                     .buildUpon()
                     .setThumbnailOffset(212271)
                     .setMakeOffset(211525)
                     .setFocalLength("41/10")
+                    .setXmpResourceId(R.raw.png_xmp)
+                    .setXmpOffsetAndLength(352, 1409)
                     .build();
 
     /** Expected attributes for {@link R.raw#webp_with_exif}. */
@@ -169,7 +220,10 @@ final class ExpectedAttributes {
 
     /** Expected attributes for {@link R.raw#invalid_webp_with_jpeg_app1_marker}. */
     public static final ExpectedAttributes INVALID_WEBP_WITH_JPEG_APP1_MARKER =
-            new Builder().setOrientation(ExifInterface.ORIENTATION_ROTATE_270).build();
+            new Builder()
+                    .setOrientation(ExifInterface.ORIENTATION_ROTATE_270)
+                    .setPixelYDimension(280)
+                    .build();
 
     /** Expected attributes for {@link R.raw#heic_with_exif} when read on a device below API 31. */
     public static final ExpectedAttributes HEIC_WITH_EXIF_BELOW_API_31 =
@@ -178,6 +232,7 @@ final class ExpectedAttributes {
                     .setMakeOffset(3519)
                     .setModel("Nexus 5")
                     .setImageSize(1920, 1080)
+                    .setPixelYDimension(1080)
                     .setOrientation(ExifInterface.ORIENTATION_NORMAL)
                     .build();
 
@@ -216,40 +271,41 @@ final class ExpectedAttributes {
         private double mComputedLatitude;
         private double mComputedLongitude;
         private double mComputedAltitude;
-        @Nullable private String mGpsAltitude;
-        @Nullable private String mGpsAltitudeRef;
-        @Nullable private String mGpsDatestamp;
-        @Nullable private String mGpsLatitude;
+        private @Nullable String mGpsAltitude;
+        private @Nullable String mGpsAltitudeRef;
+        private @Nullable String mGpsDatestamp;
+        private @Nullable String mGpsLatitude;
         private long mGpsLatitudeOffset;
         private long mGpsLatitudeLength;
-        @Nullable private String mGpsLatitudeRef;
-        @Nullable private String mGpsLongitude;
-        @Nullable private String mGpsLongitudeRef;
-        @Nullable private String mGpsProcessingMethod;
-        @Nullable private String mGpsTimestamp;
+        private @Nullable String mGpsLatitudeRef;
+        private @Nullable String mGpsLongitude;
+        private @Nullable String mGpsLongitudeRef;
+        private @Nullable String mGpsProcessingMethod;
+        private @Nullable String mGpsTimestamp;
 
         // Make information
         private long mMakeOffset;
         private long mMakeLength;
-        @Nullable private String mMake;
+        private @Nullable String mMake;
 
         // Values.
-        @Nullable private String mModel;
+        private @Nullable String mModel;
         private double mAperture;
-        @Nullable private String mDateTimeOriginal;
+        private @Nullable String mDateTimeOriginal;
         private double mExposureTime;
         private double mFlash;
-        @Nullable private String mFocalLength;
+        private @Nullable String mFocalLength;
         private int mImageLength;
         private int mImageWidth;
-        @Nullable private String mIso;
+        private @Nullable String mIso;
         private int mOrientation;
         private int mWhiteBalance;
+        private int mPixelYDimension;
 
         // XMP information.
         private boolean mHasXmp;
-        @Nullable private String mXmp;
-        @Nullable private Integer mXmpResourceId;
+        private @Nullable String mXmp;
+        private @Nullable Integer mXmpResourceId;
         private long mXmpOffset;
         private long mXmpLength;
 
@@ -289,6 +345,7 @@ final class ExpectedAttributes {
             mImageWidth = attributes.imageWidth;
             mIso = attributes.iso;
             mOrientation = attributes.orientation;
+            mPixelYDimension = attributes.pixelYDimension;
             mHasXmp = attributes.hasXmp;
             mXmp = attributes.mXmp;
             mXmpResourceId = attributes.mXmpResourceId;
@@ -418,11 +475,11 @@ final class ExpectedAttributes {
         }
 
         public Builder setMake(@Nullable String make) {
+            mMake = make;
             if (make == null) {
                 mMakeOffset = 0;
                 mMakeLength = 0;
             } else {
-                mMake = make;
                 mMakeLength = make.length() + 1;
             }
             return this;
@@ -484,6 +541,11 @@ final class ExpectedAttributes {
 
         public Builder setWhiteBalance(int whiteBalance) {
             mWhiteBalance = whiteBalance;
+            return this;
+        }
+
+        public Builder setPixelYDimension(int dimension) {
+            mPixelYDimension = dimension;
             return this;
         }
 
@@ -555,39 +617,40 @@ final class ExpectedAttributes {
     public final double computedLatitude;
     public final double computedLongitude;
     public final double computedAltitude;
-    @Nullable public final String gpsAltitude;
-    @Nullable public final String gpsAltitudeRef;
-    @Nullable public final String gpsDatestamp;
-    @Nullable public final String gpsLatitude;
+    public final @Nullable String gpsAltitude;
+    public final @Nullable String gpsAltitudeRef;
+    public final @Nullable String gpsDatestamp;
+    public final @Nullable String gpsLatitude;
     public final long gpsLatitudeOffset;
     public final long gpsLatitudeLength;
-    @Nullable public final String gpsLatitudeRef;
-    @Nullable public final String gpsLongitude;
-    @Nullable public final String gpsLongitudeRef;
-    @Nullable public final String gpsProcessingMethod;
-    @Nullable public final String gpsTimestamp;
+    public final @Nullable String gpsLatitudeRef;
+    public final @Nullable String gpsLongitude;
+    public final @Nullable String gpsLongitudeRef;
+    public final @Nullable String gpsProcessingMethod;
+    public final @Nullable String gpsTimestamp;
 
     // Make information
     public final long makeOffset;
     public final long makeLength;
-    @Nullable public final String make;
+    public final @Nullable String make;
 
     // Values.
-    @Nullable public final String model;
+    public final @Nullable String model;
     public final double aperture;
-    @Nullable public final String dateTimeOriginal;
+    public final @Nullable String dateTimeOriginal;
     public final double exposureTime;
-    @Nullable public final String focalLength;
+    public final @Nullable String focalLength;
     public final int imageLength;
     public final int imageWidth;
-    @Nullable public final String iso;
+    public final @Nullable String iso;
     public final int orientation;
+    public final int pixelYDimension;
 
     // XMP information.
     public final boolean hasXmp;
-    @Nullable private final String mXmp;
-    @Nullable private final Integer mXmpResourceId;
-    @Nullable private String mMemoizedXmp;
+    private final @Nullable String mXmp;
+    private final @Nullable Integer mXmpResourceId;
+    private @Nullable String mMemoizedXmp;
     public final long xmpOffset;
     public final long xmpLength;
 
@@ -625,6 +688,7 @@ final class ExpectedAttributes {
         imageWidth = builder.mImageWidth;
         iso = builder.mIso;
         orientation = builder.mOrientation;
+        pixelYDimension = builder.mPixelYDimension;
         hasXmp = builder.mHasXmp;
         mXmp = builder.mXmp;
         mXmpResourceId = builder.mXmpResourceId;
@@ -642,8 +706,7 @@ final class ExpectedAttributes {
      *
      * <p>Returns null if no expected XMP data was set.
      */
-    @Nullable
-    public String getXmp(Resources resources) throws IOException {
+    public @Nullable String getXmp(Resources resources) throws IOException {
         if (mMemoizedXmp == null && mXmpResourceId != null) {
             try (InputStreamReader inputStreamReader =
                     new InputStreamReader(

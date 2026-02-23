@@ -60,7 +60,7 @@ public class Request(
     public val extras: Map<Metadata.Key<*>, Any> = emptyMap(),
     public val listeners: List<Listener> = emptyList(),
     public val template: RequestTemplate? = null,
-    public val inputRequest: InputRequest? = null
+    public val inputRequest: InputRequest? = null,
 ) {
     public operator fun <T> get(key: CaptureRequest.Key<T>): T? = getUnchecked(key)
 
@@ -89,7 +89,7 @@ public class Request(
         public fun onStarted(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            timestamp: CameraTimestamp
+            timestamp: CameraTimestamp,
         ) {}
 
         /**
@@ -105,7 +105,7 @@ public class Request(
         public fun onPartialCaptureResult(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            captureResult: FrameMetadata
+            captureResult: FrameMetadata,
         ) {}
 
         /**
@@ -141,7 +141,7 @@ public class Request(
         public fun onTotalCaptureResult(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            totalCaptureResult: FrameInfo
+            totalCaptureResult: FrameInfo,
         ) {}
 
         /**
@@ -158,7 +158,7 @@ public class Request(
         public fun onComplete(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            result: FrameInfo
+            result: FrameInfo,
         ) {}
 
         /**
@@ -175,7 +175,7 @@ public class Request(
         public fun onFailed(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            requestFailure: RequestFailure
+            requestFailure: RequestFailure,
         ) {}
 
         /**
@@ -191,7 +191,7 @@ public class Request(
         public fun onReadoutStarted(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            timestamp: SensorTimestamp
+            timestamp: SensorTimestamp,
         ) {}
 
         /**
@@ -203,11 +203,33 @@ public class Request(
          * @param frameNumber the android frame number for this exposure
          * @param stream the internal stream that will not receive a buffer for this frame.
          * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
+         *
+         * TODO: b/474658963 - Remove this method once deprecated usages are removed.
+         */
+        @Deprecated("Use the onBufferLost with OutputId.")
+        public fun onBufferLost(
+            requestMetadata: RequestMetadata,
+            frameNumber: FrameNumber,
+            stream: StreamId,
+        ) {}
+
+        /**
+         * onBufferLost occurs when a CaptureRequest failed to create an image for a given output
+         * stream. This method may be invoked multiple times per frame if multiple buffers were
+         * lost. This method may not be invoked when an image is lost in some situations.
+         *
+         * @param requestMetadata the data about the camera2 request that was sent to the camera.
+         * @param frameNumber the android frame number for this exposure
+         * @param streamId the internal stream that will not receive a buffer for this frame.
+         * @param outputId the specific internal output stream of the [streamId] that will not
+         *   receive a buffer for this frame.
+         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
          */
         public fun onBufferLost(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            stream: StreamId
+            streamId: StreamId,
+            outputId: OutputId,
         ) {}
 
         /**
@@ -260,7 +282,7 @@ public class Request(
          */
         public fun onRequestSequenceCompleted(
             requestMetadata: RequestMetadata,
-            frameNumber: FrameNumber
+            frameNumber: FrameNumber,
         ) {}
     }
 
@@ -270,19 +292,27 @@ public class Request(
     @Suppress("UNCHECKED_CAST")
     private fun <T> getUnchecked(key: CaptureRequest.Key<T>): T? = this.parameters[key] as T?
 
-    override fun toString(): String {
+    override fun toString(): String = toStringInternal(verbose = false)
+
+    public fun toStringVerbose(): String = toStringInternal(verbose = true)
+
+    private fun toStringInternal(verbose: Boolean): String {
+        val templateString = if (template == null) "" else ", template=$template"
+        // Ignore listener count, always include stream list (required).
         val parametersString =
-            if (parameters.isEmpty()) {
-                ""
-            } else {
+            if (verbose && parameters.isNotEmpty()) {
                 ", parameters=${Debug.formatParameterMap(parameters, limit = 5)}"
+            } else {
+                ""
             }
         val extrasString =
-            if (extras.isEmpty()) "" else ", extras=${Debug.formatParameterMap(extras, limit = 5)}"
-        val templateString = if (template == null) "" else ", template=$template"
-        // Ignore listener count, always include stream list (required), and use super.toString to
-        // reference the class name.
-        return "Request(streams=$streams$templateString$parametersString$extrasString)"
+            if (verbose && extras.isNotEmpty()) {
+                ", extras=${Debug.formatParameterMap(extras, limit = 5)}"
+            } else {
+                ""
+            }
+        return "Request(streams=$streams$templateString$parametersString$extrasString)" +
+            "@${Integer.toHexString(hashCode())}"
     }
 }
 
@@ -406,6 +436,14 @@ public fun <T> Request.getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun Request.formatForLogs(): String = "Request($streams)@${Integer.toHexString(hashCode())}"
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any>.filterToCaptureRequestParameters(): Map<CaptureRequest.Key<*>, Any> =
+    this.filterKeys { it is CaptureRequest.Key<*> }.mapKeys { it.key as CaptureRequest.Key<*> }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any>.filterToMetadataParameters(): Map<Metadata.Key<*>, Any> =
+    this.filterKeys { it is Metadata.Key<*> }.mapKeys { it.key as Metadata.Key<*> }
 
 /** Utility function to help deal with the unsafe nature of the typed Key/Value pairs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

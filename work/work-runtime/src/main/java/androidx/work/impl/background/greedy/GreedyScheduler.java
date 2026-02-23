@@ -27,7 +27,6 @@ import static java.lang.Math.max;
 import android.content.Context;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Configuration;
@@ -50,12 +49,14 @@ import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.utils.ProcessUtils;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
+import kotlinx.coroutines.Job;
+
+import org.jspecify.annotations.NonNull;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import kotlinx.coroutines.Job;
 
 /**
  * A greedy {@link Scheduler} that schedules unconstrained, non-timed work.  It intentionally does
@@ -124,7 +125,7 @@ public class GreedyScheduler implements Scheduler, OnConstraintsStateChangedList
     }
 
     @Override
-    public void schedule(@NonNull WorkSpec... workSpecs) {
+    public void schedule(WorkSpec @NonNull ... workSpecs) {
         if (mInDefaultProcess == null) {
             checkDefaultProcess();
         }
@@ -160,7 +161,7 @@ public class GreedyScheduler implements Scheduler, OnConstraintsStateChangedList
                     }
                 } else if (workSpec.hasConstraints()) {
                     Constraints constraints = workSpec.constraints;
-                    if (SDK_INT >= 23 && constraints.requiresDeviceIdle()) {
+                    if (constraints.requiresDeviceIdle()) {
                         // Ignore requests that have an idle mode constraint.
                         Logger.get().debug(TAG,
                                 "Ignoring " + workSpec + ". Requires device idle.");

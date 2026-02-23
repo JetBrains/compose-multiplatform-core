@@ -28,8 +28,6 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
@@ -37,6 +35,9 @@ import androidx.fragment.app.ListFragment;
 
 import com.example.android.supportv4.LoremIpsum;
 import com.example.android.supportv4.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Demonstration of using fragments to implement different activity layouts.

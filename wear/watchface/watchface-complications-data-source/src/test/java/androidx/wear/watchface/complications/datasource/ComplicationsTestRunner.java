@@ -16,8 +16,7 @@
 
 package androidx.wear.watchface.complications.datasource;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.robolectric.RobolectricTestRunner;
@@ -29,9 +28,9 @@ public class ComplicationsTestRunner extends RobolectricTestRunner {
         super(clazz);
     }
 
-    @NonNull
     @Override
-    protected InstrumentationConfiguration createClassLoaderConfig(FrameworkMethod method) {
+    protected @NonNull InstrumentationConfiguration createClassLoaderConfig(
+            FrameworkMethod method) {
         return new InstrumentationConfiguration.Builder(super.createClassLoaderConfig(method))
                 .doNotInstrumentPackage("android.support.wearable.complications")
                 .doNotInstrumentPackage("android.support.wearable.watchface")

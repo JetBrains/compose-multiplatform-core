@@ -25,8 +25,6 @@ import android.util.Log;
 import android.view.InflateException;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.R;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
@@ -43,9 +41,11 @@ import androidx.appcompat.widget.AppCompatSeekBar;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.appcompat.widget.AppCompatToggleButton;
-import androidx.appcompat.widget.TintContextWrapper;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -116,12 +116,10 @@ public class AppCompatViewInflater {
      *                         wrap the view's construction context if necessary
      * @param readAppTheme {@code true} to parse {@code app:theme} from {@code attrs} and wrap the
      *                     view's construction context if necessary
-     * @param wrapContext {@code true} to wrap the view's construction context to provide
-     *                    additional resource system feature backports
+     * @param wrapContext this parameter is ignored
      * @return an AppCompat-compatible widget
      */
-    @Nullable
-    public final View createView(@Nullable View parent, @NonNull final String name,
+    public final @Nullable View createView(@Nullable View parent, final @NonNull String name,
             @NonNull Context context,
             @NonNull AttributeSet attrs, boolean inheritContext,
             boolean readAndroidTheme, boolean readAppTheme, boolean wrapContext) {
@@ -135,9 +133,6 @@ public class AppCompatViewInflater {
         if (readAndroidTheme || readAppTheme) {
             // We then apply the theme on the context, if specified
             context = themifyContext(context, attrs, readAndroidTheme, readAppTheme);
-        }
-        if (wrapContext) {
-            context = TintContextWrapper.wrap(context);
         }
 
         View view = null;
@@ -223,75 +218,63 @@ public class AppCompatViewInflater {
         return view;
     }
 
-    @NonNull
-    protected AppCompatTextView createTextView(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatTextView createTextView(Context context, AttributeSet attrs) {
         return new AppCompatTextView(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatImageView createImageView(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatImageView createImageView(Context context, AttributeSet attrs) {
         return new AppCompatImageView(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatButton createButton(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatButton createButton(Context context, AttributeSet attrs) {
         return new AppCompatButton(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatEditText createEditText(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatEditText createEditText(Context context, AttributeSet attrs) {
         return new AppCompatEditText(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatSpinner createSpinner(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatSpinner createSpinner(Context context, AttributeSet attrs) {
         return new AppCompatSpinner(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatImageButton createImageButton(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatImageButton createImageButton(Context context, AttributeSet attrs) {
         return new AppCompatImageButton(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatCheckBox createCheckBox(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatCheckBox createCheckBox(Context context, AttributeSet attrs) {
         return new AppCompatCheckBox(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatRadioButton createRadioButton(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatRadioButton createRadioButton(Context context, AttributeSet attrs) {
         return new AppCompatRadioButton(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatCheckedTextView createCheckedTextView(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatCheckedTextView createCheckedTextView(Context context,
+            AttributeSet attrs) {
         return new AppCompatCheckedTextView(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatAutoCompleteTextView createAutoCompleteTextView(Context context,
+    protected @NonNull AppCompatAutoCompleteTextView createAutoCompleteTextView(Context context,
             AttributeSet attrs) {
         return new AppCompatAutoCompleteTextView(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatMultiAutoCompleteTextView createMultiAutoCompleteTextView(Context context,
-            AttributeSet attrs) {
+    protected @NonNull AppCompatMultiAutoCompleteTextView createMultiAutoCompleteTextView(
+            Context context, AttributeSet attrs) {
         return new AppCompatMultiAutoCompleteTextView(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatRatingBar createRatingBar(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatRatingBar createRatingBar(Context context, AttributeSet attrs) {
         return new AppCompatRatingBar(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatSeekBar createSeekBar(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatSeekBar createSeekBar(Context context, AttributeSet attrs) {
         return new AppCompatSeekBar(context, attrs);
     }
 
-    @NonNull
-    protected AppCompatToggleButton createToggleButton(Context context, AttributeSet attrs) {
+    protected @NonNull AppCompatToggleButton createToggleButton(Context context,
+            AttributeSet attrs) {
         return new AppCompatToggleButton(context, attrs);
     }
 
@@ -302,8 +285,7 @@ public class AppCompatViewInflater {
         }
     }
 
-    @Nullable
-    protected View createView(Context context, String name, AttributeSet attrs) {
+    protected @Nullable View createView(Context context, String name, AttributeSet attrs) {
         return null;
     }
 
@@ -348,8 +330,7 @@ public class AppCompatViewInflater {
 
         if (!(context instanceof ContextWrapper) || !view.hasOnClickListeners()) {
             // Skip our compat functionality if: the Context isn't a ContextWrapper, or
-            // the view doesn't have an OnClickListener (we can only rely on this on API 15+ so
-            // always use our compat code on older devices)
+            // the view doesn't have an OnClickListener
             return;
         }
 

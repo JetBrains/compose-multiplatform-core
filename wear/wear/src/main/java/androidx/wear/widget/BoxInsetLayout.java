@@ -28,12 +28,13 @@ import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleRes;
 import androidx.annotation.UiThread;
 import androidx.wear.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -475,7 +476,7 @@ public class BoxInsetLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
@@ -484,7 +485,7 @@ public class BoxInsetLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull MarginLayoutParams source) {
             super(source);
         }
 
@@ -494,7 +495,7 @@ public class BoxInsetLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(@NonNull FrameLayout.LayoutParams source) {
+        public LayoutParams(FrameLayout.@NonNull LayoutParams source) {
             super(source);
         }
 

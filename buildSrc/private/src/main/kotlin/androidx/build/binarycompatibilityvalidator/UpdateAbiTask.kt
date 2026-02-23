@@ -16,24 +16,35 @@
 
 package androidx.build.binarycompatibilityvalidator
 
+import androidx.binarycompatibilityvalidator.KlibDumpParser
+import androidx.binarycompatibilityvalidator.ParseException
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
+import org.gradle.workers.WorkerExecutor
+import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 
 @CacheableTask
-abstract class UpdateAbiTask : DefaultTask() {
+abstract class UpdateAbiTask
+@Inject
+constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTask() {
 
     @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
@@ -50,6 +61,8 @@ abstract class UpdateAbiTask : DefaultTask() {
 
     /** Directory to which API signatures will be written. */
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
 
     @TaskAction
     fun execute() {
@@ -71,6 +84,33 @@ abstract class UpdateAbiTask : DefaultTask() {
                 it.into(outputDir)
                 it.rename(CURRENT_API_FILE_NAME, "${version.get()}.txt")
             }
+        }
+
+        // Execute BCV code as a WorkAction to allow setting the classpath for the action.
+        // This is to work around the kotlin compiler needing to be a compileOnly dependency for
+        // buildSrc (https://kotl.in/gradle/internal-compiler-symbols, aosp/3368960).
+        val workQueue = workerExecutor.classLoaderIsolation { it.classpath.from(runtimeClasspath) }
+        workQueue.submit(UpdateAbiWorker::class.java) { params ->
+            params.abiFile.set(outputDir.file("current.txt"))
+        }
+    }
+}
+
+private interface UpdateAbiParameters : WorkParameters {
+    val abiFile: RegularFileProperty
+}
+
+private abstract class UpdateAbiWorker : WorkAction<UpdateAbiParameters> {
+    @OptIn(ExperimentalLibraryAbiReader::class)
+    override fun execute() {
+        try {
+            KlibDumpParser(parameters.abiFile.get().asFile).parse()
+        } catch (e: ParseException) {
+            System.err.println(
+                "Successfully updated API file but parser was unable to parse the generated output. " +
+                    "This is a bug in the parser and should be filed to $NEW_ISSUE_URL"
+            )
+            e.printStackTrace()
         }
     }
 }

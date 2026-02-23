@@ -25,7 +25,6 @@ import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
 import androidx.leanback.widget.Action;
@@ -35,6 +34,8 @@ import androidx.leanback.widget.PlaybackControlsRow;
 import androidx.leanback.widget.PlaybackControlsRowPresenter;
 import androidx.leanback.widget.PlaybackRowPresenter;
 import androidx.leanback.widget.RowPresenter;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -230,7 +231,7 @@ public class PlaybackBannerControlGlue<T extends PlayerAdapter>
      * @param impl Implementation to underlying media player.
      */
     public PlaybackBannerControlGlue(@NonNull Context context,
-            @NonNull int[] seekSpeeds,
+            int @NonNull [] seekSpeeds,
             T impl) {
         this(context, seekSpeeds, seekSpeeds, impl);
     }
@@ -247,8 +248,8 @@ public class PlaybackBannerControlGlue<T extends PlayerAdapter>
      */
     public PlaybackBannerControlGlue(
             @NonNull Context context,
-            @NonNull int[] fastForwardSpeeds,
-            @NonNull int[] rewindSpeeds,
+            int @NonNull [] fastForwardSpeeds,
+            int @NonNull [] rewindSpeeds,
             T impl
     ) {
         super(context, impl);
@@ -321,9 +322,8 @@ public class PlaybackBannerControlGlue<T extends PlayerAdapter>
         }
     }
 
-    @NonNull
     @Override
-    protected PlaybackRowPresenter onCreateRowPresenter() {
+    protected @NonNull PlaybackRowPresenter onCreateRowPresenter() {
         final AbstractDetailsDescriptionPresenter detailsPresenter =
                 new AbstractDetailsDescriptionPresenter() {
                     @Override
@@ -339,14 +339,14 @@ public class PlaybackBannerControlGlue<T extends PlayerAdapter>
                 new PlaybackControlsRowPresenter(detailsPresenter) {
             @Override
             protected void onBindRowViewHolder(
-                    @NonNull RowPresenter.ViewHolder vh,
+                    RowPresenter.@NonNull ViewHolder vh,
                     @NonNull Object item
             ) {
                 super.onBindRowViewHolder(vh, item);
                 vh.setOnKeyListener(PlaybackBannerControlGlue.this);
             }
             @Override
-            protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder vh) {
+            protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder vh) {
                 super.onUnbindRowViewHolder(vh);
                 vh.setOnKeyListener(null);
             }
@@ -586,16 +586,14 @@ public class PlaybackBannerControlGlue<T extends PlayerAdapter>
     /**
      * Returns the fast forward speeds.
      */
-    @NonNull
-    public int[] getFastForwardSpeeds() {
+    public int @NonNull [] getFastForwardSpeeds() {
         return mFastForwardSpeeds;
     }
 
     /**
      * Returns the rewind speeds.
      */
-    @NonNull
-    public int[] getRewindSpeeds() {
+    public int @NonNull [] getRewindSpeeds() {
         return mRewindSpeeds;
     }
 

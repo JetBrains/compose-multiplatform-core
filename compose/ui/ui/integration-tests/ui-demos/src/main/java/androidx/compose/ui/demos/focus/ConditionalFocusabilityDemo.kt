@@ -50,23 +50,23 @@ fun ConditionalFocusabilityDemo() {
     Column {
         Text(
             """
-             The items here are focusable. Use the
-             keyboard or DPad to move focus among them.
+            The items here are focusable. Use the
+            keyboard or DPad to move focus among them.
 
-             The 1st item is focusable in all modes.
-             Notice that when you touch the screen it
-             does not lose focus like the other items.
+            The 1st item is focusable in all modes.
+            Notice that when you touch the screen it
+            does not lose focus like the other items.
 
-             The 2nd item's focusability can be
-             controlled by using the button next to it.
+            The 2nd item's focusability can be
+            controlled by using the button next to it.
 
-             The 3rd item is not focusable in touch mode.
+            The 3rd item is not focusable in touch mode.
 
-             The 4th item is not focusable in touch mode,
-             but clicking on it will request the system
-             to switch to keyboard mode, and then call
-             request focus.
-             """
+            The 4th item is not focusable in touch mode,
+            but clicking on it will request the system
+            to switch to keyboard mode, and then call
+            request focus.
+            """
                 .trimIndent()
         )
         Text(
@@ -75,7 +75,7 @@ fun ConditionalFocusabilityDemo() {
                 Modifier.focusAwareBackground()
                     .focusRequester(item1)
                     .pointerInput(item1) { detectTapGestures { item1.requestFocus() } }
-                    .focusable()
+                    .focusable(),
         )
         Row {
             var item2active by remember { mutableStateOf(false) }
@@ -86,7 +86,7 @@ fun ConditionalFocusabilityDemo() {
                         .focusRequester(item2)
                         .pointerInput(item2) { detectTapGestures { item2.requestFocus() } }
                         .focusProperties { canFocus = item2active }
-                        .focusable()
+                        .focusable(),
             )
             Button(onClick = { item2active = !item2active }) {
                 Text("${if (item2active) "deactivate" else "activate"} item 2")
@@ -99,7 +99,7 @@ fun ConditionalFocusabilityDemo() {
                     .focusRequester(item3)
                     .pointerInput(item3) { detectTapGestures { item3.requestFocus() } }
                     .focusProperties { canFocus = localInputModeManager.inputMode == Keyboard }
-                    .focusable()
+                    .focusable(),
         )
         Text(
             text = "Request focus by touch",
@@ -114,7 +114,7 @@ fun ConditionalFocusabilityDemo() {
                         }
                     }
                     .focusProperties { canFocus = localInputModeManager.inputMode == Keyboard }
-                    .focusable()
+                    .focusable(),
         )
     }
 }

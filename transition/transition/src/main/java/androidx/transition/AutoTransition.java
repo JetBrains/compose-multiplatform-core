@@ -19,7 +19,7 @@ package androidx.transition;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility class for creating a default transition that automatically fades,

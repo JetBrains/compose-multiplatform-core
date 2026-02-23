@@ -23,8 +23,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link ContentProvider} which discovers {@link Initializer}s in an application and
@@ -56,26 +56,23 @@ public class InitializationProvider extends ContentProvider {
         return true;
     }
 
-    @Nullable
     @Override
-    public final Cursor query(
+    public final @Nullable Cursor query(
             @NonNull Uri uri,
-            @Nullable String[] projection,
+            String @Nullable [] projection,
             @Nullable String selection,
-            @Nullable String[] selectionArgs,
+            String @Nullable [] selectionArgs,
             @Nullable String sortOrder) {
         throw new IllegalStateException("Not allowed.");
     }
 
-    @Nullable
     @Override
-    public final String getType(@NonNull Uri uri) {
+    public final @Nullable String getType(@NonNull Uri uri) {
         throw new IllegalStateException("Not allowed.");
     }
 
-    @Nullable
     @Override
-    public final Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+    public final @Nullable Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
         throw new IllegalStateException("Not allowed.");
     }
 
@@ -83,7 +80,7 @@ public class InitializationProvider extends ContentProvider {
     public final int delete(
             @NonNull Uri uri,
             @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+            String @Nullable [] selectionArgs) {
         throw new IllegalStateException("Not allowed.");
     }
 
@@ -92,7 +89,7 @@ public class InitializationProvider extends ContentProvider {
             @NonNull Uri uri,
             @Nullable ContentValues values,
             @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+            String @Nullable [] selectionArgs) {
         throw new IllegalStateException("Not allowed.");
     }
 }

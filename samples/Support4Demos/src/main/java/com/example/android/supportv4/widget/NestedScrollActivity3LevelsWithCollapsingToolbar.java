@@ -17,11 +17,12 @@ package com.example.android.supportv4.widget;
 
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.android.supportv4.R;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This activity demonstrates the use of nested scrolling in the v4 support library along with

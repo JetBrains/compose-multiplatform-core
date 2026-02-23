@@ -26,11 +26,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.utils.Exif;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,6 +47,7 @@ import java.util.UUID;
  */
 public final class FileUtil {
 
+    private static final String TAG = "FileUtil";
     private static final String TEMP_FILE_PREFIX = "CameraX";
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private static final int COPY_BUFFER_SIZE = 1024;
@@ -56,8 +59,7 @@ public final class FileUtil {
     /**
      * Creates a temporary Dng file.
      */
-    @NonNull
-    static File createTempFile(@NonNull ImageCapture.OutputFileOptions options)
+    static @NonNull File createTempFile(ImageCapture.@NonNull OutputFileOptions options)
             throws ImageCaptureException {
         try {
             File appProvidedFile = options.getFile();
@@ -88,7 +90,7 @@ public final class FileUtil {
     static void updateFileExif(
             @NonNull File tempFile,
             @NonNull Exif originalExif,
-            @NonNull ImageCapture.OutputFileOptions options,
+            ImageCapture.@NonNull OutputFileOptions options,
             int rotationDegrees)
             throws ImageCaptureException {
         try {
@@ -125,9 +127,8 @@ public final class FileUtil {
      *
      * @return null if the target is {@link OutputStream}.
      */
-    @Nullable
-    static Uri moveFileToTarget(
-            @NonNull File tempFile, @NonNull ImageCapture.OutputFileOptions options)
+    static @Nullable Uri moveFileToTarget(
+            @NonNull File tempFile, ImageCapture.@NonNull OutputFileOptions options)
             throws ImageCaptureException {
         Uri uri = null;
         try {
@@ -159,16 +160,19 @@ public final class FileUtil {
 
     private static Uri copyFileToMediaStore(
             @NonNull File file,
-            @NonNull ImageCapture.OutputFileOptions options)
+            ImageCapture.@NonNull OutputFileOptions options)
             throws ImageCaptureException {
         ContentResolver contentResolver = requireNonNull(options.getContentResolver());
         ContentValues values = options.getContentValues() != null
                 ? new ContentValues(options.getContentValues())
                 : new ContentValues();
+
         setContentValuePendingFlag(values, PENDING);
         Uri uri = null;
         try {
+            Logger.d(TAG, "copyFileToMediaStore: inserting values to MediaStore");
             uri = contentResolver.insert(options.getSaveCollection(), values);
+            Logger.d(TAG, "copyFileToMediaStore: insert success");
             if (uri == null) {
                 throw new ImageCaptureException(
                         ERROR_FILE_IO, "Failed to insert a MediaStore URI.", null);

@@ -20,8 +20,8 @@ import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * For specifying output surface of the extension.
@@ -48,15 +48,13 @@ public interface OutputSurfaceImpl {
     /**
      * Gets the surface. It returns null if output surface is not specified.
      */
-    @Nullable
-    Surface getSurface();
+    @Nullable Surface getSurface();
 
 
     /**
      * Gets the size.
      */
-    @NonNull
-    Size getSize();
+    @NonNull Size getSize();
 
     /**
      * Gets the image format.

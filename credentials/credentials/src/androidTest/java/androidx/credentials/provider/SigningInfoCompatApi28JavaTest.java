@@ -24,8 +24,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.SigningInfo;
+import android.os.Build;
 
-import androidx.core.os.BuildCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
@@ -61,7 +61,7 @@ public class SigningInfoCompatApi28JavaTest {
                 .containsExactlyElementsIn(mSigningInfo.getSigningCertificateHistory()).inOrder();
         assertThat(signingInfoCompat.getApkContentsSigners())
                 .containsExactlyElementsIn(mSigningInfo.getApkContentsSigners()).inOrder();
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             if (!signingInfoCompat.getPublicKeys().isEmpty()) {
                 assertThat(signingInfoCompat.getPublicKeys()).containsExactlyElementsIn(
                         mSigningInfo.getPublicKeys()).inOrder();

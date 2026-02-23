@@ -18,13 +18,12 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     implementation(project(":constraintlayout:constraintlayout-compose"))
 
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
@@ -36,7 +35,7 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.constraintlayout.compose.demos"
+    compileSdk { version = release(35) }
+    namespace = "androidx.constraintlayout.compose.demos"
 }
 

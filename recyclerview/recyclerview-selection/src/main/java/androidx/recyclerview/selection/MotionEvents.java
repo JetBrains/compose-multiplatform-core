@@ -17,10 +17,11 @@
 package androidx.recyclerview.selection;
 
 import android.graphics.Point;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility methods for working with {@link MotionEvent} instances.
@@ -28,6 +29,14 @@ import androidx.annotation.NonNull;
 final class MotionEvents {
 
     private MotionEvents() {
+    }
+
+    static boolean isTouchpadEvent(@NonNull MotionEvent e) {
+        // ChromeOS ARC devices with touchpads emit their events with
+        // {@link MotionEvent#TOOL_TYPE_MOUSE}, so this is specifically capturing non-ARC devices
+        // with touchpads (e.g. attachable keyboards with touchpads on Android tablets).
+        return e.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                && e.getSource() == InputDevice.SOURCE_MOUSE;
     }
 
     static boolean isMouseEvent(@NonNull MotionEvent e) {
@@ -71,6 +80,22 @@ final class MotionEvents {
         return isButtonPressed(e, MotionEvent.BUTTON_PRIMARY);
     }
 
+    // alsoInterpretNoButtonsPressedAsPrimary works around imperfect test code. It should be true
+    // only if the caller is certain that e is a mouse (not touch) MotionEvent.
+    static boolean isPrimaryMouseButtonPressed(
+            @NonNull MotionEvent e,
+            boolean alsoInterpretNoButtonsPressedAsPrimary) {
+        return isButtonPressed(e, MotionEvent.BUTTON_PRIMARY)
+            // In real life, for ACTION_DOWN, touch MotionEvent objects can have getButtonState()
+            // return zero but mouse MotionEvent objects should see non-zero. However, some test
+            // code creates synthetic MotionEvents whose getToolType() returns TOOL_TYPE_MOUSE but
+            // the test code forgets to also set which mouse button caused the ACTION_DOWN. For
+            // tests, getButtonState() can unintuitively return zero (despite ACTION_DOWN) for
+            // mouse. If alsoInterpretNoButtonsPressedAsPrimary then we also interpret these events
+            // as implicitly being a "primary mouse button" click.
+            || (alsoInterpretNoButtonsPressedAsPrimary && (e.getButtonState() == 0));
+    }
+
     static boolean isSecondaryMouseButtonPressed(@NonNull MotionEvent e) {
         return isButtonPressed(e, MotionEvent.BUTTON_SECONDARY);
     }
@@ -102,16 +127,8 @@ final class MotionEvents {
     static boolean isTouchpadScroll(@NonNull MotionEvent e) {
         // Touchpad inputs are treated as mouse inputs, and when scrolling, there are no buttons
         // returned.
-        return isMouseEvent(e) && isActionMove(e) && e.getButtonState() == 0;
-    }
-
-    /**
-     * Returns true if the event is a drag event (which is presumbaly, but not
-     * explicitly required to be a mouse event).
-     */
-    static boolean isPointerDragEvent(MotionEvent e) {
-        return isPrimaryMouseButtonPressed(e)
-                && isActionMove(e);
+        return (isTouchpadEvent(e) || isMouseEvent(e)) && isActionMove(e)
+                && e.getButtonState() == 0;
     }
 
     private static boolean hasBit(int metaState, int bit) {

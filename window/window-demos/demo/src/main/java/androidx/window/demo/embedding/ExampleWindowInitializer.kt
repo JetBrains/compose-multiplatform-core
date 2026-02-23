@@ -34,8 +34,9 @@ import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_FULLSCREEN_IN_PORTRAIT
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_HORIZONTAL_LAYOUT_IN_TABLETOP
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_LAYOUT_FOLLOWING_HINGE_WHEN_SEPARATING
-import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_USE_DEFAULT_SPLIT_ATTRIBUTES
 import androidx.window.embedding.ActivityEmbeddingController
+import androidx.window.embedding.EmbeddingAnimationParams
+import androidx.window.embedding.EmbeddingAnimationParams.AnimationSpec
 import androidx.window.embedding.EmbeddingBounds
 import androidx.window.embedding.EmbeddingConfiguration
 import androidx.window.embedding.EmbeddingConfiguration.DimAreaBehavior.Companion.ON_TASK
@@ -115,14 +116,17 @@ class ExampleWindowInitializer : Initializer<RuleController> {
         val isBookMode = windowLayoutInfo.isBookMode()
         val config = params.parentConfiguration
         val shouldReversed = tag?.contains(SUFFIX_REVERSED) ?: false
-        // Make a copy of the default splitAttributes, but replace the animation background
-        // to what is configured in the Demo app.
-        val animationBackground = demoActivityEmbeddingController.animationBackground
+        // Always use the Demo app specified animation background.
+        val animationParams =
+            EmbeddingAnimationParams.Builder()
+                .setAnimationBackground(demoActivityEmbeddingController.animationBackground)
+                .setDemoAppAnimations(params.defaultSplitAttributes.animationParams)
+                .build()
         val defaultSplitAttributes =
             SplitAttributes.Builder()
                 .setLayoutDirection(params.defaultSplitAttributes.layoutDirection)
                 .setSplitType(params.defaultSplitAttributes.splitType)
-                .setAnimationBackground(animationBackground)
+                .setAnimationParams(animationParams)
                 .apply {
                     if (extensionVersion >= 6) {
                         setDividerAttributes(params.defaultSplitAttributes.dividerAttributes)
@@ -134,14 +138,6 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                 ?.removePrefix(PREFIX_PLACEHOLDER)
                 ?.removeSuffix(SUFFIX_REVERSED)
         ) {
-            TAG_USE_DEFAULT_SPLIT_ATTRIBUTES,
-            null -> {
-                return if (params.areDefaultConstraintsSatisfied) {
-                    defaultSplitAttributes
-                } else {
-                    expandContainersAttrs
-                }
-            }
             TAG_SHOW_FULLSCREEN_IN_PORTRAIT -> {
                 if (isPortrait) {
                     return expandContainersAttrs
@@ -158,7 +154,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else if (isPortrait) {
                     return expandContainersAttrs
@@ -175,7 +171,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -190,7 +186,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -202,7 +198,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -219,7 +215,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -231,7 +227,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -253,7 +249,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 if (shouldReversed) RIGHT_TO_LEFT else LEFT_TO_RIGHT
                             }
                         )
-                        .setAnimationBackground(animationBackground)
+                        .setAnimationParams(animationParams)
                         .build()
                 }
             }
@@ -261,11 +257,37 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                 return SplitAttributes.Builder()
                     .setSplitType(demoActivityEmbeddingController.customizedSplitType)
                     .setLayoutDirection(demoActivityEmbeddingController.customizedLayoutDirection)
-                    .setAnimationBackground(animationBackground)
+                    .setAnimationParams(animationParams)
                     .build()
             }
         }
-        return defaultSplitAttributes
+
+        return if (params.areDefaultConstraintsSatisfied) {
+            defaultSplitAttributes
+        } else {
+            expandContainersAttrs
+        }
+    }
+
+    private fun EmbeddingAnimationParams.Builder.setDemoAppAnimations(
+        params: EmbeddingAnimationParams
+    ): EmbeddingAnimationParams.Builder {
+        // Replace the transition animations with what is configured in the Demo app if the default
+        // splitAttributes' transition animations are applicable (all configured to default).
+        val useDemoAppAnimations =
+            params.openAnimation == AnimationSpec.DEFAULT &&
+                params.closeAnimation == AnimationSpec.DEFAULT &&
+                params.changeAnimation == AnimationSpec.DEFAULT
+        if (useDemoAppAnimations) {
+            setOpenAnimation(demoActivityEmbeddingController.openAnimation)
+            setCloseAnimation(demoActivityEmbeddingController.closeAnimation)
+            setChangeAnimation(demoActivityEmbeddingController.changeAnimation)
+        } else {
+            setOpenAnimation(params.openAnimation)
+            setCloseAnimation(params.closeAnimation)
+            setChangeAnimation(params.changeAnimation)
+        }
+        return this
     }
 
     private fun sampleOverlayAttributesCalculator(
@@ -283,13 +305,13 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                         EmbeddingBounds(
                             EmbeddingBounds.Alignment.ALIGN_BOTTOM,
                             width = EmbeddingBounds.Dimension.DIMENSION_EXPANDED,
-                            height = EmbeddingBounds.Dimension.ratio(0.4f)
+                            height = EmbeddingBounds.Dimension.ratio(0.4f),
                         )
                     } else {
                         EmbeddingBounds(
                             EmbeddingBounds.Alignment.ALIGN_RIGHT,
                             width = EmbeddingBounds.Dimension.ratio(0.5f),
-                            height = EmbeddingBounds.Dimension.ratio(0.8f)
+                            height = EmbeddingBounds.Dimension.ratio(0.8f),
                         )
                     }
                 )

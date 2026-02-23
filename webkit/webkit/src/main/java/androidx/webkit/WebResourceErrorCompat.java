@@ -20,9 +20,10 @@ import android.webkit.WebResourceError;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -69,6 +70,22 @@ public abstract class WebResourceErrorCompat {
     public abstract @NetErrorCode int getErrorCode();
 
     /**
+     * Internal error code that may not be stable over time.
+     * Intended purely for debugging purposes.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#NAVIGATION_GET_WEB_RESOURCE_ERROR}.
+     *
+     * @return The internal error code
+     */
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_GET_WEB_RESOURCE_ERROR,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public abstract int getDebugCode();
+
+    /**
      * Gets the string describing the error. Descriptions are localized,
      * and thus can be used for communicating the problem to the user.
      *
@@ -79,10 +96,9 @@ public abstract class WebResourceErrorCompat {
      *
      * @return The description of the error
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public abstract CharSequence getDescription();
+    public abstract @NonNull CharSequence getDescription();
 
     /**
      * This class cannot be created by applications.

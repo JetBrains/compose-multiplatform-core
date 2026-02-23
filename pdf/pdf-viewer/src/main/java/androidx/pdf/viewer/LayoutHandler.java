@@ -16,11 +16,12 @@
 
 package androidx.pdf.viewer;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.ViewState;
 import androidx.pdf.util.ThreadUtils;
 import androidx.pdf.viewer.loader.PdfLoader;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Iterator;

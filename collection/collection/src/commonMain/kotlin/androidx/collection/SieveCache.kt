@@ -21,6 +21,7 @@ package androidx.collection
 import androidx.annotation.IntRange
 import androidx.collection.internal.EMPTY_OBJECTS
 import androidx.collection.internal.requirePrecondition
+import kotlin.js.JsName
 import kotlin.jvm.JvmField
 import kotlin.math.max
 
@@ -37,8 +38,8 @@ internal const val NodeMetaAndPreviousMask = -0x00000000_80000000L // 0xffffffff
 internal const val EmptyNode = 0x3fffffff_ffffffffL
 internal val EmptyNodes = LongArray(0)
 
-private const val InvalidMappingLink: Int = -1
-private const val InvalidMapping: Long = -1L
+internal const val InvalidMappingLink: Int = 0x7fff_ffff
+internal const val InvalidMapping: Long = 0x7fff_ffff_7fff_ffffL
 
 /**
  * [SieveCache] is an in-memory cache that holds strong references to a limited number of values
@@ -108,7 +109,7 @@ public constructor(
     private val createValueFromKey: (key: K) -> V? = { null },
     private val onEntryRemoved: (key: K, oldValue: V, newValue: V?, evicted: Boolean) -> Unit =
         { _, _, _, _ ->
-        }
+        },
 ) {
     @PublishedApi @JvmField internal var metadata: LongArray = EmptyGroup
     @PublishedApi @JvmField internal var keys: Array<Any?> = EMPTY_OBJECTS
@@ -156,6 +157,7 @@ public constructor(
      *
      * @see capacity
      */
+    @JsName("jsCount")
     public val count: Int
         get() = _count
 
@@ -225,7 +227,8 @@ public constructor(
         val index = findKeyIndex(key)
         if (index >= 0) {
             markNodeVisited(index)
-            @Suppress("UNCHECKED_CAST") return values[index] as V?
+            @Suppress("UNCHECKED_CAST")
+            return values[index] as V?
         }
 
         val createdValue = createValueFromKey(key) ?: return null
@@ -651,7 +654,8 @@ public constructor(
 
         removeNode(index)
 
-        @Suppress("UNCHECKED_CAST") return previousValue as V?
+        @Suppress("UNCHECKED_CAST")
+        return previousValue as V?
     }
 
     private inline fun removeNode(index: Int) {
@@ -830,8 +834,8 @@ public constructor(
         // The value at index 22 came from index 21 (src) and the value previously at index 22
         // is now at index 4.
         //
-        // If a src or dst mapping is set to -1 ([InvalidMappingLink]), the mapping does not
-        // exist. We initialize the array to (-1, -1).
+        // If a src or dst mapping is set to be invalid ([InvalidMappingLink]), the mapping does
+        // not exist. We initialize the array to (0x7fff_ffff, 0x7fff_ffff).
         val indexMapping = LongArray(capacity)
         indexMapping.fill(InvalidMapping, 0, capacity)
 
@@ -871,7 +875,10 @@ public constructor(
                 val hash2 = h2(hash)
                 writeRawMetadata(metadata, index, hash2.toLong())
 
-                indexMapping[index] = createMapping(index, index)
+                // Don't erase an existing mapping created from a previous swap
+                if (indexMapping[index] == InvalidMapping) {
+                    indexMapping[index] = createMapping(index, index)
+                }
 
                 // Copies the metadata into the clone area
                 metadata[metadata.size - 1] = metadata[0]
@@ -898,7 +905,7 @@ public constructor(
 
                 val mapping = indexMapping[index]
                 val src = mapping.src
-                if (src != -1) {
+                if (src != InvalidMappingLink) {
                     indexMapping[src] = createDstMapping(indexMapping[src], targetIndex)
                     indexMapping[index] = eraseSrcMapping(indexMapping[index])
                 } else {
@@ -924,7 +931,7 @@ public constructor(
 
                 val mapping = indexMapping[index]
                 var src = mapping.src
-                if (src != -1) {
+                if (src != InvalidMappingLink) {
                     indexMapping[src] = createDstMapping(indexMapping[src], targetIndex)
                     indexMapping[index] = createSrcMapping(indexMapping[index], targetIndex)
                 } else {
@@ -1124,19 +1131,19 @@ internal inline val Long.nextNode: Int
 internal inline val Long.visited: Int
     get() = ((this shr 62) and 0x1).toInt()
 
-private inline fun createMapping(src: Int, dst: Int) = (src.toLong() shl 32) or dst.toLong()
+internal inline fun createMapping(src: Int, dst: Int) = (src.toLong() shl 32) or dst.toLong()
 
-private inline fun createSrcMapping(mapping: Long, src: Int) =
+internal inline fun createSrcMapping(mapping: Long, src: Int) =
     (src.toLong() shl 32) or (mapping and 0xffff_ffffL)
 
-private inline fun createDstMapping(mapping: Long, dst: Int) =
+internal inline fun createDstMapping(mapping: Long, dst: Int) =
     (mapping and 0xffff_ffff_0000_0000UL.toLong()) or dst.toLong()
 
-private inline fun eraseSrcMapping(mapping: Long) =
+internal inline fun eraseSrcMapping(mapping: Long) =
     0xffff_ffff_0000_0000UL.toLong() or (mapping and 0xffff_ffffL)
 
-private inline val Long.src: Int
+internal inline val Long.src: Int
     get() = ((this shr 32) and 0xffff_ffffL).toInt()
 
-private inline val Long.dst: Int
+internal inline val Long.dst: Int
     get() = (this and 0xffff_ffffL).toInt()

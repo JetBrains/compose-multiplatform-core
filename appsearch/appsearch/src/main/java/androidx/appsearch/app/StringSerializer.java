@@ -16,8 +16,8 @@
 
 package androidx.appsearch.app;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Serializes some {@link T} to and from a String.
@@ -29,12 +29,10 @@ public interface StringSerializer<T> {
     /**
      * Serializes a {@link T} to a String.
      */
-    @NonNull
-    String serialize(@NonNull T instance);
+    @NonNull String serialize(@NonNull T instance);
 
     /**
      * Deserializes a {@link T} from a String. Returns null if deserialization failed.
      */
-    @Nullable
-    T deserialize(@NonNull String string);
+    @Nullable T deserialize(@NonNull String string);
 }

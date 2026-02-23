@@ -24,17 +24,15 @@ import static org.mockito.Mockito.verify;
 import android.view.View;
 import android.view.ViewParent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 
 @RunWith(AndroidJUnit4.class)
 @MediumTest
@@ -139,7 +137,6 @@ public class ViewParentCompatTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void  dispatchNestedScroll_viewIsNotASupportNestedScrollingParent_callsCorrectMethod() {
         final ViewParentImpl viewParentImpl = mock(ViewParentImpl.class);
 
@@ -189,7 +186,7 @@ public class ViewParentCompatTest {
 
         @Override
         public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                int dxUnconsumed, int dyUnconsumed, int type, @Nullable int[] consumed) {
+                int dxUnconsumed, int dyUnconsumed, int type, int @Nullable [] consumed) {
         }
     }
 }

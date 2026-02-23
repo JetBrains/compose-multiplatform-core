@@ -19,11 +19,11 @@ package androidx.health.services.client.data
 import android.util.Log
 import androidx.health.services.client.data.DataType.Companion.DISTANCE
 import androidx.health.services.client.data.DataType.TimeType
+import androidx.health.services.client.proto.ByteString
 import androidx.health.services.client.proto.DataProto
 import androidx.health.services.client.proto.DataProto.DataType.TimeType.TIME_TYPE_INTERVAL
 import androidx.health.services.client.proto.DataProto.DataType.TimeType.TIME_TYPE_SAMPLE
 import androidx.health.services.client.proto.DataProto.DataType.TimeType.TIME_TYPE_UNKNOWN
-import com.google.protobuf.ByteString
 
 /**
  * [DataType] that represents a granular, non-aggregated point in time. This will map to
@@ -32,7 +32,7 @@ import com.google.protobuf.ByteString
 class DeltaDataType<T : Any, D : DataPoint<T>>(
     name: String,
     timeType: TimeType,
-    valueClass: Class<T>
+    valueClass: Class<T>,
 ) : DataType<T, D>(name, timeType, valueClass, isAggregate = false)
 
 /**
@@ -143,9 +143,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
             .setFormat(classToValueFormat())
             .build()
 
-    internal fun toProtoFromValue(
-        value: T,
-    ): DataProto.Value {
+    internal fun toProtoFromValue(value: T): DataProto.Value {
         val builder = DataProto.Value.newBuilder()
         when (valueClass.kotlin) {
             Long::class -> builder.longVal = value as Long
@@ -813,7 +811,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
                 ?: AggregateDataType(
                     proto.name,
                     TimeType.fromProto(proto.timeType),
-                    protoDataTypeToClass(proto) as Class<Number>
+                    protoDataTypeToClass(proto) as Class<Number>,
                 )
 
         internal fun deltaFromProto(
@@ -823,7 +821,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
                 ?: DeltaDataType(
                     proto.name,
                     TimeType.fromProto(proto.timeType),
-                    protoDataTypeToClass(proto)
+                    protoDataTypeToClass(proto),
                 )
 
         internal fun deltaAndAggregateFromProto(

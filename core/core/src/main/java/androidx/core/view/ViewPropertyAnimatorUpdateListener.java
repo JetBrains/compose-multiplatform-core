@@ -18,7 +18,7 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementors of this interface can add themselves as update listeners

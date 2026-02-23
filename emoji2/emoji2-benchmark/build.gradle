@@ -15,38 +15,37 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
     id("androidx.benchmark")
 }
 
 ext {
-    fontDir = project(':noto-emoji-compat-font').projectDir
+    fontDir = project(":noto-emoji-compat-font").projectDir
 }
 
 android {
-    sourceSets {
-        androidTest {
-            assets {
-                srcDirs = [new File(fontDir, "supported-emojis").getAbsolutePath()]
-            }
-        }
-    }
-    namespace "androidx.emoji2.benchmark"
+    namespace = "androidx.emoji2.benchmark"
+}
 
+androidComponents {
+    def emojiAssetsPath = new File(fontDir, "supported-emojis").getAbsolutePath()
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.assets.addStaticSourceDirectory(emojiAssetsPath)
+    }
 }
 
 dependencies {
+    api(libs.jspecify)
     androidTestImplementation(project(":emoji2:emoji2"))
     androidTestImplementation(project(":emoji2:emoji2-bundled"))
     androidTestImplementation(project(":benchmark:benchmark-junit4"))
@@ -57,13 +56,12 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation project(':internal-testutils-runtime')
-    androidTestImplementation(libs.kotlinStdlib)
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 androidx {
     name = "Emoji2 Benchmarks"
-    publish = Publish.NONE
+    type = SoftwareType.BENCHMARK
     inceptionYear = "2021"
     description = "Emoji2 Benchmarks"
 }

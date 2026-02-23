@@ -18,7 +18,6 @@ package androidx.appsearch.playservicesstorage;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GlobalSearchSession;
@@ -31,6 +30,8 @@ import com.google.android.gms.appsearch.AppSearchOptions;
 import com.google.android.gms.appsearch.GlobalSearchClient;
 import com.google.android.gms.tasks.Task;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -58,10 +59,16 @@ public final class PlayServicesStorage {
         }
 
         /**
+         * Returns the {@link Context} associated with the {@link AppSearchSession}
+         */
+        public @NonNull Context getContext() {
+            return mContext;
+        }
+
+        /**
          * Returns the name of the database to create or open.
          */
-        @NonNull
-        public String getDatabaseName() {
+        public @NonNull String getDatabaseName() {
             return mDatabaseName;
         }
 
@@ -75,8 +82,7 @@ public final class PlayServicesStorage {
          * since {@link Executor#execute} won't return anything, we will hang forever waiting for
          * the execution.
          */
-        @NonNull
-        public Executor getWorkerExecutor() {
+        public @NonNull Executor getWorkerExecutor() {
             return mExecutor;
         }
 
@@ -101,6 +107,7 @@ public final class PlayServicesStorage {
              * using {@link
              * androidx.appsearch.app.SetSchemaRequest.Builder#setSchemaTypeVisibilityForPackage}).
              *
+             * @param context The context used as the parent of the created SearchContext
              * @param databaseName The name of the database.
              * @throws IllegalArgumentException if the databaseName contains {@code '/'}.
              */
@@ -120,15 +127,13 @@ public final class PlayServicesStorage {
              *
              * @param executor the worker executor used to run heavy background tasks.
              */
-            @NonNull
-            public Builder setWorkerExecutor(@NonNull Executor executor) {
+            public @NonNull Builder setWorkerExecutor(@NonNull Executor executor) {
                 mExecutor = Preconditions.checkNotNull(executor);
                 return this;
             }
 
             /** Builds a {@link SearchContext} instance. */
-            @NonNull
-            public SearchContext build() {
+            public @NonNull SearchContext build() {
                 if (mExecutor == null) {
                     mExecutor = EXECUTOR;
                 }
@@ -148,6 +153,13 @@ public final class PlayServicesStorage {
         }
 
         /**
+         * Returns the {@link Context} associated with the {@link GlobalSearchSession}
+         */
+        public @NonNull Context getContext() {
+            return mContext;
+        }
+
+        /**
          * Returns the worker executor associated with {@link GlobalSearchSession}.
          *
          * <p>If an executor is not provided to {@link Builder}, the AppSearch default executor will
@@ -157,8 +169,7 @@ public final class PlayServicesStorage {
          * since {@link Executor#execute} won't return anything, we will hang forever waiting for
          * the execution.
          */
-        @NonNull
-        public Executor getWorkerExecutor() {
+        public @NonNull Executor getWorkerExecutor() {
             return mExecutor;
         }
 
@@ -178,16 +189,14 @@ public final class PlayServicesStorage {
              *
              * @param executor the worker executor used to run heavy background tasks.
              */
-            @NonNull
-            public Builder setWorkerExecutor(@NonNull Executor executor) {
+            public @NonNull Builder setWorkerExecutor(@NonNull Executor executor) {
                 Preconditions.checkNotNull(executor);
                 mExecutor = executor;
                 return this;
             }
 
             /** Builds a {@link GlobalSearchContext} instance. */
-            @NonNull
-            public GlobalSearchContext build() {
+            public @NonNull GlobalSearchContext build() {
                 if (mExecutor == null) {
                     mExecutor = EXECUTOR;
                 }
@@ -209,8 +218,7 @@ public final class PlayServicesStorage {
      * @param context The {@link SearchContext} contains all information to create a new
      *                {@link AppSearchSession}
      */
-    @NonNull
-    public static ListenableFuture<AppSearchSession> createSearchSessionAsync(
+    public static @NonNull ListenableFuture<AppSearchSession> createSearchSessionAsync(
             @NonNull SearchContext context) {
         Preconditions.checkNotNull(context);
         Task<AppSearchClient> appSearchClientTask = AppSearch
@@ -230,8 +238,7 @@ public final class PlayServicesStorage {
      * @param context The {@link GlobalSearchContext} contains all information to create a new
      *                {@link GlobalSearchSession}
      */
-    @NonNull
-    public static ListenableFuture<GlobalSearchSession> createGlobalSearchSessionAsync(
+    public static @NonNull ListenableFuture<GlobalSearchSession> createGlobalSearchSessionAsync(
             @NonNull GlobalSearchContext context) {
         Preconditions.checkNotNull(context);
         Task<GlobalSearchClient> globalSearchClientTask = AppSearch

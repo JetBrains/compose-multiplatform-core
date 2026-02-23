@@ -15,22 +15,19 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":lifecycle:lifecycle-runtime"))
 
     androidTestImplementation(libs.testExtJunit)
@@ -41,12 +38,11 @@ dependencies {
 
 androidx {
     name = "Lifecycle Service"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Lifecycle Service"
-    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.lifecycle.service"
+    namespace = "androidx.lifecycle.service"
 }

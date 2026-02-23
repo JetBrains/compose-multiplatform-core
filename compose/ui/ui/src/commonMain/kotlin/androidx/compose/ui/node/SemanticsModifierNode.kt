@@ -18,7 +18,8 @@ package androidx.compose.ui.node
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -66,6 +67,22 @@ interface SemanticsModifierNode : DelegatableNode {
         get() = false
 
     /**
+     * Whether this semantics modifier node should be taken into account when computing the layout
+     * boundaries of the corresponding [SemanticsNode], which are used for accessibility and
+     * testing. By default, all semantics modifier nodes affect semantics bounds.
+     *
+     * This property should be set to false if this node should be skipped when looking for a
+     * semantics modifier node that will be used to determine the semantics bounds of the layout
+     * node. For example, in a chain of Modifier.outerSemantics(..).padding(..).innerSemantics(..),
+     * the outerSemantics modifier should have [isImportantForBounds] set to false if the semantics
+     * and accessibility bounds for the node should be determined by the bounds inside of the
+     * padding.
+     */
+    @get:Suppress("GetterSetterNames")
+    val isImportantForBounds: Boolean
+        get() = true
+
+    /**
      * Add semantics key/value pairs to the layout node, for use in testing, accessibility, etc.
      *
      * The [SemanticsPropertyReceiver] provides "key = value"-style setters for any
@@ -83,22 +100,47 @@ interface SemanticsModifierNode : DelegatableNode {
      * simplifies the structure based on [shouldMergeDescendantSemantics] and
      * [shouldClearDescendantSemantics]. For most purposes (especially accessibility, or the testing
      * of accessibility), the merged semantics tree should be used.
+     *
+     * Note: The implementation of [applySemantics] should be used to set semantic properties or
+     * semantic actions. Don't call applySemantics() from within applySemantics(). It will result in
+     * an infinite loop.
      */
     fun SemanticsPropertyReceiver.applySemantics()
 }
 
+/**
+ * Invalidate semantics associated with this node. This will reset the [SemanticsConfiguration]
+ * associated with the layout node backing this modifier node, and will re-calculate it the next
+ * time the [SemanticsConfiguration] is read.
+ *
+ * Semantics are automatically invalidated when backed by mutable state, or if the hierarchy is
+ * recomposed. In these cases [SemanticsModifierNode.applySemantics] is called and the latest
+ * semantics values are applied. However in cases where semantics properties are not backed by
+ * mutable state objects, a change to the semantic property will not trigger
+ * [SemanticsModifierNode.applySemantics]. This function can be used to manually invalidate
+ * semantics to ensure that [SemanticsModifierNode.applySemantics] will be called the next time the
+ * [SemanticsConfiguration] is read.
+ */
 fun SemanticsModifierNode.invalidateSemantics() = requireLayoutNode().invalidateSemantics()
 
 internal val SemanticsConfiguration.useMinimumTouchTarget: Boolean
     get() = getOrNull(SemanticsActions.OnClick) != null
 
-internal fun Modifier.Node.touchBoundsInRoot(useMinimumTouchTarget: Boolean): Rect {
+/** Returns bounds in root taking touch target size and clipping into consideration */
+internal fun Modifier.Node.effectiveBoundsInRoot(
+    useMinimumTouchTarget: Boolean,
+    clipBounds: Boolean,
+): Rect {
     if (!node.isAttached) {
         return Rect.Zero
     }
     if (!useMinimumTouchTarget) {
-        return requireCoordinator(Nodes.Semantics).boundsInRoot()
+        return requireCoordinator(Nodes.Semantics).boundsInRoot(clipBounds)
     }
 
     return requireCoordinator(Nodes.Semantics).touchBoundsInRoot()
 }
+
+/** The boundaries of this layout inside the root. */
+internal fun LayoutCoordinates.boundsInRoot(clipBounds: Boolean): Rect =
+    findRootCoordinates().localBoundingBoxOf(this, clipBounds)

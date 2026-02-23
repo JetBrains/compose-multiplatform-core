@@ -24,6 +24,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -43,12 +49,18 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
+import androidx.core.view.InputDeviceCompat;
+import androidx.core.view.ScrollFeedbackProviderCompat;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.test.R;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -65,6 +77,8 @@ import java.util.UUID;
 public class RecyclerViewBasicTest {
 
     RecyclerView mRecyclerView;
+
+    ScrollFeedbackProviderCompat mScrollFeedbackProvider;
 
     @Before
     public void setUp() throws Exception {
@@ -148,6 +162,76 @@ public class RecyclerViewBasicTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    public void scrollFeedbackCallbacks() {
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mRecyclerView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        mRecyclerView.setAdapter(new MockAdapter(20));
+        MockLayoutManager layoutManager = new MockLayoutManager();
+        mRecyclerView.setLayoutManager(layoutManager);
+        measure();
+        layout();
+
+        MotionEvent ev = TouchUtils.createMotionEvent(
+                /* inputDeviceId= */ 1,
+                InputDeviceCompat.SOURCE_TOUCHSCREEN,
+                MotionEvent.ACTION_MOVE,
+                List.of(
+                    Pair.create(MotionEvent.AXIS_X, 10),
+                    Pair.create(MotionEvent.AXIS_Y, -20)));
+        layoutManager.mConsumedHorizontalScroll = 3;
+        layoutManager.mConsumedVerticalScroll = -20;
+        mRecyclerView.scrollByInternal(
+                /* x= */ 10,
+                /* y= */ -20,
+                /* horizontalAxis= */ MotionEvent.AXIS_X,
+                /* verticalAxis= */ MotionEvent.AXIS_Y,
+                ev,
+                ViewCompat.TYPE_TOUCH);
+
+        // Verify onScrollProgress calls equating to the amount of consumed pixels on each axis.
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_X,
+                /* deltaInPixels= */ 3);
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_Y,
+                /* deltaInPixels= */ -20);
+        // Part of the X scroll was not consumed, so expect an onScrollLimit call.
+        verify(mScrollFeedbackProvider).onScrollLimit(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_X,
+                /* isStart= */ false);
+        // All of the Y scroll was consumed. So expect no onScrollLimit call.
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                /* inputDeviceId= */ anyInt(), anyInt(), eq(MotionEvent.AXIS_Y),
+                /* isStart= */ eq(false));
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    public void scrollFeedbackCallbacks_motionEventUnavailable() {
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mRecyclerView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        mRecyclerView.setAdapter(new MockAdapter(20));
+        MockLayoutManager layoutManager = new MockLayoutManager();
+        mRecyclerView.setLayoutManager(layoutManager);
+        measure();
+        layout();
+
+        mRecyclerView.scrollByInternal(
+                /* x= */ 10,
+                /* y= */ -20,
+                /* horizontalAxis= */ -1,
+                /* verticalAxis= */ -1,
+                null,
+                ViewCompat.TYPE_TOUCH);
+
+        verify(mScrollFeedbackProvider, never()).onScrollProgress(
+                anyInt(), anyInt(), anyInt(), anyInt());
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                anyInt(), anyInt(), anyInt(), anyBoolean());
+    }
+
+    @Test
     public void smoothScrollToPositionWithoutLayoutManager() throws InterruptedException {
         mRecyclerView.setAdapter(new MockAdapter(20));
         measure();
@@ -227,7 +311,7 @@ public class RecyclerViewBasicTest {
         mRecyclerView.setLayoutManager(layoutManager);
         MockAdapter adapter = new MockAdapter(100) {
             @Override
-            public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+            public void onViewRecycled(RecyclerView.@NonNull ViewHolder holder) {
                 super.onViewRecycled(holder);
                 recycledVhs.add(holder);
             }
@@ -250,7 +334,7 @@ public class RecyclerViewBasicTest {
         mRecyclerView.setLayoutManager(layoutManager);
         MockAdapter adapter = new MockAdapter(100) {
             @Override
-            public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+            public void onViewRecycled(RecyclerView.@NonNull ViewHolder holder) {
                 super.onViewRecycled(holder);
                 recycledVhs.add(holder);
             }
@@ -341,9 +425,8 @@ public class RecyclerViewBasicTest {
         };
         mRecyclerView.setLayoutManager(mlm);
         mRecyclerView.setAdapter(new MockAdapter(3) {
-            @NonNull
             @Override
-            public RecyclerView.ViewHolder onCreateViewHolder(
+            public RecyclerView.@NonNull ViewHolder onCreateViewHolder(
                     @NonNull ViewGroup parent, int viewType) {
                 final LoggingView itemView = new LoggingView(parent.getContext());
                 //noinspection ResourceType
@@ -398,9 +481,8 @@ public class RecyclerViewBasicTest {
     @Test
     public void createAttachedException() {
         mRecyclerView.setAdapter(new RecyclerView.Adapter() {
-            @NonNull
             @Override
-            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+            public RecyclerView.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
                     int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.item_view, parent, true)
@@ -409,7 +491,7 @@ public class RecyclerViewBasicTest {
             }
 
             @Override
-            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
                 fail("shouldn't get here, should throw during create");
             }
 
@@ -447,40 +529,33 @@ public class RecyclerViewBasicTest {
         mRecyclerView.setLayoutManager(mlm);
         assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // layout, so prefetches can occur
-            mRecyclerView.measure(View.MeasureSpec.EXACTLY | 100, View.MeasureSpec.EXACTLY | 100);
-            mRecyclerView.layout(0, 0, 100, 100);
+        // layout, so prefetches can occur
+        mRecyclerView.measure(View.MeasureSpec.EXACTLY | 100, View.MeasureSpec.EXACTLY | 100);
+        mRecyclerView.layout(0, 0, 100, 100);
 
-            // prefetch gets 3 items, so expands cache by 3
-            mRecyclerView.mPrefetchRegistry.collectPrefetchPositionsFromView(mRecyclerView, false);
-            assertEquals(3, mRecyclerView.mPrefetchRegistry.mCount);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
+        // prefetch gets 3 items, so expands cache by 3
+        mRecyclerView.mPrefetchRegistry.collectPrefetchPositionsFromView(mRecyclerView, false);
+        assertEquals(3, mRecyclerView.mPrefetchRegistry.mCount);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
 
-            // Reset to default by removing layout
-            mRecyclerView.setLayoutManager(null);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
+        // Reset to default by removing layout
+        mRecyclerView.setLayoutManager(null);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE, recycler.mViewCacheMax);
 
-            // And restore by restoring layout
-            mRecyclerView.setLayoutManager(mlm);
-            assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
-        }
+        // And restore by restoring layout
+        mRecyclerView.setLayoutManager(mlm);
+        assertEquals(RecyclerView.Recycler.DEFAULT_CACHE_SIZE + 3, recycler.mViewCacheMax);
     }
 
     @Test
     public void getNanoTime() throws InterruptedException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // check that it looks vaguely time-ish
-            long time = mRecyclerView.getNanoTime();
-            assertNotEquals(0, time);
+        // check that it looks vaguely time-ish
+        long time = mRecyclerView.getNanoTime();
+        assertNotEquals(0, time);
 
-            // Sleep for 1 nano to ensure next call won't have the same measurement.
-            Thread.sleep(0, 1);
-            assertNotEquals(time, mRecyclerView.getNanoTime());
-        } else {
-            // expect to avoid cost of system.nanoTime on older platforms that don't do prefetch
-            assertEquals(0, mRecyclerView.getNanoTime());
-        }
+        // Sleep for 1 nano to ensure next call won't have the same measurement.
+        Thread.sleep(0, 1);
+        assertNotEquals(time, mRecyclerView.getNanoTime());
     }
 
     @Test
@@ -607,12 +682,83 @@ public class RecyclerViewBasicTest {
         assertEquals(1, mockLayoutManager.mItemsChangedCount);
     }
 
+    @Test
+    public void setAdapter_callsCorrectAdapterListenerMethods() throws Throwable {
+        MockOnAdapterChangeListener firstAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockOnAdapterChangeListener secondAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockAdapter firstAdapter = new MockAdapter(0);
+        MockAdapter secondAdapter = new MockAdapter(0);
+        mRecyclerView.addOnAdapterChangeListener(firstAdapterListener);
+        mRecyclerView.addOnAdapterChangeListener(secondAdapterListener);
+
+        mRecyclerView.setAdapter(firstAdapter);
+        mRecyclerView.setAdapter(secondAdapter);
+
+        assertEquals(1, firstAdapterListener.mAdapterChangedCount);
+        assertNull(firstAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, firstAdapterListener.mNewAdapter);
+        assertEquals(1, secondAdapterListener.mAdapterChangedCount);
+        assertNull(secondAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, secondAdapterListener.mNewAdapter);
+    }
+
+    @Test
+    public void swapAdapter_callsCorrectAdapterListenerMethods() throws Throwable {
+        MockOnAdapterChangeListener firstAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockOnAdapterChangeListener secondAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockAdapter firstAdapter = new MockAdapter(0);
+        MockAdapter secondAdapter = new MockAdapter(0);
+        mRecyclerView.addOnAdapterChangeListener(firstAdapterListener);
+        mRecyclerView.addOnAdapterChangeListener(secondAdapterListener);
+
+        mRecyclerView.swapAdapter(firstAdapter, true);
+        mRecyclerView.swapAdapter(secondAdapter, true);
+
+        assertEquals(1, firstAdapterListener.mAdapterChangedCount);
+        assertNull(firstAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, firstAdapterListener.mNewAdapter);
+        assertEquals(1, secondAdapterListener.mAdapterChangedCount);
+        assertNull(secondAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, secondAdapterListener.mNewAdapter);
+    }
+
     static class MockLayoutManager extends RecyclerView.LayoutManager {
 
         int mLayoutCount = 0;
 
         int mAdapterChangedCount = 0;
         int mItemsChangedCount = 0;
+
+        int mConsumedHorizontalScroll = Integer.MIN_VALUE;
+        int mConsumedVerticalScroll = Integer.MIN_VALUE;
 
         RecyclerView.Adapter mPrevAdapter;
 
@@ -675,13 +821,13 @@ public class RecyclerViewBasicTest {
         @Override
         public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler,
                 RecyclerView.State state) {
-            return dx;
+            return mConsumedHorizontalScroll != Integer.MIN_VALUE ? mConsumedHorizontalScroll : dx;
         }
 
         @Override
         public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler,
                 RecyclerView.State state) {
-            return dy;
+            return mConsumedVerticalScroll != Integer.MIN_VALUE ? mConsumedVerticalScroll : dy;
         }
 
         @Override
@@ -741,14 +887,14 @@ public class RecyclerViewBasicTest {
             this.mCount = count;
         }
 
-        @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public RecyclerView.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+                int viewType) {
             return new MockViewHolder(new TextView(parent.getContext()));
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
 
         }
 
@@ -772,6 +918,23 @@ public class RecyclerViewBasicTest {
         public Object mItem;
         public MockViewHolder(View itemView) {
             super(itemView);
+        }
+    }
+
+    static class MockOnAdapterChangeListener implements RecyclerView.OnAdapterChangeListener {
+
+        int mAdapterChangedCount = 0;
+
+        RecyclerView.Adapter<?> mOldAdapter;
+
+        RecyclerView.Adapter<?> mNewAdapter;
+
+        @Override
+        public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                RecyclerView.@Nullable Adapter<?> newAdapter) {
+            mOldAdapter = oldAdapter;
+            mNewAdapter = newAdapter;
+            mAdapterChangedCount++;
         }
     }
 
@@ -830,7 +993,7 @@ public class RecyclerViewBasicTest {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
             LinearLayout l = (LinearLayout) holder.itemView;
             l.removeAllViews();
             if (position == 0) {

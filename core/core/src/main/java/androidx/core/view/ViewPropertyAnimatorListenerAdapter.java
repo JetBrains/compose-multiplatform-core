@@ -18,7 +18,7 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This adapter class provides empty implementations of the methods from

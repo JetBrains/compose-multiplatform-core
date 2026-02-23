@@ -1,17 +1,16 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":core:core"))
     implementation(project(":cursoradapter:cursoradapter"))
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
@@ -22,14 +21,15 @@ dependencies {
     implementation(project(":lifecycle:lifecycle-runtime-ktx"))
     implementation(project(":media:media"))
     implementation(project(":viewpager:viewpager"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":coordinatorlayout:coordinatorlayout"))
     implementation("com.google.android.material:material:1.6.0")
     implementation(project(":appcompat:appcompat"))
+    api(project(":preference:preference"))
+
 }
 
 android {
-    compileSdkVersion 35
-    namespace "com.example.android.supportv4"
+    compileSdk { version = release(36) }
+    namespace = "com.example.android.supportv4"
 }

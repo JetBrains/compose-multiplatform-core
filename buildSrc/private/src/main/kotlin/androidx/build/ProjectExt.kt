@@ -13,23 +13,17 @@
  */
 package androidx.build
 
+import java.io.File
 import java.util.Collections
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.provider.Provider
 
 /** Holder class used for lazily registering tasks using the new Lazy task execution API. */
 data class LazyTaskRegistry(
     private val names: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
 ) {
-    fun <T : Any?> once(name: String, f: () -> T): T? {
-        if (names.add(name)) {
-            return f()
-        }
-        return null
-    }
 
     companion object {
         private const val KEY = "AndroidXAutoRegisteredTasks"
@@ -48,13 +42,7 @@ data class LazyTaskRegistry(
     }
 }
 
-inline fun <reified T : Task> Project.maybeRegister(
-    name: String,
-    crossinline onConfigure: (T) -> Unit,
-    crossinline onRegister: (TaskProvider<T>) -> Unit
-): TaskProvider<T> {
-    @Suppress("UNCHECKED_CAST")
-    return LazyTaskRegistry.get(project).once(name) {
-        tasks.register(name, T::class.java) { onConfigure(it) }.also(onRegister)
-    } ?: tasks.named(name) as TaskProvider<T>
+internal fun Project.lazyReadFile(fileName: String): Provider<String> {
+    val fileProperty = objects.fileProperty().fileValue(File(getSupportRootFolder(), fileName))
+    return providers.fileContents(fileProperty).asText
 }

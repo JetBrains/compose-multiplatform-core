@@ -21,12 +21,13 @@ import android.view.View;
 import android.view.WindowInsetsAnimationController;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat.Type;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Controller for app-driven animation of system windows.
@@ -61,8 +62,7 @@ public final class WindowInsetsAnimationControllerCompat {
      * @return Insets when the windows this animation is controlling are fully hidden.
      * @see WindowInsetsAnimationCompat.BoundsCompat#getLowerBound()
      */
-    @NonNull
-    public Insets getHiddenStateInsets() {
+    public @NonNull Insets getHiddenStateInsets() {
         return mImpl.getHiddenStateInsets();
     }
 
@@ -80,8 +80,7 @@ public final class WindowInsetsAnimationControllerCompat {
      * @return Insets when the windows this animation is controlling are fully shown.
      * @see WindowInsetsAnimationCompat.BoundsCompat#getUpperBound()
      */
-    @NonNull
-    public Insets getShownStateInsets() {
+    public @NonNull Insets getShownStateInsets() {
         return mImpl.getShownStateInsets();
     }
 
@@ -95,8 +94,7 @@ public final class WindowInsetsAnimationControllerCompat {
      * @return The current insets on the currently showing frame. These insets will change as the
      * animation progresses to reflect the current insets provided by the controlled window.
      */
-    @NonNull
-    public Insets getCurrentInsets() {
+    public @NonNull Insets getCurrentInsets() {
         return mImpl.getCurrentInsets();
     }
 
@@ -230,18 +228,15 @@ public final class WindowInsetsAnimationControllerCompat {
             //privatex
         }
 
-        @NonNull
-        public Insets getHiddenStateInsets() {
+        public @NonNull Insets getHiddenStateInsets() {
             return Insets.NONE;
         }
 
-        @NonNull
-        public Insets getShownStateInsets() {
+        public @NonNull Insets getShownStateInsets() {
             return Insets.NONE;
         }
 
-        @NonNull
-        public Insets getCurrentInsets() {
+        public @NonNull Insets getCurrentInsets() {
             return Insets.NONE;
         }
 
@@ -285,21 +280,18 @@ public final class WindowInsetsAnimationControllerCompat {
             mController = controller;
         }
 
-        @NonNull
         @Override
-        public Insets getHiddenStateInsets() {
+        public @NonNull Insets getHiddenStateInsets() {
             return Insets.toCompatInsets(mController.getHiddenStateInsets());
         }
 
-        @NonNull
         @Override
-        public Insets getShownStateInsets() {
+        public @NonNull Insets getShownStateInsets() {
             return Insets.toCompatInsets(mController.getShownStateInsets());
         }
 
-        @NonNull
         @Override
-        public Insets getCurrentInsets() {
+        public @NonNull Insets getCurrentInsets() {
             return Insets.toCompatInsets(mController.getCurrentInsets());
         }
 

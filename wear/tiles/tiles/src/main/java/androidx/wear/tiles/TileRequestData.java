@@ -16,8 +16,9 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for Tiles' TileRequest class, to be parceled and transferred to a Tile Service.
@@ -30,7 +31,7 @@ public final class TileRequestData extends ProtoParcelable {
     public static final Creator<TileRequestData> CREATOR =
             newCreator(TileRequestData.class, TileRequestData::new);
 
-    public TileRequestData(@NonNull byte[] params, int version) {
+    public TileRequestData(byte @NonNull [] params, int version) {
         super(params, version);
     }
 }

@@ -84,7 +84,9 @@ import androidx.wear.compose.foundation.curvedRow
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  */
 public fun CurvedScope.curvedText(
     text: String,
@@ -99,7 +101,7 @@ public fun CurvedScope.curvedText(
     style: CurvedTextStyle? = null,
     angularDirection: CurvedDirection.Angular? = null,
     overflow: TextOverflow = TextOverflow.Clip,
-) =
+): Unit =
     basicCurvedText(text, modifier, angularDirection, overflow) {
         val baseStyle = style ?: CurvedTextStyle(LocalTextStyle.current)
         val textColor =
@@ -117,7 +119,9 @@ public fun CurvedScope.curvedText(
                 fontStyle = fontStyle,
                 fontSynthesis = fontSynthesis,
                 background = background,
-                letterSpacing = 0.em // keep backward compatibility.
+                // keep backward compatibility, add no letter spacing .
+                letterSpacing = 0.em,
+                letterSpacingCounterClockwise = 0.em,
             )
         )
     }
@@ -161,12 +165,14 @@ public fun CurvedScope.curvedText(
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  */
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for " +
         "Wear OS 1.0. A newer overload is available with additional font parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 public fun CurvedScope.curvedText(
     text: String,
@@ -177,7 +183,7 @@ public fun CurvedScope.curvedText(
     style: CurvedTextStyle? = null,
     angularDirection: CurvedDirection.Angular? = null,
     overflow: TextOverflow = TextOverflow.Clip,
-) =
+): Unit =
     basicCurvedText(text, modifier, angularDirection, overflow) {
         val baseStyle = style ?: CurvedTextStyle(LocalTextStyle.current)
         val textColor =

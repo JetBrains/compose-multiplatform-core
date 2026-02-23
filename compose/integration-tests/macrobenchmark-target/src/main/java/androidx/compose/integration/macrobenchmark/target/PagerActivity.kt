@@ -25,11 +25,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -64,7 +67,9 @@ class PagerActivity : ComponentActivity() {
         setContent {
             val pagerState = rememberPagerState { ItemCount }
 
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
+            ) {
                 if (enableTab) {
                     val scope = rememberCoroutineScope()
                     Button(
@@ -73,7 +78,7 @@ class PagerActivity : ComponentActivity() {
                             scope.launch {
                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
-                        }
+                        },
                     ) {
                         Text("Next Page")
                     }
@@ -134,7 +139,7 @@ class PagerActivity : ComponentActivity() {
                         settings.setSupportZoom(true)
                     }
                 },
-                update = { webView -> webView.loadUrl("https://www.google.com/") }
+                update = { webView -> webView.loadUrl("https://www.google.com/") },
             )
         }
     }
@@ -147,7 +152,7 @@ class PagerActivity : ComponentActivity() {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
                 painter = painterResource(pageImage.second),
-                contentDescription = stringResource(pageImage.third)
+                contentDescription = stringResource(pageImage.third),
             )
         }
     }
@@ -161,7 +166,7 @@ class PagerActivity : ComponentActivity() {
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.height(200.dp).fillMaxWidth(),
                     painter = painterResource(pageImage.second),
-                    contentDescription = stringResource(pageImage.third)
+                    contentDescription = stringResource(pageImage.third),
                 )
             }
         }
@@ -173,7 +178,7 @@ class PagerActivity : ComponentActivity() {
             modifier = Modifier.semantics { contentDescription = "Pager" }.background(Color.White),
             state = pagerState,
             pageSize = PageSize.Fill,
-            pageContent = content
+            pageContent = content,
         )
     }
 
@@ -184,7 +189,7 @@ class PagerActivity : ComponentActivity() {
             state = pagerState,
             pageSize = PageSize.Fixed(200.dp),
             pageSpacing = 10.dp,
-            pageContent = content
+            pageContent = content,
         )
     }
 

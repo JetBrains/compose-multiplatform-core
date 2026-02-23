@@ -15,24 +15,21 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
-
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.compose.animation:animation-graphics:1.6.0")
@@ -58,17 +55,17 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
-        minSdkVersion 25
+        minSdk { version = release(25) }
     }
-    namespace "androidx.wear.compose.material.samples"
+    namespace = "androidx.wear.compose.material.samples"
 }
 
 androidx {
     name = "Android Wear Compose Material Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2021"
     description = "Contains the sample code for the Android Wear Compose Material Classes"
 }

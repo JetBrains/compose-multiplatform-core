@@ -84,7 +84,7 @@ class TextMeasurer(
     private val defaultFontFamilyResolver: FontFamily.Resolver,
     private val defaultDensity: Density,
     private val defaultLayoutDirection: LayoutDirection,
-    private val cacheSize: Int = DefaultCacheSize
+    private val cacheSize: Int = DefaultCacheSize,
 ) {
     private val textLayoutCache: TextLayoutCache? =
         if (cacheSize > 0) {
@@ -144,12 +144,12 @@ class TextMeasurer(
         overflow: TextOverflow = TextOverflow.Clip,
         softWrap: Boolean = true,
         maxLines: Int = Int.MAX_VALUE,
-        placeholders: List<AnnotatedString.Range<Placeholder>> = emptyList(),
+        placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
         constraints: Constraints = Constraints(),
         layoutDirection: LayoutDirection = this.defaultLayoutDirection,
         density: Density = this.defaultDensity,
         fontFamilyResolver: FontFamily.Resolver = this.defaultFontFamilyResolver,
-        skipCache: Boolean = false
+        skipCache: Boolean = false,
     ): TextLayoutResult {
         val requestedTextLayoutInput =
             TextLayoutInput(
@@ -162,7 +162,7 @@ class TextMeasurer(
                 density,
                 layoutDirection,
                 fontFamilyResolver,
-                constraints
+                constraints,
             )
 
         val cacheResult =
@@ -177,9 +177,9 @@ class TextMeasurer(
                     constraints.constrain(
                         IntSize(
                             cacheResult.multiParagraph.width.ceilToInt(),
-                            cacheResult.multiParagraph.height.ceilToInt()
+                            cacheResult.multiParagraph.height.ceilToInt(),
                         )
-                    )
+                    ),
             )
         } else {
             layout(requestedTextLayoutInput).also {
@@ -241,7 +241,7 @@ class TextMeasurer(
         layoutDirection: LayoutDirection = this.defaultLayoutDirection,
         density: Density = this.defaultDensity,
         fontFamilyResolver: FontFamily.Resolver = this.defaultFontFamilyResolver,
-        skipCache: Boolean = false
+        skipCache: Boolean = false,
     ): TextLayoutResult {
         return measure(
             text = AnnotatedString(text),
@@ -253,7 +253,7 @@ class TextMeasurer(
             layoutDirection = layoutDirection,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
-            skipCache = skipCache
+            skipCache = skipCache,
         )
     }
 
@@ -273,7 +273,7 @@ class TextMeasurer(
                         style = resolveDefaults(style, layoutDirection),
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        placeholders = placeholders
+                        placeholders = placeholders,
                     )
 
                 val minWidth = constraints.minWidth
@@ -328,11 +328,11 @@ class TextMeasurer(
                                 minWidth = 0,
                                 maxWidth = width,
                                 minHeight = 0,
-                                maxHeight = constraints.maxHeight
+                                maxHeight = constraints.maxHeight,
                             ),
                         // This is a fallback behavior for ellipsis. Native
                         maxLines = finalMaxLines,
-                        overflow = overflow
+                        overflow = overflow,
                     )
 
                 return TextLayoutResult(
@@ -342,9 +342,9 @@ class TextMeasurer(
                         constraints.constrain(
                             IntSize(
                                 ceil(multiParagraph.width).toInt(),
-                                ceil(multiParagraph.height).toInt()
+                                ceil(multiParagraph.height).toInt(),
                             )
-                        )
+                        ),
                 )
             }
     }
@@ -421,8 +421,7 @@ internal class CacheTextLayoutInput(val textLayoutInput: TextLayoutInput) {
             result = 31 * result + density.hashCode()
             result = 31 * result + layoutDirection.hashCode()
             result = 31 * result + fontFamilyResolver.hashCode()
-            result = 31 * result + constraints.maxWidth.hashCode()
-            result = 31 * result + constraints.maxHeight.hashCode()
+            result = 31 * result + constraints.hashCode()
             return result
         }
 
@@ -440,8 +439,7 @@ internal class CacheTextLayoutInput(val textLayoutInput: TextLayoutInput) {
             if (density != other.textLayoutInput.density) return false
             if (layoutDirection != other.textLayoutInput.layoutDirection) return false
             if (fontFamilyResolver !== other.textLayoutInput.fontFamilyResolver) return false
-            if (constraints.maxWidth != other.textLayoutInput.constraints.maxWidth) return false
-            if (constraints.maxHeight != other.textLayoutInput.constraints.maxHeight) return false
+            if (constraints != other.textLayoutInput.constraints) return false
         }
 
         return true

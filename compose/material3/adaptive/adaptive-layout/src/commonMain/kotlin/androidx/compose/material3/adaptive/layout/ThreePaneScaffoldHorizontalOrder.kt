@@ -16,26 +16,16 @@
 
 package androidx.compose.material3.adaptive.layout
 
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.LayoutDirection
 
-/**
- * Represents the horizontal order of panes in a [ThreePaneScaffold] from start to end. Note that
- * the values of [firstPane], [secondPane] and [thirdPane] have to be different, otherwise
- * [IllegalArgumentException] will be thrown.
- *
- * @param firstPane The first pane from the start of the [ThreePaneScaffold]
- * @param secondPane The second pane from the start of the [ThreePaneScaffold]
- * @param thirdPane The third pane from the start of the [ThreePaneScaffold]
- * @constructor create an instance of [ThreePaneScaffoldHorizontalOrder]
- */
-@ExperimentalMaterial3AdaptiveApi
+/** Represents the horizontal order of panes in a [ThreePaneScaffold] from start to end. */
 @Immutable
-internal class ThreePaneScaffoldHorizontalOrder(
-    val firstPane: ThreePaneScaffoldRole,
-    val secondPane: ThreePaneScaffoldRole,
-    val thirdPane: ThreePaneScaffoldRole
+class ThreePaneScaffoldHorizontalOrder
+internal constructor(
+    internal val firstPane: ThreePaneScaffoldRole,
+    internal val secondPane: ThreePaneScaffoldRole,
+    internal val thirdPane: ThreePaneScaffoldRole,
 ) : PaneScaffoldHorizontalOrder<ThreePaneScaffoldRole> {
     init {
         require(firstPane != secondPane && secondPane != thirdPane && firstPane != thirdPane) {
@@ -45,6 +35,14 @@ internal class ThreePaneScaffoldHorizontalOrder(
     }
 
     override val size = 3
+
+    operator fun get(index: Int) =
+        when (index) {
+            0 -> firstPane
+            1 -> secondPane
+            2 -> thirdPane
+            else -> throw IndexOutOfBoundsException("Invalid pane index $index")
+        }
 
     override fun indexOf(role: ThreePaneScaffoldRole) =
         when (role) {
@@ -89,8 +87,11 @@ internal class ThreePaneScaffoldHorizontalOrder(
     }
 }
 
-/** Converts a bidirectional order to a left-to-right order. */
-@ExperimentalMaterial3AdaptiveApi
+/**
+ * Converts a bidirectional [ThreePaneScaffoldHorizontalOrder] to a left-to-right order.
+ *
+ * @param layoutDirection the current [LayoutDirection]
+ */
 internal fun ThreePaneScaffoldHorizontalOrder.toLtrOrder(
     layoutDirection: LayoutDirection
 ): ThreePaneScaffoldHorizontalOrder {
@@ -99,28 +100,4 @@ internal fun ThreePaneScaffoldHorizontalOrder.toLtrOrder(
     } else {
         this
     }
-}
-
-/** The set of the available pane roles of [ThreePaneScaffold]. */
-enum class ThreePaneScaffoldRole {
-    /**
-     * The primary pane of [ThreePaneScaffold]. It is supposed to have the highest priority during
-     * layout adaptation and usually contains the most important content of the screen, like content
-     * details in a list-detail settings.
-     */
-    Primary,
-
-    /**
-     * The secondary pane of [ThreePaneScaffold]. It is supposed to have the second highest priority
-     * during layout adaptation and usually contains the supplement content of the screen, like
-     * content list in a list-detail settings.
-     */
-    Secondary,
-
-    /**
-     * The tertiary pane of [ThreePaneScaffold]. It is supposed to have the lowest priority during
-     * layout adaptation and usually contains the additional info which will only be shown under
-     * user interaction.
-     */
-    Tertiary
 }

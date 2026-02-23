@@ -26,11 +26,12 @@ import android.net.NetworkInfo;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -104,9 +105,8 @@ public final class ConnectivityManagerCompat {
      */
     @SuppressWarnings("deprecation")
     @SuppressLint("ReferencesDeprecated")
-    @Nullable
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-    public static NetworkInfo getNetworkInfoFromBroadcast(@NonNull ConnectivityManager cm,
+    public static @Nullable NetworkInfo getNetworkInfoFromBroadcast(@NonNull ConnectivityManager cm,
             @NonNull Intent intent) {
         final NetworkInfo info = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
         if (info != null) {

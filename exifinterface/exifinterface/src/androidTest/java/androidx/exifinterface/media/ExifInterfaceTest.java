@@ -35,8 +35,6 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.exifinterface.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -47,9 +45,11 @@ import androidx.test.rule.GrantPermissionRule;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
+import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -95,6 +95,14 @@ public class ExifInterfaceTest {
                     + "</rdf:RDF>"
                     + "</x:xmpmeta>"
                     + "<?xpacket end='w'?>";
+
+    /** A byte pattern that should appear exactly once per XMP 'segment' in an image file. */
+    private static final byte[] XMP_XPACKET_BEGIN_BYTES =
+            "<?xpacket begin=".getBytes(Charsets.UTF_8);
+
+    /** The iTXt chunk type, XMP keyword and 5 null bytes that start every XMP iTXt chunk. */
+    public static final byte[] PNG_ITXT_XMP_CHUNK_PREFIX =
+            Bytes.concat("iTXt".getBytes(Charsets.US_ASCII), ExifInterface.PNG_ITXT_XMP_KEYWORD);
 
     @Rule
     public GrantPermissionRule mRuntimePermissionRule =
@@ -176,6 +184,21 @@ public class ExifInterfaceTest {
         testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_EXIF_WITH_XMP);
     }
 
+    /**
+     * {@link R.raw#jpeg_with_app1_after_dqt} is the same as {@link
+     * R.raw#jpeg_with_exif_byte_order_ii} but with the APP1 Exif segment moved after the DQT
+     * segment.
+     */
+    @Test
+    @LargeTest
+    public void testJpegWithApp1AfterDqt() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_app1_after_dqt, "jpeg_with_app1_after_dqt.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_APP1_AFTER_DQT);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_APP1_AFTER_DQT);
+    }
+
     // https://issuetracker.google.com/309843390
     @Test
     @LargeTest
@@ -190,8 +213,7 @@ public class ExifInterfaceTest {
         exifInterface.saveAttributes();
 
         byte[] imageBytes = Files.toByteArray(imageFile);
-        assertThat(countOccurrences(imageBytes, "<?xpacket begin=".getBytes(Charsets.UTF_8)))
-                .isEqualTo(1);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(1);
     }
 
     /**
@@ -317,6 +339,28 @@ public class ExifInterfaceTest {
 
     @Test
     @LargeTest
+    public void testJpegWithFill1Byte() throws Throwable {
+        // One fill bytes added before each marker
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_fill_1byte, "jpeg_with_fill_1byte.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_1BYTE);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_1BYTE);
+    }
+
+    @Test
+    @LargeTest
+    public void testJpegWithFill2Bytes() throws Throwable {
+        // Two fill bytes added before each marker
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_fill_2bytes, "jpeg_with_fill_2bytes.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_2BYTES);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_2BYTES);
+    }
+
+    @Test
+    @LargeTest
     public void testDngWithExifAndXmp() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(R.raw.dng_with_exif_with_xmp, "dng_with_exif_with_xmp.dng");
@@ -325,12 +369,124 @@ public class ExifInterfaceTest {
 
     @Test
     @LargeTest
-    public void testPngWithExif() throws Throwable {
+    public void testPngWithExifAndXmp() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(
-                        R.raw.png_with_exif_byte_order_ii, "png_with_exif_byte_order_ii.png");
-        readFromFilesWithExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_BYTE_ORDER_II);
-        testWritingExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_BYTE_ORDER_II);
+                        R.raw.png_with_exif_and_xmp_byte_order_ii,
+                        "png_with_exif_and_xmp_byte_order_ii.png");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II);
+        testWritingExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II);
+    }
+
+    /**
+     * Old versions of {@link ExifInterface} used to only read and write XMP from inside the eXIf
+     * PNG chunk (stored under IFD tag 700), instead of the iTXt chunk.
+     *
+     * <p>The <a
+     * href="https://github.com/adobe/XMP-Toolkit-SDK/blob/main/docs/XMPSpecificationPart3.pdf">XMP
+     * spec (section 1.1.5)</a> describes the only valid location for XMP data as the iTXt chunk.
+     *
+     * <p>This test ensures that if a file contains only XMP in eXIf, it will still be read and
+     * written from there (for compatibility with previous versions of the library).
+     */
+    @Test
+    @LargeTest
+    public void testPngWithXmpInsideExif() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.png_with_xmp_inside_exif, "png_with_xmp_inside_exif.png");
+
+        // Check the file has the properties we expect before we run the test (XMP but no iTXt
+        // chunk).
+        byte[] imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(1);
+        assertThat(Bytes.indexOf(imageBytes, PNG_ITXT_XMP_CHUNK_PREFIX)).isEqualTo(-1);
+
+        ExifInterface exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+
+        String actualXmp =
+                new String(exifInterface.getAttributeBytes(ExifInterface.TAG_XMP), Charsets.UTF_8);
+        String expectedXmp =
+                ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II.getXmp(
+                        getApplicationContext().getResources());
+        assertThat(actualXmp).isEqualTo(expectedXmp);
+
+        exifInterface.saveAttributes();
+
+        imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(1);
+        assertThat(countOccurrences(imageBytes, PNG_ITXT_XMP_CHUNK_PREFIX)).isEqualTo(0);
+    }
+
+    /**
+     * Old versions of {@link ExifInterface} used to only read and write XMP from inside the eXIf
+     * PNG chunk (stored under IFD tag 700), instead of the iTXt chunk.
+     *
+     * <p>The <a
+     * href="https://github.com/adobe/XMP-Toolkit-SDK/blob/main/docs/XMPSpecificationPart3.pdf">XMP
+     * spec (section 1.1.5)</a> describes the only valid location for XMP data as the iTXt chunk.
+     *
+     * <p>This test ensures that if a file contains XMP in both eXIf and in iTXt, only the XMP in
+     * iTXt is exposed (and modified) via {@link ExifInterface#TAG_XMP}, but saving the file
+     * persists both.
+     *
+     * <p>{@code png_with_xmp_in_both_exif_and_itxt.png} contains the iTXt chunk from {@code
+     * png_with_exif_byte_order_ii.png}, with XMP in its eXIf chunk similar to {@link #TEST_XMP} but
+     * with {@code photoshop:DateCreated} set to {@code 2024-11-11T17:44:18}.
+     */
+    @Test
+    @LargeTest
+    public void testPngWithXmpInBothExifAndItxt_itxtPreferred_bothPersisted() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.png_with_xmp_in_both_exif_and_itxt,
+                        "png_with_xmp_in_both_exif_and_itxt.png");
+        // Check the file has the properties we expect before we run the test.
+        byte[] imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(2);
+        assertThat(Bytes.indexOf(imageBytes, PNG_ITXT_XMP_CHUNK_PREFIX)).isNotEqualTo(-1);
+
+        ExifInterface exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+        String actualXmp =
+                new String(exifInterface.getAttributeBytes(ExifInterface.TAG_XMP), Charsets.UTF_8);
+        String expectedXmp =
+                ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II.getXmp(
+                        getApplicationContext().getResources());
+        assertThat(actualXmp).isEqualTo(expectedXmp);
+
+        exifInterface.setAttribute(ExifInterface.TAG_XMP, TEST_XMP);
+        exifInterface.saveAttributes();
+
+        // Re-open the file so it gets re-parsed
+        exifInterface = new ExifInterface(imageFile);
+
+        actualXmp =
+                new String(exifInterface.getAttributeBytes(ExifInterface.TAG_XMP), Charsets.UTF_8);
+        assertThat(actualXmp).isEqualTo(TEST_XMP);
+        imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(2);
+        int itxtIndex = Bytes.indexOf(imageBytes, PNG_ITXT_XMP_CHUNK_PREFIX);
+        assertThat(itxtIndex).isNotEqualTo(-1);
+        assertThat(exifInterface.getAttributeRange(ExifInterface.TAG_XMP)[0])
+                .isEqualTo(itxtIndex + PNG_ITXT_XMP_CHUNK_PREFIX.length);
+    }
+
+    @Test
+    @LargeTest
+    public void testPngWithExif_doesntDuplicateXmp() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.png_with_exif_and_xmp_byte_order_ii,
+                        "png_with_exif_and_xmp_byte_order_ii.png");
+        ExifInterface exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+        byte[] imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(1);
+
+        exifInterface.setAttribute(ExifInterface.TAG_XMP, TEST_XMP);
+        exifInterface.saveAttributes();
+
+        imageBytes = Files.toByteArray(imageFile);
+        assertThat(countOccurrences(imageBytes, XMP_XPACKET_BEGIN_BYTES)).isEqualTo(1);
     }
 
     @Test
@@ -391,7 +547,7 @@ public class ExifInterfaceTest {
     // https://issuetracker.google.com/342697059
     @Test
     @LargeTest
-    @SdkSuppress(minSdkVersion = 22) // Parsing the large image causes OOM on API 21 FTL emulators.
+    @SdkSuppress(minSdkVersion = 24) // Parsing the large image causes OOM on API 23 FTL emulators.
     public void testWebpWithoutExifHeight8192px() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(
@@ -425,6 +581,64 @@ public class ExifInterfaceTest {
                         R.raw.webp_lossless_alpha_without_exif,
                         "webp_lossless_alpha_without_exif.webp");
         testWritingExif(imageFile, /* expectedAttributes= */ null);
+    }
+
+    /**
+     * {@code webp_without_exif_trailing_data.webp} contains the same data as {@code
+     * webp_without_exif.webp} with {@code 0xDEADBEEFDEADBEEF} appended on the end (but excluded
+     * from the RIFF length).
+     *
+     * <p>This test ensures the resulting file is valid (i.e. the trailing data is still excluded
+     * from RIFF length).
+     */
+    // https://issuetracker.google.com/385766064
+    @Test
+    @LargeTest
+    public void testWebpWithoutExifAndTrailingData() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.webp_without_exif_trailing_data,
+                        "webp_without_exif_trailing_data.webp");
+        testWritingExif(imageFile, /* expectedAttributes= */ null);
+    }
+
+    /**
+     * {@code webp_without_exif_trailing_data.webp} contains the same data as {@code
+     * webp_without_exif.webp} with {@code 0xDEADBEEFDEADBEEF} appended on the end (but excluded
+     * from the RIFF length).
+     *
+     * <p>This test ensures the trailing data is preserved.
+     */
+    // https://issuetracker.google.com/385766064
+    @Test
+    @LargeTest
+    public void testWebpWithoutExifAndTrailingData_trailingDataPreserved() throws Throwable {
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.webp_without_exif_trailing_data,
+                        "webp_without_exif_trailing_data.webp");
+
+        ExifInterface exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+        exifInterface.saveAttributes();
+
+        byte[] imageData = Files.toByteArray(imageFile);
+        byte[] expectedTrailingData =
+                new byte[] {
+                    (byte) 0xDE,
+                    (byte) 0xAD,
+                    (byte) 0xBE,
+                    (byte) 0xEF,
+                    (byte) 0xDE,
+                    (byte) 0xAD,
+                    (byte) 0xBE,
+                    (byte) 0xEF
+                };
+        byte[] actualTrailingData =
+                Arrays.copyOfRange(
+                        imageData,
+                        imageData.length - expectedTrailingData.length,
+                        imageData.length);
+        assertThat(actualTrailingData).isEqualTo(expectedTrailingData);
     }
 
     /**
@@ -1779,6 +1993,8 @@ public class ExifInterfaceTest {
                 exifInterface, ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, expectedAttributes.iso);
         expect.that(exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0))
                 .isEqualTo(expectedAttributes.orientation);
+        expect.that(exifInterface.getAttributeInt(ExifInterface.TAG_PIXEL_Y_DIMENSION, 0))
+                .isEqualTo(expectedAttributes.pixelYDimension);
 
         // ExifInterface.TAG_XMP is documented as type byte[], so we access it using
         // getAttributeBytes instead of getAttribute, which would unavoidably convert it to an
@@ -1842,19 +2058,16 @@ public class ExifInterfaceTest {
             compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
         }
 
-        // Creates via FileDescriptor.
-        if (Build.VERSION.SDK_INT >= 21) {
-            FileDescriptor fd = null;
-            try {
-                fd = Os.open(imageFile.getAbsolutePath(), OsConstants.O_RDONLY,
-                        OsConstants.S_IRWXU);
-                exifInterface = new ExifInterface(fd);
-                compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
-            } catch (Exception e) {
-                throw new IOException("Failed to open file descriptor", e);
-            } finally {
-                closeQuietly(fd);
-            }
+        FileDescriptor fd = null;
+        try {
+            fd = Os.open(imageFile.getAbsolutePath(), OsConstants.O_RDONLY,
+                    OsConstants.S_IRWXU);
+            exifInterface = new ExifInterface(fd);
+            compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+        } catch (Exception e) {
+            throw new IOException("Failed to open file descriptor", e);
+        } finally {
+            closeQuietly(fd);
         }
     }
 
@@ -1954,27 +2167,25 @@ public class ExifInterfaceTest {
         expectSavingPersistsModifications(ExifInterface::new, srcFile, expectedAttributes);
 
         // Creates via FileDescriptor.
-        if (Build.VERSION.SDK_INT >= 21) {
-            AtomicReference<FileDescriptor> fileDescriptor = new AtomicReference<>();
-            ExifInterfaceFactory createFromFileDescriptor =
-                    f -> {
-                        try {
-                            fileDescriptor.set(
-                                    Os.open(
-                                            f.getAbsolutePath(),
-                                            OsConstants.O_RDWR,
-                                            OsConstants.S_IRWXU));
-                        } catch (ErrnoException e) {
-                            throw new IOException("Failed to open file descriptor", e);
-                        }
-                        return new ExifInterface(fileDescriptor.get());
-                    };
-            try {
-                expectSavingPersistsModifications(
-                        createFromFileDescriptor, srcFile, expectedAttributes);
-            } finally {
-                closeQuietly(fileDescriptor.get());
-            }
+        AtomicReference<FileDescriptor> fileDescriptor = new AtomicReference<>();
+        ExifInterfaceFactory createFromFileDescriptor =
+                f -> {
+                    try {
+                        fileDescriptor.set(
+                                Os.open(
+                                        f.getAbsolutePath(),
+                                        OsConstants.O_RDWR,
+                                        OsConstants.S_IRWXU));
+                    } catch (ErrnoException e) {
+                        throw new IOException("Failed to open file descriptor", e);
+                    }
+                    return new ExifInterface(fileDescriptor.get());
+                };
+        try {
+            expectSavingPersistsModifications(
+                    createFromFileDescriptor, srcFile, expectedAttributes);
+        } finally {
+            closeQuietly(fileDescriptor.get());
         }
     }
 
@@ -2005,6 +2216,17 @@ public class ExifInterfaceTest {
         ExifInterface exifInterface = exifInterfaceFactory.create(imageFile);
         exifInterface.setAttribute(ExifInterface.TAG_MAKE, "abc");
         exifInterface.setAttribute(ExifInterface.TAG_XMP, TEST_XMP);
+        // Check expected modifications are visible without saving to disk (but offsets are now
+        // unknown).
+        expect.that(exifInterface.getAttribute(ExifInterface.TAG_MAKE)).isEqualTo("abc");
+        expect.that(exifInterface.getAttributeRange(ExifInterface.TAG_MAKE))
+                .isEqualTo(new long[] {-1, 4});
+        byte[] expectedXmpBytes = TEST_XMP.getBytes(Charsets.UTF_8);
+        expect.that(exifInterface.getAttributeBytes(ExifInterface.TAG_XMP))
+                .isEqualTo(expectedXmpBytes);
+        expect.that(exifInterface.getAttributeRange(ExifInterface.TAG_XMP))
+                .isEqualTo(new long[] {-1, expectedXmpBytes.length});
+
         exifInterface.saveAttributes();
 
         ExpectedAttributes.Builder expectedAttributesBuilder =
@@ -2033,6 +2255,21 @@ public class ExifInterfaceTest {
                     expectedAttributes, exifInterface);
             expectThumbnailMatchesFileBytes(imageFile, exifInterface, expectedAttributes);
         }
+
+        // Clear the properties we overwrote to check passing null results in clearing.
+        exifInterface.setAttribute(ExifInterface.TAG_MAKE, null);
+        exifInterface.setAttribute(ExifInterface.TAG_XMP, null);
+
+        expectedAttributes = expectedAttributesBuilder.setMake(null).clearXmp().build();
+        // Check expected modifications are visible without saving to disk.
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+
+        // Check expected modifications are visible without re-parsing the file.
+        exifInterface.saveAttributes();
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+        // Re-parse the file to confirm the changes are persisted to disk
+        exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
     }
 
     private void readFromFilesWithExif(File imageFile, ExpectedAttributes expectedAttributes)
@@ -2092,7 +2329,6 @@ public class ExifInterfaceTest {
         expectBitmapsEquivalent(thumbnailBitmapFromFile, exifInterface.getThumbnailBitmap());
     }
 
-    @RequiresApi(21)
     private void closeQuietly(FileDescriptor fd) {
         if (fd != null) {
             try {

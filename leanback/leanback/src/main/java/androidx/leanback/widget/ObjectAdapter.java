@@ -18,9 +18,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.annotation.SuppressLint;
 import android.database.Observable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class adapter to be used in leanback activities.  Provides access to a data model and is
@@ -199,8 +200,7 @@ public abstract class ObjectAdapter {
     /**
      * Returns the presenter selector for this ObjectAdapter.
      */
-    @NonNull
-    public final PresenterSelector getPresenterSelector() {
+    public final @NonNull PresenterSelector getPresenterSelector() {
         return mPresenterSelector;
     }
 
@@ -327,8 +327,7 @@ public abstract class ObjectAdapter {
     /**
      * Returns the {@link Presenter} for the given item from the adapter.
      */
-    @Nullable
-    public final Presenter getPresenter(@NonNull Object item) {
+    public final @Nullable Presenter getPresenter(@NonNull Object item) {
         if (mPresenterSelector == null) {
             throw new IllegalStateException("Presenter selector must not be null");
         }
@@ -343,8 +342,7 @@ public abstract class ObjectAdapter {
     /**
      * Returns the item for the given position.
      */
-    @Nullable
-    public abstract Object get(int position);
+    public abstract @Nullable Object get(int position);
 
     /**
      * Returns the id for the given position.

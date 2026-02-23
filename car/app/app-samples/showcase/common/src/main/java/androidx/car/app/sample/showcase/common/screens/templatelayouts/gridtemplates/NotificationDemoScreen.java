@@ -34,7 +34,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -52,9 +51,12 @@ import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
 import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /** A simple screen that demonstrates how to use notifications in a car app. */
 public final class NotificationDemoScreen extends Screen implements DefaultLifecycleObserver {
@@ -110,9 +112,8 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         unregisterBroadcastReceiver();
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         ItemList.Builder listBuilder = new ItemList.Builder();
 
         // Send a single notification with the settings configured by other buttons.
@@ -335,7 +336,8 @@ public final class NotificationDemoScreen extends Screen implements DefaultLifec
         filter.addAction(INTENT_ACTION_PRIMARY_PHONE);
         filter.addAction(INTENT_ACTION_SECONDARY_PHONE);
 
-        getCarContext().registerReceiver(mBroadcastReceiver, filter);
+        ContextCompat.registerReceiver(getCarContext(), mBroadcastReceiver, filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     private void unregisterBroadcastReceiver() {

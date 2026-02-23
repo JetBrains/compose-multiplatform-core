@@ -26,10 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.graphics.Rect;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.models.SelectionBoundary;
@@ -39,8 +36,9 @@ import androidx.pdf.util.ObservableValue;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.MosaicView;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,10 +49,8 @@ import org.robolectric.annotation.Config;
 import java.util.List;
 
 /** Unit tests for {@link PageMosaicView}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class PageMosaicViewTest {
     @Mock
     private MosaicView.BitmapSource mMockBitmapSource;
@@ -124,8 +120,8 @@ public class PageMosaicViewTest {
                 mMockBitmapSource, mMockBitmapRecycler, mMockPdfLoader, mPdfSelectionModel,
                 mSearchModel, mSelectionHandles) {
             @Override
-            @NonNull
-            protected String buildContentDescription(@Nullable String pageText, int pageNum) {
+            protected @NonNull String buildContentDescription(@Nullable String pageText,
+                    int pageNum) {
                 return (pageText != null) ? pageText : "dummyString";
             }
         };
@@ -145,8 +141,8 @@ public class PageMosaicViewTest {
                 mMockBitmapSource, mMockBitmapRecycler, mMockPdfLoader, mPdfSelectionModel,
                 mSearchModel, mSelectionHandles) {
             @Override
-            @NonNull
-            protected String buildContentDescription(@Nullable String pageText, int pageNum) {
+            protected @NonNull String buildContentDescription(@Nullable String pageText,
+                    int pageNum) {
                 return (pageText != null) ? pageText : dummyContentDescription;
             }
         };
@@ -163,15 +159,13 @@ public class PageMosaicViewTest {
         SearchModel dummySearchModel = mock(SearchModel.class);
         when(dummyPdfSelectionModel.getPage()).thenReturn(1);
         when(dummySearchModel.query()).thenReturn(new ObservableValue<String>() {
-            @Nullable
             @Override
-            public String get() {
+            public @Nullable String get() {
                 return null;
             }
 
-            @NonNull
             @Override
-            public Object addObserver(ValueObserver<String> observer) {
+            public @NonNull Object addObserver(ValueObserver<String> observer) {
                 return null;
             }
 
@@ -209,9 +203,8 @@ public class PageMosaicViewTest {
         when(dummyPdfSelectionModel.getPage()).thenReturn(0);
         when(dummyPdfSelectionModel.selection()).thenReturn(new ObservableValue<PageSelection>() {
 
-            @NonNull
             @Override
-            public Object addObserver(ValueObserver<PageSelection> observer) {
+            public @NonNull Object addObserver(ValueObserver<PageSelection> observer) {
                 return null;
             }
 
@@ -220,9 +213,8 @@ public class PageMosaicViewTest {
 
             }
 
-            @Nullable
             @Override
-            public PageSelection get() {
+            public @Nullable PageSelection get() {
                 return new PageSelection(0, mock(SelectionBoundary.class),
                         mock(SelectionBoundary.class), boundingBoxes, "");
             }
@@ -251,15 +243,13 @@ public class PageMosaicViewTest {
         SearchModel dummySearchModel = mock(SearchModel.class);
         when(dummyPdfSelectionModel.getPage()).thenReturn(1);
         when(dummySearchModel.query()).thenReturn(new ObservableValue<String>() {
-            @Nullable
             @Override
-            public String get() {
+            public @Nullable String get() {
                 return "placeholder";
             }
 
-            @NonNull
             @Override
-            public Object addObserver(ValueObserver<String> observer) {
+            public @NonNull Object addObserver(ValueObserver<String> observer) {
                 return null;
             }
 

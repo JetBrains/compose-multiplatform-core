@@ -31,8 +31,6 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.autofill.R;
 import androidx.autofill.inline.common.TextViewStyle;
 import androidx.autofill.inline.v1.InlineSuggestionUi;
@@ -41,6 +39,8 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,8 +57,7 @@ public class RendererTest {
 
     @SuppressWarnings("deprecation")
     @Rule
-    @NonNull
-    public final androidx.test.rule.ActivityTestRule<InlineUiActivity> mActivityTestRule =
+    public final androidx.test.rule.@NonNull ActivityTestRule<InlineUiActivity> mActivityTestRule =
             new androidx.test.rule.ActivityTestRule<>(InlineUiActivity.class);
 
     private Instrumentation mInstrumentation;
@@ -117,8 +116,7 @@ public class RendererTest {
         assertNull(suggestionView);
     }
 
-    @Nullable
-    private Slice getContent(Bundle styles) {
+    private @Nullable Slice getContent(Bundle styles) {
         List<String> versions = UiVersions.getVersions(styles);
         if (versions.contains(UiVersions.INLINE_UI_VERSION_1)) {
             UiVersions.Content content = InlineSuggestionUi.newContentBuilder(mAttributionIntent)
@@ -128,8 +126,7 @@ public class RendererTest {
         return null;
     }
 
-    @Nullable
-    private static Bundle getStyles(Bundle supportedVersions) {
+    private static @Nullable Bundle getStyles(Bundle supportedVersions) {
         List<String> versions = UiVersions.getVersions(supportedVersions);
         UiVersions.StylesBuilder styles = UiVersions.newStylesBuilder();
         boolean hasStyle = false;

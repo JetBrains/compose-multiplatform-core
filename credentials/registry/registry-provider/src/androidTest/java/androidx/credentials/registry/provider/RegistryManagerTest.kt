@@ -16,10 +16,12 @@
 
 package androidx.credentials.registry.provider
 
+import androidx.credentials.PasswordCredential
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -42,8 +44,72 @@ class RegistryManagerTest {
         runBlocking<Unit> {
             assertThrows<RegisterCredentialsConfigurationException> {
                 registryManager.registerCredentials(
-                    object : RegisterCredentialsRequest("type", "id", ByteArray(4), ByteArray(8)) {}
+                    object :
+                        RegisterCredentialsRequest(
+                            "type",
+                            "id",
+                            ByteArray(4),
+                            ByteArray(8),
+                            "intentAction",
+                        ) {}
                 )
             }
         }
+
+    @Test
+    fun registerCreationOptions_noOptionalModule_throws() =
+        runBlocking<Unit> {
+            assertThrows<RegisterCreationOptionsConfigurationException> {
+                registryManager.registerCreationOptions(
+                    object :
+                        RegisterCreationOptionsRequest(
+                            "type",
+                            "id",
+                            ByteArray(4),
+                            ByteArray(8),
+                            "intentAction",
+                        ) {}
+                )
+            }
+        }
+
+    @Test
+    fun clearCredentialRegistry_noOptionalModule_throws() =
+        runBlocking<Unit> {
+            assertThrows<ClearCredentialRegistryConfigurationException> {
+                registryManager.clearCredentialRegistry(
+                    ClearCredentialRegistryRequest(
+                        deletePerTypeConfig =
+                            ClearCredentialRegistryRequest.PerTypeConfig(
+                                isDeleteAll = false,
+                                type = PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
+                                registryIds = listOf("registry-id1", "registry-id2"),
+                            )
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun clearCreationOptions_noOptionalModule_throws() =
+        runBlocking<Unit> {
+            assertThrows<ClearCreationOptionsConfigurationException> {
+                registryManager.clearCreationOptions(
+                    ClearCreationOptionsRequest(
+                        deletePerTypeConfig =
+                            ClearCreationOptionsRequest.PerTypeConfig(
+                                isDeleteAll = false,
+                                type = PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
+                                registryIds = listOf("registry-id1", "registry-id2"),
+                            )
+                    )
+                )
+            }
+        }
+
+    @Test
+    fun constant() {
+        assertThat(RegistryManager.ACTION_GET_CREDENTIAL)
+            .isEqualTo("androidx.credentials.registry.provider.action.GET_CREDENTIAL")
+    }
 }

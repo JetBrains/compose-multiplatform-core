@@ -39,12 +39,12 @@ class SleepSessionRecord(
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** Title of the session. Optional field. */
     val title: String? = null,
     /** Additional notes for the session. Optional field. */
     val notes: String? = null,
     val stages: List<Stage> = emptyList(),
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
 
     init {
@@ -52,11 +52,17 @@ class SleepSessionRecord(
         if (stages.isNotEmpty()) {
             val sortedStages = stages.sortedWith { a, b -> a.startTime.compareTo(b.startTime) }
             for (i in 0 until sortedStages.lastIndex) {
-                require(!sortedStages[i].endTime.isAfter(sortedStages[i + 1].startTime))
+                require(!sortedStages[i].endTime.isAfter(sortedStages[i + 1].startTime)) {
+                    "Sleep stages must not overlap."
+                }
             }
             // check all stages are within parent session duration
-            require(!sortedStages.first().startTime.isBefore(startTime))
-            require(!sortedStages.last().endTime.isAfter(endTime))
+            require(!sortedStages.first().startTime.isBefore(startTime)) {
+                "The first sleep stage must start within parent session duration."
+            }
+            require(!sortedStages.last().endTime.isAfter(endTime)) {
+                "The last sleep stage must end within parent session duration."
+            }
         }
     }
 
@@ -139,7 +145,7 @@ class SleepSessionRecord(
                 "deep" to STAGE_TYPE_DEEP,
                 "rem" to STAGE_TYPE_REM,
                 "awake_in_bed" to STAGE_TYPE_AWAKE_IN_BED,
-                "unknown" to STAGE_TYPE_UNKNOWN
+                "unknown" to STAGE_TYPE_UNKNOWN,
             )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -171,11 +177,7 @@ class SleepSessionRecord(
      *
      * @see SleepSessionRecord
      */
-    class Stage(
-        val startTime: Instant,
-        val endTime: Instant,
-        @property:StageTypes val stage: Int,
-    ) {
+    class Stage(val startTime: Instant, val endTime: Instant, @property:StageTypes val stage: Int) {
         init {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
         }

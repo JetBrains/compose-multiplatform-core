@@ -18,12 +18,14 @@ package androidx.core.uwb.rxjava3.mock
 
 import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.UwbAddress
+import androidx.core.uwb.UwbAvailabilityCallback
 import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.UwbControleeSessionScope
 import androidx.core.uwb.UwbControllerSessionScope
 import androidx.core.uwb.UwbManager
 import com.google.android.gms.internal.nearby.zzpt
 import com.google.android.gms.nearby.uwb.UwbComplexChannel
+import java.util.concurrent.Executor
 
 /** A default implementation of [UwbManager] used in testing. */
 class TestUwbManager : UwbManager {
@@ -44,6 +46,10 @@ class TestUwbManager : UwbManager {
         return createClientSessionSCope(true) as UwbControllerSessionScope
     }
 
+    override suspend fun isAvailable(): Boolean {
+        return true
+    }
+
     private fun createClientSessionSCope(isController: Boolean): UwbClientSessionScope {
         val complexChannel = UwbComplexChannel.Builder().setPreambleIndex(10).setChannel(10).build()
         val localAddress = com.google.android.gms.nearby.uwb.UwbAddress(DEVICE_ADDRESS)
@@ -60,7 +66,7 @@ class TestUwbManager : UwbManager {
                 zzpt.zzn(1, 2, 3),
                 zzpt.zzl(2),
                 zzpt.zzl(1),
-                false
+                false,
             )
         val uwbClient = TestUwbClient(complexChannel, localAddress, rangingCapabilities, true)
         return if (isController) {
@@ -77,13 +83,13 @@ class TestUwbManager : UwbManager {
                     rangingCapabilities.supportedSlotDurations.toSet(),
                     rangingCapabilities.supportedRangingUpdateRates.toSet(),
                     rangingCapabilities.supportsRangingIntervalReconfigure(),
-                    rangingCapabilities.hasBackgroundRangingSupport()
+                    rangingCapabilities.hasBackgroundRangingSupport(),
                 ),
                 UwbAddress(localAddress.address),
                 androidx.core.uwb.UwbComplexChannel(
                     complexChannel.channel,
-                    complexChannel.preambleIndex
-                )
+                    complexChannel.preambleIndex,
+                ),
             )
         } else {
             TestUwbControleeSessionScope(
@@ -99,10 +105,17 @@ class TestUwbManager : UwbManager {
                     rangingCapabilities.supportedSlotDurations.toSet(),
                     rangingCapabilities.supportedRangingUpdateRates.toSet(),
                     rangingCapabilities.supportsRangingIntervalReconfigure(),
-                    rangingCapabilities.hasBackgroundRangingSupport()
+                    rangingCapabilities.hasBackgroundRangingSupport(),
                 ),
-                UwbAddress(localAddress.address)
+                UwbAddress(localAddress.address),
             )
         }
     }
+
+    override fun setUwbAvailabilityCallback(
+        executor: Executor,
+        observer: UwbAvailabilityCallback,
+    ) {}
+
+    override fun clearUwbAvailabilityCallback() {}
 }

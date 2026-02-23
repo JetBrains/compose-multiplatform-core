@@ -25,12 +25,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -212,9 +213,8 @@ public class GuidedActionAdapter extends RecyclerView.Adapter {
                             mActions.get(newItemPosition));
                 }
 
-                @Nullable
                 @Override
-                public Object getChangePayload(int oldItemPosition, int newItemPosition) {
+                public @Nullable Object getChangePayload(int oldItemPosition, int newItemPosition) {
                     return mDiffCallback.getChangePayload(oldActions.get(oldItemPosition),
                             mActions.get(newItemPosition));
                 }

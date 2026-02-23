@@ -23,6 +23,9 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextMotion
+import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.material3.tokens.ArcTypographyKeyTokens
 import androidx.wear.compose.material3.tokens.TypographyKeyTokens
 import androidx.wear.compose.material3.tokens.TypographyTokens
 
@@ -31,10 +34,7 @@ import androidx.wear.compose.material3.tokens.TypographyTokens
  *
  * The text styles in this typography are scaled according to the user's preferred font size in the
  * system settings. Larger font sizes can be fixed if necessary in order to avoid pressure on screen
- * space, because they are already sufficiently accessible. Here is an example of fixing the font
- * size for DisplayLarge:
- *
- * @sample androidx.wear.compose.material3.samples.FixedFontSize
+ * space, because they are already sufficiently accessible.
  *
  * Display styles are utilized for large, short strings of text used to display highly glanceable
  * hero information, significant metrics, confidence or expressive brand moments.
@@ -109,39 +109,38 @@ import androidx.wear.compose.material3.tokens.TypographyTokens
  * @property numeralExtraSmall NumeralExtraSmall is the smallest role for digits. Numerals use
  *   tabular spacing by default. They are for numbers that need to accommodate longer strings of
  *   digits, where no localization is required like in-workout metrics.
- *
- * TODO(b/273526150) Review documentation for typography, add examples for each size.
  */
+// TODO(b/273526150) Review documentation for typography, add examples for each size.
 @Immutable
-class Typography
+public class Typography
 internal constructor(
-    val arcLarge: TextStyle,
-    val arcMedium: TextStyle,
-    val arcSmall: TextStyle,
-    val displayLarge: TextStyle,
-    val displayMedium: TextStyle,
-    val displaySmall: TextStyle,
-    val titleLarge: TextStyle,
-    val titleMedium: TextStyle,
-    val titleSmall: TextStyle,
-    val labelLarge: TextStyle,
-    val labelMedium: TextStyle,
-    val labelSmall: TextStyle,
-    val bodyLarge: TextStyle,
-    val bodyMedium: TextStyle,
-    val bodySmall: TextStyle,
-    val bodyExtraSmall: TextStyle,
-    val numeralExtraLarge: TextStyle,
-    val numeralLarge: TextStyle,
-    val numeralMedium: TextStyle,
-    val numeralSmall: TextStyle,
-    val numeralExtraSmall: TextStyle,
+    public val arcLarge: CurvedTextStyle,
+    public val arcMedium: CurvedTextStyle,
+    public val arcSmall: CurvedTextStyle,
+    public val displayLarge: TextStyle,
+    public val displayMedium: TextStyle,
+    public val displaySmall: TextStyle,
+    public val titleLarge: TextStyle,
+    public val titleMedium: TextStyle,
+    public val titleSmall: TextStyle,
+    public val labelLarge: TextStyle,
+    public val labelMedium: TextStyle,
+    public val labelSmall: TextStyle,
+    public val bodyLarge: TextStyle,
+    public val bodyMedium: TextStyle,
+    public val bodySmall: TextStyle,
+    public val bodyExtraSmall: TextStyle,
+    public val numeralExtraLarge: TextStyle,
+    public val numeralLarge: TextStyle,
+    public val numeralMedium: TextStyle,
+    public val numeralSmall: TextStyle,
+    public val numeralExtraSmall: TextStyle,
 ) {
-    constructor(
+    public constructor(
         defaultFontFamily: FontFamily = FontFamily.Default,
-        arcLarge: TextStyle = TypographyTokens.ArcLarge,
-        arcMedium: TextStyle = TypographyTokens.ArcMedium,
-        arcSmall: TextStyle = TypographyTokens.ArcSmall,
+        arcLarge: CurvedTextStyle = TypographyTokens.ArcLarge,
+        arcMedium: CurvedTextStyle = TypographyTokens.ArcMedium,
+        arcSmall: CurvedTextStyle = TypographyTokens.ArcSmall,
         displayLarge: TextStyle = TypographyTokens.DisplayLarge,
         displayMedium: TextStyle = TypographyTokens.DisplayMedium,
         displaySmall: TextStyle = TypographyTokens.DisplaySmall,
@@ -185,10 +184,10 @@ internal constructor(
     )
 
     /** Returns a copy of this Typography, optionally overriding some of the values. */
-    fun copy(
-        arcLarge: TextStyle = this.arcLarge,
-        arcMedium: TextStyle = this.arcMedium,
-        arcSmall: TextStyle = this.arcSmall,
+    public fun copy(
+        arcLarge: CurvedTextStyle = this.arcLarge,
+        arcMedium: CurvedTextStyle = this.arcMedium,
+        arcSmall: CurvedTextStyle = this.arcSmall,
         displayLarge: TextStyle = this.displayLarge,
         displayMedium: TextStyle = this.displayMedium,
         displaySmall: TextStyle = this.displaySmall,
@@ -320,27 +319,34 @@ private fun TextStyle.withDefaultFontFamily(default: FontFamily): TextStyle {
     return if (fontFamily != null) this else copy(fontFamily = default)
 }
 
+/**
+ * @return [this] if there is a [FontFamily] defined, otherwise copies [this] with [default] as the
+ *   [FontFamily].
+ */
+private fun CurvedTextStyle.withDefaultFontFamily(default: FontFamily): CurvedTextStyle {
+    return if (fontFamily != null) this else copy(fontFamily = default)
+}
+
 private const val DefaultIncludeFontPadding = false
 
 internal val DefaultLineHeightStyle =
-    LineHeightStyle(
-        alignment = LineHeightStyle.Alignment.Center,
-        trim = LineHeightStyle.Trim.None,
-    )
+    LineHeightStyle(alignment = LineHeightStyle.Alignment.Center, trim = LineHeightStyle.Trim.None)
 
-/** Returns theme default [TextStyle] with default [PlatformTextStyle]. */
+/**
+ * Returns theme default [TextStyle] with default [PlatformTextStyle]. Text styles are proportional
+ * by default but can be made tabular using copy(fontFeatureSettings = "tnum").
+ */
 internal val DefaultTextStyle =
     TextStyle.Default.copy(
         platformStyle = PlatformTextStyle(includeFontPadding = DefaultIncludeFontPadding),
         lineHeightStyle = DefaultLineHeightStyle,
+        textMotion = TextMotion.Animated,
+        fontFeatureSettings = "pnum",
     )
 
 /** Helper function for typography tokens. */
 internal fun Typography.fromToken(value: TypographyKeyTokens): TextStyle {
     return when (value) {
-        TypographyKeyTokens.ArcLarge -> arcLarge
-        TypographyKeyTokens.ArcMedium -> arcMedium
-        TypographyKeyTokens.ArcSmall -> arcSmall
         TypographyKeyTokens.DisplayLarge -> displayLarge
         TypographyKeyTokens.DisplayMedium -> displayMedium
         TypographyKeyTokens.DisplaySmall -> displaySmall
@@ -362,11 +368,27 @@ internal fun Typography.fromToken(value: TypographyKeyTokens): TextStyle {
     }
 }
 
+/** Helper function for arc typography tokens. */
+internal fun Typography.fromToken(value: ArcTypographyKeyTokens): CurvedTextStyle {
+    return when (value) {
+        ArcTypographyKeyTokens.ArcLarge -> arcLarge
+        ArcTypographyKeyTokens.ArcMedium -> arcMedium
+        ArcTypographyKeyTokens.ArcSmall -> arcSmall
+    }
+}
+
 /**
  * Converts the [TypographyKeyTokens] to the local text style provided by the theme. The text style
  * refers to the [LocalTypography].
  */
 internal val TypographyKeyTokens.value: TextStyle
+    @Composable @ReadOnlyComposable get() = MaterialTheme.typography.fromToken(this)
+
+/**
+ * Converts the [TypographyKeyTokens] to the local text style provided by the theme. The text style
+ * refers to the [LocalTypography].
+ */
+internal val ArcTypographyKeyTokens.value: CurvedTextStyle
     @Composable @ReadOnlyComposable get() = MaterialTheme.typography.fromToken(this)
 
 /**

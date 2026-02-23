@@ -16,12 +16,11 @@
 
 package androidx.core.widget;
 
-import android.os.Build;
 import android.view.View.OnTouchListener;
 import android.widget.PopupMenu;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link PopupMenu}.
@@ -32,8 +31,7 @@ public final class PopupMenuCompat {
     }
 
     /**
-     * On API {@link Build.VERSION_CODES#KITKAT} and higher, returns
-     * an {@link OnTouchListener} that can be added to the anchor view to
+     * Returns an {@link OnTouchListener} that can be added to the anchor view to
      * implement drag-to-open behavior.
      * <p>
      * When the listener is set on a view, touching that view and dragging
@@ -50,8 +48,7 @@ public final class PopupMenuCompat {
      * @return a touch listener that controls drag-to-open behavior, or {@code null} on
      *         unsupported APIs
      */
-    @Nullable
-    public static OnTouchListener getDragToOpenListener(@NonNull Object popupMenu) {
+    public static @Nullable OnTouchListener getDragToOpenListener(@NonNull Object popupMenu) {
         return ((PopupMenu) popupMenu).getDragToOpenListener();
     }
 }

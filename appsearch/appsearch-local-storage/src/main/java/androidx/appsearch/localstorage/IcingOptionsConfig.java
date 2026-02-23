@@ -19,8 +19,12 @@ package androidx.appsearch.localstorage;
 import android.app.appsearch.SearchSpec;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.flags.Flags;
 
 import com.google.android.icing.proto.IcingSearchEngineOptions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface exposing the optional config flags in {@link IcingSearchEngineOptions} used to
@@ -43,6 +47,12 @@ public interface IcingOptionsConfig {
      * previously-hardcoded document compression level in Icing (which is 3).
      */
     int DEFAULT_COMPRESSION_LEVEL = 3;
+
+    /**
+     * The default compression mem level in IcingSearchEngineOptions proto matches the
+     * previously-hardcoded document compression level in Icing (which is 8).
+     */
+    int DEFAULT_COMPRESSION_MEM_LEVEL = 8;
 
     boolean DEFAULT_USE_PREMAPPING_WITH_FILE_BACKED_VECTOR = false;
 
@@ -73,6 +83,14 @@ public interface IcingOptionsConfig {
     boolean DEFAULT_USE_NEW_QUALIFIED_ID_JOIN_INDEX = false;
 
     boolean DEFAULT_BUILD_PROPERTY_EXISTENCE_METADATA_HITS = false;
+
+    long DEFAULT_ORPHAN_BLOB_TIME_TO_LIVE_MS = 7 * 24 * 60 * 60 * 1000L; // 1 week.
+
+    String DEFAULT_ICU_DATA_FILE_ABSOLUTE_PATH = "";
+
+    int DEFAULT_COMPRESSION_THRESHOLD_BYTES = 600;
+
+    int DEFAULT_EMBEDDING_INDEX_NUM_SHARDS = 32;
 
     /**
      * The maximum allowable token length. All tokens in excess of this size will be truncated to
@@ -126,6 +144,15 @@ public interface IcingOptionsConfig {
      */
     int getCompressionLevel();
 
+
+    /**
+     * The mem level for gzip compression for documents in the Icing document store.
+     *
+     * <p> 1 uses minimum memory but is slow and reduces compression ratio; 9 uses maximum memory
+     * for optimal speed and compression ratio. Icing historically used a memLevel of 8.
+     */
+    int getCompressionMemLevel();
+
     /**
      * Whether to allow circular references between schema types for the schema definition.
      *
@@ -174,6 +201,17 @@ public interface IcingOptionsConfig {
      * result exceeds this limit.
      */
     int getMaxPageBytesLimit();
+
+    /**
+     * Flag for {@link com.google.android.icing.proto.ResultSpecProto}.
+     *
+     * <p>The maximum byte size to allow in a single page, when icing is running in a pVM. This
+     * limit is only loosely binding. AppSearch will add results to the page until either
+     * 1) AppSearch has retrieved {@link SearchSpec#getResultCountPerPage()} results or 2) total
+     * size of the page exceeds this value. Therefore, AppSearch will always retrieve at least a
+     * single result, even if that result exceeds this limit.
+     */
+    int getMaxPageBytesLimitForVm();
 
     /**
      * Flag for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
@@ -225,4 +263,123 @@ public interface IcingOptionsConfig {
      * to support the hasProperty function in advanced query.
      */
     boolean getBuildPropertyExistenceMetadataHits();
+
+    /**
+     * Config for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
+     *
+     * <p>The maximum time in millisecond for a orphan blob to get recycled and deleted if there is
+     * no reference document linked to it.
+     */
+    long getOrphanBlobTimeToLiveMs();
+
+    /**
+     * Config for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
+     *
+     * <p>The absolute path to the ICU data file. If a valid path has been provided, it will be used
+     * to initialize ICU. The path is not available in Jetpack and Framework. This method is
+     * functionally no-op and returns an empty string.
+     */
+    @NonNull String getIcuDataFileAbsolutePath();
+
+    /**
+     * The threshold in bytes for compressing documents. If a document is larger than or equal to
+     * this threshold, it will be compressed based on getCompressionLevel(). 0 means always
+     * compress.
+     */
+    int getCompressionThresholdBytes();
+
+    /** The number of shards to use for the embedding index. 1 means no sharding. */
+    int getEmbeddingIndexNumShards();
+
+    /**
+     * Controls whether repeated fields may set joinable value type to
+     * {@link AppSearchSchema.StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     */
+    boolean enableRepeatedFieldJoins();
+
+    /**
+     * Converts to an {@link IcingSearchEngineOptions} instance.
+     *
+     * @param baseDir base directory of the icing instance.
+     */
+    default @NonNull IcingSearchEngineOptions toIcingSearchEngineOptions(
+            @NonNull String baseDir, boolean isVMEnabled) {
+        return IcingSearchEngineOptions.newBuilder()
+                .setBaseDir(baseDir)
+                .setMaxTokenLength(getMaxTokenLength())
+                .setIndexMergeSize(getIndexMergeSize())
+                .setDocumentStoreNamespaceIdFingerprint(
+                        getDocumentStoreNamespaceIdFingerprint())
+                .setOptimizeRebuildIndexThreshold(
+                        getOptimizeRebuildIndexThreshold())
+                .setCompressionLevel(getCompressionLevel())
+                .setAllowCircularSchemaDefinitions(
+                        getAllowCircularSchemaDefinitions())
+                .setPreMappingFbv(getUsePreMappingWithFileBackedVector())
+                .setUsePersistentHashMap(getUsePersistentHashMap())
+                .setIntegerIndexBucketSplitThreshold(
+                        getIntegerIndexBucketSplitThreshold())
+                .setLiteIndexSortAtIndexing(getLiteIndexSortAtIndexing())
+                .setLiteIndexSortSize(getLiteIndexSortSize())
+                .setUseNewQualifiedIdJoinIndex(
+                        getUseNewQualifiedIdJoinIndex())
+                .setBuildPropertyExistenceMetadataHits(
+                        getBuildPropertyExistenceMetadataHits())
+                .setEnableBlobStore(Flags.enableBlobStore())
+                .setOrphanBlobTimeToLiveMs(getOrphanBlobTimeToLiveMs())
+                .setEnableEmbeddingIndex(
+                        Flags.enableSchemaEmbeddingPropertyConfig())
+                .setEnableEmbeddingQuantization(
+                        Flags.enableSchemaEmbeddingQuantization())
+                .setEnableScorableProperties(Flags.enableScorableProperty())
+                .setIcuDataFileAbsolutePath(getIcuDataFileAbsolutePath())
+                .setManageBlobFiles(!Flags.enableAppSearchManageBlobFiles())
+                // Join index v3 and soft index restoration are prerequisites for delete
+                // propagation.
+                .setEnableDeletePropagationFrom(
+                        Flags.enableDeletePropagationRw()
+                                && Flags.enableQualifiedIdJoinIndexV3()
+                                && Flags.enableSoftIndexRestoration())
+                .setCalculateTimeSinceLastAttemptedOptimize(
+                        Flags.enableCalculateTimeSinceLastAttemptedOptimize())
+                .setEnableQualifiedIdJoinIndexV3(Flags.enableQualifiedIdJoinIndexV3())
+                .setEnableSoftIndexRestoration(Flags.enableSoftIndexRestoration())
+                .setEnableMarkerFileForOptimize(Flags.enableMarkerFileForOptimize())
+                .setReleaseBackupSchemaFileIfOverlayPresent(
+                        Flags.enableReleaseBackupSchemaFileIfOverlayPresent())
+                // This is a necessary bug fix for the VMEnabled case. VMEnabled is guarded by its
+                // own trunk-stable flag, therefore this can be included there. Otherwise, we should
+                // use this trank-stable flag.
+                .setEnableStrictPageByteSizeLimit(
+                        Flags.enableStrictPageByteSizeLimit() || isVMEnabled)
+                .setCompressionThresholdBytes(
+                        (Flags.enableCompressionThreshold() || isVMEnabled)
+                                ? Math.max(0, getCompressionThresholdBytes()) : 0)
+                .setCompressionMemLevel(
+                        (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
+                                : getCompressionMemLevel())
+                .setEnableSchemaDatabase(
+                        Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
+                .setEnableSmallerDecompressionBufferSize(true)
+                .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
+                .setEnablePassingFilterToChildren(
+                        Flags.enablePassingFilterToChildren() || isVMEnabled)
+                .setEnableProtoLogNewHeaderFormat(
+                        Flags.enableProtoLogNewHeaderFormat() || isVMEnabled)
+                .setEnableEmbeddingIteratorV2(true)
+                .setEnableReusableDecompressionBuffer(true)
+                .setEmbeddingIndexNumShards(
+                        Flags.enableShardedEmbeddingStorage()
+                                ? Math.max(1, getEmbeddingIndexNumShards()) : 1)
+                .setEnableSchemaTypeIdOptimization(
+                        Flags.enableSchemaTypeIdOptimization())
+                .setEnableOptimizeImprovements(
+                        Flags.enableOptimizeImprovements())
+                .setEnableRepeatedFieldJoins(enableRepeatedFieldJoins())
+                .setEnableNonExistentQualifiedIdJoin(Flags.enableNonExistentQualifiedIdJoin())
+                .setEnableSkipSetSchemaTypeEqualityCheck(
+                        Flags.enableSkipSetSchemaTypeEqualityCheck())
+                .setEnableEmbedQueryOptimization(Flags.enableEmbedQueryOptimization())
+                .build();
+    }
 }

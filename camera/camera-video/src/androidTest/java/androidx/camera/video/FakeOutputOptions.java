@@ -16,9 +16,12 @@
 
 package androidx.camera.video;
 
-import androidx.annotation.NonNull;
+import android.location.Location;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** A fake implementation of {@link OutputOptions}. */
 // Java is used because @AutoValue is required.
@@ -38,8 +41,7 @@ public class FakeOutputOptions extends OutputOptions {
 
         /** Builds the {@link FakeOutputOptions} instance. */
         @Override
-        @NonNull
-        public FakeOutputOptions build() {
+        public @NonNull FakeOutputOptions build() {
             return new FakeOutputOptions(
                     ((FakeOutputOptionsInternal.Builder) mRootInternalBuilder).build());
         }
@@ -47,14 +49,15 @@ public class FakeOutputOptions extends OutputOptions {
 
     @AutoValue
     abstract static class FakeOutputOptionsInternal extends OutputOptions.OutputOptionsInternal {
+        @Override
+        abstract @Nullable Location getLocation();
 
         @AutoValue.Builder
         abstract static class Builder extends OutputOptions.OutputOptionsInternal.Builder<Builder> {
 
             @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
             @Override
-            @NonNull
-            abstract FakeOutputOptionsInternal build();
+            abstract @NonNull FakeOutputOptionsInternal build();
         }
     }
 }

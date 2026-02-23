@@ -25,7 +25,6 @@ import androidx.annotation.CallSuper
 import androidx.annotation.NavigationRes
 import androidx.annotation.RestrictTo
 import androidx.core.content.res.use
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
@@ -35,6 +34,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.Navigation
 import androidx.navigation.Navigator
 import androidx.navigation.plusAssign
+import androidx.savedstate.savedState
 
 /**
  * NavHostFragment provides an area within your layout for self-contained navigation to occur.
@@ -43,21 +43,23 @@ import androidx.navigation.plusAssign
  * app's chrome around it, e.g.:
  * ```
  * <androidx.drawerlayout.widget.DrawerLayout
- * xmlns:android="http://schemas.android.com/apk/res/android"
- * xmlns:app="http://schemas.android.com/apk/res-auto"
- * android:layout_width="match_parent"
- * android:layout_height="match_parent">
- * <androidx.fragment.app.FragmentContainerView
- * android:layout_width="match_parent"
- * android:layout_height="match_parent"
- * android:id="@+id/my_nav_host_fragment"
- * android:name="androidx.navigation.fragment.NavHostFragment"
- * app:navGraph="@navigation/nav_sample"
- * app:defaultNavHost="true" />
- * <com.google.android.material.navigation.NavigationView
- * android:layout_width="wrap_content"
- * android:layout_height="match_parent"
- * android:layout_gravity="start"/>;
+ *     xmlns:android="http://schemas.android.com/apk/res/android"
+ *     xmlns:app="http://schemas.android.com/apk/res-auto"
+ *     android:layout_width="match_parent"
+ *     android:layout_height="match_parent">
+ *
+ *     <androidx.fragment.app.FragmentContainerView
+ *         android:layout_width="match_parent"
+ *         android:layout_height="match_parent"
+ *         android:id="@+id/my_nav_host_fragment"
+ *         android:name="androidx.navigation.fragment.NavHostFragment"
+ *         app:navGraph="@navigation/nav_sample"
+ *         app:defaultNavHost="true" />
+ *
+ *     <com.google.android.material.navigation.NavigationView
+ *         android:layout_width="wrap_content"
+ *         android:layout_height="match_parent"
+ *         android:layout_gravity="start"/>;
  * </androidx.drawerlayout.widget.DrawerLayout>
  * ```
  *
@@ -92,7 +94,7 @@ public open class NavHostFragment : Fragment(), NavHost {
             }
             savedStateRegistry.registerSavedStateProvider(KEY_GRAPH_ID) {
                 if (graphId != 0) {
-                    bundleOf(KEY_GRAPH_ID to graphId)
+                    savedState { putInt(KEY_GRAPH_ID, graphId) }
                 } else {
                     Bundle.EMPTY
                 }
@@ -221,7 +223,7 @@ public open class NavHostFragment : Fragment(), NavHost {
     public override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val containerView = FragmentContainerView(inflater.context)
         // When added via XML, this has no effect (since this FragmentContainerView is given the ID
@@ -267,7 +269,7 @@ public open class NavHostFragment : Fragment(), NavHost {
     public override fun onInflate(
         context: Context,
         attrs: AttributeSet,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ) {
         super.onInflate(context, attrs, savedInstanceState)
         context.obtainStyledAttributes(attrs, androidx.navigation.R.styleable.NavHost).use { navHost
@@ -369,7 +371,7 @@ public open class NavHostFragment : Fragment(), NavHost {
         @JvmStatic
         public fun create(
             @NavigationRes graphResId: Int,
-            startDestinationArgs: Bundle? = null
+            startDestinationArgs: Bundle? = null,
         ): NavHostFragment {
             var b: Bundle? = null
             if (graphResId != 0) {

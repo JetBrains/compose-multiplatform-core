@@ -16,10 +16,11 @@
 
 package androidx.wear.tiles.material;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -39,8 +40,7 @@ public class Helper {
 
     /** Returns given value if not null or throws {@code NullPointerException} otherwise. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static <T> T checkNotNull(@Nullable T value) {
+    public static <T> @NonNull T checkNotNull(@Nullable T value) {
         if (value == null) {
             throw new NullPointerException();
         }
@@ -50,8 +50,7 @@ public class Helper {
     /**
      * Returns radius in {@link androidx.wear.tiles.DimensionBuilders.DpProp} of the given diameter.
      */
-    @NonNull
-    static androidx.wear.tiles.DimensionBuilders.DpProp radiusOf(
+    static androidx.wear.tiles.DimensionBuilders.@NonNull DpProp radiusOf(
             androidx.wear.tiles.DimensionBuilders.DpProp diameter) {
         return androidx.wear.tiles.DimensionBuilders.dp(diameter.getValue() / 2);
     }
@@ -62,8 +61,7 @@ public class Helper {
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static boolean isRoundDevice(
-            @NonNull
-                    androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+            androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                             deviceParameters) {
         return deviceParameters.getScreenShape()
                 == androidx.wear.tiles.DeviceParametersBuilders.SCREEN_SHAPE_ROUND;
@@ -71,15 +69,13 @@ public class Helper {
 
     /** Returns String representation of tag from byte array. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static String getTagName(@NonNull byte[] tagData) {
+    public static @NonNull String getTagName(byte @NonNull [] tagData) {
         return new String(tagData, StandardCharsets.UTF_8);
     }
 
     /** Returns byte array representation of tag from String. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static byte[] getTagBytes(@NonNull String tagName) {
+    public static byte @NonNull [] getTagBytes(@NonNull String tagName) {
         return tagName.getBytes(StandardCharsets.UTF_8);
     }
 
@@ -87,9 +83,8 @@ public class Helper {
      * Returns the String representation of metadata tag from the given
      * androidx.wear.tiles.ModifiersBuilders.ElementMetadata.
      */
-    @NonNull
-    public static String getMetadataTagName(
-            @NonNull androidx.wear.tiles.ModifiersBuilders.ElementMetadata metadata) {
+    public static @NonNull String getMetadataTagName(
+            androidx.wear.tiles.ModifiersBuilders.@NonNull ElementMetadata metadata) {
         return getTagName(getMetadataTagBytes(metadata));
     }
 
@@ -97,9 +92,8 @@ public class Helper {
      * Returns the metadata tag from the given
      * androidx.wear.tiles.ModifiersBuilders.ElementMetadata.
      */
-    @NonNull
-    public static byte[] getMetadataTagBytes(
-            @NonNull androidx.wear.tiles.ModifiersBuilders.ElementMetadata metadata) {
+    public static byte @NonNull [] getMetadataTagBytes(
+            androidx.wear.tiles.ModifiersBuilders.@NonNull ElementMetadata metadata) {
         return checkNotNull(metadata).getTagData();
     }
 
@@ -108,7 +102,7 @@ public class Helper {
      * set to the given String value.
      */
     public static boolean checkTag(
-            @Nullable androidx.wear.tiles.ModifiersBuilders.Modifiers modifiers,
+            androidx.wear.tiles.ModifiersBuilders.@Nullable Modifiers modifiers,
             @NonNull String validTag) {
         return modifiers != null
                 && modifiers.getMetadata() != null
@@ -120,7 +114,7 @@ public class Helper {
      * set to any of the value in the given String collection.
      */
     public static boolean checkTag(
-            @Nullable androidx.wear.tiles.ModifiersBuilders.Modifiers modifiers,
+            androidx.wear.tiles.ModifiersBuilders.@Nullable Modifiers modifiers,
             @NonNull Collection<String> validTags) {
         return modifiers != null
                 && modifiers.getMetadata() != null
@@ -132,9 +126,9 @@ public class Helper {
      * set with prefix that is equal to the given String and its length is of the given base array.
      */
     public static boolean checkTag(
-            @Nullable androidx.wear.tiles.ModifiersBuilders.Modifiers modifiers,
+            androidx.wear.tiles.ModifiersBuilders.@Nullable Modifiers modifiers,
             @NonNull String validPrefix,
-            @NonNull byte[] validBase) {
+            byte @NonNull [] validBase) {
         if (modifiers == null || modifiers.getMetadata() == null) {
             return false;
         }

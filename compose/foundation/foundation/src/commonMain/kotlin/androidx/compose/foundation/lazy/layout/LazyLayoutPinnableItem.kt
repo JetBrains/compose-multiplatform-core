@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,7 +47,7 @@ fun LazyLayoutPinnableItem(
     key: Any?,
     index: Int,
     pinnedItemList: LazyLayoutPinnedItemList,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val pinnableItem = remember(key, pinnedItemList) { LazyLayoutPinnableItem(key, pinnedItemList) }
     pinnableItem.index = index
@@ -101,16 +100,18 @@ private class LazyLayoutPinnableItem(
     private val pinnedItemList: LazyLayoutPinnedItemList,
 ) : PinnableContainer, PinnableContainer.PinnedHandle, LazyLayoutPinnedItemList.PinnedItem {
     /** Current index associated with this item. */
-    override var index by mutableIntStateOf(-1)
+    override var index = -1
 
     /**
      * It is a valid use case when users of this class call [pin] multiple times individually, so we
      * want to do the unpinning only when all of the users called [release].
      */
-    private var pinsCount by mutableIntStateOf(0)
+    private var pinsCount = 0
 
     /** Handle associated with the current [parentPinnableContainer]. */
-    private var parentHandle by mutableStateOf<PinnableContainer.PinnedHandle?>(null)
+    private var parentHandle: PinnableContainer.PinnedHandle? = null
+
+    private var isDisposed = false
 
     /**
      * Current parent [PinnableContainer]. Note that we should correctly re-pin if we pinned the
@@ -133,6 +134,7 @@ private class LazyLayoutPinnableItem(
         }
 
     override fun pin(): PinnableContainer.PinnedHandle {
+        checkPrecondition(!isDisposed) { "Pin should not be called on an already disposed item " }
         if (pinsCount == 0) {
             pinnedItemList.pin(this)
             parentHandle = parentPinnableContainer?.pin()
@@ -142,6 +144,7 @@ private class LazyLayoutPinnableItem(
     }
 
     override fun release() {
+        if (isDisposed) return // already during item disposal.
         checkPrecondition(pinsCount > 0) { "Release should only be called once" }
         pinsCount--
         if (pinsCount == 0) {
@@ -152,6 +155,6 @@ private class LazyLayoutPinnableItem(
     }
 
     fun onDisposed() {
-        repeat(pinsCount) { release() }
+        isDisposed = true
     }
 }

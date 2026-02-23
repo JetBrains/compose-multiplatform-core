@@ -16,18 +16,23 @@
 
 package androidx.appsearch.platformstorage.converter;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SchemaVisibilityConfig;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,9 +52,8 @@ public final class GetSchemaResponseToPlatformConverter {
      * Translates a platform {@link android.app.appsearch.GetSchemaResponse} into a jetpack
      * {@link GetSchemaResponse}.
      */
-    @NonNull
-    public static GetSchemaResponse toJetpackGetSchemaResponse(
-            @NonNull android.app.appsearch.GetSchemaResponse platformResponse) {
+    public static @NonNull GetSchemaResponse toJetpackGetSchemaResponse(
+            android.app.appsearch.@NonNull GetSchemaResponse platformResponse) {
         Preconditions.checkNotNull(platformResponse);
         GetSchemaResponse.Builder jetpackBuilder = new GetSchemaResponse.Builder();
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -77,10 +81,10 @@ public final class GetSchemaResponseToPlatformConverter {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
             // Convert publicly visible schemas
             Map<String, PackageIdentifier> publiclyVisibleSchemas =
-                    ApiHelperForV.getPubliclyVisibleSchemas(platformResponse);
+                    ApiHelperForSdkExtensionVBase.getPubliclyVisibleSchemas(platformResponse);
             if (!publiclyVisibleSchemas.isEmpty()) {
                 for (Map.Entry<String, PackageIdentifier> entry :
                         publiclyVisibleSchemas.entrySet()) {
@@ -90,7 +94,7 @@ public final class GetSchemaResponseToPlatformConverter {
 
             // Convert schemas visible to configs
             Map<String, Set<SchemaVisibilityConfig>> schemasVisibleToConfigs =
-                    ApiHelperForV.getSchemasVisibleToConfigs(platformResponse);
+                    ApiHelperForSdkExtensionVBase.getSchemasVisibleToConfigs(platformResponse);
             if (!schemasVisibleToConfigs.isEmpty()) {
                 for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
                         schemasVisibleToConfigs.entrySet()) {
@@ -108,8 +112,8 @@ public final class GetSchemaResponseToPlatformConverter {
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private static void convertSchemasVisibleToPackages(
-            @NonNull android.app.appsearch.GetSchemaResponse platformResponse,
-            @NonNull GetSchemaResponse.Builder jetpackBuilder) {
+            android.app.appsearch.@NonNull GetSchemaResponse platformResponse,
+            GetSchemaResponse.@NonNull Builder jetpackBuilder) {
         // TODO(b/205749173): If there were no packages, getSchemaTypesVisibleToPackages
         //  incorrectly returns {@code null} in some prerelease versions of Android T. Remove
         //  this workaround after the issue is fixed in T.
@@ -158,13 +162,16 @@ public final class GetSchemaResponseToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {}
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    @RequiresApi(Build.VERSION_CODES.S)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
+        }
 
         @DoNotInline
-        @NonNull
-        static Map<String, PackageIdentifier> getPubliclyVisibleSchemas(
+        static @NonNull Map<String, PackageIdentifier> getPubliclyVisibleSchemas(
                 android.app.appsearch.GetSchemaResponse platformResponse) {
             Map<String, android.app.appsearch.PackageIdentifier> platformPubliclyVisibleSchemas =
                     platformResponse.getPubliclyVisibleSchemas();
@@ -185,8 +192,7 @@ public final class GetSchemaResponseToPlatformConverter {
         }
 
         @DoNotInline
-        @NonNull
-        static Map<String, Set<SchemaVisibilityConfig>> getSchemasVisibleToConfigs(
+        static @NonNull Map<String, Set<SchemaVisibilityConfig>> getSchemasVisibleToConfigs(
                 android.app.appsearch.GetSchemaResponse platformResponse) {
             Map<String, Set<android.app.appsearch.SchemaVisibilityConfig>>
                     platformSchemasVisibleToConfigs =
@@ -215,9 +221,8 @@ public final class GetSchemaResponseToPlatformConverter {
          * Translates a platform {@link android.app.appsearch.SchemaVisibilityConfig} into a jetpack
          * {@link SchemaVisibilityConfig}.
          */
-        @NonNull
-        private static SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
-                @NonNull android.app.appsearch.SchemaVisibilityConfig platformConfig) {
+        private static @NonNull SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
+                android.app.appsearch.@NonNull SchemaVisibilityConfig platformConfig) {
             Preconditions.checkNotNull(platformConfig);
             SchemaVisibilityConfig.Builder jetpackBuilder = new SchemaVisibilityConfig.Builder();
 

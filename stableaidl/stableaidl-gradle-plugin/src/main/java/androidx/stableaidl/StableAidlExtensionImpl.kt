@@ -26,7 +26,7 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
 /** Internal implementation of [StableAidlExtension] that wraps task providers. */
-open class StableAidlExtensionImpl : StableAidlExtension {
+abstract class StableAidlExtensionImpl : StableAidlExtension {
     override val checkAction: Action =
         object : Action {
             override fun <T : Task> before(task: TaskProvider<T>) {

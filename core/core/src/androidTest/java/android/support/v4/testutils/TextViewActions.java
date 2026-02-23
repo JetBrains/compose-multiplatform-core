@@ -23,7 +23,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.annotation.StyleRes;
 import androidx.core.widget.TextViewCompat;
@@ -31,6 +30,7 @@ import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
 
 import org.hamcrest.Matcher;
+import org.jspecify.annotations.Nullable;
 
 public class TextViewActions {
     /**

@@ -112,7 +112,7 @@ public fun ScalingLazyListScope.expandableItems(
     state: ExpandableState,
     count: Int,
     key: ((index: Int) -> Any)? = null,
-    itemContent: @Composable BoxScope.(index: Int) -> Unit
+    itemContent: @Composable BoxScope.(index: Int) -> Unit,
 ) {
     repeat(count) { itemIndex ->
         // Animations for each item start in inverse order, the first item animates last.
@@ -122,7 +122,7 @@ public fun ScalingLazyListScope.expandableItems(
             item(key = key?.invoke(itemIndex)) {
                 Layout(
                     modifier = Modifier.clipToBounds(),
-                    content = { Box(content = { itemContent(itemIndex) }) }
+                    content = { Box(content = { itemContent(itemIndex) }) },
                 ) { measurables, constraints ->
                     val placeable = measurables.first().measure(constraints)
                     val shownHeight = (placeable.height * animationProgress).roundToInt()
@@ -157,8 +157,8 @@ public fun ScalingLazyListScope.expandableItems(
 public fun ScalingLazyListScope.expandableItem(
     state: ExpandableState,
     key: Any? = null,
-    content: @Composable (expanded: Boolean) -> Unit
-) = expandableItemImpl(state, key, content = content)
+    content: @Composable (expanded: Boolean) -> Unit,
+): Unit = expandableItemImpl(state, key, content = content)
 
 /**
  * Adds a single item, for the button that controls expandable item(s). The button will be animated
@@ -178,14 +178,14 @@ public fun ScalingLazyListScope.expandableItem(
 public fun ScalingLazyListScope.expandableButton(
     state: ExpandableState,
     key: Any? = null,
-    content: @Composable () -> Unit
-) = expandableItemImpl(state, key, invertProgress = true, content = { if (it) content() })
+    content: @Composable () -> Unit,
+): Unit = expandableItemImpl(state, key, invertProgress = true, content = { if (it) content() })
 
 private fun ScalingLazyListScope.expandableItemImpl(
     state: ExpandableState,
     key: Any? = null,
     invertProgress: Boolean = false,
-    content: @Composable (expanded: Boolean) -> Unit
+    content: @Composable (expanded: Boolean) -> Unit,
 ) {
     item(key = key) {
         Layout(
@@ -193,7 +193,7 @@ private fun ScalingLazyListScope.expandableItemImpl(
                 Box { content(false) }
                 Box { content(true) }
             },
-            modifier = Modifier.clipToBounds()
+            modifier = Modifier.clipToBounds(),
         ) { measurables, constraints ->
             val progress = if (invertProgress) 1f - state.expandProgress else state.expandProgress
 
@@ -231,7 +231,7 @@ internal constructor(
     initiallyExpanded: Boolean,
     private val coroutineScope: CoroutineScope,
     private val expandAnimationSpec: AnimationSpec<Float>,
-    private val collapseAnimationSpec: AnimationSpec<Float>
+    private val collapseAnimationSpec: AnimationSpec<Float>,
 ) {
     private val _expandProgress = Animatable(if (initiallyExpanded) 1f else 0f)
 
@@ -240,7 +240,7 @@ internal constructor(
      * (expanded), or the other way around. If no animation is running, it's either 0f if the extra
      * content is not showing, or 1f if the extra content is showing.
      */
-    val expandProgress
+    public val expandProgress: Float
         get() = _expandProgress.value
 
     /**
@@ -250,7 +250,7 @@ internal constructor(
      *
      * Modifying this value triggers a change to show/hide the extra information.
      */
-    var expanded
+    public var expanded: Boolean
         @JvmName("isExpanded") get() = _expandProgress.targetValue == 1f
         set(newValue) {
             if (expanded != newValue) {
@@ -264,10 +264,10 @@ internal constructor(
             }
         }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [ExpandableState]. */
         @Composable
-        fun saver(
+        public fun saver(
             expandAnimationSpec: AnimationSpec<Float>,
             collapseAnimationSpec: AnimationSpec<Float>,
         ): Saver<ExpandableState, Boolean> {
@@ -279,9 +279,9 @@ internal constructor(
                         initiallyExpanded = it,
                         expandAnimationSpec = expandAnimationSpec,
                         collapseAnimationSpec = collapseAnimationSpec,
-                        coroutineScope = coroutineScope
+                        coroutineScope = coroutineScope,
                     )
-                }
+                },
             )
         }
     }
@@ -297,7 +297,7 @@ internal constructor(
     private val initiallyExpanded: (key: T) -> Boolean,
     private val coroutineScope: CoroutineScope,
     private val expandAnimationSpec: AnimationSpec<Float>,
-    private val collapseAnimationSpec: AnimationSpec<Float>
+    private val collapseAnimationSpec: AnimationSpec<Float>,
 ) {
 
     private val states = mutableStateMapOf<T, ExpandableState>()
@@ -308,13 +308,13 @@ internal constructor(
      * parameters used to create the new [ExpandableState] are the ones passed to
      * [rememberExpandableStateMapping]
      */
-    public fun getOrPutNew(key: T) =
+    public fun getOrPutNew(key: T): ExpandableState =
         states.getOrPut(key) {
             ExpandableState(
                 initiallyExpanded(key),
                 coroutineScope,
                 expandAnimationSpec,
-                collapseAnimationSpec
+                collapseAnimationSpec,
             )
         }
 }
@@ -322,8 +322,8 @@ internal constructor(
 /** Contains the default values used by Expandable components. */
 public object ExpandableItemsDefaults {
     /** Default animation used to show extra information. */
-    val expandAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
+    public val expandAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
 
     /** Default animation used to hide extra information. */
-    val collapseAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
+    public val collapseAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
 }

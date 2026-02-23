@@ -18,10 +18,11 @@ package androidx.appsearch.playservicesstorage.converter;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.JoinSpec;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Gms and Jetpack versions of {@link JoinSpec}.
@@ -36,8 +37,7 @@ public class JoinSpecToGmsConverter {
      * {@link com.google.android.gms.appsearch.JoinSpec}.
      */
     @SuppressLint("WrongConstant")
-    @NonNull
-    public static com.google.android.gms.appsearch.JoinSpec toGmsJoinSpec(
+    public static com.google.android.gms.appsearch.@NonNull JoinSpec toGmsJoinSpec(
             @NonNull JoinSpec jetpackSpec) {
         Preconditions.checkNotNull(jetpackSpec);
         return new com.google.android.gms.appsearch.JoinSpec

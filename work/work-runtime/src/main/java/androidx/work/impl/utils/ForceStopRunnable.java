@@ -25,7 +25,6 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static androidx.work.WorkInfo.State.ENQUEUED;
 import static androidx.work.impl.model.WorkSpec.SCHEDULE_NOT_REQUESTED_YET;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.ApplicationExitInfo;
@@ -45,8 +44,6 @@ import android.database.sqlite.SQLiteTableLockedException;
 import android.os.Build;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
@@ -62,6 +59,9 @@ import androidx.work.impl.background.systemjob.SystemJobScheduler;
 import androidx.work.impl.model.WorkProgressDao;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -193,7 +193,6 @@ public class ForceStopRunnable implements Runnable {
      * @return {@code true} If the application was force stopped.
      */
     @VisibleForTesting
-    @SuppressLint("ClassVerificationFailure")
     public boolean isForceStopped() {
         // Alarms get cancelled when an app is force-stopped starting at Eclair MR1.
         // Cancelling of Jobs on force-stop was introduced in N-MR1 (SDK 25).
@@ -283,14 +282,11 @@ public class ForceStopRunnable implements Runnable {
     @SuppressWarnings("deprecation")
     @VisibleForTesting
     public boolean cleanUp() {
-        boolean needsReconciling = false;
-        if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            // Mitigation for faulty implementations of JobScheduler (b/134058261) and
-            // Mitigation for a platform bug, which causes jobs to get dropped when binding to
-            // SystemJobService fails.
-            needsReconciling = SystemJobScheduler.reconcileJobs(mContext,
-                    mWorkManager.getWorkDatabase());
-        }
+        // Mitigation for faulty implementations of JobScheduler (b/134058261) and
+        // Mitigation for a platform bug, which causes jobs to get dropped when binding to
+        // SystemJobService fails.
+        boolean needsReconciling = SystemJobScheduler.reconcileJobs(mContext,
+                mWorkManager.getWorkDatabase());
         // Reset previously unfinished work.
         WorkDatabase workDatabase = mWorkManager.getWorkDatabase();
         WorkSpecDao workSpecDao = workDatabase.workSpecDao();
@@ -385,7 +381,6 @@ public class ForceStopRunnable implements Runnable {
         return intent;
     }
 
-    @SuppressLint("ClassVerificationFailure")
     static void setAlarm(Context context) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         // Using FLAG_UPDATE_CURRENT, because we only ever want once instance of this alarm.

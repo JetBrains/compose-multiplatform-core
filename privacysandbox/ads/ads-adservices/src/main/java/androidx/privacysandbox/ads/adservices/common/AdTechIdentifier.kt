@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.common
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
@@ -27,8 +26,7 @@ import androidx.annotation.RestrictTo
  *
  * @param identifier The identifier.
  */
-@SuppressLint("ClassVerificationFailure")
-class AdTechIdentifier public constructor(val identifier: String) {
+public class AdTechIdentifier public constructor(public val identifier: String) {
 
     /**
      * Compares this AdTechIdentifier to the specified object. The result is true if and only if the

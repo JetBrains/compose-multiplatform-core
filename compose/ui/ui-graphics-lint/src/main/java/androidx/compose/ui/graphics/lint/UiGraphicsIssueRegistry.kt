@@ -23,7 +23,7 @@ import com.android.tools.lint.detector.api.CURRENT_API
 /** [IssueRegistry] containing Compose UI graphics specific lint issues. */
 class UiGraphicsIssueRegistry : IssueRegistry() {
     // Tests are run with this version. We ensure that with ApiLintVersionsTest
-    override val api = 14
+    override val api = 16
     override val minApi = CURRENT_API
     override val issues
         get() = listOf(ColorDetector.MissingColorAlphaChannel, ColorDetector.InvalidColorHexValue)
@@ -32,6 +32,6 @@ class UiGraphicsIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.ui.graphics",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

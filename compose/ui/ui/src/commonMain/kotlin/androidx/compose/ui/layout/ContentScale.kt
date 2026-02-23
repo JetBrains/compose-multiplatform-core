@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.layout
 
 import androidx.compose.runtime.Immutable
@@ -121,7 +123,7 @@ interface ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     ScaleFactor(
                         computeFillWidth(srcSize, dstSize),
-                        computeFillHeight(srcSize, dstSize)
+                        computeFillHeight(srcSize, dstSize),
                     )
             }
     }
@@ -132,6 +134,7 @@ interface ContentScale {
  * point value
  */
 @Immutable
+@Suppress("DataClassDefinition")
 data class FixedScale(val value: Float) : ContentScale {
     override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
         ScaleFactor(value, value)
@@ -149,6 +152,8 @@ private fun computeFillMinDimension(srcSize: Size, dstSize: Size): Float {
     return min(widthScale, heightScale)
 }
 
-private fun computeFillWidth(srcSize: Size, dstSize: Size): Float = dstSize.width / srcSize.width
+private inline fun computeFillWidth(srcSize: Size, dstSize: Size): Float =
+    dstSize.width / srcSize.width
 
-private fun computeFillHeight(srcSize: Size, dstSize: Size): Float = dstSize.height / srcSize.height
+private inline fun computeFillHeight(srcSize: Size, dstSize: Size): Float =
+    dstSize.height / srcSize.height

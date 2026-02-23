@@ -18,8 +18,9 @@ package androidx.wear.utils;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class for determining whether the given Wear OS device is for China or rest of the world.

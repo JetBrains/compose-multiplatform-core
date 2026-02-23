@@ -21,9 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -37,12 +38,20 @@ public final class CarFeatures {
      * Flag value to check whether or not audio is allowed to play while driving.
      */
     public static final String FEATURE_BACKGROUND_AUDIO_WHILE_DRIVING =
-            "background_audio_while_driving";
+            "com.android.car.background_audio_while_driving";
+
+    /**
+     * Flag value to check whether the system supports apps that use the
+     * CarAppLibrary Media category
+     */
+    public static final String FEATURE_CAR_APP_LIBRARY_MEDIA =
+            "android.software.car.templates_host.media";
 
     @RestrictTo(LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
             FEATURE_BACKGROUND_AUDIO_WHILE_DRIVING,
+            FEATURE_CAR_APP_LIBRARY_MEDIA,
     })
     public @interface CarFeature {}
 
@@ -59,7 +68,7 @@ public final class CarFeatures {
      * @return  Whether the system enables a given CarFeature.
      */
     public static boolean isFeatureEnabled(@NonNull Context context,
-            @NonNull @CarFeature String feature) {
+            @CarFeature @NonNull String feature) {
         PackageManager packageManager = context.getPackageManager();
 
         return packageManager.hasSystemFeature(feature);

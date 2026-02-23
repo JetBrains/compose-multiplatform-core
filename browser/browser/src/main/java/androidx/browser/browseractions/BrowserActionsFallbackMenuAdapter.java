@@ -27,11 +27,12 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.browser.R;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;

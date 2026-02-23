@@ -1,43 +1,39 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.swiperefreshlayout:swiperefreshlayout:1.0.0")
     api("androidx.fragment:fragment:1.2.4")
     api("androidx.recyclerview:recyclerview:1.1.0")
     api("androidx.core:core:1.6.0")
     api("androidx.versionedparcelable:versionedparcelable:1.1.1")
-    api('androidx.dynamicanimation:dynamicanimation:1.0.0')
-    api('androidx.lifecycle:lifecycle-runtime:2.5.1')
+    api("androidx.dynamicanimation:dynamicanimation:1.0.0")
+    api("androidx.lifecycle:lifecycle-runtime:2.5.1")
 
     androidTestImplementation(project(":test:screenshot:screenshot"))
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.truth)
 
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
@@ -52,30 +48,17 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 23
-    }
-
-    sourceSets {
-        main.res.srcDirs += "src/main/res-public"
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear"
-    }
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear"
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
+    namespace = "androidx.wear"
 }
 
 androidx {
     name = "Android Wear"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR
     inceptionYear = "2016"
     description = "Android Wear Support UI"
     failOnDeprecationWarnings = false
-    legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
+    enableRobolectric()
 }

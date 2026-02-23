@@ -23,9 +23,7 @@ import android.os.Build
 import android.view.SurfaceView
 import android.view.TextureView
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.test.core.app.ActivityScenario
@@ -53,33 +51,21 @@ import org.junit.runners.Parameterized
 /** Tests basic UI operation when using CoreTest app. */
 @LargeTest
 @RunWith(Parameterized::class)
-class BasicUITest(private val implName: String, private val cameraConfig: String) {
+class BasicUITest(private val implName: String) {
 
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
-    @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
-            CameraUtil.PreTestCameraIdList(
-                if (implName == Camera2Config::class.simpleName) {
-                    Camera2Config.defaultConfig()
-                } else {
-                    CameraPipeConfig.defaultConfig()
-                }
-            )
+            CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
     @get:Rule
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     // Skip DetectLeaksAfterTestSuccess on API 27 and 29 devices. Some objects (analyzer or taking
@@ -96,10 +82,7 @@ class BasicUITest(private val implName: String, private val cameraConfig: String
         }
 
     private val launchIntent =
-        Intent(ApplicationProvider.getApplicationContext(), CameraXActivity::class.java).apply {
-            putExtra(CameraXActivity.INTENT_EXTRA_CAMERA_IMPLEMENTATION, cameraConfig)
-            putExtra(CameraXActivity.INTENT_EXTRA_CAMERA_IMPLEMENTATION_NO_HISTORY, true)
-        }
+        Intent(ApplicationProvider.getApplicationContext(), CameraXActivity::class.java)
 
     @Before
     fun setUp() {
@@ -206,16 +189,6 @@ class BasicUITest(private val implName: String, private val cameraConfig: String
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(
-                    Camera2Config::class.simpleName,
-                    CameraXViewModel.CAMERA2_IMPLEMENTATION_OPTION
-                ),
-                arrayOf(
-                    CameraPipeConfig::class.simpleName,
-                    CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION
-                )
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName))
     }
 }

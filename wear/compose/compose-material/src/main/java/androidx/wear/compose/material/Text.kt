@@ -107,7 +107,7 @@ public fun Text(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         AnnotatedString(text),
@@ -127,7 +127,7 @@ public fun Text(
         minLines,
         emptyMap(),
         onTextLayout,
-        style
+        style,
     )
 }
 
@@ -183,10 +183,10 @@ public fun Text(
  */
 @Deprecated(
     "Maintained for binary compatibility with Compose for Wear OS 1.1",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun Text(
+public fun Text(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
@@ -202,7 +202,7 @@ fun Text(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         text,
@@ -221,7 +221,7 @@ fun Text(
         maxLines,
         1,
         onTextLayout,
-        style
+        style,
     )
 }
 
@@ -298,7 +298,7 @@ public fun Text(
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     val textColor =
         color.takeOrElse {
@@ -324,7 +324,7 @@ public fun Text(
         minLines = minLines,
         inlineContent = inlineContent,
         onTextLayout = onTextLayout,
-        style = style
+        style = style,
     )
 }
 
@@ -382,10 +382,10 @@ public fun Text(
  */
 @Deprecated(
     "Maintained for binary compatibility with Compose for Wear OS 1.1",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun Text(
+public fun Text(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
@@ -402,7 +402,7 @@ fun Text(
     maxLines: Int = Int.MAX_VALUE,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         text,
@@ -422,7 +422,7 @@ fun Text(
         1,
         inlineContent,
         onTextLayout,
-        style
+        style,
     )
 }
 

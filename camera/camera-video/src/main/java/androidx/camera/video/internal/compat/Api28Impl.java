@@ -19,8 +19,9 @@ package androidx.camera.video.internal.compat;
 import android.media.MediaCodecInfo;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class to avoid verification errors for methods introduced in Android 9 (API 28).
@@ -35,8 +36,8 @@ public final class Api28Impl {
      * Returns the supported range of quality values for
      * {@link MediaCodecInfo.EncoderCapabilities}.
      */
-    @NonNull
-    public static Range<Integer> getQualityRange(@NonNull MediaCodecInfo.EncoderCapabilities caps) {
+    public static @NonNull Range<Integer> getQualityRange(
+            MediaCodecInfo.@NonNull EncoderCapabilities caps) {
         return caps.getQualityRange();
     }
 }

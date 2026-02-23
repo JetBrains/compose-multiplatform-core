@@ -25,17 +25,18 @@ import static org.mockito.Mockito.verify;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link ManagerCache}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class ManagerCacheTest {
     private final ManagerCache mManagers = new ManagerCache();
@@ -52,9 +53,8 @@ public class ManagerCacheTest {
             mManager = manager;
         }
 
-        @NonNull
         @Override
-        public T create() {
+        public @NonNull T create() {
             if (mException != null) {
                 throw mException;
             }
@@ -63,9 +63,8 @@ public class ManagerCacheTest {
     }
 
     private static class SimpleFactory<T extends Manager> implements ManagerFactory<BarManager> {
-        @NonNull
         @Override
-        public BarManager create() {
+        public @NonNull BarManager create() {
             return new BarManager();
         }
     }

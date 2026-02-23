@@ -18,10 +18,11 @@ package com.example.androidx.webkit;
 
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate IsMultiProcessEnabled query.
@@ -33,6 +34,7 @@ public class MultiProcessEnabledActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_is_multi_process_enabled);
         setTitle(R.string.multi_process_enabled_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROCESS)) {

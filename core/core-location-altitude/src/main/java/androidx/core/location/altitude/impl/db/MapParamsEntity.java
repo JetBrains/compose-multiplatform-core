@@ -18,8 +18,6 @@ package androidx.core.location.altitude.impl.db;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.location.altitude.impl.proto.InvalidProtocolBufferException;
 import androidx.core.location.altitude.impl.proto.MapParamsProto;
 import androidx.room.ColumnInfo;
@@ -31,6 +29,8 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.AutoValue.CopyAnnotations;
 
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Defines the entity type and its converters within the MapParams table. */
 @AutoValue
@@ -39,23 +39,20 @@ public abstract class MapParamsEntity {
 
     private static final String TAG = "MapParamsEntity";
 
-    @NonNull
     @Contract("_, _ -> new")
-    static MapParamsEntity create(int id, MapParamsProto value) {
+    static @NonNull MapParamsEntity create(int id, MapParamsProto value) {
         return new AutoValue_MapParamsEntity(id, value);
     }
 
     /** Encodes a {@link MapParamsProto} */
-    @NonNull
     @TypeConverter
-    public static byte[] fromValue(@NonNull MapParamsProto value) {
+    public static byte @NonNull [] fromValue(@NonNull MapParamsProto value) {
         return value.toByteArray();
     }
 
     /** Decodes a {@link MapParamsProto} */
-    @Nullable
     @TypeConverter
-    public static MapParamsProto toValue(@NonNull byte[] byteArray) {
+    public static @Nullable MapParamsProto toValue(byte @NonNull [] byteArray) {
         try {
             return MapParamsProto.parseFrom(byteArray);
         } catch (InvalidProtocolBufferException e) {
@@ -74,6 +71,5 @@ public abstract class MapParamsEntity {
      */
     @CopyAnnotations
     @ColumnInfo(name = "value")
-    @NonNull
-    public abstract MapParamsProto value();
+    public abstract @NonNull MapParamsProto value();
 }

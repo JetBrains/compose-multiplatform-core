@@ -20,11 +20,11 @@ import android.annotation.SuppressLint;
 import android.graphics.Matrix;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-@RequiresApi(21)
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 class ViewUtilsApi21 extends ViewUtilsApi19 {
 
     /**

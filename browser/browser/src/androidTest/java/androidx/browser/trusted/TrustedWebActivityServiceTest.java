@@ -29,14 +29,14 @@ import android.os.RemoteException;
 import android.support.customtabs.trusted.ITrustedWebActivityCallback;
 import android.support.customtabs.trusted.ITrustedWebActivityService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.browser.customtabs.EnableComponentsTestRule;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -133,6 +133,11 @@ public class TrustedWebActivityServiceTest {
             public void onExtraCallback(String callbackName, Bundle args)
                     throws RemoteException {
                 mTestCallback.onExtraCallback(callbackName, args);
+            }
+
+            @Override
+            public int getInterfaceVersion() {
+                return super.VERSION;
             }
         };
 

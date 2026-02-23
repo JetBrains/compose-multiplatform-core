@@ -20,7 +20,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,9 +55,8 @@ public class MultiSelectListPreferenceDialogFragment extends PreferenceDialogFra
     /**
      * @deprecated Use {@link MultiSelectListPreferenceDialogFragmentCompat} instead
      */
-    @NonNull
     @Deprecated
-    public static MultiSelectListPreferenceDialogFragment newInstance(String key) {
+    public static @NonNull MultiSelectListPreferenceDialogFragment newInstance(String key) {
         final MultiSelectListPreferenceDialogFragment fragment =
                 new MultiSelectListPreferenceDialogFragment();
         final Bundle b = new Bundle(1);
@@ -107,7 +106,7 @@ public class MultiSelectListPreferenceDialogFragment extends PreferenceDialogFra
     }
 
     @Override
-    protected void onPrepareDialogBuilder(@NonNull AlertDialog.Builder builder) {
+    protected void onPrepareDialogBuilder(AlertDialog.@NonNull Builder builder) {
         super.onPrepareDialogBuilder(builder);
 
         final int entryCount = mEntryValues.length;

@@ -17,12 +17,13 @@
 package androidx.wear.tiles;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.tiles.proto.EventProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,21 +53,18 @@ public final class EventBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TileAddEvent fromProto(@NonNull EventProto.TileAddEvent proto) {
+        public static @NonNull TileAddEvent fromProto(EventProto.@NonNull TileAddEvent proto) {
             return new TileAddEvent(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public EventProto.TileAddEvent toProto() {
+        public EventProto.@NonNull TileAddEvent toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "TileAddEvent{" + "tileId=" + getTileId() + "}";
         }
 
@@ -84,15 +82,13 @@ public final class EventBuilders {
              * carousel. This ID will remain the same for this tile instance as long it is not
              * removed from the carousel.
              */
-            @NonNull
-            public Builder setTileId(int tileId) {
+            public @NonNull Builder setTileId(int tileId) {
                 mImpl.setTileId(tileId);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TileAddEvent build() {
+            public @NonNull TileAddEvent build() {
                 return TileAddEvent.fromProto(mImpl.build());
             }
         }
@@ -118,21 +114,19 @@ public final class EventBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TileRemoveEvent fromProto(@NonNull EventProto.TileRemoveEvent proto) {
+        public static @NonNull TileRemoveEvent fromProto(
+                EventProto.@NonNull TileRemoveEvent proto) {
             return new TileRemoveEvent(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public EventProto.TileRemoveEvent toProto() {
+        public EventProto.@NonNull TileRemoveEvent toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "TileRemoveEvent{" + "tileId=" + getTileId() + "}";
         }
 
@@ -149,15 +143,13 @@ public final class EventBuilders {
              * Sets instance ID of the removed tile, allocated when the tile instance was added to
              * the carousel.
              */
-            @NonNull
-            public Builder setTileId(int tileId) {
+            public @NonNull Builder setTileId(int tileId) {
                 mImpl.setTileId(tileId);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TileRemoveEvent build() {
+            public @NonNull TileRemoveEvent build() {
                 return TileRemoveEvent.fromProto(mImpl.build());
             }
         }
@@ -183,21 +175,18 @@ public final class EventBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TileEnterEvent fromProto(@NonNull EventProto.TileEnterEvent proto) {
+        public static @NonNull TileEnterEvent fromProto(EventProto.@NonNull TileEnterEvent proto) {
             return new TileEnterEvent(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public EventProto.TileEnterEvent toProto() {
+        public EventProto.@NonNull TileEnterEvent toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "TileEnterEvent{" + "tileId=" + getTileId() + "}";
         }
 
@@ -215,15 +204,13 @@ public final class EventBuilders {
              * carousel. This ID will remain the same for this tile instance as long it is not
              * removed from the carousel.
              */
-            @NonNull
-            public Builder setTileId(int tileId) {
+            public @NonNull Builder setTileId(int tileId) {
                 mImpl.setTileId(tileId);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TileEnterEvent build() {
+            public @NonNull TileEnterEvent build() {
                 return TileEnterEvent.fromProto(mImpl.build());
             }
         }
@@ -252,21 +239,18 @@ public final class EventBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TileLeaveEvent fromProto(@NonNull EventProto.TileLeaveEvent proto) {
+        public static @NonNull TileLeaveEvent fromProto(EventProto.@NonNull TileLeaveEvent proto) {
             return new TileLeaveEvent(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public EventProto.TileLeaveEvent toProto() {
+        public EventProto.@NonNull TileLeaveEvent toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "TileLeaveEvent{" + "tileId=" + getTileId() + "}";
         }
 
@@ -284,15 +268,13 @@ public final class EventBuilders {
              * carousel. This ID will remain the same for this tile instance as long it is not
              * removed from the carousel.
              */
-            @NonNull
-            public Builder setTileId(int tileId) {
+            public @NonNull Builder setTileId(int tileId) {
                 mImpl.setTileId(tileId);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TileLeaveEvent build() {
+            public @NonNull TileLeaveEvent build() {
                 return TileLeaveEvent.fromProto(mImpl.build());
             }
         }
@@ -347,29 +329,25 @@ public final class EventBuilders {
          * Instant#now()} (Created at the time of {@link
          * TileInteractionEvent.Builder#Builder(int,int)} constructor call) if not provided.
          */
-        @NonNull
-        public Instant getTimestamp() {
+        public @NonNull Instant getTimestamp() {
             return Instant.ofEpochMilli(mImpl.getTimestampEpochMillis());
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TileInteractionEvent fromProto(
-                @NonNull EventProto.TileInteractionEvent proto) {
+        public static @NonNull TileInteractionEvent fromProto(
+                EventProto.@NonNull TileInteractionEvent proto) {
             return new TileInteractionEvent(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public EventProto.TileInteractionEvent toProto() {
+        public EventProto.@NonNull TileInteractionEvent toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "TileInteractionEvent{"
                     + "tileId="
                     + getTileId()
@@ -382,8 +360,7 @@ public final class EventBuilders {
 
         /** Builder for {@link TileInteractionEvent} */
         public static final class Builder {
-            @NonNull
-            private final EventProto.TileInteractionEvent.Builder mImpl =
+            private final EventProto.TileInteractionEvent.@NonNull Builder mImpl =
                     EventProto.TileInteractionEvent.newBuilder();
 
             /** Interface so this Builder can retrieve the current time. */
@@ -441,15 +418,13 @@ public final class EventBuilders {
              * call) if not provided.
              */
             @RequiresSchemaVersion(major = 1, minor = 400)
-            @NonNull
-            public Builder setTimestamp(@NonNull Instant instant) {
+            public @NonNull Builder setTimestamp(@NonNull Instant instant) {
                 mImpl.setTimestampEpochMillis(instant.toEpochMilli());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TileInteractionEvent build() {
+            public @NonNull TileInteractionEvent build() {
                 return TileInteractionEvent.fromProto(mImpl.build());
             }
         }

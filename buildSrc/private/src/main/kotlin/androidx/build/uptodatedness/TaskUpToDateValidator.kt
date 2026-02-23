@@ -47,7 +47,6 @@ private const val ENABLE_FLAG_NAME = VERIFY_UP_TO_DATE
 val ALLOW_RERUNNING_TASKS =
     setOf(
         "buildOnServer",
-        "checkExternalLicenses",
         // verifies the existence of some archives to check for caching bugs: http://b/273294710
         "createAllArchives",
         "externalNativeBuildDebug",
@@ -126,7 +125,6 @@ val ALLOW_RERUNNING_TASKS =
         ":datastore:datastore-preferences-proto:extractIncludeTestProto",
         ":glance:glance-appwidget-proto:extractIncludeTestProto",
         ":health:connect:connect-client-proto:extractIncludeTestProto",
-        ":privacysandbox:tools:tools-core:extractIncludeTestProto",
         ":test:screenshot:screenshot-proto:extractIncludeTestProto",
         ":wear:protolayout:protolayout-proto:extractIncludeTestProto",
         ":wear:tiles:tiles-proto:extractIncludeTestProto",
@@ -136,6 +134,8 @@ val ALLOW_RERUNNING_TASKS =
 
         // https://youtrack.jetbrains.com/issue/KT-70008
         "kotlinNpmCachesSetup",
+        "kotlinKotlinNpmCachesSetup",
+        "kotlinWasmKotlinNpmCachesSetup",
     )
 
 // Additional tasks that are expected to be temporarily out-of-date after running once
@@ -156,6 +156,17 @@ val DONT_TRY_RERUNNING_TASKS =
 
         // https://github.com/spdx/spdx-gradle-plugin/issues/18
         "spdxSbomForRelease",
+
+        // Task not cacheable, will always rerun.
+        "validateIntegrationPatches",
+
+        // b/446696375
+        // no outputs, not cachable. Internal type so can't access via withType and
+        // .cacheEvenIfNoOutputs
+        "kmpPartiallyResolvedDependenciesChecker",
+
+        // Input is all of frameworks/support with a filter sometimes causing invalidations.
+        "zipOwnersFiles",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =
@@ -222,10 +233,7 @@ abstract class TaskUpToDateValidator :
                 return true
             }
             val taskName = taskPath.substringAfterLast(":")
-            if (ALLOW_RERUNNING_TASKS.contains(taskName)) {
-                return true
-            }
-            return false
+            return ALLOW_RERUNNING_TASKS.contains(taskName)
         }
 
         private fun shouldTryRerunningTask(task: Task): Boolean {
@@ -248,7 +256,7 @@ abstract class TaskUpToDateValidator :
             val validatorProvider =
                 project.gradle.sharedServices.registerIfAbsent(
                     "TaskUpToDateValidator",
-                    TaskUpToDateValidator::class.java
+                    TaskUpToDateValidator::class.java,
                 ) { spec ->
                     spec.parameters.validate = validate
                 }

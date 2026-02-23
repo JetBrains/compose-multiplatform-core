@@ -19,10 +19,11 @@ package androidx.camera.core.internal.utils;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains utility methods related to UseCaseConfig.
@@ -39,7 +40,7 @@ public final class UseCaseConfigUtil {
      * {@link Surface#ROTATION_270}.
      */
     public static void updateTargetRotationAndRelatedConfigs(
-            @NonNull UseCaseConfig.Builder<?, ?, ?> builder, int newRotation) {
+            UseCaseConfig.@NonNull Builder<?, ?, ?> builder, int newRotation) {
         ImageOutputConfig config = (ImageOutputConfig) builder.getUseCaseConfig();
         int oldRotation = config.getTargetRotation(ImageOutputConfig.INVALID_ROTATION);
 

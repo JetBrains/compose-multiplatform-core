@@ -19,8 +19,9 @@ package androidx.transition;
 import android.annotation.SuppressLint;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 @RequiresApi(22)
 class ViewUtilsApi22 extends ViewUtilsApi21 {

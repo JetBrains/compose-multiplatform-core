@@ -31,21 +31,19 @@ import static androidx.camera.core.impl.utils.TransformUtils.isMirrored;
 import static androidx.camera.core.impl.utils.TransformUtils.rotateSize;
 import static androidx.camera.core.impl.utils.TransformUtils.within360;
 import static androidx.camera.core.streamsharing.DynamicRangeUtils.resolveDynamicRange;
+import static androidx.core.util.Preconditions.checkNotNull;
 import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Objects.requireNonNull;
 
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
-import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.DynamicRange;
@@ -68,6 +66,10 @@ import androidx.camera.core.processing.SurfaceEdge;
 import androidx.camera.core.processing.concurrent.DualOutConfig;
 import androidx.camera.core.processing.util.OutConfig;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -84,36 +86,25 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
 
     private static final String TAG = "VirtualCameraAdapter";
     // Children UseCases associated with this virtual camera.
-    @NonNull
-    final Set<UseCase> mChildren;
+    final @NonNull Set<UseCase> mChildren;
     // Specs for children UseCase, calculated and set by StreamSharing.
-    @NonNull
-    final Map<UseCase, SurfaceEdge> mChildrenEdges = new HashMap<>();
-    @NonNull
-    private final Map<UseCase, VirtualCamera> mChildrenVirtualCameras = new HashMap<>();
+    final @NonNull Map<UseCase, SurfaceEdge> mChildrenEdges = new HashMap<>();
+    private final @NonNull Map<UseCase, VirtualCamera> mChildrenVirtualCameras = new HashMap<>();
     // Whether a children is in the active state. See: UseCase.State.ACTIVE
-    @NonNull
-    final Map<UseCase, Boolean> mChildrenActiveState = new HashMap<>();
+    final @NonNull Map<UseCase, Boolean> mChildrenActiveState = new HashMap<>();
     // Config factory for getting children's config.
-    @NonNull
-    private final UseCaseConfigFactory mUseCaseConfigFactory;
+    private final @NonNull UseCaseConfigFactory mUseCaseConfigFactory;
     // The parent camera instance.
-    @NonNull
-    private final CameraInternal mParentCamera;
+    private final @NonNull CameraInternal mParentCamera;
     // The parent secondary camera instance in dual camera case.
-    @Nullable
-    private final CameraInternal mSecondaryParentCamera;
+    private final @Nullable CameraInternal mSecondaryParentCamera;
     // The callback that receives the parent camera's metadata.
-    @NonNull
-    private final CameraCaptureCallback mParentMetadataCallback = createCameraCaptureCallback();
-    @NonNull
-    private final Set<UseCaseConfig<?>> mChildrenConfigs;
-    @NonNull
-    private final Map<UseCase, UseCaseConfig<?>> mChildrenConfigsMap;
-    @NonNull
-    private final ResolutionsMerger mResolutionsMerger;
-    @Nullable
-    private ResolutionsMerger mSecondaryResolutionsMerger;
+    private final @NonNull CameraCaptureCallback mParentMetadataCallback =
+            createCameraCaptureCallback();
+    private final @NonNull Set<UseCaseConfig<?>> mChildrenConfigs;
+    private final @NonNull Map<UseCase, UseCaseConfig<?>> mChildrenConfigsMap;
+    private final @NonNull ResolutionsMerger mResolutionsMerger;
+    private @Nullable ResolutionsMerger mSecondaryResolutionsMerger;
 
     /**
      * @param parentCamera         the parent {@link CameraInternal} instance. For example, the
@@ -125,7 +116,7 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
             @Nullable CameraInternal secondaryParentCamera,
             @NonNull Set<UseCase> children,
             @NonNull UseCaseConfigFactory useCaseConfigFactory,
-            @NonNull StreamSharing.Control streamSharingControl) {
+            StreamSharing.@NonNull Control streamSharingControl) {
         mParentCamera = parentCamera;
         mSecondaryParentCamera = secondaryParentCamera;
         mUseCaseConfigFactory = useCaseConfigFactory;
@@ -177,16 +168,17 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
 
         // Merge Preview stabilization and video stabilization configs.
         for (UseCase useCase : mChildren) {
-            if (useCase.getCurrentConfig().getVideoStabilizationMode()
+            UseCaseConfig<?> useCaseConfig = requireNonNull(mChildrenConfigsMap.get(useCase));
+            if (useCaseConfig.getVideoStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getVideoStabilizationMode());
+                        useCaseConfig.getVideoStabilizationMode());
             }
 
-            if (useCase.getCurrentConfig().getPreviewStabilizationMode()
+            if (useCaseConfig.getPreviewStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getPreviewStabilizationMode());
+                        useCaseConfig.getPreviewStabilizationMode());
             }
         }
     }
@@ -207,40 +199,104 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         }
     }
 
-    void notifyStateAttached() {
+    void notifySessionStart() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateAttached();
+            useCase.onSessionStart();
         }
     }
 
-    void notifyStateDetached() {
+    void notifySessionStop() {
         for (UseCase useCase : mChildren) {
-            useCase.onStateDetached();
+            useCase.onSessionStop();
         }
     }
 
-    @NonNull
-    Set<UseCase> getChildren() {
+    void notifyCameraControlReady() {
+        for (UseCase useCase : mChildren) {
+            useCase.onCameraControlReady();
+        }
+    }
+
+    @NonNull Set<UseCase> getChildren() {
         return mChildren;
     }
 
     /**
      * Gets {@link OutConfig} for children {@link UseCase} based on the input edge.
      */
-    @NonNull
-    Map<UseCase, OutConfig> getChildrenOutConfigs(@NonNull SurfaceEdge sharingInputEdge,
-            @ImageOutputConfig.RotationValue int parentTargetRotation, boolean isViewportSet) {
+    @NonNull Map<UseCase, OutConfig> getChildrenOutConfigs(
+            @NonNull SurfaceEdge sharingInputEdge,
+            @ImageOutputConfig.RotationValue int parentTargetRotation, boolean isViewportSet,
+            boolean skipMirroring) {
         Map<UseCase, OutConfig> outConfigs = new HashMap<>();
         for (UseCase useCase : mChildren) {
             OutConfig outConfig = calculateOutConfig(useCase, mResolutionsMerger,
-                    mParentCamera, sharingInputEdge, parentTargetRotation, isViewportSet);
+                    mParentCamera, sharingInputEdge, parentTargetRotation, isViewportSet,
+                    skipMirroring);
+            updateVirtualCameraRotationDegrees(useCase);
+
             outConfigs.put(useCase, outConfig);
         }
+
         return outConfigs;
     }
 
-    @NonNull
-    Map<UseCase, DualOutConfig> getChildrenOutConfigs(
+    private void updateVirtualCameraRotationDegrees(UseCase useCase) {
+        int childRotationDegrees = getChildRotationDegrees(useCase, mParentCamera);
+        requireNonNull(mChildrenVirtualCameras.get(useCase))
+                .setRotationDegrees(childRotationDegrees);
+    }
+
+    /**
+     * Gets original selected size for children {@link UseCase} based on the input edge.
+     */
+    @NonNull Map<UseCase, Size> getSelectedChildSizes(@NonNull SurfaceEdge sharingInputEdge,
+            boolean isViewportSet) {
+        Map<UseCase, Size> selectedChildSizes = new HashMap<>();
+        for (UseCase useCase : mChildren) {
+            PreferredChildSize preferredChildSize = mResolutionsMerger
+                    .getPreferredChildSize(
+                            requireNonNull(mChildrenConfigsMap.get(useCase)),
+                            sharingInputEdge.getCropRect(),
+                            getRotationDegrees(sharingInputEdge.getSensorToBufferTransform()),
+                            isViewportSet);
+            selectedChildSizes.put(useCase, preferredChildSize.getOriginalSelectedChildSize());
+            Logger.d(TAG,
+                    "Selected child size: " + preferredChildSize.getOriginalSelectedChildSize()
+                            + ", useCase: " + useCase);
+        }
+        return selectedChildSizes;
+    }
+
+    @Nullable
+    private Preview getPreviewFromChildren() {
+        for (UseCase child : mChildren) {
+            if (child instanceof Preview) {
+                return (Preview) child;
+            }
+        }
+        return null;
+    }
+
+    @NonNull DualOutConfig getChildPreviewOutConfig(
+            @NonNull SurfaceEdge primaryInputSurfaceEdge,
+            @NonNull SurfaceEdge secondaryInputSurfaceEdge,
+            @ImageOutputConfig.RotationValue int parentTargetRotation,
+            boolean isViewportSet
+    ) {
+        Preview preview = checkNotNull(getPreviewFromChildren());
+        OutConfig primaryoutConfig = calculateOutConfig(
+                preview, mResolutionsMerger,
+                mParentCamera, primaryInputSurfaceEdge, parentTargetRotation, isViewportSet,
+                /* skipMirroring */ false);
+        OutConfig secondaryOutConfig = calculateOutConfig(
+                preview, mResolutionsMerger,
+                mSecondaryParentCamera, secondaryInputSurfaceEdge, parentTargetRotation,
+                isViewportSet, /* skipMirroring */ false);
+        return DualOutConfig.of(primaryoutConfig, secondaryOutConfig);
+    }
+
+    @NonNull Map<UseCase, DualOutConfig> getChildrenOutConfigs(
             @NonNull SurfaceEdge primaryInputEdge,
             @NonNull SurfaceEdge secondaryInputEdge,
             @ImageOutputConfig.RotationValue int parentTargetRotation,
@@ -251,63 +307,66 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
             OutConfig primaryOutConfig = calculateOutConfig(
                     useCase, mResolutionsMerger,
                     mParentCamera, primaryInputEdge,
-                    parentTargetRotation, isViewportSet);
+                    parentTargetRotation, isViewportSet,
+                    /* skipMirroring */ false);
             // secondary
             OutConfig secondaryOutConfig = calculateOutConfig(
-                    useCase, mSecondaryResolutionsMerger,
+                    useCase, requireNonNull(mSecondaryResolutionsMerger),
                     requireNonNull(mSecondaryParentCamera),
                     secondaryInputEdge,
-                    parentTargetRotation, isViewportSet);
+                    parentTargetRotation, isViewportSet,
+                    /* skipMirroring */ false);
+
+            updateVirtualCameraRotationDegrees(useCase);
             outConfigs.put(useCase, DualOutConfig.of(
                     primaryOutConfig, secondaryOutConfig));
         }
         return outConfigs;
     }
 
-    @NonNull
-    private OutConfig calculateOutConfig(
+    private @NonNull OutConfig calculateOutConfig(
             @NonNull UseCase useCase,
             @NonNull ResolutionsMerger resolutionsMerger,
             @NonNull CameraInternal cameraInternal,
             @Nullable SurfaceEdge cameraInputEdge,
             @ImageOutputConfig.RotationValue int parentTargetRotation,
-            boolean isViewportSet) {
+            boolean isViewportSet,
+            boolean skipMirroring) {
         // TODO: we might be able to extract parent rotation degrees from the input edge's
         //  sensor-to-buffer matrix and the mirroring bit.
         int parentRotationDegrees = cameraInternal.getCameraInfo()
                 .getSensorRotationDegrees(parentTargetRotation);
         boolean parentIsMirrored = isMirrored(
                 cameraInputEdge.getSensorToBufferTransform());
-        Pair<Rect, Size> preferredSizePair = resolutionsMerger
-                .getPreferredChildSizePair(
+        PreferredChildSize preferredChildSize = resolutionsMerger
+                .getPreferredChildSize(
                         requireNonNull(mChildrenConfigsMap.get(useCase)),
                         cameraInputEdge.getCropRect(),
                         getRotationDegrees(cameraInputEdge.getSensorToBufferTransform()),
                         isViewportSet);
-        Rect cropRectBeforeScaling = preferredSizePair.first;
-        Size childSizeToScale = preferredSizePair.second;
+        Rect cropRectBeforeScaling = preferredChildSize.getCropRectBeforeScaling();
+        Size childSizeToScale = preferredChildSize.getChildSizeToScale();
 
-        // Only use primary camera info for output surface
-        int childRotationDegrees = getChildRotationDegrees(useCase, mParentCamera);
-        requireNonNull(mChildrenVirtualCameras.get(useCase))
-                .setRotationDegrees(childRotationDegrees);
+        int childRotationDegrees = getChildRotationDegrees(useCase, cameraInternal);
         int childParentDelta = within360(cameraInputEdge.getRotationDegrees()
                 + childRotationDegrees - parentRotationDegrees);
+        // if not skipMirroring, we do the mirroring if the parent and the child disagrees.
+        boolean doMirroring = skipMirroring ? false
+                : useCase.isMirroringRequired(cameraInternal) ^ parentIsMirrored;
         return OutConfig.of(
                 getChildTargetType(useCase),
                 getChildFormat(useCase),
                 cropRectBeforeScaling,
                 rotateSize(childSizeToScale, childParentDelta),
                 childParentDelta,
-                // Only mirror if the parent and the child disagrees.
-                useCase.isMirroringRequired(cameraInternal)
-                        ^ parentIsMirrored);
+                doMirroring);
     }
 
     /**
      * Update children {@link SurfaceEdge} calculated by {@link StreamSharing}.
      */
-    void setChildrenEdges(@NonNull Map<UseCase, SurfaceEdge> childrenEdges) {
+    void setChildrenEdges(@NonNull Map<UseCase, SurfaceEdge> childrenEdges,
+            @NonNull Map<UseCase, @NonNull Size> selectedChildSizes) {
         mChildrenEdges.clear();
         mChildrenEdges.putAll(childrenEdges);
         for (Map.Entry<UseCase, SurfaceEdge> entry : mChildrenEdges.entrySet()) {
@@ -315,7 +374,9 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
             SurfaceEdge surfaceEdge = entry.getValue();
             useCase.setViewPortCropRect(surfaceEdge.getCropRect());
             useCase.setSensorToBufferTransformMatrix(surfaceEdge.getSensorToBufferTransform());
-            useCase.updateSuggestedStreamSpec(surfaceEdge.getStreamSpec(), null);
+            StreamSpec streamSpec = getChildStreamSpec(useCase, surfaceEdge.getStreamSpec(),
+                    selectedChildSizes);
+            useCase.updateSuggestedStreamSpec(streamSpec, null);
             useCase.notifyState();
         }
     }
@@ -333,8 +394,7 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
     /**
      * Gets the callback for receiving parent camera's metadata.
      */
-    @NonNull
-    CameraCaptureCallback getParentMetadataCallback() {
+    @NonNull CameraCaptureCallback getParentMetadataCallback() {
         return mParentMetadataCallback;
     }
 
@@ -410,6 +470,17 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         return cameraInternal.getCameraInfo().getSensorRotationDegrees(childTargetRotation);
     }
 
+    @NonNull
+    private static StreamSpec getChildStreamSpec(@NonNull UseCase useCase,
+            @NonNull StreamSpec baseStreamSpec, @NonNull Map<UseCase, Size> selectedChildSizes) {
+        StreamSpec.Builder builder = baseStreamSpec.toBuilder();
+        Size selectedChildSize = selectedChildSizes.get(useCase);
+        if (selectedChildSize != null) {
+            builder.setOriginalConfiguredResolution(selectedChildSize);
+        }
+        return builder.build();
+    }
+
     private static int getChildFormat(@NonNull UseCase useCase) {
         return useCase instanceof ImageCapture ? ImageFormat.JPEG
                 : INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
@@ -426,8 +497,7 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         }
     }
 
-    @NonNull
-    private static Map<UseCase, UseCaseConfig<?>> toChildrenConfigsMap(
+    private static @NonNull Map<UseCase, UseCaseConfig<?>> toChildrenConfigsMap(
             @NonNull CameraInternal parentCamera, @NonNull Set<UseCase> children,
             @NonNull UseCaseConfigFactory useCaseConfigFactory) {
         Map<UseCase, UseCaseConfig<?>> result = new HashMap<>();
@@ -449,8 +519,7 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         return highestPriority;
     }
 
-    @NonNull
-    private SurfaceEdge getUseCaseEdge(@NonNull UseCase useCase) {
+    private @NonNull SurfaceEdge getUseCaseEdge(@NonNull UseCase useCase) {
         return requireNonNull(mChildrenEdges.get(useCase));
     }
 
@@ -479,8 +548,7 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
      * Gets the {@link DeferrableSurface} associated with the child.
      */
     @VisibleForTesting
-    @Nullable
-    static DeferrableSurface getChildSurface(@NonNull UseCase child) {
+    static @Nullable DeferrableSurface getChildSurface(@NonNull UseCase child) {
         // Get repeating Surface for preview & video, regular Surface for image capture.
         List<DeferrableSurface> surfaces = child instanceof ImageCapture
                 ? child.getSessionConfig().getSurfaces() :
@@ -493,17 +561,28 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
     }
 
     CameraCaptureCallback createCameraCaptureCallback() {
-        return new CameraCaptureCallback() {
-            @Override
-            public void onCaptureCompleted(int captureConfigId,
-                    @NonNull CameraCaptureResult cameraCaptureResult) {
-                super.onCaptureCompleted(captureConfigId, cameraCaptureResult);
-                for (UseCase child : mChildren) {
+        // Use static class + WeakReference to avoid the reference being held in
+        // CameraCaptureCallback. On some device, the cameraCaptureCallback could be held in
+        // camera framework.
+        return new VirtualCameraCaptureCallback(this);
+    }
+
+    static class VirtualCameraCaptureCallback extends CameraCaptureCallback {
+        private final WeakReference<VirtualCameraAdapter> mVirtualCameraAdapterRef;
+        VirtualCameraCaptureCallback(VirtualCameraAdapter virtualCameraAdapter) {
+            mVirtualCameraAdapterRef = new WeakReference<>(virtualCameraAdapter);
+        }
+        @Override
+        public void onCaptureCompleted(int captureConfigId,
+                @NonNull CameraCaptureResult cameraCaptureResult) {
+            VirtualCameraAdapter virtualCameraAdapter = mVirtualCameraAdapterRef.get();
+            if (virtualCameraAdapter != null) {
+                for (UseCase child : virtualCameraAdapter.mChildren) {
                     sendCameraCaptureResultToChild(cameraCaptureResult,
                             child.getSessionConfig(), captureConfigId);
                 }
             }
-        };
+        }
     }
 
     static void sendCameraCaptureResultToChild(
@@ -524,14 +603,13 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
      * <p>Tries to return a intersected frame rate range in priority. If it can't be found, return
      * the smallest range that includes both frame rate ranges.
      */
-    @NonNull
-    private static Range<Integer> resolveTargetFrameRate(
+    private static @NonNull Range<Integer> resolveTargetFrameRate(
             @NonNull Set<UseCaseConfig<?>> useCaseConfigs) {
         Range<Integer> resolvedTargetFrameRate = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 
         for (UseCaseConfig<?> useCaseConfig : useCaseConfigs) {
-            Range<Integer> targetFrameRate = useCaseConfig.getTargetFrameRate(
-                    resolvedTargetFrameRate);
+            Range<Integer> targetFrameRate = requireNonNull(useCaseConfig.getTargetFrameRate(
+                    resolvedTargetFrameRate));
 
             if (StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED.equals(resolvedTargetFrameRate)) {
                 resolvedTargetFrameRate = targetFrameRate;

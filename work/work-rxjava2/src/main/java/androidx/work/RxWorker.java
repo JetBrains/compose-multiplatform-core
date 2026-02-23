@@ -21,7 +21,6 @@ import static androidx.concurrent.futures.CallbackToFutureAdapter.getFuture;
 import android.content.Context;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.work.impl.utils.SynchronousExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -32,6 +31,8 @@ import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -63,9 +64,8 @@ public abstract class RxWorker extends ListenableWorker {
         super(appContext, workerParams);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Result> startWork() {
+    public @NonNull ListenableFuture<Result> startWork() {
         return convert(createWork());
     }
 
@@ -120,9 +120,8 @@ public abstract class RxWorker extends ListenableWorker {
      * <p>
      * Use {@link #setCompletableProgress(Data)} instead.
      */
-    @NonNull
     @Deprecated
-    public final Single<Void> setProgress(@NonNull Data data) {
+    public final @NonNull Single<Void> setProgress(@NonNull Data data) {
         return Single.fromFuture(setProgressAsync(data));
     }
 
@@ -133,14 +132,12 @@ public abstract class RxWorker extends ListenableWorker {
      * @param data The progress {@link Data}
      * @return The {@link Completable}
      */
-    @NonNull
-    public final Completable setCompletableProgress(@NonNull Data data) {
+    public final @NonNull Completable setCompletableProgress(@NonNull Data data) {
         return Completable.fromFuture(setProgressAsync(data));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
+    public @NonNull ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
         return convert(getForegroundInfo());
     }
 
@@ -161,8 +158,7 @@ public abstract class RxWorker extends ListenableWorker {
      * is marked immediate. For more information look at
      * {@link WorkRequest.Builder#setExpedited(OutOfQuotaPolicy)}.
      */
-    @NonNull
-    public Single<ForegroundInfo> getForegroundInfo() {
+    public @NonNull Single<ForegroundInfo> getForegroundInfo() {
         String message =
                 "Expedited WorkRequests require a RxWorker to provide an implementation for"
                         + " `getForegroundInfo()`";
@@ -191,8 +187,7 @@ public abstract class RxWorker extends ListenableWorker {
      * @return A {@link Completable} which resolves after the {@link RxWorker}
      * transitions to running in the context of a foreground {@link android.app.Service}.
      */
-    @NonNull
-    public final Completable setForeground(@NonNull ForegroundInfo foregroundInfo) {
+    public final @NonNull Completable setForeground(@NonNull ForegroundInfo foregroundInfo) {
         return Completable.fromFuture(setForegroundAsync(foregroundInfo));
     }
 

@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -78,7 +79,7 @@ fun TriStateCheckboxSample() {
         TriStateCheckbox(
             state = parentState,
             onClick = onParentClick,
-            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colors.primary)
+            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colors.primary),
         )
         Spacer(Modifier.size(25.dp))
         Column(Modifier.padding(10.dp, 0.dp, 0.dp, 0.dp)) {
@@ -89,6 +90,7 @@ fun TriStateCheckboxSample() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FocusedCheckboxSample() {
     Text("The gray circle around this checkbox means it's non-touch focused.  Press Tab to move it")
@@ -98,7 +100,7 @@ fun FocusedCheckboxSample() {
         Checkbox(
             modifier = Modifier.wrapContentSize(Alignment.TopStart).focusRequester(focusRequester),
             checked = true,
-            onCheckedChange = {}
+            onCheckedChange = {},
         )
     }
 
@@ -165,19 +167,19 @@ fun RadioGroupSample() {
                     .selectable(
                         selected = (text == selectedOption),
                         onClick = { onOptionSelected(text) },
-                        role = Role.RadioButton
+                        role = Role.RadioButton,
                     )
                     .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(
                     selected = (text == selectedOption),
-                    onClick = null // null recommended for accessibility with screenreaders
+                    onClick = null, // null recommended for accessibility with screenreaders
                 )
                 Text(
                     text = text,
                     style = MaterialTheme.typography.body1.merge(),
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp),
                 )
             }
         }

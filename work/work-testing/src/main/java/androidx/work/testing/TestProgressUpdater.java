@@ -20,13 +20,14 @@ import static androidx.concurrent.futures.CallbackToFutureAdapter.getFuture;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.Logger;
 import androidx.work.ProgressUpdater;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -37,9 +38,8 @@ import java.util.UUID;
 public class TestProgressUpdater implements ProgressUpdater {
     private static final String TAG = Logger.tagWithPrefix("TestProgressUpdater");
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> updateProgress(
+    public @NonNull ListenableFuture<Void> updateProgress(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull Data data) {

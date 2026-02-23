@@ -34,13 +34,14 @@ import android.text.style.MetricAffectingSpan;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -59,10 +60,9 @@ import java.util.concurrent.FutureTask;
  * layout information will be included in this instance, {@link android.widget.TextView} or
  * {@link StaticLayout} will not have to recalculate this information.
  *
- * On API 29 or later, there is full PrecomputedText support by framework. From API 21 to API 27,
+ * On API 29 or later, there is full PrecomputedText support by framework. From API 23 to API 27,
  * PrecomputedTextCompat relies on internal text layout cache. PrecomputedTextCompat immediately
- * computes the text layout in the constuctor to warm up the internal text layout cache. On API 20
- * or before, PrecomputedTextCompat does nothing.
+ * computes the text layout in the constructor to warm up the internal text layout cache.
  *
  * Note that any {@link android.text.NoCopySpan} attached to the original text won't be passed to
  * PrecomputedText.
@@ -115,12 +115,8 @@ public class PrecomputedTextCompat implements Spannable {
              */
             public Builder(@NonNull TextPaint paint) {
                 mPaint = paint;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    mBreakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY;
-                    mHyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL;
-                } else {
-                    mBreakStrategy = mHyphenationFrequency = 0;
-                }
+                mBreakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY;
+                mHyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NORMAL;
                 mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
             }
 
@@ -129,14 +125,11 @@ public class PrecomputedTextCompat implements Spannable {
              *
              * The default value is {@link Layout#BREAK_STRATEGY_HIGH_QUALITY}.
              *
-             * On API 22 and below, this has no effect as there is no line break strategy.
-             *
              * @param strategy the break strategy
              * @return PrecomputedTextCompat.Builder instance
              * @see StaticLayout.Builder#setBreakStrategy
              * @see android.widget.TextView#setBreakStrategy
              */
-            @RequiresApi(23)
             public Builder setBreakStrategy(int strategy) {
                 mBreakStrategy = strategy;
                 return this;
@@ -147,14 +140,11 @@ public class PrecomputedTextCompat implements Spannable {
              *
              * The default value is {@link Layout#HYPHENATION_FREQUENCY_NORMAL}.
              *
-             * On API 22 and below, this has no effect as there is no hyphenation frequency.
-             *
              * @param frequency the hyphenation frequency
              * @return PrecomputedTextCompat.Builder instance
              * @see StaticLayout.Builder#setHyphenationFrequency
              * @see android.widget.TextView#setHyphenationFrequency
              */
-            @RequiresApi(23)
             public Builder setHyphenationFrequency(int frequency) {
                 mHyphenationFrequency = frequency;
                 return this;
@@ -164,9 +154,6 @@ public class PrecomputedTextCompat implements Spannable {
              * Set the text direction heuristic.
              *
              * The default value is {@link TextDirectionHeuristics#FIRSTSTRONG_LTR}.
-             *
-             * On API 17 or before, text direction heuristics cannot be modified, so this method
-             * does nothing.
              *
              * @param textDir the text direction heuristic for resolving bidi behavior
              * @return PrecomputedTextCompat.Builder instance
@@ -205,7 +192,7 @@ public class PrecomputedTextCompat implements Spannable {
         }
 
         @RequiresApi(28)
-        public Params(@NonNull PrecomputedText.Params wrapped) {
+        public Params(PrecomputedText.@NonNull Params wrapped) {
             mPaint = wrapped.getTextPaint();
             mTextDir = wrapped.getTextDirection();
             mBreakStrategy = wrapped.getBreakStrategy();
@@ -225,9 +212,6 @@ public class PrecomputedTextCompat implements Spannable {
         /**
          * Returns the {@link TextDirectionHeuristic} for this text.
          *
-         * On API 17 and below, this returns null, otherwise returns non-null
-         * TextDirectionHeuristic.
-         *
          * @return the {@link TextDirectionHeuristic}
          */
         public @Nullable TextDirectionHeuristic getTextDirection() {
@@ -237,11 +221,8 @@ public class PrecomputedTextCompat implements Spannable {
         /**
          * Returns the break strategy for this text.
          *
-         * On API 22 and below, this returns 0.
-         *
          * @return the line break strategy
          */
-        @RequiresApi(23)
         public int getBreakStrategy() {
             return mBreakStrategy;
         }
@@ -249,11 +230,8 @@ public class PrecomputedTextCompat implements Spannable {
         /**
          * Returns the hyphenation frequency for this text.
          *
-         * On API 22 and below, this returns 0.
-         *
          * @return the hyphenation frequency
          */
-        @RequiresApi(23)
         public int getHyphenationFrequency() {
             return mHyphenationFrequency;
         }
@@ -264,15 +242,12 @@ public class PrecomputedTextCompat implements Spannable {
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public boolean equalsWithoutTextDirection(@NonNull Params other) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (mBreakStrategy != other.getBreakStrategy()) {
-                    return false;
-                }
-                if (mHyphenationFrequency != other.getHyphenationFrequency()) {
-                    return false;
-                }
+            if (mBreakStrategy != other.getBreakStrategy()) {
+                return false;
             }
-
+            if (mHyphenationFrequency != other.getHyphenationFrequency()) {
+                return false;
+            }
             if (mPaint.getTextSize() != other.getTextPaint().getTextSize()) {
                 return false;
             }
@@ -282,14 +257,12 @@ public class PrecomputedTextCompat implements Spannable {
             if (mPaint.getTextSkewX() != other.getTextPaint().getTextSkewX()) {
                 return false;
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                if (mPaint.getLetterSpacing() != other.getTextPaint().getLetterSpacing()) {
-                    return false;
-                }
-                if (!TextUtils.equals(mPaint.getFontFeatureSettings(),
-                        other.getTextPaint().getFontFeatureSettings())) {
-                    return false;
-                }
+            if (mPaint.getLetterSpacing() != other.getTextPaint().getLetterSpacing()) {
+                return false;
+            }
+            if (!TextUtils.equals(mPaint.getFontFeatureSettings(),
+                    other.getTextPaint().getFontFeatureSettings())) {
+                return false;
             }
             if (mPaint.getFlags() != other.getTextPaint().getFlags()) {
                 return false;
@@ -341,15 +314,11 @@ public class PrecomputedTextCompat implements Spannable {
                         mPaint.getTextSkewX(), mPaint.getLetterSpacing(), mPaint.getFlags(),
                         mPaint.getTextLocales(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),
                         mTextDir, mBreakStrategy, mHyphenationFrequency);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else {
                 return ObjectsCompat.hash(mPaint.getTextSize(), mPaint.getTextScaleX(),
                         mPaint.getTextSkewX(), mPaint.getLetterSpacing(), mPaint.getFlags(),
                         mPaint.getTextLocale(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),
                         mTextDir, mBreakStrategy, mHyphenationFrequency);
-            } else {
-                return ObjectsCompat.hash(mPaint.getTextSize(), mPaint.getTextScaleX(),
-                        mPaint.getTextSkewX(), mPaint.getFlags(), mPaint.getTextLocale(),
-                        mPaint.getTypeface(), mTextDir, mBreakStrategy, mHyphenationFrequency);
             }
         }
 
@@ -359,10 +328,8 @@ public class PrecomputedTextCompat implements Spannable {
             sb.append("textSize=" + mPaint.getTextSize());
             sb.append(", textScaleX=" + mPaint.getTextScaleX());
             sb.append(", textSkewX=" + mPaint.getTextSkewX());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                sb.append(", letterSpacing=" + mPaint.getLetterSpacing());
-                sb.append(", elegantTextHeight=" + mPaint.isElegantTextHeight());
-            }
+            sb.append(", letterSpacing=" + mPaint.getLetterSpacing());
+            sb.append(", elegantTextHeight=" + mPaint.isElegantTextHeight());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 sb.append(", textLocale=" + mPaint.getTextLocales());
             } else {
@@ -386,7 +353,7 @@ public class PrecomputedTextCompat implements Spannable {
     private final @NonNull Params mParams;
 
     // The list of measured paragraph info.
-    private final @NonNull int[] mParagraphEnds;
+    private final int @NonNull [] mParagraphEnds;
 
     // null on API 27 or before. Non-null on API 29 or later
     private final @Nullable PrecomputedText mWrapped;
@@ -443,20 +410,12 @@ public class PrecomputedTextCompat implements Spannable {
             // No framework support for PrecomputedText
             // Compute text layout and throw away StaticLayout for the purpose of warming up the
             // internal text layout cache.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                StaticLayout.Builder.obtain(text, 0, text.length(), params.getTextPaint(),
-                        Integer.MAX_VALUE)
-                        .setBreakStrategy(params.getBreakStrategy())
-                        .setHyphenationFrequency(params.getHyphenationFrequency())
-                        .setTextDirection(params.getTextDirection())
-                        .build();
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                new StaticLayout(text, params.getTextPaint(), Integer.MAX_VALUE,
-                        Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-            } else {
-                // There is no way of precomputing text layout on API 20 or before
-                // Do nothing
-            }
+            StaticLayout.Builder.obtain(text, 0, text.length(), params.getTextPaint(),
+                    Integer.MAX_VALUE)
+                    .setBreakStrategy(params.getBreakStrategy())
+                    .setHyphenationFrequency(params.getHyphenationFrequency())
+                    .setTextDirection(params.getTextDirection())
+                    .build();
 
             return new PrecomputedTextCompat(text, params, result);
         } finally {
@@ -466,7 +425,7 @@ public class PrecomputedTextCompat implements Spannable {
 
     // Use PrecomputedText.create instead.
     private PrecomputedTextCompat(@NonNull CharSequence text, @NonNull Params params,
-            @NonNull int[] paraEnds) {
+            int @NonNull [] paraEnds) {
         mText = new SpannableString(text);
         mParams = params;
         mParagraphEnds = paraEnds;
@@ -544,8 +503,8 @@ public class PrecomputedTextCompat implements Spannable {
             private PrecomputedTextCompat.Params mParams;
             private CharSequence mText;
 
-            PrecomputedTextCallback(@NonNull final PrecomputedTextCompat.Params params,
-                    @NonNull final CharSequence cs) {
+            PrecomputedTextCallback(final PrecomputedTextCompat.@NonNull Params params,
+                    final @NonNull CharSequence cs) {
                 mParams = params;
                 mText = cs;
             }
@@ -556,8 +515,8 @@ public class PrecomputedTextCompat implements Spannable {
             }
         }
 
-        PrecomputedTextFutureTask(@NonNull final PrecomputedTextCompat.Params params,
-                @NonNull final CharSequence text) {
+        PrecomputedTextFutureTask(final PrecomputedTextCompat.@NonNull Params params,
+                final @NonNull CharSequence text) {
             super(new PrecomputedTextCallback(params, text));
         }
     }
@@ -623,7 +582,7 @@ public class PrecomputedTextCompat implements Spannable {
      */
     @UiThread
     public static Future<PrecomputedTextCompat> getTextFuture(
-            @NonNull final CharSequence charSequence, @NonNull PrecomputedTextCompat.Params params,
+            final @NonNull CharSequence charSequence, PrecomputedTextCompat.@NonNull Params params,
             @Nullable Executor executor) {
         PrecomputedTextFutureTask task = new PrecomputedTextFutureTask(params, charSequence);
         if (executor == null) {
@@ -731,9 +690,8 @@ public class PrecomputedTextCompat implements Spannable {
         return mText.subSequence(start, end);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mText.toString();
     }
 

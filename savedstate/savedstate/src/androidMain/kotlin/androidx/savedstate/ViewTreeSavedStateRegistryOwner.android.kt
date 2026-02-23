@@ -18,6 +18,7 @@
 package androidx.savedstate
 
 import android.view.View
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 
 /**
  * Set the [SavedStateRegistryOwner] responsible for managing the saved state for this [View] Calls
@@ -34,7 +35,7 @@ import android.view.View
  *   view
  */
 @JvmName("set")
-fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
+public fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
     setTag(R.id.view_tree_saved_state_registry_owner, owner)
 }
 
@@ -49,10 +50,16 @@ fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
  *   and/or some subset of its ancestors
  */
 @JvmName("get")
-fun View.findViewTreeSavedStateRegistryOwner(): SavedStateRegistryOwner? {
-    return generateSequence(this) { view -> view.parent as? View }
-        .mapNotNull { view ->
-            view.getTag(R.id.view_tree_saved_state_registry_owner) as? SavedStateRegistryOwner
+public fun View.findViewTreeSavedStateRegistryOwner(): SavedStateRegistryOwner? {
+    var currentView: View? = this
+    while (currentView != null) {
+        val registryOwner =
+            currentView.getTag(R.id.view_tree_saved_state_registry_owner)
+                as? SavedStateRegistryOwner
+        if (registryOwner != null) {
+            return registryOwner
         }
-        .firstOrNull()
+        currentView = currentView.getParentOrViewTreeDisjointParent() as? View
+    }
+    return null
 }

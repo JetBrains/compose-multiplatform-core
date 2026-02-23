@@ -17,7 +17,7 @@ package androidx.core.animation;
 
 import android.graphics.PointF;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This evaluator can be used to perform type interpolation between <code>PointF</code> values.
@@ -71,8 +71,8 @@ public class PointFEvaluator implements TypeEvaluator<PointF> {
      *         <code>fraction</code> parameter.
      */
     @Override
-    @NonNull
-    public PointF evaluate(float fraction, @NonNull PointF startValue, @NonNull PointF endValue) {
+    public @NonNull PointF evaluate(float fraction, @NonNull PointF startValue,
+            @NonNull PointF endValue) {
         float x = startValue.x + (fraction * (endValue.x - startValue.x));
         float y = startValue.y + (fraction * (endValue.y - startValue.y));
 

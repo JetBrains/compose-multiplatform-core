@@ -28,9 +28,8 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Very simple drawable that draws a rounded rectangle background with arbitrary corners and also
@@ -38,7 +37,6 @@ import androidx.annotation.RequiresApi;
  * <p>
  * Simpler and uses less resources compared to GradientDrawable or ShapeDrawable.
  */
-@RequiresApi(21)
 class RoundRectDrawable extends Drawable {
     private float mRadius;
     private final Paint mPaint;

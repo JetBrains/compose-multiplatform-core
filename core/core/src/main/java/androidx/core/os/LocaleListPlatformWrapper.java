@@ -18,9 +18,10 @@ package androidx.core.os;
 
 import android.os.LocaleList;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -77,9 +78,8 @@ final class LocaleListPlatformWrapper implements LocaleListInterface {
         return mLocaleList.toLanguageTags();
     }
 
-    @Nullable
     @Override
-    public Locale getFirstMatch(@NonNull String[] supportedLocales) {
+    public @Nullable Locale getFirstMatch(String @NonNull [] supportedLocales) {
         return mLocaleList.getFirstMatch(supportedLocales);
     }
 }

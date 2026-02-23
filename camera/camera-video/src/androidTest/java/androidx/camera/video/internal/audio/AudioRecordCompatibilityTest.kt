@@ -25,6 +25,7 @@ import android.media.MediaRecorder
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.core.Logger
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.RequiresDevice
 import androidx.camera.video.internal.audio.AudioUtils.computeInterpolatedTimeNs
 import androidx.camera.video.internal.audio.AudioUtils.getBytesPerFrame
@@ -50,7 +51,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioRecordCompatibilityTest {
 
     companion object {
@@ -88,6 +88,11 @@ class AudioRecordCompatibilityTest {
 
     @Before
     fun setUp() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
+        )
         audioRecord = createAudioRecordFromGlobalVariables()
         assumeNotNull(audioRecord)
     }
@@ -223,7 +228,7 @@ class AudioRecordCompatibilityTest {
         return createAudioRecord(
             sampleRate = sampleRate,
             audioFormat = audioFormat,
-            bufferSizeInByte = bufferSizeInBytes
+            bufferSizeInByte = bufferSizeInBytes,
         )
     }
 
@@ -232,20 +237,14 @@ class AudioRecordCompatibilityTest {
         sampleRate: Int = DEFAULT_SAMPLE_RATE,
         channelConfig: Int = DEFAULT_CHANNEL_CONFIG,
         audioFormat: Int = DEFAULT_AUDIO_FORMAT,
-        bufferSizeInByte: Int = DEFAULT_BUFFER_SIZE_IN_BYTE
+        bufferSizeInByte: Int = DEFAULT_BUFFER_SIZE_IN_BYTE,
     ): AudioRecord? {
         if (bufferSizeInByte <= 0) {
             return null
         }
 
         return try {
-            AudioRecord(
-                audioSource,
-                sampleRate,
-                channelConfig,
-                audioFormat,
-                bufferSizeInByte,
-            )
+            AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInByte)
         } catch (e: IllegalArgumentException) {
             null
         }

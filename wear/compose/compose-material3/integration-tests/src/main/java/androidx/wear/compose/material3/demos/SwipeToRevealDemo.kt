@@ -17,167 +17,1030 @@
 package androidx.wear.compose.material3.demos
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.GestureInclusion
+import androidx.wear.compose.foundation.SwipeToDismissBoxState
+import androidx.wear.compose.foundation.edgeSwipeToDismiss
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.material3.RevealValue
+import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.SplitSwitchButton
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TitleCard
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.material3.rememberRevealState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalWearFoundationApi::class)
+@Composable
+fun SwipeToRevealBothDirectionsNoPartialReveal() {
+    // Note that this demo include hasPartiallyRevealedState = false, so does not need to explicitly
+    // reset the RevealState to covered when scrolling.
+    ScalingLazyDemo {
+        item {
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+                revealDirection = Bidirectional,
+                hasPartiallyRevealedState = false,
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    }
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has only one action", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealBothDirections() {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (slcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* This block is called when the secondary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
+                    )
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+                undoSecondaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo secondary action is executed. */
+                        },
+                        text = { Text("Undo Secondary") },
+                    )
+                },
+                revealDirection = Bidirectional,
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("More") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has two actions", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun SwipeToRevealTwoActionsWithUndo() {
     val context = LocalContext.current
     val showToasts = remember { mutableStateOf(true) }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        SwipeToReveal(
-            // Use the double action anchor width when revealing two actions
-            revealState =
-                rememberRevealState(anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth),
-            actionButtonHeight = SwipeToRevealDefaults.LargeActionButtonHeight,
-            actions = {
-                primaryAction(
-                    onClick = {
-                        if (showToasts.value) {
-                            Toast.makeText(context, "Primary action executed.", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    },
-                    icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    label = "Delete"
-                )
-                secondaryAction(
-                    onClick = {
-                        if (showToasts.value) {
-                            Toast.makeText(
-                                    context,
-                                    "Secondary action executed.",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-                        }
-                    },
-                    icon = { Icon(Icons.Filled.Lock, contentDescription = "Lock") },
-                    label = "Lock"
-                )
-                undoPrimaryAction(
-                    onClick = {
-                        if (showToasts.value) {
-                            Toast.makeText(
-                                    context,
-                                    "Undo primary action executed.",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-                        }
-                    },
-                    label = "Undo Delete"
-                )
-                undoSecondaryAction(
-                    onClick = {
-                        if (showToasts.value) {
-                            Toast.makeText(
-                                    context,
-                                    "Undo secondary action executed.",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-                        }
-                    },
-                    label = "Undo Lock"
-                )
+    val primaryAction = {
+        if (showToasts.value) {
+            Toast.makeText(context, "Primary action executed.", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item { ListHeader { Text("Two Undo Actions") } }
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
             }
-        ) {
-            Card(modifier = Modifier.fillMaxWidth(), onClick = {}) {
-                Text("This Card has two actions", modifier = Modifier.fillMaxSize())
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = primaryAction,
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                    )
+                },
+                onSwipePrimaryAction = primaryAction,
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = {
+                            if (showToasts.value) {
+                                Toast.makeText(
+                                        context,
+                                        "Secondary action executed.",
+                                        Toast.LENGTH_SHORT,
+                                    )
+                                    .show()
+                            }
+                        },
+                        icon = { Icon(Icons.Filled.Lock, contentDescription = "Lock") },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                    )
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = {
+                            if (showToasts.value) {
+                                Toast.makeText(
+                                        context,
+                                        "Undo primary action executed.",
+                                        Toast.LENGTH_SHORT,
+                                    )
+                                    .show()
+                            }
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+                undoSecondaryAction = {
+                    UndoActionButton(
+                        onClick = {
+                            if (showToasts.value) {
+                                Toast.makeText(
+                                        context,
+                                        "Undo secondary action executed.",
+                                        Toast.LENGTH_SHORT,
+                                    )
+                                    .show()
+                            }
+                        },
+                        text = { Text("Undo Lock") },
+                    )
+                },
+            ) {
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Lock") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Card has two actions", modifier = Modifier.fillMaxSize())
+                }
             }
         }
-        Spacer(Modifier.size(4.dp))
-        SplitSwitchButton(
-            showToasts.value,
-            onCheckedChange = { showToasts.value = it },
-            onContainerClick = { showToasts.value = !showToasts.value },
-            toggleContentDescription = "Show toasts"
-        ) {
-            Text("Show toasts")
+        item {
+            SplitSwitchButton(
+                showToasts.value,
+                onCheckedChange = { showToasts.value = it },
+                onContainerClick = { showToasts.value = !showToasts.value },
+                toggleContentDescription = "Show toasts",
+            ) {
+                Text("Show toasts")
+            }
         }
     }
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Composable
-fun SwipeToRevealInList() {
-    val namesList = remember { mutableStateListOf("Alice", "Bob", "Charlie", "Dave", "Eve") }
+fun SwipeToRevealInScalingLazyColumnDemo() {
+    data class ListItem(val name: String, var undoButtonClicked: Boolean = false)
+    val listState = remember {
+        mutableStateListOf(
+            ListItem("Alice"),
+            ListItem("Bob"),
+            ListItem("Charlie"),
+            ListItem("Dave"),
+            ListItem("Eve"),
+        )
+    }
+    val slcState = rememberScalingLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    ScalingLazyColumn(contentPadding = PaddingValues(0.dp)) {
-        items(namesList.size, key = { namesList[it] }) {
-            val revealState =
-                rememberRevealState(anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth)
-            val name = remember { namesList[it] }
+
+    ScalingLazyDemo(state = slcState) {
+        items(listState.size, key = { listState[it].name }) { index ->
+            val item = remember { listState[index] }
+            val primaryAction: () -> Unit = {
+                coroutineScope.launch {
+                    delay(2000)
+                    // After a delay, remove the item from the list if the last
+                    // action performed by the user is still the primary action, so
+                    // the user didn't press "Undo".
+                    if (!item.undoButtonClicked) {
+                        listState.remove(item)
+                    }
+                }
+            }
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
             SwipeToReveal(
                 revealState = revealState,
-                actions = {
-                    primaryAction(
-                        onClick = {
-                            coroutineScope.launch {
-                                delay(2000)
-                                // After a delay, remove the item from the list if the last action
-                                // performed by the user is still the primary action, so the user
-                                // didn't press "Undo".
-                                if (revealState.lastActionType == RevealActionType.PrimaryAction) {
-                                    namesList.remove(name)
-                                }
-                            }
-                        },
+                revealDirection = Bidirectional,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = primaryAction,
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                        label = "Delete"
+                        text = { Text("Delete") },
                     )
-                    secondaryAction(
-                        onClick = {
-                            // Add a duplicate item to the list, if it doesn't exist already
-                            val nextName = "$name+"
-                            if (!namesList.contains(nextName)) {
-                                namesList.add(namesList.indexOf(name) + 1, nextName)
-                                coroutineScope.launch { revealState.animateTo(RevealValue.Covered) }
-                            }
+                },
+                onSwipePrimaryAction = primaryAction,
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* This block is called when the secondary action is executed. */
                         },
-                        icon = { Icon(Icons.Filled.Add, contentDescription = "Duplicate") },
-                        label = "Duplicate"
+                        icon = { Icon(Icons.Filled.MoreVert, contentDescription = "Duplicate") },
                     )
-                    undoPrimaryAction(onClick = {}, label = "Undo Delete")
-                }
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { item.undoButtonClicked = true },
+                        text = { Text("Undo Delete") },
+                    )
+                },
             ) {
-                Button({}, Modifier.fillMaxWidth().padding(horizontal = 4.dp)) { Text(name) }
+                Button(
+                    {},
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics {
+                        // Use custom actions to make the primary and secondary actions accessible
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Delete") {
+                                    /* Add the primary action click handler here */
+                                    true
+                                },
+                                CustomAccessibilityAction("Duplicate") {
+                                    /* Add the secondary click handler here */
+                                    true
+                                },
+                            )
+                    },
+                ) {
+                    Text("Name: ${item.name}")
+                }
             }
         }
     }
 }
+
+@Composable
+fun SwipeToRevealSingleButtonWithPartialReveal() {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    }
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has only one action", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealWithLongLabels() {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = {
+                            Text("Delete action with an extremely long label that should truncate.")
+                        },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* This block is called when the secondary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Lock, contentDescription = "Lock") },
+                    )
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = {
+                            Text(
+                                "Undo Delete action with an extremely long label that should truncate."
+                            )
+                        },
+                    )
+                },
+                undoSecondaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo secondary action is executed. */
+                        },
+                        text = {
+                            Text(
+                                "Undo Lock action with an extremely long label that should truncate."
+                            )
+                        },
+                    )
+                },
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Lock") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text(
+                        "This Button has actions with extremely long labels that should truncate.",
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealWithCustomIcons() {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = {
+                            // Although this practice is not recommended, this demo deliberately
+                            // passes Text in the icon slot so that this edge case can be
+                            // visualised.
+                            Text(
+                                "🗑",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* This block is called when the secondary action is executed. */
+                        },
+                        icon = {
+                            // Although this practice is not recommended, this demo deliberately
+                            // passes Text in the icon slot so that this edge case can be
+                            // visualised.
+                            Text(
+                                "U",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        },
+                    )
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        icon = {
+                            // Although this practice is not recommended, this demo deliberately
+                            // passes Text in the icon slot so that this edge case can be
+                            // visualised.
+                            Text(
+                                "<",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+                undoSecondaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo secondary action is executed. */
+                        },
+                        icon = {
+                            // Although this practice is not recommended, this demo deliberately
+                            // passes Text in the icon slot so that this edge case can be
+                            // visualised.
+                            Text(
+                                text = "🔙",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        },
+                        text = { Text("Undo Update") },
+                    )
+                },
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Update") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has two actions.", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Usage of [edgeSwipeToDismiss] modifier with [SwipeToReveal] is discouraged. Instead, the
+ * [GestureInclusion] parameter should be used.
+ *
+ * This demo is to check compatibility with code that is still using [edgeSwipeToDismiss] after
+ * [GestureInclusion] was introduced.
+ */
+@Composable
+fun SwipeToRevealWithEdgeSwipeToDismiss(swipeToDismissBoxState: SwipeToDismissBoxState) {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    ScalingLazyDemo(state = slcState) {
+        item {
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal should be reset to covered when scrolling occurs.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (slcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* This block is called when the primary action is executed. */
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                undoPrimaryAction = {
+                    UndoActionButton(
+                        onClick = { /* This block is called when the undo primary action is executed. */
+                        },
+                        text = { Text("Undo Delete") },
+                    )
+                },
+                modifier = Modifier.edgeSwipeToDismiss(swipeToDismissBoxState),
+            ) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    }
+                                )
+                        },
+                    onClick = {},
+                ) {
+                    Text("This Button has only one action", modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealWithTransformingLazyColumnDemo() {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
+    val messages = remember {
+        mutableStateListOf<String>().apply {
+            for (i in 1..100) {
+                add("Message #${i}")
+            }
+        }
+    }
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(items = messages, key = { it }) { message ->
+            val revealState = rememberRevealState(initialValue = Covered)
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                revealState = revealState,
+                revealDirection = Bidirectional,
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { messages.remove(message) },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = { messages.remove(message) },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .animateItem()
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        },
+            ) {
+                Button(
+                    {},
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics {
+                        // Use custom actions to make the primary and secondary actions accessible
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Delete") {
+                                    messages.remove(message)
+                                    true
+                                }
+                            )
+                    },
+                ) {
+                    Text("Item number: $message")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
+    val messages = remember {
+        mutableStateListOf<MessageWithSenderItem>().apply {
+            for (i in 1..100) {
+                add(
+                    MessageWithSenderItem(
+                        sender = "Sender #${i}",
+                        title = "Message #${i}",
+                        bodyText = "Body of the message",
+                        time = "13:31",
+                    )
+                )
+            }
+        }
+    }
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(items = messages, key = { it.title }) { message ->
+            val revealState = rememberRevealState(initialValue = Covered)
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { messages.remove(message) },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = {},
+                        containerColor = Color(red = 0.427f, green = 0.835f, blue = 0.549f),
+                    )
+                },
+                secondaryAction = {
+                    SecondaryActionButton(
+                        onClick = { /* Called when the primary action is executed. */ },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                        icon = { Icon(Icons.Outlined.Share, contentDescription = "Share") },
+                        containerColor = Color(0.949f, 0.722f, 0.71f),
+                        contentColor = Color(0.207f, 0.148f, 0.145f),
+                    )
+                },
+                onSwipePrimaryAction = { messages.remove(message) },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .animateItem()
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        },
+                revealState = revealState,
+            ) {
+                TitleCard(
+                    onClick = {},
+                    title = {
+                        Icon(Icons.Outlined.AccountCircle, contentDescription = "Share")
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            text = message.sender,
+                        )
+                    },
+                    subtitle = {
+                        Text(message.title)
+                        Text(message.bodyText)
+                        Text(message.time)
+                    },
+                    modifier =
+                        Modifier.semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        messages.remove(message)
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Share") {
+                                        /* Add the secondary action click handler here */
+                                        true
+                                    },
+                                )
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+    val coroutineScope = rememberCoroutineScope()
+
+    var expandedItemKey by remember { mutableStateOf<String?>(null) }
+
+    val messages = remember {
+        mutableStateListOf<MessageItem>().apply {
+            for (i in 1..100) {
+                add(
+                    MessageItem(
+                        "Message #${i}",
+                        body = "Body of the message",
+                        longBody =
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                    )
+                )
+            }
+        }
+    }
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(items = messages, key = { it.title }) { message ->
+            val isCurrentlyExpanded = message.title == expandedItemKey
+            val revealState = rememberRevealState(initialValue = Covered)
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(tlcState.isScrollInProgress) {
+                if (tlcState.isScrollInProgress && revealState.currentValue != Covered) {
+                    coroutineScope.launch { revealState.animateTo(targetValue = Covered) }
+                }
+            }
+
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = {
+                            if (message.title == expandedItemKey) {
+                                expandedItemKey = null
+                            }
+                            messages.remove(message)
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                        modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                    )
+                },
+                onSwipePrimaryAction = {
+                    if (message.title == expandedItemKey) {
+                        expandedItemKey = null
+                    }
+                    messages.remove(message)
+                },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        }
+                        .animateItem(),
+                revealState = revealState,
+            ) {
+                TitleCard(
+                    onClick = {
+                        if (expandedItemKey == message.title) {
+                            expandedItemKey = null
+                        } else {
+                            expandedItemKey = message.title
+                        }
+                    },
+                    title = { Text(message.title) },
+                    subtitle = { Text(message.body) },
+                    modifier =
+                        Modifier.semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        if (message.title == expandedItemKey) {
+                                            expandedItemKey = null
+                                        }
+                                        messages.remove(message)
+                                        true
+                                    }
+                                )
+                        },
+                ) {
+                    AnimatedVisibility(visible = isCurrentlyExpanded) {
+                        Text(text = message.longBody, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+data class MessageItem(val title: String, val body: String, val longBody: String)
+
+data class MessageWithSenderItem(
+    val sender: String,
+    val title: String,
+    val bodyText: String,
+    val time: String,
+)

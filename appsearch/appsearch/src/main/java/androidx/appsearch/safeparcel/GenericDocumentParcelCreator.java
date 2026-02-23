@@ -21,9 +21,10 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +50,7 @@ public class GenericDocumentParcelCreator implements
     private static final String PARENT_TYPES_FIELD = "parentTypes";
 
     /** Creates a {@link GenericDocumentParcel} from a {@link Bundle}. */
-    @NonNull
-    private static GenericDocumentParcel createGenericDocumentParcelFromBundle(
+    private static @NonNull GenericDocumentParcel createGenericDocumentParcelFromBundle(
             @NonNull Bundle genericDocumentParcelBundle) {
         // Get namespace, id, and schema type
         String namespace = genericDocumentParcelBundle.getString(NAMESPACE_FIELD);
@@ -91,8 +91,7 @@ public class GenericDocumentParcelCreator implements
     }
 
     /** Creates a {@link Bundle} from a {@link GenericDocumentParcel}. */
-    @NonNull
-    private static Bundle createBundleFromGenericDocumentParcel(
+    private static @NonNull Bundle createBundleFromGenericDocumentParcel(
             @NonNull GenericDocumentParcel genericDocumentParcel) {
         Bundle genericDocumentParcelBundle = new Bundle();
 
@@ -122,9 +121,8 @@ public class GenericDocumentParcelCreator implements
         return genericDocumentParcelBundle;
     }
 
-    @Nullable
     @Override
-    public GenericDocumentParcel createFromParcel(Parcel in) {
+    public @Nullable GenericDocumentParcel createFromParcel(Parcel in) {
         Bundle bundle = in.readBundle(getClass().getClassLoader());
         return createGenericDocumentParcelFromBundle(bundle);
     }
@@ -136,7 +134,7 @@ public class GenericDocumentParcelCreator implements
 
     /** Writes a {@link GenericDocumentParcel} to a {@link Parcel}. */
     public static void writeToParcel(@NonNull GenericDocumentParcel genericDocumentParcel,
-            @NonNull android.os.Parcel parcel, int flags) {
+            android.os.@NonNull Parcel parcel, int flags) {
         parcel.writeBundle(createBundleFromGenericDocumentParcel(genericDocumentParcel));
     }
 }

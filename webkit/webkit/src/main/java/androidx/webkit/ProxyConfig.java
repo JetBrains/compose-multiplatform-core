@@ -16,10 +16,11 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -90,8 +91,7 @@ public final class ProxyConfig {
      *
      * @return List of proxy rules
      */
-    @NonNull
-    public List<ProxyRule> getProxyRules() {
+    public @NonNull List<ProxyRule> getProxyRules() {
         return Collections.unmodifiableList(mProxyRules);
     }
 
@@ -102,8 +102,7 @@ public final class ProxyConfig {
      *
      * @return List of bypass rules
      */
-    @NonNull
-    public List<String> getBypassRules() {
+    public @NonNull List<String> getBypassRules() {
         return Collections.unmodifiableList(mBypassRules);
     }
 
@@ -147,8 +146,7 @@ public final class ProxyConfig {
          *
          * @return Scheme filter
          */
-        @NonNull
-        public String getSchemeFilter() {
+        public @NonNull String getSchemeFilter() {
             return mSchemeFilter;
         }
 
@@ -157,8 +155,7 @@ public final class ProxyConfig {
          *
          * @return Proxy URL
          */
-        @NonNull
-        public String getUrl() {
+        public @NonNull String getUrl() {
             return mUrl;
         }
     }
@@ -199,8 +196,7 @@ public final class ProxyConfig {
          *
          * @return The ProxyConfig object represented by this Builder
          */
-        @NonNull
-        public ProxyConfig build() {
+        public @NonNull ProxyConfig build() {
             return new ProxyConfig(proxyRules(), bypassRules(), reverseBypass());
         }
 
@@ -233,8 +229,7 @@ public final class ProxyConfig {
          * @param proxyUrl Proxy URL
          * @return This Builder object
          */
-        @NonNull
-        public Builder addProxyRule(@NonNull String proxyUrl) {
+        public @NonNull Builder addProxyRule(@NonNull String proxyUrl) {
             mProxyRules.add(new ProxyRule(proxyUrl));
             return this;
         }
@@ -249,9 +244,8 @@ public final class ProxyConfig {
          * @param schemeFilter Scheme filter
          * @return This Builder object
          */
-        @NonNull
-        public Builder addProxyRule(@NonNull String proxyUrl,
-                @NonNull @ProxyScheme String schemeFilter) {
+        public @NonNull Builder addProxyRule(@NonNull String proxyUrl,
+                @ProxyScheme @NonNull String schemeFilter) {
             mProxyRules.add(new ProxyRule(schemeFilter, proxyUrl));
             return this;
         }
@@ -266,8 +260,7 @@ public final class ProxyConfig {
          * @param bypassRule Rule to be added to the exclusion list
          * @return This Builder object
          */
-        @NonNull
-        public Builder addBypassRule(@NonNull String bypassRule) {
+        public @NonNull Builder addBypassRule(@NonNull String bypassRule) {
             mBypassRules.add(bypassRule);
             return this;
         }
@@ -279,8 +272,7 @@ public final class ProxyConfig {
          * @param schemeFilter Scheme filter
          * @return This Builder object
          */
-        @NonNull
-        public Builder addDirect(@NonNull @ProxyScheme String schemeFilter) {
+        public @NonNull Builder addDirect(@ProxyScheme @NonNull String schemeFilter) {
             mProxyRules.add(new ProxyRule(schemeFilter, DIRECT));
             return this;
         }
@@ -290,8 +282,7 @@ public final class ProxyConfig {
          *
          * @return This Builder object
          */
-        @NonNull
-        public Builder addDirect() {
+        public @NonNull Builder addDirect() {
             return addDirect(MATCH_ALL_SCHEMES);
         }
 
@@ -304,8 +295,7 @@ public final class ProxyConfig {
          *
          * @return This Builder object
          */
-        @NonNull
-        public Builder bypassSimpleHostnames() {
+        public @NonNull Builder bypassSimpleHostnames() {
             return addBypassRule(BYPASS_RULE_SIMPLE_NAMES);
         }
 
@@ -326,8 +316,7 @@ public final class ProxyConfig {
          *
          * @return This Builder object
          */
-        @NonNull
-        public Builder removeImplicitRules() {
+        public @NonNull Builder removeImplicitRules() {
             return addBypassRule(BYPASS_RULE_REMOVE_IMPLICIT);
         }
 
@@ -350,19 +339,16 @@ public final class ProxyConfig {
          */
         @RequiresFeature(name = WebViewFeature.PROXY_OVERRIDE_REVERSE_BYPASS,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-        @NonNull
-        public Builder setReverseBypassEnabled(boolean reverseBypass) {
+        public @NonNull Builder setReverseBypassEnabled(boolean reverseBypass) {
             mReverseBypass = reverseBypass;
             return this;
         }
 
-        @NonNull
-        private List<ProxyRule> proxyRules() {
+        private @NonNull List<ProxyRule> proxyRules() {
             return mProxyRules;
         }
 
-        @NonNull
-        private List<String> bypassRules() {
+        private @NonNull List<String> bypassRules() {
             return mBypassRules;
         }
 

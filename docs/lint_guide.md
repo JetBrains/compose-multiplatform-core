@@ -12,7 +12,7 @@ practices.
 This guide is targeted to developers who would like to quickly get started with
 adding lint checks in the AndroidX development workflow. For a complete guide to
 writing and running lint checks, see the official
-[Android lint documentation](https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-master-dev:lint/docs/README.md.html).
+[Android lint documentation](https://googlesamples.github.io/android-custom-lint-rules/).
 
 ### Create a module
 

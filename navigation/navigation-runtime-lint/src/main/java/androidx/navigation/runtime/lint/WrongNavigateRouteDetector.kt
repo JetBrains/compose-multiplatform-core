@@ -16,7 +16,7 @@
 
 package androidx.navigation.runtime.lint
 
-import androidx.navigation.lint.common.isClassReference
+import androidx.navigation.lint.isClassReference
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
@@ -46,7 +46,7 @@ class WrongNavigateRouteDetector() : Detector(), SourceCodeScanner {
                 category = Category.CORRECTNESS,
                 severity = Severity.ERROR,
                 implementation =
-                    Implementation(WrongNavigateRouteDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                    Implementation(WrongNavigateRouteDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
     }
 
@@ -55,7 +55,7 @@ class WrongNavigateRouteDetector() : Detector(), SourceCodeScanner {
     final override fun visitMethodCall(
         context: JavaContext,
         node: UCallExpression,
-        method: PsiMethod
+        method: PsiMethod,
     ) {
         val startNode =
             node.valueArguments.find { node.getParameterForArgument(it)?.name == "route" } ?: return
@@ -69,8 +69,8 @@ class WrongNavigateRouteDetector() : Detector(), SourceCodeScanner {
                 context.getNameLocation(startNode as UElement),
                 """
                 The route should be a destination class instance or destination object.
-                    """
-                    .trimIndent()
+                """
+                    .trimIndent(),
             )
         }
     }

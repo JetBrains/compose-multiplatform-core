@@ -19,8 +19,9 @@ package androidx.pdf.util;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /** Utility class for temporarily disabling StrictMode to do I/O on UI threads. */
 // TODO: Cleanup this class as I/O ops should not be done on UI thread

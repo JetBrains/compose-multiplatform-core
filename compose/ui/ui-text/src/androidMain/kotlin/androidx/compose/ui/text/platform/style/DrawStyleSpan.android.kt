@@ -45,22 +45,22 @@ internal class DrawStyleSpan(val drawStyle: DrawStyle) : CharacterStyle(), Updat
             }
         }
     }
+}
 
-    private fun StrokeJoin.toAndroidJoin(): Paint.Join {
-        return when (this) {
-            StrokeJoin.Miter -> Paint.Join.MITER
-            StrokeJoin.Round -> Paint.Join.ROUND
-            StrokeJoin.Bevel -> Paint.Join.BEVEL
-            else -> Paint.Join.MITER
-        }
+internal fun StrokeJoin.toAndroidJoin(): Paint.Join {
+    return when (this) {
+        StrokeJoin.Miter -> Paint.Join.MITER
+        StrokeJoin.Round -> Paint.Join.ROUND
+        StrokeJoin.Bevel -> Paint.Join.BEVEL
+        else -> Paint.Join.MITER
     }
+}
 
-    private fun StrokeCap.toAndroidCap(): Paint.Cap {
-        return when (this) {
-            StrokeCap.Butt -> Paint.Cap.BUTT
-            StrokeCap.Round -> Paint.Cap.ROUND
-            StrokeCap.Square -> Paint.Cap.SQUARE
-            else -> Paint.Cap.BUTT
-        }
+internal fun StrokeCap.toAndroidCap(): Paint.Cap {
+    return when (this) {
+        StrokeCap.Butt -> Paint.Cap.BUTT
+        StrokeCap.Round -> Paint.Cap.ROUND
+        StrokeCap.Square -> Paint.Cap.SQUARE
+        else -> Paint.Cap.BUTT
     }
 }

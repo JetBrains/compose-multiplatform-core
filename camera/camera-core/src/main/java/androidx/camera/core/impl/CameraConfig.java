@@ -16,14 +16,18 @@
 
 package androidx.camera.core.impl;
 
+import android.graphics.ImageFormat;
+
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
 /**
  * Configuration for a {@link androidx.camera.core.Camera}.
@@ -52,6 +56,9 @@ public interface CameraConfig extends ReadableConfig {
     Option<Boolean> OPTION_POSTVIEW_SUPPORTED =
             Option.create("camerax.core.camera.isPostviewSupported", Boolean.class);
 
+    Option<PostviewFormatSelector> OPTION_POSTVIEW_FORMAT_SELECTOR = Option.create(
+            "camerax.core.camera.PostviewFormatSelector", PostviewFormatSelector.class);
+
     Option<Boolean> OPTION_CAPTURE_PROCESS_PROGRESS_SUPPORTED =
             Option.create("camerax.core.camera.isCaptureProcessProgressSupported", Boolean.class);
 
@@ -74,11 +81,22 @@ public interface CameraConfig extends ReadableConfig {
     @interface RequiredRule {
     }
 
+    PostviewFormatSelector DEFAULT_POSTVIEW_FORMAT_SELECTOR =
+            (stillImageFormat, supportedPostviewFormats) -> {
+                if (supportedPostviewFormats.contains(ImageFormat.YUV_420_888)) {
+                    return ImageFormat.YUV_420_888;
+                } else if (supportedPostviewFormats.contains(ImageFormat.JPEG)) {
+                    return ImageFormat.JPEG;
+                } else if (supportedPostviewFormats.contains(ImageFormat.JPEG_R)) {
+                    return ImageFormat.JPEG_R;
+                }
+                return ImageFormat.UNKNOWN;
+            };
+
     /**
      * Retrieves the use case config factory instance.
      */
-    @NonNull
-    default UseCaseConfigFactory getUseCaseConfigFactory() {
+    default @NonNull UseCaseConfigFactory getUseCaseConfigFactory() {
         return retrieveOption(OPTION_USECASE_CONFIG_FACTORY, UseCaseConfigFactory.EMPTY_INSTANCE);
     }
 
@@ -88,8 +106,7 @@ public interface CameraConfig extends ReadableConfig {
      * <p>If camera configs have the same compatibility identifier, they will allow to bind a new
      * use case without unbinding all use cases first.
      */
-    @NonNull
-    Identifier getCompatibilityId();
+    @NonNull Identifier getCompatibilityId();
 
     /**
      * Returns the use case combination required rule when the camera is opened by the camera
@@ -108,8 +125,8 @@ public interface CameraConfig extends ReadableConfig {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    default SessionProcessor getSessionProcessor(@Nullable SessionProcessor valueIfMissing) {
+    default @Nullable SessionProcessor getSessionProcessor(
+            @Nullable SessionProcessor valueIfMissing) {
         return retrieveOption(OPTION_SESSION_PROCESSOR, valueIfMissing);
     }
 
@@ -118,6 +135,13 @@ public interface CameraConfig extends ReadableConfig {
      */
     default boolean isPostviewSupported() {
         return retrieveOption(OPTION_POSTVIEW_SUPPORTED, false);
+    }
+
+    /**
+     * Returns the postview format selector when the camera is opened by the camera config.
+     */
+    default @NonNull PostviewFormatSelector getPostviewFormatSelector() {
+        return retrieveOption(OPTION_POSTVIEW_FORMAT_SELECTOR, DEFAULT_POSTVIEW_FORMAT_SELECTOR);
     }
 
     /**
@@ -134,8 +158,7 @@ public interface CameraConfig extends ReadableConfig {
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    default SessionProcessor getSessionProcessor() {
+    default @NonNull SessionProcessor getSessionProcessor() {
         return retrieveOption(OPTION_SESSION_PROCESSOR);
     }
 
@@ -148,27 +171,24 @@ public interface CameraConfig extends ReadableConfig {
         /**
          * Sets a {@link UseCaseConfigFactory} for the camera config.
          */
-        @NonNull
-        B setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory);
+        @NonNull B setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory);
 
         /**
          * Sets compatibility {@link Identifier} for the camera config.
          */
-        @NonNull
-        B setCompatibilityId(@NonNull Identifier identifier);
+        @NonNull B setCompatibilityId(@NonNull Identifier identifier);
 
         /**
          * Sets use case combination required rule to this configuration.
          */
-        @NonNull
-        B setUseCaseCombinationRequiredRule(@RequiredRule int useCaseCombinationRequiredRule);
+        @NonNull B setUseCaseCombinationRequiredRule(
+                @RequiredRule int useCaseCombinationRequiredRule);
 
         /**
          * Sets the session processor which will transform the stream configurations and will
          * perform the repeating request and still capture request when being requested by CameraX.
          */
-        @NonNull
-        B setSessionProcessor(@NonNull SessionProcessor sessionProcessor);
+        @NonNull B setSessionProcessor(@NonNull SessionProcessor sessionProcessor);
 
         /**
          * Sets zsl disabled or not. If disabled is true, zero-shutter lag should be disabled.
@@ -176,8 +196,7 @@ public interface CameraConfig extends ReadableConfig {
          * needs other conditions e.g. flash mode OFF, so setting to false doesn't guarantee
          * zero-shutter lag to be always ON.
          */
-        @NonNull
-        B setZslDisabled(boolean disabled);
+        @NonNull B setZslDisabled(boolean disabled);
 
         /**
          * Sets if the postview is supported or not.
@@ -185,8 +204,27 @@ public interface CameraConfig extends ReadableConfig {
         B setPostviewSupported(boolean postviewSupported);
 
         /**
+         * Sets the postview format selector for the camera config.
+         */
+        B setPostviewFormatSelector(@NonNull PostviewFormatSelector postviewFormatSelector);
+
+        /**
          * Sets if the capture process progress is supported.
          */
         B setCaptureProcessProgressSupported(boolean supported);
+    }
+
+    /**
+     * The interface for selecting the suitable format for the postview.
+     */
+    interface PostviewFormatSelector {
+        /**
+         * Returns the suitable format for the postview.
+         *
+         * @param stillImageFormat         the still image format to capture
+         * @param supportedPostviewFormats the supported postview formats
+         * @return the image format for the postview, or {@link ImageFormat#UNKNOWN} if not found.
+         */
+        int select(int stillImageFormat, @NonNull List<Integer> supportedPostviewFormats);
     }
 }

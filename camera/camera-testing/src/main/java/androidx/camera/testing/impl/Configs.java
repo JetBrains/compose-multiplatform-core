@@ -16,11 +16,12 @@
 
 package androidx.camera.testing.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,10 +32,10 @@ import java.util.Map;
  */
 public final class Configs {
     /** Return a map that associates UseCases to UseCaseConfigs with default settings. */
-    @NonNull
-    public static Map<UseCase, UseCaseConfig<?>> useCaseConfigMapWithDefaultSettingsFromUseCaseList(
-            @NonNull CameraInfoInternal cameraInfo, @NonNull List<UseCase> useCases,
-            @NonNull UseCaseConfigFactory useCaseConfigFactory) {
+    public static @NonNull Map<UseCase, UseCaseConfig<?>>
+            useCaseConfigMapWithDefaultSettingsFromUseCaseList(
+                    @NonNull CameraInfoInternal cameraInfo, @NonNull List<UseCase> useCases,
+                    @NonNull UseCaseConfigFactory useCaseConfigFactory) {
         Map<UseCase, UseCaseConfig<?>> useCaseToConfigMap = new HashMap<>();
 
         for (UseCase useCase : useCases) {

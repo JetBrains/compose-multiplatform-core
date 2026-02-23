@@ -88,7 +88,7 @@ import androidx.compose.ui.unit.dp
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun ToggleButton(
+public fun ToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
@@ -115,14 +115,14 @@ fun ToggleButton(
                     onValueChange = onCheckedChange,
                     enabled = enabled,
                     interactionSource = interactionSource,
-                    indication = ripple
+                    indication = ripple,
                 )
                 .then(
                     if (borderStroke != null) Modifier.border(border = borderStroke, shape = shape)
                     else Modifier
                 )
                 .background(color = backgroundColor(enabled, checked).value, shape = shape),
-        content = content
+        content = content,
     )
 }
 
@@ -168,7 +168,7 @@ fun ToggleButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun ToggleButton(
+public fun ToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     label: @Composable RowScope.() -> Unit,
@@ -187,7 +187,7 @@ fun ToggleButton(
     labelSpacerSize: Dp,
     toggleControlSpacing: Dp,
     iconSpacing: Dp,
-    ripple: Indication
+    ripple: Indication,
 ) {
     // One and only one of toggleControl and selectionControl should be provided.
     require((toggleControl != null) xor (selectionControl != null)) {
@@ -208,7 +208,7 @@ fun ToggleButton(
                             value = checked,
                             onValueChange = onCheckedChange,
                             indication = ripple,
-                            interactionSource = interactionSource
+                            interactionSource = interactionSource,
                         )
                         // For a toggleable button, the role could be Checkbox or Switch,
                         // so we cannot set the semantics here. Instead,
@@ -219,7 +219,7 @@ fun ToggleButton(
                                 selected = checked,
                                 onClick = { onCheckedChange(true) },
                                 indication = ripple,
-                                interactionSource = interactionSource
+                                interactionSource = interactionSource,
                             )
                             .semantics {
                                 // For a selectable button, the role is always RadioButton.
@@ -230,7 +230,7 @@ fun ToggleButton(
                     }
                 )
                 .padding(contentPadding),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         ToggleButtonIcon(spacerSize = iconSpacing, content = icon)
         Labels(label = label, secondaryLabel = secondaryLabel, spacerSize = labelSpacerSize)
@@ -238,7 +238,7 @@ fun ToggleButton(
         ToggleControl(
             width = toggleControlWidth,
             height = toggleControlHeight,
-            content = toggleControl ?: selectionControl!!
+            content = toggleControl ?: selectionControl!!,
         )
     }
 }
@@ -295,7 +295,7 @@ fun ToggleButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun SplitToggleButton(
+public fun SplitToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     label: @Composable RowScope.() -> Unit,
@@ -313,7 +313,7 @@ fun SplitToggleButton(
     contentPadding: PaddingValues,
     shape: Shape,
     labelSpacerSize: Dp,
-    ripple: Indication
+    ripple: Indication,
 ) {
     val (startPadding, endPadding) = contentPadding.splitHorizontally()
 
@@ -323,7 +323,7 @@ fun SplitToggleButton(
             modifier
                 .width(IntrinsicSize.Max)
                 .clip(shape = shape)
-                .background(backgroundColor(enabled, checked).value)
+                .background(backgroundColor(enabled, checked).value),
     ) {
         Row(
             modifier =
@@ -344,12 +344,7 @@ fun SplitToggleButton(
             Spacer(modifier = Modifier.size(TOGGLE_CONTROL_SPACING))
         }
 
-        val splitBackground =
-            splitBackgroundColor(
-                    enabled,
-                    checked,
-                )
-                .value
+        val splitBackground = splitBackgroundColor(enabled, checked).value
 
         val boxModifier =
             if (toggleControl != null) {
@@ -358,7 +353,7 @@ fun SplitToggleButton(
                     value = checked,
                     onValueChange = onCheckedChange,
                     indication = ripple,
-                    interactionSource = checkedInteractionSource
+                    interactionSource = checkedInteractionSource,
                 )
             } else {
                 Modifier.selectable(
@@ -366,7 +361,7 @@ fun SplitToggleButton(
                         selected = checked,
                         onClick = { onCheckedChange(true) },
                         indication = ripple,
-                        interactionSource = checkedInteractionSource
+                        interactionSource = checkedInteractionSource,
                     )
                     .semantics {
                         // For a selectable button, the role is always RadioButton.
@@ -391,7 +386,7 @@ fun SplitToggleButton(
                     .wrapContentHeight(align = Alignment.CenterVertically)
                     .wrapContentWidth(align = Alignment.End)
                     .then(endPadding),
-            content = toggleControl ?: selectionControl!!
+            content = toggleControl ?: selectionControl!!,
         )
     }
 }
@@ -408,7 +403,7 @@ private fun ToggleButtonIcon(spacerSize: Dp, content: @Composable (BoxScope.() -
 private fun RowScope.Labels(
     label: @Composable RowScope.() -> Unit,
     secondaryLabel: @Composable (RowScope.() -> Unit)?,
-    spacerSize: Dp = 0.dp
+    spacerSize: Dp = 0.dp,
 ) {
     Column(modifier = Modifier.weight(1.0f)) {
         Row(content = label)
@@ -425,7 +420,7 @@ private fun RowScope.ToggleControl(width: Dp, height: Dp, content: @Composable (
         modifier =
             Modifier.align(Alignment.CenterVertically)
                 .size(width = width, height = height)
-                .wrapContentWidth(align = Alignment.End),
+                .wrapContentWidth(align = Alignment.End)
     ) {
         content()
     }
@@ -437,13 +432,13 @@ private fun PaddingValues.splitHorizontally() =
         start = calculateStartPadding(LocalLayoutDirection.current),
         end = 0.dp,
         top = calculateTopPadding(),
-        bottom = calculateBottomPadding()
+        bottom = calculateBottomPadding(),
     ) to
         Modifier.padding(
             start = 0.dp,
             end = calculateEndPadding(layoutDirection = LocalLayoutDirection.current),
             top = calculateTopPadding(),
-            bottom = calculateBottomPadding()
+            bottom = calculateBottomPadding(),
         )
 
 private val TOGGLE_CONTROL_SPACING = 4.dp

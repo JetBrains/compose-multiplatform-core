@@ -16,7 +16,7 @@
 
 package androidx.camera.core.internal;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.EOFException;
 import java.io.IOException;

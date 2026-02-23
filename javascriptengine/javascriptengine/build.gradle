@@ -15,13 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -34,37 +33,38 @@ dependencies {
     api("androidx.concurrent:concurrent-futures:1.0.0")
     api("androidx.core:core:1.1.0")
     api(libs.guavaAndroid)
+    api(libs.jspecify)
 
-    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation(libs.junit)
     annotationProcessor(libs.nullaway)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    // Add dependencies here
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk { version = release(26) }
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
     aaptOptions {
-        noCompress 'js'
+        noCompress = "js"
     }
-    namespace "androidx.javascriptengine"
+    namespace = "androidx.javascriptengine"
 }
 
 androidx {
     name = "JavaScript Engine"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Javascript Engine is a static library you can add to your Android application in order to evaluate JavaScript."
     additionalDeviceTestApkKeys.add("chrome")

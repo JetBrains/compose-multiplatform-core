@@ -40,8 +40,6 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
@@ -49,10 +47,11 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationDurationScaleRule;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
 
 @LargeTest
 public class FadeTest extends BaseTest {
@@ -519,11 +518,10 @@ public class FadeTest extends BaseTest {
             mAlphaValues = alphaValues;
         }
 
-        @Nullable
         @Override
-        public Animator createAnimator(@NonNull ViewGroup sceneRoot,
-                @Nullable final TransitionValues startValues,
-                @Nullable final TransitionValues endValues) {
+        public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
+                final @Nullable TransitionValues startValues,
+                final @Nullable TransitionValues endValues) {
             final Animator animator = super.createAnimator(sceneRoot, startValues, endValues);
             if (animator instanceof ObjectAnimator) {
                 ((ObjectAnimator) animator).addUpdateListener(

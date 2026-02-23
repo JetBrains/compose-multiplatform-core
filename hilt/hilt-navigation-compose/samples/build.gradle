@@ -15,26 +15,22 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.KotlinTarget
-import androidx.build.LibraryType
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":hilt:hilt-navigation-compose"))
@@ -42,14 +38,14 @@ dependencies {
 
 androidx {
     name = "Navigation Compose Hilt Extension Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.HILT_NAVIGATION_COMPOSE
     inceptionYear = "2021"
     description = "Samples for the Navigation Compose Hilt Integration"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.hilt.navigation.compose.samples"
+    compileSdk { version = release(35) }
+    namespace = "androidx.hilt.navigation.compose.samples"
 }

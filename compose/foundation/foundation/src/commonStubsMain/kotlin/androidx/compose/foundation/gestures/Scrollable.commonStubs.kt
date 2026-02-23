@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package androidx.compose.foundation.gestures
 
 import androidx.compose.foundation.implementedInJetBrainsFork
-import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.Composable
 
-internal actual class FlingCancellationException actual constructor() :
-    CancellationException("The fling animation was cancelled") {
-    init {
-        implementedInJetBrainsFork()
-    }
-}
+internal actual fun platformScrollableDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
+    implementedInJetBrainsFork()
+
+@Composable
+internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior =
+    implementedInJetBrainsFork()

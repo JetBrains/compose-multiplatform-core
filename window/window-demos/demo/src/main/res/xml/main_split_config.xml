@@ -30,7 +30,8 @@
             window:embeddingDividerColor="@color/colorAccent"
             window:embeddingDividerWidthDp="1"
             window:dragRangeMinRatio="0.2"
-            window:dragRangeMaxRatio="0.8" />
+            window:dragRangeMaxRatio="0.8"
+            window:isDraggingToFullscreenAllowed="true" />
     </SplitPairRule>
 
     <SplitPlaceholderRule
@@ -42,9 +43,10 @@
         <DividerAttributes
             window:embeddingDividerType="draggable"
             window:embeddingDividerColor="@color/colorAccent"
-            window:embeddingDividerWidthDp="1"
+            window:embeddingDividerWidthDp="0"
             window:dragRangeMinRatio="0.2"
-            window:dragRangeMaxRatio="0.8" />
+            window:dragRangeMaxRatio="0.8"
+            window:isDraggingToFullscreenAllowed="true" />
     </SplitPlaceholderRule>
 
     <!-- Rules for SplitImeActivityMain -->

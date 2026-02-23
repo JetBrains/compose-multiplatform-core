@@ -30,13 +30,15 @@ import androidx.camera.core.impl.CaptureBundle
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageInputConfig
 import androidx.camera.core.impl.TagBundle
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.core.internal.CameraCaptureResultImageInfo
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult
+import androidx.camera.testing.fakes.FakeCameraCaptureResult
 import androidx.camera.testing.impl.fakes.FakeCaptureStage
 import androidx.camera.testing.impl.fakes.FakeImageProxy
 import java.io.File
 import java.util.UUID
+import org.mockito.Mockito.mock
 import org.robolectric.util.ReflectionHelpers.setStaticField
 
 /** Utility methods for testing image capture. */
@@ -59,21 +61,26 @@ object Utils {
             it.deleteOnExit()
         }
     internal val OUTPUT_FILE_OPTIONS = ImageCapture.OutputFileOptions.Builder(TEMP_FILE).build()
+    internal val SECONDARY_OUTPUT_FILE_OPTIONS =
+        ImageCapture.OutputFileOptions.Builder(TEMP_FILE).build()
     internal val CAMERA_CAPTURE_RESULT = FakeCameraCaptureResult().also { it.timestamp = TIMESTAMP }
 
     internal fun createProcessingRequest(
         takePictureCallback: TakePictureCallback = FakeTakePictureCallback(),
-        captureBundle: CaptureBundle = CaptureBundles.singleDefaultCaptureBundle()
+        captureBundle: CaptureBundle = CaptureBundles.singleDefaultCaptureBundle(),
     ): ProcessingRequest {
         return ProcessingRequest(
             captureBundle,
-            OUTPUT_FILE_OPTIONS,
-            CROP_RECT,
-            ROTATION_DEGREES,
-            /*jpegQuality=*/ 100,
-            SENSOR_TO_BUFFER,
+            createTakePictureRequest(
+                OUTPUT_FILE_OPTIONS,
+                null,
+                CROP_RECT,
+                SENSOR_TO_BUFFER,
+                ROTATION_DEGREES,
+                JPEG_QUALITY,
+            ),
             takePictureCallback,
-            Futures.immediateFuture(null)
+            Futures.immediateFuture(null),
         )
     }
 
@@ -101,8 +108,41 @@ object Utils {
     fun createCameraCaptureResultImageInfo(tagBundleKey: String, stageId: Int): ImageInfo {
         return CameraCaptureResultImageInfo(
             FakeCameraCaptureResult().also {
-                it.setTag(TagBundle.create(Pair(tagBundleKey, stageId)))
+                it.setTagBundle(TagBundle.create(Pair(tagBundleKey, stageId)))
             }
+        )
+    }
+
+    fun createTakePictureRequest(
+        outputFileOptions: ImageCapture.OutputFileOptions?,
+        secondaryOutputFileOptions: ImageCapture.OutputFileOptions?,
+        cropRect: Rect,
+        sensorToBufferTransform: Matrix,
+        rotationDegrees: Int,
+        jpegQuality: Int,
+        isSimultaneousCapture: Boolean = false,
+    ): TakePictureRequest {
+        var onDiskCallback: ImageCapture.OnImageSavedCallback? = null
+        var onMemoryCallback: ImageCapture.OnImageCapturedCallback? = null
+        if (outputFileOptions == null) {
+            onMemoryCallback = mock(ImageCapture.OnImageCapturedCallback::class.java)
+        } else {
+            onDiskCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
+        }
+
+        return TakePictureRequest.of(
+            CameraXExecutors.mainThreadExecutor(),
+            onMemoryCallback,
+            onDiskCallback,
+            outputFileOptions,
+            secondaryOutputFileOptions,
+            cropRect,
+            sensorToBufferTransform,
+            rotationDegrees,
+            jpegQuality,
+            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
+            isSimultaneousCapture,
+            listOf(),
         )
     }
 }

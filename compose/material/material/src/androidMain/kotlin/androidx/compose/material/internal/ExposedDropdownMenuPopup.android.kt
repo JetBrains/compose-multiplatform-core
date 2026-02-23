@@ -73,14 +73,11 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.util.UUID
 import kotlin.math.roundToInt
 
-/**
- * Popup specific for exposed dropdown menus. b/202810604. Should not be used in other components.
- */
 @Composable
-internal fun ExposedDropdownMenuPopup(
-    onDismissRequest: (() -> Unit)? = null,
+internal actual fun ExposedDropdownMenuPopup(
+    onDismissRequest: (() -> Unit)?,
     popupPositionProvider: PopupPositionProvider,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
@@ -96,7 +93,7 @@ internal fun ExposedDropdownMenuPopup(
                 composeView = view,
                 density = density,
                 initialPositionProvider = popupPositionProvider,
-                popupId = popupId
+                popupId = popupId,
             )
             .apply {
                 setContent(parentComposition) {
@@ -109,7 +106,7 @@ internal fun ExposedDropdownMenuPopup(
                             }
                             // Hide the popup while we can't position it correctly
                             .alpha(if (canCalculatePosition) 1f else 0f),
-                        currentContent
+                        currentContent,
                     )
                 }
             }
@@ -120,7 +117,7 @@ internal fun ExposedDropdownMenuPopup(
         popupLayout.updateParameters(
             onDismissRequest = onDismissRequest,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
         onDispose {
             popupLayout.disposeComposition()
@@ -133,7 +130,7 @@ internal fun ExposedDropdownMenuPopup(
         popupLayout.updateParameters(
             onDismissRequest = onDismissRequest,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
     }
 
@@ -159,7 +156,7 @@ internal fun ExposedDropdownMenuPopup(
                 popupLayout.parentBounds = IntRect(layoutPosition, layoutSize)
                 // Update the popup's position
                 popupLayout.updatePosition()
-            }
+            },
     ) { _, _ ->
         popupLayout.parentLayoutDirection = layoutDirection
         layout(0, 0) {}
@@ -215,7 +212,7 @@ private class PopupLayout(
     private val composeView: View,
     density: Density,
     initialPositionProvider: PopupPositionProvider,
-    popupId: UUID
+    popupId: UUID,
 ) :
     AbstractComposeView(composeView.context),
     ViewRootForInspector,
@@ -328,7 +325,7 @@ private class PopupLayout(
     fun updateParameters(
         onDismissRequest: (() -> Unit)?,
         testTag: String,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.testTag = testTag
@@ -352,7 +349,7 @@ private class PopupLayout(
                 parentBounds,
                 windowSize,
                 parentLayoutDirection,
-                popupContentSize
+                popupContentSize,
             )
 
         params.x = popupPosition.x
@@ -394,7 +391,7 @@ private class PopupLayout(
                         // window.
                         if (event.rawX != 0f && event.rawY != 0f) Offset(event.rawX, event.rawY)
                         else null,
-                        parentBounds
+                        parentBounds,
                     )
             if (shouldDismiss) {
                 onDismissRequest?.invoke()

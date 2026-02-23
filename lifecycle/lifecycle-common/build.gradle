@@ -15,15 +15,13 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -31,59 +29,53 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
-
-    kotlin {
-        explicitApi = ExplicitApiMode.Strict
-    }
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.8.1")
-            }
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        jvmMain.dependsOn(commonMain)
-
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.mockitoCore4)
-            }
+        jvmMain.dependencies {
+            api(libs.jspecify)
         }
 
-        nonJvmCommonMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.atomicFu)
-            }
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.mockitoCore4)
         }
 
-        targets.configureEach { target ->
-            if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonJvmCommonMain)
-                }
-            }
+        nonJvmMain.dependencies {
+            implementation(libs.atomicFu)
+        }
+    }
+}
+
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-common:2.9.5") {
+            because "prevents symbols duplication"
         }
     }
 }
 
 androidx {
     name = "Lifecycle-Common"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle-Common"
-    metalavaK2UastEnabled = false
 }

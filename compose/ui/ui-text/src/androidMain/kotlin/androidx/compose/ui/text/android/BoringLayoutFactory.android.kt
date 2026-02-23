@@ -24,6 +24,7 @@ import android.text.TextDirectionHeuristic
 import android.text.TextPaint
 import android.text.TextUtils.TruncateAt
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.text.internal.requirePrecondition
 
 /** Factory Class for BoringLayout */
 @OptIn(InternalPlatformTextApi::class)
@@ -74,8 +75,8 @@ internal object BoringLayoutFactory {
         ellipsize: TruncateAt? = null,
         ellipsizedWidth: Int = width,
     ): BoringLayout {
-        require(width >= 0) { "negative width" }
-        require(ellipsizedWidth >= 0) { "negative ellipsized width" }
+        requirePrecondition(width >= 0) { "negative width" }
+        requirePrecondition(ellipsizedWidth >= 0) { "negative ellipsized width" }
 
         return if (Build.VERSION.SDK_INT >= 33) {
             BoringLayoutFactory33.create(
@@ -89,7 +90,7 @@ internal object BoringLayoutFactory {
                 includePadding,
                 useFallbackLineSpacing,
                 ellipsize,
-                ellipsizedWidth
+                ellipsizedWidth,
             )
         } else {
             BoringLayoutFactoryDefault.create(
@@ -102,7 +103,7 @@ internal object BoringLayoutFactory {
                 metrics,
                 includePadding,
                 ellipsize,
-                ellipsizedWidth
+                ellipsizedWidth,
             )
         }
     }
@@ -128,7 +129,7 @@ private object BoringLayoutFactory33 {
             paint,
             textDir,
             LayoutCompat.DEFAULT_FALLBACK_LINE_SPACING,
-            null /* metrics */
+            null, /* metrics */
         )
     }
 
@@ -144,7 +145,7 @@ private object BoringLayoutFactory33 {
         includePadding: Boolean,
         useFallbackLineSpacing: Boolean,
         ellipsize: TruncateAt? = null,
-        ellipsizedWidth: Int = width
+        ellipsizedWidth: Int = width,
     ): BoringLayout {
         return BoringLayout(
             text,
@@ -157,7 +158,7 @@ private object BoringLayoutFactory33 {
             includePadding,
             ellipsize,
             ellipsizedWidth,
-            useFallbackLineSpacing
+            useFallbackLineSpacing,
         )
     }
 
@@ -188,7 +189,7 @@ private object BoringLayoutFactoryDefault {
         metrics: Metrics,
         includePadding: Boolean,
         ellipsize: TruncateAt? = null,
-        ellipsizedWidth: Int = width
+        ellipsizedWidth: Int = width,
     ): BoringLayout {
         return BoringLayout(
             text,
@@ -200,7 +201,7 @@ private object BoringLayoutFactoryDefault {
             metrics,
             includePadding,
             ellipsize,
-            ellipsizedWidth
+            ellipsizedWidth,
         )
     }
 }

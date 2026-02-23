@@ -23,12 +23,13 @@ import static java.util.UUID.randomUUID;
 import android.graphics.Rect;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.processing.SurfaceEdge;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -51,8 +52,7 @@ public abstract class OutConfig {
      * <p> This is for making sure two {@link OutConfig} with the same value can be stored as
      * different keys in a {@link HashMap}.
      */
-    @NonNull
-    abstract UUID getUuid();
+    abstract @NonNull UUID getUuid();
 
     /**
      * The target {@link UseCase} of the output stream.
@@ -69,16 +69,14 @@ public abstract class OutConfig {
     /**
      * How the input should be cropped.
      */
-    @NonNull
-    public abstract Rect getCropRect();
+    public abstract @NonNull Rect getCropRect();
 
     /**
      * The stream should scale to this size after cropping and rotating.
      *
      * <p>The input stream should be scaled to match this size after cropping and rotating
      */
-    @NonNull
-    public abstract Size getSize();
+    public abstract @NonNull Size getSize();
 
     /**
      * How the input should be rotated clockwise.
@@ -112,8 +110,7 @@ public abstract class OutConfig {
      *
      * <p>The result is an output edge with the input's transformation applied.
      */
-    @NonNull
-    public static OutConfig of(@NonNull SurfaceEdge inputEdge) {
+    public static @NonNull OutConfig of(@NonNull SurfaceEdge inputEdge) {
         return of(inputEdge.getTargets(),
                 inputEdge.getFormat(),
                 inputEdge.getCropRect(),
@@ -127,8 +124,7 @@ public abstract class OutConfig {
      *
      * // TODO: remove this method and make the shouldRespectInputCropRect bit explicit.
      */
-    @NonNull
-    public static OutConfig of(@CameraEffect.Targets int targets,
+    public static @NonNull OutConfig of(@CameraEffect.Targets int targets,
             @CameraEffect.Formats int format,
             @NonNull Rect cropRect,
             @NonNull Size size,
@@ -141,8 +137,7 @@ public abstract class OutConfig {
     /**
      * Creates an {@link OutConfig} instance with custom transformations.
      */
-    @NonNull
-    public static OutConfig of(@CameraEffect.Targets int targets,
+    public static @NonNull OutConfig of(@CameraEffect.Targets int targets,
             @CameraEffect.Formats int format,
             @NonNull Rect cropRect,
             @NonNull Size size,

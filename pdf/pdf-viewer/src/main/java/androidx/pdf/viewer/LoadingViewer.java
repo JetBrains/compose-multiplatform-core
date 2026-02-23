@@ -22,14 +22,15 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.fetcher.Fetcher;
 import androidx.pdf.util.Preconditions;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This base class offers logic to save the {@link DisplayData} it receives (without any heavy
@@ -64,8 +65,7 @@ public abstract class LoadingViewer extends Viewer {
 
     private boolean mHasContents;
 
-    @NonNull
-    protected Fetcher mFetcher;
+    protected @NonNull Fetcher mFetcher;
 
     protected LoadingViewer() {
         this(false);
@@ -83,18 +83,16 @@ public abstract class LoadingViewer extends Viewer {
     }
 
     /** Feed this Viewer with contents to be displayed. */
-    @NonNull
     @CanIgnoreReturnValue
-    public Viewer feed(@NonNull DisplayData contents) {
+    public @NonNull Viewer feed(@NonNull DisplayData contents) {
         saveToArguments(contents);
         postContentsAvailable(contents, null);
         return this;
     }
 
-    @NonNull
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedState) {
+    public @NonNull View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedState) {
         View result = super.onCreateView(inflater, container, savedState);
         if (mFetcher == null) {
             // When changing device languages the system creates a new ImageViewer and the old
@@ -149,7 +147,7 @@ public abstract class LoadingViewer extends Viewer {
      * now if the Viewer is currently started.
      */
     protected void postContentsAvailable(final @NonNull DisplayData contents,
-            @Nullable final Bundle savedState) {
+            final @Nullable Bundle savedState) {
         Preconditions.checkState(mDelayedContentsAvailable == null, "Already waits for contents");
 
         if (isStarted()) {
@@ -168,8 +166,7 @@ public abstract class LoadingViewer extends Viewer {
     }
 
     /** Sets the fetcher to be used by the viewer and returns the viewer. */
-    @NonNull
-    public LoadingViewer setFetcher(@NonNull Fetcher fetcher) {
+    public @NonNull LoadingViewer setFetcher(@NonNull Fetcher fetcher) {
         this.mFetcher = Preconditions.checkNotNull(fetcher);
         return this;
     }

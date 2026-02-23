@@ -18,11 +18,12 @@ package androidx.work.integration.testapp.sherlockholmes;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import androidx.annotation.NonNull;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;

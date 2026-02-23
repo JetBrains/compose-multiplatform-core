@@ -30,14 +30,15 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
 import androidx.core.view.accessibility.AccessibilityClickableSpanCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat;
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -320,8 +321,8 @@ public class AccessibilityDelegateCompat {
      *
      * @see AccessibilityNodeProviderCompat
      */
-    @Nullable
-    public AccessibilityNodeProviderCompat getAccessibilityNodeProvider(@NonNull View host) {
+    public @Nullable AccessibilityNodeProviderCompat getAccessibilityNodeProvider(
+            @NonNull View host) {
         Object provider = mOriginalDelegate.getAccessibilityNodeProvider(host);
         if (provider != null) {
             return new AccessibilityNodeProviderCompat(provider);

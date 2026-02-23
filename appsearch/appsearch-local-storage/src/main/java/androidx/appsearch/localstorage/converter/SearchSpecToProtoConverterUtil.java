@@ -16,12 +16,14 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.localstorage.NamespaceCache;
 import androidx.appsearch.localstorage.SchemaCache;
 import androidx.collection.ArraySet;
 
 import com.google.android.icing.proto.SchemaTypeConfigProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -41,22 +43,21 @@ public class SearchSpecToProtoConverterUtil {
      * intersection set with those prefixed namespace candidates that are stored in AppSearch.
      *
      * @param prefixes              Set of database prefix which the caller want to access.
-     * @param namespaceMap          The cached Map of {@code <Prefix, Set<PrefixedNamespace>>}
-     *                              stores all prefixed namespace filters which are stored in
-     *                              AppSearch.
+     * @param namespaceCache        The NamespaceCache instance held in AppSearch.
      * @param inputNamespaceFilters The set contains all desired but un-prefixed namespace filters
      *                              of user. If the inputNamespaceFilters is empty, all existing
      *                              prefixedCandidates will be added to the prefixedTargetFilters.
      */
     static Set<String> generateTargetNamespaceFilters(
             @NonNull Set<String> prefixes,
-            @NonNull Map<String, Set<String>> namespaceMap,
+            @NonNull NamespaceCache namespaceCache,
             @NonNull List<String> inputNamespaceFilters) {
         // Convert namespace filters to prefixed namespace filters
         Set<String> targetPrefixedNamespaceFilters = new ArraySet<>();
         for (String prefix : prefixes) {
             // Step1: find all prefixed namespace candidates that are stored in AppSearch.
-            Set<String> prefixedNamespaceCandidates = namespaceMap.get(prefix);
+            Set<String> prefixedNamespaceCandidates =
+                    namespaceCache.getPrefixedDocumentNamespaces(prefix);
             if (prefixedNamespaceCandidates == null) {
                 // This is should never happen. All prefixes should be verified before reach
                 // here.

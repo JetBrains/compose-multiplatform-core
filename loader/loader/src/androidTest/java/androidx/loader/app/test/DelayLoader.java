@@ -19,8 +19,9 @@ package androidx.loader.app.test;
 import android.content.Context;
 import android.os.SystemClock;
 
-import androidx.annotation.Nullable;
 import androidx.loader.content.AsyncTaskLoader;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 

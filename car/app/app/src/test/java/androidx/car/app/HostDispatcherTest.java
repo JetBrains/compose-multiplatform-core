@@ -27,11 +27,11 @@ import static org.mockito.Mockito.when;
 import android.location.Location;
 import android.os.RemoteException;
 
-import androidx.annotation.Nullable;
 import androidx.car.app.navigation.INavigationHost;
 import androidx.car.app.serialization.Bundleable;
 import androidx.car.app.suggestion.ISuggestionHost;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,11 +40,13 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link HostDispatcher}. */
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class HostDispatcherTest {
     @Rule
@@ -98,6 +100,11 @@ public class HostDispatcherTest {
                     throws RemoteException {
                 return mMockAppHost.openMicrophone(openMicrophoneRequest);
             }
+
+            @Override
+            public int getInterfaceVersion() {
+                return super.VERSION;
+            }
         };
 
         mNavigationHost = new INavigationHost.Stub() {
@@ -112,12 +119,22 @@ public class HostDispatcherTest {
             @Override
             public void navigationEnded() {
             }
+
+            @Override
+            public int getInterfaceVersion() {
+                return super.VERSION;
+            }
         };
 
         mSuggestionHost = new ISuggestionHost.Stub() {
             @Override
             public void updateSuggestions(Bundleable suggestions){
 
+            }
+
+            @Override
+            public int getInterfaceVersion() {
+                return super.VERSION;
             }
         };
 

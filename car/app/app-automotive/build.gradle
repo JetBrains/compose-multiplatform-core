@@ -15,13 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,6 +28,7 @@ plugins {
     id("androidx.stableaidl")
 }
 dependencies {
+    api(libs.jspecify)
     api(project(":car:app:app"))
     api(libs.guavaListenableFuture)
     api("androidx.annotation:annotation-experimental:1.4.1")
@@ -49,34 +49,32 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation("androidx.fragment:fragment-testing:1.2.3")
-    testImplementation project(path: ':car:app:app-testing')
+    testImplementation(project(":car:app:app-testing"))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk { version = release(29) }
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-
         stableAidl {
-            version 1
+            version = 1
         }
     }
     useLibrary 'android.car'
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app.automotive"
+    namespace = "androidx.car.app.automotive"
 }
 
 androidx {
     name = "Android for Cars App Automotive Extension"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Automotive OS specific functionality to build navigation, parking, and charging apps for cars"
+    enableRobolectric()
 }

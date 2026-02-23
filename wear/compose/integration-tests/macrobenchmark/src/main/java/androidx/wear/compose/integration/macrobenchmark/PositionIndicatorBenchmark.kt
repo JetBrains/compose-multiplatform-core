@@ -18,7 +18,9 @@ package androidx.wear.compose.integration.macrobenchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.CompilationMode
-import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingGfxInfoMetric
+import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
@@ -32,6 +34,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalMetricApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class PositionIndicatorBenchmark(private val compilationMode: CompilationMode) {
@@ -51,14 +54,15 @@ class PositionIndicatorBenchmark(private val compilationMode: CompilationMode) {
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = listOf(FrameTimingMetric()),
+            metrics =
+                listOf(FrameTimingGfxInfoMetric(), MemoryUsageMetric(MemoryUsageMetric.Mode.Last)),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
                 val intent = Intent()
                 intent.action = POSITION_INDICATOR_ACTIVITY
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val buttonVisibilityAutoHide = device.findObject(By.desc(CHANGE_VISIBILITY_AUTO_HIDE))
             val buttonVisibilityHide = device.findObject(By.desc(CHANGE_VISIBILITY_HIDE))
@@ -90,18 +94,17 @@ class PositionIndicatorBenchmark(private val compilationMode: CompilationMode) {
     private fun repeatIncrementAndDecrement(
         device: UiDevice,
         times: Int,
-        delayBetweenClicks: Long
+        delayBetweenClicks: Long,
     ) {
-        val buttonIncrease = device.findObject(By.desc(INCREASE_POSITION))
-        val buttonDecrease = device.findObject(By.desc(DECREASE_POSITION))
-
         repeat(times) {
+            val buttonIncrease = device.findObject(By.desc(INCREASE_POSITION))
             buttonIncrease?.click()
             device.waitForIdle()
             sleep(delayBetweenClicks)
         }
 
         repeat(times) {
+            val buttonDecrease = device.findObject(By.desc(DECREASE_POSITION))
             buttonDecrease?.click()
             device.waitForIdle()
             sleep(delayBetweenClicks)

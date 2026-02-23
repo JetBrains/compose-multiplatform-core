@@ -19,9 +19,11 @@
  */
 package androidx.leanback.app;
 
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -31,11 +33,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.app.Fragment;
-import android.app.Activity;
-import android.app.FragmentTransaction;
 import androidx.leanback.R;
 import androidx.leanback.transition.TransitionHelper;
 import androidx.leanback.transition.TransitionListener;
@@ -53,6 +50,9 @@ import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.VerticalGridView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -479,8 +479,8 @@ public class DetailsFragment extends BaseFragment {
     }
 
     @Override
-    @Nullable
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+            Bundle savedInstanceState) {
         mRootView = (BrowseFrameLayout) inflater.inflate(
                 R.layout.lb_details_fragment, container, false);
         mBackgroundView = mRootView.findViewById(R.id.details_background_view);
@@ -508,22 +508,20 @@ public class DetailsFragment extends BaseFragment {
 
         setupDpadNavigation();
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            // Setup adapter listener to work with ParallaxTransition (>= API 21).
-            mRowsFragment.setExternalAdapterListener(new ItemBridgeAdapter.AdapterListener() {
-                @Override
-                public void onCreate(ItemBridgeAdapter.ViewHolder vh) {
-                    if (mDetailsParallax != null && vh.getViewHolder()
-                            instanceof FullWidthDetailsOverviewRowPresenter.ViewHolder) {
-                        FullWidthDetailsOverviewRowPresenter.ViewHolder rowVh =
-                                (FullWidthDetailsOverviewRowPresenter.ViewHolder)
-                                        vh.getViewHolder();
-                        rowVh.getOverviewView().setTag(R.id.lb_parallax_source,
-                                mDetailsParallax);
-                    }
+        // Setup adapter listener to work with ParallaxTransition.
+        mRowsFragment.setExternalAdapterListener(new ItemBridgeAdapter.AdapterListener() {
+            @Override
+            public void onCreate(ItemBridgeAdapter.ViewHolder vh) {
+                if (mDetailsParallax != null && vh.getViewHolder()
+                        instanceof FullWidthDetailsOverviewRowPresenter.ViewHolder) {
+                    FullWidthDetailsOverviewRowPresenter.ViewHolder rowVh =
+                            (FullWidthDetailsOverviewRowPresenter.ViewHolder)
+                                    vh.getViewHolder();
+                    rowVh.getOverviewView().setTag(R.id.lb_parallax_source,
+                            mDetailsParallax);
                 }
-            });
-        }
+            }
+        });
         return mRootView;
     }
 

@@ -45,12 +45,13 @@ import static androidx.media.AudioAttributesCompat.USAGE_VOICE_COMMUNICATION_SIG
 import android.media.AudioManager;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.media.AudioAttributesCompat.AudioManagerHidden;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -92,8 +93,7 @@ public class AudioAttributesImplBase implements AudioAttributesImpl {
     }
 
     @Override
-    @Nullable
-    public Object getAudioAttributes() {
+    public @Nullable Object getAudioAttributes() {
         return null;
     }
 
@@ -158,8 +158,7 @@ public class AudioAttributesImplBase implements AudioAttributesImpl {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         final StringBuilder sb = new StringBuilder("AudioAttributesCompat:");
         if (mLegacyStream != INVALID_STREAM_TYPE) {
             sb.append(" stream=").append(mLegacyStream);
@@ -191,14 +190,12 @@ public class AudioAttributesImplBase implements AudioAttributesImpl {
         }
 
         @Override
-        @NonNull
-        public AudioAttributesImpl build() {
+        public @NonNull AudioAttributesImpl build() {
             return new AudioAttributesImplBase(mContentType, mFlags, mUsage, mLegacyStream);
         }
 
         @Override
-        @NonNull
-        public Builder setUsage(@AudioAttributesCompat.AttributeUsage int usage) {
+        public @NonNull Builder setUsage(@AudioAttributesCompat.AttributeUsage int usage) {
             switch (usage) {
                 case USAGE_UNKNOWN:
                 case USAGE_MEDIA:
@@ -229,8 +226,8 @@ public class AudioAttributesImplBase implements AudioAttributesImpl {
         }
 
         @Override
-        @NonNull
-        public Builder setContentType(@AudioAttributesCompat.AttributeContentType int contentType) {
+        public @NonNull Builder setContentType(
+                @AudioAttributesCompat.AttributeContentType int contentType) {
             switch (contentType) {
                 case CONTENT_TYPE_UNKNOWN:
                 case CONTENT_TYPE_MOVIE:
@@ -246,16 +243,14 @@ public class AudioAttributesImplBase implements AudioAttributesImpl {
         }
 
         @Override
-        @NonNull
-        public Builder setFlags(int flags) {
+        public @NonNull Builder setFlags(int flags) {
             flags &= AudioAttributesCompat.FLAG_ALL;
             mFlags |= flags;
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setLegacyStreamType(int streamType) {
+        public @NonNull Builder setLegacyStreamType(int streamType) {
             if (streamType == AudioManagerHidden.STREAM_ACCESSIBILITY) {
                 throw new IllegalArgumentException(
                         "STREAM_ACCESSIBILITY is not a legacy stream "

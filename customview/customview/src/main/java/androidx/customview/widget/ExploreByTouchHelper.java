@@ -27,8 +27,6 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityRecord;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
@@ -38,6 +36,9 @@ import androidx.core.view.accessibility.AccessibilityEventCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat;
 import androidx.core.view.accessibility.AccessibilityRecordCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,13 +68,13 @@ import java.util.List;
  *
  *     &#64;Override
  *     public boolean dispatchHoverEvent(MotionEvent event) {
- *       return mHelper.dispatchHoverEvent(this, event)
+ *       return mExploreByTouchHelper.dispatchHoverEvent(event)
  *           || super.dispatchHoverEvent(event);
  *     }
  *
  *     &#64;Override
  *     public boolean dispatchKeyEvent(KeyEvent event) {
- *       return mHelper.dispatchKeyEvent(event)
+ *       return mExploreByTouchHelper.dispatchKeyEvent(event)
  *           || super.dispatchKeyEvent(event);
  *     }
  *
@@ -81,7 +82,7 @@ import java.util.List;
  *     public void onFocusChanged(boolean gainFocus, int direction,
  *         Rect previouslyFocusedRect) {
  *       super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
- *       mHelper.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+ *       mExploreByTouchHelper.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
  *     }
  * }
  * </pre>
@@ -715,8 +716,7 @@ public abstract class ExploreByTouchHelper extends AccessibilityDelegateCompat {
      * @return an {@link AccessibilityNodeInfoCompat} populated with information
      *         about the specified item
      */
-    @NonNull
-    AccessibilityNodeInfoCompat obtainAccessibilityNodeInfo(int virtualViewId) {
+    @NonNull AccessibilityNodeInfoCompat obtainAccessibilityNodeInfo(int virtualViewId) {
         if (virtualViewId == HOST_ID) {
             return createNodeForHost();
         }
@@ -730,8 +730,7 @@ public abstract class ExploreByTouchHelper extends AccessibilityDelegateCompat {
      *
      * @return an {@link AccessibilityNodeInfoCompat} for the parent node
      */
-    @NonNull
-    private AccessibilityNodeInfoCompat createNodeForHost() {
+    private @NonNull AccessibilityNodeInfoCompat createNodeForHost() {
         final AccessibilityNodeInfoCompat info = AccessibilityNodeInfoCompat.obtain(mHost);
         ViewCompat.onInitializeAccessibilityNodeInfo(mHost, info);
 
@@ -777,8 +776,7 @@ public abstract class ExploreByTouchHelper extends AccessibilityDelegateCompat {
      *                      a node
      * @return an {@link AccessibilityNodeInfoCompat} for the specified item
      */
-    @NonNull
-    private AccessibilityNodeInfoCompat createNodeForChild(int virtualViewId) {
+    private @NonNull AccessibilityNodeInfoCompat createNodeForChild(int virtualViewId) {
         final AccessibilityNodeInfoCompat node = AccessibilityNodeInfoCompat.obtain();
 
         // Ensure the client has good defaults.

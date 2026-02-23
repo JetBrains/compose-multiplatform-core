@@ -24,10 +24,11 @@ import android.util.Base64;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to exercise Force Dark functionality.
@@ -44,6 +45,7 @@ public class ForceDarkActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_force_dark);
         setTitle(R.string.force_dark_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {

@@ -19,12 +19,14 @@ package androidx.compose.foundation.lazy.grid
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.AutoTestFrameClock
 import androidx.compose.foundation.BaseLazyLayoutTestWithOrientation
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -58,9 +60,10 @@ open class BaseLazyGridTestWithOrientation(orientation: Orientation) :
         reverseArrangement: Boolean = false,
         flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
         userScrollEnabled: Boolean = true,
+        overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         crossAxisSpacedBy: Dp = 0.dp,
         mainAxisSpacedBy: Dp = 0.dp,
-        content: LazyGridScope.() -> Unit
+        content: LazyGridScope.() -> Unit,
     ) =
         LazyGrid(
             GridCells.Fixed(cells),
@@ -71,9 +74,10 @@ open class BaseLazyGridTestWithOrientation(orientation: Orientation) :
             reverseArrangement,
             flingBehavior,
             userScrollEnabled,
+            overscrollEffect,
             crossAxisSpacedBy,
             mainAxisSpacedBy,
-            content
+            content,
         )
 
     @Composable
@@ -86,9 +90,10 @@ open class BaseLazyGridTestWithOrientation(orientation: Orientation) :
         reverseArrangement: Boolean = false,
         flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
         userScrollEnabled: Boolean = true,
+        overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         crossAxisSpacedBy: Dp = 0.dp,
         mainAxisSpacedBy: Dp = 0.dp,
-        content: LazyGridScope.() -> Unit
+        content: LazyGridScope.() -> Unit,
     ) {
         if (vertical) {
             val verticalArrangement =
@@ -110,9 +115,10 @@ open class BaseLazyGridTestWithOrientation(orientation: Orientation) :
                 reverseLayout = reverseLayout,
                 flingBehavior = flingBehavior,
                 userScrollEnabled = userScrollEnabled,
+                overscrollEffect = overscrollEffect,
                 verticalArrangement = verticalArrangement,
                 horizontalArrangement = horizontalArrangement,
-                content = content
+                content = content,
             )
         } else {
             val horizontalArrangement =
@@ -134,9 +140,10 @@ open class BaseLazyGridTestWithOrientation(orientation: Orientation) :
                 reverseLayout = reverseLayout,
                 flingBehavior = flingBehavior,
                 userScrollEnabled = userScrollEnabled,
+                overscrollEffect = overscrollEffect,
                 horizontalArrangement = horizontalArrangement,
                 verticalArrangement = verticalArrangement,
-                content = content
+                content = content,
             )
         }
     }

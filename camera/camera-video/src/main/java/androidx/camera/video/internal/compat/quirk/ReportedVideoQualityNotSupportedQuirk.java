@@ -24,10 +24,11 @@ import android.media.MediaCodec;
 import android.media.MediaRecorder.VideoEncoder;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk;
 import androidx.camera.video.Quality;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Locale;

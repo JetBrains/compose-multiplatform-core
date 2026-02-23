@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("TYPE_INTERSECTION_AS_REIFIED")
+
 package androidx.kruth
 
 import androidx.kruth.Fact.Companion.simpleFact
@@ -157,10 +159,7 @@ class SubjectTest {
         fun getArray(): Array<*> =
             arrayOf(
                 intArrayOf(1, 2, 3),
-                arrayOf(
-                    intArrayOf(1, 2, 3),
-                    arrayOf("a", null, "b"),
-                ),
+                arrayOf<Any>(intArrayOf(1, 2, 3), arrayOf("a", null, "b")),
                 listOf(1, 2, 3),
                 "a",
             )
@@ -173,10 +172,7 @@ class SubjectTest {
         fun getArray(arg: Int): Array<*> =
             arrayOf(
                 intArrayOf(1, 2, 3),
-                arrayOf(
-                    intArrayOf(1, arg, 3),
-                    arrayOf("a", null, "b"),
-                ),
+                arrayOf<Any>(intArrayOf(1, arg, 3), arrayOf("a", null, "b")),
                 listOf(1, 2, 3),
                 "a",
             )
@@ -388,7 +384,7 @@ class SubjectTest {
     }
 
     @Test
-    fun isSameInstanceAsFailureWithComparableObjects() {
+    fun isSameInstanceAsFailureWithComparableObjects() = assumeNotJs {
         val a: Any = "ab"
         val b: Any = buildString { append("ab") }
         assertFailsWith<AssertionError> { assertThat(a).isSameInstanceAs(b) }
@@ -435,7 +431,7 @@ class SubjectTest {
     }
 
     @Test
-    fun isNotSameInstanceAsWithComparableObjects() {
+    fun isNotSameInstanceAsWithComparableObjects() = assumeNotJs {
         val a: Any = "ab"
         val b: Any = buildString { append("ab") }
         assertThat(a).isNotSameInstanceAs(b)
@@ -641,11 +637,11 @@ class SubjectTest {
 
         assertFailsWithMessage(
             """
-                msg1
-                msg2
-                msg3
-                msg4
-                but was: 0
+            msg1
+            msg2
+            msg3
+            msg4
+            but was: 0
             """
                 .trimIndent()
         ) {
@@ -668,13 +664,13 @@ class SubjectTest {
 
         assertFailsWithMessage(
             """
-                msg1
-                msg2
-                msg3
-                msg4
-                but was:
-                    a
-                    b
+            msg1
+            msg2
+            msg3
+            msg4
+            but was:
+                a
+                b
             """
                 .trimIndent()
         ) {
@@ -697,10 +693,10 @@ class SubjectTest {
 
         assertFailsWithMessage(
             """
-                msg1
-                msg2
-                msg3
-                msg4
+            msg1
+            msg2
+            msg3
+            msg4
             """
                 .trimIndent()
         ) {
@@ -723,10 +719,10 @@ class SubjectTest {
 
         assertFailsWithMessage(
             """
-                msg1
-                msg2
-                msg3
-                msg4
+            msg1
+            msg2
+            msg3
+            msg4
             """
                 .trimIndent()
         ) {

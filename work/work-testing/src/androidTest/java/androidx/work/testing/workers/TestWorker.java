@@ -19,10 +19,11 @@ package androidx.work.testing.workers;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.Logger;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A test {@link Worker} that prints a log and returns a successful result.

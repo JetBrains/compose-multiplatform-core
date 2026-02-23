@@ -23,12 +23,13 @@ import android.util.SparseArray;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.SafeBrowsingResponseCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} which shows a custom interstitial if {@link WebView} encounters malicious
@@ -46,6 +47,7 @@ public class CustomInterstitialActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_interstitial);
         setTitle(R.string.custom_interstitial_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_HIT)

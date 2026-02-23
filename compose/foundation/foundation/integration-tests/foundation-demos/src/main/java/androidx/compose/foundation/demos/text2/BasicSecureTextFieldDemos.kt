@@ -52,6 +52,7 @@ import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BasicSecureTextFieldDemos() {
@@ -88,7 +89,7 @@ fun BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
     BasicSecureTextField(
         state = state,
         textObfuscationMode = textObfuscationMode,
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -115,18 +116,18 @@ fun ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
                     replace(
                         start = 0,
                         end = length,
-                        text = asCharSequence().substring(changes.getRange(0))
+                        text = asCharSequence().substring(changes.getRange(0)),
                     )
                 }
             },
-            outputTransformation = { insert(0, "Enter mask character: ") }
+            outputTransformation = { insert(0, "Enter mask character: ") },
         )
     }
     BasicSecureTextField(
         state = passwordState,
         textObfuscationMode = textObfuscationMode,
         textObfuscationCharacter = maskState.text[0],
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -143,7 +144,7 @@ fun NumberPasswordDemo() {
         },
         keyboardOptions =
             KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.NumberPassword),
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
@@ -165,7 +166,7 @@ fun PasswordToggleVisibilityDemo() {
                 Modifier.weight(1f)
                     .padding(6.dp)
                     .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .padding(6.dp)
+                    .padding(6.dp),
         )
         if (visible) {
             TextButton(onClick = { visible = false }) { Text("Hide") }

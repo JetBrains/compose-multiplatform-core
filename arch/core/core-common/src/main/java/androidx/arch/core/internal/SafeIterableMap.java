@@ -16,9 +16,10 @@
 
 package androidx.arch.core.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -30,7 +31,9 @@ import java.util.WeakHashMap;
  *
  * @param <K> Key type
  * @param <V> Value type
+ * @deprecated These are internal legacy utilities and should not be used.
  */
+@Deprecated
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
 
@@ -42,9 +45,8 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
     private final WeakHashMap<SupportRemove<K, V>, Boolean> mIterators = new WeakHashMap<>();
     private int mSize = 0;
 
-    @Nullable
     @SuppressWarnings("HiddenTypeParameter")
-    protected Entry<K, V> get(K k) {
+    protected @Nullable Entry<K, V> get(K k) {
         Entry<K, V> currentNode = mStart;
         while (currentNode != null) {
             if (currentNode.mKey.equals(k)) {
@@ -136,9 +138,8 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
      * @return an ascending iterator, which doesn't include new elements added during an
      * iteration.
      */
-    @NonNull
     @Override
-    public Iterator<Map.Entry<K, V>> iterator() {
+    public @NonNull Iterator<Map.Entry<K, V>> iterator() {
         ListIterator<K, V> iterator = new AscendingIterator<>(mStart, mEnd);
         mIterators.put(iterator, false);
         return iterator;
@@ -148,8 +149,7 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
      * @return an descending iterator, which doesn't include new elements added during an
      * iteration.
      */
-    @NonNull
-    public Iterator<Map.Entry<K, V>> descendingIterator() {
+    public @NonNull Iterator<Map.Entry<K, V>> descendingIterator() {
         DescendingIterator<K, V> iterator = new DescendingIterator<>(mEnd, mStart);
         mIterators.put(iterator, false);
         return iterator;
@@ -158,8 +158,7 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
     /**
      * return an iterator with additions.
      */
-    @NonNull
-    public IteratorWithAdditions iteratorWithAdditions() {
+    public @NonNull IteratorWithAdditions iteratorWithAdditions() {
         IteratorWithAdditions iterator = new IteratorWithAdditions();
         mIterators.put(iterator, false);
         return iterator;
@@ -168,16 +167,14 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
     /**
      * @return eldest added entry or null
      */
-    @Nullable
-    public Map.Entry<K, V> eldest() {
+    public Map.@Nullable Entry<K, V> eldest() {
         return mStart;
     }
 
     /**
      * @return newest added entry or null
      */
-    @Nullable
-    public Map.Entry<K, V> newest() {
+    public Map.@Nullable Entry<K, V> newest() {
         return mEnd;
     }
 
@@ -368,10 +365,8 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
     }
 
     static class Entry<K, V> implements Map.Entry<K, V> {
-        @NonNull
-        final K mKey;
-        @NonNull
-        final V mValue;
+        final @NonNull K mKey;
+        final @NonNull V mValue;
         Entry<K, V> mNext;
         Entry<K, V> mPrevious;
 
@@ -380,15 +375,13 @@ public class SafeIterableMap<K, V> implements Iterable<Map.Entry<K, V>> {
             this.mValue = value;
         }
 
-        @NonNull
         @Override
-        public K getKey() {
+        public @NonNull K getKey() {
             return mKey;
         }
 
-        @NonNull
         @Override
-        public V getValue() {
+        public @NonNull V getValue() {
             return mValue;
         }
 

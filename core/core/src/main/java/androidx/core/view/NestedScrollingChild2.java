@@ -21,9 +21,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewParent;
 
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat.NestedScrollType;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This interface should be implemented by {@link View View} subclasses that wish
@@ -129,7 +130,7 @@ public interface NestedScrollingChild2 extends NestedScrollingChild {
      * @see #dispatchNestedPreScroll(int, int, int[], int[], int)
      */
     boolean dispatchNestedScroll(int dxConsumed, int dyConsumed,
-            int dxUnconsumed, int dyUnconsumed, @Nullable int[] offsetInWindow,
+            int dxUnconsumed, int dyUnconsumed, int @Nullable [] offsetInWindow,
             @NestedScrollType int type);
 
     /**
@@ -152,6 +153,6 @@ public interface NestedScrollingChild2 extends NestedScrollingChild {
      * @return true if the parent consumed some or all of the scroll delta
      * @see #dispatchNestedScroll(int, int, int, int, int[], int)
      */
-    boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow, @NestedScrollType int type);
+    boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow, @NestedScrollType int type);
 }

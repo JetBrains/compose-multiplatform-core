@@ -14,9 +14,33 @@
  * limitations under the License.
  */
 
+@file:JvmName("SavedStateKt")
+@file:JvmMultifileClass
+@file:Suppress("NOTHING_TO_INLINE")
+
 package androidx.savedstate
+
+import androidx.core.os.bundleOf
 
 public actual typealias SavedState = android.os.Bundle
 
-public actual inline fun savedState(block: SavedStateWriter.() -> Unit): SavedState =
-    SavedState().apply { write(block) }
+public actual inline fun savedState(
+    initialState: Map<String, Any?>,
+    builderAction: SavedStateWriter.() -> Unit,
+): SavedState {
+    val pairs =
+        if (initialState.isEmpty()) {
+            emptyArray()
+        } else {
+            initialState.map { (key, value) -> key to value }.toTypedArray()
+        }
+    @Suppress("DEPRECATION") // Bridge Map<String, Any?> to Bundle; no safe alternative.
+    return bundleOf(*pairs).apply { write(builderAction) }
+}
+
+public actual inline fun savedState(
+    initialState: SavedState,
+    builderAction: SavedStateWriter.() -> Unit,
+): SavedState {
+    return SavedState(initialState).apply { write(builderAction) }
+}

@@ -31,12 +31,12 @@ class VerificationEntryDisplayDataTest {
     fun construction_success() {
         val icon = Bitmap.createBitmap(4, 4, Bitmap.Config.ALPHA_8)
         val data =
-            VerificationEntryDisplayData(
+            VerificationEntryDisplayProperties(
                 title = "test-title",
                 subtitle = "subtitle",
                 icon = icon,
                 explainer = "explainer",
-                warning = "warning"
+                warning = "warning",
             )
 
         assertThat(data.displayType).isEqualTo(DISPLAY_TYPE_VERIFICATION)

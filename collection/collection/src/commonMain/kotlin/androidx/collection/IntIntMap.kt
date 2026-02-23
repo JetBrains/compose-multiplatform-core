@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -52,12 +57,7 @@ public fun intIntMapOf(key1: Int, value1: Int): IntIntMap =
  * Returns a new [IntIntMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun intIntMapOf(
-    key1: Int,
-    value1: Int,
-    key2: Int,
-    value2: Int,
-): IntIntMap =
+public fun intIntMapOf(key1: Int, value1: Int, key2: Int, value2: Int): IntIntMap =
     MutableIntIntMap().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -137,12 +137,7 @@ public fun mutableIntIntMapOf(key1: Int, value1: Int): MutableIntIntMap =
  * Returns a new [MutableIntIntMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun mutableIntIntMapOf(
-    key1: Int,
-    value1: Int,
-    key2: Int,
-    value2: Int,
-): MutableIntIntMap =
+public fun mutableIntIntMapOf(key1: Int, value1: Int, key2: Int, value2: Int): MutableIntIntMap =
     MutableIntIntMap().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -210,6 +205,36 @@ public fun mutableIntIntMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [IntIntMap] by populating a [MutableIntIntMap] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableIntIntMap] can be populated.
+ */
+public inline fun buildIntIntMap(builderAction: MutableIntIntMap.() -> Unit): IntIntMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableIntIntMap().apply(builderAction)
+}
+
+/**
+ * Builds a new [IntIntMap] by populating a [MutableIntIntMap] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableIntIntMap] can be populated.
+ */
+public inline fun buildIntIntMap(
+    initialCapacity: Int,
+    builderAction: MutableIntIntMap.() -> Unit,
+): IntIntMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableIntIntMap(initialCapacity).apply(builderAction)
+}
 
 /**
  * [IntIntMap] is a container with a [Map]-like interface for [Int] primitive keys and [Int]
@@ -390,13 +415,13 @@ public sealed class IntIntMap {
         return count
     }
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
-    public operator fun contains(key: Int): Boolean = findKeyIndex(key) >= 0
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
+    public inline operator fun contains(key: Int): Boolean = containsKey(key)
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
     public fun containsKey(key: Int): Boolean = findKeyIndex(key) >= 0
 
-    /** Returns true if the specified [value] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [value] is present in this map, false otherwise. */
     public fun containsValue(value: Int): Boolean {
         forEachValue { v -> if (value == v) return true }
         return false
@@ -419,19 +444,21 @@ public sealed class IntIntMap {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@IntIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@IntIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -451,20 +478,22 @@ public sealed class IntIntMap {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Int, value: Int) -> CharSequence
+        crossinline transform: (key: Int, value: Int) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@IntIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@IntIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -501,7 +530,8 @@ public sealed class IntIntMap {
         }
 
         forEach { key, value ->
-            if (value != other[key]) {
+            val index = other.findKeyIndex(key)
+            if (index < 0 || value != other.values[index]) {
                 return false
             }
         }

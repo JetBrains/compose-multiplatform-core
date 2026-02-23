@@ -19,12 +19,13 @@ package androidx.camera.core.resolutionselector;
 import static androidx.camera.core.resolutionselector.AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -126,12 +127,9 @@ public final class ResolutionSelector {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @interface AllowedResolutionMode {
     }
-    @NonNull
-    private final AspectRatioStrategy mAspectRatioStrategy;
-    @Nullable
-    private final ResolutionStrategy mResolutionStrategy;
-    @Nullable
-    private final ResolutionFilter mResolutionFilter;
+    private final @NonNull AspectRatioStrategy mAspectRatioStrategy;
+    private final @Nullable ResolutionStrategy mResolutionStrategy;
+    private final @Nullable ResolutionFilter mResolutionFilter;
     @AllowedResolutionMode
     private final int mAllowedResolutionMode;
 
@@ -151,24 +149,21 @@ public final class ResolutionSelector {
      * {@link AspectRatioStrategy#RATIO_4_3_FALLBACK_AUTO_STRATEGY} if none is specified when
      * creating the ResolutionSelector.
      */
-    @NonNull
-    public AspectRatioStrategy getAspectRatioStrategy() {
+    public @NonNull AspectRatioStrategy getAspectRatioStrategy() {
         return mAspectRatioStrategy;
     }
 
     /**
      * Returns the specified {@link ResolutionStrategy}, or null if not specified.
      */
-    @Nullable
-    public ResolutionStrategy getResolutionStrategy() {
+    public @Nullable ResolutionStrategy getResolutionStrategy() {
         return mResolutionStrategy;
     }
 
     /**
      * Returns the specified {@link ResolutionFilter} implementation, or null if not specified.
      */
-    @Nullable
-    public ResolutionFilter getResolutionFilter() {
+    public @Nullable ResolutionFilter getResolutionFilter() {
         return mResolutionFilter;
     }
 
@@ -184,12 +179,10 @@ public final class ResolutionSelector {
      * Builder for a {@link ResolutionSelector}.
      */
     public static final class Builder {
-        @Nullable
-        private AspectRatioStrategy mAspectRatioStrategy = RATIO_4_3_FALLBACK_AUTO_STRATEGY;
-        @Nullable
-        private ResolutionStrategy mResolutionStrategy = null;
-        @Nullable
-        private ResolutionFilter mResolutionFilter = null;
+        private @Nullable AspectRatioStrategy mAspectRatioStrategy =
+                RATIO_4_3_FALLBACK_AUTO_STRATEGY;
+        private @Nullable ResolutionStrategy mResolutionStrategy = null;
+        private @Nullable ResolutionFilter mResolutionFilter = null;
         @AllowedResolutionMode
         private int mAllowedResolutionMode = PREFER_CAPTURE_RATE_OVER_HIGHER_RESOLUTION;
 
@@ -209,9 +202,8 @@ public final class ResolutionSelector {
         /**
          * Creates a Builder from an existing resolution selector.
          */
-        @NonNull
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public static Builder fromResolutionSelector(
+        public static @NonNull Builder fromResolutionSelector(
                 @NonNull ResolutionSelector resolutionSelector) {
             return new Builder(resolutionSelector);
         }
@@ -235,8 +227,8 @@ public final class ResolutionSelector {
          * {@link ResolutionSelector} with a {@link ResolutionFilter} to find and select those
          * specific sizes.
          */
-        @NonNull
-        public Builder setAspectRatioStrategy(@NonNull AspectRatioStrategy aspectRatioStrategy) {
+        public @NonNull Builder setAspectRatioStrategy(
+                @NonNull AspectRatioStrategy aspectRatioStrategy) {
             mAspectRatioStrategy = aspectRatioStrategy;
             return this;
         }
@@ -259,8 +251,8 @@ public final class ResolutionSelector {
          * resolution of other aspect ratios, you'll need to create a {@link ResolutionSelector}
          * with a {@link ResolutionFilter} to find and select those specific sizes.
          */
-        @NonNull
-        public Builder setResolutionStrategy(@NonNull ResolutionStrategy resolutionStrategy) {
+        public @NonNull Builder setResolutionStrategy(
+                @NonNull ResolutionStrategy resolutionStrategy) {
             mResolutionStrategy = resolutionStrategy;
             return this;
         }
@@ -270,8 +262,7 @@ public final class ResolutionSelector {
          * filter will filter out unsuitable sizes and sort the resolution list in the preferred
          * order. The preferred order is the order in which the resolutions should be tried first.
          */
-        @NonNull
-        public Builder setResolutionFilter(@NonNull ResolutionFilter resolutionFilter) {
+        public @NonNull Builder setResolutionFilter(@NonNull ResolutionFilter resolutionFilter) {
             mResolutionFilter = resolutionFilter;
             return this;
         }
@@ -282,8 +273,7 @@ public final class ResolutionSelector {
          * <p>If not specified, the default setting is
          * {@link ResolutionSelector#PREFER_CAPTURE_RATE_OVER_HIGHER_RESOLUTION}.
          */
-        @NonNull
-        public Builder setAllowedResolutionMode(@AllowedResolutionMode int mode) {
+        public @NonNull Builder setAllowedResolutionMode(@AllowedResolutionMode int mode) {
             mAllowedResolutionMode = mode;
             return this;
         }
@@ -292,8 +282,7 @@ public final class ResolutionSelector {
          * Builds the resolution selector. This will create a resolution selector that can be
          * used to select the desired resolution for the captured image.
          */
-        @NonNull
-        public ResolutionSelector build() {
+        public @NonNull ResolutionSelector build() {
             return new ResolutionSelector(mAspectRatioStrategy, mResolutionStrategy,
                     mResolutionFilter, mAllowedResolutionMode);
         }

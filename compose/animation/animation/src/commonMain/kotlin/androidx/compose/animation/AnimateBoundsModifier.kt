@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.isUnspecified
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.layout.ApproachLayoutModifierNode
 import androidx.compose.ui.layout.ApproachMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -40,10 +41,22 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.constrain
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toSize
@@ -114,7 +127,6 @@ import kotlinx.coroutines.launch
  * @see ApproachLayoutModifierNode
  * @see LookaheadScope
  */
-@ExperimentalSharedTransitionApi // Depends on BoundsTransform
 public fun Modifier.animateBounds(
     lookaheadScope: LookaheadScope,
     modifier: Modifier = Modifier,
@@ -144,8 +156,7 @@ public fun Modifier.animateBounds(
             )
         )
 
-@ExperimentalSharedTransitionApi
-internal data class BoundsAnimationElement(
+internal class BoundsAnimationElement(
     val lookaheadScope: LookaheadScope,
     val boundsTransform: BoundsTransform,
     val resolveMeasureConstraints: (animatedSize: IntSize, constraints: Constraints) -> Constraints,
@@ -174,6 +185,19 @@ internal data class BoundsAnimationElement(
         properties["onChooseMeasureConstraints"] = resolveMeasureConstraints
         properties["animateMotionFrameOfReference"] = animateMotionFrameOfReference
     }
+
+    override fun hashCode(): Int {
+        return ((lookaheadScope.hashCode() * 31 + boundsTransform.hashCode()) * 31 +
+            resolveMeasureConstraints.hashCode()) * 31 + animateMotionFrameOfReference.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is BoundsAnimationElement &&
+            other.lookaheadScope == lookaheadScope &&
+            other.boundsTransform == boundsTransform &&
+            other.resolveMeasureConstraints === resolveMeasureConstraints &&
+            other.animateMotionFrameOfReference == animateMotionFrameOfReference
+    }
 }
 
 /**
@@ -188,15 +212,25 @@ internal data class BoundsAnimationElement(
  * @param animateMotionFrameOfReference Whether to include changes under
  *   [LayoutCoordinates.introducesMotionFrameOfReference] to trigger animations.
  */
-@ExperimentalSharedTransitionApi
+@OptIn(ExperimentalLookaheadAnimationVisualDebugApi::class)
 internal class BoundsAnimationModifierNode(
     var lookaheadScope: LookaheadScope,
     var boundsTransform: BoundsTransform,
     var onChooseMeasureConstraints:
         (animatedSize: IntSize, constraints: Constraints) -> Constraints,
     var animateMotionFrameOfReference: Boolean,
-) : ApproachLayoutModifierNode, Modifier.Node() {
+) :
+    ApproachLayoutModifierNode,
+    Modifier.Node(),
+    CompositionLocalConsumerModifierNode,
+    DrawModifierNode {
+
+    private var directManipulationParentsDirty = true
     private val boundsAnimation = BoundsTransformDeferredAnimation()
+    private var textMeasurer: TextMeasurer? = null
+    var currentResolver: FontFamily.Resolver? = null
+    var currentDensity: Density? = null
+    var currentLayoutDirection: LayoutDirection? = null
 
     override fun isMeasurementApproachInProgress(lookaheadSize: IntSize): Boolean {
         // Update target size, it will serve to know if we expect an approach in progress
@@ -205,23 +239,37 @@ internal class BoundsAnimationModifierNode(
         return !boundsAnimation.isIdle
     }
 
+    @Suppress("SuspiciousCompositionLocalModifierRead")
+    override fun onAttach() {
+        directManipulationParentsDirty = true
+    }
+
     override fun Placeable.PlacementScope.isPlacementApproachInProgress(
         lookaheadCoordinates: LayoutCoordinates
     ): Boolean {
+        if (
+            isLookaheadAnimationVisualDebuggingEnabled &&
+                boundsAnimation.lookaheadAnimationVisualDebugHelper == null
+        ) {
+            boundsAnimation.lookaheadAnimationVisualDebugHelper =
+                LookaheadAnimationVisualDebugHelper()
+        }
         // Once we can capture size and offset we may also start the animation
         boundsAnimation.updateTargetOffsetAndAnimate(
             lookaheadScope = lookaheadScope,
             placementScope = this,
             coroutineScope = coroutineScope,
+            directManipulationParentsDirty = directManipulationParentsDirty,
             includeMotionFrameOfReference = animateMotionFrameOfReference,
             boundsTransform = boundsTransform,
         )
+        directManipulationParentsDirty = animateMotionFrameOfReference
         return !boundsAnimation.isIdle
     }
 
     override fun ApproachMeasureScope.approachMeasure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // The animated value is null on the first frame as we don't get the full bounds
         // information until placement, so we can safely use the current Size.
@@ -237,7 +285,13 @@ internal class BoundsAnimationModifierNode(
         val chosenConstraints = onChooseMeasureConstraints(animatedSize, constraints)
 
         val placeable = measurable.measure(chosenConstraints)
-        return layout(animatedSize.width, animatedSize.height) {
+        // Constrain the animated size to the chosen constraints. This is important, particularly
+        // for the outer AnimateBoundsModifierElement, because we want to avoid parent layout
+        // placing this node in its center due to the non-conforming size. In that scenario, we'd
+        // have no guarantee that the parent's center-placement is animated, esp if the
+        // parent layout places this node using `withMotionFrameOfReferencePlacement`.
+        val (w, h) = chosenConstraints.constrain(animatedSize)
+        return layout(w, h) {
             val animatedBounds = boundsAnimation.value
             val positionInScope =
                 with(lookaheadScope) {
@@ -245,33 +299,94 @@ internal class BoundsAnimationModifierNode(
                         lookaheadScopeCoordinates.localPositionOf(
                             sourceCoordinates = coordinates,
                             relativeToSource = Offset.Zero,
-                            includeMotionFrameOfReference = animateMotionFrameOfReference
+                            includeMotionFrameOfReference = animateMotionFrameOfReference,
                         )
                     }
                 }
-
             val topLeft =
                 if (animatedBounds != null) {
                     boundsAnimation.updateCurrentBounds(animatedBounds.topLeft, animatedBounds.size)
                     animatedBounds.topLeft
                 } else {
-                    boundsAnimation.currentBounds?.topLeft ?: Offset.Zero
+                    (boundsAnimation.currentBounds?.topLeft ?: Offset.Zero)
                 }
             val (x, y) = positionInScope?.let { topLeft - it } ?: Offset.Zero
             placeable.place(x.fastRoundToInt(), y.fastRoundToInt())
         }
     }
+
+    override fun ContentDrawScope.draw() {
+        drawContent()
+
+        if (isLookaheadAnimationVisualDebuggingEnabled) {
+            val isInnerNode = onChooseMeasureConstraints(IntSize.Zero, Constraints()).hasFixedWidth
+
+            if (!isInnerNode) {
+                return
+            }
+            val lookaheadAnimationVisualDebugConfig =
+                currentValueOf(LocalLookaheadAnimationVisualDebugConfig)
+            if (lookaheadAnimationVisualDebugConfig.isEnabled) {
+                if (currentDensity == null) {
+                    currentDensity = currentValueOf(LocalDensity)
+                    currentLayoutDirection = currentValueOf(LocalLayoutDirection)
+                }
+                val lookaheadAnimationVisualDebugHelper =
+                    boundsAnimation.lookaheadAnimationVisualDebugHelper!!
+                val lookaheadAnimationVisualDebugColor =
+                    currentValueOf(LocalLookaheadAnimationVisualDebugColor)
+                updateTextMeasurer(currentValueOf(LocalFontFamilyResolver))
+                if (boundsAnimation.isIdle) {
+                    with(lookaheadAnimationVisualDebugHelper) {
+                        drawInactiveVisualizations(
+                            lookaheadAnimationVisualDebugColor,
+                            lookaheadAnimationVisualDebugConfig.isShowKeyLabelEnabled,
+                            2.5.dp.toPx(),
+                            boundsAnimation.toString().substring(60),
+                            textMeasurer,
+                        )
+                    }
+                } else {
+                    with(lookaheadAnimationVisualDebugHelper) {
+                        drawLocalVisualizations(
+                            lookaheadAnimationVisualDebugColor,
+                            boundsAnimation.targetOffset,
+                            boundsAnimation.targetSize,
+                            boundsAnimation.value!!,
+                            center,
+                            lookaheadAnimationVisualDebugConfig.isShowKeyLabelEnabled,
+                            2.5.dp.toPx(),
+                            boundsAnimation.toString().substring(60),
+                            textMeasurer,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateTextMeasurer(fontFamilyResolver: FontFamily.Resolver) {
+        if (textMeasurer == null || currentResolver != fontFamilyResolver) {
+            textMeasurer =
+                TextMeasurer(fontFamilyResolver, currentDensity!!, currentLayoutDirection!!)
+            currentResolver = fontFamilyResolver
+        }
+    }
 }
 
 /** Helper class to keep track of the BoundsAnimation state for [ApproachLayoutModifierNode]. */
-@OptIn(ExperimentalSharedTransitionApi::class)
 internal class BoundsTransformDeferredAnimation {
     private var animatable: Animatable<Rect, AnimationVector4D>? = null
 
-    private var targetSize: Size = Size.Unspecified
-    private var targetOffset: Offset = Offset.Unspecified
+    var targetSize: Size = Size.Unspecified
+        private set
+
+    var targetOffset: Offset = Offset.Unspecified
+        private set
 
     private var isPending = false
+
+    var lookaheadAnimationVisualDebugHelper: LookaheadAnimationVisualDebugHelper? = null
 
     /**
      * Captures lookahead size, updates current size for the first pass and marks the animation as
@@ -339,6 +454,7 @@ internal class BoundsTransformDeferredAnimation {
         lookaheadScope: LookaheadScope,
         placementScope: Placeable.PlacementScope,
         coroutineScope: CoroutineScope,
+        directManipulationParentsDirty: Boolean,
         includeMotionFrameOfReference: Boolean,
         boundsTransform: BoundsTransform,
     ) {
@@ -347,7 +463,7 @@ internal class BoundsTransformDeferredAnimation {
                 val lookaheadScopeCoordinates = placementScope.lookaheadScopeCoordinates
 
                 var delta = Offset.Zero
-                if (!includeMotionFrameOfReference) {
+                if (!includeMotionFrameOfReference && directManipulationParentsDirty) {
                     // As the Layout changes, we need to keep track of the accumulated offset up
                     // the hierarchy tree, to get the proper Offset accounting for scrolling.
                     val parents = directManipulationParents ?: mutableListOf()
@@ -381,7 +497,7 @@ internal class BoundsTransformDeferredAnimation {
                 val targetOffset =
                     lookaheadScopeCoordinates.localLookaheadPositionOf(
                         sourceCoordinates = coordinates,
-                        includeMotionFrameOfReference = includeMotionFrameOfReference
+                        includeMotionFrameOfReference = includeMotionFrameOfReference,
                     )
                 updateTargetOffset(targetOffset + additionalOffset)
 
@@ -392,10 +508,7 @@ internal class BoundsTransformDeferredAnimation {
         }
     }
 
-    private fun animate(
-        coroutineScope: CoroutineScope,
-        boundsTransform: BoundsTransform,
-    ): Rect {
+    private fun animate(coroutineScope: CoroutineScope, boundsTransform: BoundsTransform): Rect {
         if (targetOffset.isSpecified && targetSize.isSpecified) {
             // Initialize Animatable when possible, we might not use it but we need to have it
             // instantiated since at the first pass the lookahead information will become the
@@ -408,9 +521,23 @@ internal class BoundsTransformDeferredAnimation {
             // be enough information to have a distinct current and target bounds.
             if (isPending) {
                 isPending = false
+                if (
+                    isLookaheadAnimationVisualDebuggingEnabled &&
+                        lookaheadAnimationVisualDebugHelper != null
+                ) {
+                    lookaheadAnimationVisualDebugHelper!!.calculatePath(
+                        boundsTransform.createAnimationSpec(currentBounds!!, target),
+                        currentBounds!!,
+                        target,
+                        anim.velocity,
+                    )
+                }
                 coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     // Dispatch right away to make sure approach callbacks are accurate on `isIdle`
-                    anim.animateTo(target, boundsTransform.transform(currentBounds!!, target))
+                    anim.animateTo(
+                        target,
+                        boundsTransform.createAnimationSpec(currentBounds!!, target),
+                    )
                 }
             }
         }
@@ -418,11 +545,10 @@ internal class BoundsTransformDeferredAnimation {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 private val DefaultBoundsTransform = BoundsTransform { _, _ ->
     spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = Rect.VisibilityThreshold
+        visibilityThreshold = Rect.VisibilityThreshold,
     )
 }

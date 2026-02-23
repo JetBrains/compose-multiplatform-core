@@ -19,8 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.transition.TransitionHelper;
 import androidx.leanback.util.StateMachine.State;
@@ -33,6 +31,9 @@ import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.VerticalGridPresenter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fragment for creating leanback vertical grids.
@@ -92,8 +93,8 @@ public class VerticalGridSupportFragment extends BaseSupportFragment {
     /**
      * Returns the grid presenter.
      */
-    @Nullable
-    public VerticalGridPresenter getGridPresenter() {
+    @SuppressWarnings("GetterSetterNullability")
+    public @Nullable VerticalGridPresenter getGridPresenter() {
         return mGridPresenter;
     }
 
@@ -108,8 +109,7 @@ public class VerticalGridSupportFragment extends BaseSupportFragment {
     /**
      * Returns the object adapter.
      */
-    @Nullable
-    public ObjectAdapter getAdapter() {
+    public @Nullable ObjectAdapter getAdapter() {
         return mAdapter;
     }
 
@@ -182,15 +182,13 @@ public class VerticalGridSupportFragment extends BaseSupportFragment {
     /**
      * Returns the item clicked listener.
      */
-    @Nullable
-    public OnItemViewClickedListener getOnItemViewClickedListener() {
+    public @Nullable OnItemViewClickedListener getOnItemViewClickedListener() {
         return mOnItemViewClickedListener;
     }
 
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         ViewGroup root = (ViewGroup) inflater.inflate(R.layout.lb_vertical_grid_fragment,
                 container, false);
         ViewGroup gridFrame = (ViewGroup) root.findViewById(R.id.grid_frame);
@@ -253,8 +251,7 @@ public class VerticalGridSupportFragment extends BaseSupportFragment {
     }
 
     @Override
-    @NonNull
-    protected Object createEntranceTransition() {
+    protected @NonNull Object createEntranceTransition() {
         return TransitionHelper.loadTransition(getContext(),
                 R.transition.lb_vertical_grid_entrance_transition);
     }

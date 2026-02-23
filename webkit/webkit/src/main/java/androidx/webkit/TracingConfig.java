@@ -17,8 +17,9 @@
 package androidx.webkit;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -145,8 +146,7 @@ public class TracingConfig {
      *
      * @return Empty list if no custom category patterns are specified.
      */
-    @NonNull
-    public List<String> getCustomIncludedCategories() {
+    public @NonNull List<String> getCustomIncludedCategories() {
         return mCustomIncludedCategories;
     }
 
@@ -210,8 +210,7 @@ public class TracingConfig {
          *
          * @return The {@link TracingConfig} with the current settings.
          */
-        @NonNull
-        public TracingConfig build() {
+        public @NonNull TracingConfig build() {
             return new TracingConfig(mPredefinedCategories, mCustomIncludedCategories,
                     mTracingMode);
         }
@@ -232,8 +231,8 @@ public class TracingConfig {
          * @param predefinedCategories A list or bitmask of predefined category sets.
          * @return The builder to facilitate chaining.
          */
-        @NonNull
-        public Builder addCategories(@NonNull @PredefinedCategories int... predefinedCategories) {
+        public @NonNull Builder addCategories(
+                @PredefinedCategories int @NonNull ... predefinedCategories) {
             for (int categorySet : predefinedCategories) {
                 mPredefinedCategories |= categorySet;
             }
@@ -252,8 +251,7 @@ public class TracingConfig {
          *        e.g. "blink*" or full category name e.g. "renderer.scheduler".
          * @return The builder to facilitate chaining.
          */
-        @NonNull
-        public Builder addCategories(@NonNull String... categories) {
+        public @NonNull Builder addCategories(String @NonNull ... categories) {
             mCustomIncludedCategories.addAll(Arrays.asList(categories));
             return this;
         }
@@ -266,8 +264,7 @@ public class TracingConfig {
          * @param categories A list of category patterns.
          * @return The builder to facilitate chaining.
          */
-        @NonNull
-        public Builder addCategories(@NonNull Collection<String> categories) {
+        public @NonNull Builder addCategories(@NonNull Collection<String> categories) {
             mCustomIncludedCategories.addAll(categories);
             return this;
         }
@@ -282,8 +279,7 @@ public class TracingConfig {
          *                    {@link TracingConfig#RECORD_CONTINUOUSLY}.
          * @return The builder to facilitate chaining.
          */
-        @NonNull
-        public Builder setTracingMode(@TracingMode int tracingMode) {
+        public @NonNull Builder setTracingMode(@TracingMode int tracingMode) {
             mTracingMode = tracingMode;
             return this;
         }

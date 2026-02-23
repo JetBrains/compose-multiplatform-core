@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verify;
 import android.content.ComponentName;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.Screen;
 import androidx.car.app.Session;
 import androidx.car.app.model.Template;
@@ -32,6 +31,7 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,10 +40,12 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link SessionController}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class SessionControllerTest {
     @Rule
@@ -68,9 +70,8 @@ public class SessionControllerTest {
         mScreenIntent = null;
 
         Session session = new Session() {
-            @NonNull
             @Override
-            public Screen onCreateScreen(@NonNull Intent intent) {
+            public @NonNull Screen onCreateScreen(@NonNull Intent intent) {
                 mScreenIntent = intent;
                 return mScreen;
             }
@@ -152,9 +153,8 @@ public class SessionControllerTest {
             super(TestCarContext.createCarContext(ApplicationProvider.getApplicationContext()));
         }
 
-        @NonNull
         @Override
-        public Template onGetTemplate() {
+        public @NonNull Template onGetTemplate() {
             return new Template() {
             };
         }

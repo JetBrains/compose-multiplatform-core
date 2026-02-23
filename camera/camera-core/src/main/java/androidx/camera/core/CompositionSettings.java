@@ -17,9 +17,10 @@
 package androidx.camera.core;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig;
 import androidx.core.util.Pair;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Composition settings for dual concurrent camera. It includes alpha value for blending,
@@ -128,8 +129,7 @@ public class CompositionSettings {
      *
      * @return offset value.
      */
-    @NonNull
-    public Pair<Float, Float> getOffset() {
+    public @NonNull Pair<Float, Float> getOffset() {
         return mOffset;
     }
 
@@ -138,8 +138,7 @@ public class CompositionSettings {
      *
      * @return scale value.
      */
-    @NonNull
-    public Pair<Float, Float> getScale() {
+    public @NonNull Pair<Float, Float> getScale() {
         return mScale;
     }
 
@@ -167,8 +166,7 @@ public class CompositionSettings {
          * @param alpha alpha value.
          * @return Builder instance.
          */
-        @NonNull
-        public Builder setAlpha(@FloatRange(from = 0, to = 1) float alpha) {
+        public @NonNull Builder setAlpha(@FloatRange(from = 0, to = 1) float alpha) {
             mAlpha = alpha;
             return this;
         }
@@ -180,8 +178,7 @@ public class CompositionSettings {
          * @param offsetY offset Y value.
          * @return Builder instance.
          */
-        @NonNull
-        public Builder setOffset(
+        public @NonNull Builder setOffset(
                 @FloatRange(from = -1, to = 1) float offsetX,
                 @FloatRange(from = -1, to = 1) float offsetY) {
             mOffset = Pair.create(offsetX, offsetY);
@@ -195,8 +192,7 @@ public class CompositionSettings {
          * @param scaleY scale Y value.
          * @return Builder instance.
          */
-        @NonNull
-        public Builder setScale(float scaleX, float scaleY) {
+        public @NonNull Builder setScale(float scaleX, float scaleY) {
             mScale = Pair.create(scaleX, scaleY);
             return this;
         }
@@ -206,8 +202,7 @@ public class CompositionSettings {
          *
          * @return {@link CompositionSettings}.
          */
-        @NonNull
-        public CompositionSettings build() {
+        public @NonNull CompositionSettings build() {
             return new CompositionSettings(
                     mAlpha,
                     mOffset,

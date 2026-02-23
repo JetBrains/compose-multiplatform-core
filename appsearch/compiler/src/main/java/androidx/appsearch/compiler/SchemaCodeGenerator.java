@@ -20,17 +20,17 @@ import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTIO
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_SCHEMA_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.PROPERTY_CONFIG_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentClassFactoryForClass;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
 
-import static com.google.auto.common.MoreTypes.asTypeElement;
-
-import static javax.lang.model.type.TypeKind.DECLARED;
-
-import androidx.annotation.NonNull;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.DocumentPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.EmbeddingPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.LongPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
+import androidx.room.compiler.codegen.XClassName;
+import androidx.room.compiler.processing.XProcessingEnv;
+import androidx.room.compiler.processing.XType;
+import androidx.room.compiler.processing.XTypeElement;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -41,56 +41,52 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
 /** Generates java code for an {@link androidx.appsearch.app.AppSearchSchema}. */
 class SchemaCodeGenerator {
     private final DocumentModel mModel;
     private final IntrospectionHelper mHelper;
-    private final LinkedHashSet<TypeElement> mDependencyDocumentClasses;
+    private final LinkedHashSet<XTypeElement> mDependencyDocumentClasses;
 
     public static void generate(
-            @NonNull ProcessingEnvironment env,
+            @NonNull XProcessingEnv env,
             @NonNull DocumentModel model,
-            @NonNull TypeSpec.Builder classBuilder) throws ProcessingException {
+            TypeSpec.@NonNull Builder classBuilder) throws XProcessingException {
         new SchemaCodeGenerator(model, env).generate(classBuilder);
     }
 
-    private SchemaCodeGenerator(@NonNull DocumentModel model, @NonNull ProcessingEnvironment env) {
+    private SchemaCodeGenerator(@NonNull DocumentModel model, @NonNull XProcessingEnv env) {
         mModel = model;
         mHelper = new IntrospectionHelper(env);
-        mDependencyDocumentClasses = computeDependencyClasses(model, env);
+        mDependencyDocumentClasses = computeDependencyClasses(model);
     }
 
-    @NonNull
-    private static LinkedHashSet<TypeElement> computeDependencyClasses(
-            @NonNull DocumentModel model,
-            @NonNull ProcessingEnvironment env) {
-        LinkedHashSet<TypeElement> dependencies = new LinkedHashSet<>(model.getParentTypes());
+    private static @NonNull LinkedHashSet<XTypeElement> computeDependencyClasses(
+            @NonNull DocumentModel model) {
+        LinkedHashSet<XTypeElement> dependencies = new LinkedHashSet<>(model.getParentTypes());
         for (AnnotatedGetterOrField getterOrField : model.getAnnotatedGettersAndFields()) {
             if (!(getterOrField.getAnnotation() instanceof DocumentPropertyAnnotation)) {
                 continue;
             }
 
-            TypeMirror documentClass = getterOrField.getComponentType();
-            dependencies.add((TypeElement) env.getTypeUtils().asElement(documentClass));
+            XType documentClass = getterOrField.getComponentType();
+            dependencies.add(documentClass.getTypeElement());
         }
         return dependencies;
     }
 
-    private void generate(@NonNull TypeSpec.Builder classBuilder) throws ProcessingException {
+    private void generate(TypeSpec.@NonNull Builder classBuilder) throws XProcessingException {
         classBuilder.addField(
                 FieldSpec.builder(String.class, "SCHEMA_NAME")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
@@ -108,17 +104,16 @@ class SchemaCodeGenerator {
         classBuilder.addMethod(
                 MethodSpec.methodBuilder("getSchema")
                         .addModifiers(Modifier.PUBLIC)
-                        .returns(APPSEARCH_SCHEMA_CLASS)
+                        .returns(toJavaPoet(APPSEARCH_SCHEMA_CLASS))
                         .addAnnotation(Override.class)
-                        .addException(APPSEARCH_EXCEPTION_CLASS)
+                        .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS))
                         .addStatement("return $L", createSchemaInitializerGetDocumentTypes())
                         .build());
 
         classBuilder.addMethod(createDependencyClassesMethod());
     }
 
-    @NonNull
-    private MethodSpec createDependencyClassesMethod() {
+    private @NonNull MethodSpec createDependencyClassesMethod() {
         TypeName listOfClasses = ParameterizedTypeName.get(ClassName.get("java.util", "List"),
                 ParameterizedTypeName.get(ClassName.get(Class.class),
                         WildcardTypeName.subtypeOf(Object.class)));
@@ -132,14 +127,16 @@ class SchemaCodeGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(listOfClasses)
                 .addAnnotation(Override.class)
-                .addException(APPSEARCH_EXCEPTION_CLASS);
+                .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS));
 
         if (mDependencyDocumentClasses.isEmpty()) {
             methodBuilder.addStatement("return $T.emptyList()", ClassName.get(Collections.class));
         } else {
             methodBuilder.addStatement("$T classSet = new $T()", listOfClasses, arrayListOfClasses);
-            for (TypeElement dependencyType : mDependencyDocumentClasses) {
-                methodBuilder.addStatement("classSet.add($T.class)", ClassName.get(dependencyType));
+            for (XTypeElement dependencyType : mDependencyDocumentClasses) {
+                methodBuilder.addStatement(
+                        "classSet.add($T.class)",
+                        toJavaPoet(dependencyType.asClassName()));
             }
             methodBuilder.addStatement("return classSet").build();
         }
@@ -152,14 +149,17 @@ class SchemaCodeGenerator {
      *
      * <p>The AppSearchSchema has parent types and various Document.*Properties set.
      */
-    private CodeBlock createSchemaInitializerGetDocumentTypes() throws ProcessingException {
+    private CodeBlock createSchemaInitializerGetDocumentTypes() throws XProcessingException {
         CodeBlock.Builder codeBlock = CodeBlock.builder()
-                .add("new $T(SCHEMA_NAME)", APPSEARCH_SCHEMA_CLASS.nestedClass("Builder"))
+                .add(
+                        "new $T(SCHEMA_NAME)",
+                        toJavaPoet(APPSEARCH_SCHEMA_CLASS.nestedClass("Builder")))
                 .indent();
-        for (TypeElement parentType : mModel.getParentTypes()) {
-            ClassName parentDocumentFactoryClass =
-                    getDocumentClassFactoryForClass(ClassName.get(parentType));
-            codeBlock.add("\n.addParentType($T.SCHEMA_NAME)", parentDocumentFactoryClass);
+        for (XTypeElement parentType : mModel.getParentTypes()) {
+            XClassName parentDocumentFactoryClass =
+                    getDocumentClassFactoryForClass(parentType.asClassName());
+            codeBlock.add(
+                    "\n.addParentType($T.SCHEMA_NAME)", toJavaPoet(parentDocumentFactoryClass));
         }
 
         for (AnnotatedGetterOrField getterOrField : mModel.getAnnotatedGettersAndFields()) {
@@ -190,20 +190,21 @@ class SchemaCodeGenerator {
      */
     private CodeBlock createPropertyConfig(
             @NonNull DataPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         CodeBlock.Builder codeBlock = CodeBlock.builder();
         if (annotation.getDataPropertyKind() == DataPropertyAnnotation.Kind.DOCUMENT_PROPERTY) {
-            ClassName documentClass = (ClassName) ClassName.get(getterOrField.getComponentType());
-            ClassName documentFactoryClass = getDocumentClassFactoryForClass(documentClass);
+            XClassName documentClass =
+                    getterOrField.getComponentType().getTypeElement().asClassName();
+            XClassName documentFactoryClass = getDocumentClassFactoryForClass(documentClass);
             codeBlock.add("new $T.Builder($S, $T.SCHEMA_NAME)",
-                    DocumentPropertyAnnotation.CONFIG_CLASS,
+                    toJavaPoet(DocumentPropertyAnnotation.CONFIG_CLASS),
                     annotation.getName(),
-                    documentFactoryClass);
+                    toJavaPoet(documentFactoryClass));
         } else {
             // All other property configs have a single param constructor that just takes the
             // property's serialized name as input
             codeBlock.add("new $T.Builder($S)",
-                    annotation.getConfigClassName(), annotation.getName());
+                    toJavaPoet(annotation.getConfigClassName()), annotation.getName());
         }
         codeBlock.indent().add(createSetCardinalityExpr(annotation, getterOrField));
         switch (annotation.getDataPropertyKind()) {
@@ -223,7 +224,7 @@ class SchemaCodeGenerator {
                         documentPropertyAnnotation);
                 for (String propertyPath : indexableNestedProperties) {
                     codeBlock.add(
-                            CodeBlock.of("\n.addIndexableNestedProperties($L)", propertyPath));
+                            CodeBlock.of("\n.addIndexableNestedProperties($S)", propertyPath));
                 }
                 break;
             case LONG_PROPERTY:
@@ -233,12 +234,15 @@ class SchemaCodeGenerator {
             case EMBEDDING_PROPERTY:
                 EmbeddingPropertyAnnotation embeddingPropertyAnnotation =
                         (EmbeddingPropertyAnnotation) annotation;
-                codeBlock.add(
-                        createSetIndexingTypeExpr(embeddingPropertyAnnotation, getterOrField));
+                codeBlock
+                        .add(createSetIndexingTypeExpr(embeddingPropertyAnnotation, getterOrField))
+                        .add(createSetQuantizationTypeExpr(embeddingPropertyAnnotation,
+                                getterOrField));
                 break;
             case DOUBLE_PROPERTY: // fall-through
             case BOOLEAN_PROPERTY: // fall-through
-            case BYTES_PROPERTY:
+            case BYTES_PROPERTY: // fall-through
+            case BLOB_HANDLE_PROPERTY:
                 break;
             default:
                 throw new IllegalStateException("Unhandled annotation: " + annotation);
@@ -256,30 +260,32 @@ class SchemaCodeGenerator {
      */
     private Set<String> getAllIndexableNestedProperties(
             @NonNull DocumentPropertyAnnotation documentPropertyAnnotation)
-            throws ProcessingException {
-        Set<String> indexableNestedProperties = new HashSet<>(
+            throws XProcessingException {
+        Set<String> indexableNestedProperties = new LinkedHashSet<>(
                 documentPropertyAnnotation.getIndexableNestedPropertiesList());
 
-        if (documentPropertyAnnotation.shouldInheritIndexableNestedPropertiesFromSuperClass()) {
+        if (documentPropertyAnnotation.getShouldInheritIndexableNestedPropertiesFromSuperClass()) {
             // List of classes to expand into parent classes to search for the property annotation
-            Queue<TypeElement> classesToExpand = new ArrayDeque<>();
-            Set<TypeElement> visited = new HashSet<>();
+            Queue<XTypeElement> classesToExpand = new ArrayDeque<>();
+            Set<XTypeElement> visited = new LinkedHashSet<>();
             classesToExpand.add(mModel.getClassElement());
             while (!classesToExpand.isEmpty()) {
-                TypeElement currentClass = classesToExpand.poll();
+                XTypeElement currentClass = classesToExpand.poll();
                 if (visited.contains(currentClass)) {
                     continue;
                 }
                 visited.add(currentClass);
                 // Look for the document property annotation in the class's parent classes
-                List<TypeMirror> parentTypes = new ArrayList<>();
-                parentTypes.add(currentClass.getSuperclass());
-                parentTypes.addAll(currentClass.getInterfaces());
-                for (TypeMirror parent : parentTypes) {
-                    if (!parent.getKind().equals(DECLARED)) {
+                List<XType> parentTypes = new ArrayList<>();
+                if (currentClass.getSuperClass() != null) {
+                    parentTypes.add(currentClass.getSuperClass());
+                }
+                parentTypes.addAll(currentClass.getSuperInterfaces());
+                for (XType parent : parentTypes) {
+                    XTypeElement parentElement = parent.getTypeElement();
+                    if (parentElement == null) {
                         continue;
                     }
-                    TypeElement parentElement = asTypeElement(parent);
                     DocumentPropertyAnnotation annotation = mHelper.getDocumentPropertyAnnotation(
                             parentElement, documentPropertyAnnotation.getName());
                     if (annotation == null) {
@@ -290,7 +296,7 @@ class SchemaCodeGenerator {
                     } else {
                         indexableNestedProperties.addAll(
                                 annotation.getIndexableNestedPropertiesList());
-                        if (annotation.shouldInheritIndexableNestedPropertiesFromSuperClass()) {
+                        if (annotation.getShouldInheritIndexableNestedPropertiesFromSuperClass()) {
                             // Continue searching in the parent class's parents
                             classesToExpand.add(parentElement);
                         }
@@ -304,8 +310,7 @@ class SchemaCodeGenerator {
     /**
      * Creates an expr like {@code .setCardinality(PropertyConfig.CARDINALITY_REPEATED)}.
      */
-    @NonNull
-    private static CodeBlock createSetCardinalityExpr(
+    private static @NonNull CodeBlock createSetCardinalityExpr(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         AnnotatedGetterOrField.ElementTypeCategory typeCategory =
@@ -324,16 +329,16 @@ class SchemaCodeGenerator {
             default:
                 throw new IllegalStateException("Unhandled type category: " + typeCategory);
         }
-        return CodeBlock.of("\n.setCardinality($T.$N)", PROPERTY_CONFIG_CLASS, enumName);
+        return CodeBlock.of(
+                "\n.setCardinality($T.$N)", toJavaPoet(PROPERTY_CONFIG_CLASS), enumName);
     }
 
     /**
      * Creates an expr like {@code .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)}.
      */
-    @NonNull
-    private static CodeBlock createSetTokenizerTypeExpr(
+    private static @NonNull CodeBlock createSetTokenizerTypeExpr(
             @NonNull StringPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         String enumName;
         if (annotation.getIndexingType() == 0) { // INDEXING_TYPE_NONE
             //TODO(b/171857731) remove this hack after apply to Icing lib's change.
@@ -353,22 +358,21 @@ class SchemaCodeGenerator {
                     enumName = "TOKENIZER_TYPE_RFC822";
                     break;
                 default:
-                    throw new ProcessingException(
+                    throw new XProcessingException(
                             "Unknown tokenizer type " + annotation.getTokenizerType(),
                             getterOrField.getElement());
             }
         }
         return CodeBlock.of("\n.setTokenizerType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
      * Creates an expr like {@code .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)}.
      */
-    @NonNull
-    private static CodeBlock createSetIndexingTypeExpr(
+    private static @NonNull CodeBlock createSetIndexingTypeExpr(
             @NonNull StringPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         String enumName;
         switch (annotation.getIndexingType()) {
             case 0:
@@ -381,31 +385,29 @@ class SchemaCodeGenerator {
                 enumName = "INDEXING_TYPE_PREFIXES";
                 break;
             default:
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Unknown indexing type " + annotation.getIndexingType(),
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
      * Creates an expr like {@code .setShouldIndexNestedProperties(true)}.
      */
-    @NonNull
-    private static CodeBlock createSetShouldIndexNestedPropertiesExpr(
+    private static @NonNull CodeBlock createSetShouldIndexNestedPropertiesExpr(
             @NonNull DocumentPropertyAnnotation annotation) {
         return CodeBlock.of("\n.setShouldIndexNestedProperties($L)",
-                annotation.shouldIndexNestedProperties());
+                annotation.getShouldIndexNestedProperties());
     }
 
     /**
      * Creates an expr like {@code .setIndexingType(LongPropertyConfig.INDEXING_TYPE_RANGE)}.
      */
-    @NonNull
-    private static CodeBlock createSetIndexingTypeExpr(
+    private static @NonNull CodeBlock createSetIndexingTypeExpr(
             @NonNull LongPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         String enumName;
         switch (annotation.getIndexingType()) {
             case 0:
@@ -415,22 +417,21 @@ class SchemaCodeGenerator {
                 enumName = "INDEXING_TYPE_RANGE";
                 break;
             default:
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Unknown indexing type " + annotation.getIndexingType(),
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                LongPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(LongPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
      * Creates an expr like
      * {@code .setIndexingType(EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)}.
      */
-    @NonNull
-    private static CodeBlock createSetIndexingTypeExpr(
+    private static @NonNull CodeBlock createSetIndexingTypeExpr(
             @NonNull EmbeddingPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         String enumName;
         switch (annotation.getIndexingType()) {
             case 0:
@@ -440,22 +441,45 @@ class SchemaCodeGenerator {
                 enumName = "INDEXING_TYPE_SIMILARITY";
                 break;
             default:
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Unknown indexing type " + annotation.getIndexingType(),
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                EmbeddingPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(EmbeddingPropertyAnnotation.CONFIG_CLASS), enumName);
+    }
+
+    /**
+     * Creates an expr like
+     * {@code .setQuantizationType(EmbeddingPropertyConfig.QUANTIZATION_TYPE_8_BIT)}.
+     */
+    private static @NonNull CodeBlock createSetQuantizationTypeExpr(
+            @NonNull EmbeddingPropertyAnnotation annotation,
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
+        String enumName;
+        switch (annotation.getQuantizationType()) {
+            case 0:
+                enumName = "QUANTIZATION_TYPE_NONE";
+                break;
+            case 1:
+                enumName = "QUANTIZATION_TYPE_8_BIT";
+                break;
+            default:
+                throw new XProcessingException(
+                        "Unknown quantization type " + annotation.getQuantizationType(),
+                        getterOrField.getElement());
+        }
+        return CodeBlock.of("\n.setQuantizationType($T.$N)",
+                toJavaPoet(EmbeddingPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
      * Creates an expr like
      * {@code .setJoinableValueType(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)}.
      */
-    @NonNull
-    private static CodeBlock createSetJoinableValueTypeExpr(
+    private static @NonNull CodeBlock createSetJoinableValueTypeExpr(
             @NonNull StringPropertyAnnotation annotation,
-            @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+            @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
         String enumName;
         AnnotatedGetterOrField.ElementTypeCategory typeCategory =
                 getterOrField.getElementTypeCategory();
@@ -467,7 +491,7 @@ class SchemaCodeGenerator {
                 switch (typeCategory) {
                     case COLLECTION: // fall-through
                     case ARRAY:
-                        throw new ProcessingException(
+                        throw new XProcessingException(
                                 "Joinable value type 1 not allowed on repeated properties.",
                                 getterOrField.getElement());
                     case SINGLE: // fall-through
@@ -478,11 +502,11 @@ class SchemaCodeGenerator {
                 enumName = "JOINABLE_VALUE_TYPE_QUALIFIED_ID";
                 break;
             default:
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Unknown joinable value type " + annotation.getJoinableValueType(),
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setJoinableValueType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 }

@@ -81,13 +81,14 @@ import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
 import androidx.core.util.Pair;
 import androidx.media.MediaSessionManager.RemoteUserInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -101,17 +102,16 @@ import java.util.List;
 
 /**
  * Base class for media browse services.
- * <p>
- * Media browse services enable applications to browse media content provided by an application
- * and ask the application to start playing it. They may also be used to control content that
- * is already playing by way of a {@link MediaSessionCompat}.
- * </p>
  *
- * To extend this class, you must declare the service in your manifest file with
- * an intent filter with the {@link #SERVICE_INTERFACE} action.
+ * <p>Media browse services enable applications to browse media content provided by an application
+ * and ask the application to start playing it. They may also be used to control content that is
+ * already playing by way of a {@link MediaSessionCompat}. To extend this class, you must declare
+ * the service in your manifest file with an intent filter with the {@link #SERVICE_INTERFACE}
+ * action.
  *
- * For example:
- * </p><pre>
+ * <p>For example:
+ *
+ * <pre>
  * &lt;service android:name=".MyMediaBrowserServiceCompat"
  *          android:label="&#64;string/service_name" >
  *     &lt;intent-filter>
@@ -121,11 +121,16 @@ import java.util.List;
  * </pre>
  *
  * <div class="special reference">
+ *
  * <h3>Developer Guides</h3>
- * <p>For information about building your media application, read the
- * <a href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide.</p>
- * </div>
+ *
+ * <p>For information about building your media application, read the <a
+ * href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide. </div>
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public abstract class MediaBrowserServiceCompat extends Service {
     static final String TAG = "MBServiceCompat";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
@@ -233,7 +238,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
 
         @Override
-        public void notifyChildrenChanged(@NonNull final String parentId, final Bundle options) {
+        public void notifyChildrenChanged(final @NonNull String parentId, final Bundle options) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -246,8 +251,8 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
 
         @Override
-        public void notifyChildrenChanged(@NonNull final RemoteUserInfo remoteUserInfo,
-                @NonNull final String parentId, final Bundle options) {
+        public void notifyChildrenChanged(final @NonNull RemoteUserInfo remoteUserInfo,
+                final @NonNull String parentId, final Bundle options) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -295,7 +300,6 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
     }
 
-    @RequiresApi(21)
     class MediaBrowserServiceImplApi21 implements MediaBrowserServiceImpl {
         final List<Bundle> mRootExtrasList = new ArrayList<>();
         MediaBrowserService mServiceFwk;
@@ -501,7 +505,6 @@ public abstract class MediaBrowserServiceCompat extends Service {
             return mCurConnection.browserInfo;
         }
 
-        @RequiresApi(21)
         class MediaBrowserServiceApi21 extends MediaBrowserService {
             MediaBrowserServiceApi21(Context context) {
                 attachBaseContext(context);
@@ -539,7 +542,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
             final Result<MediaBrowserCompat.MediaItem> result =
                     new Result<MediaBrowserCompat.MediaItem>(itemId) {
                         @Override
-                        void onResultSent(@Nullable MediaBrowserCompat.MediaItem item) {
+                        void onResultSent(MediaBrowserCompat.@Nullable MediaItem item) {
                             if (item == null) {
                                 resultWrapper.sendResult(null);
                             } else {
@@ -672,7 +675,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
     private static final class ServiceHandler extends Handler {
 
         // Must only be accessed on the main thread.
-        @Nullable private MediaBrowserServiceCompat mService;
+        private @Nullable MediaBrowserServiceCompat mService;
 
         @MainThread
         ServiceHandler(@NonNull MediaBrowserServiceCompat service) {
@@ -756,24 +759,27 @@ public abstract class MediaBrowserServiceCompat extends Service {
 
     /**
      * Completion handler for asynchronous callback methods in {@link MediaBrowserServiceCompat}.
-     * <p>
-     * Each of the methods that takes one of these to send the result must call either
-     * {@link #sendResult} or {@link #sendError} to respond to the caller with the given results or
-     * errors. If those functions return without calling {@link #sendResult} or {@link #sendError},
-     * they must instead call {@link #detach} before returning, and then may call
-     * {@link #sendResult} or {@link #sendError} when they are done. If {@link #sendResult},
-     * {@link #sendError}, or {@link #detach} is called twice, an exception will be thrown.
-     * </p><p>
-     * Those functions might also want to call {@link #sendProgressUpdate} to send interim updates
-     * to the caller. If it is called after calling {@link #sendResult} or {@link #sendError}, an
-     * exception will be thrown.
-     * </p>
+     *
+     * <p>Each of the methods that takes one of these to send the result must call either {@link
+     * #sendResult} or {@link #sendError} to respond to the caller with the given results or errors.
+     * If those functions return without calling {@link #sendResult} or {@link #sendError}, they
+     * must instead call {@link #detach} before returning, and then may call {@link #sendResult} or
+     * {@link #sendError} when they are done. If {@link #sendResult}, {@link #sendError}, or {@link
+     * #detach} is called twice, an exception will be thrown.
+     *
+     * <p>Those functions might also want to call {@link #sendProgressUpdate} to send interim
+     * updates to the caller. If it is called after calling {@link #sendResult} or {@link
+     * #sendError}, an exception will be thrown.
      *
      * @see MediaBrowserServiceCompat#onLoadChildren
      * @see MediaBrowserServiceCompat#onLoadItem
      * @see MediaBrowserServiceCompat#onSearch
      * @see MediaBrowserServiceCompat#onCustomAction
+     * @param <T> The type of the result
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static class Result<T> {
         private final Object mDebug;
         private boolean mDetachCalled;
@@ -1194,7 +1200,6 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
     }
 
-    @RequiresApi(21)
     @SuppressWarnings({"rawtypes", "unchecked"})
     static class ResultWrapper<T> {
         MediaBrowserService.Result mResultFwk;
@@ -1258,10 +1263,8 @@ public abstract class MediaBrowserServiceCompat extends Service {
             mImpl = new MediaBrowserServiceImplApi26();
         } else if (Build.VERSION.SDK_INT >= 23) {
             mImpl = new MediaBrowserServiceImplApi23();
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            mImpl = new MediaBrowserServiceImplApi21();
         } else {
-            mImpl = new MediaBrowserServiceImplBase();
+            mImpl = new MediaBrowserServiceImplApi21();
         }
         mImpl.onCreate();
     }
@@ -1478,8 +1481,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
      * Gets the session token, or null if it has not yet been created
      * or if it has been destroyed.
      */
-    @Nullable
-    public MediaSessionCompat.Token getSessionToken() {
+    public MediaSessionCompat.@Nullable Token getSessionToken() {
         return mSession;
     }
 
@@ -1509,8 +1511,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
      *             {@link #onLoadChildren} or {@link #onLoadItem}.
      * @see MediaSessionManager#isTrustedForMediaControl(RemoteUserInfo)
      */
-    @NonNull
-    public final RemoteUserInfo getCurrentBrowserInfo() {
+    public final @NonNull RemoteUserInfo getCurrentBrowserInfo() {
         return mImpl.getCurrentBrowserInfo();
     }
 
@@ -1816,7 +1817,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
         final Result<MediaBrowserCompat.MediaItem> result =
                 new Result<MediaBrowserCompat.MediaItem>(itemId) {
                     @Override
-                    void onResultSent(@Nullable MediaBrowserCompat.MediaItem item) {
+                    void onResultSent(MediaBrowserCompat.@Nullable MediaItem item) {
                         if ((getFlags() & RESULT_FLAG_ON_LOAD_ITEM_NOT_IMPLEMENTED) != 0) {
                             receiver.send(RESULT_ERROR, null);
                             return;
@@ -1896,9 +1897,13 @@ public abstract class MediaBrowserServiceCompat extends Service {
     }
 
     /**
-     * Contains information that the browser service needs to send to the client
-     * when first connected.
+     * Contains information that the browser service needs to send to the client when first
+     * connected.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class BrowserRoot {
         /**
          * The lookup key for a boolean that indicates whether the browser service should return a

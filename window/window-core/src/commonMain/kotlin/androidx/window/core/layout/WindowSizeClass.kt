@@ -45,23 +45,23 @@ import kotlin.jvm.JvmStatic
  * these cases developers may wish to specify their own custom break points and match using a `when`
  * statement.
  *
- * To process a [WindowSizeClass] use the methods [containsWindowSizeDp], [containsWidthDp],
- * [containsHeightDp] methods. Note these methods are order dependent as the smaller [minWidthDp]
- * and [minHeightDp] would match all the breakpoints that are larger. Therefore when processing the
- * selection should normally be ordered from larger to smaller breakpoints.
+ * To process a [WindowSizeClass] use the methods [isAtLeastBreakpoint], [isWidthAtLeastBreakpoint],
+ * [isHeightAtLeastBreakpoint] methods. Note these methods are order dependent as the smaller
+ * [minWidthDp] and [minHeightDp] would match all the breakpoints that are larger. Therefore when
+ * processing the selection should normally be ordered from larger to smaller breakpoints.
  *
  * @see WindowWidthSizeClass
  * @see WindowHeightSizeClass
  */
-class WindowSizeClass(
+public class WindowSizeClass(
     /** Returns the lower bound for the width of the size class in dp. */
-    val minWidthDp: Int,
+    public val minWidthDp: Int,
     /** Returns the lower bound for the height of the size class in dp. */
-    val minHeightDp: Int
+    public val minHeightDp: Int,
 ) {
 
     /** A convenience constructor that will truncate to ints. */
-    constructor(widthDp: Float, heightDp: Float) : this(widthDp.toInt(), heightDp.toInt())
+    public constructor(widthDp: Float, heightDp: Float) : this(widthDp.toInt(), heightDp.toInt())
 
     init {
         require(minWidthDp >= 0) {
@@ -73,46 +73,50 @@ class WindowSizeClass(
     }
 
     @Suppress("DEPRECATION")
-    @Deprecated("Use either isWidthAtLeast or isAtLeast to check matching bounds.")
+    @Deprecated(
+        "Use either isWidthAtLeastBreakpoint or isAtLeastBreakpoint to check matching bounds."
+    )
     /** Returns the [WindowWidthSizeClass] that corresponds to the widthDp of the window. */
-    val windowWidthSizeClass: WindowWidthSizeClass
+    public val windowWidthSizeClass: WindowWidthSizeClass
         get() = WindowWidthSizeClass.compute(minWidthDp.toFloat())
 
     @Suppress("DEPRECATION")
-    @Deprecated("Use either isHeightAtLeast or isAtLeast to check matching bounds.")
+    @Deprecated(
+        "Use either isHeightAtLeastBreakpoint or isAtLeastBreakpoint to check matching bounds."
+    )
     /** Returns the [WindowHeightSizeClass] that corresponds to the heightDp of the window. */
-    val windowHeightSizeClass: WindowHeightSizeClass
+    public val windowHeightSizeClass: WindowHeightSizeClass
         get() = WindowHeightSizeClass.compute(minHeightDp.toFloat())
 
     /**
-     * Returns `true` when [minWidthDp] is greater than or equal to [widthDp], `false` otherwise.
-     * When processing a [WindowSizeClass] note that this method is order dependent. A
-     * [WindowSizeClass] with [minWidthDp] = 0 and [minHeightDp] = 0 will match any breakpoint, so
-     * the selection should normally go from largest to smallest breakpoints.
+     * Returns `true` when [minWidthDp] is greater than or equal to [widthDpBreakpoint], `false`
+     * otherwise. When processing a [WindowSizeClass] note that this method is order dependent.
+     * Selection should go from largest to smallest breakpoints.
+     *
+     * @sample androidx.window.core.samples.layout.processWindowSizeClassWidthOnly
      */
-    fun containsWidthDp(widthDp: Int): Boolean {
-        return minWidthDp >= widthDp
+    public fun isWidthAtLeastBreakpoint(widthDpBreakpoint: Int): Boolean {
+        return minWidthDp >= widthDpBreakpoint
     }
 
     /**
-     * Returns `true` when [minHeightDp] is greater than or equal to [heightDp], `false` otherwise.
-     * When processing a [WindowSizeClass] note that this method is order dependent. A
-     * [WindowSizeClass] with [minWidthDp] = 0 and [minHeightDp] = 0 will match any breakpoint, so
-     * the selection should normally go from largest to smallest breakpoints.
+     * Returns `true` when [minHeightDp] is greater than or equal to [heightDpBreakpoint], `false`
+     * otherwise. When processing a [WindowSizeClass] note that this method is order dependent.
+     * Selection should go from largest to smallest breakpoints.
      */
-    fun containsHeightDp(heightDp: Int): Boolean {
-        return minHeightDp >= heightDp
+    public fun isHeightAtLeastBreakpoint(heightDpBreakpoint: Int): Boolean {
+        return minHeightDp >= heightDpBreakpoint
     }
 
     /**
-     * Returns `true` when [widthDp] is greater than or equal to [minWidthDp] and [heightDp] is
-     * greater than or equal to [minHeightDp], `false` otherwise. When processing a
-     * [WindowSizeClass] note that this method is order dependent. A [WindowSizeClass] with
-     * [minWidthDp] = 0 and [minHeightDp] = 0 will match any breakpoint, so * the selection should
-     * normally go from largest to smallest breakpoints.
+     * Returns `true` when [minWidthDp] is greater than or equal to [widthDpBreakpoint] and
+     * [minHeightDp] is greater than or equal to [heightDpBreakpoint], `false` otherwise. When
+     * processing a [WindowSizeClass] note that this method is order dependent. Selection should go
+     * from largest to smallest breakpoints.
      */
-    fun containsWindowSizeDp(widthDp: Int, heightDp: Int): Boolean {
-        return containsWidthDp(widthDp) && containsHeightDp(heightDp)
+    public fun isAtLeastBreakpoint(widthDpBreakpoint: Int, heightDpBreakpoint: Int): Boolean {
+        return isWidthAtLeastBreakpoint(widthDpBreakpoint) &&
+            isHeightAtLeastBreakpoint(heightDpBreakpoint)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -137,33 +141,69 @@ class WindowSizeClass(
         return "WindowSizeClass(minWidthDp=$minWidthDp, minHeightDp=$minHeightDp)"
     }
 
-    companion object {
+    public companion object {
         /** A lower bound for a size class with Medium width in dp. */
-        const val WIDTH_DP_MEDIUM_LOWER_BOUND = 600
+        public const val WIDTH_DP_MEDIUM_LOWER_BOUND: Int = 600
 
         /** A lower bound for a size class with Expanded width in dp. */
-        const val WIDTH_DP_EXPANDED_LOWER_BOUND = 840
+        public const val WIDTH_DP_EXPANDED_LOWER_BOUND: Int = 840
+
+        /** A lower bound for a size class with Large width in dp. */
+        public const val WIDTH_DP_LARGE_LOWER_BOUND: Int = 1200
+
+        /** A lower bound for a size class width Extra Large width in dp. */
+        public const val WIDTH_DP_EXTRA_LARGE_LOWER_BOUND: Int = 1600
 
         /** A lower bound for a size class with Medium height in dp. */
-        const val HEIGHT_DP_MEDIUM_LOWER_BOUND = 480
+        public const val HEIGHT_DP_MEDIUM_LOWER_BOUND: Int = 480
 
         /** A lower bound for a size class with Expanded height in dp. */
-        const val HEIGHT_DP_EXPANDED_LOWER_BOUND = 900
+        public const val HEIGHT_DP_EXPANDED_LOWER_BOUND: Int = 900
 
         private val WIDTH_DP_BREAKPOINTS_V1 =
             listOf(0, WIDTH_DP_MEDIUM_LOWER_BOUND, WIDTH_DP_EXPANDED_LOWER_BOUND)
 
+        private val WIDTH_DP_BREAKPOINTS_V2 =
+            WIDTH_DP_BREAKPOINTS_V1 +
+                listOf(WIDTH_DP_LARGE_LOWER_BOUND, WIDTH_DP_EXTRA_LARGE_LOWER_BOUND)
+
         private val HEIGHT_DP_BREAKPOINTS_V1 =
             listOf(0, HEIGHT_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_EXPANDED_LOWER_BOUND)
 
-        @JvmField
-        val BREAKPOINTS_V1 =
-            WIDTH_DP_BREAKPOINTS_V1.flatMap { widthBp ->
-                    HEIGHT_DP_BREAKPOINTS_V1.map { heightBp ->
+        private val HEIGHT_DP_BREAKPOINTS_V2 = HEIGHT_DP_BREAKPOINTS_V1
+
+        private fun createBreakpointSet(
+            widthBreakpoints: List<Int>,
+            heightBreakpoints: List<Int>,
+        ): Set<WindowSizeClass> {
+            return widthBreakpoints
+                .flatMap { widthBp ->
+                    heightBreakpoints.map { heightBp ->
                         WindowSizeClass(minWidthDp = widthBp, minHeightDp = heightBp)
                     }
                 }
                 .toSet()
+        }
+
+        /**
+         * The recommended breakpoints for window size classes.
+         *
+         * @sample androidx.window.core.samples.layout.calculateWindowSizeClass
+         */
+        @JvmField
+        public val BREAKPOINTS_V1: Set<WindowSizeClass> =
+            createBreakpointSet(WIDTH_DP_BREAKPOINTS_V1, HEIGHT_DP_BREAKPOINTS_V1)
+
+        /**
+         * The recommended breakpoints for window size classes. This includes all the breakpoints
+         * from [BREAKPOINTS_V1] plus new breakpoints to account for the Large and Extra Large width
+         * breakpoints.
+         *
+         * @sample androidx.window.core.samples.layout.calculateWindowSizeClass
+         */
+        @JvmField
+        public val BREAKPOINTS_V2: Set<WindowSizeClass> =
+            createBreakpointSet(WIDTH_DP_BREAKPOINTS_V2, HEIGHT_DP_BREAKPOINTS_V2)
 
         /**
          * Computes the recommended [WindowSizeClass] for the given width and height in DP.
@@ -178,10 +218,10 @@ class WindowSizeClass(
             "Use computeWindowSizeClass instead.",
             ReplaceWith(
                 "BREAKPOINTS_V1.computeWindowSizeClass(widthDp = dpWidth, heightDp = dpHeight)",
-                "androidx.window.core.layout.computeWindowSizeClass"
-            )
+                "androidx.window.core.layout.computeWindowSizeClass",
+            ),
         )
-        fun compute(dpWidth: Float, dpHeight: Float): WindowSizeClass {
+        public fun compute(dpWidth: Float, dpHeight: Float): WindowSizeClass {
             val widthDp =
                 when {
                     dpWidth >= WIDTH_DP_EXPANDED_LOWER_BOUND -> WIDTH_DP_EXPANDED_LOWER_BOUND

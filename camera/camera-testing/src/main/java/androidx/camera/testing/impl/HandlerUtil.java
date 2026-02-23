@@ -20,8 +20,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.MessageQueue;
 
-import androidx.annotation.NonNull;
 import androidx.camera.testing.impl.compat.LooperCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Semaphore;
 

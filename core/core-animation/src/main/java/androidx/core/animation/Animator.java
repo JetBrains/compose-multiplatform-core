@@ -19,8 +19,9 @@ package androidx.core.animation;
 import android.annotation.SuppressLint;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -183,8 +184,7 @@ public abstract class Animator implements Cloneable {
      *
      * @param duration The length of the animation, in milliseconds.
      */
-    @NonNull
-    public abstract Animator setDuration(@IntRange(from = 0) long duration);
+    public abstract @NonNull Animator setDuration(@IntRange(from = 0) long duration);
 
     /**
      * Gets the duration of the animation.
@@ -232,8 +232,7 @@ public abstract class Animator implements Cloneable {
      *
      * @return The timing interpolator for this animation.
      */
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         return null;
     }
 
@@ -299,8 +298,7 @@ public abstract class Animator implements Cloneable {
      *
      * @return ArrayList<AnimatorListener> The set of listeners.
      */
-    @Nullable
-    ArrayList<AnimatorListener> getListeners() {
+    @Nullable ArrayList<AnimatorListener> getListeners() {
         return mListeners;
     }
 
@@ -391,9 +389,8 @@ public abstract class Animator implements Cloneable {
     }
 
     @SuppressLint("NoClone") /* Platform API */
-    @NonNull
     @Override
-    public Animator clone() {
+    public @NonNull Animator clone() {
         try {
             final Animator anim = (Animator) super.clone();
             if (mListeners != null) {

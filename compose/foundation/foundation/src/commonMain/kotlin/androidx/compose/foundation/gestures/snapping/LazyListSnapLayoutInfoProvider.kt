@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastSumBy
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -39,7 +40,7 @@ import kotlin.math.sign
  */
 fun SnapLayoutInfoProvider(
     lazyListState: LazyListState,
-    snapPosition: SnapPosition = SnapPosition.Center
+    snapPosition: SnapPosition = SnapPosition.Center,
 ): SnapLayoutInfoProvider =
     object : SnapLayoutInfoProvider {
 
@@ -53,7 +54,7 @@ fun SnapLayoutInfoProvider(
                     0
                 } else {
                     val numberOfItems = layoutInfo.visibleItemsInfo.size
-                    layoutInfo.visibleItemsInfo.sumOf { it.size } / numberOfItems
+                    layoutInfo.visibleItemsInfo.fastSumBy { it.size } / numberOfItems
                 }
             }
 
@@ -77,7 +78,7 @@ fun SnapLayoutInfoProvider(
                         itemOffset = item.offset,
                         itemIndex = item.index,
                         snapPosition = snapPosition,
-                        itemCount = layoutInfo.totalItemsCount
+                        itemCount = layoutInfo.totalItemsCount,
                     )
 
                 // Find item that is closest to the center
@@ -94,7 +95,7 @@ fun SnapLayoutInfoProvider(
             return calculateFinalOffset(
                 with(lazyListState.density) { calculateFinalSnappingItem(velocity) },
                 lowerBoundOffset,
-                upperBoundOffset
+                upperBoundOffset,
             )
         }
     }
@@ -112,7 +113,7 @@ fun SnapLayoutInfoProvider(
 @Composable
 fun rememberSnapFlingBehavior(
     lazyListState: LazyListState,
-    snapPosition: SnapPosition = SnapPosition.Center
+    snapPosition: SnapPosition = SnapPosition.Center,
 ): FlingBehavior {
     val snappingLayout =
         remember(lazyListState) { SnapLayoutInfoProvider(lazyListState, snapPosition) }

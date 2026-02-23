@@ -15,55 +15,106 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlinSerialization)
 }
 
-dependencies {
-    api(project(":navigation:navigation-runtime"))
-    api("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
-    implementation(libs.kotlinSerializationCore)
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.navigation.testing"
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+    }
+    desktop()
+    linux()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
-    androidTestImplementation(project(":internal-testutils-navigation"), {
-        exclude group: "androidx.navigation", module: "navigation-common"
-    })
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testExtTruth)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinTestJunit)
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
-    testImplementation(libs.testCore)
-    testImplementation(libs.testExtJunit)
-    testImplementation(libs.testExtTruth)
-    testImplementation(libs.testRunner)
-    testImplementation(libs.testRules)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinTestJunit)
-    testImplementation(libs.robolectric)
+    sourceSets {
+        configureEach {
+            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+        }
+
+        commonMain.dependencies {
+            api(project(":navigation:navigation-runtime"))
+            api(project(":lifecycle:lifecycle-runtime-testing"))
+
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinSerializationCore)
+            implementation(project(":navigation:navigation-common"))
+            implementation(project(":lifecycle:lifecycle-common"))
+            implementation(project(":lifecycle:lifecycle-viewmodel"))
+            implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(project(":kruth:kruth"))
+        }
+
+        jvmAndAndroidTest.dependencies {
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
+        }
+
+        androidMain.dependencies {
+            api(project(":lifecycle:lifecycle-runtime"))
+            api(project(":lifecycle:lifecycle-viewmodel"))
+            api(project(":savedstate:savedstate-ktx"))
+            implementation("androidx.core:core-ktx:1.1.0")
+            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+        }
+
+        androidHostTest.dependencies {
+            runtimeOnly(libs.testCore)
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(project(":internal-testutils-navigation"))
+            implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
+            implementation(libs.testExtJunit)
+            implementation(libs.testExtTruth)
+            implementation(libs.testRules)
+
+            runtimeOnly(libs.testCore)
+            runtimeOnly(libs.kotlinTestJunit)
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+        }
+
+        create("nonAndroidMain").dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nativeMain.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
+
+        create("nonAndroidTest").dependsOn(commonTest)
+        desktopTest.dependsOn(nonAndroidTest)
+        nativeTest.dependsOn(nonAndroidTest)
+        webTest.dependsOn(nonAndroidTest)
+    }
 }
 
 androidx {
     name = "Navigation Testing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
-    legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    namespace "androidx.navigation.testing"
+    enableRobolectric()
 }

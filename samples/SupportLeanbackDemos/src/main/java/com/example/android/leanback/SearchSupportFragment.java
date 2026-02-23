@@ -14,8 +14,6 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -29,6 +27,9 @@ import androidx.leanback.widget.OnItemViewClickedListener;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -66,9 +67,9 @@ public class SearchSupportFragment extends androidx.leanback.app.SearchSupportFr
             return oldItem.equals(newItem);
         }
 
-        @Nullable
         @Override
-        public Object getChangePayload(@NonNull PhotoItem oldItem, @NonNull PhotoItem newItem) {
+        public @Nullable Object getChangePayload(@NonNull PhotoItem oldItem,
+                @NonNull PhotoItem newItem) {
             Bundle diff = new Bundle();
             if (oldItem.getImageResourceId()
                     != newItem.getImageResourceId()) {

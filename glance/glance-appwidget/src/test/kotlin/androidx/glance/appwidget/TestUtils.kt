@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.view.children
 import androidx.glance.Applier
+import androidx.glance.Backend
 import androidx.glance.GlanceComposable
 import androidx.glance.GlanceId
 import androidx.glance.session.GlobalSnapshotManager
@@ -53,10 +54,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -64,18 +68,18 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 
 internal suspend fun runTestingComposition(
-    content: @Composable @GlanceComposable () -> Unit,
+    content: @Composable @GlanceComposable () -> Unit
 ): RemoteViewsRoot =
     runCompositionUntil(
         stopWhen = { state: Recomposer.State, root: RemoteViewsRoot ->
             state == Recomposer.State.Idle && !root.shouldIgnoreResult()
         },
-        content
+        content,
     )
 
 internal suspend fun runCompositionUntil(
     stopWhen: (Recomposer.State, RemoteViewsRoot) -> Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): RemoteViewsRoot = coroutineScope {
     GlobalSnapshotManager.ensureStarted()
     val root = RemoteViewsRoot(10)
@@ -162,21 +166,22 @@ private class TestAppWidgetHostView(context: Context) : AppWidgetHostView(contex
             this,
             AppWidgetHostView::class.java,
             "updateAppWidget",
-            ClassParameter(RemoteViews::class.java, remoteViews)
+            ClassParameter(RemoteViews::class.java, remoteViews),
         )
     }
 }
 
 internal suspend fun Context.runAndTranslate(
     appWidgetId: Int = 0,
-    content: @Composable () -> Unit
+    backendOverride: Backend? = null,
+    content: @Composable () -> Unit,
 ): RemoteViews {
     val originalRoot = runTestingComposition(content)
 
     // Copy makes a deep copy of the emittable tree, so will exercise the copy methods
     // of all of the emmitables the test checks too.
     val root = originalRoot.copy() as RemoteViewsRoot
-    normalizeCompositionTree(root)
+    normalizeCompositionTree(root, backendOverrideRequest = backendOverride)
     return translateComposition(
         this,
         appWidgetId,
@@ -189,7 +194,7 @@ internal suspend fun Context.runAndTranslate(
 
 internal suspend fun Context.runAndTranslateInRtl(
     appWidgetId: Int = 0,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): RemoteViews {
     val rtlLocale =
         Locale.getAvailableLocales().first {
@@ -255,7 +260,7 @@ internal open class TestWidget(
     companion object {
         fun forPreview(
             sizeMode: PreviewSizeMode = SizeMode.Single,
-            ui: @Composable (Int) -> Unit
+            ui: @Composable (Int) -> Unit,
         ): TestWidget {
             return object : TestWidget(SizeMode.Single, {}) {
                 override val previewSizeMode = sizeMode
@@ -282,3 +287,11 @@ fun configurationContext(modifier: Configuration.() -> Unit): Context {
     return ApplicationProvider.getApplicationContext<Context>()
         .createConfigurationContext(configuration)
 }
+
+/** JVM tests in a [TestScope] that can't finish under 10s. */
+internal fun TestScope.runMediumTest(testBody: suspend TestScope.() -> Unit) =
+    this.runTest(timeout = 30.seconds, testBody = testBody)
+
+/** JVM tests that can't finish under 10s. */
+internal fun runMediumTest(testBody: suspend TestScope.() -> Unit) =
+    runTest(timeout = 30.seconds, testBody = testBody)

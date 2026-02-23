@@ -24,20 +24,9 @@ import org.gradle.api.provider.Provider
 /**
  * Whether to enable constraints for projects in same-version groups
  *
- * This is expected to be true during builds that publish artifacts externally This is expected to
- * be false during most other builds because: Developers may be interested in including only a
- * subset of projects in ANDROIDX_PROJECTS to make Studio run more quickly. If a build contains only
- * a subset of projects, we cannot necessarily add constraints between all pairs of projects in the
- * same group. We want most builds to have high remote cache usage, so we want constraints to be
- * similar across most builds See go/androidx-group-constraints for more information
+ * This is default true.
  */
 const val ADD_GROUP_CONSTRAINTS = "androidx.constraints"
-
-/**
- * Setting this property makes Test tasks succeed even if there are some failing tests. Useful when
- * running tests in CI where build passes test results as XML to test reporter.
- */
-const val TEST_FAILURES_DO_NOT_FAIL_TEST_TASK = "androidx.ignoreTestFailures"
 
 /** Setting this property to false makes test tasks not display detailed output to stdout. */
 const val DISPLAY_TEST_OUTPUT = "androidx.displayTestOutput"
@@ -45,25 +34,8 @@ const val DISPLAY_TEST_OUTPUT = "androidx.displayTestOutput"
 /** Setting this property changes "url" property in publishing maven artifact metadata */
 const val ALTERNATIVE_PROJECT_URL = "androidx.alternativeProjectUrl"
 
-/**
- * Check that version extra meets the specified rules (version is in format major.minor.patch-extra)
- */
-const val VERSION_EXTRA_CHECK_ENABLED = "androidx.versionExtraCheckEnabled"
-
 /** Validate the project structure against Jetpack guidelines */
 const val VALIDATE_PROJECT_STRUCTURE = "androidx.validateProjectStructure"
-
-/**
- * Setting this property enables Compose Compiler metrics - see
- * compose/compiler/design/compiler-metrics.md
- */
-const val ENABLE_COMPOSE_COMPILER_METRICS = "androidx.enableComposeCompilerMetrics"
-
-/**
- * Setting this property enables Compose Compiler reports - see
- * compose/compiler/design/compiler-metrics.md
- */
-const val ENABLE_COMPOSE_COMPILER_REPORTS = "androidx.enableComposeCompilerReports"
 
 /** Returns whether the project should generate documentation. */
 const val ENABLE_DOCUMENTATION = "androidx.enableDocumentation"
@@ -133,22 +105,8 @@ const val ALLOW_MISSING_LINT_CHECKS_PROJECT = "androidx.allow.missing.lint"
  */
 const val XCODEGEN_DOWNLOAD_URI = "androidx.benchmark.darwin.xcodeGenDownloadUri"
 
-/** If true, don't restrict usage of compileSdk property. */
-const val ALLOW_CUSTOM_COMPILE_SDK = "androidx.allowCustomCompileSdk"
-
-/** If true, include Jetpack library projects that live outside of `frameworks/support`. */
-const val INCLUDE_OPTIONAL_PROJECTS = "androidx.includeOptionalProjects"
-
-/**
- * If true, enable the ArrayNullnessMigration lint check to transition to type-use nullness
- * annotations. Defaults to false.
- */
-const val USE_JSPECIFY_ANNOTATIONS = "androidx.useJSpecifyAnnotations"
-
 /** If true, yarn dependencies are fetched from an offline mirror */
 const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
-
-const val FORCE_KOTLIN_2_0_TARGET = "androidx.forceKotlin20Target"
 
 /** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
 const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
@@ -157,10 +115,7 @@ val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
         ALTERNATIVE_PROJECT_URL,
-        VERSION_EXTRA_CHECK_ENABLED,
         VALIDATE_PROJECT_STRUCTURE,
-        ENABLE_COMPOSE_COMPILER_METRICS,
-        ENABLE_COMPOSE_COMPILER_REPORTS,
         DISPLAY_TEST_OUTPUT,
         ENABLE_DOCUMENTATION,
         HIGH_MEMORY,
@@ -168,7 +123,6 @@ val ALL_ANDROIDX_PROPERTIES =
         STUDIO_TYPE,
         SUMMARIZE_STANDARD_ERROR,
         USE_MAX_DEP_VERSIONS,
-        TEST_FAILURES_DO_NOT_FAIL_TEST_TASK,
         VALIDATE_NO_UNRECOGNIZED_MESSAGES,
         VERIFY_UP_TO_DATE,
         WRITE_VERSIONED_API_FILES,
@@ -182,24 +136,18 @@ val ALL_ANDROIDX_PROPERTIES =
         ENABLED_KMP_TARGET_PLATFORMS,
         ALLOW_MISSING_LINT_CHECKS_PROJECT,
         XCODEGEN_DOWNLOAD_URI,
-        ALLOW_CUSTOM_COMPILE_SDK,
         FilteredAnchorTask.PROP_TASK_NAME,
         FilteredAnchorTask.PROP_PATH_PREFIX,
-        INCLUDE_OPTIONAL_PROJECTS,
-        USE_JSPECIFY_ANNOTATIONS,
         YARN_OFFLINE_MODE,
-        FORCE_KOTLIN_2_0_TARGET,
         FORCE_BENCHMARK_AOT_COMPILATION,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
-
-fun Project.shouldForceKotlin20Target() =
-    project.providers.gradleProperty(FORCE_KOTLIN_2_0_TARGET).map { it.toBoolean() }.orElse(false)
 
 /**
  * Whether to enable constraints for projects in same-version groups See the property definition for
  * more details
  */
-fun Project.shouldAddGroupConstraints() = booleanPropertyProvider(ADD_GROUP_CONSTRAINTS)
+fun Project.shouldAddGroupConstraints(): Provider<Boolean> =
+    project.providers.gradleProperty(ADD_GROUP_CONSTRAINTS).map { s -> s.toBoolean() }.orElse(true)
 
 /**
  * Returns alternative project url that will be used as "url" property in publishing maven artifact
@@ -209,12 +157,6 @@ fun Project.shouldAddGroupConstraints() = booleanPropertyProvider(ADD_GROUP_CONS
  */
 fun Project.getAlternativeProjectUrl(): String? =
     project.providers.gradleProperty(ALTERNATIVE_PROJECT_URL).getOrNull()
-
-/**
- * Check that version extra meets the specified rules (version is in format major.minor.patch-extra)
- */
-fun Project.isVersionExtraCheckEnabled(): Boolean =
-    findBooleanProperty(VERSION_EXTRA_CHECK_ENABLED) ?: true
 
 /** Validate the project structure against Jetpack guidelines */
 fun Project.isValidateProjectStructureEnabled(): Boolean =
@@ -262,17 +204,9 @@ fun Project.isWriteVersionedApiFilesEnabled(): Boolean =
     findBooleanProperty(WRITE_VERSIONED_API_FILES) ?: true
 
 /** Returns whether the build is for checking forward compatibility across projects */
-fun Project.usingMaxDepVersions(): Boolean {
-    return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).isPresent()
+fun Project.usingMaxDepVersions(): Provider<Boolean> {
+    return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).map { true }.orElse(false)
 }
-
-/** Returns whether we export compose compiler metrics */
-fun Project.enableComposeCompilerMetrics() =
-    findBooleanProperty(ENABLE_COMPOSE_COMPILER_METRICS) ?: false
-
-/** Returns whether we export compose compiler reports */
-fun Project.enableComposeCompilerReports() =
-    findBooleanProperty(ENABLE_COMPOSE_COMPILER_REPORTS) ?: false
 
 /** Returns whether we should use the offline mirror for dependencies */
 fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
@@ -284,18 +218,5 @@ fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
 fun Project.allowMissingLintProject() =
     findBooleanProperty(ALLOW_MISSING_LINT_CHECKS_PROJECT) ?: false
 
-/** Whether libraries are allowed to customize the value of the compileSdk property. */
-fun Project.isCustomCompileSdkAllowed(): Boolean =
-    findBooleanProperty(ALLOW_CUSTOM_COMPILE_SDK) ?: true
-
-/**
- * Whether to enable the JSpecifyNullnessMigration lint check for moving nullness annotations when
- * switching a project to the JSpecify type-use nullness annotations.
- */
-fun Project.useJSpecifyAnnotations() = findBooleanProperty(USE_JSPECIFY_ANNOTATIONS) ?: false
-
-fun Project.findBooleanProperty(propName: String) = booleanPropertyProvider(propName).get()
-
-fun Project.booleanPropertyProvider(propName: String): Provider<Boolean> {
-    return project.providers.gradleProperty(propName).map { s -> s.toBoolean() }.orElse(false)
-}
+fun Project.findBooleanProperty(propName: String): Boolean? =
+    project.providers.gradleProperty(propName).map { it.toBoolean() }.getOrNull()

@@ -29,10 +29,10 @@ import androidx.window.core.ConsumerAdapter
 import androidx.window.core.VerificationMode
 import androidx.window.embedding.EmbeddingInterfaceCompat.EmbeddingCallbackInterface
 import androidx.window.embedding.OverlayController.Companion.OVERLAY_FEATURE_VERSION
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
 import androidx.window.embedding.SplitController.SplitSupportStatus.Companion.SPLIT_AVAILABLE
 import androidx.window.extensions.WindowExtensionsProvider
 import androidx.window.extensions.embedding.ActivityEmbeddingComponent
-import androidx.window.extensions.embedding.ActivityStack as OEMActivityStack
 import androidx.window.extensions.embedding.ActivityStackAttributes
 import androidx.window.extensions.embedding.SplitInfo as OEMSplitInfo
 import androidx.window.reflection.Consumer2
@@ -73,7 +73,7 @@ internal class EmbeddingCompat(
                 Log.w(
                     TAG,
                     "Cannot set SplitRule because ActivityEmbedding Split is not " +
-                        "supported or PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED is not set."
+                        "supported or PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED is not set.",
                 )
             }
             return
@@ -89,7 +89,7 @@ internal class EmbeddingCompat(
                 consumerAdapter.addConsumer(
                     embeddingExtension,
                     List::class,
-                    "setSplitInfoCallback"
+                    "setSplitInfoCallback",
                 ) { values ->
                     val splitInfoList = values.filterIsInstance<OEMSplitInfo>()
                     embeddingCallback.onSplitInfoChanged(adapter.translate(splitInfoList))
@@ -102,13 +102,9 @@ internal class EmbeddingCompat(
                 registerSplitInfoCallback(embeddingCallback)
 
                 // Register ActivityStack callback
-                val activityStackCallback =
-                    Consumer2<List<OEMActivityStack>> { activityStacks ->
-                        embeddingCallback.onActivityStackChanged(adapter.translate(activityStacks))
-                    }
                 embeddingExtension.registerActivityStackCallback(
                     Runnable::run,
-                    activityStackCallback
+                    ActivityStackConsumer(embeddingCallback, adapter),
                 )
             }
         }
@@ -131,7 +127,7 @@ internal class EmbeddingCompat(
         windowSdkExtensions.requireExtensionVersion(5)
         return embeddingExtension.pinTopActivityStack(
             taskId,
-            adapter.translateSplitPinRule(applicationContext, splitPinRule)
+            adapter.translateSplitPinRule(applicationContext, splitPinRule),
         )
     }
 
@@ -177,6 +173,9 @@ internal class EmbeddingCompat(
         adapter.embeddingConfiguration = embeddingConfig
         setDefaultSplitAttributeCalculatorIfNeeded()
 
+        if (windowSdkExtensions.extensionVersion >= 8) {
+            embeddingExtension.setAutoSaveEmbeddingState(embeddingConfig.isAutoSaveEmbeddingState)
+        }
         embeddingExtension.invalidateTopVisibleSplitAttributes()
     }
 
@@ -189,7 +188,14 @@ internal class EmbeddingCompat(
                 adapter.embeddingConfiguration != null
         ) {
             embeddingExtension.setSplitAttributesCalculator { params ->
-                adapter.translateSplitAttributes(adapter.translate(params.defaultSplitAttributes))
+                if (params.areDefaultConstraintsSatisfied())
+                    adapter.translateSplitAttributes(
+                        adapter.translate(params.defaultSplitAttributes)
+                    )
+                else
+                    adapter.translateSplitAttributes(
+                        SplitAttributes.Builder().setSplitType(SPLIT_TYPE_EXPAND).build()
+                    )
             }
         }
     }
@@ -218,12 +224,12 @@ internal class EmbeddingCompat(
         if (windowSdkExtensions.extensionVersion >= 5) {
             embeddingExtension.updateSplitAttributes(
                 splitInfo.getToken(),
-                adapter.translateSplitAttributes(splitAttributes)
+                adapter.translateSplitAttributes(splitAttributes),
             )
         } else {
             embeddingExtension.updateSplitAttributes(
                 splitInfo.getBinder(),
-                adapter.translateSplitAttributes(splitAttributes)
+                adapter.translateSplitAttributes(splitAttributes),
             )
         }
     }
@@ -239,7 +245,7 @@ internal class EmbeddingCompat(
     @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
     override fun setOverlayCreateParams(
         options: Bundle,
-        overlayCreateParams: OverlayCreateParams
+        overlayCreateParams: OverlayCreateParams,
     ): Bundle =
         options.apply {
             ActivityEmbeddingOptionsImpl.setOverlayCreateParams(options, overlayCreateParams)
@@ -274,20 +280,12 @@ internal class EmbeddingCompat(
         executor: Executor,
         overlayInfoCallback: JetpackConsumer<OverlayInfo>,
     ) {
-        overlayController?.addOverlayInfoCallback(
-            overlayTag,
-            executor,
-            overlayInfoCallback,
-        )
+        overlayController?.addOverlayInfoCallback(overlayTag, executor, overlayInfoCallback)
             ?: apply {
                 Log.w(TAG, "overlayInfo is not supported on device less than version 5")
 
                 overlayInfoCallback.accept(
-                    OverlayInfo(
-                        overlayTag,
-                        currentOverlayAttributes = null,
-                        activityStack = null,
-                    )
+                    OverlayInfo(overlayTag, currentOverlayAttributes = null, activityStack = null)
                 )
             }
     }
@@ -300,13 +298,13 @@ internal class EmbeddingCompat(
     @RequiresWindowSdkExtension(6)
     override fun addEmbeddedActivityWindowInfoCallbackForActivity(
         activity: Activity,
-        callback: JetpackConsumer<EmbeddedActivityWindowInfo>
+        callback: JetpackConsumer<EmbeddedActivityWindowInfo>,
     ) {
         activityWindowInfoCallbackController?.addCallback(activity, callback)
             ?: apply {
                 Log.w(
                     TAG,
-                    "EmbeddedActivityWindowInfo is not supported on device less than version 6"
+                    "EmbeddedActivityWindowInfo is not supported on device less than version 6",
                 )
             }
     }
@@ -363,7 +361,7 @@ internal class EmbeddingCompat(
         private fun emptyActivityEmbeddingProxy(): ActivityEmbeddingComponent {
             return Proxy.newProxyInstance(
                 EmbeddingCompat::class.java.classLoader,
-                arrayOf(ActivityEmbeddingComponent::class.java)
+                arrayOf(ActivityEmbeddingComponent::class.java),
             ) { _, _, _ ->
             } as ActivityEmbeddingComponent
         }

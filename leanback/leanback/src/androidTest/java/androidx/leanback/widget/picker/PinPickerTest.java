@@ -25,7 +25,6 @@ import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentat
 import android.view.KeyEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.PollingCheck;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

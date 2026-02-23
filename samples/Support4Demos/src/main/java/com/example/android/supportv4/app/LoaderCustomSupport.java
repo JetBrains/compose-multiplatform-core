@@ -41,8 +41,6 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -52,6 +50,9 @@ import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
 
 import com.example.android.supportv4.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.text.Collator;
@@ -475,8 +476,7 @@ public class LoaderCustomSupport extends FragmentActivity {
             Log.i("LoaderCustom", "Item clicked: " + id);
         }
 
-        @NonNull
-        @Override public Loader<List<AppEntry>> onCreateLoader(int id, Bundle args) {
+        @Override public @NonNull Loader<List<AppEntry>> onCreateLoader(int id, Bundle args) {
             // This is called when a new Loader needs to be created.  This
             // sample only has one Loader with no arguments, so it is simple.
             return new AppListLoader(getActivity());

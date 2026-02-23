@@ -115,6 +115,7 @@ private constructor(
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
         listeners: List<Request.Listener>,
     ): Boolean {
@@ -131,9 +132,10 @@ private constructor(
                     isRepeating,
                     requests,
                     defaultParameters,
+                    graphParameters,
                     requiredParameters,
+                    activeBurstListener,
                     listeners,
-                    activeBurstListener
                 )
             }
 

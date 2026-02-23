@@ -19,6 +19,7 @@ package androidx.health.connect.client.impl.converters.records
 
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -47,6 +48,7 @@ import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MealType
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -55,6 +57,7 @@ import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SexualActivityRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
@@ -82,6 +85,20 @@ import java.time.Instant
 fun toRecord(proto: DataProto.DataPoint): Record =
     with(proto) {
         when (dataType.name) {
+            "ActivityIntensity" ->
+                ActivityIntensityRecord(
+                    activityIntensityType =
+                        mapEnum(
+                            "activityIntensityType",
+                            ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_STRING_TO_INT_MAP,
+                            ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE,
+                        ),
+                    startTime = startTime,
+                    startZoneOffset = startZoneOffset,
+                    endTime = endTime,
+                    endZoneOffset = endZoneOffset,
+                    metadata = metadata,
+                )
             "BasalBodyTemperature" ->
                 BasalBodyTemperatureRecord(
                     temperature = getDouble("temperature").celsius,
@@ -94,14 +111,14 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BasalMetabolicRate" ->
                 BasalMetabolicRateRecord(
                     basalMetabolicRate = getDouble("bmr").kilocaloriesPerDay,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BloodGlucose" ->
                 BloodGlucoseRecord(
@@ -110,23 +127,23 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "specimenSource",
                             BloodGlucoseRecord.SPECIMEN_SOURCE_STRING_TO_INT_MAP,
-                            BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN
+                            BloodGlucoseRecord.SPECIMEN_SOURCE_UNKNOWN,
                         ),
                     mealType =
                         mapEnum(
                             "mealType",
                             MealType.MEAL_TYPE_STRING_TO_INT_MAP,
-                            MealType.MEAL_TYPE_UNKNOWN
+                            MealType.MEAL_TYPE_UNKNOWN,
                         ),
                     relationToMeal =
                         mapEnum(
                             "relationToMeal",
                             BloodGlucoseRecord.RELATION_TO_MEAL_STRING_TO_INT_MAP,
-                            BloodGlucoseRecord.RELATION_TO_MEAL_UNKNOWN
+                            BloodGlucoseRecord.RELATION_TO_MEAL_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BloodPressure" ->
                 BloodPressureRecord(
@@ -136,24 +153,24 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "bodyPosition",
                             BloodPressureRecord.BODY_POSITION_STRING_TO_INT_MAP,
-                            BloodPressureRecord.BODY_POSITION_UNKNOWN
+                            BloodPressureRecord.BODY_POSITION_UNKNOWN,
                         ),
                     measurementLocation =
                         mapEnum(
                             "measurementLocation",
                             BloodPressureRecord.MEASUREMENT_LOCATION_STRING_TO_INT_MAP,
-                            BloodPressureRecord.MEASUREMENT_LOCATION_UNKNOWN
+                            BloodPressureRecord.MEASUREMENT_LOCATION_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BodyFat" ->
                 BodyFatRecord(
                     percentage = getDouble("percentage").percent,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BodyTemperature" ->
                 BodyTemperatureRecord(
@@ -163,25 +180,25 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                             "measurementLocation",
                             BodyTemperatureMeasurementLocation
                                 .MEASUREMENT_LOCATION_STRING_TO_INT_MAP,
-                            BodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_UNKNOWN
+                            BodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BodyWaterMass" ->
                 BodyWaterMassRecord(
                     mass = getDouble("mass").kilograms,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "BoneMass" ->
                 BoneMassRecord(
                     mass = getDouble("mass").kilograms,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "CervicalMucus" ->
                 CervicalMucusRecord(
@@ -189,17 +206,17 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "texture",
                             APPEARANCE_STRING_TO_INT_MAP,
-                            CervicalMucusRecord.APPEARANCE_UNKNOWN
+                            CervicalMucusRecord.APPEARANCE_UNKNOWN,
                         ),
                     sensation =
                         mapEnum(
                             "amount",
                             SENSATION_STRING_TO_INT_MAP,
-                            CervicalMucusRecord.SENSATION_UNKNOWN
+                            CervicalMucusRecord.SENSATION_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "CyclingPedalingCadenceSeries" ->
                 CyclingPedalingCadenceRecord(
@@ -236,7 +253,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     height = getDouble("height").meters,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "HeartRateVariabilityRmssd" -> {
                 // Ensure that the values being read from old APKs do not crash the client.
@@ -255,7 +272,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     heartRateVariabilityMillis = heartRateVariabilityMillis,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             }
             "LeanBodyMass" ->
@@ -263,7 +280,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     mass = getDouble("mass").kilograms,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "Menstruation" ->
                 MenstruationFlowRecord(
@@ -271,11 +288,11 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "flow",
                             MenstruationFlowRecord.FLOW_TYPE_STRING_TO_INT_MAP,
-                            MenstruationFlowRecord.FLOW_UNKNOWN
+                            MenstruationFlowRecord.FLOW_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "MenstruationPeriod" ->
                 MenstruationPeriodRecord(
@@ -285,24 +302,41 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     endZoneOffset = endZoneOffset,
                     metadata = metadata,
                 )
+            "MindfulnessSession" -> {
+                MindfulnessSessionRecord(
+                    mindfulnessSessionType =
+                        mapEnum(
+                            "sessionType",
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_STRING_TO_INT_MAP,
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN,
+                        ),
+                    title = getString("title"),
+                    notes = getString("notes"),
+                    startTime = startTime,
+                    startZoneOffset = startZoneOffset,
+                    endTime = endTime,
+                    endZoneOffset = endZoneOffset,
+                    metadata = metadata,
+                )
+            }
             "OvulationTest" ->
                 OvulationTestRecord(
                     result =
                         mapEnum(
                             "result",
                             OvulationTestRecord.RESULT_STRING_TO_INT_MAP,
-                            OvulationTestRecord.RESULT_INCONCLUSIVE
+                            OvulationTestRecord.RESULT_INCONCLUSIVE,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "OxygenSaturation" ->
                 OxygenSaturationRecord(
                     percentage = getDouble("percentage").percent,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "PowerSeries" ->
                 PowerRecord(
@@ -324,14 +358,14 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     rate = getDouble("rate"),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "RestingHeartRate" ->
                 RestingHeartRateRecord(
                     beatsPerMinute = getLong("bpm"),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "SexualActivity" ->
                 SexualActivityRecord(
@@ -339,11 +373,11 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "protectionUsed",
                             SexualActivityRecord.PROTECTION_USED_STRING_TO_INT_MAP,
-                            SexualActivityRecord.PROTECTION_USED_UNKNOWN
+                            SexualActivityRecord.PROTECTION_USED_UNKNOWN,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "SpeedSeries" ->
                 SpeedRecord(
@@ -382,18 +416,18 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "measurementMethod",
                             Vo2MaxRecord.MEASUREMENT_METHOD_STRING_TO_INT_MAP,
-                            Vo2MaxRecord.MEASUREMENT_METHOD_OTHER
+                            Vo2MaxRecord.MEASUREMENT_METHOD_OTHER,
                         ),
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "Weight" ->
                 WeightRecord(
                     weight = getDouble("weight").kilograms,
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "ActiveCaloriesBurned" ->
                 ActiveCaloriesBurnedRecord(
@@ -402,7 +436,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "ActivitySession" -> {
                 ExerciseSessionRecord(
@@ -410,7 +444,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "activityType",
                             ExerciseSessionRecord.EXERCISE_TYPE_STRING_TO_INT_MAP,
-                            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT
+                            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
                         ),
                     title = getString("title"),
                     notes = getString("notes"),
@@ -437,7 +471,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "ElevationGained" ->
                 ElevationGainedRecord(
@@ -446,7 +480,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "FloorsClimbed" ->
                 FloorsClimbedRecord(
@@ -455,7 +489,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "Hydration" ->
                 HydrationRecord(
@@ -464,7 +498,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "Nutrition" ->
                 NutritionRecord(
@@ -514,14 +548,30 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                         mapEnum(
                             "mealType",
                             MealType.MEAL_TYPE_STRING_TO_INT_MAP,
-                            MealType.MEAL_TYPE_UNKNOWN
+                            MealType.MEAL_TYPE_UNKNOWN,
                         ),
                     name = getString("name"),
                     startTime = startTime,
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
+                )
+            "SkinTemperature" ->
+                SkinTemperatureRecord(
+                    baseline = valuesMap["baseline"]?.doubleVal?.celsius,
+                    measurementLocation =
+                        mapEnum(
+                            "measurementLocation",
+                            SkinTemperatureRecord.MEASUREMENT_LOCATION_STRING_TO_INT_MAP,
+                            SkinTemperatureRecord.MEASUREMENT_LOCATION_UNKNOWN,
+                        ),
+                    startTime = startTime,
+                    startZoneOffset = startZoneOffset,
+                    endTime = endTime,
+                    endZoneOffset = endZoneOffset,
+                    deltas = subTypeDataListsMap["deltas"]?.toDeltasList() ?: emptyList(),
+                    metadata = metadata,
                 )
             "SleepSession" ->
                 SleepSessionRecord(
@@ -532,13 +582,13 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
                     stages = subTypeDataListsMap["stages"]?.toStageList() ?: emptyList(),
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "IntermenstrualBleeding" ->
                 IntermenstrualBleedingRecord(
                     time = time,
                     zoneOffset = zoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "Steps" ->
                 StepsRecord(
@@ -547,7 +597,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "TotalCaloriesBurned" ->
                 TotalCaloriesBurnedRecord(
@@ -556,7 +606,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             "WheelchairPushes" ->
                 WheelchairPushesRecord(
@@ -565,7 +615,7 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
-                    metadata = metadata
+                    metadata = metadata,
                 )
             else -> throw RuntimeException("Unknown data type ${dataType.name}")
         }
@@ -582,7 +632,7 @@ fun toExerciseRouteData(
                 longitude = value.valuesMap["longitude"]!!.doubleVal,
                 altitude = value.valuesMap["altitude"]?.doubleVal?.meters,
                 horizontalAccuracy = value.valuesMap["horizontal_accuracy"]?.doubleVal?.meters,
-                verticalAccuracy = value.valuesMap["vertical_accuracy"]?.doubleVal?.meters
+                verticalAccuracy = value.valuesMap["vertical_accuracy"]?.doubleVal?.meters,
             )
         }
     )

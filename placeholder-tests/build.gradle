@@ -32,5 +32,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.testinfra.placeholderintegrationtest"
+    namespace = "androidx.testinfra.placeholderintegrationtest"
 }

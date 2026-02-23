@@ -22,6 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -82,6 +83,12 @@ class SnapshotStateSetTests {
     }
 
     @Test
+    fun validateIterator_ordered() {
+        val set = mutableStateSetOf(0, 1, 2, 3, 4)
+        assertEquals(listOf(0, 1, 2, 3, 4), set.iterator().asSequence().toList())
+    }
+
+    @Test
     fun validateIterator_remove() {
         assertFailsWith(IllegalStateException::class) {
             validate(mutableStateSetOf(0, 1, 2, 3, 4)) { normalSet ->
@@ -94,6 +101,13 @@ class SnapshotStateSetTests {
                 iterator.remove()
             }
         }
+    }
+
+    @Test
+    fun validateIterator_orderedAfterRemove() {
+        val set = mutableStateSetOf(0, 1, 2, 3, 4)
+        set.remove(2)
+        assertEquals(listOf(0, 1, 3, 4), set.iterator().asSequence().toList())
     }
 
     @Test
@@ -168,32 +182,33 @@ class SnapshotStateSetTests {
         }
     }
 
-    @Test(timeout = 30_000)
+    @Test
     @IgnoreJsTarget // Not relevant in a single threaded environment
-    fun concurrentMixingWriteApply_add(): Unit = runTest {
-        repeat(10) {
-            val sets = Array(100) { mutableStateSetOf<Int>() }.toList()
-            val channel = Channel<Unit>(Channel.CONFLATED)
-            coroutineScope {
-                // Launch mutator
-                launch(Dispatchers.Default) {
-                    repeat(100) { index ->
-                        sets.fastForEach { set -> set.add(index) }
+    fun concurrentMixingWriteApply_add() =
+        runTest(timeout = 30.seconds) {
+            repeat(10) {
+                val sets = Array(100) { mutableStateSetOf<Int>() }.toList()
+                val channel = Channel<Unit>(Channel.CONFLATED)
+                coroutineScope {
+                    // Launch mutator
+                    launch(Dispatchers.Default) {
+                        repeat(100) { index ->
+                            sets.fastForEach { set -> set.add(index) }
 
-                        // Simulate the write observer
-                        channel.trySend(Unit)
+                            // Simulate the write observer
+                            channel.trySend(Unit)
+                        }
+                        channel.close()
                     }
-                    channel.close()
-                }
 
-                // Simulate the global snapshot manager
-                launch(Dispatchers.Default) {
-                    channel.consumeEach { Snapshot.notifyObjectsInitialized() }
+                    // Simulate the global snapshot manager
+                    launch(Dispatchers.Default) {
+                        channel.consumeEach { Snapshot.notifyObjectsInitialized() }
+                    }
                 }
             }
+            // Should only get here if the above doesn't deadlock.
         }
-        // Should only get here if the above doesn't deadlock.
-    }
 
     @Test
     fun testWritingANewValueDoesObserveChange() {
@@ -235,6 +250,8 @@ class SnapshotStateSetTests {
     private fun <T> expected(expected: Set<T>, actual: Set<T>) {
         assertEquals(expected.size, actual.size)
         assertEquals(expected.subtract(actual), emptySet())
+        // Set is ordered, so should be equivalent when converted to list
+        assertEquals(expected.toList(), actual.toList())
     }
 
     private fun observeGlobalChanges(block: () -> Unit): Set<Any> {

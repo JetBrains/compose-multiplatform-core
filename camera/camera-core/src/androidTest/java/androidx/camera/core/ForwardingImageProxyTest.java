@@ -25,12 +25,11 @@ import static org.mockito.Mockito.when;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +42,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public final class ForwardingImageProxyTest {
 
     private final ImageProxy mBaseImageProxy = mock(ImageProxy.class);

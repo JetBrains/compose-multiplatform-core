@@ -19,7 +19,6 @@ package androidx.camera.integration.core.stresstest
 import android.Manifest
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -40,7 +39,6 @@ import androidx.camera.integration.core.util.StressTestUtil.launchCameraXActivit
 import androidx.camera.integration.core.waitForImageAnalysisIdle
 import androidx.camera.integration.core.waitForViewfinderIdle
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.LabTestRule
@@ -65,15 +63,9 @@ import org.junit.runners.Parameterized
 abstract class SwitchCameraStressTestBase(
     val implName: String,
     val cameraConfig: CameraXConfig,
-    val cameraId: String
+    val cameraId: String,
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
 
     @get:Rule
     val useCamera =
@@ -85,7 +77,7 @@ abstract class SwitchCameraStressTestBase(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
@@ -123,7 +115,7 @@ abstract class SwitchCameraStressTestBase(
         // For running the LifecycleStatusChangeStressTest, we need to get the target test camera
         // to check whether the testing use case combination can be supported to skip unsupported
         // cases. For the purpose, we force configure the target testing config first
-        // (Camera2Config/CameraPipeConfig) and gets the CameraProvider instance in the setup()
+        // Camera2Config and gets the CameraProvider instance in the setup()
         // function. Then, the activity launched afterward will also run on the same config
         // environment. The setup config environment will be cleared after
         // CameraProvider#shutdown() is called in the tearDown() function.
@@ -159,7 +151,7 @@ abstract class SwitchCameraStressTestBase(
         cameraId: String,
         useCaseCombination: Int,
         verificationTarget: Int,
-        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT
+        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
     ) {
         // Launches CameraXActivity and wait for the preview ready.
         val activityScenario =
@@ -202,7 +194,7 @@ abstract class SwitchCameraStressTestBase(
         cameraId: String,
         useCaseCombination: Int,
         verificationTarget: Int,
-        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT
+        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
     ) {
         // Launches CameraXActivity and wait for the preview ready.
         val activityScenario =
@@ -242,7 +234,7 @@ abstract class SwitchCameraStressTestBase(
 
     protected fun assumeBothLensFacingCamerasSupportUseCaseCombination(
         camera: Camera,
-        useCaseCombination: Int
+        useCaseCombination: Int,
     ): Unit = runBlocking {
         // Checks whether the input camera can support the use case combination
         assumeCameraSupportUseCaseCombination(camera, useCaseCombination)

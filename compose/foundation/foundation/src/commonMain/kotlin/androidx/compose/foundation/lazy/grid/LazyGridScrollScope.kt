@@ -20,7 +20,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.ui.util.fastFirstOrNull
-import kotlin.math.max
 
 /**
  * An implementation of [LazyLayoutScrollScope] that can be used with LazyGrids.
@@ -55,7 +54,7 @@ fun LazyLayoutScrollScope(state: LazyGridState, scrollScope: ScrollScope): LazyL
             if (layoutInfo.visibleItemsInfo.isEmpty()) return 0
             return if (targetIndex !in firstVisibleItemIndex..lastVisibleItemIndex) {
                 val slotsPerLine = state.slotsPerLine
-                val averageLineMainAxisSize = calculateLineAverageMainAxisSize(layoutInfo)
+                val averageLineMainAxisSize = layoutInfo.visibleLinesAverageMainAxisSize()
                 val before = targetIndex < firstVisibleItemIndex
                 val linesDiff =
                     (targetIndex - firstVisibleItemIndex +
@@ -70,49 +69,6 @@ fun LazyLayoutScrollScope(state: LazyGridState, scrollScope: ScrollScope): LazyL
                     visibleItem?.offset?.x
                 } ?: 0
             } + targetOffset
-        }
-
-        private fun calculateLineAverageMainAxisSize(layoutInfo: LazyGridLayoutInfo): Int {
-            val isVertical = layoutInfo.orientation == Orientation.Vertical
-            val visibleItems = layoutInfo.visibleItemsInfo
-            val lineOf: (Int) -> Int = {
-                if (isVertical) visibleItems[it].row else visibleItems[it].column
-            }
-
-            var totalLinesMainAxisSize = 0
-            var linesCount = 0
-
-            var lineStartIndex = 0
-            while (lineStartIndex < visibleItems.size) {
-                val currentLine = lineOf(lineStartIndex)
-                if (currentLine == -1) {
-                    // Filter out exiting items.
-                    ++lineStartIndex
-                    continue
-                }
-
-                var lineMainAxisSize = 0
-                var lineEndIndex = lineStartIndex
-                while (lineEndIndex < visibleItems.size && lineOf(lineEndIndex) == currentLine) {
-                    lineMainAxisSize =
-                        max(
-                            lineMainAxisSize,
-                            if (isVertical) {
-                                visibleItems[lineEndIndex].size.height
-                            } else {
-                                visibleItems[lineEndIndex].size.width
-                            }
-                        )
-                    ++lineEndIndex
-                }
-
-                totalLinesMainAxisSize += lineMainAxisSize
-                ++linesCount
-
-                lineStartIndex = lineEndIndex
-            }
-
-            return totalLinesMainAxisSize / linesCount + layoutInfo.mainAxisItemSpacing
         }
     }
 }

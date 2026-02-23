@@ -43,11 +43,7 @@ fun CheckboxButtonDemo() {
         item { DemoCheckboxButton(enabled = false, initiallyChecked = false) }
         item { ListHeader { Text("Checkbox with Icon") } }
         item {
-            DemoCheckboxButton(
-                enabled = true,
-                initiallyChecked = true,
-                primary = "Primary label",
-            ) {
+            DemoCheckboxButton(enabled = true, initiallyChecked = true, primary = "Primary label") {
                 Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
             }
         }
@@ -56,9 +52,31 @@ fun CheckboxButtonDemo() {
                 enabled = true,
                 initiallyChecked = true,
                 primary = "Primary label",
-                secondary = "Secondary label"
+                secondary = "Secondary label",
             ) {
                 Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
+            }
+        }
+        item { ListHeader { Text("Disabled Checkbox with Icon") } }
+        for (initiallyChecked in booleanArrayOf(true, false)) {
+            item {
+                DemoCheckboxButton(
+                    enabled = false,
+                    initiallyChecked = initiallyChecked,
+                    primary = "Primary label",
+                ) {
+                    Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
+                }
+            }
+            item {
+                DemoCheckboxButton(
+                    enabled = false,
+                    initiallyChecked = initiallyChecked,
+                    primary = "Primary label",
+                    secondary = "Secondary label",
+                ) {
+                    Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
+                }
             }
         }
         item { ListHeader { Text("Multi-line") } }
@@ -67,14 +85,7 @@ fun CheckboxButtonDemo() {
                 enabled = true,
                 initiallyChecked = true,
                 primary = "8:15AM",
-                secondary = "Monday"
-            )
-        }
-        item {
-            DemoCheckboxButton(
-                enabled = true,
-                initiallyChecked = true,
-                primary = "Primary Label with at most three lines of content"
+                secondary = "Monday",
             )
         }
         item {
@@ -82,7 +93,14 @@ fun CheckboxButtonDemo() {
                 enabled = true,
                 initiallyChecked = true,
                 primary = "Primary Label with at most three lines of content",
-                secondary = "Secondary label with at most two lines of text"
+            )
+        }
+        item {
+            DemoCheckboxButton(
+                enabled = true,
+                initiallyChecked = true,
+                primary = "Primary Label with at most three lines of content",
+                secondary = "Secondary label with at most two lines of text",
             )
         }
         item {
@@ -113,15 +131,12 @@ private fun DemoCheckboxButton(
             Text(
                 primary,
                 modifier = Modifier.fillMaxWidth(),
-                maxLines = primaryMaxLines ?: LocalTextConfiguration.current.maxLines
+                maxLines = primaryMaxLines ?: LocalTextConfiguration.current.maxLines,
             )
         },
         secondaryLabel = {
             if (secondary.isNotEmpty()) {
-                Text(
-                    secondary,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Text(secondary, modifier = Modifier.fillMaxWidth())
             }
         },
         checked = checked,

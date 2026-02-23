@@ -33,11 +33,10 @@ private constructor(
     override val capacity: Int,
     override val surface: Surface,
     public val streamId: StreamId,
-    private val outputs: Map<OutputId, Size>
+    private val outputs: Map<OutputId, Size>,
 ) : ImageReaderWrapper {
     private val debugId = debugIds.incrementAndGet()
     private val closed = atomic(false)
-    private val onImageListener = atomic<ImageReaderWrapper.OnImageListener?>(null)
 
     private val lock = Any()
     private val _images = mutableListOf<FakeImage>()
@@ -79,12 +78,17 @@ private constructor(
                 _images.add(image)
             }
         }
-        onImageListener.value?.onImage(streamId, outputId, image)
+        onImageListener?.onImage(streamId, outputId, image)
     }
 
-    override fun setOnImageListener(onImageListener: ImageReaderWrapper.OnImageListener) {
-        this.onImageListener.value = onImageListener
+    public fun simulateExpectedOutputs(timestamp: Long, outputIds: Set<OutputId>) {
+        onExpectedOutputsListener?.onExpectedOutputs(timestamp, outputIds)
     }
+
+    override var onImageListener: ImageReaderWrapper.OnImageListener? by atomic(null)
+
+    override var onExpectedOutputsListener: ImageReaderWrapper.OnExpectedOutputsListener? by
+        atomic(null)
 
     override fun flush() {
         // NoOp
@@ -122,7 +126,7 @@ private constructor(
             outputId: OutputId,
             size: Size,
             capacity: Int,
-            fakeSurfaces: FakeSurfaces? = null
+            fakeSurfaces: FakeSurfaces? = null,
         ): FakeImageReader =
             create(format, streamId, mapOf(outputId to size), capacity, fakeSurfaces)
 
@@ -132,7 +136,7 @@ private constructor(
             streamId: StreamId,
             outputIdMap: Map<OutputId, Size>,
             capacity: Int,
-            fakeSurfaces: FakeSurfaces? = null
+            fakeSurfaces: FakeSurfaces? = null,
         ): FakeImageReader {
 
             // Find smallest by areas to pick the default surface size. This matches the behavior of
@@ -156,6 +160,6 @@ public class FakeOnImageListener : ImageReaderWrapper.OnImageListener {
     public data class OnImageEvent(
         val streamId: StreamId,
         val outputId: OutputId,
-        val image: ImageWrapper
+        val image: ImageWrapper,
     )
 }

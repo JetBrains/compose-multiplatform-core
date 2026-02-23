@@ -20,8 +20,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Returned from {@link TransitionManager#controlDelayedTransition(ViewGroup, Transition)}

@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// @exportToFramework:skipFile()
+
 package androidx.appsearch.app;
 
 import androidx.annotation.RequiresOptIn;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 
 /** Indicates that an AppSearch api is unstable. */
 @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+@FlaggedApi(Flags.FLAG_ENABLE_ABSTRACT_SYNTAX_TREES)
 public @interface ExperimentalAppSearchApi {}
 

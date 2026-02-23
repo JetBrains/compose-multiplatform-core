@@ -17,15 +17,8 @@
 package androidx.camera.integration.core;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
-import androidx.camera.camera2.Camera2Config;
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
-import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.AndroidViewModel;
@@ -34,6 +27,9 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -41,18 +37,6 @@ import java.util.concurrent.ExecutionException;
 /** View model providing access to the camera */
 public class CameraXViewModel extends AndroidViewModel {
     private static final String TAG = "CameraXViewModel";
-
-    @Nullable
-    private static String sConfiguredCameraXCameraImplementation = null;
-    // Does not explicitly configure with an implementation and relies on default config provider
-    // or previously configured implementation.
-    public static final String IMPLICIT_IMPLEMENTATION_OPTION = "implicit";
-    // Camera2 implementation.
-    public static final String CAMERA2_IMPLEMENTATION_OPTION = "camera2";
-    // Camera-pipe implementation.
-    public static final String CAMERA_PIPE_IMPLEMENTATION_OPTION = "camera_pipe";
-    private static final String DEFAULT_CAMERA_IMPLEMENTATION = IMPLICIT_IMPLEMENTATION_OPTION;
-
 
     private MutableLiveData<CameraProviderResult> mProcessCameraProviderLiveData;
 
@@ -68,7 +52,6 @@ public class CameraXViewModel extends AndroidViewModel {
     LiveData<CameraProviderResult> getCameraProvider() {
         if (mProcessCameraProviderLiveData == null) {
             mProcessCameraProviderLiveData = new MutableLiveData<>();
-            tryConfigureCameraProvider();
             try {
                 ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
                         ProcessCameraProvider.getInstance(getApplication());
@@ -94,91 +77,6 @@ public class CameraXViewModel extends AndroidViewModel {
             }
         }
         return mProcessCameraProviderLiveData;
-    }
-
-    @OptIn(markerClass = ExperimentalCameraProviderConfiguration.class)
-    @MainThread
-    private static void tryConfigureCameraProvider() {
-        if (sConfiguredCameraXCameraImplementation == null) {
-            configureCameraProvider(DEFAULT_CAMERA_IMPLEMENTATION);
-        }
-    }
-
-    @OptIn(markerClass = ExperimentalCameraProviderConfiguration.class)
-    @MainThread
-    public static boolean isCameraProviderUnInitializedOrSameAsParameter(
-            @Nullable String cameraImplementation) {
-
-        if (sConfiguredCameraXCameraImplementation == null) {
-            return true;
-        }
-        String currentCameraProvider = getCameraProviderName(
-                sConfiguredCameraXCameraImplementation);
-        cameraImplementation = getCameraProviderName(cameraImplementation);
-
-        return currentCameraProvider.equals(cameraImplementation);
-    }
-
-    /**
-     * convert null and IMPLICIT_IMPLEMENTATION_OPTION Camera Provider name to
-     * CAMERA2_IMPLEMENTATION_OPTION
-     */
-    @OptIn(markerClass = ExperimentalCameraProviderConfiguration.class)
-    @MainThread
-    private static String getCameraProviderName(@Nullable String mCameraProvider) {
-        if (mCameraProvider == null) {
-            mCameraProvider = CAMERA2_IMPLEMENTATION_OPTION;
-        }
-        if (mCameraProvider.equals(IMPLICIT_IMPLEMENTATION_OPTION)) {
-            mCameraProvider = CAMERA2_IMPLEMENTATION_OPTION;
-        }
-        return mCameraProvider;
-    }
-
-    @OptIn(markerClass = ExperimentalCameraProviderConfiguration.class)
-    @MainThread
-    static void configureCameraProvider(@NonNull String cameraImplementation) {
-        configureCameraProvider(cameraImplementation, false);
-    }
-
-    @OptIn(markerClass = ExperimentalCameraProviderConfiguration.class)
-    @MainThread
-    static void configureCameraProvider(@NonNull String cameraImplementation, boolean noHistory) {
-        if (!cameraImplementation.equals(sConfiguredCameraXCameraImplementation)) {
-            // Attempt to configure. This will throw an ISE if singleton is already configured.
-            try {
-                // If IMPLICIT_IMPLEMENTATION_OPTION is specified, we won't use explicit
-                // configuration, but will depend on the default config provider or the
-                // previously configured implementation.
-                if (!cameraImplementation.equals(IMPLICIT_IMPLEMENTATION_OPTION)) {
-                    if (cameraImplementation.equals(CAMERA2_IMPLEMENTATION_OPTION)) {
-                        ProcessCameraProvider.configureInstance(Camera2Config.defaultConfig());
-                    } else if (cameraImplementation.equals(CAMERA_PIPE_IMPLEMENTATION_OPTION)) {
-                        ProcessCameraProvider.configureInstance(
-                                CameraPipeConfig.defaultConfig());
-                    } else {
-                        throw new IllegalArgumentException("Failed to configure the CameraProvider "
-                                + "using unknown " + cameraImplementation
-                                + " implementation option.");
-                    }
-                }
-
-                Log.d(TAG, "ProcessCameraProvider initialized using " + cameraImplementation);
-                if (!noHistory) {
-                    sConfiguredCameraXCameraImplementation = cameraImplementation;
-                }
-            } catch (IllegalStateException e) {
-                throw new IllegalStateException("WARNING: CameraX is currently configured to use "
-                        + sConfiguredCameraXCameraImplementation + " which is different "
-                        + "from the desired implementation: " + cameraImplementation + " this "
-                        + "would have resulted in unexpected behavior.", e);
-            }
-        }
-    }
-
-    @Nullable
-    public static String getConfiguredCameraXCameraImplementation() {
-        return sConfiguredCameraXCameraImplementation;
     }
 
     /**
@@ -217,8 +115,7 @@ public class CameraXViewModel extends AndroidViewModel {
          *
          * <p>Use {@link #hasProvider()} to check if this result contains a provider.
          */
-        @Nullable
-        public ProcessCameraProvider getProvider() {
+        public @Nullable ProcessCameraProvider getProvider() {
             return mProvider;
         }
 
@@ -229,8 +126,7 @@ public class CameraXViewModel extends AndroidViewModel {
          *
          * <p>Use {@link #hasProvider()} to check if this result contains a provider.
          */
-        @Nullable
-        public Throwable getError() {
+        public @Nullable Throwable getError() {
             return mError;
         }
     }

@@ -24,8 +24,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ActionBuilders.LaunchAction;
@@ -39,6 +37,8 @@ import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 import androidx.wear.protolayout.material.CompactChip;
 import androidx.wear.protolayout.material.Text;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;

@@ -23,14 +23,15 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.Observables;
 import androidx.pdf.util.Observables.ExposedValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A widget that displays the contents of a file in a given PDF format.
@@ -108,12 +109,10 @@ public abstract class Viewer extends Fragment {
     protected boolean mIsPasswordProtected;
 
     /** The container where this viewer is attached. */
-    @NonNull
-    protected ViewGroup mContainer;
+    protected @NonNull ViewGroup mContainer;
 
-    @NonNull
-    protected ExposedValue<ViewState> mViewState = Observables.newExposedValueWithInitialValue(
-            ViewState.NO_VIEW);
+    protected @NonNull ExposedValue<ViewState> mViewState =
+            Observables.newExposedValueWithInitialValue(ViewState.NO_VIEW);
 
     {
         // We can call getArguments() from setters and know that it will not be null.
@@ -121,8 +120,7 @@ public abstract class Viewer extends Fragment {
     }
 
     /** Reports the {@link ViewState} of this Fragment. */
-    @NonNull
-    public ObservableValue<ViewState> viewState() {
+    public @NonNull ObservableValue<ViewState> viewState() {
         return mViewState;
     }
 
@@ -149,10 +147,9 @@ public abstract class Viewer extends Fragment {
         // editFabTarget = new BaseViewerEditFabTargetImpl(requireActivity(), this);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedState) {
         if (container == null) {
             // Don't throw an exception here, as this may happen during restoreInstanceState for
             // Viewers that we don't need anymore.

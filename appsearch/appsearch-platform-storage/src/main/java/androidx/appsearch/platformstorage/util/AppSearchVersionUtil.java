@@ -22,11 +22,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.annotation.ChecksSdkIntAtLeast;
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities for retrieving platform AppSearch's module version code.
@@ -35,12 +37,20 @@ import androidx.core.util.Preconditions;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppSearchVersionUtil {
-    public static final long APPSEARCH_U_BASE_VERSION_CODE = 331311020;
+    public static class TExtensionVersions {
+        public static final int U_BASE = 7;
+        public static final int M2023_11 = 10;
+        public static final int V_BASE = 13;
+        public static final int B_BASE = 17;
+    }
+    public static final long APPSEARCH_U_BASE_VERSION_CODE = 340800000;
     public static final long APPSEARCH_M2023_11_VERSION_CODE = 341113000;
+    public static final long APPSEARCH_V_BASE_VERSION_CODE = 350700000;
+    public static final long APPSEARCH_M2024_11_VERSION_CODE = 351112060;
 
     private static final String APPSEARCH_MODULE_NAME = "com.android.appsearch";
 
-    // This will be set to -1 to indicate the AppSearch version code hasn't bee checked, then to
+    // This will be set to -1 to indicate the AppSearch version code hasn't been checked, then to
     // 0 if it is not found, or the version code if it is found.
     private static volatile long sAppSearchVersionCode = -1;
 

@@ -18,8 +18,6 @@ package androidx.concurrent.futures;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.Nullable;
-
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
@@ -30,6 +28,7 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.internal.runners.JUnit38ClassRunner;
 import org.junit.runner.RunWith;
 
@@ -1042,8 +1041,7 @@ abstract class ImmediateFuture<V> implements com.google.common.util.concurrent.L
     }
 
     static class ImmediateSuccessfulFuture<V> extends ImmediateFuture<V> {
-        private final @Nullable
-        V value;
+        private final         @Nullable V value;
 
         ImmediateSuccessfulFuture(@Nullable V value) {
             this.value = value;

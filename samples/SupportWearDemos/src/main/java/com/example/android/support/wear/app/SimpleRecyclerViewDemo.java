@@ -5,12 +5,13 @@ import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android.support.wear.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Main activity for the RecyclerView demo.
@@ -40,8 +41,7 @@ public class SimpleRecyclerViewDemo extends Activity {
         private static final int ELEMENT_TEXT_SIZE = 14;
 
         @Override
-        @NonNull
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public @NonNull ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             TextView view = new TextView(parent.getContext());
             view.setHeight(ELEMENT_HEIGHT_DP);
             view.setTextSize(ELEMENT_TEXT_SIZE);

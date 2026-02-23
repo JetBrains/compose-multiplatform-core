@@ -27,8 +27,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An Activity to demonstrate how to properly display fullscreen web content with WebView.
@@ -112,6 +113,7 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fullscreen);
         setTitle(R.string.fullscreen_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         mWebView = findViewById(R.id.webview_supports_fullscreen);
         mWebView.getSettings().setJavaScriptEnabled(true);

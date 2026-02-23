@@ -137,4 +137,22 @@ public final class MetadataExtras {
      */
     public static final String KEY_CONTENT_FORMAT_TINTABLE_SMALL_ICON_URI =
             "androidx.car.app.mediaextensions.KEY_CONTENT_FORMAT_TINTABLE_SMALL_ICON_URI";
+
+    /**
+     * {@link Bundle} key used in the extras of a media item to indicate a list of tintable vector
+     * drawables where each drawable represents a property or a state of the media item.
+     * These drawables may be rendered in small views showing information about a media item,
+     * in an area roughly equivalent to 2 characters of the media item's subtitle.<br/>
+     *
+     * <b>Note:</b> when specifying this extra, the "android.media.extra.DOWNLOAD_STATUS" and
+     * "android.media.IS_EXPLICIT" extras will be ignored, so 3p apps should add their own
+     * downloaded and explicit icon uris to this extra's list. This way all these icons can use
+     * the same drawing style.
+     *
+     * <p>TYPE: {@code ArrayList<Uri>}, list of Uris - with each uri pointing to local content
+     * using either ContentResolver.SCHEME_CONTENT or ContentResolver.SCHEME_ANDROID_RESOURCE
+     * (ie not on the web) that can be parsed into a android.graphics.drawable.Drawable</p>
+     */
+    public static final String KEY_TINTABLE_INDICATOR_ICON_URI_LIST =
+            "androidx.car.app.mediaextensions.KEY_TINTABLE_INDICATOR_ICON_URI_LIST";
 }

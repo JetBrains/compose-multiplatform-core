@@ -16,17 +16,29 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Color
 
 @Immutable
 @ExperimentalMaterial3Api
 actual class ModalBottomSheetProperties
 actual constructor(
     actual val shouldDismissOnBackPress: Boolean,
-)
+    actual val shouldDismissOnClickOutside: Boolean,
+) {
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Android-specific parameters have been removed",
+        replaceWith = ReplaceWith("ModalBottomSheetProperties(shouldDismissOnBackPress)"),
+    )
+    @Suppress("UNUSED_PARAMETER")
+    constructor(
+        shouldDismissOnBackPress: Boolean,
+        isAppearanceLightStatusBars: Boolean,
+        isAppearanceLightNavigationBars: Boolean,
+    ) : this(shouldDismissOnBackPress)
+}
 
 @Immutable
 @ExperimentalMaterial3Api
@@ -38,7 +50,7 @@ actual object ModalBottomSheetDefaults {
 @Composable
 internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
+    contentColor: Color,
     properties: ModalBottomSheetProperties,
-    predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()

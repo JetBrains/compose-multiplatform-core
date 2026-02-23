@@ -18,7 +18,7 @@ package androidx.sqlite.inspection;
 
 import android.database.sqlite.SQLiteDatabase;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.Objects;

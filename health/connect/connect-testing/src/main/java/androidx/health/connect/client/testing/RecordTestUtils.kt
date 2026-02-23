@@ -37,22 +37,22 @@ internal fun Record.isWithin(filter: TimeRangeFilter, clock: Clock): Boolean {
         if (proto.hasInstantTimeMillis()) {
             val time =
                 LocalDateTime.ofInstant(proto.time, proto.zoneOffset ?: ZoneId.systemDefault())
-            return !time.isBefore(timeRangeFilter.localStartTime) &&
+            return !time.isBefore(timeRangeFilter.localStartTime!!) &&
                 timeRangeFilter.localEndTime!!.isAfter(time)
         }
         val startTime =
             LocalDateTime.ofInstant(proto.startTime, proto.zoneOffset ?: ZoneId.systemDefault())
-        return !startTime.isBefore(timeRangeFilter.localStartTime) &&
+        return !startTime.isBefore(timeRangeFilter.localStartTime!!) &&
             timeRangeFilter.localEndTime!!.isAfter(startTime)
     }
 
     if (proto.hasInstantTimeMillis()) {
-        return proto.time >= timeRangeFilter.startTime && // Inclusive
-            proto.time.isBefore(timeRangeFilter.endTime) // Exclusive
+        return proto.time >= timeRangeFilter.startTime!! && // Inclusive
+            proto.time.isBefore(timeRangeFilter.endTime!!) // Exclusive
     }
 
-    return proto.startTime >= timeRangeFilter.startTime && // Inclusive
-        proto.endTime.isBefore(timeRangeFilter.endTime) // Exclusive
+    return proto.startTime >= timeRangeFilter.startTime!! && // Inclusive
+        proto.endTime.isBefore(timeRangeFilter.endTime!!) // Exclusive
 }
 
 private fun TimeRangeFilter.sanitize(clock: Clock): TimeRangeFilter {
@@ -61,12 +61,12 @@ private fun TimeRangeFilter.sanitize(clock: Clock): TimeRangeFilter {
             startTime =
                 localStartTime ?: LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()),
             endTime =
-                localEndTime ?: LocalDateTime.ofInstant(clock.instant(), ZoneId.systemDefault())
+                localEndTime ?: LocalDateTime.ofInstant(clock.instant(), ZoneId.systemDefault()),
         )
     }
     return TimeRangeFilter.between(
         startTime = startTime ?: Instant.EPOCH,
-        endTime = endTime ?: clock.instant()
+        endTime = endTime ?: clock.instant(),
     )
 }
 

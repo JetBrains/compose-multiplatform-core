@@ -15,18 +15,16 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
     id("androidx.stableaidl")
 }
 
@@ -34,7 +32,6 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.6.0")
     api("androidx.wear:wear:1.2.0")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
 
     // Needed for Assert.assertThrows
@@ -42,7 +39,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.truth)
     testImplementation(libs.mockitoKotlin4)
@@ -54,29 +50,26 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk { version = release(25) }
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
 
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    namespace "androidx.wear.phone.interactions"
+    namespace = "androidx.wear.phone.interactions"
 }
 
 androidx {
     name = "Android Wear Phone Interactions"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_PHONE_INTERACTIONS
     inceptionYear = "2021"
     description = "Android Wear Phone Interactions"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:wear-phone-interactions-samples"))
+    enableRobolectric()
 }

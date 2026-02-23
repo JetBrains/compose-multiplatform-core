@@ -33,7 +33,7 @@ import static java.util.Collections.unmodifiableList;
 
 import android.media.CamcorderProfile;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -56,8 +56,7 @@ public interface EncoderProfilesProvider {
      *
      * @see #hasProfile(int)
      */
-    @Nullable
-    EncoderProfilesProxy getAll(int quality);
+    @Nullable EncoderProfilesProxy getAll(int quality);
 
     /** An implementation that contains no data. */
     EncoderProfilesProvider EMPTY = new EncoderProfilesProvider() {
@@ -66,9 +65,8 @@ public interface EncoderProfilesProvider {
             return false;
         }
 
-        @Nullable
         @Override
-        public EncoderProfilesProxy getAll(int quality) {
+        public @Nullable EncoderProfilesProxy getAll(int quality) {
             return null;
         }
     };

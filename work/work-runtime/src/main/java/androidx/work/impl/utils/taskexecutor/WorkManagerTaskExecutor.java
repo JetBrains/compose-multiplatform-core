@@ -19,14 +19,15 @@ package androidx.work.impl.utils.taskexecutor;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.impl.utils.SerialExecutorImpl;
 
-import java.util.concurrent.Executor;
-
 import kotlinx.coroutines.CoroutineDispatcher;
 import kotlinx.coroutines.ExecutorsKt;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.concurrent.Executor;
 
 /**
  * Default Task Executor for executing common tasks in WorkManager
@@ -54,20 +55,17 @@ public class WorkManagerTaskExecutor implements TaskExecutor {
     };
 
     @Override
-    @NonNull
-    public Executor getMainThreadExecutor() {
+    public @NonNull Executor getMainThreadExecutor() {
         return mMainThreadExecutor;
     }
 
     @Override
-    @NonNull
-    public SerialExecutorImpl getSerialTaskExecutor() {
+    public @NonNull SerialExecutorImpl getSerialTaskExecutor() {
         return mBackgroundExecutor;
     }
 
-    @NonNull
     @Override
-    public CoroutineDispatcher getTaskCoroutineDispatcher() {
+    public @NonNull CoroutineDispatcher getTaskCoroutineDispatcher() {
         return mTaskDispatcher;
     }
 }

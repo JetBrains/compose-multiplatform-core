@@ -19,10 +19,11 @@ package androidx.browser.trusted.sharing;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,31 +92,27 @@ public final class ShareTarget  {
      * Activity. For example, assuming the origin is "https://mypwa.com", the action could be
      * "https://mypwa.com/share.html".
      */
-    @NonNull
-    public final String action;
+    public final @NonNull String action;
 
     /**
      * HTTP request method for the Web Share Target. Must be {@link #METHOD_GET} or
      * {@link #METHOD_POST}. Default is {@link #METHOD_GET}.
      */
-    @Nullable
     @RequestMethod
-    public final String method;
+    public final @Nullable String method;
 
     /**
      * Specifies how the shared data should be encoded in the body of a POST request. Must be
      * {@link #ENCODING_TYPE_MULTIPART} or {@link #ENCODING_TYPE_URL_ENCODED}. Default is
      * {@link #ENCODING_TYPE_URL_ENCODED}.
      */
-    @Nullable
     @EncodingType
-    public final String encodingType;
+    public final @Nullable String encodingType;
 
     /**
      * Contains the parameter names, see {@link Params}.
      */
-    @NonNull
-    public final Params params;
+    public final @NonNull Params params;
 
     /**
      * Creates a {@link ShareTarget} with the given parameters.
@@ -124,8 +121,8 @@ public final class ShareTarget  {
      * @param encodingType The {@link #encodingType}.
      * @param params The {@link #params}.
      */
-    public ShareTarget(@NonNull String action, @Nullable @RequestMethod String method,
-            @Nullable @EncodingType String encodingType, @NonNull Params params) {
+    public ShareTarget(@NonNull String action, @RequestMethod @Nullable String method,
+            @EncodingType @Nullable String encodingType, @NonNull Params params) {
         this.action = action;
         this.method = method;
         this.encodingType = encodingType;
@@ -133,8 +130,7 @@ public final class ShareTarget  {
     }
 
     /** Packs the object into a {@link Bundle}. */
-    @NonNull
-    public Bundle toBundle() {
+    public @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         bundle.putString(KEY_ACTION, action);
         bundle.putString(KEY_METHOD, method);
@@ -144,8 +140,7 @@ public final class ShareTarget  {
     }
 
     /** Unpacks the object from a {@link Bundle}. */
-    @Nullable
-    public static ShareTarget fromBundle(@NonNull Bundle bundle) {
+    public static @Nullable ShareTarget fromBundle(@NonNull Bundle bundle) {
         String action = bundle.getString(KEY_ACTION);
         String method = bundle.getString(KEY_METHOD);
         String encType = bundle.getString(KEY_ENCTYPE);
@@ -168,12 +163,10 @@ public final class ShareTarget  {
         public static final String KEY_FILES = "androidx.browser.trusted.sharing.KEY_FILES";
 
         /** The name of the query parameter used for the title of the message being shared. */
-        @Nullable
-        public final String title;
+        public final @Nullable String title;
 
         /** The name of the query parameter used for the body of the message being shared. */
-        @Nullable
-        public final String text;
+        public final @Nullable String text;
 
         /**
          * Defines form fields for the files being shared, see {@link FileFormField}.
@@ -183,8 +176,7 @@ public final class ShareTarget  {
          *
          * [1] https://wicg.github.io/web-share-target/level-2/#launching-the-web-share-target
          */
-        @Nullable
-        public final List<FileFormField> files;
+        public final @Nullable List<FileFormField> files;
 
         /**
          * Creates a {@link Params} with the given parameters.
@@ -200,8 +192,7 @@ public final class ShareTarget  {
         }
 
         @SuppressWarnings("WeakerAccess") /* synthetic access */
-        @NonNull
-        Bundle toBundle() {
+        @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putString(KEY_TITLE, title);
             bundle.putString(KEY_TEXT, text);
@@ -218,8 +209,7 @@ public final class ShareTarget  {
 
         /* synthetic access */
         @SuppressWarnings({"WeakerAccess", "deprecation"})
-        @Nullable
-        static Params fromBundle(@Nullable Bundle bundle) {
+        static @Nullable Params fromBundle(@Nullable Bundle bundle) {
             if (bundle == null) {
                 return null;
             }
@@ -246,16 +236,14 @@ public final class ShareTarget  {
                 "androidx.browser.trusted.sharing.KEY_ACCEPTED_TYPES";
 
         /** Name of the form field. */
-        @NonNull
-        public final String name;
+        public final @NonNull String name;
 
         /**
          * List of MIME types or file extensions to be sent in this field. The MIME type matching
          * algorithm is specified by
          * https://wicg.github.io/web-share-target/level-2/#determining-if-a-file-is-accepted.
          */
-        @NonNull
-        public final List<String> acceptedTypes;
+        public final @NonNull List<String> acceptedTypes;
 
         /**
          * Creates a {@link FileFormField} with the given parameters.
@@ -268,8 +256,7 @@ public final class ShareTarget  {
         }
 
         @SuppressWarnings("WeakerAccess") /* synthetic access */
-        @NonNull
-        Bundle toBundle() {
+        @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putString(KEY_NAME, name);
             bundle.putStringArrayList(KEY_ACCEPTED_TYPES, new ArrayList<>(acceptedTypes));
@@ -277,8 +264,7 @@ public final class ShareTarget  {
         }
 
         @SuppressWarnings("WeakerAccess") /* synthetic access */
-        @Nullable
-        static FileFormField fromBundle(@Nullable Bundle bundle) {
+        static @Nullable FileFormField fromBundle(@Nullable Bundle bundle) {
             if (bundle == null) {
                 return null;
             }

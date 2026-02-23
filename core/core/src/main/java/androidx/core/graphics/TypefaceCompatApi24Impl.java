@@ -25,8 +25,6 @@ import android.net.Uri;
 import android.os.CancellationSignal;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
@@ -34,13 +32,15 @@ import androidx.core.content.res.FontResourcesParserCompat.FontFamilyFilesResour
 import androidx.core.content.res.FontResourcesParserCompat.FontFileResourceEntry;
 import androidx.core.provider.FontsContractCompat.FontInfo;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.List;
-
 
 /**
  * Implementation of the Typeface compat methods for API 24 and above.
@@ -128,9 +128,9 @@ class TypefaceCompatApi24Impl extends TypefaceCompatBaseImpl {
     }
 
     @Override
-    @Nullable
-    public Typeface createFromFontInfo(Context context,
-            @Nullable CancellationSignal cancellationSignal, @NonNull FontInfo[] fonts, int style) {
+    public @Nullable Typeface createFromFontInfo(Context context,
+            @Nullable CancellationSignal cancellationSignal, FontInfo @NonNull [] fonts,
+            int style) {
         Object family = newFamily();
         if (family == null) {
             return null;
@@ -160,8 +160,7 @@ class TypefaceCompatApi24Impl extends TypefaceCompatBaseImpl {
     }
 
     @Override
-    @Nullable
-    public Typeface createFromFontFamilyFilesResourceEntry(Context context,
+    public @Nullable Typeface createFromFontFamilyFilesResourceEntry(Context context,
             FontFamilyFilesResourceEntry entry, Resources resources, int style) {
         Object family = newFamily();
         if (family == null) {
@@ -180,9 +179,8 @@ class TypefaceCompatApi24Impl extends TypefaceCompatBaseImpl {
         return createFromFamiliesWithDefault(family);
     }
 
-    @NonNull
     @Override
-    Typeface createWeightStyle(@NonNull Context context,
+    @NonNull Typeface createWeightStyle(@NonNull Context context,
             @NonNull Typeface base, int weight, boolean italic) {
         Typeface out = null;
         try {

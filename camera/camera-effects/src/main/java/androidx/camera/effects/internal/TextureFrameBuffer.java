@@ -18,10 +18,11 @@ package androidx.camera.effects.internal;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.effects.opengl.GlRenderer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A buffer of {@link TextureFrame}.
@@ -30,8 +31,7 @@ import androidx.camera.effects.opengl.GlRenderer;
  */
 class TextureFrameBuffer {
 
-    @NonNull
-    private final TextureFrame[] mFrames;
+    private final TextureFrame @NonNull [] mFrames;
 
     /**
      * Creates a buffer of frames backed by texture IDs.
@@ -64,8 +64,7 @@ class TextureFrameBuffer {
      *
      * <p>Once the returned frame is rendered, it should be marked empty by the caller.
      */
-    @Nullable
-    TextureFrame getFrameToRender(long timestampNs) {
+    @Nullable TextureFrame getFrameToRender(long timestampNs) {
         TextureFrame frameToReturn = null;
         for (TextureFrame frame : mFrames) {
             if (frame.isEmpty()) {
@@ -86,8 +85,7 @@ class TextureFrameBuffer {
      * <p>This is called when a new frame is available from the camera. The new frame will be
      * filled to this position. If there is no empty frame, the oldest frame will be overwritten.
      */
-    @NonNull
-    TextureFrame getFrameToFill() {
+    @NonNull TextureFrame getFrameToFill() {
         long minTimestampNs = Long.MAX_VALUE;
         TextureFrame oldestFrame = null;
         for (TextureFrame frame : mFrames) {
@@ -102,8 +100,7 @@ class TextureFrameBuffer {
     }
 
     @VisibleForTesting
-    @NonNull
-    TextureFrame[] getFrames() {
+    TextureFrame @NonNull [] getFrames() {
         return mFrames;
     }
 }

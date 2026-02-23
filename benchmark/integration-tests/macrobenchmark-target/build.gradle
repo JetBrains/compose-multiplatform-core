@@ -17,37 +17,33 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
 }
 
 android {
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
             )
         }
     }
-    compileSdkVersion 35
-    namespace "androidx.benchmark.integration.macrobenchmark.target"
+    compileSdk { version = release(35) }
+    namespace = "androidx.benchmark.integration.macrobenchmark.target"
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(libs.constraintLayout)
-    implementation(project(":appcompat:appcompat"))
-    implementation(project(":activity:activity"))
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.activity:activity:1.10.0")
     implementation(project(":profileinstaller:profileinstaller"))
-    implementation(project(":recyclerview:recyclerview"))
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation(project(":tracing:tracing-ktx"))
     implementation(project(":tracing:tracing-perfetto"))
     implementation(libs.material)
 
-    implementation(project(":work:work-runtime"))
-    implementation(project(":work:work-runtime-ktx"))
-    implementation(project(":room:room-runtime"))
-    implementation(project(":room:room-ktx"))
+    implementation("androidx.work:work-runtime:2.11.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
 }

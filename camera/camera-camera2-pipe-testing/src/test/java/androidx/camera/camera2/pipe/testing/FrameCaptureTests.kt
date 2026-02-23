@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.content.Context
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
@@ -27,6 +26,7 @@ import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
 import androidx.camera.camera2.pipe.ImageSourceConfig
 import androidx.camera.camera2.pipe.OutputStatus
+import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.test.core.app.ApplicationProvider
@@ -36,13 +36,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FrameCaptureTests {
     private val testScope = TestScope()
     private val testContext = ApplicationProvider.getApplicationContext() as Context
@@ -57,13 +58,22 @@ class FrameCaptureTests {
         CameraStream.Config.create(
             Size(640, 480),
             StreamFormat.YUV_420_888,
-            imageSourceConfig = ImageSourceConfig(capacity = 10)
+            imageSourceConfig = ImageSourceConfig(capacity = 10),
         )
+
+    private val rawStreamOutputConfigs =
+        listOf(
+            OutputStream.Config.create(Size(1280, 720), StreamFormat.RAW10),
+            OutputStream.Config.create(Size(1920, 1080), StreamFormat.RAW10),
+            OutputStream.Config.create(Size(1920, 1200), StreamFormat.RAW10),
+        )
+    private val rawStreamConfig =
+        CameraStream.Config.create(rawStreamOutputConfigs, ImageSourceConfig(5))
 
     private val graphConfig =
         CameraGraph.Config(
             camera = cameraMetadata.camera,
-            streams = listOf(viewfinderStreamConfig, jpegStreamConfig)
+            streams = listOf(viewfinderStreamConfig, jpegStreamConfig, rawStreamConfig),
         )
 
     private val cameraGraphSimulator = cameraPipeSimulator.createCameraGraphSimulator(graphConfig)
@@ -71,6 +81,8 @@ class FrameCaptureTests {
 
     private val viewfinderStream = cameraGraph.streams[viewfinderStreamConfig]!!
     private val jpegStream = cameraGraph.streams[jpegStreamConfig]!!
+    private val rawStream = cameraGraph.streams[rawStreamConfig]!!
+    private val expectedRawOutputId = rawStream.outputs.last().id
 
     private suspend fun startCameraGraph() {
         assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStopped)
@@ -83,6 +95,11 @@ class FrameCaptureTests {
         assertThat(cameraGraph.graphState.value).isEqualTo(GraphStateStarted)
     }
 
+    @After
+    fun tearDown() {
+        cameraPipeSimulator.close()
+    }
+
     @Test
     fun frameCaptureCanBeSimulated() =
         testScope.runTest {
@@ -91,7 +108,7 @@ class FrameCaptureTests {
             // Capture an image using the cameraGraph
             val frameCapture =
                 cameraGraph.useSession { session ->
-                    session.capture(Request(streams = listOf(jpegStream.id)))
+                    session.capture(Request(streams = listOf(jpegStream.id, rawStream.id)))
                 }
             advanceUntilIdle()
 
@@ -106,15 +123,22 @@ class FrameCaptureTests {
                 assertThat(frame.frameTimestamp.value).isGreaterThan(0)
 
                 val image = frame.awaitImage(jpegStream.id)
+                val rawImages = frame.awaitImages(rawStream.id)
                 assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
                 assertThat(frame.imageStatus(viewfinderStream.id))
                     .isEqualTo(OutputStatus.UNAVAILABLE)
                 assertThat(image).isNotNull()
                 assertThat(image!!.timestamp).isEqualTo(frame.frameTimestamp.value)
+                assertThat(rawImages.size).isEqualTo(1)
+                val rawImage = rawImages.first()
+                assertThat(rawImage.timestamp).isEqualTo(frame.frameTimestamp.value)
 
                 image.close()
+                rawImage.close()
 
                 assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.AVAILABLE)
+                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.AVAILABLE)
                 assertThat(frame.imageStatus(viewfinderStream.id))
                     .isEqualTo(OutputStatus.UNAVAILABLE)
 
@@ -129,22 +153,28 @@ class FrameCaptureTests {
                 frame.close()
 
                 assertThat(frame.imageStatus(jpegStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
+                assertThat(frame.imageStatus(rawStream.id)).isEqualTo(OutputStatus.UNAVAILABLE)
                 assertThat(frame.imageStatus(viewfinderStream.id))
                     .isEqualTo(OutputStatus.UNAVAILABLE)
                 assertThat(frame.isFrameInfoAvailable).isFalse()
             }
 
             // Simulate camera interactions:
-            // TODO: simulateFrameStarted?
             val frameSimulator = cameraGraphSimulator.simulateNextFrame()
+
             frameSimulator.simulateImage(jpegStream.id)
+            frameSimulator.simulateExpectedOutputs(
+                rawStream.id,
+                outputIds = setOf(expectedRawOutputId),
+            )
+            frameSimulator.simulateImage(rawStream.id, outputId = expectedRawOutputId)
             frameSimulator.simulateComplete(emptyMap())
 
             // TODO: should this have a way to check to make sure all frames are closed?
             // cameraGraph?
 
             advanceUntilIdle()
-            assertThat(frameCaptureJob.isCompleted) // Ensure verification is complete
+            assertThat(frameCaptureJob.isCompleted).isTrue() // Ensure verification is complete
             cameraGraphSimulator.close()
         }
 }

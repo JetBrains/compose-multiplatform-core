@@ -27,7 +27,7 @@ import kotlinx.atomicfu.atomic
 public class FakeImageSource
 private constructor(
     private val fakeImageReader: FakeImageReader,
-    private val imageSource: ImageSource
+    private val imageSource: ImageSource,
 ) : ImageSource by imageSource {
     private val debugId = debugIds.incrementAndGet()
     private val closed = atomic<Boolean>(false)
@@ -43,6 +43,10 @@ private constructor(
 
     public fun simulateImage(timestamp: Long, outputId: OutputId? = null): FakeImage {
         return fakeImageReader.simulateImage(timestamp, outputId)
+    }
+
+    public fun simulateExpectedOutputs(timestamp: Long, outputIds: Set<OutputId>) {
+        fakeImageReader.simulateExpectedOutputs(timestamp, outputIds)
     }
 
     override fun close() {
@@ -61,7 +65,7 @@ private constructor(
             streamId: StreamId,
             outputs: Map<OutputId, Size>,
             capacity: Int,
-            fakeImageReaders: FakeImageReaders
+            fakeImageReaders: FakeImageReaders,
         ): FakeImageSource {
             val fakeImageReader = fakeImageReaders.create(streamFormat, streamId, outputs, capacity)
 

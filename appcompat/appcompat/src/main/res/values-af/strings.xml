@@ -27,7 +27,7 @@
     <string name="abc_searchview_description_clear" msgid="3741173234950517107">"Vee navraag uit"</string>
     <string name="abc_searchview_description_submit" msgid="1486535517437947103">"Dien navraag in"</string>
     <string name="abc_searchview_description_voice" msgid="2293578557972875415">"Stemsoektog"</string>
-    <string name="abc_activitychooserview_choose_application" msgid="2165779757652331008">"Kies \'n program"</string>
+    <string name="abc_activitychooserview_choose_application" msgid="2165779757652331008">"Kies \'n app"</string>
     <string name="abc_activity_chooser_view_see_all" msgid="1189761859438369441">"Sien alles"</string>
     <string name="abc_shareactionprovider_share_with_application" msgid="9055268688411532828">"Deel met <xliff:g id="APPLICATION_NAME">%s</xliff:g>"</string>
     <string name="abc_shareactionprovider_share_with" msgid="8875138169939072951">"Deel met"</string>

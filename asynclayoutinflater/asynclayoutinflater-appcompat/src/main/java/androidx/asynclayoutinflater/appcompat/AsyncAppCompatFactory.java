@@ -21,12 +21,13 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.R;
 import androidx.appcompat.app.AppCompatViewInflater;
 import androidx.appcompat.widget.VectorEnabledTintResources;
 import androidx.asynclayoutinflater.view.AsyncLayoutFactory;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Factory for inflating views in AppCompat activity. This is used when Async inflater is created
@@ -39,19 +40,17 @@ public class AsyncAppCompatFactory implements AsyncLayoutFactory {
     /**
      * Creates view using {@link AppCompatViewInflater}.
      */
-    @Nullable
     @Override
-    public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context,
-            @NonNull AttributeSet attrs) {
+    public @Nullable View onCreateView(@Nullable View parent, @NonNull String name,
+            @NonNull Context context, @NonNull AttributeSet attrs) {
         return createView(parent, name, context, attrs);
     }
 
     /**
      * Creates view using {@link AppCompatViewInflater}.
      */
-    @Nullable
     @Override
-    public View onCreateView(@NonNull String name, @NonNull Context context,
+    public @Nullable View onCreateView(@NonNull String name, @NonNull Context context,
             @NonNull AttributeSet attrs) {
         return createView(/* parent= */ null, name, context, attrs);
     }

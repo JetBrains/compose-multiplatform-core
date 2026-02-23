@@ -17,7 +17,6 @@ package androidx.recyclerview.widget;
 
 import android.content.Context;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -28,11 +27,11 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.GridView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -224,8 +223,8 @@ public class GridLayoutManager extends LinearLayoutManager {
     }
 
     @Override
-    public void onInitializeAccessibilityNodeInfo(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state, @NonNull AccessibilityNodeInfoCompat info) {
+    public void onInitializeAccessibilityNodeInfo(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state, @NonNull AccessibilityNodeInfoCompat info) {
         super.onInitializeAccessibilityNodeInfo(recycler, state, info);
         // Set the class name so this is treated as a grid. A11y services should identify grids
         // and list via CollectionInfos, but an almost empty grid may be incorrectly identified
@@ -793,22 +792,19 @@ public class GridLayoutManager extends LinearLayoutManager {
         return indices;
     }
 
-    @Nullable
-    private View findChildWithAccessibilityFocus() {
+    private @Nullable View findChildWithAccessibilityFocus() {
         View child = null;
         // SDK check needed for View#isAccessibilityFocused()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            boolean childFound = false;
-            int i;
-            for (i = 0; i < getChildCount(); i++) {
-                if (Api21Impl.isAccessibilityFocused(Objects.requireNonNull(getChildAt(i)))) {
-                    childFound = true;
-                    break;
-                }
+        boolean childFound = false;
+        int i;
+        for (i = 0; i < getChildCount(); i++) {
+            if (Api21Impl.isAccessibilityFocused(Objects.requireNonNull(getChildAt(i)))) {
+                childFound = true;
+                break;
             }
-            if (childFound) {
-                child = getChildAt(i);
-            }
+        }
+        if (childFound) {
+            child = getChildAt(i);
         }
         return child;
     }
@@ -2121,7 +2117,6 @@ public class GridLayoutManager extends LinearLayoutManager {
     }
 
 
-    @RequiresApi(21)
     private static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.

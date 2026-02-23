@@ -17,20 +17,19 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace "androidx.fragment.testapp"
+    namespace = "androidx.fragment.testapp"
+    compileSdk { version = release(35) }
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.annotation:annotation:1.8.1")
-    implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation(project(":fragment:fragment-ktx"))
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
-    implementation(project(":transition:transition"))
+    implementation("androidx.transition:transition:1.5.1")
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     debugImplementation(project(":fragment:fragment-testing-manifest"))
 

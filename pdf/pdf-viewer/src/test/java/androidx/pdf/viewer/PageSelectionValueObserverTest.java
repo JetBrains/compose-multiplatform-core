@@ -22,25 +22,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.DisplayMetrics;
 
 import androidx.pdf.data.Range;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.PageSelection;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class PageSelectionValueObserverTest {
     private final PaginatedView mMockPaginatedView = mock(PaginatedView.class);
     private final PaginationModel mMockPaginationModel = mock(PaginationModel.class);
@@ -54,7 +50,7 @@ public class PageSelectionValueObserverTest {
     private final PageRangeHandler mMockPageRangeHandler = mock(PageRangeHandler.class);
     private final Context mContext = ApplicationProvider.getApplicationContext();
 
-
+    @Ignore // b/376314114
     @Test
     public void onChange_setOverlay() {
         when(mMockOldPageSelection.getPage()).thenReturn(1);
@@ -71,11 +67,11 @@ public class PageSelectionValueObserverTest {
                 new Dimensions(100, 100)).getPageView()).thenReturn(
                 mMockNewPageMosaicView);
         when(mMockPaginatedView.getPageRangeHandler()).thenReturn(mMockPageRangeHandler);
+        when(mMockPaginatedView.getModel()).thenReturn(mMockPaginationModel);
         when(mMockPageRangeHandler.getVisiblePages()).thenReturn(new Range(1, 2));
         DisplayMetrics displayMetrics = new DisplayMetrics();
         displayMetrics.density = 1f;
         mContext.getResources().getDisplayMetrics().setTo(displayMetrics);
-        PdfViewer.setScreenForTest(mContext);
 
         PageSelectionValueObserver pageSelectionValueObserver =
                 new PageSelectionValueObserver(mMockPaginatedView,

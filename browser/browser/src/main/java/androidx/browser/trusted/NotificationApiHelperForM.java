@@ -20,9 +20,10 @@ import android.app.NotificationManager;
 import android.os.Build;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  *
@@ -40,8 +41,7 @@ public class NotificationApiHelperForM {
      * added in API 18, returning the result as StatusBarNotification[] would prevent classes from
      * being verified on earlier Jellybean builds.
      */
-    @NonNull
-    static Parcelable[] getActiveNotifications(NotificationManager manager) {
+    static Parcelable @NonNull [] getActiveNotifications(NotificationManager manager) {
         return manager.getActiveNotifications();
     }
 

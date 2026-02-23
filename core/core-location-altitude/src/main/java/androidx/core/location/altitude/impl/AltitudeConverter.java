@@ -19,10 +19,11 @@ package androidx.core.location.altitude.impl;
 import android.content.Context;
 import android.location.Location;
 
-import androidx.annotation.NonNull;
 import androidx.core.location.LocationCompat;
 import androidx.core.location.altitude.impl.proto.MapParamsProto;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 
@@ -80,8 +81,7 @@ public final class AltitudeConverter {
      * 2023 IEEE/ION Position, Location and Navigation Symposium (PLANS).
      * </pre>
      */
-    @NonNull
-    private static long[] findMapSquare(@NonNull MapParamsProto params,
+    private static long @NonNull [] findMapSquare(@NonNull MapParamsProto params,
             @NonNull Location location) {
         long s2CellId =
                 S2CellIdUtils.fromLatLngDegrees(location.getLatitude(), location.getLongitude());
@@ -143,7 +143,7 @@ public final class AltitudeConverter {
      * such a common neighbor does not exist, returns z11.
      */
     private static long findCommonNeighbor(
-            @NonNull long[] edgeNeighbors, @NonNull long[] otherEdgeNeighbors, long z11) {
+            long @NonNull [] edgeNeighbors, long @NonNull [] otherEdgeNeighbors, long z11) {
         for (long edgeNeighbor : edgeNeighbors) {
             if (edgeNeighbor == z11) {
                 continue;
@@ -163,7 +163,7 @@ public final class AltitudeConverter {
      * accuracy; otherwise, does not add a corresponding accuracy.
      */
     private static void addMslAltitude(@NonNull MapParamsProto params,
-            @NonNull double[] geoidHeightsMeters, @NonNull Location location) {
+            double @NonNull [] geoidHeightsMeters, @NonNull Location location) {
         double h0 = geoidHeightsMeters[0];
         double h1 = geoidHeightsMeters[1];
         double h2 = geoidHeightsMeters[2];

@@ -21,6 +21,8 @@ import android.os.Looper
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -39,7 +41,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  */
 internal class ComposeRootRegistry {
 
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
     private val allRoots = Collections.newSetFromMap(WeakHashMap<ViewRootForTest, Boolean>())
     private val resumedRoots = mutableSetOf<ViewRootForTest>()
     private val registryListeners = mutableSetOf<OnRegistrationChangedListener>()
@@ -131,7 +133,7 @@ internal class ComposeRootRegistry {
         }
     }
 
-    fun <R> withRegistry(block: () -> R): R {
+    inline fun <R> withRegistry(block: () -> R): R {
         try {
             setupRegistry()
             return block()
@@ -236,7 +238,11 @@ private val ComposeRootRegistry.hasComposeRoots: Boolean
 private fun ComposeRootRegistry.ensureComposeRootRegistryIsSetUp() {
     check(isSetUp) {
         "Test not setup properly. Use a ComposeTestRule in your test to be able to interact " +
-            "with composables"
+            "with composables. Also ensure that you are not using a ComposeTestRule " +
+            "(e.g. createComposeRule) inside a ComposeUiTest scope (e.g. in runComposeUiTest " +
+            "block) or any of their respective variants. Since these APIs independently " +
+            "manage the test environment, use one or the other, but not both simultaneously in a " +
+            "test case."
     }
 }
 
@@ -251,7 +257,7 @@ internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boo
             object : ComposeRootRegistry.OnRegistrationChangedListener {
                 override fun onRegistrationChanged(
                     composeRoot: ViewRootForTest,
-                    registered: Boolean
+                    registered: Boolean,
                 ) {
                     if (hasComposeRoots) {
                         latch.countDown()
@@ -294,7 +300,7 @@ internal suspend fun ComposeRootRegistry.awaitComposeRoots() {
                 object : ComposeRootRegistry.OnRegistrationChangedListener {
                     override fun onRegistrationChanged(
                         composeRoot: ViewRootForTest,
-                        registered: Boolean
+                        registered: Boolean,
                     ) {
                         if (hasComposeRoots) {
                             resume(this)

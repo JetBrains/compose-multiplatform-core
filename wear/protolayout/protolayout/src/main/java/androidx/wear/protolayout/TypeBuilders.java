@@ -20,8 +20,6 @@ import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.DynamicBuilders;
@@ -32,6 +30,11 @@ import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.AlignmentProto;
 import androidx.wear.protolayout.proto.TypesProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Objects;
 
 /** Builders for extensible primitive types used by layout elements. */
 public final class TypeBuilders {
@@ -44,7 +47,7 @@ public final class TypeBuilders {
     @RequiresSchemaVersion(major = 1, minor = 200)
     public static final class StringLayoutConstraint {
         private final TypesProto.StringProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         StringLayoutConstraint(TypesProto.StringProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -55,8 +58,7 @@ public final class TypeBuilders {
          * Gets the text string to use as the pattern for the largest text that can be laid out.
          * Used to ensure that the layout is of a known size during the layout pass.
          */
-        @NonNull
-        public String getPatternForLayout() {
+        public @NonNull String getPatternForLayout() {
             return mImpl.getValueForLayout();
         }
 
@@ -67,20 +69,44 @@ public final class TypeBuilders {
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TypesProto.StringProp toProto() {
+        public TypesProto.@NonNull StringProp toProto() {
             return mImpl;
         }
 
-        @NonNull
-        static StringLayoutConstraint fromProto(@NonNull TypesProto.StringProp proto) {
+        static @NonNull StringLayoutConstraint fromProto(TypesProto.@NonNull StringProp proto) {
             return new StringLayoutConstraint(proto, null);
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof StringLayoutConstraint)) {
+                return false;
+            }
+            StringLayoutConstraint other = (StringLayoutConstraint) o;
+            return this.getPatternForLayout().equals(other.getPatternForLayout())
+                    && getAlignment() == other.getAlignment();
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "StringLayoutConstraint(patternForLayout="
+                    + getPatternForLayout()
+                    + ", alignment="
+                    + getAlignment()
+                    + ")";
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getPatternForLayout(), getAlignment());
         }
 
         /** Builder for {@link StringLayoutConstraint}. */
@@ -105,8 +131,7 @@ public final class TypeBuilders {
              * Used to ensure that the layout is of a known size during the layout pass.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            private Builder setValue(@NonNull String patternForLayout) {
+            private @NonNull Builder setValue(@NonNull String patternForLayout) {
                 mImpl.setValueForLayout(patternForLayout);
                 mFingerprint.recordPropertyUpdate(3, patternForLayout.hashCode());
                 return this;
@@ -117,16 +142,15 @@ public final class TypeBuilders {
              * not specified, defaults to center alignment.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAlignment(@LayoutElementBuilders.TextAlignment int alignment) {
+            public @NonNull Builder setAlignment(
+                    @LayoutElementBuilders.TextAlignment int alignment) {
                 mImpl.setTextAlignmentForLayout(AlignmentProto.TextAlignment.forNumber(alignment));
                 mFingerprint.recordPropertyUpdate(4, alignment);
                 return this;
             }
 
             /** Builds an instance of {@link StringLayoutConstraint}. */
-            @NonNull
-            public StringLayoutConstraint build() {
+            public @NonNull StringLayoutConstraint build() {
                 return new StringLayoutConstraint(mImpl.build(), mFingerprint);
             }
         }
@@ -136,7 +160,7 @@ public final class TypeBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Int32Prop {
         private final TypesProto.Int32Prop mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Int32Prop(TypesProto.Int32Prop impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -150,34 +174,29 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Int32Prop fromProto(
-                @NonNull TypesProto.Int32Prop proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Int32Prop fromProto(
+                TypesProto.@NonNull Int32Prop proto, @Nullable Fingerprint fingerprint) {
             return new Int32Prop(proto, fingerprint);
         }
 
-        @NonNull
-        static Int32Prop fromProto(@NonNull TypesProto.Int32Prop proto) {
+        static @NonNull Int32Prop fromProto(TypesProto.@NonNull Int32Prop proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TypesProto.Int32Prop toProto() {
+        public TypesProto.@NonNull Int32Prop toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Int32Prop{" + "value=" + getValue() + "}";
         }
 
@@ -191,16 +210,14 @@ public final class TypeBuilders {
 
             /** Sets the static value. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(int value) {
+            public @NonNull Builder setValue(int value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, value);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Int32Prop build() {
+            public @NonNull Int32Prop build() {
                 return new Int32Prop(mImpl.build(), mFingerprint);
             }
         }
@@ -210,7 +227,7 @@ public final class TypeBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class StringProp {
         private final TypesProto.StringProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         StringProp(TypesProto.StringProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -222,8 +239,7 @@ public final class TypeBuilders {
          * values for the corresponding field, this static value will be ignored. If the static
          * value is not specified, {@code null} will be used instead.
          */
-        @NonNull
-        public String getValue() {
+        public @NonNull String getValue() {
             return mImpl.getValue();
         }
 
@@ -232,8 +248,7 @@ public final class TypeBuilders {
          * required to be set to support older renderers that only read the static value. If {@code
          * dynamicValue} has an invalid result, the provided static value will be used instead.
          */
-        @Nullable
-        public DynamicString getDynamicValue() {
+        public @Nullable DynamicString getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicStringFromProto(mImpl.getDynamicValue());
             } else {
@@ -243,34 +258,29 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static StringProp fromProto(
-                @NonNull TypesProto.StringProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull StringProp fromProto(
+                TypesProto.@NonNull StringProp proto, @Nullable Fingerprint fingerprint) {
             return new StringProp(proto, fingerprint);
         }
 
-        @NonNull
-        static StringProp fromProto(@NonNull TypesProto.StringProp proto) {
+        static @NonNull StringProp fromProto(TypesProto.@NonNull StringProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TypesProto.StringProp toProto() {
+        public TypesProto.@NonNull StringProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "StringProp{"
                     + "value="
                     + getValue()
@@ -306,8 +316,7 @@ public final class TypeBuilders {
              * static value is not specified, {@code null} will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(@NonNull String value) {
+            public @NonNull Builder setValue(@NonNull String value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, value.hashCode());
                 return this;
@@ -320,8 +329,7 @@ public final class TypeBuilders {
              * instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicString dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicString dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicStringProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -335,8 +343,7 @@ public final class TypeBuilders {
              *     #setDynamicValue(DynamicString)} but neither {@link #Builder(String)} nor {@link
              *     #setValue(String)} is used to provide a static value.
              */
-            @NonNull
-            public StringProp build() {
+            public @NonNull StringProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {
                     throw new IllegalStateException("Static value is missing.");
                 }
@@ -349,7 +356,7 @@ public final class TypeBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class FloatProp {
         private final TypesProto.FloatProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         FloatProp(TypesProto.FloatProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -370,8 +377,7 @@ public final class TypeBuilders {
          * required to be set to support older renderers that only read the static value. If {@code
          * dynamicValue} has an invalid result, the provided static value will be used instead.
          */
-        @Nullable
-        public DynamicFloat getDynamicValue() {
+        public @Nullable DynamicFloat getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicFloatFromProto(mImpl.getDynamicValue());
             } else {
@@ -381,34 +387,29 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static FloatProp fromProto(
-                @NonNull TypesProto.FloatProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull FloatProp fromProto(
+                TypesProto.@NonNull FloatProp proto, @Nullable Fingerprint fingerprint) {
             return new FloatProp(proto, fingerprint);
         }
 
-        @NonNull
-        static FloatProp fromProto(@NonNull TypesProto.FloatProp proto) {
+        static @NonNull FloatProp fromProto(TypesProto.@NonNull FloatProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TypesProto.FloatProp toProto() {
+        public TypesProto.@NonNull FloatProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "FloatProp{"
                     + "value="
                     + getValue()
@@ -444,8 +445,7 @@ public final class TypeBuilders {
              * static value is not specified, zero will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(float value) {
+            public @NonNull Builder setValue(float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(value));
                 return this;
@@ -458,8 +458,7 @@ public final class TypeBuilders {
              * has an invalid result, the provided static value will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicFloatProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -473,8 +472,7 @@ public final class TypeBuilders {
              *     #setDynamicValue(DynamicFloat)} but neither {@link #Builder(float)} nor {@link
              *     #setValue(float)} is used to provide a static value.
              */
-            @NonNull
-            public FloatProp build() {
+            public @NonNull FloatProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {
                     throw new IllegalStateException("Static value is missing.");
                 }
@@ -487,7 +485,7 @@ public final class TypeBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class BoolProp {
         private final TypesProto.BoolProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         BoolProp(TypesProto.BoolProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -517,8 +515,7 @@ public final class TypeBuilders {
          * required to be set to support older renderers that only read the static value. If {@code
          * dynamicValue} has an invalid result, the provided static value will be used instead.
          */
-        @Nullable
-        public DynamicBool getDynamicValue() {
+        public @Nullable DynamicBool getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicBoolFromProto(mImpl.getDynamicValue());
             } else {
@@ -528,34 +525,29 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static BoolProp fromProto(
-                @NonNull TypesProto.BoolProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull BoolProp fromProto(
+                TypesProto.@NonNull BoolProp proto, @Nullable Fingerprint fingerprint) {
             return new BoolProp(proto, fingerprint);
         }
 
-        @NonNull
-        static BoolProp fromProto(@NonNull TypesProto.BoolProp proto) {
+        static @NonNull BoolProp fromProto(TypesProto.@NonNull BoolProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TypesProto.BoolProp toProto() {
+        public TypesProto.@NonNull BoolProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "BoolProp{"
                     + "value="
                     + getValue()
@@ -592,8 +584,7 @@ public final class TypeBuilders {
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder setValue(boolean value) {
+            public @NonNull Builder setValue(boolean value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Boolean.hashCode(value));
                 return this;
@@ -606,8 +597,7 @@ public final class TypeBuilders {
              * instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicBool dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicBool dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicBoolProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -621,8 +611,7 @@ public final class TypeBuilders {
              *     #setDynamicValue(DynamicBool)} but neither {@link #Builder(boolean)} nor {@link
              *     #setValue(boolean)} is used to provide a static value.
              */
-            @NonNull
-            public BoolProp build() {
+            public @NonNull BoolProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {
                     throw new IllegalStateException("Static value is missing.");
                 }

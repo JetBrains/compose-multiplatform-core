@@ -16,9 +16,10 @@
 
 package androidx.wear.tiles.material;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the default values used by chip Tiles components.
@@ -33,26 +34,22 @@ public class ChipDefaults {
 
     /** The default height for standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp DEFAULT_HEIGHT =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp DEFAULT_HEIGHT =
             androidx.wear.tiles.DimensionBuilders.dp(52);
 
     /** The default height for standard {@link CompactChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp COMPACT_HEIGHT =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp COMPACT_HEIGHT =
             androidx.wear.tiles.DimensionBuilders.dp(32);
 
     /** The default height of tappable area for standard {@link CompactChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp COMPACT_HEIGHT_TAPPABLE =
-            androidx.wear.tiles.DimensionBuilders.dp(48);
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
+            COMPACT_HEIGHT_TAPPABLE = androidx.wear.tiles.DimensionBuilders.dp(48);
 
     /** The default height for standard {@link TitleChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp TITLE_HEIGHT =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp TITLE_HEIGHT =
             androidx.wear.tiles.DimensionBuilders.dp(60);
 
     /** The recommended horizontal margin used for width for standard {@link Chip} */
@@ -61,60 +58,50 @@ public class ChipDefaults {
 
     /** The recommended horizontal padding for standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp HORIZONTAL_PADDING =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp HORIZONTAL_PADDING =
             androidx.wear.tiles.DimensionBuilders.dp(14);
 
     /** The recommended horizontal padding for standard {@link CompactChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp COMPACT_HORIZONTAL_PADDING =
-            androidx.wear.tiles.DimensionBuilders.dp(12);
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
+            COMPACT_HORIZONTAL_PADDING = androidx.wear.tiles.DimensionBuilders.dp(12);
 
     /** The recommended horizontal padding for standard {@link TitleChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp TITLE_HORIZONTAL_PADDING =
-            androidx.wear.tiles.DimensionBuilders.dp(16);
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
+            TITLE_HORIZONTAL_PADDING = androidx.wear.tiles.DimensionBuilders.dp(16);
 
     /** The recommended vertical space between icon and text in standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp ICON_SPACER_WIDTH =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp ICON_SPACER_WIDTH =
             androidx.wear.tiles.DimensionBuilders.dp(6);
 
     /** The icon size used in standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp ICON_SIZE =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp ICON_SIZE =
             androidx.wear.tiles.DimensionBuilders.dp(24);
 
     /** The recommended colors for a primary {@link Chip}. */
-    @NonNull
-    public static final ChipColors PRIMARY_COLORS = ChipColors.primaryChipColors(Colors.DEFAULT);
+    public static final @NonNull ChipColors PRIMARY_COLORS =
+            ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link Chip}. */
-    @NonNull
-    public static final ChipColors SECONDARY_COLORS =
+    public static final @NonNull ChipColors SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a primary {@link CompactChip}. */
-    @NonNull
-    public static final ChipColors COMPACT_PRIMARY_COLORS =
+    public static final @NonNull ChipColors COMPACT_PRIMARY_COLORS =
             ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link CompactChip}. */
-    @NonNull
-    public static final ChipColors COMPACT_SECONDARY_COLORS =
+    public static final @NonNull ChipColors COMPACT_SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a primary {@link TitleChip}. */
-    @NonNull
-    public static final ChipColors TITLE_PRIMARY_COLORS =
+    public static final @NonNull ChipColors TITLE_PRIMARY_COLORS =
             ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link TitleChip}. */
-    @NonNull
-    public static final ChipColors TITLE_SECONDARY_COLORS =
+    public static final @NonNull ChipColors TITLE_SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 }

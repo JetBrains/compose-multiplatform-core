@@ -15,37 +15,32 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.RunApiTasks
 
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.versionedparcelable:versionedparcelable:1.1.0")
     api("androidx.wear.protolayout:protolayout-expression:1.0.0")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.preference:preference:1.1.0")
-    implementation("androidx.wear.protolayout:protolayout-expression-pipeline:1.0.0-beta01")
+    implementation("androidx.wear.protolayout:protolayout-expression-pipeline:1.0.0")
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -56,6 +51,8 @@ dependencies {
     testImplementation(libs.guavaTestlib)
 
     annotationProcessor(project(":versionedparcelable:versionedparcelable-compiler"))
+
+    compileOnly files("../../wear_sdk/wear-sdk.jar")
 }
 
 android {
@@ -63,21 +60,16 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk { version = release(26) }
+        consumerProguardFiles("proguard-rules.pro")
     }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications.data"
+    namespace = "androidx.wear.watchface.complications.data"
 }
 
 androidx {
     name = "Android Wear Complications Data"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Wear Complications Data"
-    legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

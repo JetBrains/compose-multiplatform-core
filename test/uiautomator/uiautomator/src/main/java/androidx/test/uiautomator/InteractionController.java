@@ -195,11 +195,11 @@ class InteractionController {
      * @return true if the click executed successfully
      */
     public boolean clickNoSync(int x, int y) {
-        if (touchDown(x, y)) {
-            SystemClock.sleep(REGULAR_CLICK_LENGTH);
-            return touchUp(x, y);
-        }
-        return false;
+        boolean success = touchDown(x, y);
+        SystemClock.sleep(REGULAR_CLICK_LENGTH);
+        // Always touch up (regardless of touch down success) to ensure the gesture is complete.
+        success &= touchUp(x, y);
+        return success;
     }
 
     /**
@@ -240,11 +240,11 @@ class InteractionController {
      * @return true if successful.
      */
     public boolean longTapNoSync(int x, int y) {
-        if (touchDown(x, y)) {
-            SystemClock.sleep(LONG_PRESS_DURATION_MS);
-            return touchUp(x, y);
-        }
-        return false;
+        boolean success = touchDown(x, y);
+        SystemClock.sleep(LONG_PRESS_DURATION_MS);
+        // Always touch up (regardless of touch down success) to ensure the gesture is complete.
+        success &= touchUp(x, y);
+        return success;
     }
 
     /**

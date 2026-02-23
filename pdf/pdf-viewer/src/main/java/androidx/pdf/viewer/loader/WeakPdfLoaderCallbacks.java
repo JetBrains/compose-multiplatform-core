@@ -19,7 +19,6 @@ package androidx.pdf.viewer.loader;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.data.DisplayData;
@@ -30,6 +29,8 @@ import androidx.pdf.models.LinkRects;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.util.TileBoard.TileInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -45,8 +46,7 @@ public class WeakPdfLoaderCallbacks implements PdfLoaderCallbacks {
     private static final String TAG = WeakPdfLoaderCallbacks.class.getSimpleName();
 
     /** Take some callbacks and hold them with only a weak reference. */
-    @NonNull
-    public static WeakPdfLoaderCallbacks wrap(@NonNull PdfLoaderCallbacks delegate) {
+    public static @NonNull WeakPdfLoaderCallbacks wrap(@NonNull PdfLoaderCallbacks delegate) {
         if (delegate instanceof WeakPdfLoaderCallbacks) {
             return (WeakPdfLoaderCallbacks) delegate;
         }

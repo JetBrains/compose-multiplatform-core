@@ -15,9 +15,10 @@
  */
 package androidx.work.integration.testapp.db;
 
-import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A POJO for a word and its count.
@@ -26,7 +27,6 @@ import androidx.room.PrimaryKey;
 public class WordCount {
 
     @PrimaryKey
-    @NonNull
-    public String mWord;
+    public @NonNull String mWord;
     public int mCount;
 }

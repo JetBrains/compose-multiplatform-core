@@ -34,7 +34,6 @@ import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.extensions.Participant
 import androidx.core.telecom.extensions.ParticipantParcelable
 import androidx.core.telecom.extensions.toParticipant
-import androidx.core.telecom.internal.utils.BuildVersionAdapter
 import androidx.core.telecom.test.ITestAppControlCallback
 import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.test.platform.app.InstrumentationRegistry
@@ -47,6 +46,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -82,78 +82,37 @@ object TestUtils {
     private const val CALLBACK_FAILED_EXCEPTION_MSG =
         "callback failed to be completed in the lambda function"
     // non-primitive constants
-    val TEST_PHONE_NUMBER_9001: Uri = Uri.parse("tel:6506959001")
-    val TEST_PHONE_NUMBER_8985: Uri = Uri.parse("tel:6506958985")
+    val CUSTOM_TEST_APP_SCHEME = "CoreTelecomUnitTestScheme:"
+    val TEST_PHONE_NUMBER = "6506959001"
+    val TEST_ADDRESS: Uri = Uri.parse(CUSTOM_TEST_APP_SCHEME + TEST_PHONE_NUMBER)
 
     // Define the minimal set of properties to start an outgoing call
     val OUTGOING_CALL_ATTRIBUTES =
         CallAttributesCompat(
             OUTGOING_NAME,
-            TEST_PHONE_NUMBER_8985,
+            TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_OUTGOING,
             CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-            ALL_CALL_CAPABILITIES
+            ALL_CALL_CAPABILITIES,
         )
 
     val OUTGOING_NO_HOLD_CAP_CALL_ATTRIBUTES =
         CallAttributesCompat(
             OUTGOING_NAME,
-            TEST_PHONE_NUMBER_8985,
+            TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_OUTGOING,
             CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-            CallAttributesCompat.SUPPORTS_STREAM
+            CallAttributesCompat.SUPPORTS_STREAM,
         )
 
     // Define all possible properties for CallAttributes
     val INCOMING_CALL_ATTRIBUTES =
         CallAttributesCompat(
             INCOMING_NAME,
-            TEST_PHONE_NUMBER_8985,
+            TEST_ADDRESS,
             CallAttributesCompat.DIRECTION_INCOMING,
-            ALL_CALL_CAPABILITIES
+            ALL_CALL_CAPABILITIES,
         )
-
-    /**
-     * This build version should be set when the **V2 transactional APIs** are desired as the
-     * underlying call management.
-     */
-    internal val mV2Build =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return true
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return false
-            }
-        }
-
-    /**
-     * This build version should be set when the **ConnectionService and Connection APIs** are
-     * desired as the underlying call management.
-     */
-    internal val mBackwardsCompatBuild =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return false
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return false
-            }
-        }
-
-    /** This build version should be set when edge case testing on invalid builds */
-    internal val mInvalidBuild =
-        object : BuildVersionAdapter {
-            override fun hasPlatformV2Apis(): Boolean {
-                return false
-            }
-
-            override fun hasInvalidBuildVersion(): Boolean {
-                return true
-            }
-        }
 
     val mOnSetActiveLambda: suspend () -> Unit = {
         Log.i(LOG_TAG, "onSetActive: completing")
@@ -223,14 +182,9 @@ object TestUtils {
 
         val attributes: CallAttributesCompat =
             if (callType != null) {
-                CallAttributesCompat(
-                    TEST_CALL_ATTRIB_NAME,
-                    TEST_PHONE_NUMBER_9001,
-                    callDirection,
-                    callType
-                )
+                CallAttributesCompat(TEST_CALL_ATTRIB_NAME, TEST_ADDRESS, callDirection, callType)
             } else {
-                CallAttributesCompat(TEST_CALL_ATTRIB_NAME, TEST_PHONE_NUMBER_9001, callDirection)
+                CallAttributesCompat(TEST_CALL_ATTRIB_NAME, TEST_ADDRESS, callDirection)
             }
 
         attributes.mHandle = phoneAccountHandle
@@ -249,7 +203,7 @@ object TestUtils {
     fun setDefaultDialer(packageName: String) {
         Log.i(
             LOG_TAG,
-            "setDefaultDialer=[${runShellCommand((COMMAND_SET_DEFAULT_DIALER + packageName))}]"
+            "setDefaultDialer=[${runShellCommand((COMMAND_SET_DEFAULT_DIALER + packageName))}]",
         )
     }
 
@@ -277,7 +231,7 @@ object TestUtils {
                     (COMMAND_ENABLE_PHONE_ACCOUNT +
                         pn + "/" + cn + " " + phoneAccountHandle.id + " " + userHandleId)
                 )
-            }]"
+            }]",
         )
     }
 
@@ -306,19 +260,19 @@ object TestUtils {
      */
     internal suspend fun waitOnInCallServiceToReachXCalls(
         service: TestInCallService,
-        targetCallCount: Int
+        targetCallCount: Int,
     ): Call? {
         var targetCall: Call? = null
         Log.i(
             LOG_TAG,
             "waitOnInCallServiceToReachXCalls: target count=$targetCallCount, " +
-                "starting call check"
+                "starting call check",
         )
         if (targetCallCount > 0) {
             waitForCondition(
                 WAIT_ON_IN_CALL_SERVICE_CALL_COUNT_TIMEOUT,
                 "Expected call count to be <$targetCallCount>" +
-                    " but the Actual call count was <${service.getCallCount()}>"
+                    " but the Actual call count was <${service.getCallCount()}>",
             ) {
                 service.getCallCount() >= targetCallCount
             }
@@ -328,7 +282,7 @@ object TestUtils {
             waitForCondition(
                 WAIT_ON_IN_CALL_SERVICE_CALL_COUNT_TIMEOUT,
                 "Expected call count to be <$targetCallCount>" +
-                    " but the Actual call count was <${service.getCallCount()}>"
+                    " but the Actual call count was <${service.getCallCount()}>",
             ) {
                 service.getCallCount() <= 0
             }
@@ -342,7 +296,7 @@ object TestUtils {
         waitForCondition(
             WAIT_ON_CALL_STATE_TIMEOUT,
             "Expected call state to be <$targetState>" +
-                " but the Actual call state was <${call.state}>"
+                " but the Actual call state was <${call.state}>",
         ) {
             call.state == targetState
         }
@@ -351,7 +305,7 @@ object TestUtils {
     private suspend fun waitForCondition(
         timeout: Long,
         failureMessage: String,
-        expectedCondition: () -> Boolean
+        expectedCondition: () -> Boolean,
     ) {
         try {
             withTimeout(timeout) {
@@ -414,6 +368,16 @@ class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppCont
     private val isLocallySilencedFlow: MutableSharedFlow<Pair<String, Boolean>> =
         MutableStateFlow(Pair("", false))
     private val callAddedFlow: MutableSharedFlow<Pair<Int, String>> = MutableSharedFlow(replay = 1)
+    private val isMutedFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
+
+    companion object {
+        private val TAG: String = TestCallCallbackListener::class.java.simpleName.toString()
+    }
+
+    override fun onGlobalMuteStateChanged(isMuted: Boolean) {
+        Log.i(TAG, "onGlobalMuteStateChanged: isMuted: $isMuted")
+        scope.launch { isMutedFlow.emit(isMuted) }
+    }
 
     override fun onCallAdded(requestId: Int, callId: String?) {
         if (callId == null) return
@@ -457,6 +421,21 @@ class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppCont
                     .first()
             }
         assertEquals("<LOCAL CALL SILENCE> never received", expectedState, result?.second)
+    }
+
+    suspend fun waitForGlobalMuteState(isMuted: Boolean, id: String = "") {
+        Log.i(TAG, "waitForGlobalMuteState: v=[$isMuted], id=[$id]")
+        val result =
+            withTimeoutOrNull(5000) {
+                isMutedFlow
+                    .filter {
+                        Log.i(TAG, "it=[$isMuted], isMuted=[$isMuted]")
+                        it == isMuted
+                    }
+                    .firstOrNull()
+            }
+        Log.i(TAG, "asserting id=[$id], result=$result")
+        assertEquals("Global Mute State {$id} never reached the expected state", isMuted, result)
     }
 
     suspend fun waitForKickParticipant(callId: String, expectedParticipant: Participant?) {

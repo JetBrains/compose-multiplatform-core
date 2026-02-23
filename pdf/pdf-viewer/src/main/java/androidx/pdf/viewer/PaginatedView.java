@@ -25,19 +25,21 @@ import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.ParcelCompat;
 import androidx.pdf.ViewState;
 import androidx.pdf.data.Range;
+import androidx.pdf.metrics.EventCallback;
 import androidx.pdf.util.PaginationUtils;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.util.ThreadUtils;
 import androidx.pdf.viewer.PageViewFactory.PageView;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.AbstractList;
 import java.util.List;
@@ -73,6 +75,8 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     /** The current viewport in content coordinates */
     private final Rect mViewArea = new Rect();
 
+    private EventCallback mEventCallback;
+
     public PaginatedView(@NonNull Context context) {
         this(context, null);
     }
@@ -105,13 +109,11 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mModel = model;
     }
 
-    @NonNull
-    public PaginationModel getModel() {
+    public @NonNull PaginationModel getModel() {
         return mModel;
     }
 
-    @NonNull
-    public PaginationModel resetModels() {
+    public @NonNull PaginationModel resetModels() {
         mModel = new PaginationModel(getContext());
         mPageRangeHandler = new PageRangeHandler(mModel);
         return mModel;
@@ -168,9 +170,8 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         }
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         return new SavedState(superState, mModel);
     }
@@ -187,8 +188,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     /**
      * Returns the current viewport in content coordinates
      */
-    @NonNull
-    public Rect getViewArea() {
+    public @NonNull Rect getViewArea() {
         return mViewArea;
     }
 
@@ -204,13 +204,11 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         }
     }
 
-    @NonNull
-    public PageRangeHandler getPageRangeHandler() {
+    public @NonNull PageRangeHandler getPageRangeHandler() {
         return mPageRangeHandler;
     }
 
-    @NonNull
-    public PdfSelectionModel getSelectionModel() {
+    public @NonNull PdfSelectionModel getSelectionModel() {
         return mSelectionModel;
     }
 
@@ -219,8 +217,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mSelectionModel = selectionModel;
     }
 
-    @NonNull
-    public SearchModel getSearchModel() {
+    public @NonNull SearchModel getSearchModel() {
         return mSearchModel;
     }
 
@@ -228,8 +225,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mSearchModel = searchModel;
     }
 
-    @NonNull
-    public PdfSelectionHandles getSelectionHandles() {
+    public @NonNull PdfSelectionHandles getSelectionHandles() {
         return mSelectionHandles;
     }
 
@@ -241,13 +237,16 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mPdfLoader = pdfLoader;
     }
 
-    @NonNull
-    public PageViewFactory getPageViewFactory() {
+    public @NonNull PageViewFactory getPageViewFactory() {
         return mPageViewFactory;
     }
 
     public void setPageViewFactory(@NonNull PageViewFactory pageViewFactory) {
         mPageViewFactory = pageViewFactory;
+    }
+
+    public void setMetricEventCallback(@Nullable EventCallback eventCallback) {
+        mEventCallback = eventCallback;
     }
 
     /** Instantiate a page of this pageView into a child pageView. */
@@ -285,8 +284,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     }
 
     /** Return the view of the given page number. */
-    @Nullable
-    public PageView getViewAt(int pageNum) {
+    public @Nullable PageView getViewAt(int pageNum) {
         return mPageViews.get(pageNum);
     }
 
@@ -296,8 +294,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
      * <p>The list is backed by this view and will likely change soon, so is only suitable for
      * immediate iteration.
      */
-    @NonNull
-    public List<PageMosaicView> getChildViews() {
+    public @NonNull List<PageMosaicView> getChildViews() {
         return new AbstractList<PageMosaicView>() {
 
             @Override
@@ -398,7 +395,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     /**
      * Refreshes the page range for the visible area.
      */
-    public void refreshPageRangeInVisibleArea(@NonNull ZoomView.ZoomScroll zoomScroll,
+    public void refreshPageRangeInVisibleArea(ZoomView.@NonNull ZoomScroll zoomScroll,
             int parentViewHeight) {
         mPageRangeHandler.refreshVisiblePageRange(zoomScroll.scrollY, zoomScroll.zoom,
                 parentViewHeight);
@@ -475,6 +472,9 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
             // be executed against the document, even if the user has scrolled away from the page.
             mPdfLoader.cancelExceptSearchAndFormFilling(page);
             mPdfLoader.releasePage(page);
+            if (mEventCallback != null) {
+                mEventCallback.onPageCleared(page);
+            }
             if (clearViews) {
                 removeViewAt(page);
             }
@@ -546,9 +546,9 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     static class SavedState extends View.BaseSavedState {
         final PaginationModel mModel;
 
-        SavedState(Parcelable superState, PaginationModel model) {
-            super(superState);
-            mModel = model;
+        SavedState(Parcel source) {
+            super(source);
+            mModel = ParcelCompat.readParcelable(source, null, PaginationModel.class);
         }
 
         SavedState(Parcel source, ClassLoader loader) {
@@ -556,10 +556,34 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
             mModel = ParcelCompat.readParcelable(source, loader, PaginationModel.class);
         }
 
+        SavedState(Parcelable superState, PaginationModel model) {
+            super(superState);
+            mModel = model;
+        }
+
         @Override
         public void writeToParcel(Parcel out, int flags) {
             super.writeToParcel(out, flags);
             out.writeParcelable(mModel, flags);
         }
+
+        public static final ClassLoaderCreator<SavedState> CREATOR =
+                new ClassLoaderCreator<SavedState>() {
+
+                    @Override
+                    public SavedState createFromParcel(Parcel in) {
+                        return new SavedState(in);
+                    }
+
+                    @Override
+                    public SavedState createFromParcel(Parcel source, ClassLoader loader) {
+                        return new SavedState(source, loader);
+                    }
+
+                    @Override
+                    public SavedState[] newArray(int size) {
+                        return new SavedState[size];
+                    }
+                };
     }
 }

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.health.connect.client.testing.stubs
+@file:JvmName("Stubs")
 
-import androidx.health.connect.client.testing.ExperimentalTestingApi
+package androidx.health.connect.client.testing.stubs
 
 /**
  * Represents a stub mapping from a request [T] to a response [R].
@@ -27,7 +27,7 @@ import androidx.health.connect.client.testing.ExperimentalTestingApi
  * - A value of type [R] is returned meaning that the request has succeeded and the value should be
  *   returned to the caller.
  * - An exception is thrown meaning that the request has failed and the error should be returned to
- *   the caller.
+ *   the caller.u
  * - Null (`null`) is returned meaning that the request has not been processed by this stub, in
  *   which case the client may call another stub or somehow fallback to a default behaviour.
  *
@@ -37,7 +37,6 @@ import androidx.health.connect.client.testing.ExperimentalTestingApi
  * @see stub
  * @see MutableStub
  */
-@ExperimentalTestingApi
 public fun interface Stub<in T, out R : Any> {
     /** Returns the next item. */
     public fun next(request: T): R?
@@ -52,7 +51,6 @@ public fun interface Stub<in T, out R : Any> {
  * @param default A response [R] that will be used if a response is requested
  * @see Stub
  */
-@ExperimentalTestingApi
 public fun <R : Any> stub(default: R?): Stub<Any?, R> =
     stub(queue = emptyList(), defaultHandler = { default })
 
@@ -79,10 +77,9 @@ public fun <R : Any> stub(default: R?): Stub<Any?, R> =
  *   and the queue is empty.
  */
 @JvmOverloads
-@ExperimentalTestingApi
 public inline fun <R : Any> stub(
     queue: Iterable<R> = emptyList(),
-    crossinline defaultHandler: () -> R? = { null }
+    crossinline defaultHandler: () -> R? = { null },
 ): Stub<Any?, R> {
     val internalQueue = queue.toCollection(ArrayDeque())
 

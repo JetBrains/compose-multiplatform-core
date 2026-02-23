@@ -22,8 +22,8 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -75,12 +75,10 @@ public interface PreviewExtenderImpl extends ExtenderStateListener {
      * CaptureStageImpl}. If the processing step returns a {@code null}, meaning the required
      * parameters has not changed, then calling this will return the previous non-null value.
      */
-    @NonNull
-    CaptureStageImpl getCaptureStage();
+    @NonNull CaptureStageImpl getCaptureStage();
 
     /** The type of preview processing to use. */
-    @NonNull
-    ProcessorType getProcessorType();
+    @NonNull ProcessorType getProcessorType();
 
     /**
      * Returns a processor which only updates the {@link CaptureStageImpl}.
@@ -95,8 +93,7 @@ public interface PreviewExtenderImpl extends ExtenderStateListener {
      * <tr><td> PROCESSOR_TYPE_NONE </td> <td> null </td> </tr>
      * </table>
      */
-    @Nullable
-    ProcessorImpl getProcessor();
+    @Nullable ProcessorImpl getProcessor();
 
     /**
      * Returns the customized supported resolutions.
@@ -111,6 +108,5 @@ public interface PreviewExtenderImpl extends ExtenderStateListener {
      * @return the customized supported resolutions.
      * @since 1.1
      */
-    @Nullable
-    List<Pair<Integer, Size[]>> getSupportedResolutions();
+    @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions();
 }

@@ -23,9 +23,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class to use new APIs that were added in O (API level 26).
@@ -54,24 +55,21 @@ public class ApiHelperForO {
     /**
      * @see WebView#getWebViewClient()
      */
-    @Nullable
-    public static WebViewClient getWebViewClient(@NonNull WebView webView) {
+    public static @Nullable WebViewClient getWebViewClient(@NonNull WebView webView) {
         return webView.getWebViewClient();
     }
 
     /**
      * @see WebView#getWebChromeClient()
      */
-    @Nullable
-    public static WebChromeClient getWebChromeClient(@NonNull WebView webView) {
+    public static @Nullable WebChromeClient getWebChromeClient(@NonNull WebView webView) {
         return webView.getWebChromeClient();
     }
 
     /**
      * @see WebView#getCurrentWebViewPackage()
      */
-    @NonNull
-    public static PackageInfo getCurrentWebViewPackage() {
+    public static @NonNull PackageInfo getCurrentWebViewPackage() {
         return WebView.getCurrentWebViewPackage();
     }
 }

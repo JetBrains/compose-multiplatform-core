@@ -16,7 +16,6 @@
 
 package androidx.paging.integration.testapp.custom;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.paging.LivePagedListBuilder;
@@ -24,6 +23,8 @@ import androidx.paging.PagedList;
 import androidx.paging.PagingSource;
 
 import kotlin.jvm.functions.Function0;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample ViewModel backed by an artificial data source
@@ -34,9 +35,8 @@ public class PagedListItemViewModel extends ViewModel {
 
     private final Function0<PagingSource<Integer, Item>> mFactory =
             new Function0<PagingSource<Integer, Item>>() {
-                @NonNull
                 @Override
-                public PagingSource<Integer, Item> invoke() {
+                public @NonNull PagingSource<Integer, Item> invoke() {
                     ItemDataSource newDataSource = new ItemDataSource();
                     synchronized (mDataSourceLock) {
                         mDataSource = newDataSource;

@@ -18,15 +18,24 @@ package androidx.wear.compose.material3
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
@@ -34,6 +43,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -49,7 +61,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -61,14 +73,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
 import androidx.wear.compose.material3.samples.SimpleButtonSample
+import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class ButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun simple_button_sample_builds() {
@@ -83,12 +98,7 @@ class ButtonTest {
     @Test
     fun supports_testtag() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            ) {
-                Text("Test")
-            }
+            Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("Test") }
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -146,7 +156,7 @@ class ButtonTest {
             Button(
                 onClick = { clicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Text("Test")
             }
@@ -173,7 +183,7 @@ class ButtonTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 onClick = {},
                 onLongClick = {},
-                onLongClickLabel = testLabel
+                onLongClickLabel = testLabel,
             ) {
                 Text("Button")
             }
@@ -198,7 +208,7 @@ class ButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Text("Test")
             }
@@ -245,11 +255,7 @@ class ButtonTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.labelMedium
-            Button(
-                onClick = {},
-            ) {
-                actualTextStyle = LocalTextStyle.current
-            }
+            Button(onClick = {}) { actualTextStyle = LocalTextStyle.current }
         }
 
         assertEquals(expectedTextStyle, actualTextStyle)
@@ -268,19 +274,19 @@ class ButtonTest {
             Button(
                 onClick = {},
                 label = { actualLabelTextStyle = LocalTextStyle.current },
-                secondaryLabel = { actualSecondaryLabelTextStyle = LocalTextStyle.current }
+                secondaryLabel = { actualSecondaryLabelTextStyle = LocalTextStyle.current },
             )
         }
         assertEquals(expectedTextStyle, actualLabelTextStyle)
         assertEquals(expectedSecondaryTextStyle, actualSecondaryLabelTextStyle)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun default_shape_is_stadium() {
         rule.isShape(
             expectedShape = RoundedCornerShape(CornerSize(50)),
-            colors = { ButtonDefaults.buttonColors() }
+            colors = { ButtonDefaults.buttonColors() },
         ) { modifier ->
             Button(onClick = {}, modifier = modifier) {
                 // omit content to allow us to validate the shape by pixel checking.
@@ -288,7 +294,7 @@ class ButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_shape_override() {
         val shape = CutCornerShape(4.dp)
@@ -314,9 +320,7 @@ class ButtonTest {
 
         rule
             .setContentWithThemeForSizeAssertions {
-                Button(
-                    onClick = {},
-                ) {
+                Button(onClick = {}) {
                     Text(
                         text =
                             "Button with multiple lines of text to exceed default" +
@@ -350,10 +354,54 @@ class ButtonTest {
                                 "Button with multiple lines of text to exceed default" +
                                     " minimum height. This should exceed the minimum height for the button."
                         )
-                    }
+                    },
                 )
             }
             .assertHeightIsAtLeast(minHeight)
+    }
+
+    @Test
+    fun button_animate_content_size_animates_height() {
+        val boxHeight = mutableStateOf(60.dp)
+        val frames = 14
+        val animationMillis = frames * 16
+        val buttonPadding = ButtonDefaults.ButtonVerticalPadding
+
+        rule.setContentWithTheme {
+            Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG).fillMaxWidth()) {
+                Box(
+                    modifier =
+                        Modifier.animateContentSize(
+                                animationSpec = tween(animationMillis, easing = LinearEasing)
+                            )
+                            .fillMaxWidth()
+                            .requiredHeight(boxHeight.value)
+                ) {}
+            }
+        }
+        // Verify initial height
+        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(60.dp + buttonPadding * 2)
+
+        // Set autoAdvance off to test the content size animation
+        rule.mainClock.autoAdvance = false
+        boxHeight.value = 100.dp
+        // Advance to the actual start of the animation
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // Advance to middle of animation
+        rule.mainClock.advanceTimeBy(animationMillis / 2L)
+        rule.waitForIdle()
+        // Verify that the animation is halfway finished
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assertHeightIsEqualTo(80.dp + buttonPadding * 2, tolerance = 2.dp)
+
+        // Set autoAdvance back on to finish the animation
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        // Verify end height is correct
+        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(100.dp + buttonPadding * 2)
     }
 
     @Test
@@ -364,7 +412,7 @@ class ButtonTest {
                 onClick = {},
                 label = { Text("Blue green orange") },
                 icon = { TestImage(iconTag) },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
@@ -376,7 +424,7 @@ class ButtonTest {
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -386,7 +434,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -400,18 +448,18 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Enabled,
             expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { FilledTonalButton(Status.Enabled) }
+            content = { filledTonalButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -422,22 +470,22 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { FilledTonalButton(Status.Disabled) }
+            content = { filledTonalButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_button_correct_filled_variant_colors() {
         rule.verifyButtonColors(
             status = Status.Enabled,
             expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
-            content = { FilledVariantButton(Status.Enabled) }
+            content = { filledVariantButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_button_correct_filled_variant_colors() {
         rule.verifyButtonColors(
@@ -448,22 +496,22 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { FilledVariantButton(Status.Disabled) }
+            content = { filledVariantButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Enabled,
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { OutlinedButton(Status.Enabled) }
+            content = { outlinedButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -472,22 +520,22 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { OutlinedButton(Status.Disabled) }
+            content = { outlinedButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Enabled,
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { ChildButton(Status.Enabled) }
+            content = { childButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -496,91 +544,155 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { ChildButton(Status.Disabled) }
+            content = { childButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_enabled_image_button_correct_colors() {
+        rule.verifyButtonColors(
+            status = Status.Enabled,
+            expectedContainerColor = { Color.Red },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().contentColor
+            },
+            content = { imageButton(Status.Enabled, containerPainter = ColorPainter(Color.Red)) },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_disabled_image_button_correct_colors() {
+        rule.verifyButtonColors(
+            status = Status.Disabled,
+            expectedContainerColor = { Color.Red.copy(alpha = DisabledContainerAlpha) },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().disabledContentColor
+            },
+            content = { imageButton(Status.Disabled, containerPainter = ColorPainter(Color.Red)) },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun enabled_image_button_uses_correct_container_painter() {
+        rule.verifyButtonColors(
+            status = Status.Enabled,
+            expectedContainerColor = { Color.Red },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().contentColor
+            },
+            content = {
+                imageButton(
+                    Status.Enabled,
+                    containerPainter = ColorPainter(Color.Red),
+                    disabledContainerPainter = ColorPainter(Color.Yellow),
+                )
+            },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun disabled_image_button_uses_correct_container_painter() {
+        rule.verifyButtonColors(
+            status = Status.Disabled,
+            expectedContainerColor = { Color.Yellow },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().disabledContentColor
+            },
+            content = {
+                imageButton(
+                    Status.Disabled,
+                    containerPainter = ColorPainter(Color.Red),
+                    disabledContainerPainter = ColorPainter(Color.Yellow),
+                )
+            },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.buttonColors() },
-            content = { ThreeSlotFilledButton(Status.Enabled) }
+            content = { threeSlotFilledButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.buttonColors() },
-            content = { ThreeSlotFilledButton(Status.Disabled) }
+            content = { threeSlotFilledButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.filledTonalButtonColors() },
-            content = { ThreeSlotFilledTonalButton(Status.Enabled) }
+            content = { threeSlotFilledTonalButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.filledTonalButtonColors() },
-            content = { ThreeSlotFilledTonalButton(Status.Disabled) }
+            content = { threeSlotFilledTonalButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.outlinedButtonColors() },
-            content = { ThreeSlotOutlinedButton(Status.Enabled) }
+            content = { threeSlotOutlinedButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.outlinedButtonColors() },
-            content = { ThreeSlotOutlinedButton(Status.Disabled) }
+            content = { threeSlotOutlinedButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.childButtonColors() },
-            content = { ThreeSlotChildButton(Status.Enabled) }
+            content = { threeSlotChildButton(Status.Enabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.childButtonColors() },
-            content = { ThreeSlotChildButton(Status.Disabled) }
+            content = { threeSlotChildButton(Status.Disabled) },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_button_correct_border_colors() {
         val status = Status.Enabled
@@ -588,11 +700,11 @@ class ButtonTest {
             expectedBorderColor = { MaterialTheme.colorScheme.outline },
             content = { modifier: Modifier ->
                 OutlinedButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_button_correct_border_colors() {
         val status = Status.Disabled
@@ -605,16 +717,13 @@ class ButtonTest {
                     onClick = {},
                     modifier = modifier,
                     enabled = status.enabled(),
-                    border =
-                        ButtonDefaults.outlinedButtonBorder(
-                            enabled = status.enabled(),
-                        )
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = status.enabled()),
                 ) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_enabled_outlined_button_border_color() {
         val status = Status.Enabled
@@ -629,14 +738,14 @@ class ButtonTest {
                         ButtonDefaults.outlinedButtonBorder(
                             enabled = status.enabled(),
                             borderColor = Color.Green,
-                            disabledBorderColor = Color.Red
-                        )
+                            disabledBorderColor = Color.Red,
+                        ),
                 ) {}
-            }
+            },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_disabled_outlined_button_border_color() {
         val status = Status.Disabled
@@ -651,10 +760,48 @@ class ButtonTest {
                         ButtonDefaults.outlinedButtonBorder(
                             enabled = status.enabled(),
                             borderColor = Color.Green,
-                            disabledBorderColor = Color.Red
-                        )
+                            disabledBorderColor = Color.Red,
+                        ),
                 ) {}
+            },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun outlined_button_border_updates_color_when_state_changes() {
+        var enabled by mutableStateOf(true)
+        val enabledBorderColor = Color.Green
+        val disabledBorderColor = Color.Red
+        val testBackground = Color.Black
+
+        rule.setContent {
+            MaterialTheme {
+                Box(Modifier.background(testBackground)) {
+                    OutlinedButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        enabled = enabled,
+                        border =
+                            ButtonDefaults.outlinedButtonBorder(
+                                enabled = enabled,
+                                borderColor = enabledBorderColor,
+                                disabledBorderColor = disabledBorderColor,
+                            ),
+                    ) {}
+                }
             }
+        }
+        rule.verifyBorderColor(
+            contentBorderColor = enabledBorderColor,
+            backgroundColor = testBackground,
+        )
+
+        rule.runOnIdle { enabled = false }
+
+        rule.verifyBorderColor(
+            contentBorderColor = disabledBorderColor,
+            backgroundColor = testBackground,
         )
     }
 
@@ -677,14 +824,14 @@ class ButtonTest {
             CompactButton(
                 onClick = {},
                 modifier = Modifier.testTag(TEST_TAG),
-                icon = { TestImage(iconTag) }
+                icon = { TestImage(iconTag) },
             )
         }
 
         rule
             .onRoot()
-            .assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
-            .assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
+            .assertWidthIsEqualTo(CompactButtonDefaults.IconOnlyWidth)
+            .assertHeightIsEqualTo(CompactButtonDefaults.Height)
     }
 
     @Test
@@ -693,26 +840,23 @@ class ButtonTest {
             CompactButton(
                 onClick = {},
                 modifier = Modifier.testTag(TEST_TAG),
-                label = { Text("Test") }
+                label = { Text("Test") },
             )
         }
 
-        rule.onRoot().assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
+        rule.onRoot().assertHeightIsEqualTo(CompactButtonDefaults.Height)
     }
 
     @Test
     fun no_content_compact_button_has_correct_default_width_and_height() {
         rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-            CompactButton(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            CompactButton(onClick = {}, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule
             .onRoot()
-            .assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
-            .assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
+            .assertWidthIsEqualTo(CompactButtonDefaults.IconOnlyWidth)
+            .assertHeightIsEqualTo(CompactButtonDefaults.Height)
     }
 
     @Test
@@ -722,7 +866,7 @@ class ButtonTest {
             CompactButton(
                 onClick = {},
                 modifier = Modifier.testTag(TEST_TAG).width(100.dp),
-                icon = { TestImage(iconTag) }
+                icon = { TestImage(iconTag) },
             )
         }
 
@@ -737,7 +881,7 @@ class ButtonTest {
                 onClick = {},
                 label = { Text("Blue green orange") },
                 icon = { TestImage(iconTag) },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
@@ -748,7 +892,7 @@ class ButtonTest {
             .onNodeWithContentDescription(iconTag, useUnmergedTree = true)
             .assertTopPositionInRootIsEqualTo(
                 (itemBounds.height - iconBounds.height) / 2 +
-                    ButtonDefaults.CompactButtonTapTargetPadding.calculateTopPadding()
+                    CompactButtonDefaults.TapTargetPadding.calculateTopPadding()
             )
     }
 
@@ -759,7 +903,7 @@ class ButtonTest {
             CompactButton(
                 onClick = {},
                 icon = { TestImage(iconTag) },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
@@ -770,79 +914,79 @@ class ButtonTest {
             .onNodeWithContentDescription(iconTag, useUnmergedTree = true)
             .assertTopPositionInRootIsEqualTo(
                 (itemBounds.height - iconBounds.height) / 2 +
-                    ButtonDefaults.CompactButtonTapTargetPadding.calculateTopPadding()
+                    CompactButtonDefaults.TapTargetPadding.calculateTopPadding()
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Enabled,
-            colors = { ButtonDefaults.buttonColors() }
+            colors = { ButtonDefaults.buttonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Disabled,
-            colors = { ButtonDefaults.buttonColors() }
+            colors = { ButtonDefaults.buttonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Enabled,
-            colors = { ButtonDefaults.filledTonalButtonColors() }
+            colors = { ButtonDefaults.filledTonalButtonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Disabled,
-            colors = { ButtonDefaults.filledTonalButtonColors() }
+            colors = { ButtonDefaults.filledTonalButtonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Enabled,
-            colors = { ButtonDefaults.outlinedButtonColors() }
+            colors = { ButtonDefaults.outlinedButtonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Disabled,
-            colors = { ButtonDefaults.outlinedButtonColors() }
+            colors = { ButtonDefaults.outlinedButtonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Enabled,
-            colors = { ButtonDefaults.childButtonColors() }
+            colors = { ButtonDefaults.childButtonColors() },
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
             status = Status.Disabled,
-            colors = { ButtonDefaults.childButtonColors() }
+            colors = { ButtonDefaults.childButtonColors() },
         )
     }
 
@@ -1187,10 +1331,58 @@ class ButtonTest {
         assertEquals(TextAlign.Center, labelAlignment)
     }
 
+    @Test
+    fun button_long_click_triggers_haptic() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                Button(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    modifier = Modifier.testTag(TEST_TAG),
+                ) {
+                    Text("Test")
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
+    @Test
+    fun compactbutton_long_click_triggers_haptic() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                CompactButton(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    modifier = Modifier.testTag(TEST_TAG),
+                ) {
+                    Text("Test")
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
     private fun responds_to_long_click(
         enabled: Boolean,
         onLongClick: () -> Unit,
-        assert: () -> Unit
+        assert: () -> Unit,
     ) {
 
         rule.setContentWithTheme {
@@ -1198,7 +1390,7 @@ class ButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = onLongClick,
                 enabled = enabled,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Text("Test")
             }
@@ -1215,7 +1407,7 @@ private fun ComposeContentTestRule.verifyButtonColors(
     status: Status,
     expectedContainerColor: @Composable () -> Color,
     expectedContentColor: @Composable () -> Color,
-    content: @Composable () -> Color = { FilledButton(status) }
+    content: @Composable () -> Color = { filledButton(status) },
 ) {
     verifyColors(
         status = status,
@@ -1224,29 +1416,21 @@ private fun ComposeContentTestRule.verifyButtonColors(
         applyAlphaForDisabled = false,
         content = {
             return@verifyColors content()
-        }
+        },
     )
 }
 
 @Composable
-private fun FilledButton(
-    status: Status,
-): Color {
+private fun filledButton(status: Status): Color {
     var actualContentColor = Color.Transparent
-    Button(
-        onClick = {},
-        enabled = status.enabled(),
-        modifier = Modifier.testTag(TEST_TAG),
-    ) {
+    Button(onClick = {}, enabled = status.enabled(), modifier = Modifier.testTag(TEST_TAG)) {
         actualContentColor = LocalContentColor.current
     }
     return actualContentColor
 }
 
 @Composable
-private fun FilledTonalButton(
-    status: Status,
-): Color {
+private fun filledTonalButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     FilledTonalButton(
         onClick = {},
@@ -1259,9 +1443,7 @@ private fun FilledTonalButton(
 }
 
 @Composable
-private fun FilledVariantButton(
-    status: Status,
-): Color {
+private fun filledVariantButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     Button(
         onClick = {},
@@ -1275,7 +1457,7 @@ private fun FilledVariantButton(
 }
 
 @Composable
-private fun OutlinedButton(status: Status): Color {
+private fun outlinedButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     OutlinedButton(
         onClick = {},
@@ -1288,10 +1470,25 @@ private fun OutlinedButton(status: Status): Color {
 }
 
 @Composable
-private fun ChildButton(status: Status): Color {
+private fun childButton(status: Status): Color {
     var actualContentColor = Color.Transparent
-    ChildButton(
+    ChildButton(onClick = {}, enabled = status.enabled(), modifier = Modifier.testTag(TEST_TAG)) {
+        actualContentColor = LocalContentColor.current
+    }
+    return actualContentColor
+}
+
+@Composable
+private fun imageButton(
+    status: Status,
+    containerPainter: Painter,
+    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
+): Color {
+    var actualContentColor = Color.Transparent
+    Button(
         onClick = {},
+        containerPainter = containerPainter,
+        disabledContainerPainter = disabledContainerPainter,
         enabled = status.enabled(),
         modifier = Modifier.testTag(TEST_TAG),
     ) {
@@ -1304,7 +1501,7 @@ private fun ChildButton(status: Status): Color {
 private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
     status: Status,
     expectedColor: @Composable () -> ButtonColors,
-    content: @Composable () -> ThreeSlotButtonColors
+    content: @Composable () -> ThreeSlotButtonColors,
 ) {
     val testBackgroundColor = Color.White
     var containerColor = Color.Transparent
@@ -1316,9 +1513,7 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
     setContentWithTheme {
         val buttonColors = expectedColor()
         containerColor =
-            ((buttonColors.containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
-                testBackgroundColor
-            )
+            (buttonColors.containerColor(status.enabled())).compositeOver(testBackgroundColor)
         labelColor = buttonColors.contentColor(status.enabled())
         secondaryLabelColor = buttonColors.secondaryContentColor(status.enabled())
         iconColor = buttonColors.iconColor(status.enabled())
@@ -1335,12 +1530,12 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
     onNodeWithTag(TEST_TAG)
         .captureToImage()
         .assertContainsColor(
-            if (containerColor != Color.Transparent) containerColor else testBackgroundColor,
+            if (containerColor != Color.Transparent) containerColor else testBackgroundColor
         )
 }
 
 @Composable
-private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotFilledButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1350,13 +1545,13 @@ private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {
         modifier = Modifier.testTag(TEST_TAG),
         label = { actualLabelColor = LocalContentColor.current },
         secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
-        icon = { actualIconColor = LocalContentColor.current }
+        icon = { actualIconColor = LocalContentColor.current },
     )
     return ThreeSlotButtonColors(actualLabelColor, actualSecondaryLabelColor, actualIconColor)
 }
 
 @Composable
-private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1366,13 +1561,13 @@ private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
         modifier = Modifier.testTag(TEST_TAG),
         label = { actualLabelColor = LocalContentColor.current },
         secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
-        icon = { actualIconColor = LocalContentColor.current }
+        icon = { actualIconColor = LocalContentColor.current },
     )
     return ThreeSlotButtonColors(actualLabelColor, actualSecondaryLabelColor, actualIconColor)
 }
 
 @Composable
-private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1382,13 +1577,13 @@ private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
         modifier = Modifier.testTag(TEST_TAG),
         label = { actualLabelColor = LocalContentColor.current },
         secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
-        icon = { actualIconColor = LocalContentColor.current }
+        icon = { actualIconColor = LocalContentColor.current },
     )
     return ThreeSlotButtonColors(actualLabelColor, actualSecondaryLabelColor, actualIconColor)
 }
 
 @Composable
-private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotChildButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1398,7 +1593,7 @@ private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {
         modifier = Modifier.testTag(TEST_TAG),
         label = { actualLabelColor = LocalContentColor.current },
         secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
-        icon = { actualIconColor = LocalContentColor.current }
+        icon = { actualIconColor = LocalContentColor.current },
     )
     return ThreeSlotButtonColors(actualLabelColor, actualSecondaryLabelColor, actualIconColor)
 }
@@ -1406,7 +1601,7 @@ private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun ComposeContentTestRule.verifyButtonBorderColor(
     expectedBorderColor: @Composable () -> Color,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable (Modifier) -> Unit,
 ) {
     val testBackground = Color.Black
     var finalExpectedBorderColor = Color.Transparent
@@ -1425,7 +1620,7 @@ internal fun ComposeContentTestRule.verifyButtonBorderColor(
 private fun ComposeContentTestRule.isShape(
     expectedShape: Shape,
     colors: @Composable () -> ButtonColors,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable (Modifier) -> Unit,
 ) {
     var background = Color.Transparent
     var buttonColor = Color.Transparent
@@ -1434,7 +1629,7 @@ private fun ComposeContentTestRule.isShape(
     setContentWithTheme {
         background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
-            buttonColor = (colors().containerPainter(true) as ColorPainter).color
+            buttonColor = colors().containerColor(true)
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }
@@ -1450,7 +1645,7 @@ private fun ComposeContentTestRule.isShape(
             verticalPadding = 0.dp,
             shapeColor = buttonColor,
             backgroundColor = background,
-            shapeOverlapPixelCount = 2.0f,
+            antiAliasingGap = 2.0f,
             shape = expectedShape,
         )
 }
@@ -1458,7 +1653,7 @@ private fun ComposeContentTestRule.isShape(
 @RequiresApi(Build.VERSION_CODES.O)
 private fun ComposeContentTestRule.verifyCompactButtonColors(
     status: Status,
-    colors: @Composable () -> ButtonColors
+    colors: @Composable () -> ButtonColors,
 ) {
     val testBackgroundColor = Color.White
     var containerColor = Color.Transparent
@@ -1469,9 +1664,7 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
 
     setContentWithTheme {
         containerColor =
-            ((colors().containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
-                testBackgroundColor
-            )
+            (colors().containerColor(status.enabled())).compositeOver(testBackgroundColor)
         labelColor = colors().contentColor(status.enabled())
         iconColor = colors().iconColor(status.enabled())
 
@@ -1482,7 +1675,7 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
                 enabled = status.enabled(),
                 modifier = Modifier.testTag(TEST_TAG),
                 label = { actualLabelColor = LocalContentColor.current },
-                icon = { actualIconColor = LocalContentColor.current }
+                icon = { actualIconColor = LocalContentColor.current },
             )
         }
     }
@@ -1493,8 +1686,17 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
     onNodeWithTag(TEST_TAG)
         .captureToImage()
         .assertContainsColor(
-            if (containerColor != Color.Transparent) containerColor else testBackgroundColor,
+            if (containerColor != Color.Transparent) containerColor else testBackgroundColor
         )
+}
+
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+private fun ComposeContentTestRule.verifyBorderColor(
+    contentBorderColor: Color,
+    backgroundColor: Color,
+) {
+    val expectedColor = contentBorderColor.compositeOver(backgroundColor)
+    onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedColor)
 }
 
 val MinimumButtonTapSize = 48.dp
@@ -1502,5 +1704,5 @@ val MinimumButtonTapSize = 48.dp
 private data class ThreeSlotButtonColors(
     val labelColor: Color,
     val secondaryLabelColor: Color,
-    val iconColor: Color
+    val iconColor: Color,
 )

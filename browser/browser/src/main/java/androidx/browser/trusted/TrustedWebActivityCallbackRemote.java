@@ -21,8 +21,8 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.customtabs.trusted.ITrustedWebActivityCallback;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * TrustedWebActivityCallbackRemote is used by client app to execute callbacks from a binder of
@@ -38,8 +38,7 @@ public class TrustedWebActivityCallbackRemote {
     /**
      * Create a TrustedWebActivityCallbackRemote from a binder.
      */
-    @Nullable
-    static TrustedWebActivityCallbackRemote fromBinder(@Nullable IBinder binder) {
+    static @Nullable TrustedWebActivityCallbackRemote fromBinder(@Nullable IBinder binder) {
         ITrustedWebActivityCallback callbackBinder = binder == null ? null :
                 ITrustedWebActivityCallback.Stub.asInterface(binder);
         if (callbackBinder == null) {

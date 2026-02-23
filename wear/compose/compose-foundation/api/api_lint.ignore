@@ -7,3 +7,7 @@ GetterSetterNames: androidx.wear.compose.foundation.lazy.ScalingLazyListState#ge
     Getter for boolean property `canScrollBackward` is named `getCanScrollBackward` but should match the property name. Use `@get:JvmName` to rename.
 GetterSetterNames: androidx.wear.compose.foundation.lazy.ScalingLazyListState#getCanScrollForward():
     Getter for boolean property `canScrollForward` is named `getCanScrollForward` but should match the property name. Use `@get:JvmName` to rename.
+GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollBackward():
+    Getter for boolean property `canScrollBackward` is named `getCanScrollBackward` but should match the property name. Use `@get:JvmName` to rename.
+GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollForward():
+    Getter for boolean property `canScrollForward` is named `getCanScrollForward` but should match the property name. Use `@get:JvmName` to rename.

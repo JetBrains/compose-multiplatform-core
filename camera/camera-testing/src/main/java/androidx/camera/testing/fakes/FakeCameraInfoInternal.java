@@ -17,8 +17,11 @@
 package androidx.camera.testing.fakes;
 
 import static androidx.camera.core.DynamicRange.SDR;
+import static androidx.camera.core.internal.StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
+import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.MAX_OUTPUT_SIZE;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.util.Range;
@@ -27,17 +30,19 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
+import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.Logger;
 import androidx.camera.core.TorchState;
+import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.CameraCaptureCallback;
+import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.EncoderProfilesProvider;
@@ -47,10 +52,15 @@ import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.Timebase;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.camera.core.internal.ImmutableZoomState;
+import androidx.camera.core.internal.StreamSpecsCalculator;
+import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.test.core.app.ApplicationProvider;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +77,9 @@ import java.util.concurrent.Executor;
  *
  * <p>This camera info can be constructed with fake values.
  */
+@SuppressWarnings("HiddenSuperclass")
 public final class FakeCameraInfoInternal implements CameraInfoInternal {
+    private static final String TAG = "FakeCameraInfoInternal";
     private static final Set<Range<Integer>> FAKE_FPS_RANGES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
                     new Range<>(12, 30),
@@ -83,10 +95,12 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private final MutableLiveData<Integer> mTorchState = new MutableLiveData<>(TorchState.OFF);
     private final MutableLiveData<ZoomState> mZoomLiveData;
     private final Map<Integer, List<Size>> mSupportedResolutionMap = new HashMap<>();
+    private final Map<Range<Integer>, List<Size>> mSupportedHighSpeedFpsToSizeMap = new HashMap<>();
     private final Map<Integer, List<Size>> mSupportedHighResolutionMap = new HashMap<>();
     private MutableLiveData<CameraState> mCameraStateMutableLiveData;
 
     private final Set<DynamicRange> mSupportedDynamicRanges = new HashSet<>(DEFAULT_DYNAMIC_RANGES);
+    private final Set<Integer> mAvailableCapabilities = new HashSet<>();
     private String mImplementationType = IMPLEMENTATION_TYPE_FAKE;
 
     // Leave uninitialized to support camera-core:1.0.0 dependencies.
@@ -98,18 +112,36 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private float mIntrinsicZoomRatio = 1.0F;
 
     private boolean mIsFocusMeteringSupported = false;
+    private boolean mIsHighSpeedSupported = false;
+    private boolean mIsPreviewStabilizationSupported = false;
+    private boolean mIsVideoStabilizationSupported = false;
 
     private ExposureState mExposureState = new FakeExposureState();
-    @NonNull
-    private final List<Quirk> mCameraQuirks = new ArrayList<>();
+    private final @NonNull List<Quirk> mCameraQuirks = new ArrayList<>();
 
     private Timebase mTimebase = Timebase.UPTIME;
 
-    @Nullable
-    private CameraManager mCameraManager;
+    private @Nullable CameraManager mCameraManager;
+
+    private final @NonNull StreamSpecsCalculator mStreamSpecsCalculator;
+
+    private @Nullable CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
 
     public FakeCameraInfoInternal() {
         this(/*sensorRotation=*/ 0, /*lensFacing=*/ CameraSelector.LENS_FACING_BACK);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public FakeCameraInfoInternal(@NonNull StreamSpecsCalculator streamSpecsCalculator) {
+        this(/*cameraId=*/ "0", /*sensorRotation=*/ 0, CameraSelector.LENS_FACING_BACK,
+                ApplicationProvider.getApplicationContext(), streamSpecsCalculator);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public FakeCameraInfoInternal(@NonNull String cameraId,
+            @NonNull StreamSpecsCalculator streamSpecsCalculator) {
+        this(cameraId, /*sensorRotation=*/ 0, CameraSelector.LENS_FACING_BACK,
+                ApplicationProvider.getApplicationContext(), streamSpecsCalculator);
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -144,11 +176,19 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     public FakeCameraInfoInternal(@NonNull String cameraId, int sensorRotation,
             @CameraSelector.LensFacing int lensFacing,
             @NonNull Context context) {
+        this(cameraId, sensorRotation, lensFacing, context, NO_OP_STREAM_SPECS_CALCULATOR);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public FakeCameraInfoInternal(@NonNull String cameraId, int sensorRotation,
+            @CameraSelector.LensFacing int lensFacing,
+            @NonNull Context context, @NonNull StreamSpecsCalculator streamSpecsCalculator) {
         mCameraId = cameraId;
         mSensorRotation = sensorRotation;
         mLensFacing = lensFacing;
         mZoomLiveData = new MutableLiveData<>(ImmutableZoomState.create(1.0f, 4.0f, 1.0f, 0.0f));
         mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        mStreamSpecsCalculator = streamSpecsCalculator;
     }
 
     /**
@@ -182,14 +222,29 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         mIsFocusMeteringSupported = supported;
     }
 
+    /**
+     * Sets the return value for {@link #isPreviewStabilizationSupported()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setIsPreviewStabilizationSupported(boolean supported) {
+        mIsPreviewStabilizationSupported = supported;
+    }
+
+    /**
+     * Sets the return value for {@link #isVideoStabilizationSupported()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setVideoStabilizationSupported(boolean supported) {
+        mIsVideoStabilizationSupported = supported;
+    }
+
     @Override
     public int getLensFacing() {
         return mLensFacing;
     }
 
-    @NonNull
     @Override
-    public String getCameraId() {
+    public @NonNull String getCameraId() {
         return mCameraId;
     }
 
@@ -219,21 +274,18 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         return true;
     }
 
-    @NonNull
     @Override
-    public LiveData<Integer> getTorchState() {
+    public @NonNull LiveData<Integer> getTorchState() {
         return mTorchState;
     }
 
-    @NonNull
     @Override
-    public LiveData<ZoomState> getZoomState() {
+    public @NonNull LiveData<ZoomState> getZoomState() {
         return mZoomLiveData;
     }
 
-    @NonNull
     @Override
-    public ExposureState getExposureState() {
+    public @NonNull ExposureState getExposureState() {
         return mExposureState;
     }
 
@@ -245,56 +297,104 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         return mCameraStateMutableLiveData;
     }
 
-    @NonNull
     @Override
-    public LiveData<CameraState> getCameraState() {
+    public @NonNull LiveData<CameraState> getCameraState() {
         return getCameraStateMutableLiveData();
     }
 
-    @NonNull
     @Override
-    public String getImplementationType() {
+    public @NonNull String getImplementationType() {
         return mImplementationType;
     }
 
-    @NonNull
     @Override
-    public EncoderProfilesProvider getEncoderProfilesProvider() {
+    public @NonNull EncoderProfilesProvider getEncoderProfilesProvider() {
         return mEncoderProfilesProvider == null ? EncoderProfilesProvider.EMPTY :
                 mEncoderProfilesProvider;
     }
 
-    @NonNull
     @Override
-    public Timebase getTimebase() {
+    public @NonNull Timebase getTimebase() {
         return mTimebase;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public @NonNull Set<Integer> getSupportedOutputFormats() {
+        return mSupportedResolutionMap.keySet();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedResolutions(int format) {
+        List<Size> resolutions = mSupportedResolutionMap.get(format);
+        return resolutions != null ? resolutions : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighResolutions(int format) {
+        List<Size> resolutions = mSupportedHighResolutionMap.get(format);
+        return resolutions != null ? resolutions : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
+        return mSupportedDynamicRanges;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public boolean isHighSpeedSupported() {
+        return mIsHighSpeedSupported;
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @NonNull
     @Override
-    public Set<Integer> getSupportedOutputFormats() {
-        return mSupportedResolutionMap.keySet();
+    public Set<Range<Integer>> getSupportedHighSpeedFrameRateRanges() {
+        return mSupportedHighSpeedFpsToSizeMap.keySet();
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @NonNull
     @Override
-    public List<Size> getSupportedResolutions(int format) {
-        List<Size> resolutions = mSupportedResolutionMap.get(format);
+    public Set<Range<Integer>> getSupportedHighSpeedFrameRateRangesFor(@NonNull Size size) {
+        Set<Range<Integer>> ranges = new HashSet<>();
+        for (Map.Entry<Range<Integer>, List<Size>> entry :
+                mSupportedHighSpeedFpsToSizeMap.entrySet()) {
+            if (entry.getValue().contains(size)) {
+                ranges.add(entry.getKey());
+            }
+        }
+        return ranges;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @NonNull
+    @Override
+    public List<Size> getSupportedHighSpeedResolutions() {
+        Set<Size> resolutions = new HashSet<>();
+        for (List<Size> sizes : mSupportedHighSpeedFpsToSizeMap.values()) {
+            resolutions.addAll(sizes);
+        }
+        return new ArrayList<>(resolutions);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @NonNull
+    @Override
+    public List<Size> getSupportedHighSpeedResolutionsFor(@NonNull Range<Integer> fpsRange) {
+        List<Size> resolutions = mSupportedHighSpeedFpsToSizeMap.get(fpsRange);
         return resolutions != null ? resolutions : Collections.emptyList();
     }
 
-    @NonNull
+    /**
+     * Returns a {@link Rect} corresponding to
+     * {@link FakeCameraDeviceSurfaceManager#MAX_OUTPUT_SIZE}.
+     */
     @Override
-    public List<Size> getSupportedHighResolutions(int format) {
-        List<Size> resolutions = mSupportedHighResolutionMap.get(format);
-        return resolutions != null ? resolutions : Collections.emptyList();
-    }
-
-    @NonNull
-    @Override
-    public Set<DynamicRange> getSupportedDynamicRanges() {
-        return mSupportedDynamicRanges;
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull Rect getSensorRect() {
+        return new Rect(0, 0, MAX_OUTPUT_SIZE.getWidth(), MAX_OUTPUT_SIZE.getHeight());
     }
 
     /**
@@ -312,9 +412,8 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
      *
      * @see androidx.camera.core.CameraInfo#querySupportedDynamicRanges(Set)
      */
-    @NonNull
     @Override
-    public Set<DynamicRange> querySupportedDynamicRanges(
+    public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
             @NonNull Set<DynamicRange> candidateDynamicRanges) {
         return DynamicRanges.findAllPossibleMatches(
                 candidateDynamicRanges, getSupportedDynamicRanges());
@@ -331,15 +430,13 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
-    @NonNull
     @Override
-    public Quirks getCameraQuirks() {
+    public @NonNull Quirks getCameraQuirks() {
         return new Quirks(mCameraQuirks);
     }
 
-    @NonNull
     @Override
-    public Set<Range<Integer>> getSupportedFrameRateRanges() {
+    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
         return FAKE_FPS_RANGES;
     }
 
@@ -367,17 +464,17 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     @Override
     public boolean isPreviewStabilizationSupported() {
-        return false;
+        return mIsPreviewStabilizationSupported;
     }
 
     @Override
     public boolean isVideoStabilizationSupported() {
-        return false;
+        return mIsVideoStabilizationSupported;
     }
 
     /** Adds a quirk to the list of this camera's quirks. */
     @SuppressWarnings("unused")
-    public void addCameraQuirk(@NonNull final Quirk quirk) {
+    public void addCameraQuirk(final @NonNull Quirk quirk) {
         mCameraQuirks.add(quirk);
     }
 
@@ -395,7 +492,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     /**
      * Set the implementation type for testing
      */
-    public void setImplementationType(@NonNull @ImplementationType String implementationType) {
+    public void setImplementationType(@ImplementationType @NonNull String implementationType) {
         mImplementationType = implementationType;
     }
 
@@ -420,6 +517,19 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         mSupportedHighResolutionMap.put(format, resolutions);
     }
 
+    /** Sets the return value for {@link #isHighSpeedSupported()}}. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setHighSpeedSupported(boolean supported) {
+        mIsHighSpeedSupported = supported;
+    }
+
+    /** Set the supported high speed resolutions for testing */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setSupportedHighSpeedResolutions(@NonNull Range<Integer> fps,
+            @NonNull List<Size> resolutions) {
+        mSupportedHighSpeedFpsToSizeMap.put(fps, resolutions);
+    }
+
     /** Set the isPrivateReprocessingSupported flag for testing */
     public void setPrivateReprocessingSupported(boolean supported) {
         mIsPrivateReprocessingSupported = supported;
@@ -436,10 +546,9 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         mSupportedDynamicRanges.addAll(dynamicRanges);
     }
 
-    @NonNull
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public Object getCameraCharacteristics() {
+    public @NonNull Object getCameraCharacteristics() {
         try {
             return mCameraManager.getCameraCharacteristics(mCameraId);
         } catch (CameraAccessException e) {
@@ -447,15 +556,61 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         }
     }
 
-    @Nullable
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
+    public @Nullable Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
         try {
             return mCameraManager.getCameraCharacteristics(physicalCameraId);
         } catch (CameraAccessException e) {
             throw new IllegalStateException("can't get CameraCharacteristics", e);
         }
+    }
+
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
+            int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
+        try {
+            StreamSpecsCalculator.Companion.calculateSuggestedStreamSpecsCompat(
+                    mStreamSpecsCalculator,
+                    cameraMode,
+                    this,
+                    useCases,
+                    cameraConfig,
+                    isFeatureComboInvocation
+            );
+        } catch (IllegalArgumentException e) {
+            Logger.d(TAG, "isUseCaseCombinationSupported: calculateSuggestedStreamSpecs failed", e);
+            return false;
+        }
+
+        return true;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public void setCameraUseCaseAdapterProvider(
+            @NonNull CameraUseCaseAdapterProvider cameraUseCaseAdapterProvider) {
+        CameraInfoInternal.super.setCameraUseCaseAdapterProvider(cameraUseCaseAdapterProvider);
+        mCameraUseCaseAdapterProvider = cameraUseCaseAdapterProvider;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @Nullable CameraUseCaseAdapterProvider getCameraUseCaseAdapterProvider() {
+        return mCameraUseCaseAdapterProvider;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public @NonNull Set<@NonNull Integer> getAvailableCapabilities() {
+        return new HashSet<>(mAvailableCapabilities);
+    }
+
+    /** Sets the capabilities available for a camera. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setAvailableCapabilities(@NonNull Set<@NonNull Integer> availableCapabilities) {
+        mAvailableCapabilities.clear();
+        mAvailableCapabilities.addAll(availableCapabilities);
     }
 
     static final class FakeExposureState implements ExposureState {
@@ -479,15 +634,13 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
             return mIndex;
         }
 
-        @NonNull
         @Override
-        public Range<Integer> getExposureCompensationRange() {
+        public @NonNull Range<Integer> getExposureCompensationRange() {
             return mRange;
         }
 
-        @NonNull
         @Override
-        public Rational getExposureCompensationStep() {
+        public @NonNull Rational getExposureCompensationStep() {
             return mStep;
         }
 

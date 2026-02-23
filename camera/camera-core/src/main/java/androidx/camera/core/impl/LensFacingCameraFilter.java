@@ -16,11 +16,12 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +37,8 @@ public class LensFacingCameraFilter implements CameraFilter {
         mLensFacing = lensFacing;
     }
 
-    @NonNull
     @Override
-    public List<CameraInfo> filter(@NonNull List<CameraInfo> cameraInfos) {
+    public @NonNull List<CameraInfo> filter(@NonNull List<CameraInfo> cameraInfos) {
         List<CameraInfo> result = new ArrayList<>();
         for (CameraInfo cameraInfo : cameraInfos) {
             Preconditions.checkArgument(cameraInfo instanceof CameraInfoInternal,

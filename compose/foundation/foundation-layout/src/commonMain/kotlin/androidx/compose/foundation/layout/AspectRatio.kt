@@ -50,11 +50,13 @@ import androidx.compose.ui.util.fastRoundToInt
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleAspectRatio
  * @param ratio the desired width/height positive ratio
+ * @param matchHeightConstraintsFirst if true, height constraints will be matched before width
+ *   constraints and used to calculate the resulting size according to [ratio]
  */
 @Stable
 fun Modifier.aspectRatio(
     @FloatRange(from = 0.0, fromInclusive = false) ratio: Float,
-    matchHeightConstraintsFirst: Boolean = false
+    matchHeightConstraintsFirst: Boolean = false,
 ) =
     this.then(
         AspectRatioElement(
@@ -64,14 +66,14 @@ fun Modifier.aspectRatio(
                 name = "aspectRatio"
                 properties["ratio"] = ratio
                 properties["matchHeightConstraintsFirst"] = matchHeightConstraintsFirst
-            }
+            },
         )
     )
 
 private class AspectRatioElement(
     val aspectRatio: Float,
     val matchHeightConstraintsFirst: Boolean,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<AspectRatioNode>() {
     init {
         requirePrecondition(aspectRatio > 0) { "aspectRatio $aspectRatio must be > 0" }
@@ -101,13 +103,11 @@ private class AspectRatioElement(
         aspectRatio.hashCode() * 31 + matchHeightConstraintsFirst.hashCode()
 }
 
-private class AspectRatioNode(
-    var aspectRatio: Float,
-    var matchHeightConstraintsFirst: Boolean,
-) : LayoutModifierNode, Modifier.Node() {
+private class AspectRatioNode(var aspectRatio: Float, var matchHeightConstraintsFirst: Boolean) :
+    LayoutModifierNode, Modifier.Node() {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = constraints.findSize()
         val wrappedConstraints =
@@ -122,7 +122,7 @@ private class AspectRatioNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) =
         if (height != Constraints.Infinity) {
             (height * aspectRatio).fastRoundToInt()
@@ -132,7 +132,7 @@ private class AspectRatioNode(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) =
         if (height != Constraints.Infinity) {
             (height * aspectRatio).fastRoundToInt()
@@ -142,7 +142,7 @@ private class AspectRatioNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) =
         if (width != Constraints.Infinity) {
             (width / aspectRatio).fastRoundToInt()
@@ -152,7 +152,7 @@ private class AspectRatioNode(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) =
         if (width != Constraints.Infinity) {
             (width / aspectRatio).fastRoundToInt()

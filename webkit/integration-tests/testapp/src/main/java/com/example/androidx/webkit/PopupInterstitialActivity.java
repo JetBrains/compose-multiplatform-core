@@ -25,10 +25,11 @@ import android.webkit.WebViewClient;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.text.HtmlCompat;
 import androidx.webkit.WebViewCompat;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to demonstrate one way to implement a custom Safe Browsing interstitial. This
@@ -51,6 +52,7 @@ public class PopupInterstitialActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_popup_interstitial);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.custom_interstitial_title);
 
         Intent intent = getIntent();

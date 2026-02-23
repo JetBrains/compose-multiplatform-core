@@ -15,42 +15,37 @@
  */
 package androidx.pdf.viewer
 
-import android.content.Context
-import android.os.Build
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.pdf.ActivityUtils
 import androidx.pdf.R
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /** Tests for [LoadingView]. */
-@SmallTest
 @RunWith(RobolectricTestRunner::class)
-
-// TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LoadingViewTest {
     private lateinit var loadingView: LoadingView
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        loadingView = LoadingView(context)
+        loadingView = LoadingView(ActivityUtils.getThemedActivity())
     }
 
+    @Ignore // b/376314114
     @Test
     fun testLoadingView_isNotNull() {
         Assert.assertNotNull(loadingView)
     }
 
+    @Ignore // b/376314114
     @Test
     fun showLoadingView_showsLoadingSpinner() {
         val progressBar = loadingView.findViewById<ProgressBar>(R.id.loadingProgressBar)
@@ -62,6 +57,7 @@ class LoadingViewTest {
         Assert.assertEquals(View.GONE.toLong(), errorMessage.visibility.toLong())
     }
 
+    @Ignore // b/376314114
     @Test
     fun showErrorView_showsErrorMessage() {
         val dummyErrorMessage = "testing error"

@@ -22,9 +22,10 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.service.quicksettings.TileService;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A helper for accessing {@link TileService} API methods.

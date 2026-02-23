@@ -16,19 +16,18 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * Thrown when the [RegistryManager.registerCredentials] transaction fails with no more detailed
  * information.
  *
  * @param errorMessage the error message
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RegisterCredentialsUnknownException(errorMessage: CharSequence? = null) :
+public class RegisterCredentialsUnknownException
+@JvmOverloads
+constructor(errorMessage: CharSequence? = null) :
     RegisterCredentialsException(
         type = TYPE_REGISTER_CREDENTIALS_UNKNOWN_EXCEPTION,
-        errorMessage = errorMessage
+        errorMessage = errorMessage,
     ) {
     private companion object {
         const val TYPE_REGISTER_CREDENTIALS_UNKNOWN_EXCEPTION =

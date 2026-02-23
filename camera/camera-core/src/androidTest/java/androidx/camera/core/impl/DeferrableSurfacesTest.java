@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verify;
 
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -32,11 +31,11 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +51,6 @@ import java.util.concurrent.TimeoutException;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public class DeferrableSurfacesTest {
 
     private ScheduledExecutorService mScheduledExecutorService;
@@ -104,9 +102,8 @@ public class DeferrableSurfacesTest {
     public void surfaceListWithTimeout_cancelReturnedFutureWontCancelDeferrableSurfaces() {
         DeferrableSurface deferrableSurface = new DeferrableSurface() {
             private final ListenableFuture<Surface> mSurfaceFuture = ResolvableFuture.create();
-            @NonNull
             @Override
-            protected ListenableFuture<Surface> provideSurface() {
+            protected @NonNull ListenableFuture<Surface> provideSurface() {
                 // Return a never complete future.
                 return mSurfaceFuture;
             }
@@ -191,8 +188,7 @@ public class DeferrableSurfacesTest {
     /**
      * Return a {@link ListenableFuture} which will never complete.
      */
-    @NonNull
-    private ListenableFuture<Surface> getFakeProcessingListenableFuture() {
+    private @NonNull ListenableFuture<Surface> getFakeProcessingListenableFuture() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             // Only keep the completer instance to avoid the garbage collection and not set the
             // completer to keep the ListenableFuture unfinished.
@@ -201,12 +197,10 @@ public class DeferrableSurfacesTest {
         });
     }
 
-    @NonNull
-    private DeferrableSurface getFakeDeferrableSurface() {
+    private @NonNull DeferrableSurface getFakeDeferrableSurface() {
         DeferrableSurface surface = new DeferrableSurface() {
             @Override
-            @NonNull
-            public ListenableFuture<Surface> provideSurface() {
+            public @NonNull ListenableFuture<Surface> provideSurface() {
                 return getFakeProcessingListenableFuture();
             }
         };

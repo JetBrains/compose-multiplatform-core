@@ -24,10 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.AppCard
@@ -48,27 +48,24 @@ fun GuideLines() {
                 drawLine(
                     Color.Magenta,
                     Offset(0f, (size.height / 10f) * i),
-                    Offset(size.width - 1, (size.height / 10f) * i)
+                    Offset(size.width - 1, (size.height / 10f) * i),
                 )
             }
-        }
+        },
     )
 }
 
 @Composable
 fun ScalingLazyColumnDetail() {
     val state = rememberScalingLazyListState()
-    val applicationContext = LocalContext.current
     val screenHeightPx =
-        with(LocalDensity.current) {
-            Dp(applicationContext.resources.configuration.screenHeightDp.toFloat()).roundToPx()
-        }
+        with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.roundToPx() }
     val halfScreenHeightPx = screenHeightPx / 2f
     ScalingLazyColumn(modifier = Modifier.fillMaxWidth(), state = state) {
         item {
             Text(
                 text = "Screen height: ${screenHeightPx}px",
-                style = MaterialTheme.typography.caption1
+                style = MaterialTheme.typography.caption1,
             )
         }
         items(20, key = { ix -> ix }) { ix ->
@@ -91,9 +88,9 @@ fun ScalingLazyColumnDetail() {
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         text = description,
-                        style = MaterialTheme.typography.caption3
+                        style = MaterialTheme.typography.caption3,
                     )
-                }
+                },
             )
         }
     }
@@ -111,7 +108,7 @@ fun ScalingLazyColumnMixedTypes() {
                 secondaryLabel = "Defaults",
                 colors = ChipDefaults.secondaryChipColors(),
             ) {
-                DemoImage(resourceId = R.drawable.ic_maps_icon)
+                DemoImage(resourceId = R.drawable.icon_maps_icon)
             }
         }
         item {
@@ -120,8 +117,8 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
-                        size = CardDefaults.AppImageSize
+                        resourceId = R.drawable.icon_maps_icon,
+                        size = CardDefaults.AppImageSize,
                     )
                 },
                 title = { Text("AppCard") },
@@ -140,7 +137,7 @@ fun ScalingLazyColumnMixedTypes() {
                 secondaryLabel = "Defaults",
                 colors = ChipDefaults.secondaryChipColors(),
             ) {
-                DemoImage(resourceId = R.drawable.ic_maps_icon)
+                DemoImage(resourceId = R.drawable.icon_maps_icon)
             }
         }
         item { ListHeader { Text("Activity") } }
@@ -150,8 +147,8 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
-                        size = CardDefaults.AppImageSize
+                        resourceId = R.drawable.icon_maps_icon,
+                        size = CardDefaults.AppImageSize,
                     )
                 },
                 title = { Text("AppCard") },
@@ -175,8 +172,8 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
-                        size = CardDefaults.AppImageSize
+                        resourceId = R.drawable.icon_maps_icon,
+                        size = CardDefaults.AppImageSize,
                     )
                 },
                 title = { Text("AppCard") },

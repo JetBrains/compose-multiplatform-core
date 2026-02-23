@@ -16,23 +16,18 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.runtime.remember
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -40,9 +35,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ButtonGroupScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -72,32 +67,29 @@ class ButtonGroupScreenshotTest {
         require(numItems in 1..3)
         rule.setContentWithTheme {
             ScreenConfiguration(SCREEN_SIZE_SMALL) {
-                val interactionSource1 = remember { MutableInteractionSource() }
-                val interactionSource2 = remember { MutableInteractionSource() }
-                val interactionSource3 = remember { MutableInteractionSource() }
                 ButtonGroup(
                     Modifier.testTag(TEST_TAG),
                     spacing = spacing,
-                    expansionWidth = expansionWidth
+                    expansionWidth = expansionWidth,
                 ) {
-                    buttonGroupItem(interactionSource1, minWidth1, weight1) {
-                        Text("A", Modifier.background(Color.Gray))
+                    // Modifiers inverted here to check order doesn't matter
+                    Text("A", Modifier.background(Color.Gray).weight(weight1).minWidth(minWidth1))
+                    if (numItems >= 2) {
+                        Text(
+                            "B",
+                            Modifier.background(Color.Gray).minWidth(minWidth2).weight(weight2),
+                        )
                     }
-                    if (numItems >= 2)
-                        buttonGroupItem(interactionSource2, minWidth2, weight2) {
-                            Text("B", Modifier.background(Color.Gray))
-                        }
-                    if (numItems >= 3)
-                        buttonGroupItem(interactionSource3, minWidth3, weight3) {
-                            Text("C", Modifier.background(Color.Gray))
-                        }
+                    if (numItems >= 3) {
+                        Text(
+                            "C",
+                            Modifier.background(Color.Gray).minWidth(minWidth3).weight(weight3),
+                        )
+                    }
                 }
             }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

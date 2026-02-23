@@ -44,37 +44,17 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault(because = "Doesn't benefit from caching")
 abstract class GenerateTestConfigurationTask : DefaultTask() {
-
+    /** File containing [AppApksModel] with list of App APKs to install */
     @get:InputFile
     @get:Optional
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val appApk: RegularFileProperty
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val appApksModel: RegularFileProperty
 
     /** File existence check to determine whether to run this task. */
     @get:InputFiles
     @get:SkipWhenEmpty
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val androidTestSourceCodeCollection: ConfigurableFileCollection
-
-    /**
-     * Extracted APKs for PrivacySandbox SDKs dependencies. Produced by AGP.
-     *
-     * Should be set only for applications with PrivacySandbox SDKs dependencies.
-     */
-    @get:InputFiles
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val privacySandboxSdkApks: ConfigurableFileCollection
-
-    /**
-     * Extracted splits required for running app with PrivacySandbox SDKs. Produced by AGP.
-     *
-     * Should be set only for applications with PrivacySandbox SDKs dependencies.
-     */
-    @get:InputFiles
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val privacySandboxAppSplits: ConfigurableFileCollection
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
@@ -98,6 +78,8 @@ abstract class GenerateTestConfigurationTask : DefaultTask() {
 
     @get:Input abstract val instrumentationArgs: MapProperty<String, String>
 
+    @get:Input abstract val useOrchestrator: Property<Boolean>
+
     @get:OutputFile abstract val outputXml: RegularFileProperty
 
     /**
@@ -117,25 +99,17 @@ abstract class GenerateTestConfigurationTask : DefaultTask() {
         configurations testing Android Application projects, so that both APKs get installed.
          */
         val configBuilder = ConfigBuilder()
-        configBuilder.configName = outputXml.asFile.get().name
-        if (appApk.isPresent) {
-            val appApkFile = appApk.get().asFile
-            configBuilder.appApkName(appApkFile.name).appApkSha256(sha256(appApkFile))
+        configBuilder.configName(outputXml.asFile.get().name)
+        if (appApksModel.isPresent) {
+            val modelJson = appApksModel.get().asFile.readText()
+            val model = AppApksModel.fromJson(modelJson)
+            configBuilder.appApksModel(model)
         }
-
-        val privacySandboxSdkApksFileNames =
-            privacySandboxSdkApks.asFileTree.map { f -> f.name }.sorted()
-        if (privacySandboxSdkApksFileNames.isNotEmpty()) {
-            configBuilder.enablePrivacySandbox(true)
-            configBuilder.initialSetupApks(privacySandboxSdkApksFileNames)
-        }
-        val privacySandboxSplitsFileNames =
-            privacySandboxAppSplits.asFileTree.map { f -> f.name }.sorted()
-        configBuilder.appSplits(privacySandboxSplitsFileNames)
 
         configBuilder.additionalApkKeys(additionalApkKeys.get())
         val isPresubmit = presubmit.get()
         configBuilder.isPostsubmit(!isPresubmit)
+        configBuilder.useOrchestrator = useOrchestrator.get()
         // This section adds metadata tags that will help filter runners to specific modules.
         if (hasBenchmarkPlugin.get()) {
             configBuilder.isMicrobenchmark(true)
@@ -161,6 +135,9 @@ abstract class GenerateTestConfigurationTask : DefaultTask() {
             }
         } else {
             configBuilder.tag("androidx_unit_tests")
+            if (additionalTags.get().contains("compose")) {
+                configBuilder.tag("compose_tests")
+            }
         }
         additionalTags.get().forEach { configBuilder.tag(it) }
         instrumentationArgs.get().forEach { (key, value) ->

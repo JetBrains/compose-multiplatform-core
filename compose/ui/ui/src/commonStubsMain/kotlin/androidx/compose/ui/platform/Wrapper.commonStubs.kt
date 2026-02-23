@@ -15,12 +15,9 @@
  */
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.CompositionContext
-import androidx.compose.runtime.ReusableComposition
+import androidx.compose.runtime.AbstractApplier
 import androidx.compose.ui.implementedInJetBrainsFork
 import androidx.compose.ui.node.LayoutNode
 
-internal actual fun createSubcomposition(
-    container: LayoutNode,
-    parent: CompositionContext
-): ReusableComposition = implementedInJetBrainsFork()
+internal actual fun createApplier(container: LayoutNode): AbstractApplier<LayoutNode> =
+    implementedInJetBrainsFork()

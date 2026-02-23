@@ -19,6 +19,7 @@ package androidx.compose.foundation.lazy
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastSumBy
 
 /**
  * Contains useful information about the currently displayed layout state of lazy lists like
@@ -85,3 +86,29 @@ interface LazyListLayoutInfo {
     val mainAxisItemSpacing: Int
         get() = 0
 }
+
+internal fun LazyListLayoutInfo.visibleItemsAverageSize(): Int {
+    val visibleItems = visibleItemsInfo
+    if (visibleItems.isEmpty()) return 0
+    val itemsSum = visibleItems.fastSumBy { it.size }
+    return itemsSum / visibleItems.size + mainAxisItemSpacing
+}
+
+internal fun LazyListLayoutInfo.calculateContentSize(): Int {
+    val contentPadding = beforeContentPadding + afterContentPadding
+    if (totalItemsCount == 0) return contentPadding
+
+    val contentSizeWithoutSpacing =
+        (visibleItemsAverageSize() - mainAxisItemSpacing) * totalItemsCount
+    val totalSpacing = (totalItemsCount - 1) * mainAxisItemSpacing
+
+    return contentSizeWithoutSpacing + totalSpacing + contentPadding
+}
+
+internal val LazyListLayoutInfo.singleAxisViewportSize: Int
+    get() =
+        if (orientation == Orientation.Vertical) {
+            viewportSize.height
+        } else {
+            viewportSize.width
+        }

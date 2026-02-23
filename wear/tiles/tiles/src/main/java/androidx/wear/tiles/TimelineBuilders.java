@@ -16,11 +16,12 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.proto.TimelineProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,13 +63,11 @@ public final class TimelineBuilders {
             return mImpl.getEndMillis();
         }
 
-        @NonNull
-        static TimeInterval fromProto(@NonNull TimelineProto.TimeInterval proto) {
+        static @NonNull TimeInterval fromProto(TimelineProto.@NonNull TimeInterval proto) {
             return new TimeInterval(proto);
         }
 
-        @NonNull
-        TimelineProto.TimeInterval toProto() {
+        TimelineProto.@NonNull TimeInterval toProto() {
             return mImpl;
         }
 
@@ -80,22 +79,19 @@ public final class TimelineBuilders {
             public Builder() {}
 
             /** Sets starting point of the time interval, in milliseconds since the Unix epoch. */
-            @NonNull
-            public Builder setStartMillis(long startMillis) {
+            public @NonNull Builder setStartMillis(long startMillis) {
                 mImpl.setStartMillis(startMillis);
                 return this;
             }
 
             /** Sets end point of the time interval, in milliseconds since the Unix epoch. */
-            @NonNull
-            public Builder setEndMillis(long endMillis) {
+            public @NonNull Builder setEndMillis(long endMillis) {
                 mImpl.setEndMillis(endMillis);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TimeInterval build() {
+            public @NonNull TimeInterval build() {
                 return TimeInterval.fromProto(mImpl.build());
             }
         }
@@ -110,8 +106,7 @@ public final class TimelineBuilders {
         }
 
         /** Gets the validity period for this timeline entry. Intended for testing purposes only. */
-        @Nullable
-        public TimeInterval getValidity() {
+        public @Nullable TimeInterval getValidity() {
             if (mImpl.hasValidity()) {
                 return TimeInterval.fromProto(mImpl.getValidity());
             } else {
@@ -120,8 +115,7 @@ public final class TimelineBuilders {
         }
 
         /** Gets the contents of this timeline entry. Intended for testing purposes only. */
-        @Nullable
-        public LayoutElementBuilders.Layout getLayout() {
+        public LayoutElementBuilders.@Nullable Layout getLayout() {
             if (mImpl.hasLayout()) {
                 return LayoutElementBuilders.Layout.fromProto(mImpl.getLayout());
             } else {
@@ -130,23 +124,20 @@ public final class TimelineBuilders {
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static TimelineEntry fromProto(@NonNull TimelineProto.TimelineEntry proto) {
+        public static @NonNull TimelineEntry fromProto(TimelineProto.@NonNull TimelineEntry proto) {
             return new TimelineEntry(proto);
         }
 
         /** Returns the {@link TimelineEntry} object containing the given layout element. */
-        @NonNull
-        public static TimelineEntry fromLayoutElement(
-                @NonNull LayoutElementBuilders.LayoutElement layoutElement) {
+        public static @NonNull TimelineEntry fromLayoutElement(
+                LayoutElementBuilders.@NonNull LayoutElement layoutElement) {
             return new Builder()
                     .setLayout(LayoutElementBuilders.Layout.fromLayoutElement(layoutElement))
                     .build();
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TimelineProto.TimelineEntry toProto() {
+        public TimelineProto.@NonNull TimelineEntry toProto() {
             return mImpl;
         }
 
@@ -158,22 +149,19 @@ public final class TimelineBuilders {
             public Builder() {}
 
             /** Sets the validity period for this timeline entry. */
-            @NonNull
-            public Builder setValidity(@NonNull TimeInterval validity) {
+            public @NonNull Builder setValidity(@NonNull TimeInterval validity) {
                 mImpl.setValidity(validity.toProto());
                 return this;
             }
 
             /** Sets the contents of this timeline entry. */
-            @NonNull
-            public Builder setLayout(@NonNull LayoutElementBuilders.Layout layout) {
+            public @NonNull Builder setLayout(LayoutElementBuilders.@NonNull Layout layout) {
                 mImpl.setLayout(layout.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public TimelineEntry build() {
+            public @NonNull TimelineEntry build() {
                 return TimelineEntry.fromProto(mImpl.build());
             }
         }
@@ -201,8 +189,7 @@ public final class TimelineBuilders {
         }
 
         /** Gets the entries in a timeline. Intended for testing purposes only. */
-        @NonNull
-        public List<TimelineEntry> getTimelineEntries() {
+        public @NonNull List<TimelineEntry> getTimelineEntries() {
             List<TimelineEntry> list = new ArrayList<>();
             for (TimelineProto.TimelineEntry item : mImpl.getTimelineEntriesList()) {
                 list.add(TimelineEntry.fromProto(item));
@@ -211,23 +198,20 @@ public final class TimelineBuilders {
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Timeline fromProto(@NonNull TimelineProto.Timeline proto) {
+        public static @NonNull Timeline fromProto(TimelineProto.@NonNull Timeline proto) {
             return new Timeline(proto);
         }
 
         /** Returns the {@link Timeline} object containing the given layout element. */
-        @NonNull
-        public static Timeline fromLayoutElement(
-                @NonNull LayoutElementBuilders.LayoutElement layoutElement) {
+        public static @NonNull Timeline fromLayoutElement(
+                LayoutElementBuilders.@NonNull LayoutElement layoutElement) {
             return new Builder()
                     .addTimelineEntry(TimelineEntry.fromLayoutElement(layoutElement))
                     .build();
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TimelineProto.Timeline toProto() {
+        public TimelineProto.@NonNull Timeline toProto() {
             return mImpl;
         }
 
@@ -239,15 +223,13 @@ public final class TimelineBuilders {
             public Builder() {}
 
             /** Adds one item to the entries in a timeline. */
-            @NonNull
-            public Builder addTimelineEntry(@NonNull TimelineEntry timelineEntry) {
+            public @NonNull Builder addTimelineEntry(@NonNull TimelineEntry timelineEntry) {
                 mImpl.addTimelineEntries(timelineEntry.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Timeline build() {
+            public @NonNull Timeline build() {
                 return Timeline.fromProto(mImpl.build());
             }
         }

@@ -20,8 +20,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.webkit.WebResourceResponse;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -31,6 +29,8 @@ import androidx.webkit.WebViewAssetLoader.PathHandler;
 import androidx.webkit.WebViewAssetLoader.ResourcesPathHandler;
 import androidx.webkit.internal.AssetHelper;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -147,8 +147,7 @@ public class WebViewAssetLoaderTest {
 
         AssetHelper mockAssetHelper = new AssetHelper(ApplicationProvider.getApplicationContext()) {
             @Override
-            @NonNull
-            public InputStream openAsset(String path) throws IOException {
+            public @NonNull InputStream openAsset(String path) throws IOException {
                 if (path.equals("www/test.html")) {
                     return new ByteArrayInputStream(testHtmlContents.getBytes(ENCODING));
                 }
@@ -172,8 +171,7 @@ public class WebViewAssetLoaderTest {
 
         AssetHelper mockAssetHelper = new AssetHelper(ApplicationProvider.getApplicationContext()) {
             @Override
-            @NonNull
-            public InputStream openResource(String path) throws IOException {
+            public @NonNull InputStream openResource(String path) throws IOException {
                 if (path.equals("raw/test.html")) {
                     return new ByteArrayInputStream(testHtmlContents.getBytes(ENCODING));
                 }
@@ -404,14 +402,12 @@ public class WebViewAssetLoaderTest {
 
         AssetHelper mockAssetHelper = new AssetHelper(ApplicationProvider.getApplicationContext()) {
             @Override
-            @NonNull
-            public InputStream openAsset(String path) throws IOException {
+            public @NonNull InputStream openAsset(String path) throws IOException {
                 return new ByteArrayInputStream(testHtmlContents.getBytes(ENCODING));
             }
 
             @Override
-            @NonNull
-            public InputStream openResource(String path) throws IOException {
+            public @NonNull InputStream openResource(String path) throws IOException {
                 return new ByteArrayInputStream(testHtmlContents.getBytes(ENCODING));
             }
         };

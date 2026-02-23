@@ -41,13 +41,14 @@ import android.widget.TextView;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.wear.R;
 import androidx.wear.activity.ConfirmationActivity;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -152,9 +153,8 @@ public class ConfirmationOverlay {
      * @return {@code this} object for method chaining.
      * @deprecated Use {@link #setMessage(CharSequence)} instead.
      */
-    @NonNull
     @Deprecated
-    public ConfirmationOverlay setMessage(@NonNull String message) {
+    public @NonNull ConfirmationOverlay setMessage(@NonNull String message) {
         mMessage = message;
         return this;
     }
@@ -164,8 +164,7 @@ public class ConfirmationOverlay {
      *
      * @return {@code this} object for method chaining.
      */
-    @NonNull
-    public ConfirmationOverlay setMessage(@NonNull CharSequence message) {
+    public @NonNull ConfirmationOverlay setMessage(@NonNull CharSequence message) {
         mMessage = message;
         return this;
     }
@@ -175,8 +174,7 @@ public class ConfirmationOverlay {
      *
      * @return {@code this} object for method chaining.
      */
-    @NonNull
-    public ConfirmationOverlay setType(@OverlayType int type) {
+    public @NonNull ConfirmationOverlay setType(@OverlayType int type) {
         mType = type;
         return this;
     }
@@ -187,8 +185,7 @@ public class ConfirmationOverlay {
      *
      * @return {@code this} object for method chaining.
      */
-    @NonNull
-    public ConfirmationOverlay setDuration(int millis) {
+    public @NonNull ConfirmationOverlay setDuration(int millis) {
         mDurationMillis = millis;
         return this;
     }
@@ -201,9 +198,8 @@ public class ConfirmationOverlay {
      * @deprecated Use
      * {@link #setOnAnimationFinishedListener(OnAnimationFinishedListener)} instead.
      */
-    @NonNull
     @Deprecated
-    public ConfirmationOverlay setFinishedAnimationListener(
+    public @NonNull ConfirmationOverlay setFinishedAnimationListener(
             @Nullable OnAnimationFinishedListener listener) {
         mListener = listener;
         return this;
@@ -215,8 +211,7 @@ public class ConfirmationOverlay {
      *
      * @return {@code this} object for method chaining.
      */
-    @NonNull
-    public ConfirmationOverlay setOnAnimationFinishedListener(
+    public @NonNull ConfirmationOverlay setOnAnimationFinishedListener(
             @Nullable OnAnimationFinishedListener listener) {
         mListener = listener;
         return this;

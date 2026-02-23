@@ -24,7 +24,6 @@ import androidx.pdf.data.Openable
 import androidx.pdf.viewer.loader.PdfLoader
 import androidx.pdf.viewer.loader.WeakPdfLoaderCallbacks
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
-import androidx.test.filters.SmallTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.filterNotNull
@@ -36,6 +35,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
@@ -44,7 +44,6 @@ import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@SmallTest
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 
@@ -58,22 +57,29 @@ class PdfViewerViewModelTest {
         DisplayData(
             Uri.parse("content://test.app.authority/fake-file1.pdf"),
             "FakeFile1",
-            mock(Openable::class.java)
+            mock(Openable::class.java),
         )
     private val displayData2 =
         DisplayData(
             Uri.parse("content://test.app.authority/fake-file2.pdf"),
             "FakeFile2",
-            mock(Openable::class.java)
+            mock(Openable::class.java),
         )
     private val testScope = TestScope(UnconfinedTestDispatcher())
+
+    private lateinit var onDocumentChanged: () -> Unit
+
+    @Before
+    fun setUp() {
+        onDocumentChanged = {}
+    }
 
     @Test
     fun testUpdatePdfLoader_CreatesNewPdfLoader() {
         val viewModel = PdfLoaderViewModel()
-
+        onDocumentChanged = {}
         assertNull(viewModel.pdfLoaderStateFlow.value)
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         assertNotNull(viewModel.pdfLoaderStateFlow.value)
     }
 
@@ -81,11 +87,11 @@ class PdfViewerViewModelTest {
     fun testUpdatePdfLoader_WithSameDisplayData_ReusesExistingPdfLoader() {
         val viewModel = PdfLoaderViewModel()
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val initialLoader = viewModel.pdfLoaderStateFlow.value
         assertNotNull(initialLoader)
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val currentLoader = viewModel.pdfLoaderStateFlow.value
         assertEquals(initialLoader, currentLoader)
     }
@@ -94,11 +100,11 @@ class PdfViewerViewModelTest {
     fun testUpdatePdfLoader_WithNewDisplayData_CreatesNewPdfLoader() {
         val viewModel = PdfLoaderViewModel()
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val initialLoader = viewModel.pdfLoaderStateFlow.value
         assertNotNull(initialLoader)
 
-        viewModel.updatePdfLoader(context, displayData2, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData2, mockCallbacks, onDocumentChanged)
         val currentLoader = viewModel.pdfLoaderStateFlow.value
         assertNotEquals(initialLoader, currentLoader)
     }
@@ -107,11 +113,11 @@ class PdfViewerViewModelTest {
     fun testUpdatePdfLoader_WithSameDisplayData_CallsReloadDocument() {
         val viewModel = PdfLoaderViewModel()
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val pdfLoader = mock(PdfLoader::class.java)
         viewModel.updatePdfLoader(pdfLoader)
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         verify(pdfLoader, times(1)).reloadDocument()
     }
 
@@ -119,11 +125,11 @@ class PdfViewerViewModelTest {
     fun testUpdatePdfLoader_WithSameDisplayData_CallsSetCallbacks() {
         val viewModel = PdfLoaderViewModel()
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val pdfLoader = mock(PdfLoader::class.java)
         viewModel.updatePdfLoader(pdfLoader)
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         verify(pdfLoader, times(1)).callbacks = mockCallbacks
     }
 
@@ -131,11 +137,11 @@ class PdfViewerViewModelTest {
     fun testUpdatePdfLoader_WithNewDisplayData_CleansUpOldLoader() {
         val viewModel = PdfLoaderViewModel()
 
-        viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
         val pdfLoader = mock(PdfLoader::class.java)
         viewModel.updatePdfLoader(pdfLoader)
 
-        viewModel.updatePdfLoader(context, displayData2, mockCallbacks)
+        viewModel.updatePdfLoader(context, displayData2, mockCallbacks, onDocumentChanged)
         verify(pdfLoader, times(1)).disconnect()
         verify(pdfLoader, times(1)).cancelAll()
     }
@@ -154,8 +160,8 @@ class PdfViewerViewModelTest {
                         .collect { emissionCount++ }
                 }
 
-            viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
-            viewModel.updatePdfLoader(context, displayData2, mockCallbacks)
+            viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
+            viewModel.updatePdfLoader(context, displayData2, mockCallbacks, onDocumentChanged)
 
             assertEquals(2, emissionCount)
 
@@ -176,8 +182,8 @@ class PdfViewerViewModelTest {
                         .collect { emissionCount++ }
                 }
 
-            viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
-            viewModel.updatePdfLoader(context, displayData1, mockCallbacks)
+            viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
+            viewModel.updatePdfLoader(context, displayData1, mockCallbacks, onDocumentChanged)
 
             assertEquals(1, emissionCount)
 

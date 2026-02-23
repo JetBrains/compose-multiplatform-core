@@ -22,11 +22,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -232,15 +232,15 @@ public class ButtonTest {
 
     private void assertButton(
             @NonNull Button actualButton,
-            @NonNull androidx.wear.tiles.DimensionBuilders.DpProp expectedSize,
+            androidx.wear.tiles.DimensionBuilders.@NonNull DpProp expectedSize,
             @NonNull ButtonColors expectedButtonColors,
             @Nullable String expectedContentDescription,
             @NonNull String expectedMetadataTag,
             @Nullable String expectedTextContent,
             @Nullable String expectedIconContent,
             @Nullable String expectedImageContent,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         assertButtonIsEqual(
                 actualButton,
                 expectedSize,
@@ -268,15 +268,15 @@ public class ButtonTest {
 
     private void assertButtonIsEqual(
             @NonNull Button actualButton,
-            @NonNull androidx.wear.tiles.DimensionBuilders.DpProp expectedSize,
+            androidx.wear.tiles.DimensionBuilders.@NonNull DpProp expectedSize,
             @NonNull ButtonColors expectedButtonColors,
             @Nullable String expectedContentDescription,
             @NonNull String expectedMetadataTag,
             @Nullable String expectedTextContent,
             @Nullable String expectedIconContent,
             @Nullable String expectedImageContent,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         // Mandatory
         assertThat(actualButton.getMetadataTag()).isEqualTo(expectedMetadataTag);
         assertThat(actualButton.getClickable().toProto()).isEqualTo(CLICKABLE.toProto());
@@ -323,15 +323,15 @@ public class ButtonTest {
 
     private void assertFromLayoutElementButtonIsEqual(
             @NonNull Button button,
-            @NonNull androidx.wear.tiles.DimensionBuilders.DpProp expectedSize,
+            androidx.wear.tiles.DimensionBuilders.@NonNull DpProp expectedSize,
             @NonNull ButtonColors expectedButtonColors,
             @Nullable String expectedContentDescription,
             @NonNull String expectedMetadataTag,
             @Nullable String expectedTextContent,
             @Nullable String expectedIconContent,
             @Nullable String expectedImageContent,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         androidx.wear.tiles.LayoutElementBuilders.Box box =
                 new androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
                         .addContent(button)

@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
 @file:OptIn(ExperimentalStdlibApi::class)
 
 package androidx.lifecycle
 
+import androidx.annotation.EmptySuper
 import androidx.annotation.MainThread
 import androidx.lifecycle.viewmodel.internal.SynchronizedObject
 import androidx.lifecycle.viewmodel.internal.VIEW_MODEL_SCOPE_KEY
@@ -144,9 +146,13 @@ public expect abstract class ViewModel {
      * prevent a memory leak, as the subscriptions might hold a reference to the [ViewModel] even
      * after it is no longer needed.
      *
-     * For specifics about the clearing sequence, refer to the [clear] method.
+     * **Clearing Sequence:**
+     * 1. [Close][AutoCloseable.close] resources added **with** a key via [addCloseable].
+     * 2. [Close][AutoCloseable.close] resources added via `constructor`.
+     * 3. [Close][AutoCloseable.close] resources added **without** a key via [addCloseable].
+     * 4. Invoke the [onCleared] callback.
      */
-    protected open fun onCleared()
+    @EmptySuper protected open fun onCleared()
 
     /**
      * Clears all resources associated with this [ViewModel] and marks it as cleared.

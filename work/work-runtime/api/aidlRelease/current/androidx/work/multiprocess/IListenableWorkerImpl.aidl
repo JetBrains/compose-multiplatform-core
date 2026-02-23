@@ -36,4 +36,5 @@ package androidx.work.multiprocess;
 interface IListenableWorkerImpl {
   oneway void startWork(in byte[] request, androidx.work.multiprocess.IWorkManagerImplCallback callback);
   oneway void interrupt(in byte[] request, androidx.work.multiprocess.IWorkManagerImplCallback callback);
+  oneway void getForegroundInfoAsync(in byte[] request, androidx.work.multiprocess.IWorkManagerImplCallback callback);
 }

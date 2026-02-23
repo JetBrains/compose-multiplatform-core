@@ -22,10 +22,11 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.util.Base64;
 
 import androidx.annotation.ArrayRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -38,6 +39,8 @@ public final class FontRequest {
     private final String mQuery;
     private final List<List<byte[]>> mCertificates;
     private final int mCertificatesArray;
+    private final @Nullable String mSystemFont;
+    private final @Nullable String mVariationSettings;
 
     // Used for key of the cache
     private final String mIdentifier;
@@ -55,12 +58,22 @@ public final class FontRequest {
      */
     public FontRequest(@NonNull String providerAuthority, @NonNull String providerPackage,
             @NonNull String query, @NonNull List<List<byte[]>> certificates) {
+        this(providerAuthority, providerPackage, query, certificates, null, null);
+    }
+
+    @RestrictTo(LIBRARY)
+    public FontRequest(@NonNull String providerAuthority, @NonNull String providerPackage,
+            @NonNull String query, @NonNull List<List<byte[]>> certificates,
+            @Nullable String systemFont, @Nullable String variationSettings) {
         mProviderAuthority = Preconditions.checkNotNull(providerAuthority);
         mProviderPackage = Preconditions.checkNotNull(providerPackage);
         mQuery = Preconditions.checkNotNull(query);
         mCertificates = Preconditions.checkNotNull(certificates);
         mCertificatesArray = 0;
-        mIdentifier = createIdentifier(providerAuthority, providerPackage, query);
+        mSystemFont = systemFont;
+        mVariationSettings = variationSettings;
+        mIdentifier = createIdentifier(providerAuthority, providerPackage, query, systemFont,
+                mVariationSettings);
     }
 
     /**
@@ -82,23 +95,27 @@ public final class FontRequest {
         mCertificates = null;
         Preconditions.checkArgument(certificates != 0);
         mCertificatesArray = certificates;
-        mIdentifier = createIdentifier(providerAuthority, providerPackage, query);
+        mSystemFont = null;
+        mVariationSettings = null;
+        mIdentifier = createIdentifier(providerAuthority, providerPackage, query, null, null);
     }
 
     private String createIdentifier(
             @NonNull String providerAuthority,
             @NonNull String providerPackage,
-            @NonNull String query
+            @NonNull String query,
+            @Nullable String systemFont,
+            @Nullable String variationSettings
     ) {
-        return providerAuthority + "-" + providerPackage + "-" + query;
+        return providerAuthority + "-" + providerPackage + "-" + query + "-" + systemFont + "-"
+                + variationSettings;
     }
 
     /**
      * Returns the selected font provider's authority. This tells the system what font provider
      * it should request the font from.
      */
-    @NonNull
-    public String getProviderAuthority() {
+    public @NonNull String getProviderAuthority() {
         return mProviderAuthority;
     }
 
@@ -106,8 +123,7 @@ public final class FontRequest {
      * Returns the selected font provider's package. This helps the system verify that the provider
      * identified by the given authority is the one requested.
      */
-    @NonNull
-    public String getProviderPackage() {
+    public @NonNull String getProviderPackage() {
         return mProviderPackage;
     }
 
@@ -115,8 +131,7 @@ public final class FontRequest {
      * Returns the query string. Refer to your font provider's documentation on the format of this
      * string.
      */
-    @NonNull
-    public String getQuery() {
+    public @NonNull String getQuery() {
         return mQuery;
     }
 
@@ -127,8 +142,7 @@ public final class FontRequest {
      *
      * @see #getCertificatesArrayResId()
      */
-    @Nullable
-    public List<List<byte[]>> getCertificates() {
+    public @Nullable List<List<byte[]>> getCertificates() {
         return mCertificates;
     }
 
@@ -156,9 +170,18 @@ public final class FontRequest {
     }
 
     @RestrictTo(LIBRARY)
-    @NonNull
-    String getId() {
+    @NonNull String getId() {
         return mIdentifier;
+    }
+
+    @RestrictTo(LIBRARY)
+    public @Nullable String getSystemFont() {
+        return mSystemFont;
+    }
+
+    @RestrictTo(LIBRARY)
+    public @Nullable String getVariationSettings() {
+        return mVariationSettings;
     }
 
     @Override
@@ -168,7 +191,10 @@ public final class FontRequest {
                 + "mProviderAuthority: " + mProviderAuthority
                 + ", mProviderPackage: " + mProviderPackage
                 + ", mQuery: " + mQuery
+                + ", mSystemFont: " + mSystemFont
+                + ", mVariationSettings: " + mVariationSettings
                 + ", mCertificates:");
+
         for (int i = 0; i < mCertificates.size(); i++) {
             builder.append(" [");
             List<byte[]> set = mCertificates.get(i);

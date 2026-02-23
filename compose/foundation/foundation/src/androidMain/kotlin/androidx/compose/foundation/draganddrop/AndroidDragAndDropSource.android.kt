@@ -19,57 +19,77 @@
 
 package androidx.compose.foundation.draganddrop
 
-import android.graphics.Picture
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.PressGestureScopeImpl
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.processDragGesture
+import androidx.compose.foundation.gestures.processTapGesture
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.DrawResult
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.draw
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerType
+import kotlinx.coroutines.coroutineScope
 
 @Immutable
 internal actual object DragAndDropSourceDefaults {
     actual val DefaultStartDetector: DragAndDropStartDetector = {
-        detectTapGestures(onLongPress = { offset -> requestDragAndDropTransfer(offset) })
+        // special signal to indicate to the sending side that it shouldn't intercept and
+        // consume
+        // cancel/up events as we're only require down events
+        val pressScope = PressGestureScopeImpl(this)
+
+        coroutineScope {
+            awaitEachGesture {
+                val initialDown =
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                if (initialDown.type == PointerType.Mouse) {
+                    processDragGesture(
+                        initialDown = initialDown,
+                        shouldAwaitTouchSlop = { true },
+                        orientationLock = null,
+                        onDragStart = { down, _, _ -> requestDragAndDropTransfer(down.position) },
+                        onDrag = { _, _ -> },
+                        onDragCancel = {},
+                        onDragEnd = {},
+                    )
+                } else {
+                    // Process tap gesture internally doesn't use the initial pass in the initial
+                    // suspending code, so we don't need to forward the initialDown on to it.
+                    processTapGesture(
+                        scope = this@coroutineScope,
+                        pressScope = pressScope,
+                        onDoubleTap = null,
+                        onLongPress = { offset -> requestDragAndDropTransfer(offset) },
+                        onPress = {},
+                        onTap = null,
+                    )
+                }
+            }
+        }
     }
 }
 
 internal actual class CacheDrawScopeDragShadowCallback {
-    private var cachedPicture: Picture? = null
+    private var graphicsLayer: GraphicsLayer? = null
 
     actual fun drawDragShadow(drawScope: DrawScope) =
         with(drawScope) {
-            when (val picture = cachedPicture) {
+            when (val layer = graphicsLayer) {
                 null ->
                     throw IllegalArgumentException(
-                        "No cached drag shadow. Check if Modifier.cacheDragShadow(painter) was called."
+                        "No cached drag shadow. Check if the drag source node was rendered first"
                     )
-                else -> drawIntoCanvas { canvas -> canvas.nativeCanvas.drawPicture(picture) }
+                else -> drawLayer(layer)
             }
         }
 
     actual fun cachePicture(scope: CacheDrawScope): DrawResult =
         with(scope) {
-            val picture = Picture()
-            cachedPicture = picture
-            val width = this.size.width.toInt()
-            val height = this.size.height.toInt()
-            onDrawWithContent {
-                val pictureCanvas =
-                    androidx.compose.ui.graphics.Canvas(picture.beginRecording(width, height))
-                draw(
-                    density = this,
-                    layoutDirection = this.layoutDirection,
-                    canvas = pictureCanvas,
-                    size = this.size
-                ) {
-                    this@onDrawWithContent.drawContent()
-                }
-                picture.endRecording()
-
-                drawIntoCanvas { canvas -> canvas.nativeCanvas.drawPicture(picture) }
-            }
+            graphicsLayer = scope.obtainGraphicsLayer().apply { record { drawContent() } }
+            onDrawWithContent { drawLayer(graphicsLayer!!) }
         }
 }

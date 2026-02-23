@@ -20,12 +20,13 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.media.PlaybackGlue;
 import androidx.leanback.widget.DetailsParallax;
 import androidx.leanback.widget.Parallax;
 import androidx.leanback.widget.ParallaxEffect;
 import androidx.leanback.widget.ParallaxTarget;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class responsible for controlling video playback in {@link DetailsFragment}. This

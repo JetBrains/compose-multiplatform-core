@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A callback object for tracking the progress of a capture request submitted to the camera device.

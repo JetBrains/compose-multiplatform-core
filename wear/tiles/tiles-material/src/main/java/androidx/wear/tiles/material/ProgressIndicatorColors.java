@@ -17,7 +17,8 @@
 package androidx.wear.tiles.material;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the indicator and track colors used in a progress indicator Tiles component.
@@ -31,8 +32,8 @@ import androidx.annotation.NonNull;
 @Deprecated
 @SuppressWarnings("deprecation")
 public class ProgressIndicatorColors {
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mIndicatorColor;
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mTrackColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mIndicatorColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mTrackColor;
 
     /**
      * Constructor for {@link ProgressIndicatorColors} object.
@@ -43,8 +44,8 @@ public class ProgressIndicatorColors {
      *     component.
      */
     public ProgressIndicatorColors(
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp indicatorColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp trackColor) {
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp indicatorColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp trackColor) {
         this.mIndicatorColor = indicatorColor;
         this.mTrackColor = trackColor;
     }
@@ -67,20 +68,17 @@ public class ProgressIndicatorColors {
      * indicator color and the current Surface color for the track color from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ProgressIndicatorColors progressIndicatorColors(@NonNull Colors colors) {
+    public static @NonNull ProgressIndicatorColors progressIndicatorColors(@NonNull Colors colors) {
         return new ProgressIndicatorColors(colors.getPrimary(), colors.getSurface());
     }
 
     /** The indicator color to be used for a progress indicator Tiles component. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getIndicatorColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getIndicatorColor() {
         return mIndicatorColor;
     }
 
     /** The background track color to be used for a progress indicator Tiles component. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getTrackColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getTrackColor() {
         return mTrackColor;
     }
 }

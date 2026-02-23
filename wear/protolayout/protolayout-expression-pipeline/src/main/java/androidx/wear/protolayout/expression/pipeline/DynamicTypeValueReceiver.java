@@ -16,7 +16,7 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Callback for an evaluation result. This is intended to support two-step updates; first a

@@ -16,12 +16,13 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.localstorage.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -35,8 +36,7 @@ public final class FutureUtil {
     private FutureUtil() {}
 
     /** Executes the given lambda on the given executor and returns a {@link ListenableFuture}. */
-    @NonNull
-    public static <T> ListenableFuture<T> execute(
+    public static <T> @NonNull ListenableFuture<T> execute(
             @NonNull Executor executor,
             @NonNull Callable<T> callable) {
         Preconditions.checkNotNull(executor);

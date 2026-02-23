@@ -19,7 +19,7 @@ package androidx.preference;
 import android.content.Context;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;

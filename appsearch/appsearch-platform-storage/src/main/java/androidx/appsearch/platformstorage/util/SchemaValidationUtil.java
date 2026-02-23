@@ -16,7 +16,6 @@
 
 package androidx.appsearch.platformstorage.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig;
@@ -26,6 +25,8 @@ import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.appsearch.exceptions.IllegalSchemaException;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 import java.util.Set;

@@ -19,8 +19,9 @@ package androidx.window.extensions.embedding;
 import android.os.Build;
 import android.view.WindowMetrics;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A helper class to access {@link WindowMetrics#toString()} with compatibility.
@@ -28,8 +29,7 @@ import androidx.annotation.RequiresApi;
 class WindowMetricsCompat {
     private WindowMetricsCompat() {}
 
-    @NonNull
-    static String toString(@NonNull WindowMetrics windowMetrics) {
+    static @NonNull String toString(@NonNull WindowMetrics windowMetrics) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // WindowMetrics#toString is implemented in U.
             return windowMetrics.toString();
@@ -42,8 +42,7 @@ class WindowMetricsCompat {
 
     @RequiresApi(30)
     private static final class Api30Impl {
-        @NonNull
-        static String toString(@NonNull WindowMetrics windowMetrics) {
+        static @NonNull String toString(@NonNull WindowMetrics windowMetrics) {
             return WindowMetrics.class.getSimpleName() + ":{"
                     + "bounds=" + windowMetrics.getBounds()
                     + ", windowInsets=" + windowMetrics.getWindowInsets()

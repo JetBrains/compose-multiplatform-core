@@ -28,11 +28,15 @@ import android.health.connect.changelog.ChangeLogsRequest
 import android.os.Build
 import android.os.RemoteException
 import android.os.ext.SdkExtensions
+import androidx.annotation.IntRange
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
+import androidx.annotation.RequiresPermission
 import androidx.annotation.VisibleForTesting
 import androidx.core.os.asOutcomeReceiver
 import androidx.health.connect.client.ExperimentalDeduplicationApi
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectClient.Companion.HEALTH_CONNECT_CLIENT_TAG
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.aggregate.AggregateMetric
@@ -41,14 +45,15 @@ import androidx.health.connect.client.aggregate.AggregationResultGroupedByDurati
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
-import androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi
+import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.feature.HealthConnectFeaturesPlatformImpl
-import androidx.health.connect.client.impl.platform.aggregate.AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10
+import androidx.health.connect.client.feature.withPhrFeatureCheckSuspend
 import androidx.health.connect.client.impl.platform.aggregate.aggregateFallback
-import androidx.health.connect.client.impl.platform.aggregate.platformMetrics
-import androidx.health.connect.client.impl.platform.aggregate.plus
+import androidx.health.connect.client.impl.platform.aggregate.isPlatformSupportedMetric
 import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.impl.platform.records.toPlatformRecordClass
+import androidx.health.connect.client.impl.platform.records.toSdkMedicalDataSource
+import androidx.health.connect.client.impl.platform.records.toSdkMedicalResource
 import androidx.health.connect.client.impl.platform.records.toSdkRecord
 import androidx.health.connect.client.impl.platform.request.toPlatformLocalTimeRangeFilter
 import androidx.health.connect.client.impl.platform.request.toPlatformRequest
@@ -57,18 +62,28 @@ import androidx.health.connect.client.impl.platform.response.toKtResponse
 import androidx.health.connect.client.impl.platform.response.toSdkResponse
 import androidx.health.connect.client.impl.platform.toKtException
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_PREFIX
+import androidx.health.connect.client.records.MedicalDataSource
+import androidx.health.connect.client.records.MedicalResource
+import androidx.health.connect.client.records.MedicalResourceId
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ChangesTokenRequest
+import androidx.health.connect.client.request.CreateMedicalDataSourceRequest
+import androidx.health.connect.client.request.DeleteMedicalResourcesRequest
+import androidx.health.connect.client.request.GetMedicalDataSourcesRequest
+import androidx.health.connect.client.request.ReadMedicalResourcesRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.request.ReadRecordsRequest.Companion.DEDUPLICATION_STRATEGY_DISABLED
+import androidx.health.connect.client.request.UpsertMedicalResourceRequest
 import androidx.health.connect.client.response.ChangesResponse
 import androidx.health.connect.client.response.InsertRecordsResponse
+import androidx.health.connect.client.response.ReadMedicalResourcesResponse
 import androidx.health.connect.client.response.ReadRecordResponse
 import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.platform.client.impl.logger.Logger
 import kotlin.reflect.KClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -76,7 +91,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Implements the [HealthConnectClient] with APIs in UpsideDownCake. */
 @RequiresApi(api = 34)
-@OptIn(ExperimentalFeatureAvailabilityApi::class)
 class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionController {
 
     private val executor = Dispatchers.Default.asExecutor()
@@ -109,7 +123,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.insertRecords(
                     records.map { it.toPlatformRecord() },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -122,7 +136,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.updateRecords(
                     records.map { it.toPlatformRecord() },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -131,7 +145,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
-        clientRecordIdsList: List<String>
+        clientRecordIdsList: List<String>,
     ) {
         wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -144,13 +158,13 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                             add(
                                 RecordIdFilter.fromClientRecordId(
                                     recordType.toPlatformRecordClass(),
-                                    it
+                                    it,
                                 )
                             )
                         }
                     },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -158,7 +172,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
 
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        timeRangeFilter: TimeRangeFilter
+        timeRangeFilter: TimeRangeFilter,
     ) {
         wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -166,7 +180,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     recordType.toPlatformRecordClass(),
                     timeRangeFilter.toPlatformTimeRangeFilter(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -175,7 +189,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     @Suppress("UNCHECKED_CAST") // Safe to cast as the type should match
     override suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T> {
         val response = wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -184,7 +198,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         .addId(recordId)
                         .build(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -207,22 +221,25 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.readRecords(
                     request.toPlatformRequest(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
         return ReadRecordsResponse(
             response.records.map { it.toSdkRecord() as T },
-            pageToken = response.nextPageToken.takeUnless { it == -1L }?.toString()
+            pageToken = response.nextPageToken.takeUnless { it == -1L }?.toString(),
         )
     }
 
     override suspend fun aggregate(request: AggregateRequest): AggregationResult {
-        verifyAggregationMetrics(request.metrics)
+        requireAggregationMetrics(request.metrics)
 
         val fallbackResponse = aggregateFallback(request)
 
-        if (request.platformMetrics.isEmpty()) {
+        val platformSupportedMetrics =
+            request.metrics.filter { it.isPlatformSupportedMetric() }.toSet()
+
+        if (platformSupportedMetrics.isEmpty()) {
             return fallbackResponse
         }
 
@@ -232,11 +249,11 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         healthConnectManager.aggregate(
                             request.toPlatformRequest(),
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
-                .toSdkResponse(request.platformMetrics)
+                .toSdkResponse(platformSupportedMetrics)
 
         return platformResponse + fallbackResponse
     }
@@ -244,69 +261,112 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun aggregateGroupByDuration(
         request: AggregateGroupByDurationRequest
     ): List<AggregationResultGroupedByDuration> {
-        verifyAggregationMetrics(request.metrics)
+        requireAggregationMetrics(request.metrics)
 
-        return wrapPlatformException {
-                suspendCancellableCoroutine { continuation ->
-                    healthConnectManager.aggregateGroupByDuration(
-                        request.toPlatformRequest(),
-                        request.timeRangeSlicer,
-                        executor,
-                        continuation.asOutcomeReceiver()
-                    )
+        val fallbackResponse = aggregateFallback(request)
+
+        val platformSupportedMetrics =
+            request.metrics.filter { it.isPlatformSupportedMetric() }.toSet()
+
+        if (platformSupportedMetrics.isEmpty()) {
+            return fallbackResponse
+        }
+
+        val platformResponse =
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.aggregateGroupByDuration(
+                            request.toPlatformRequest(),
+                            request.timeRangeSlicer,
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
                 }
+                .map { it.toSdkResponse(platformSupportedMetrics) }
+
+        return (fallbackResponse + platformResponse)
+            .groupingBy { it.startTime }
+            .reduce { startTime, accumulator, element ->
+                AggregationResultGroupedByDuration(
+                    result = accumulator.result + element.result,
+                    startTime = startTime,
+                    endTime = accumulator.endTime,
+                    zoneOffset = accumulator.zoneOffset,
+                )
             }
-            .map { it.toSdkResponse(request.metrics) }
+            .values
+            .sortedBy { it.startTime }
     }
 
     override suspend fun aggregateGroupByPeriod(
         request: AggregateGroupByPeriodRequest
     ): List<AggregationResultGroupedByPeriod> {
-        verifyAggregationMetrics(request.metrics)
+        requireAggregationMetrics(request.metrics)
 
-        return wrapPlatformException {
-                suspendCancellableCoroutine { continuation ->
-                    healthConnectManager.aggregateGroupByPeriod(
-                        request.toPlatformRequest(),
-                        request.timeRangeSlicer,
-                        executor,
-                        continuation.asOutcomeReceiver()
-                    )
-                }
-            }
-            .mapIndexed { index, platformResponse ->
-                if (
-                    SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 10 ||
-                        (request.timeRangeSlicer.months == 0 && request.timeRangeSlicer.years == 0)
-                ) {
-                    platformResponse.toSdkResponse(request.metrics)
-                } else {
-                    // Handle bug in the Platform for versions of module before SDK extensions 10
-                    val requestTimeRangeFilter =
-                        request.timeRangeFilter.toPlatformLocalTimeRangeFilter()
-                    val bucketStartTime =
-                        requestTimeRangeFilter.startTime!!.plus(
-                            request.timeRangeSlicer.multipliedBy(index)
+        val fallbackResponse = aggregateFallback(request)
+
+        val platformSupportedMetrics =
+            request.metrics.filter { it.isPlatformSupportedMetric() }.toSet()
+
+        if (platformSupportedMetrics.isEmpty()) {
+            return fallbackResponse
+        }
+
+        val platformResponse =
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.aggregateGroupByPeriod(
+                            request.toPlatformRequest(),
+                            request.timeRangeSlicer,
+                            executor,
+                            continuation.asOutcomeReceiver(),
                         )
-                    val bucketEndTime = bucketStartTime.plus(request.timeRangeSlicer)
-                    platformResponse.toSdkResponse(
-                        metrics = request.metrics,
-                        bucketStartTime = bucketStartTime,
-                        bucketEndTime =
-                            if (requestTimeRangeFilter.endTime!!.isBefore(bucketEndTime)) {
-                                requestTimeRangeFilter.endTime!!
-                            } else {
-                                bucketEndTime
-                            }
-                    )
+                    }
                 }
+                .mapIndexed { index, response ->
+                    if (
+                        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >=
+                            10 ||
+                            (request.timeRangeSlicer.months == 0 &&
+                                request.timeRangeSlicer.years == 0)
+                    ) {
+                        response.toSdkResponse(platformSupportedMetrics)
+                    } else {
+                        // Handle bug in the Platform for versions of mainline module before SDK
+                        // extension 10, where bucket endTime < bucket startTime (b/298290400)
+                        val requestTimeRangeFilter =
+                            request.timeRangeFilter.toPlatformLocalTimeRangeFilter()
+                        val bucketStartTime =
+                            requestTimeRangeFilter.startTime!! +
+                                request.timeRangeSlicer.multipliedBy(index)
+                        response.toSdkResponse(
+                            metrics = platformSupportedMetrics,
+                            bucketStartTime = bucketStartTime,
+                            bucketEndTime =
+                                minOf(
+                                    bucketStartTime + request.timeRangeSlicer,
+                                    requestTimeRangeFilter.endTime!!,
+                                ),
+                        )
+                    }
+                }
+
+        return (fallbackResponse + platformResponse)
+            .groupingBy { it.startTime }
+            .reduce { startTime, accumulator, element ->
+                AggregationResultGroupedByPeriod(
+                    result = accumulator.result + element.result,
+                    startTime = startTime,
+                    endTime = accumulator.endTime,
+                )
             }
+            .values
+            .sortedBy { it.startTime }
     }
 
-    private fun verifyAggregationMetrics(metrics: Set<AggregateMetric<*>>) {
-        AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10.intersect(metrics).firstOrNull()?.let {
-            throw UnsupportedOperationException("Unsupported metric type ${it.metricKey}")
-        }
+    private fun requireAggregationMetrics(metrics: Set<AggregateMetric<*>>) {
+        require(metrics.isNotEmpty()) { "At least one of the aggregation types must be set" }
     }
 
     override suspend fun getChangesToken(request: ChangesTokenRequest): String {
@@ -315,43 +375,26 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     healthConnectManager.getChangeLogToken(
                         request.toPlatformRequest(),
                         executor,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }
             .token
     }
 
+    override suspend fun getChanges(
+        changesToken: String,
+        @IntRange(from = 1, to = 5000) pageSize: Int,
+    ): ChangesResponse {
+        Logger.debug(
+            HEALTH_CONNECT_CLIENT_TAG,
+            "Passing getChanges request with change logs size pageSize = ${pageSize}",
+        )
+        return getChanges(ChangeLogsRequest.Builder(changesToken).setPageSize(pageSize).build())
+    }
+
     override suspend fun getChanges(changesToken: String): ChangesResponse {
-        try {
-            val response = suspendCancellableCoroutine { continuation ->
-                healthConnectManager.getChangeLogs(
-                    ChangeLogsRequest.Builder(changesToken).build(),
-                    executor,
-                    continuation.asOutcomeReceiver()
-                )
-            }
-            return ChangesResponse(
-                buildList {
-                    response.upsertedRecords.forEach { add(UpsertionChange(it.toSdkRecord())) }
-                    response.deletedLogs.forEach { add(DeletionChange(it.deletedRecordId)) }
-                },
-                response.nextChangesToken,
-                response.hasMorePages(),
-                changesTokenExpired = false
-            )
-        } catch (e: HealthConnectException) {
-            // Handle invalid token
-            if (e.errorCode == HealthConnectException.ERROR_INVALID_ARGUMENT) {
-                return ChangesResponse(
-                    changes = listOf(),
-                    nextChangesToken = "",
-                    hasMore = false,
-                    changesTokenExpired = true
-                )
-            }
-            throw e.toKtException()
-        }
+        return getChanges(ChangeLogsRequest.Builder(changesToken).build())
     }
 
     override suspend fun getGrantedPermissions(): Set<String> {
@@ -384,10 +427,223 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
         }
     }
 
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 16)
+    override suspend fun createMedicalDataSource(
+        request: CreateMedicalDataSourceRequest
+    ): MedicalDataSource =
+        withPhrFeatureCheckSuspend(
+            this::class,
+            "createMedicalDataSource(request: CreateMedicalDataSourceRequest)",
+        ) {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.createMedicalDataSource(
+                            request.platformCreateMedicalDataSourceRequest,
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .toSdkMedicalDataSource()
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 16)
+    override suspend fun deleteMedicalDataSourceWithData(id: String) {
+        withPhrFeatureCheckSuspend(this::class, "deleteMedicalDataSourceWithData(id: String)") {
+            wrapPlatformException {
+                suspendCancellableCoroutine { continuation ->
+                    healthConnectManager.deleteMedicalDataSourceWithData(
+                        id,
+                        executor,
+                        continuation.asOutcomeReceiver(),
+                    )
+                }
+            }
+        }
+    }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 16)
+    override suspend fun getMedicalDataSources(
+        request: GetMedicalDataSourcesRequest
+    ): List<MedicalDataSource> =
+        withPhrFeatureCheckSuspend(
+            this::class,
+            "getMedicalDataSources(request: GetMedicalDataSourcesRequest)",
+        ) {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.getMedicalDataSources(
+                            request.platformGetMedicalDataSourcesRequest,
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .map { it.toSdkMedicalDataSource() }
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 16)
+    override suspend fun getMedicalDataSources(ids: List<String>): List<MedicalDataSource> =
+        withPhrFeatureCheckSuspend(this::class, "getMedicalDataSources(ids: List<String>)") {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.getMedicalDataSources(
+                            ids,
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .map { it.toSdkMedicalDataSource() }
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
+    @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 16)
+    override suspend fun upsertMedicalResources(
+        requests: List<UpsertMedicalResourceRequest>
+    ): List<MedicalResource> =
+        withPhrFeatureCheckSuspend(this::class, "upsertMedicalResources()") {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.upsertMedicalResources(
+                            requests.map { it.platformUpsertMedicalResourceRequest },
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .map { it.toSdkMedicalResource() }
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 16)
+    override suspend fun readMedicalResources(
+        request: ReadMedicalResourcesRequest
+    ): ReadMedicalResourcesResponse =
+        withPhrFeatureCheckSuspend(
+            this::class,
+            "readMedicalResources(request: ReadMedicalResourcesRequest)",
+        ) {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.readMedicalResources(
+                            request.platformReadMedicalResourcesRequest,
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .let { platformResponse ->
+                    ReadMedicalResourcesResponse(
+                        platformResponse.medicalResources.map { it.toSdkMedicalResource() },
+                        platformResponse.nextPageToken,
+                        platformResponse.remainingCount,
+                    )
+                }
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 16)
+    override suspend fun readMedicalResources(ids: List<MedicalResourceId>): List<MedicalResource> =
+        withPhrFeatureCheckSuspend(
+            this::class,
+            "readMedicalResources(ids: List<MedicalResourceId>)",
+        ) {
+            wrapPlatformException {
+                    suspendCancellableCoroutine { continuation ->
+                        healthConnectManager.readMedicalResources(
+                            ids.map { it.platformMedicalResourceId },
+                            executor,
+                            continuation.asOutcomeReceiver(),
+                        )
+                    }
+                }
+                .map { it.toSdkMedicalResource() }
+        }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
+    @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 16)
+    override suspend fun deleteMedicalResources(ids: List<MedicalResourceId>) {
+        withPhrFeatureCheckSuspend(
+            HealthConnectClientUpsideDownImpl::class,
+            "deleteMedicalResources(ids: List<MedicalResourceId>)",
+        ) {
+            wrapPlatformException {
+                suspendCancellableCoroutine { continuation ->
+                    healthConnectManager.deleteMedicalResources(
+                        ids.map { it.platformMedicalResourceId },
+                        executor,
+                        continuation.asOutcomeReceiver(),
+                    )
+                }
+            }
+        }
+    }
+
+    @ExperimentalPersonalHealthRecordApi
+    @RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
+    @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 16)
+    override suspend fun deleteMedicalResources(request: DeleteMedicalResourcesRequest) {
+        withPhrFeatureCheckSuspend(
+            HealthConnectClientUpsideDownImpl::class,
+            "deleteMedicalResources(request: DeleteMedicalResourcesRequest)",
+        ) {
+            wrapPlatformException {
+                suspendCancellableCoroutine { continuation ->
+                    healthConnectManager.deleteMedicalResources(
+                        request.platformReadMedicalResourcesRequest,
+                        executor,
+                        continuation.asOutcomeReceiver(),
+                    )
+                }
+            }
+        }
+    }
+
     private suspend fun <T> wrapPlatformException(function: suspend () -> T): T {
         return try {
             function()
         } catch (e: HealthConnectException) {
+            throw e.toKtException()
+        }
+    }
+
+    private suspend fun getChanges(changeLogsRequest: ChangeLogsRequest): ChangesResponse {
+        try {
+            val response = suspendCancellableCoroutine { continuation ->
+                healthConnectManager.getChangeLogs(
+                    changeLogsRequest,
+                    executor,
+                    continuation.asOutcomeReceiver(),
+                )
+            }
+            return ChangesResponse(
+                buildList {
+                    response.upsertedRecords.forEach { add(UpsertionChange(it.toSdkRecord())) }
+                    response.deletedLogs.forEach { add(DeletionChange(it.deletedRecordId)) }
+                },
+                response.nextChangesToken,
+                response.hasMorePages(),
+                changesTokenExpired = false,
+            )
+        } catch (e: HealthConnectException) {
+            // Handle invalid token
+            if (e.errorCode == HealthConnectException.ERROR_INVALID_ARGUMENT) {
+                return ChangesResponse(
+                    changes = listOf(),
+                    nextChangesToken = "",
+                    hasMore = false,
+                    changesTokenExpired = true,
+                )
+            }
             throw e.toKtException()
         }
     }

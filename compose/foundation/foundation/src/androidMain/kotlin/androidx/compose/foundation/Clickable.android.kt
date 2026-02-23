@@ -16,19 +16,9 @@
 
 package androidx.compose.foundation
 
-import android.view.KeyEvent.KEYCODE_DPAD_CENTER
-import android.view.KeyEvent.KEYCODE_ENTER
-import android.view.KeyEvent.KEYCODE_NUMPAD_ENTER
-import android.view.KeyEvent.KEYCODE_SPACE
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
-import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.nativeKeyCode
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.requireView
 
@@ -48,27 +38,3 @@ private fun View.isInScrollableViewGroup(): Boolean {
 }
 
 internal actual val TapIndicationDelay: Long = ViewConfiguration.getTapTimeout().toLong()
-
-/**
- * Whether the specified [KeyEvent] should trigger a press for a clickable component, i.e. whether
- * it is associated with a press of an enter key or dpad centre.
- */
-internal actual val KeyEvent.isPress: Boolean
-    get() = type == KeyDown && isEnter
-
-/**
- * Whether the specified [KeyEvent] should trigger a click for a clickable component, i.e. whether
- * it is associated with a release of an enter key or dpad centre.
- */
-internal actual val KeyEvent.isClick: Boolean
-    get() = type == KeyUp && isEnter
-
-private val KeyEvent.isEnter: Boolean
-    get() =
-        when (key.nativeKeyCode) {
-            KEYCODE_DPAD_CENTER,
-            KEYCODE_ENTER,
-            KEYCODE_NUMPAD_ENTER,
-            KEYCODE_SPACE -> true
-            else -> false
-        }

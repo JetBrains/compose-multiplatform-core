@@ -85,13 +85,15 @@ interface PointerInputModifierNode : DelegatableNode {
      * Developers will need to restart the gesture detection handling pointer input in order for the
      * event locations to remain accurate.
      *
-     * The default implementation will do that by calling [onCancelPointerInput].
+     * The default implementation will do that by calling [onCancelPointerInput]. If you override
+     * this function, make sure to call super.onDensityChange or implement your own restarting
+     * logic.
      *
      * [SuspendingPointerInputModifierNode] offers a more specific interface to allow only
      * cancelling the coroutine for more control. See [SuspendingPointerInputModifierNodeImpl] for a
      * concrete example.
      */
-    fun onDensityChange() {
+    override fun onDensityChange() {
         onCancelPointerInput()
     }
 
@@ -112,6 +114,18 @@ interface PointerInputModifierNode : DelegatableNode {
     fun onViewConfigurationChange() {
         onCancelPointerInput()
     }
+
+    /**
+     * Override this value to expand the touch bounds of this [PointerInputModifierNode] by the
+     * given value in align each edge. It only applies to this pointer input modifier and won't
+     * impact other pointer input modifiers on the same [LayoutNode]. Also note that a pointer in
+     * expanded touch bounds can't be intercepted by its parents and ancestors even if their
+     * [interceptOutOfBoundsChildEvents] returns true.
+     *
+     * @see TouchBoundsExpansion
+     */
+    val touchBoundsExpansion: TouchBoundsExpansion
+        get() = TouchBoundsExpansion.None
 }
 
 internal val PointerInputModifierNode.isAttached: Boolean

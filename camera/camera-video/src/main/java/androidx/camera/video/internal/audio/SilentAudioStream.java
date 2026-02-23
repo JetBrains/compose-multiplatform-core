@@ -22,9 +22,10 @@ import static androidx.camera.video.internal.audio.AudioUtils.sizeToFrameCount;
 import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkState;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
@@ -43,13 +44,10 @@ public class SilentAudioStream implements AudioStream {
     private final AtomicBoolean mIsReleased = new AtomicBoolean(false);
     private final int mBytesPerFrame;
     private final int mSampleRate;
-    @Nullable
-    private byte[] mZeroBytes;
+    private byte @Nullable [] mZeroBytes;
     private long mCurrentReadTimeNs;
-    @Nullable
-    private AudioStreamCallback mAudioStreamCallback;
-    @Nullable
-    private Executor mCallbackExecutor;
+    private @Nullable AudioStreamCallback mAudioStreamCallback;
+    private @Nullable Executor mCallbackExecutor;
 
     /**
      * Constructs the instance.
@@ -58,7 +56,7 @@ public class SilentAudioStream implements AudioStream {
      */
     public SilentAudioStream(@NonNull AudioSettings audioSettings) {
         mBytesPerFrame = audioSettings.getBytesPerFrame();
-        mSampleRate = audioSettings.getSampleRate();
+        mSampleRate = audioSettings.getCaptureSampleRate();
     }
 
     @Override
@@ -92,9 +90,8 @@ public class SilentAudioStream implements AudioStream {
         mIsReleased.getAndSet(true);
     }
 
-    @NonNull
     @Override
-    public PacketInfo read(@NonNull ByteBuffer byteBuffer) {
+    public @NonNull PacketInfo read(@NonNull ByteBuffer byteBuffer) {
         checkNotReleasedOrThrow();
         checkStartedOrThrow();
         long requiredFrameCount = sizeToFrameCount(byteBuffer.remaining(), mBytesPerFrame);

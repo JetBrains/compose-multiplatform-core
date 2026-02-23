@@ -18,11 +18,12 @@ package androidx.work.multiprocess;
 
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Logger;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -53,8 +54,7 @@ public abstract class ListenableCallback<I> {
     /**
      * Transforms the result of the {@link ListenableFuture} to a byte array.
      */
-    @NonNull
-    public abstract byte[] toByteArray(@NonNull I result);
+    public abstract byte @NonNull [] toByteArray(@NonNull I result);
 
     /**
      * Dispatches callbacks safely while handling {@link android.os.RemoteException}s.
@@ -90,7 +90,7 @@ public abstract class ListenableCallback<I> {
          */
         public static void reportSuccess(
                 @NonNull IWorkManagerImplCallback callback,
-                @NonNull byte[] response) {
+                byte @NonNull [] response) {
             try {
                 callback.onSuccess(response);
             } catch (RemoteException exception) {

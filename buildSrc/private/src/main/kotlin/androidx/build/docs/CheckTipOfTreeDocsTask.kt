@@ -17,8 +17,7 @@
 package androidx.build.docs
 
 import androidx.build.AndroidXExtension
-import androidx.build.INCLUDE_OPTIONAL_PROJECTS
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.addToBuildOnServer
 import androidx.build.checkapi.shouldConfigureApiTasks
 import androidx.build.getSupportRootFolder
@@ -47,12 +46,14 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
 
     @get:Input abstract val projectPathProvider: Property<String>
 
-    @get:Input abstract val includeOptionalProjects: Property<Boolean>
-
     @get:Input abstract val type: Property<DocsType>
+
+    @get:Input abstract val requiresDocs: Property<Boolean>
 
     @TaskAction
     fun exec() {
+        if (!requiresDocs.get()) return
+
         val projectPath = projectPathProvider.get()
         // Make sure not to allow a partial project path match, e.g. ":activity:activity" shouldn't
         // match ":activity:activity-ktx", both need to be listed separately.
@@ -65,12 +66,7 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
         val fileContents = tipOfTreeBuildFile.asFile.get().readText()
         val foundExpectedText = fileContents.contains(fullExpectedText)
 
-        // Optional projects use a different path for docs configuration
-        val foundOptionalText =
-            includeOptionalProjects.get() &&
-                fileContents.contains("${prefix}ForOptionalProject(\"$projectPath\")")
-
-        if (!foundExpectedText && !foundOptionalText) {
+        if (!foundExpectedText) {
             // If this is a KMP project, check if it is present but configured as non-KMP
             val message =
                 if (fileContents.contains(projectDependency)) {
@@ -96,38 +92,29 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
 
     companion object {
         fun Project.setUpCheckDocsTask(extension: AndroidXExtension) {
-            project.afterEvaluate {
-                if (!extension.requiresDocs()) return@afterEvaluate
-
-                val docsType =
-                    if (extension.type == LibraryType.Companion.SAMPLES) {
+            val docsTypeProvider =
+                extension.type.map { softwareType ->
+                    if (softwareType == SoftwareType.SAMPLES) {
                         DocsType.SAMPLES
                     } else if (multiplatformExtension != null) {
                         DocsType.KMP
                     } else {
                         DocsType.STANDARD
                     }
+                }
 
-                val checkDocs =
-                    project.tasks.register(
-                        "checkDocsTipOfTree",
-                        CheckTipOfTreeDocsTask::class.java
-                    ) { task ->
-                        task.tipOfTreeBuildFile.set(
-                            project.getSupportRootFolder().resolve("docs-tip-of-tree/build.gradle")
-                        )
-                        task.projectPathProvider.set(path)
-                        task.includeOptionalProjects.set(
-                            providers
-                                .gradleProperty(INCLUDE_OPTIONAL_PROJECTS)
-                                .getOrElse("false")
-                                .toBoolean()
-                        )
-                        task.type.set(docsType)
-                        task.cacheEvenIfNoOutputs()
-                    }
-                project.addToBuildOnServer(checkDocs)
-            }
+            val checkDocs =
+                project.tasks.register("checkDocsTipOfTree", CheckTipOfTreeDocsTask::class.java) {
+                    task ->
+                    task.tipOfTreeBuildFile.set(
+                        project.getSupportRootFolder().resolve("docs-tip-of-tree/build.gradle")
+                    )
+                    task.projectPathProvider.set(path)
+                    task.type.set(docsTypeProvider)
+                    task.requiresDocs.set(extension.requiresDocs())
+                    task.cacheEvenIfNoOutputs()
+                }
+            project.addToBuildOnServer(checkDocs)
         }
 
         enum class DocsType(val prefix: String) {
@@ -141,6 +128,6 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
          * unless opted-out with [AndroidXExtension.doNotDocumentReason]
          */
         fun AndroidXExtension.requiresDocs() =
-            shouldConfigureApiTasks() && doNotDocumentReason == null
+            shouldConfigureApiTasks().map { it && doNotDocumentReason == null }
     }
 }

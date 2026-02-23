@@ -19,8 +19,9 @@ package androidx.appsearch.util;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities for handling exceptions.

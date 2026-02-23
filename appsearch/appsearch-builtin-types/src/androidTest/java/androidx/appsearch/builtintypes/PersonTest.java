@@ -24,7 +24,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.Context;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
@@ -36,6 +35,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.collect.ImmutableList;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.ArrayList;

@@ -46,7 +46,7 @@ import androidx.annotation.VisibleForTesting
  * historical events preceding the primary [MotionEvent] data.
  */
 @VisibleForTesting
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
 public class MultiTouchInputBuilder(
     private val pointerCount: Int = 2,
     private val pointerId: IntArray = IntArray(pointerCount) { 9000 + it },
@@ -348,7 +348,7 @@ public class MultiTouchInputBuilder(
          */
         public fun rotate90DegreesClockwise(
             centerX: Float,
-            centerY: Float
+            centerY: Float,
         ): MultiTouchInputBuilder =
             MultiTouchInputBuilder(
                 pointerCount = 2,

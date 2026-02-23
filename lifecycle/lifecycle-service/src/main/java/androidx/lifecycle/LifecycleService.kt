@@ -21,7 +21,7 @@ import android.os.IBinder
 import androidx.annotation.CallSuper
 
 /** A Service that is also a [LifecycleOwner]. */
-open class LifecycleService : Service(), LifecycleOwner {
+public open class LifecycleService : Service(), LifecycleOwner {
 
     private val dispatcher = ServiceLifecycleDispatcher(this)
 

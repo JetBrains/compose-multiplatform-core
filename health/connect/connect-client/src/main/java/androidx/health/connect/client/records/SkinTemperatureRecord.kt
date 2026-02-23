@@ -17,6 +17,12 @@ package androidx.health.connect.client.records
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.aggregate.AggregateMetric.AggregationType.AVERAGE
+import androidx.health.connect.client.aggregate.AggregateMetric.AggregationType.MAXIMUM
+import androidx.health.connect.client.aggregate.AggregateMetric.AggregationType.MINIMUM
+import androidx.health.connect.client.aggregate.AggregateMetric.Companion.doubleMetric
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Temperature
 import androidx.health.connect.client.units.TemperatureDelta
@@ -27,6 +33,11 @@ import java.time.ZoneOffset
 /**
  * Captures the skin temperature of a user. Each record can represent a series of measurements of
  * temperature differences.
+ *
+ * The ability to insert or read this record type is dependent on the version of HealthConnect
+ * installed on the device. To check if available: call [HealthConnectFeatures.getFeatureStatus] and
+ * pass [HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE] as an argument. See further down for an
+ * example on how to read skin temperature.
  *
  * @param startTime Start time of the record.
  * @param startZoneOffset User experienced zone offset at [startTime], or null if unknown. Providing
@@ -39,7 +50,7 @@ import java.time.ZoneOffset
  *   user experienced time filters will assume system current zone offset if the information is
  *   absent.
  * @param deltas a list of skin temperature [Delta]. If [baseline] is set, these values are expected
- *   to be relative to it.
+ *   to be relative to it. Otherwise, they are deltas against an unspecified starting baseline.
  * @param baseline Temperature in [Temperature] unit. Optional field, null by default. Valid range:
  *   0-100 Celsius degrees.
  * @param measurementLocation indicates the location on the body from which the temperature reading
@@ -48,16 +59,17 @@ import java.time.ZoneOffset
  * @param metadata set of common metadata associated with the written record.
  * @throws IllegalArgumentException if [startTime] > [endTime] or [deltas] are not within the record
  *   time range or baseline is not within [MIN_TEMPERATURE], [MAX_TEMPERATURE].
+ * @sample androidx.health.connect.client.samples.ReadSkinTemperatureRecord
  */
 class SkinTemperatureRecord(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     val deltas: List<Delta>,
     val baseline: Temperature? = null,
     @SkinTemperatureMeasurementLocation val measurementLocation: Int = MEASUREMENT_LOCATION_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
 
     init {
@@ -111,8 +123,56 @@ class SkinTemperatureRecord(
     }
 
     companion object {
+
+        private const val SKIN_TEMPERATURE_TYPE_NAME = "SkinTemperature"
+        private const val TEMPERATURE_DELTA_FIELD_NAME = "temperatureDelta"
         private val MIN_TEMPERATURE = 0.celsius
         private val MAX_TEMPERATURE = 100.celsius
+
+        /**
+         * Metric identifier for retrieving the average skin temperature delta from
+         * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
+         * available, use [HealthConnectFeatures.getFeatureStatus] with
+         * [HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE] as the argument.
+         */
+        @JvmField
+        val TEMPERATURE_DELTA_AVG: AggregateMetric<TemperatureDelta> =
+            doubleMetric(
+                SKIN_TEMPERATURE_TYPE_NAME,
+                AVERAGE,
+                TEMPERATURE_DELTA_FIELD_NAME,
+                TemperatureDelta::celsius,
+            )
+
+        /**
+         * Metric identifier for retrieving the minimum skin temperature delta from
+         * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
+         * available, use [HealthConnectFeatures.getFeatureStatus] with
+         * [HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE] as the argument.
+         */
+        @JvmField
+        val TEMPERATURE_DELTA_MIN: AggregateMetric<TemperatureDelta> =
+            doubleMetric(
+                SKIN_TEMPERATURE_TYPE_NAME,
+                MINIMUM,
+                TEMPERATURE_DELTA_FIELD_NAME,
+                TemperatureDelta::celsius,
+            )
+
+        /**
+         * Metric identifier for retrieving the maximum skin temperature delta from
+         * [androidx.health.connect.client.aggregate.AggregationResult]. To check if this metric is
+         * available, use [HealthConnectFeatures.getFeatureStatus] with
+         * [HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE] as the argument.
+         */
+        @JvmField
+        val TEMPERATURE_DELTA_MAX: AggregateMetric<TemperatureDelta> =
+            doubleMetric(
+                SKIN_TEMPERATURE_TYPE_NAME,
+                MAXIMUM,
+                TEMPERATURE_DELTA_FIELD_NAME,
+                TemperatureDelta::celsius,
+            )
 
         /** Use this if the location is unknown. */
         const val MEASUREMENT_LOCATION_UNKNOWN: Int = 0

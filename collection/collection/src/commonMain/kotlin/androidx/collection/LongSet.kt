@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
     "KotlinRedundantDiagnosticSuppress",
@@ -21,13 +22,17 @@
     "PropertyName",
     "ConstPropertyName",
     "PrivatePropertyName",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.annotation.IntRange
 import androidx.collection.internal.requirePrecondition
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -97,6 +102,36 @@ public fun mutableLongSetOf(element1: Long, element2: Long, element3: Long): Mut
 /** Returns a new [MutableLongSet] with the specified elements. */
 public fun mutableLongSetOf(vararg elements: Long): MutableLongSet =
     MutableLongSet(elements.size).apply { plusAssign(elements) }
+
+/**
+ * Builds a new [LongSet] by populating a [MutableLongSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableLongSet] can be populated.
+ */
+public inline fun buildLongSet(builderAction: MutableLongSet.() -> Unit): LongSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongSet().apply(builderAction)
+}
+
+/**
+ * Builds a new [LongSet] by populating a [MutableLongSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableLongSet] can be populated.
+ */
+public inline fun buildLongSet(
+    initialCapacity: Int,
+    builderAction: MutableLongSet.() -> Unit,
+): LongSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongSet(initialCapacity).apply(builderAction)
+}
 
 /**
  * [LongSet] is a container with a [Set]-like interface designed to avoid allocations, including
@@ -289,17 +324,19 @@ public sealed class LongSet {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
-            index++
         }
         append(postfix)
     }
@@ -319,20 +356,22 @@ public sealed class LongSet {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (Long) -> CharSequence
+        crossinline transform: (Long) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
-            index++
         }
         append(postfix)
     }

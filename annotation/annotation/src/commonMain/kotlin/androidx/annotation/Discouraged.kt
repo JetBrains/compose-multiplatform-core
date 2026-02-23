@@ -28,7 +28,7 @@ package androidx.annotation
  * }
  * ```
  */
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.FIELD,
@@ -37,7 +37,7 @@ package androidx.annotation
     AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.VALUE_PARAMETER,
     AnnotationTarget.ANNOTATION_CLASS,
-    AnnotationTarget.CLASS
+    AnnotationTarget.CLASS,
 )
 public annotation class Discouraged(
     /**

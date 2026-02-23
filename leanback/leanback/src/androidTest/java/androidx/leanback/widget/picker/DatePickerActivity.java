@@ -21,7 +21,6 @@ import android.os.Bundle;
 
 import androidx.leanback.test.R;
 
-
 public class DatePickerActivity extends Activity {
 
     public static final String EXTRA_LAYOUT_RESOURCE_ID = "layoutResourceId";

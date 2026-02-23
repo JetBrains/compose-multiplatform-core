@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -223,6 +229,40 @@ public fun mutablePKeyPValueMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [PKeyPValueMap] by populating a [MutablePKeyPValueMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutablePKeyPValueMap] can be populated.
+ */
+public inline fun buildPKeyPValueMap(
+    builderAction: MutablePKeyPValueMap.() -> Unit,
+): PKeyPValueMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutablePKeyPValueMap().apply(builderAction)
+}
+
+/**
+ * Builds a new [PKeyPValueMap] by populating a [MutablePKeyPValueMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutablePKeyPValueMap] can be populated.
+ */
+public inline fun buildPKeyPValueMap(
+    initialCapacity: Int,
+    builderAction: MutablePKeyPValueMap.() -> Unit,
+): PKeyPValueMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutablePKeyPValueMap(initialCapacity).apply(builderAction)
+}
 
 /**
  * [PKeyPValueMap] is a container with a [Map]-like interface for
@@ -453,19 +493,19 @@ public sealed class PKeyPValueMap {
     }
 
     /**
-     * Returns true if the specified [key] is present in this hash map, false
+     * Returns true if the specified [key] is present in this map, false
      * otherwise.
      */
-    public operator fun contains(key: PKey): Boolean = findKeyIndex(key) >= 0
+    public inline operator fun contains(key: PKey): Boolean = containsKey(key)
 
     /**
-     * Returns true if the specified [key] is present in this hash map, false
+     * Returns true if the specified [key] is present in this map, false
      * otherwise.
      */
     public fun containsKey(key: PKey): Boolean = findKeyIndex(key) >= 0
 
     /**
-     * Returns true if the specified [value] is present in this hash map, false
+     * Returns true if the specified [value] is present in this map, false
      * otherwise.
      */
     public fun containsValue(value: PValue): Boolean {
@@ -492,19 +532,21 @@ public sealed class PKeyPValueMap {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@PKeyPValueMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@PKeyPValueMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -527,17 +569,19 @@ public sealed class PKeyPValueMap {
         crossinline transform: (key: PKey, value: PValue) -> CharSequence
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@PKeyPValueMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@PKeyPValueMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -576,7 +620,8 @@ public sealed class PKeyPValueMap {
         }
 
         forEach { key, value ->
-            if (value != other[key]) {
+            val index = other.findKeyIndex(key)
+            if (index < 0 || value != other.values[index]) {
                 return false
             }
         }

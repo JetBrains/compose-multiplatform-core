@@ -21,11 +21,13 @@ import static androidx.recyclerview.widget.RecyclerView.VERTICAL;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -33,13 +35,13 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.R;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -92,6 +94,7 @@ public class RecyclerViewFastScrollerTest extends BaseRecyclerViewInstrumentatio
 
     @Test
     public void ui_dragsThumb_scrollsRecyclerView() throws Throwable {
+        assumeFalse("Test fails on cuttlefish b/460512664", Build.MODEL.contains("Cuttlefish"));
         arrangeWithXml();
 
         // RecyclerView#scrollBy(int, int) used to cause the scroller thumb to show up.
@@ -439,7 +442,7 @@ public class RecyclerViewFastScrollerTest extends BaseRecyclerViewInstrumentatio
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
             holder.itemView.setTag("pos " + position);
         }
 

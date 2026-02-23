@@ -15,7 +15,6 @@
  */
 package androidx.work.integration.testapp
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.job.JobInfo
 import android.app.job.JobScheduler
@@ -34,6 +33,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Constraints
 import androidx.work.Constraints.ContentUriTrigger
 import androidx.work.ExistingWorkPolicy
@@ -62,6 +62,9 @@ import androidx.work.multiprocess.RemoteListenableWorker.ARGUMENT_PACKAGE_NAME
 import androidx.work.multiprocess.RemoteWorkerService
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Main Activity */
 class MainActivity : AppCompatActivity() {
@@ -69,7 +72,6 @@ class MainActivity : AppCompatActivity() {
     private var lastNotificationId = 10
     private val workManager: WorkManager by lazy { WorkManager.getInstance(this) }
 
-    @SuppressLint("ClassVerificationFailure")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -112,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                                 setOf(
                                     ContentUriTrigger(
                                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        true
+                                        true,
                                     )
                                 )
                         )
@@ -163,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                         15,
                         TimeUnit.MINUTES,
                         10,
-                        TimeUnit.MINUTES
+                        TimeUnit.MINUTES,
                     )
                     .setInputData(input)
                     .build()
@@ -226,20 +228,20 @@ class MainActivity : AppCompatActivity() {
                                         .beginUniqueWork(
                                             REPLACE_COMPLETED_WORK,
                                             ExistingWorkPolicy.REPLACE,
-                                            from(TestWorker::class.java)
+                                            from(TestWorker::class.java),
                                         )
                                         .enqueue()
                                     count += 1
                                 }
                             }
                         }
-                    }
+                    },
                 )
             workManager
                 .beginUniqueWork(
                     REPLACE_COMPLETED_WORK,
                     ExistingWorkPolicy.REPLACE,
-                    from(TestWorker::class.java)
+                    from(TestWorker::class.java),
                 )
                 .enqueue()
         }
@@ -256,10 +258,10 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(
                                 this@MainActivity,
                                 "Run attempt count #${value.runAttemptCount}",
-                                Toast.LENGTH_SHORT
+                                Toast.LENGTH_SHORT,
                             )
                             .show()
-                    }
+                    },
                 )
         }
         findViewById<View>(R.id.run_recursive_worker).setOnClickListener {
@@ -356,6 +358,22 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "No work to cancel")
             }
         }
+        findViewById<View>(R.id.run_foreground_worker_shutdown_race).setOnClickListener {
+            lifecycleScope.launch(Dispatchers.Unconfined) {
+                (1 until 100).forEach { i ->
+                    val inputData = workDataOf(SetForegroundAsyncWorker.InputDelayTime to 100L)
+                    val delay = 100L + ((i % 20) * 2)
+                    Log.d(TAG, "Start next FG run $i in $delay ms")
+                    delay(delay)
+                    val request =
+                        OneTimeWorkRequest.Builder(SetForegroundAsyncWorker::class.java)
+                            .setInputData(inputData)
+                            .build()
+
+                    workManager.enqueue(request)
+                }
+            }
+        }
         findViewById<View>(R.id.enqueue_work_multi_process).setOnClickListener {
             startService(enqueueIntent(this))
         }
@@ -410,7 +428,7 @@ class MainActivity : AppCompatActivity() {
                     jobScheduler.schedule(
                         JobInfo.Builder(
                                 100000 + i,
-                                ComponentName(this, SystemJobService::class.java)
+                                ComponentName(this, SystemJobService::class.java),
                             )
                             .setMinimumLatency((10 * 60 * 1000).toLong())
                             .build()
@@ -437,17 +455,13 @@ class MainActivity : AppCompatActivity() {
             )
         return OneTimeWorkRequest.Builder(RemoteWorker::class.java)
             .setInputData(data)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
             .build()
     }
 }
 
-@SuppressLint("ClassVerificationFailure")
 private fun enqueueWithNetworkRequest(workManager: WorkManager) {
-    if (Build.VERSION.SDK_INT < 21) {
-        Log.w(TAG, "Ignoring enqueueWithNetworkRequest on old API levels")
-        return
-    }
     val networkRequest =
         NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

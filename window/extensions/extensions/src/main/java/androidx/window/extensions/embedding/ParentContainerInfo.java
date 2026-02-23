@@ -19,10 +19,11 @@ package androidx.window.extensions.embedding;
 import android.content.res.Configuration;
 import android.view.WindowMetrics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.layout.WindowLayoutInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The parent container information of an {@link ActivityStack}.
@@ -31,14 +32,11 @@ import androidx.window.extensions.layout.WindowLayoutInfo;
  */
 @RequiresVendorApiLevel(level = 6)
 public class ParentContainerInfo {
-    @NonNull
-    private final WindowMetrics mWindowMetrics;
+    private final @NonNull WindowMetrics mWindowMetrics;
 
-    @NonNull
-    private final Configuration mConfiguration;
+    private final @NonNull Configuration mConfiguration;
 
-    @NonNull
-    private final WindowLayoutInfo mWindowLayoutInfo;
+    private final @NonNull WindowLayoutInfo mWindowLayoutInfo;
 
     /**
      * {@link ParentContainerInfo} constructor, which is used in Window Manager Extensions to
@@ -57,22 +55,19 @@ public class ParentContainerInfo {
 
     /** Returns the parent container's {@link WindowMetrics}. */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public WindowMetrics getWindowMetrics() {
+    public @NonNull WindowMetrics getWindowMetrics() {
         return mWindowMetrics;
     }
 
     /** Returns the parent container's {@link Configuration}. */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public Configuration getConfiguration() {
+    public @NonNull Configuration getConfiguration() {
         return mConfiguration;
     }
 
     /** Returns the parent container's {@link WindowLayoutInfo}. */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public WindowLayoutInfo getWindowLayoutInfo() {
+    public @NonNull WindowLayoutInfo getWindowLayoutInfo() {
         return mWindowLayoutInfo;
     }
 
@@ -94,9 +89,8 @@ public class ParentContainerInfo {
                 && mWindowLayoutInfo.equals(parentContainerInfo.mWindowLayoutInfo);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return ParentContainerInfo.class.getSimpleName() + ": {"
                 + "windowMetrics=" + WindowMetricsCompat.toString(mWindowMetrics)
                 + ", configuration=" + mConfiguration

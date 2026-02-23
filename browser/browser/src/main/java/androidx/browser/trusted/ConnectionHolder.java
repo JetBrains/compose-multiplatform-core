@@ -22,12 +22,13 @@ import android.os.IBinder;
 import android.support.customtabs.trusted.ITrustedWebActivityService;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,19 +43,18 @@ class ConnectionHolder implements ServiceConnection {
     private static final int STATE_DISCONNECTED = 2;
     private static final int STATE_CANCELLED = 3;
 
-    @NonNull private final Runnable mCloseRunnable;
-    @NonNull private final WrapperFactory mWrapperFactory;
+    private final @NonNull Runnable mCloseRunnable;
+    private final @NonNull WrapperFactory mWrapperFactory;
 
     private int mState = STATE_AWAITING_CONNECTION;
-    @Nullable private TrustedWebActivityServiceConnection mService;
-    @NonNull private List<Completer<TrustedWebActivityServiceConnection>> mCompleters =
+    private @Nullable TrustedWebActivityServiceConnection mService;
+    private @NonNull List<Completer<TrustedWebActivityServiceConnection>> mCompleters =
             new ArrayList<>();
-    @Nullable private Exception mCancellationException;
+    private @Nullable Exception mCancellationException;
 
     /** A class that creates the TrustedWebActivityServiceConnection. Allows mocking in tests. */
     static class WrapperFactory {
-        @NonNull
-        TrustedWebActivityServiceConnection create(ComponentName name, IBinder iBinder) {
+        @NonNull TrustedWebActivityServiceConnection create(ComponentName name, IBinder iBinder) {
             return new TrustedWebActivityServiceConnection(
                     ITrustedWebActivityService.Stub.asInterface(iBinder), name);
         }
@@ -121,8 +121,7 @@ class ConnectionHolder implements ServiceConnection {
      * - be set to an exception if the connection failed or has been closed.
      */
     @MainThread
-    @NonNull
-    public ListenableFuture<TrustedWebActivityServiceConnection> getServiceWrapper() {
+    public @NonNull ListenableFuture<TrustedWebActivityServiceConnection> getServiceWrapper() {
         // Using CallbackToFutureAdapter and storing the completers gives us some additional safety
         // checks over using Futures ourselves (such as failing the Future if the completer is
         // garbage collected).

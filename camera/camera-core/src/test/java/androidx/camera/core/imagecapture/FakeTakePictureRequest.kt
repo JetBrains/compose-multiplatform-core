@@ -35,6 +35,7 @@ class FakeTakePictureRequest() : TakePictureRequest() {
     private var imageCapturedCallback: OnImageCapturedCallback? = null
     private var imageSavedCallback: OnImageSavedCallback? = null
     private var fileOptions: ImageCapture.OutputFileOptions? = null
+    private var secondaryFileOptions: ImageCapture.OutputFileOptions? = null
     var exceptionReceived: ImageCaptureException? = null
     var imageReceived: ImageProxy? = null
     var fileReceived: ImageCapture.OutputFileResults? = null
@@ -112,7 +113,11 @@ class FakeTakePictureRequest() : TakePictureRequest() {
         return fileOptions
     }
 
-    internal override fun getCropRect(): Rect {
+    override fun getSecondaryOutputFileOptions(): ImageCapture.OutputFileOptions? {
+        return secondaryFileOptions
+    }
+
+    override fun getCropRect(): Rect {
         return Rect(0, 0, 640, 480)
     }
 
@@ -120,12 +125,16 @@ class FakeTakePictureRequest() : TakePictureRequest() {
         return Matrix()
     }
 
-    internal override fun getRotationDegrees(): Int {
+    override fun getRotationDegrees(): Int {
         return ROTATION_DEGREES
     }
 
-    internal override fun getJpegQuality(): Int {
+    override fun getJpegQuality(): Int {
         return JPEG_QUALITY
+    }
+
+    override fun isSimultaneousCapture(): Boolean {
+        return false
     }
 
     internal override fun getCaptureMode(): Int {
@@ -138,6 +147,6 @@ class FakeTakePictureRequest() : TakePictureRequest() {
 
     enum class Type {
         IN_MEMORY,
-        ON_DISK
+        ON_DISK,
     }
 }

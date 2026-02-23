@@ -16,15 +16,18 @@
 
 package androidx.wear.tiles;
 
+import static java.util.Collections.emptyMap;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -32,7 +35,7 @@ import java.util.Map;
 @RestrictTo(Scope.LIBRARY_GROUP)
 final class DiskAccessAllowedPrefs {
 
-    @NonNull private final SharedPreferences preferences;
+    private final @NonNull SharedPreferences preferences;
 
     private DiskAccessAllowedPrefs(@NonNull SharedPreferences preferences) {
         this.preferences = preferences;
@@ -42,8 +45,7 @@ final class DiskAccessAllowedPrefs {
      * Returns a simplified version of {@link SharedPreferences} wrapped to ignore disk read and
      * write StrictMode violations.
      */
-    @Nullable
-    static DiskAccessAllowedPrefs wrap(@NonNull Context context, @NonNull String name) {
+    static @Nullable DiskAccessAllowedPrefs wrap(@NonNull Context context, @NonNull String name) {
         ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
             SharedPreferences sharedPref = context.getSharedPreferences(name, Context.MODE_PRIVATE);
@@ -53,11 +55,20 @@ final class DiskAccessAllowedPrefs {
         }
     }
 
-    @Nullable
-    Map<String, ?> getAll() {
+    @NonNull Map<String, ?> getAll() {
         ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
-            return preferences.getAll();
+            Map<String, ?> all = preferences.getAll();
+            return all == null ? emptyMap() : all;
+        } finally {
+            StrictMode.setThreadPolicy(policy);
+        }
+    }
+
+    int getInt(@NonNull String key, int defValue) {
+        ThreadPolicy policy = StrictMode.allowThreadDiskReads();
+        try {
+            return preferences.getInt(key, defValue);
         } finally {
             StrictMode.setThreadPolicy(policy);
         }
@@ -72,10 +83,37 @@ final class DiskAccessAllowedPrefs {
         }
     }
 
+    String getString(@NonNull String key, String defValue) {
+        ThreadPolicy policy = StrictMode.allowThreadDiskReads();
+        try {
+            return preferences.getString(key, defValue);
+        } finally {
+            StrictMode.setThreadPolicy(policy);
+        }
+    }
+
+    void putInt(@NonNull String key, int value) {
+        ThreadPolicy policy = StrictMode.allowThreadDiskWrites();
+        try {
+            preferences.edit().putInt(key, value).apply();
+        } finally {
+            StrictMode.setThreadPolicy(policy);
+        }
+    }
+
     void putLong(@NonNull String key, long value) {
         ThreadPolicy policy = StrictMode.allowThreadDiskWrites();
         try {
             preferences.edit().putLong(key, value).apply();
+        } finally {
+            StrictMode.setThreadPolicy(policy);
+        }
+    }
+
+    void putString(@NonNull String key, @NonNull String value) {
+        ThreadPolicy policy = StrictMode.allowThreadDiskWrites();
+        try {
+            preferences.edit().putString(key, value).apply();
         } finally {
             StrictMode.setThreadPolicy(policy);
         }

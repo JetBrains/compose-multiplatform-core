@@ -16,7 +16,7 @@
 
 package androidx.datastore.core
 
-import androidx.datastore.core.handlers.NoOpCorruptionHandler
+import androidx.datastore.core.handlers.ReThrowCorruptionHandler
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import kotlinx.coroutines.CoroutineScope
 
@@ -44,7 +44,6 @@ public actual object DataStoreFactory {
      * @param scope The scope in which IO operations and transform functions will execute.
      * @return a new DataStore instance with the provided configuration
      */
-    @kotlin.jvm.JvmOverloads // annotation has to match common
     public actual fun <T> create(
         storage: Storage<T>,
         corruptionHandler: ReplaceFileCorruptionHandler<T>?,
@@ -53,8 +52,8 @@ public actual object DataStoreFactory {
     ): DataStore<T> =
         DataStoreImpl(
             storage = storage,
-            corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
+            corruptionHandler = corruptionHandler ?: ReThrowCorruptionHandler(),
             initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope
+            scope = scope,
         )
 }

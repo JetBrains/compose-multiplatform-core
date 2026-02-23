@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.Features;
@@ -43,6 +42,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -66,11 +67,11 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         mFeatures = Preconditions.checkNotNull(features);
         mExecutor = Preconditions.checkNotNull(executor);
     }
-    @NonNull
     @Override
-    public ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
-            @NonNull String packageName, @NonNull String databaseName,
-            @NonNull GetByDocumentIdRequest request) {
+    public @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>>
+            getByDocumentIdAsync(
+                    @NonNull String packageName, @NonNull String databaseName,
+                    @NonNull GetByDocumentIdRequest request) {
         Preconditions.checkNotNull(packageName);
         Preconditions.checkNotNull(databaseName);
         Preconditions.checkNotNull(request);
@@ -83,9 +84,9 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                 mExecutor);
     }
 
-    @NonNull
     @Override
-    public SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec) {
+    public @NonNull SearchResults search(@NonNull String queryExpression,
+            @NonNull SearchSpec searchSpec) {
         Preconditions.checkNotNull(queryExpression);
         Preconditions.checkNotNull(searchSpec);
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
@@ -95,9 +96,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         return new SearchResultsImpl(searchResults, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> reportSystemUsageAsync(
+    public @NonNull ListenableFuture<Void> reportSystemUsageAsync(
             @NonNull ReportSystemUsageRequest request) {
         Preconditions.checkNotNull(request);
         Preconditions.checkState(!mIsClosed, "GlobalSearchSession has already been closed");
@@ -106,9 +106,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                 mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
+    public @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
             @NonNull String databaseName) {
         Preconditions.checkNotNull(packageName);
         Preconditions.checkNotNull(databaseName);
@@ -118,9 +117,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                 GetSchemaResponseToGmsConverter::toJetpackGetSchemaResponse, mExecutor);
     }
 
-    @NonNull
     @Override
-    public Features getFeatures() {
+    public @NonNull Features getFeatures() {
         return mFeatures;
     }
 

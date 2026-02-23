@@ -16,11 +16,11 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.JavaScriptReplyProxy;
 
 import org.chromium.support_lib_boundary.JsReplyProxyBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.Objects;
@@ -38,9 +38,8 @@ public class JavaScriptReplyProxyImpl extends JavaScriptReplyProxy {
     /**
      * Get a support library JavaScriptReplyProxy object that is 1:1 with the AndroidX side object.
      */
-    @NonNull
-    public static JavaScriptReplyProxyImpl forInvocationHandler(
-            @NonNull /* JsReplyProxy */ InvocationHandler invocationHandler) {
+    public static @NonNull JavaScriptReplyProxyImpl forInvocationHandler(
+            /* JsReplyProxy */ @NonNull InvocationHandler invocationHandler) {
         final JsReplyProxyBoundaryInterface boundaryInterface =
                 BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                         JsReplyProxyBoundaryInterface.class, invocationHandler);
@@ -49,7 +48,7 @@ public class JavaScriptReplyProxyImpl extends JavaScriptReplyProxy {
     }
 
     @Override
-    public void postMessage(@NonNull final String message) {
+    public void postMessage(final @NonNull String message) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.WEB_MESSAGE_LISTENER;
         if (feature.isSupportedByWebView()) {
             mBoundaryInterface.postMessage(message);
@@ -59,7 +58,7 @@ public class JavaScriptReplyProxyImpl extends JavaScriptReplyProxy {
     }
 
     @Override
-    public void postMessage(@NonNull byte[] arrayBuffer) {
+    public void postMessage(byte @NonNull [] arrayBuffer) {
         // WebView cannot handle null ArrayBuffer as WebMessage.
         Objects.requireNonNull(arrayBuffer, "ArrayBuffer must be non-null");
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.WEB_MESSAGE_ARRAY_BUFFER;

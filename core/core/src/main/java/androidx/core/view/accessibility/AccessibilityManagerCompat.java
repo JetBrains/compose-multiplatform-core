@@ -20,8 +20,9 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.os.Build;
 import android.view.accessibility.AccessibilityManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

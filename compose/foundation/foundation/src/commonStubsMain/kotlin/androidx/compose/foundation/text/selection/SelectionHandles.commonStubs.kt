@@ -29,5 +29,6 @@ internal actual fun SelectionHandle(
     direction: ResolvedTextDirection,
     handlesCrossed: Boolean,
     minTouchTargetSize: DpSize,
+    lineHeight: Float,
     modifier: Modifier,
 ): Unit = implementedInJetBrainsFork()

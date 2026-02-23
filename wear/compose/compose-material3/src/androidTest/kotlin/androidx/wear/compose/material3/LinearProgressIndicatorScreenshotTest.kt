@@ -16,24 +16,22 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -41,10 +39,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class LinearProgressIndicatorScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -59,9 +57,25 @@ class LinearProgressIndicatorScreenshotTest {
     }
 
     @Test
+    fun linear_progress_indicator_1_percent() = linear_progress_indicator_test {
+        LinearProgressIndicator(
+            progress = { 0.01f },
+            modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+        )
+    }
+
+    @Test
     fun linear_progress_indicator_50_percent() = linear_progress_indicator_test {
         LinearProgressIndicator(
             progress = { 0.5f },
+            modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+        )
+    }
+
+    @Test
+    fun linear_progress_indicator_95_percent() = linear_progress_indicator_test {
+        LinearProgressIndicator(
+            progress = { 0.95f },
             modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
         )
     }
@@ -91,8 +105,8 @@ class LinearProgressIndicatorScreenshotTest {
             colors =
                 ProgressIndicatorDefaults.colors(
                     indicatorColor = Color.Green,
-                    trackColor = Color.Red.copy(alpha = 0.5f)
-                )
+                    trackColor = Color.Red.copy(alpha = 0.5f),
+                ),
         )
     }
 
@@ -105,21 +119,40 @@ class LinearProgressIndicatorScreenshotTest {
             )
         }
 
-    private fun linear_progress_indicator_test(
-        isLtr: Boolean = true,
-        content: @Composable () -> Unit
-    ) {
-        rule.setContentWithTheme(modifier = Modifier.background(Color.Black)) {
-            val layoutDirection = if (isLtr) LayoutDirection.Ltr else LayoutDirection.Rtl
-            CompositionLocalProvider(
-                LocalLayoutDirection provides layoutDirection,
-                content = content
-            )
+    @Test
+    fun linear_progress_indicator_animated_progress() {
+        rule.mainClock.autoAdvance = false
+        val progress = mutableFloatStateOf(0f)
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(ScreenSize.LARGE.size) {
+                LinearProgressIndicator(
+                    progress = { progress.floatValue },
+                    modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                )
+            }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.runOnIdle { progress.floatValue = 1f }
+        rule.mainClock.advanceTimeBy(100)
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    private fun linear_progress_indicator_test(
+        isLtr: Boolean = true,
+        content: @Composable () -> Unit,
+    ) {
+        rule.setContentWithTheme(modifier = Modifier.background(Color.Black)) {
+            ScreenConfiguration(ScreenSize.LARGE.size) {
+                val layoutDirection = if (isLtr) LayoutDirection.Ltr else LayoutDirection.Rtl
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides layoutDirection,
+                    content = content,
+                )
+            }
+        }
+
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

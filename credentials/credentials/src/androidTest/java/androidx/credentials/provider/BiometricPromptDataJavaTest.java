@@ -41,7 +41,7 @@ import org.junit.runner.RunWith;
 public class BiometricPromptDataJavaTest {
 
     private static final BiometricPrompt.CryptoObject TEST_CRYPTO_OBJECT = BiometricTestUtils
-            .INSTANCE.createCryptoObject$credentials_releaseAndroidTest();
+            .INSTANCE.createCryptoObject$credentials();
 
     private static final long DEFAULT_BUNDLE_LONG_FOR_CRYPTO_ID = 0L;
 
@@ -116,6 +116,18 @@ public class BiometricPromptDataJavaTest {
     }
 
     @Test
+    public void build_requiredParamsOnlyForceSetCryptoObjectNull_success() {
+        int expectedAllowedAuthenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK;
+
+        BiometricPromptData actualBiometricPromptData = new BiometricPromptData.Builder()
+                .setCryptoObject(null).build();
+
+        assertThat(actualBiometricPromptData.getAllowedAuthenticators()).isEqualTo(
+                expectedAllowedAuthenticators);
+        assertThat(actualBiometricPromptData.getCryptoObject()).isNull();
+    }
+
+    @Test
     public void build_setCryptoObjectWithStrongAuthenticator_success() {
         BiometricPromptData actualBiometricPromptData = new BiometricPromptData.Builder()
                 .setCryptoObject(TEST_CRYPTO_OBJECT)
@@ -150,7 +162,8 @@ public class BiometricPromptDataJavaTest {
 
     @Test
     public void fromBundle_validAllowedAuthenticatorAboveApi35_success() {
-        long expectedOpId = TEST_CRYPTO_OBJECT.getOperationHandle();
+        long expectedOpId = BiometricTestUtils.INSTANCE
+                .getTestCryptoObjectOpId$credentials(TEST_CRYPTO_OBJECT);
         Bundle inputBundle = new Bundle();
         inputBundle.putInt(BUNDLE_HINT_ALLOWED_AUTHENTICATORS, TEST_ALLOWED_AUTHENTICATOR);
         inputBundle.putLong(BUNDLE_HINT_CRYPTO_OP_ID, expectedOpId);
@@ -160,9 +173,8 @@ public class BiometricPromptDataJavaTest {
         assertThat(actualBiometricPromptData).isNotNull();
         assertThat(actualBiometricPromptData.getAllowedAuthenticators()).isEqualTo(
                 TEST_ALLOWED_AUTHENTICATOR);
-        assertThat(actualBiometricPromptData.getCryptoObject()).isNotNull();
-        assertThat(actualBiometricPromptData.getCryptoObject().getOperationHandle())
-                .isEqualTo(TEST_CRYPTO_OBJECT.getOperationHandle());
+        assertThat(actualBiometricPromptData.getCryptoObject()).isNull();
+        // TODO(b/368395001) : Add CryptoObject test back when library dependency updates
     }
 
     @Test
@@ -211,7 +223,8 @@ public class BiometricPromptDataJavaTest {
     public void toBundle_api35AndAboveWithOpId_success() {
         BiometricPromptData testBiometricPromptData = new BiometricPromptData(TEST_CRYPTO_OBJECT,
                 TEST_ALLOWED_AUTHENTICATOR);
-        long expectedOpId = TEST_CRYPTO_OBJECT.getOperationHandle();
+        long expectedOpId = BiometricTestUtils.INSTANCE
+                .getTestCryptoObjectOpId$credentials(TEST_CRYPTO_OBJECT);
 
         Bundle actualBundle = BiometricPromptData.toBundle(
                 testBiometricPromptData);
@@ -231,5 +244,4 @@ public class BiometricPromptDataJavaTest {
                 () -> new BiometricPromptData.Builder().setAllowedAuthenticators(-10000).build()
         );
     }
-
 }

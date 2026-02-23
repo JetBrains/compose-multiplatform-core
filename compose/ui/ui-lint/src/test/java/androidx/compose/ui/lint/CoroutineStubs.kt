@@ -27,17 +27,17 @@ object CoroutineStubs {
             checksum = 0x2eedf37a,
             source =
                 """
-    package kotlinx.coroutines
+                package kotlinx.coroutines
 
-    public interface CoroutineContext {
-        public operator fun plus(context: CoroutineContext): CoroutineContext = context
-        public operator fun <E : CoroutineContext.Element> get(key: CoroutineContext.Key<E>): E? = null
-        public interface Key<E : Element>
-        public interface Element : CoroutineContext {
-            public val key: Key<*>
-        }
-    }
-    """
+                public interface CoroutineContext {
+                    public operator fun plus(context: CoroutineContext): CoroutineContext = context
+                    public operator fun <E : CoroutineContext.Element> get(key: CoroutineContext.Key<E>): E? = null
+                    public interface Key<E : Element>
+                    public interface Element : CoroutineContext {
+                        public val key: Key<*>
+                    }
+                }
+                """
                     .trimIndent(),
             """
                 META-INF/main.kotlin_module:
@@ -125,7 +125,7 @@ object CoroutineStubs {
                 8kxarkV6jp7FLh0C2CjAwHwKR/EXcOgakCALJKuknxBwEqOokR43C3hKeoL0
                 swuKGSyS3qWqEvW+1YLh4baHOx4clMnEsIcR3G2BKdzD/RZKCg8UKgq2wqhC
                 VWFM4aFCQSGv8EhhXGHiBxzlJBgpBQAA
-                """
+                """,
         )
 
     val coroutineScopeTestFile: TestFile =
@@ -135,24 +135,24 @@ object CoroutineStubs {
             checksum = 0x2041f1c4,
             source =
                 """
-    package kotlinx.coroutines
+                package kotlinx.coroutines
 
-    public interface CoroutineScope {
-        public val coroutineContext: CoroutineContext
-    }
+                public interface CoroutineScope {
+                    public val coroutineContext: CoroutineContext
+                }
 
-    class ContextScopeImp(context: CoroutineContext) : CoroutineScope {
-        override val coroutineContext: CoroutineContext = context
-    }
+                class ContextScopeImp(context: CoroutineContext) : CoroutineScope {
+                    override val coroutineContext: CoroutineContext = context
+                }
 
 
-    public suspend fun <R> coroutineScope(block: suspend CoroutineScope.() -> R): R {
-        val newScope = ContextScopeImp(EmptyCoroutineContext)
-        return newScope.block()
-    }
+                public suspend fun <R> coroutineScope(block: suspend CoroutineScope.() -> R): R {
+                    val newScope = ContextScopeImp(EmptyCoroutineContext)
+                    return newScope.block()
+                }
 
-    public object EmptyCoroutineContext : CoroutineContext
-    """
+                public object EmptyCoroutineContext : CoroutineContext
+                """
                     .trimIndent(),
             """
                 META-INF/main.kotlin_module:
@@ -231,6 +231,6 @@ object CoroutineStubs {
                 e/Y8Gmi1Ok22gyXlaOisoTA6z31UZVOCs2ETnMN52r9b9+7fTzRwOFEMF/bb
                 0FsPArR9hvZiBxc/ILldN0QwTfMAyS6KkqF4EySvR+O4QfImyXv1PLdwv/5r
                 pFeSWnVlARELwxZSFtIYoSVGLVzFtQWwAGMwaT+AEaAnQOwn9GRn5FcHAAA=
-                """
+                """,
         )
 }

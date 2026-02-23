@@ -23,8 +23,9 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents one edge of the selected text. A boundary can be defined by
@@ -85,20 +86,17 @@ public class SelectionBoundary implements Parcelable {
     }
 
     /** Create a boundary that has a particular index, but the position is not known. */
-    @NonNull
-    public static SelectionBoundary atIndex(int index) {
+    public static @NonNull SelectionBoundary atIndex(int index) {
         return new SelectionBoundary(index, -1, -1, false);
     }
 
     /** Create a boundary at a particular point, but the index is not known. */
-    @NonNull
-    public static SelectionBoundary atPoint(int x, int y) {
+    public static @NonNull SelectionBoundary atPoint(int x, int y) {
         return new SelectionBoundary(-1, x, y, false);
     }
 
     /** Create a boundary at a particular point, but the index is not known. */
-    @NonNull
-    public static SelectionBoundary atPoint(@NonNull Point p) {
+    public static @NonNull SelectionBoundary atPoint(@NonNull Point p) {
         return new SelectionBoundary(-1, p.x, p.y, false);
     }
 
@@ -136,9 +134,8 @@ public class SelectionBoundary implements Parcelable {
      * Converts android.graphics.pdf.models.selection.SelectionBoundary object to its
      * androidx.pdf.aidl.SelectionBoundary representation.
      */
-    @NonNull
-    public static SelectionBoundary convert(
-            @NonNull android.graphics.pdf.models.selection.SelectionBoundary selectionBoundary,
+    public static @NonNull SelectionBoundary convert(
+            android.graphics.pdf.models.selection.@NonNull SelectionBoundary selectionBoundary,
             boolean isRtl) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             if (selectionBoundary.getPoint() == null) {
@@ -155,8 +152,7 @@ public class SelectionBoundary implements Parcelable {
      * Converts androidx.pdf.aidl.SelectionBoundary object to its
      * android.graphics.pdf.models.selection.SelectionBoundary representation.
      */
-    @NonNull
-    public static android.graphics.pdf.models.selection.SelectionBoundary convert(
+    public static android.graphics.pdf.models.selection.@NonNull SelectionBoundary convert(
             @NonNull SelectionBoundary selectionBoundary) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             if (selectionBoundary.getIndex() == -1) {

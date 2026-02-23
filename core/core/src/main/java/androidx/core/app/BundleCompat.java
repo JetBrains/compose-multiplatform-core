@@ -19,8 +19,8 @@ package androidx.core.app;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link Bundle}.
@@ -42,8 +42,7 @@ public final class BundleCompat {
      */
     @Deprecated
     @androidx.annotation.ReplaceWith(expression = "bundle.getBinder(key)")
-    @Nullable
-    public static IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
+    public static @Nullable IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
         return bundle.getBinder(key);
     }
 

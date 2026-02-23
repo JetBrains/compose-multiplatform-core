@@ -15,24 +15,21 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":health:connect:connect-client"))
@@ -41,21 +38,15 @@ dependencies {
 
 androidx {
     name = "Health Connect Testing Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2024"
     description = "Contains the sample code for the Androidx Health Connect Testing Library"
 }
 
 android {
-    namespace "androidx.health.connect.testing.samples"
+    namespace = "androidx.health.connect.testing.samples"
     defaultConfig {
-        minSdkVersion 26
+        minSdk { version = release(26) }
     }
-    compileSdk = 35
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += ["-opt-in=kotlin.RequiresOptIn", "-opt-in=androidx.health.connect.client.testing.ExperimentalTestingApi"]
-    }
+    compileSdk { version = release(36) }
 }

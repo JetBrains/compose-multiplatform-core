@@ -16,11 +16,12 @@
 
 package androidx.camera.core.impl.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.FocusMeteringAction;
-import androidx.camera.core.impl.RestrictedCameraInfo;
+import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.SessionProcessor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public final class SessionProcessorUtil {
      * @return {@code true} if the operations can be supported, otherwise {@code false}.
      */
     public static boolean isOperationSupported(@Nullable SessionProcessor sessionProcessor,
-            @NonNull @RestrictedCameraInfo.CameraOperation int... operations) {
+            @AdapterCameraInfo.CameraOperation int @NonNull ... operations) {
         if (sessionProcessor == null) {
             return true;
         }
@@ -58,8 +59,7 @@ public final class SessionProcessorUtil {
      * regions. Returns {@code null} if none of AF/AE/AWB regions can be supported after the
      * filtering.
      */
-    @Nullable
-    public static FocusMeteringAction getModifiedFocusMeteringAction(
+    public static @Nullable FocusMeteringAction getModifiedFocusMeteringAction(
             @Nullable SessionProcessor sessionProcessor, @NonNull FocusMeteringAction action) {
         if (sessionProcessor == null) {
             return action;
@@ -68,22 +68,22 @@ public final class SessionProcessorUtil {
         FocusMeteringAction.Builder builder = new FocusMeteringAction.Builder(action);
         if (!action.getMeteringPointsAf().isEmpty()
                 && !isOperationSupported(sessionProcessor,
-                RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
-                RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION)) {
+                AdapterCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
+                AdapterCameraInfo.CAMERA_OPERATION_AF_REGION)) {
             shouldModify = true;
             builder.removePoints(FocusMeteringAction.FLAG_AF);
         }
 
         if (!action.getMeteringPointsAe().isEmpty()
                 && !isOperationSupported(sessionProcessor,
-                RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION)) {
+                AdapterCameraInfo.CAMERA_OPERATION_AE_REGION)) {
             shouldModify = true;
             builder.removePoints(FocusMeteringAction.FLAG_AE);
         }
 
         if (!action.getMeteringPointsAwb().isEmpty()
                 && !isOperationSupported(sessionProcessor,
-                RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION)) {
+                AdapterCameraInfo.CAMERA_OPERATION_AWB_REGION)) {
             shouldModify = true;
             builder.removePoints(FocusMeteringAction.FLAG_AWB);
         }

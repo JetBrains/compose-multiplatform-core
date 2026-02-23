@@ -25,9 +25,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,8 +85,8 @@ public class GotoLink implements Parcelable {
      * Converts android.graphics.pdf.content.PdfPageGotoLinkContent object to its
      * androidx.pdf.aidl.GotoLink representation.
      */
-    @NonNull
-    public static GotoLink convert(@NonNull PdfPageGotoLinkContent pdfPageGotoLinkContent) {
+    public static @NonNull GotoLink convert(
+            @NonNull PdfPageGotoLinkContent pdfPageGotoLinkContent) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             List<Rect> rectBounds = new ArrayList<>();
             List<RectF> rectFBounds = pdfPageGotoLinkContent.getBounds();
@@ -106,8 +107,7 @@ public class GotoLink implements Parcelable {
      *
      * @return The bounds of the goto link.
      */
-    @NonNull
-    public List<Rect> getBounds() {
+    public @NonNull List<Rect> getBounds() {
         return mBounds;
     }
 
@@ -116,8 +116,7 @@ public class GotoLink implements Parcelable {
      *
      * @return Destination where goto link is directing the user.
      */
-    @NonNull
-    public GotoLinkDestination getDestination() {
+    public @NonNull GotoLinkDestination getDestination() {
         return mDestination;
     }
 

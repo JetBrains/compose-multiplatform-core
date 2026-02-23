@@ -19,7 +19,7 @@ package androidx.camera.extensions.impl;
 import android.hardware.camera2.CaptureResult;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

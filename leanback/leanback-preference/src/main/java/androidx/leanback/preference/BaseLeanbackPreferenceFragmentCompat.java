@@ -25,13 +25,14 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceRecyclerViewAccessibilityDelegate;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This fragment provides a preference fragment with leanback-style behavior, suitable for
@@ -41,9 +42,8 @@ public abstract class BaseLeanbackPreferenceFragmentCompat extends PreferenceFra
 
     private Context mThemedContext;
 
-    @Nullable
     @Override
-    public Context getContext() {
+    public @Nullable Context getContext() {
         if (mThemedContext == null && getActivity() != null) {
             final TypedValue tv = new TypedValue();
             getActivity().getTheme().resolveAttribute(

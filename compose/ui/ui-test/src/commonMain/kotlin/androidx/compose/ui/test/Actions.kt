@@ -18,7 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.AccessibilityAction
@@ -75,7 +74,6 @@ fun SemanticsNodeInteraction.performClick(): SemanticsNodeInteraction {
  * @return The [SemanticsNodeInteraction] that is the receiver of this method
  */
 fun SemanticsNodeInteraction.performScrollTo(): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     do {
         val shouldContinueScroll =
@@ -157,7 +155,6 @@ private fun SemanticsNode.scrollToNode(testOwner: TestOwner): Boolean {
  * @see hasScrollToIndexAction
  */
 fun SemanticsNodeInteraction.performScrollToIndex(index: Int): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     fetchSemanticsNode("Failed: performScrollToIndex($index)").scrollToIndex(index, this)
     return this
@@ -187,7 +184,6 @@ private fun SemanticsNode.scrollToIndex(index: Int, nodeInteraction: SemanticsNo
  * @see hasScrollToKeyAction
  */
 fun SemanticsNodeInteraction.performScrollToKey(key: Any): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode("Failed: performScrollToKey(\"$key\")")
     requireSemantics(node, IndexForKey, ScrollToIndex) {
@@ -235,7 +231,6 @@ fun SemanticsNodeInteraction.performScrollToKey(key: Any): SemanticsNodeInteract
 fun SemanticsNodeInteraction.performScrollToNode(
     matcher: SemanticsMatcher
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = scrollToMatchingDescendantOrReturnScrollable(matcher) ?: return this
     // If this is NOT a lazy list, but we haven't found the node above ..
@@ -279,15 +274,33 @@ private fun SemanticsNodeInteraction.scrollToMatchingDescendantOrReturnScrollabl
     matcher: SemanticsMatcher
 ): SemanticsNode? {
     var node = fetchSemanticsNode("Failed: performScrollToNode(${matcher.description})")
-    var matchedNode = matcher.scrollToMatchingDescendantOrReturnScrollable(node)
+    var matchedNode = matcher.matchDescendant(node)
     while (matchedNode != null) {
         val shouldContinueScroll = matchedNode.scrollToNode(testContext.testOwner)
         if (!shouldContinueScroll) return null
         node = fetchSemanticsNode("Failed: performScrollToNode(${matcher.description})")
-        matchedNode = matcher.scrollToMatchingDescendantOrReturnScrollable(node)
+        matchedNode = matcher.matchDescendant(node)
     }
 
     return node
+}
+
+private fun SemanticsMatcher.matchDescendant(root: SemanticsNode): SemanticsNode? {
+    root.children.forEach { child ->
+        val matchedNode = matchNodeOrDescendant(child)
+        if (matchedNode != null) return matchedNode
+    }
+    return null
+}
+
+private fun SemanticsMatcher.matchNodeOrDescendant(root: SemanticsNode?): SemanticsNode? {
+    if (root == null || !root.layoutInfo.isPlaced) return null
+    if (matches(root)) return root
+    root.children.forEach { child ->
+        val matchedNode = matchNodeOrDescendant(child)
+        if (matchedNode != null) return matchedNode
+    }
+    return null
 }
 
 /**
@@ -322,7 +335,7 @@ private fun SemanticsNodeInteraction.scrollToMatchingDescendantOrReturnScrollabl
 @Deprecated(
     message = "Replaced by performTouchInput",
     replaceWith =
-        ReplaceWith("performTouchInput(block)", "import androidx.compose.ui.test.performGesture")
+        ReplaceWith("performTouchInput(block)", "import androidx.compose.ui.test.performGesture"),
 )
 @Suppress("DEPRECATION")
 fun SemanticsNodeInteraction.performGesture(
@@ -384,7 +397,6 @@ fun SemanticsNodeInteraction.performGesture(
 fun SemanticsNodeInteraction.performTouchInput(
     block: TouchInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode("Failed to inject touch input.")
     with(MultiModalInjectionScopeImpl(node, testContext)) {
@@ -434,12 +446,56 @@ fun SemanticsNodeInteraction.performTouchInput(
 fun SemanticsNodeInteraction.performMouseInput(
     block: MouseInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode("Failed to inject mouse input.")
     with(MultiModalInjectionScopeImpl(node, testContext)) {
         try {
             mouse(block)
+        } finally {
+            dispose()
+        }
+    }
+    return this
+}
+
+/**
+ * Executes the trackpad gesture specified in the given [block]. The gesture doesn't need to be
+ * complete and can be resumed in a later invocation of one of the `perform.*Input` methods. The
+ * event time is initialized to the current time of the [MainTestClock].
+ *
+ * Be aware that if you split a gesture over multiple invocations of `perform.*Input`, everything
+ * that happens in between will run as if the gesture is still ongoing (imagine a trackpad button
+ * still being pressed).
+ *
+ * All events that are injected from the [block] are batched together and sent after [block] is
+ * complete. This method blocks while the events are injected. If an error occurs during execution
+ * of [block] or injection of the events, all (subsequent) events are dropped and the error is
+ * thrown here.
+ *
+ * Due to the batching of events, all events in a block are sent together and no recomposition will
+ * take place in between events. Additionally all events will be generated before any of the events
+ * take effect. This means that the screen coordinates of all events are resolved before any of the
+ * events can cause the position of the node being injected into to change. This has certain
+ * advantages, for example, in the cases of nested scrolling or dragging an element around, it
+ * prevents the injection of events into a moving target since all events are enqueued before any of
+ * them has taken effect.
+ *
+ * Example of performing a trackpad click:
+ *
+ * @sample androidx.compose.ui.test.samples.trackpadInputClick
+ * @param block A lambda with [TrackpadInjectionScope] as receiver that describes the gesture by
+ *   sending all trackpad events.
+ * @return The [SemanticsNodeInteraction] that is the receiver of this method
+ * @see TrackpadInjectionScope
+ */
+fun SemanticsNodeInteraction.performTrackpadInput(
+    block: TrackpadInjectionScope.() -> Unit
+): SemanticsNodeInteraction {
+    tryPerformAccessibilityChecks()
+    val node = fetchSemanticsNode("Failed to inject trackpad input.")
+    with(MultiModalInjectionScopeImpl(node, testContext)) {
+        try {
+            trackpad(block)
         } finally {
             dispose()
         }
@@ -465,16 +521,15 @@ fun SemanticsNodeInteraction.performMouseInput(
  * prevents the injection of events into a moving target since all events are enqueued before any of
  * them has taken effect.
  *
+ * @sample androidx.compose.ui.test.samples.keyInputClick
  * @param block A lambda with [KeyInjectionScope] as receiver that describes the gesture by sending
  *   all key press events.
  * @return The [SemanticsNodeInteraction] that is the receiver of this method
  * @see KeyInjectionScope
  */
-@ExperimentalTestApi
 fun SemanticsNodeInteraction.performKeyInput(
     block: KeyInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode("Failed to inject key input.")
     with(MultiModalInjectionScopeImpl(node, testContext)) {
@@ -545,13 +600,13 @@ fun SemanticsNodeInteraction.requestFocus(): SemanticsNodeInteraction =
 
 @Deprecated(
     message = "Replaced with same function, but with SemanticsNodeInteraction as return type",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("unused")
 @JvmName("performSemanticsAction")
 fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsActionUnit(
     key: SemanticsPropertyKey<AccessibilityAction<T>>,
-    invocation: (T) -> Unit
+    invocation: (T) -> Unit,
 ) {
     performSemanticsAction(key, invocation)
 }
@@ -573,7 +628,7 @@ fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsActionUnit(
  */
 fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsAction(
     key: SemanticsPropertyKey<AccessibilityAction<T>>,
-    invocation: (T) -> Unit
+    invocation: (T) -> Unit,
 ): SemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to perform ${key.name} action.")
     requireSemantics(node, key) { "Failed to perform action ${key.name}" }
@@ -585,7 +640,7 @@ fun <T : Function<Boolean>> SemanticsNodeInteraction.performSemanticsAction(
 
 @Deprecated(
     message = "Replaced with same function, but with SemanticsNodeInteraction as return type",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Suppress("unused")
 @JvmName("performSemanticsAction")
@@ -615,15 +670,28 @@ fun SemanticsNodeInteraction.performSemanticsAction(
 }
 
 /**
- * Send the specified [RotaryScrollEvent] to the focused component.
+ * Executes the rotary input specified in the given [block].
  *
- * @return true if the event was consumed. False otherwise.
+ * The [block] receives a [RotaryInjectionScope] which provides access to rotary input injection
+ * functions, such as [RotaryInjectionScope.rotateToScrollVertically] or
+ * [RotaryInjectionScope.rotateToScrollHorizontally].
+ *
+ * All events that are injected from the [block] are batched together and sent after [block] is
+ * complete. This method blocks while the events are injected. If an error occurs during execution
+ * of [block] or injection of the events, all (subsequent) events are dropped and the error is
+ * thrown here.
+ *
+ * Example of performing a scroll with three events:
+ *
+ * @sample androidx.compose.ui.test.samples.rotaryInputScroll
+ * @param block A lambda with [RotaryInjectionScope] as receiver that describes the gesture by
+ *   sending all rotary scroll events.
+ * @return The [SemanticsNodeInteraction] that is the receiver of this method
+ * @see RotaryInjectionScope
  */
-@ExperimentalTestApi
 fun SemanticsNodeInteraction.performRotaryScrollInput(
     block: RotaryInjectionScope.() -> Unit
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode("Failed to send rotary Event")
     with(MultiModalInjectionScopeImpl(node, testContext)) {
@@ -669,7 +737,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabel(
 @ExperimentalTestApi
 fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
     predicateDescription: String? = null,
-    labelPredicate: (label: String) -> Boolean
+    labelPredicate: (label: String) -> Boolean,
 ): SemanticsNodeInteraction {
     val node = fetchSemanticsNode()
     val actions = node.config[CustomActions]
@@ -679,7 +747,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
             buildGeneralErrorMessage(
                 "No custom accessibility actions matched [$predicateDescription].",
                 selector,
-                node
+                node,
             )
         )
     } else if (matchingActions.size > 1) {
@@ -688,7 +756,7 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
                 "Expected exactly one custom accessibility action to match" +
                     " [$predicateDescription], but found ${matchingActions.size}.",
                 selector,
-                node
+                node,
             )
         )
     }
@@ -707,7 +775,6 @@ fun SemanticsNodeInteraction.performCustomAccessibilityActionWithLabelMatching(
 fun SemanticsNodeInteraction.performFirstLinkClick(
     predicate: (AnnotatedString.Range<LinkAnnotation>) -> Boolean = { true }
 ): SemanticsNodeInteraction {
-    @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
 
     val errorMessage = "Failed to click the link."
@@ -721,7 +788,13 @@ fun SemanticsNodeInteraction.performFirstLinkClick(
     val linkChildren = node.children.fastFilter { it.isLink() }
     val matchedLinkIndex = linksInTexts.indexOfFirst(predicate)
     if (matchedLinkIndex != -1) {
-        linkChildren[matchedLinkIndex].config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()
+        testContext.testOwner.runOnUiThread {
+            linkChildren[matchedLinkIndex]
+                .config
+                .getOrNull(SemanticsActions.OnClick)
+                ?.action
+                ?.invoke()
+        }
     } else {
         throw AssertionError("$errorMessage\n Reason: No link found that matches the predicate.")
     }
@@ -784,7 +857,7 @@ private val SemanticsNode.isRtl: Boolean
 private fun SemanticsNodeInteraction.requireSemantics(
     node: SemanticsNode,
     vararg properties: SemanticsPropertyKey<*>,
-    errorMessage: () -> String
+    errorMessage: () -> String,
 ) {
     val missingProperties = properties.filter { it !in node.config }
     if (missingProperties.isNotEmpty()) {
@@ -794,15 +867,4 @@ private fun SemanticsNodeInteraction.requireSemantics(
             }]"
         throw AssertionError(buildGeneralErrorMessage(msg, selector, node))
     }
-}
-
-@Suppress("NOTHING_TO_INLINE") // Avoids doubling the stack depth for recursive search
-private inline fun SemanticsMatcher.scrollToMatchingDescendantOrReturnScrollable(
-    root: SemanticsNode
-): SemanticsNode? {
-    return root.children.firstOrNull { it.layoutInfo.isPlaced && findMatchInHierarchy(it) != null }
-}
-
-private fun SemanticsMatcher.findMatchInHierarchy(node: SemanticsNode): SemanticsNode? {
-    return if (matches(node)) node else scrollToMatchingDescendantOrReturnScrollable(node)
 }

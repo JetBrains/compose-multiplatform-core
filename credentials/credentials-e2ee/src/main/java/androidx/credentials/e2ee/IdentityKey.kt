@@ -29,7 +29,9 @@ import com.google.crypto.tink.subtle.Hkdf
  * @property public The public key, stored as a byte array.
  * @property private The private key, stored as a byte array.
  * @property type The type of signing key, e.g. Ed25519.
+ * @deprecated This API is deprecated and will be removed in a future release.
  */
+@Deprecated(message = "This API is deprecated and will be removed in a future release.")
 class IdentityKey
 private constructor(val public: ByteArray, val private: ByteArray, @IdentityKeyType val type: Int) {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -37,6 +39,8 @@ private constructor(val public: ByteArray, val private: ByteArray, @IdentityKeyT
     @IntDef(IDENTITY_KEY_TYPE_RESERVED, IDENTITY_KEY_TYPE_ED25519)
     annotation class IdentityKeyType
 
+    /** @deprecated This API is deprecated and will be removed in a future release. */
+    @Deprecated(message = "This API is deprecated and will be removed in a future release.")
     companion object {
         /**
          * The default signing key type, which should not be used. This is required to match
@@ -61,13 +65,15 @@ private constructor(val public: ByteArray, val private: ByteArray, @IdentityKeyT
          * @param keyType The type of IdentityKey to generate, e.g. Ed25519.
          * @return a [IdentityKey], a public/private key pair usable for signing.
          * @throws IllegalArgumentException if the key type is not supported.
+         * @deprecated This API is deprecated and will be removed in a future release.
          */
         @JvmStatic
         @WorkerThread
+        @Deprecated(message = "This API is deprecated and will be removed in a future release.")
         fun createFromPrf(
             prf: ByteArray,
             salt: ByteArray?,
-            @IdentityKeyType keyType: Int
+            @IdentityKeyType keyType: Int,
         ): IdentityKey {
             if (keyType != IDENTITY_KEY_TYPE_ED25519) {
                 throw IllegalArgumentException("Only Ed25519 is supported at this stage.")
@@ -82,7 +88,7 @@ private constructor(val public: ByteArray, val private: ByteArray, @IdentityKeyT
                     // as the hash digest.
                     /* salt= */ salt ?: ByteArray(32),
                     /* info= */ ByteArray(0),
-                    /* size= */ 32
+                    /* size= */ 32,
                 )
             val keyPair: Ed25519Sign.KeyPair = Ed25519Sign.KeyPair.newKeyPairFromSeed(hkdf)
             return IdentityKey(keyPair.publicKey, keyPair.privateKey, IDENTITY_KEY_TYPE_ED25519)

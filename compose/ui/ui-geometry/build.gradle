@@ -15,94 +15,54 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
-
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.compose.ui.geometry"
+    }
     jvmStubs()
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:ui:ui-util"))
-            }
+        commonMain.dependencies {
+            implementation(project(":compose:runtime:runtime"))
+            implementation(project(":compose:ui:ui-util"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(kotlin("test-junit"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-            }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
-        }
-
-        androidUnitTest {
-            dependsOn(commonTest)
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
         }
     }
 }
 
 androidx {
     name = "Compose Geometry"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose classes related to dimensions without units"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
-android {
-    namespace "androidx.compose.ui.geometry"
-}

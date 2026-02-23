@@ -18,7 +18,7 @@ package androidx.window.sidecar;
 
 import android.os.IBinder;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -35,6 +35,5 @@ public final class SidecarWindowLayoutInfo {
      * window and reported within the coordinate space of the window that was provided by the app.
      * @see SidecarInterface#getWindowLayoutInfo(IBinder)
      */
-    @Nullable
-    public List<SidecarDisplayFeature> displayFeatures;
+    public @Nullable List<SidecarDisplayFeature> displayFeatures;
 }

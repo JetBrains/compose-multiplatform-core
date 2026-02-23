@@ -16,15 +16,24 @@
 
 package androidx.appsearch.safeparcel;
 
+import static androidx.appsearch.testutil.AppSearchTestUtils.calculateDigest;
+import static androidx.appsearch.testutil.AppSearchTestUtils.generateRandomBytes;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
 import android.os.Parcel;
 
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +42,10 @@ import java.util.Map;
 
 /** Tests for {@link androidx.appsearch.app.GenericDocument} related SafeParcels. */
 public class GenericDocumentParcelTest {
+
+    @Rule
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
+
     @Test
     public void testPropertyParcel_onePropertySet_success() {
         String[] stringValues = {"a", "b"};
@@ -66,6 +79,25 @@ public class GenericDocumentParcelTest {
         assertThat(new PropertyParcel.Builder("name").setDocumentValues(
                 docValues).build().getDocumentValues()).isEqualTo(
                 Arrays.copyOf(docValues, docValues.length));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testPropertyParcel_blobHandleSet_success() throws Exception {
+        byte[] data1 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest1 = calculateDigest(data1);
+        byte[] data2 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle blob1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package1", "db1", "ns");
+        AppSearchBlobHandle blob2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package1", "db1", "ns");
+        AppSearchBlobHandle[] blobHandles = {blob1, blob2};
+
+        PropertyParcel parcel =  new PropertyParcel.Builder("name")
+                .setBlobHandleValues(blobHandles).build();
+        assertThat(parcel.getBlobHandleValues()).asList()
+                .containsExactly(blob1, blob2).inOrder();
     }
 
     @Test

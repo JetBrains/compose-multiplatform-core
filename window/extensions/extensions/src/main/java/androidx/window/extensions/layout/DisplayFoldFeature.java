@@ -21,11 +21,12 @@ import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Consumer;
 import androidx.window.extensions.util.SetUtilApi23;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -122,7 +123,7 @@ public final class DisplayFoldFeature {
      * Returns {@code true} if the fold has all the given properties, {@code false} otherwise.
      */
     @RequiresVendorApiLevel(level = 6)
-    public boolean hasProperties(@NonNull @FoldProperty int... properties) {
+    public boolean hasProperties(@FoldProperty int @NonNull ... properties) {
         for (int i = 0; i < properties.length; i++) {
             if (!mProperties.contains(properties[i])) {
                 return false;
@@ -145,8 +146,7 @@ public final class DisplayFoldFeature {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return "ScreenFoldDisplayFeature{mType=" + mType + ", mProperties=" + mProperties + '}';
     }
 
@@ -180,9 +180,8 @@ public final class DisplayFoldFeature {
          * Add a property to the set of properties exposed by {@link DisplayFoldFeature}.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
         @RequiresVendorApiLevel(level = 6)
-        public Builder addProperty(@FoldProperty int property) {
+        public @NonNull Builder addProperty(@FoldProperty int property) {
             mProperties.add(property);
             return this;
         }
@@ -192,9 +191,8 @@ public final class DisplayFoldFeature {
          * {@link DisplayFoldFeature}.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
         @RequiresVendorApiLevel(level = 6)
-        public Builder addProperties(@NonNull @FoldProperty int... properties) {
+        public @NonNull Builder addProperties(@FoldProperty int @NonNull ... properties) {
             for (int i = 0; i < properties.length; i++) {
                 mProperties.add(properties[i]);
             }
@@ -204,9 +202,8 @@ public final class DisplayFoldFeature {
         /**
          * Clear the properties in the builder.
          */
-        @NonNull
         @RequiresVendorApiLevel(level = 6)
-        public Builder clearProperties() {
+        public @NonNull Builder clearProperties() {
             mProperties.clear();
             return this;
         }
@@ -215,8 +212,7 @@ public final class DisplayFoldFeature {
          * Returns an instance of {@link DisplayFoldFeature}.
          */
         @RequiresVendorApiLevel(level = 6)
-        @NonNull
-        public DisplayFoldFeature build() {
+        public @NonNull DisplayFoldFeature build() {
             return new DisplayFoldFeature(mType, mProperties);
         }
     }

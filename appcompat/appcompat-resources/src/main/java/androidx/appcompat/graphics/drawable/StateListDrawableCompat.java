@@ -16,9 +16,6 @@
 
 package androidx.appcompat.graphics.drawable;
 
-import static android.os.Build.VERSION.SDK_INT;
-import static android.os.Build.VERSION_CODES.LOLLIPOP;
-
 import static androidx.core.content.res.TypedArrayUtils.obtainAttributes;
 
 import android.content.Context;
@@ -29,13 +26,11 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.StateSet;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.resources.Compatibility;
 import androidx.appcompat.resources.R;
 import androidx.appcompat.widget.ResourceManagerInternal;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -105,7 +100,7 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull [] stateSet) {
         final boolean changed = super.onStateChange(stateSet);
         int idx = mStateListState.indexOfStateSet(stateSet);
         if (DEBUG) {
@@ -122,6 +117,7 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
      * Inflate this Drawable from an XML resource optionally styled by a theme.
      * This can't be called more than once for each Drawable.
      *
+     * @param context The context in which the inflation takes place
      * @param r Resources used to resolve attribute values
      * @param parser XML parser from which to inflate this Drawable
      * @param attrs Base set of attribute values
@@ -151,9 +147,7 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
     private void updateStateFromTypedArray(TypedArray a) {
         final StateListState state = mStateListState;
         // Account for any configuration changes.
-        if (SDK_INT >= LOLLIPOP) {
-            state.mChangingConfigurations |= Compatibility.Api21Impl.getChangingConfigurations(a);
-        }
+        state.mChangingConfigurations |= a.getChangingConfigurations();
         state.mVariablePadding = a.getBoolean(
                 R.styleable.StateListDrawable_android_variablePadding, state.mVariablePadding);
         state.mConstantSize = a.getBoolean(
@@ -210,11 +204,7 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
                                     + ": <item> tag requires a 'drawable' attribute or "
                                     + "child tag defining a drawable");
                 }
-                if (SDK_INT >= LOLLIPOP) {
-                    dr = Compatibility.Api21Impl.createFromXmlInner(r, parser, attrs, theme);
-                } else {
-                    dr = Drawable.createFromXmlInner(r, parser, attrs);
-                }
+                dr = Drawable.createFromXmlInner(r, parser, attrs, theme);
             }
             state.addStateSet(states, dr);
         }
@@ -300,9 +290,8 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
         return mStateListState.indexOfStateSet(stateSet);
     }
 
-    @NonNull
     @Override
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
             mStateListState.mutate();
             mMutated = true;
@@ -360,15 +349,13 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
             return -1;
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable() {
+        public @NonNull Drawable newDrawable() {
             return new StateListDrawableCompat(this, null);
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable(Resources res) {
+        public @NonNull Drawable newDrawable(Resources res) {
             return new StateListDrawableCompat(this, res);
         }
 
@@ -382,7 +369,6 @@ public class StateListDrawableCompat extends DrawableContainerCompat {
     }
 
     @Override
-    @RequiresApi(21)
     public void applyTheme(@NonNull Theme theme) {
         super.applyTheme(theme);
         onStateChange(getState());

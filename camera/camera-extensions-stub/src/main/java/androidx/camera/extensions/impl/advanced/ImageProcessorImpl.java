@@ -16,8 +16,8 @@
 
 package androidx.camera.extensions.impl.advanced;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A interface to receive and process the upcoming next available Image.

@@ -17,6 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
@@ -48,7 +49,7 @@ private const val InvalidFocusRequesterInvocation =
  * @see androidx.compose.ui.focus.focusRequester
  */
 @Stable
-class FocusRequester {
+class FocusRequester @RememberInComposition constructor() {
 
     internal val focusRequesterNodes: MutableVector<FocusRequesterModifierNode> = mutableVectorOf()
 
@@ -59,21 +60,28 @@ class FocusRequester {
      *
      * @sample androidx.compose.ui.samples.RequestFocusSample
      */
+    @Deprecated(
+        message = "use the version the has a FocusDirection",
+        replaceWith = ReplaceWith("this.requestFocus()"),
+        level = DeprecationLevel.HIDDEN,
+    )
     fun requestFocus() {
-        focus()
+        requestFocus(Enter)
     }
 
-    // TODO(b/245755256): Consider making this API Public.
-    internal fun focus(): Boolean = findFocusTargetNode { it.requestFocus() }
-
-    internal fun findFocusTargetNode(onFound: (FocusTargetNode) -> Boolean): Boolean {
-        return findFocusTarget { focusTarget ->
-            if (focusTarget.fetchFocusProperties().canFocus) {
-                onFound(focusTarget)
-            } else {
-                focusTarget.findChildCorrespondingToFocusEnter(Enter, onFound)
-            }
-        }
+    /**
+     * Use this function to request focus with a specific direction. If the system grants focus to a
+     * component associated with this [FocusRequester], its [onFocusChanged] modifiers will receive
+     * a [FocusState] object where [FocusState.isFocused] is true.
+     *
+     * @param focusDirection The direction passed to the [FocusTargetModifierNode] to indicate the
+     *   direction that the focus request comes from.
+     * @return `true` if the focus was successfully requested or `false` if the focus request was
+     *   canceled.
+     * @sample androidx.compose.ui.samples.RequestFocusSample
+     */
+    fun requestFocus(focusDirection: FocusDirection = Enter): Boolean {
+        return findFocusTarget { it.requestFocus(focusDirection) }
     }
 
     /**
@@ -91,7 +99,10 @@ class FocusRequester {
      * @sample androidx.compose.ui.samples.CaptureFocusSample
      */
     fun captureFocus(): Boolean {
-        check(focusRequesterNodes.isNotEmpty()) { FocusRequesterNotInitialized }
+        if (focusRequesterNodes.isEmpty()) {
+            println("$FocusWarning: $FocusRequesterNotInitialized")
+            return false
+        }
         focusRequesterNodes.forEach {
             if (it.captureFocus()) {
                 return true
@@ -114,7 +125,10 @@ class FocusRequester {
      * @sample androidx.compose.ui.samples.CaptureFocusSample
      */
     fun freeFocus(): Boolean {
-        check(focusRequesterNodes.isNotEmpty()) { FocusRequesterNotInitialized }
+        if (focusRequesterNodes.isEmpty()) {
+            println("$FocusWarning: $FocusRequesterNotInitialized")
+            return false
+        }
         focusRequesterNodes.forEach {
             if (it.freeFocus()) {
                 return true
@@ -132,8 +146,18 @@ class FocusRequester {
      *   and we successfully saved a reference to it.
      * @sample androidx.compose.ui.samples.RestoreFocusSample
      */
+    // TODO: Deprecate once focus restoration is enabled by default via flags.
+    // @Deprecated(
+    //    message =
+    //        "The focused child is now saved automatically whenever focus changes. Just call" +
+    //            " restoreFocusedChild to restore focus.",
+    //    level = DeprecationLevel.WARNING,
+    // )
     fun saveFocusedChild(): Boolean {
-        check(focusRequesterNodes.isNotEmpty()) { FocusRequesterNotInitialized }
+        if (focusRequesterNodes.isEmpty()) {
+            println("$FocusWarning: $FocusRequesterNotInitialized")
+            return false
+        }
         focusRequesterNodes.forEach { if (it.saveFocusedChild()) return true }
         return false
     }
@@ -148,7 +172,10 @@ class FocusRequester {
      * @sample androidx.compose.ui.samples.RestoreFocusSample
      */
     fun restoreFocusedChild(): Boolean {
-        check(focusRequesterNodes.isNotEmpty()) { FocusRequesterNotInitialized }
+        if (focusRequesterNodes.isEmpty()) {
+            println("$FocusWarning: $FocusRequesterNotInitialized")
+            return false
+        }
         var success = false
         focusRequesterNodes.forEach { success = it.restoreFocusedChild() || success }
         return success
@@ -170,6 +197,9 @@ class FocusRequester {
          * @sample androidx.compose.ui.samples.CancelFocusMoveSample
          */
         val Cancel = FocusRequester()
+
+        /** Used to indicate that the focus has been redirected during an enter/exit lambda. */
+        internal val Redirect = FocusRequester()
 
         /**
          * Convenient way to create multiple [FocusRequester] instances.
@@ -225,14 +255,16 @@ class FocusRequester {
      *
      * @param onFound the callback that is run when the child is found.
      * @return false if no focus nodes were found or if the FocusRequester is
-     *   [FocusRequester.Cancel]. Returns null if the FocusRequester is [FocusRequester.Default].
-     *   Otherwise returns a logical or of the result of calling [onFound] for each focus node
-     *   associated with this [FocusRequester].
+     *   [FocusRequester.Cancel]. Returns a logical or of the result of calling [onFound] for each
+     *   focus node associated with this [FocusRequester].
      */
-    private inline fun findFocusTarget(onFound: (FocusTargetNode) -> Boolean): Boolean {
+    internal inline fun findFocusTarget(onFound: (FocusTargetNode) -> Boolean): Boolean {
         check(this !== Default) { InvalidFocusRequesterInvocation }
         check(this !== Cancel) { InvalidFocusRequesterInvocation }
-        check(focusRequesterNodes.isNotEmpty()) { FocusRequesterNotInitialized }
+        if (focusRequesterNodes.isEmpty()) {
+            println("$FocusWarning: $FocusRequesterNotInitialized")
+            return false
+        }
         var success = false
         focusRequesterNodes.forEach { node ->
             node.visitChildren(Nodes.FocusTarget) {

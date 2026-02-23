@@ -20,8 +20,9 @@ import android.net.TrafficStats;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.net.DatagramSocket;
 import java.net.Socket;

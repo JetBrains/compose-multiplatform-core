@@ -22,8 +22,6 @@ import androidx.annotation.RequiresOptIn;
 
 import java.lang.annotation.Retention;
 
-
-
 /**
  * Denotes that the methods on use cases and use case builders are experimental and may
  * change in a future release

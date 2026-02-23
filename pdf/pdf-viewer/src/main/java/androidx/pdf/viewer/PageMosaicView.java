@@ -22,8 +22,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.models.Dimensions;
@@ -34,6 +32,9 @@ import androidx.pdf.util.Accessibility;
 import androidx.pdf.util.BitmapRecycler;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.MosaicView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -96,8 +97,7 @@ public class PageMosaicView extends MosaicView implements PageViewFactory.PageVi
         return mPageText == null && Accessibility.get().isAccessibilityEnabled(getContext());
     }
 
-    @Nullable
-    public String getPageText() {
+    public @Nullable String getPageText() {
         return this.mPageText;
     }
 
@@ -107,12 +107,14 @@ public class PageMosaicView extends MosaicView implements PageViewFactory.PageVi
         setContentDescription(buildContentDescription(pageText, mPageNum));
     }
 
-    @NonNull
-    protected String buildContentDescription(@Nullable String pageText, int pageNum) {
-        return (pageText != null)
-                ? pageText
-                : getContext()
-                        .getString(androidx.pdf.R.string.desc_page, (mPageNum + 1));
+    protected @NonNull String buildContentDescription(@Nullable String pageText, int pageNum) {
+        if (pageText != null) {
+            if (pageText.trim().isEmpty()) {
+                return getContext().getString(androidx.pdf.R.string.desc_empty_page);
+            }
+            return pageText;
+        }
+        return getContext().getString(androidx.pdf.R.string.desc_page, (mPageNum + 1));
     }
 
     /** Returns true if we have data about any links on the page. */
@@ -126,14 +128,12 @@ public class PageMosaicView extends MosaicView implements PageViewFactory.PageVi
     }
 
     /** Return the URL corresponding to the given point. */
-    @Nullable
-    public String getLinkUrl(@NonNull Point p) {
+    public @Nullable String getLinkUrl(@NonNull Point p) {
         return (mUrlLinks != null) ? mUrlLinks.getUrlAtPoint(p.x, p.y) : null;
     }
 
     /** Return the goto link corresponding to the given point. */
-    @Nullable
-    public GotoLinkDestination getGotoDestination(@NonNull Point p) {
+    public @Nullable GotoLinkDestination getGotoDestination(@NonNull Point p) {
         if (mGotoLinks != null) {
             for (GotoLink link : mGotoLinks) {
                 if (link.getBounds() != null) {
@@ -155,9 +155,8 @@ public class PageMosaicView extends MosaicView implements PageViewFactory.PageVi
         setPageText(null);
     }
 
-    @NonNull
     @Override
-    public PageMosaicView getPageView() {
+    public @NonNull PageMosaicView getPageView() {
         return this;
     }
 
@@ -176,9 +175,8 @@ public class PageMosaicView extends MosaicView implements PageViewFactory.PageVi
         mGotoLinks = links;
     }
 
-    @NonNull
     @Override
-    public View asView() {
+    public @NonNull View asView() {
         return this;
     }
 

@@ -19,19 +19,18 @@ package androidx.appcompat.widget;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.R;
 import androidx.core.view.ViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 class AppCompatBackgroundHelper {
 
-    @NonNull
-    private final View mView;
+    private final @NonNull View mView;
     private final AppCompatDrawableManager mDrawableManager;
 
     private int mBackgroundResId = -1;
@@ -153,20 +152,7 @@ class AppCompatBackgroundHelper {
     }
 
     private boolean shouldApplyFrameworkTintUsingColorFilter() {
-        final int sdk = Build.VERSION.SDK_INT;
-        if (sdk > 21) {
-            // On API 22+, if we're using an internal compat background tint, we're also
-            // responsible for applying any custom tint set via the framework impl
-            return mInternalBackgroundTint != null;
-        } else if (sdk == 21) {
-            // GradientDrawable doesn't implement setTintList on API 21, and since there is
-            // no nice way to unwrap DrawableContainers we have to blanket apply this
-            // on API 21
-            return true;
-        } else {
-            // API 19 and below doesn't have framework tint
-            return false;
-        }
+        return mInternalBackgroundTint != null;
     }
 
     /**

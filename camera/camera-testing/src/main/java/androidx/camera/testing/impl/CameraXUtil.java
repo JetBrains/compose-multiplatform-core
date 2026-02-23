@@ -19,8 +19,6 @@ package androidx.camera.testing.impl;
 import android.content.Context;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraX;
 import androidx.camera.core.CameraXConfig;
 import androidx.camera.core.InitializationException;
@@ -33,6 +31,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 
@@ -72,15 +73,13 @@ public class CameraXUtil {
      * {@link Throwable#getCause()). The cause will be a {@link CameraUnavailableException} if it
      * fails to access any camera during initialization.
      */
-    @NonNull
-    public static ListenableFuture<Void> initialize(@NonNull Context context,
+    public static @NonNull ListenableFuture<Void> initialize(@NonNull Context context,
             @NonNull CameraXConfig cameraXConfig) {
         return sInstance.initializeInternal(context, () -> cameraXConfig);
     }
 
-    @NonNull
-    private ListenableFuture<Void> initializeInternal(@NonNull Context context,
-            @Nullable CameraXConfig.Provider configProvider) {
+    private @NonNull ListenableFuture<Void> initializeInternal(@NonNull Context context,
+            CameraXConfig.@Nullable Provider configProvider) {
         synchronized (mLock) {
             Preconditions.checkNotNull(context);
             Preconditions.checkState(mCameraX == null, "A CameraX instance has already been "
@@ -130,13 +129,11 @@ public class CameraXUtil {
      *
      * @return A {@link ListenableFuture} representing the shutdown task.
      */
-    @NonNull
-    public static ListenableFuture<Void> shutdown() {
+    public static @NonNull ListenableFuture<Void> shutdown() {
         return sInstance.shutdownInternal();
     }
 
-    @NonNull
-    private ListenableFuture<Void> shutdownInternal() {
+    private @NonNull ListenableFuture<Void> shutdownInternal() {
         synchronized (mLock) {
             if (mCameraX == null) {
                 // If it is already or will be shutdown, return the future directly.
@@ -172,15 +169,13 @@ public class CameraXUtil {
      *                      retrieve the config provider from Application or meta-data.
      */
     @SuppressWarnings("FutureReturnValueIgnored") // shutdownLocked() should always succeed.
-    @NonNull
-    public static ListenableFuture<CameraX> getOrCreateInstance(@NonNull Context context,
-            @Nullable CameraXConfig.Provider configProvider) {
+    public static @NonNull ListenableFuture<CameraX> getOrCreateInstance(@NonNull Context context,
+            CameraXConfig.@Nullable Provider configProvider) {
         return sInstance.getOrCreateInstanceInternal(context, configProvider);
     }
 
-    @NonNull
-    private ListenableFuture<CameraX> getOrCreateInstanceInternal(@NonNull Context context,
-            @Nullable CameraXConfig.Provider configProvider) {
+    private @NonNull ListenableFuture<CameraX> getOrCreateInstanceInternal(@NonNull Context context,
+            CameraXConfig.@Nullable Provider configProvider) {
         Preconditions.checkNotNull(context, "Context must not be null.");
         synchronized (mLock) {
             ListenableFuture<CameraX> instanceFuture = getInstanceLocked();
@@ -211,8 +206,7 @@ public class CameraXUtil {
     }
 
     @GuardedBy("mLock")
-    @NonNull
-    private ListenableFuture<CameraX> getInstanceLocked() {
+    private @NonNull ListenableFuture<CameraX> getInstanceLocked() {
         CameraX cameraX = mCameraX;
         if (cameraX == null) {
             return Futures.immediateFailedFuture(new IllegalStateException("Must "

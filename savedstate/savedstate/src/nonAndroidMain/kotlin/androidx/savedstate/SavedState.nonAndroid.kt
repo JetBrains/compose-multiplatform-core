@@ -14,11 +14,31 @@
  * limitations under the License.
  */
 
+@file:JvmName("SavedStateKt")
+@file:JvmMultifileClass
+@file:Suppress("NOTHING_TO_INLINE")
+
 package androidx.savedstate
+
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
 public actual class SavedState
 @PublishedApi
-internal constructor(@PublishedApi internal val map: MutableMap<String, Any> = mutableMapOf())
+internal constructor(@PublishedApi internal val map: MutableMap<String, Any?> = mutableMapOf())
 
-actual inline fun savedState(block: SavedStateWriter.() -> Unit): SavedState =
-    SavedState().apply { write(block) }
+public actual inline fun savedState(
+    initialState: Map<String, Any?>,
+    builderAction: SavedStateWriter.() -> Unit,
+): SavedState {
+    val copiedState = initialState.toMutableMap()
+    return SavedState(copiedState).apply { write(builderAction) }
+}
+
+public actual inline fun savedState(
+    initialState: SavedState,
+    builderAction: SavedStateWriter.() -> Unit,
+): SavedState {
+    val copiedState = initialState.map.toMutableMap()
+    return SavedState(copiedState).apply { write(builderAction) }
+}

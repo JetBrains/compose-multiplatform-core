@@ -18,8 +18,8 @@ package androidx.camera.video.internal.audio;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Factory class to create {@link AudioStream}. */
 interface AudioStreamFactory {
@@ -32,7 +32,6 @@ interface AudioStreamFactory {
      * @return AudioStream
      * @throws AudioStream.AudioStreamException if it fails to create the AudioStream.
      */
-    @NonNull
-    AudioStream create(@NonNull AudioSettings audioSettings, @Nullable Context attributionContext)
-            throws AudioStream.AudioStreamException;
+    @NonNull AudioStream create(@NonNull AudioSettings audioSettings,
+            @Nullable Context attributionContext) throws AudioStream.AudioStreamException;
 }

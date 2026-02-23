@@ -16,25 +16,24 @@
 
 package androidx.build.docs
 
-import androidx.build.PROJECT_STRUCTURE_METADATA_FILENAME
+import androidx.build.KonanPrebuiltsSetup
 import androidx.build.configureTaskTimeouts
 import androidx.build.dackka.DackkaTask
 import androidx.build.dackka.GenerateMetadataTask
 import androidx.build.defaultAndroidConfig
 import androidx.build.getAndroidJar
-import androidx.build.getBuildId
-import androidx.build.getCheckoutRoot
 import androidx.build.getDistributionDirectory
-import androidx.build.getKeystore
-import androidx.build.getLibraryByName
+import androidx.build.getLibraryClasspath
 import androidx.build.getSupportRootFolder
+import androidx.build.isIsolatedProjectsEnabled
 import androidx.build.metalava.versionMetadataUsage
-import androidx.build.multiplatformUsage
+import androidx.build.multiplatformExtension
+import androidx.build.sources.PROJECT_STRUCTURE_METADATA_FILENAME
+import androidx.build.sources.multiplatformUsage
 import androidx.build.versionCatalog
-import androidx.build.workaroundPrebuiltTakingPrecedenceOverProject
+import androidx.build.workaroundAndroidXDependencyResolutions
 import com.android.build.api.attributes.BuildTypeAttr
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.gradle.LibraryPlugin
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.FileNotFoundException
@@ -55,7 +54,9 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
@@ -65,12 +66,13 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -79,65 +81,49 @@ import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.all
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.mapProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.work.DisableCachingByDefault
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsages
+import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetAttribute
+import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
+import org.jetbrains.kotlin.gradle.targets.js.toAttribute
 
 /**
  * Plugin that allows to build documentation for a given set of prebuilt and tip of tree projects.
  */
 abstract class AndroidXDocsImplPlugin : Plugin<Project> {
-    lateinit var docsType: String
     lateinit var docsSourcesConfiguration: Configuration
     lateinit var multiplatformDocsSourcesConfiguration: Configuration
-    lateinit var samplesSourcesConfiguration: Configuration
     lateinit var versionMetadataConfiguration: Configuration
-    lateinit var dependencyClasspath: FileCollection
+    // Classpath for non-KMP projects
+    lateinit var nonKmpDependencyClasspath: FileCollection
+    // Mapping from KMP target name to classpath for that target
+    lateinit var kmpDependencyClasspathMap: MapProperty<String, FileCollection>
 
     @get:Inject abstract val archiveOperations: ArchiveOperations
+    @get:Inject abstract val buildFeatures: BuildFeatures
 
     override fun apply(project: Project) {
-        docsType = project.name.removePrefix("docs-")
-        project.plugins.configureEach { plugin ->
-            when (plugin) {
-                is LibraryPlugin -> {
-                    val libraryExtension = project.extensions.getByType<LibraryExtension>()
-                    libraryExtension.compileSdk =
-                        project.defaultAndroidConfig.latestStableCompileSdk
-                    libraryExtension.buildToolsVersion =
-                        project.defaultAndroidConfig.buildToolsVersion
+        val docsType = project.name.removePrefix("docs-")
+        // Configure this as a KMP project.
+        KonanPrebuiltsSetup.configureKonanDirectory(project)
+        configureTargets(project, docsType)
 
-                    // Use a local debug keystore to avoid build server issues.
-                    val debugSigningConfig = libraryExtension.signingConfigs.getByName("debug")
-                    debugSigningConfig.storeFile = project.getKeystore()
-                    libraryExtension.buildTypes.configureEach { buildType ->
-                        // Sign all the builds (including release) with debug key
-                        buildType.signingConfig = debugSigningConfig
-                    }
-                }
-            }
-        }
         disableUnneededTasks(project)
         createConfigurations(project)
         val buildOnServer =
             project.tasks.register<DocsBuildOnServer>("buildOnServer") {
-                buildId = getBuildId()
-                docsType = this@AndroidXDocsImplPlugin.docsType
-                distributionDirectory = project.getDistributionDirectory()
+                requiredFile.set(project.getDistributionDirectory().file("docs-$docsType.zip"))
             }
 
-        val unzippedDeprecatedSamplesSources =
-            project.layout.buildDirectory.dir("unzippedDeprecatedSampleSources")
-        val deprecatedUnzipSamplesTask =
-            configureUnzipTask(
-                project,
-                "unzipSampleSourcesDeprecated",
-                unzippedDeprecatedSamplesSources,
-                samplesSourcesConfiguration
-            )
         val unzippedKmpSamplesSourcesDirectory =
             project.layout.buildDirectory.dir("unzippedMultiplatformSampleSources")
         val unzippedJvmSamplesSourcesDirectory =
@@ -154,7 +140,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 project,
                 unzippedJvmSourcesDirectory,
                 unzippedJvmSamplesSourcesDirectory,
-                docsSourcesConfiguration
+                docsSourcesConfiguration,
             )
         val configureMultiplatformSourcesTask =
             configureMultiplatformInputsTasks(
@@ -162,7 +148,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 unzippedMultiplatformSourcesDirectory,
                 unzippedKmpSamplesSourcesDirectory,
                 multiplatformDocsSourcesConfiguration,
-                mergedProjectMetadata
+                mergedProjectMetadata,
             )
 
         configureDackka(
@@ -171,71 +157,31 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             unzippedMultiplatformSourcesDirectory = unzippedMultiplatformSourcesDirectory,
             unzipJvmSourcesTask = unzipJvmSourcesTask,
             configureMultiplatformSourcesTask = configureMultiplatformSourcesTask,
-            unzippedDeprecatedSamplesSources = unzippedDeprecatedSamplesSources,
-            unzipDeprecatedSamplesTask = deprecatedUnzipSamplesTask,
             unzippedJvmSamplesSources = unzippedJvmSamplesSourcesDirectory,
             unzipJvmSamplesTask = unzipJvmSamplesTask,
             unzippedKmpSamplesSources = unzippedKmpSamplesSourcesDirectory,
-            dependencyClasspath = dependencyClasspath,
+            nonKmpDependencyClasspath = nonKmpDependencyClasspath,
+            kmpDependencyClasspathMap = kmpDependencyClasspathMap,
             buildOnServer = buildOnServer,
             docsConfiguration = docsSourcesConfiguration,
             multiplatformDocsConfiguration = multiplatformDocsSourcesConfiguration,
-            mergedProjectMetadata = mergedProjectMetadata
+            mergedProjectMetadata = mergedProjectMetadata,
+            docsType = docsType,
         )
 
         project.configureTaskTimeouts()
-        project.workaroundPrebuiltTakingPrecedenceOverProject()
-    }
-
-    /**
-     * Creates and configures a task that will build a list of all sources for projects in
-     * [docsConfiguration] configuration, resolve them and put them to [destinationDirectory].
-     */
-    private fun configureUnzipTask(
-        project: Project,
-        taskName: String,
-        destinationDirectory: Provider<Directory>,
-        docsConfiguration: Configuration
-    ): TaskProvider<Sync> {
-        return project.tasks.register(taskName, Sync::class.java) { task ->
-            val sources = docsConfiguration.incoming.artifactView {}.files
-            // Store archiveOperations into a local variable to prevent access to the plugin
-            // during the task execution, as that breaks configuration caching.
-            val localVar = archiveOperations
-            task.from(
-                sources.elements.map { jars ->
-                    jars.map { jar ->
-                        localVar.zipTree(jar).matching {
-                            // Filter out files that documentation tools cannot process.
-                            it.exclude("**/*.MF")
-                            it.exclude("**/*.aidl")
-                            it.exclude("**/META-INF/**")
-                            it.exclude("**/OWNERS")
-                            it.exclude("**/package.html")
-                            it.exclude("**/*.md")
-                        }
-                    }
-                }
-            )
-            task.into(destinationDirectory)
-            // TODO(123020809) remove this filter once it is no longer necessary to prevent Dokka
-            //  from failing
-            val regex = Regex("@attr ref ([^*]*)styleable#([^_*]*)_([^*]*)$")
-            task.filter { line -> regex.replace(line, "{@link $1attr#$3}") }
-        }
+        project.workaroundAndroidXDependencyResolutions()
     }
 
     /**
      * Creates and configures a task that builds a list of select sources from jars and places them
      * in [sourcesDestinationDirectory], partitioning samples into [samplesDestinationDirectory].
-     *
-     * This is a modified version of [configureUnzipTask], customized for Dackka usage.
      */
     private fun configureUnzipJvmSourcesTasks(
         project: Project,
         sourcesDestinationDirectory: Provider<Directory>,
         samplesDestinationDirectory: Provider<Directory>,
-        docsConfiguration: Configuration
+        docsConfiguration: Configuration,
     ): Pair<TaskProvider<Sync>, TaskProvider<Sync>> {
         val pairProvider =
             docsConfiguration.incoming
@@ -253,12 +199,13 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             task.from(
                 pairProvider
                     .map { it.first }
-                    .map {
-                        it.map { jar ->
+                    .map { jars ->
+                        jars.map { jar ->
                             localVar.zipTree(jar).matching { it.exclude("**/META-INF/MANIFEST.MF") }
                         }
                     }
             )
+            task.rewriteSamplesTags()
             // Files with the same path in different source jars of the same library will lead to
             // some classes/methods not appearing in the docs.
             task.duplicatesStrategy = DuplicatesStrategy.WARN
@@ -294,7 +241,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         unzippedMultiplatformSourcesDirectory: Provider<Directory>,
         unzippedMultiplatformSamplesDirectory: Provider<Directory>,
         multiplatformDocsSourcesConfiguration: Configuration,
-        mergedProjectMetadata: Provider<RegularFile>
+        mergedProjectMetadata: Provider<RegularFile>,
     ): TaskProvider<MergeMultiplatformMetadataTask> {
         val tempMultiplatformMetadataDirectory =
             project.layout.buildDirectory.dir("tmp/multiplatformMetadataFiles")
@@ -302,11 +249,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val unzipMultiplatformSources =
             project.tasks.register(
                 "unzipMultiplatformSources",
-                UnzipMultiplatformSourcesTask::class.java
+                UnzipMultiplatformSourcesTask::class.java,
             ) {
-                it.inputJars.set(
-                    multiplatformDocsSourcesConfiguration.incoming.artifactView {}.files
-                )
+                it.inputJars.set(multiplatformDocsSourcesConfiguration.incoming.files)
                 it.metadataOutput.set(tempMultiplatformMetadataDirectory)
                 it.sourceOutput.set(unzippedMultiplatformSourcesDirectory)
                 it.samplesOutput.set(unzippedMultiplatformSamplesDirectory)
@@ -314,7 +259,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         // merge all the metadata files from the individual project dirs
         return project.tasks.register(
             "mergeMultiplatformMetadata",
-            MergeMultiplatformMetadataTask::class.java
+            MergeMultiplatformMetadataTask::class.java,
         ) {
             it.mergedProjectMetadata.set(mergedProjectMetadata)
             it.inputDirectory.set(unzipMultiplatformSources.flatMap { it.metadataOutput })
@@ -347,11 +292,6 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val samplesConfiguration =
-            project.configurations.create("samples") {
-                it.isCanBeResolved = false
-                it.isCanBeConsumed = false
-            }
         val stubsConfiguration =
             project.configurations.create("stubs") {
                 it.isCanBeResolved = false
@@ -364,19 +304,19 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             attributes {
                 it.attribute(
                     Usage.USAGE_ATTRIBUTE,
-                    project.objects.named<Usage>(Usage.JAVA_RUNTIME)
+                    project.objects.named<Usage>(Usage.JAVA_RUNTIME),
                 )
                 it.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.DOCUMENTATION)
+                    project.objects.named<Category>(Category.DOCUMENTATION),
                 )
                 it.attribute(
                     DocsType.DOCS_TYPE_ATTRIBUTE,
-                    project.objects.named<DocsType>(DocsType.SOURCES)
+                    project.objects.named<DocsType>(DocsType.SOURCES),
                 )
                 it.attribute(
                     LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    project.objects.named<LibraryElements>(LibraryElements.JAR)
+                    project.objects.named<LibraryElements>(LibraryElements.JAR),
                 )
             }
         }
@@ -393,23 +333,18 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     it.attribute(Usage.USAGE_ATTRIBUTE, project.multiplatformUsage)
                     it.attribute(
                         Category.CATEGORY_ATTRIBUTE,
-                        project.objects.named<Category>(Category.DOCUMENTATION)
+                        project.objects.named<Category>(Category.DOCUMENTATION),
                     )
                     it.attribute(
                         DocsType.DOCS_TYPE_ATTRIBUTE,
-                        project.objects.named<DocsType>(DocsType.SOURCES)
+                        project.objects.named<DocsType>(DocsType.SOURCES),
                     )
                     it.attribute(
                         LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                        project.objects.named<LibraryElements>(LibraryElements.JAR)
+                        project.objects.named<LibraryElements>(LibraryElements.JAR),
                     )
                 }
                 configuration.extendsFrom(multiplatformDocsConfiguration)
-            }
-        samplesSourcesConfiguration =
-            project.configurations.create("samples-sources") {
-                it.setResolveSources()
-                it.extendsFrom(samplesConfiguration)
             }
 
         versionMetadataConfiguration =
@@ -420,11 +355,11 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.versionMetadataUsage)
                 it.attributes.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.DOCUMENTATION)
+                    project.objects.named<Category>(Category.DOCUMENTATION),
                 )
                 it.attributes.attribute(
                     Bundling.BUNDLING_ATTRIBUTE,
-                    project.objects.named<Bundling>(Bundling.EXTERNAL)
+                    project.objects.named<Bundling>(Bundling.EXTERNAL),
                 )
 
                 it.extendsFrom(docsConfiguration, multiplatformDocsConfiguration)
@@ -436,19 +371,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
                 it.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.LIBRARY)
+                    project.objects.named<Category>(Category.LIBRARY),
                 )
                 it.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named<BuildTypeAttr>("release")
+                    project.objects.named<BuildTypeAttr>("release"),
                 )
             }
-            extendsFrom(
-                docsConfiguration,
-                samplesConfiguration,
-                stubsConfiguration,
-                docsWithoutApiSinceConfiguration
-            )
+            extendsFrom(docsConfiguration, stubsConfiguration, docsWithoutApiSinceConfiguration)
         }
 
         // Build a compile & runtime classpaths for needed for documenting the libraries
@@ -461,7 +391,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             project.configurations.create("docs-runtime-classpath") {
                 it.setResolveClasspathForUsage(Usage.JAVA_RUNTIME)
             }
-        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.DEFAULT.catalogVersion
+        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.LATEST.catalogVersion
         val kotlinLatest = project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
         listOf(docsCompileClasspath, docsRuntimeClasspath).forEach { config ->
             config.resolutionStrategy {
@@ -472,12 +402,12 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 }
             }
         }
-        dependencyClasspath =
+        nonKmpDependencyClasspath =
             docsCompileClasspath.incoming
                 .artifactView {
                     it.attributes.attribute(
                         Attribute.of("artifactType", String::class.java),
-                        "android-classes"
+                        "android-classes",
                     )
                 }
                 .files +
@@ -485,10 +415,125 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     .artifactView {
                         it.attributes.attribute(
                             Attribute.of("artifactType", String::class.java),
-                            "android-classes"
+                            "android-classes",
                         )
                     }
                     .files
+
+        // Create mapping from target name to classpath for that target.
+        kmpDependencyClasspathMap = project.objects.mapProperty<String, FileCollection>()
+        val kmpExtension = project.extensions.getByType<KotlinMultiplatformExtension>()
+        kmpExtension.targets.configureEach { target ->
+            // Find both the API and runtime dependencies. Technically only the API dependencies
+            // should be required for docs, but projects don't always use the correct configuration.
+            val targetApiClasspath =
+                createClasspathConfigurationForTarget(
+                    project = project,
+                    multiplatformDocsConfiguration = multiplatformDocsConfiguration,
+                    target = target,
+                    usageDescription = "api",
+                    javaUsage = Usage.JAVA_API,
+                    kotlinUsage = KotlinUsages.KOTLIN_API,
+                )
+            val targetRuntimeClasspath =
+                createClasspathConfigurationForTarget(
+                    project = project,
+                    multiplatformDocsConfiguration = multiplatformDocsConfiguration,
+                    target = target,
+                    usageDescription = "runtime",
+                    javaUsage = Usage.JAVA_RUNTIME,
+                    kotlinUsage = KotlinUsages.KOTLIN_RUNTIME,
+                )
+            val classpath =
+                targetApiClasspath.zip(targetRuntimeClasspath) { api, runtime -> api + runtime }
+            // Add the classpath for the target to the mapping.
+            kmpDependencyClasspathMap.put(target.name + "Main", classpath)
+            // It is an error to configure separate jvm and desktop targets, so treat the jvm target
+            // as both jvm and desktop.
+            if (target.name == "jvm") {
+                kmpDependencyClasspathMap.put("desktopMain", classpath)
+            }
+        }
+    }
+
+    /**
+     * Configures the classpath for the given [target] extending from
+     * [multiplatformDocsConfiguration].
+     *
+     * The [usageDescription] is used in the configuration name. If [target] is JVM or android, the
+     * [javaUsage] is used as the usage attribute, otherwise [kotlinUsage] is used instead.
+     */
+    private fun createClasspathConfigurationForTarget(
+        project: Project,
+        multiplatformDocsConfiguration: Configuration,
+        target: KotlinTarget,
+        usageDescription: String,
+        javaUsage: String,
+        kotlinUsage: String,
+    ): Provider<FileCollection> {
+        // Skip the common target, which is associated with the metadata compilation.
+        if (target.platformType == KotlinPlatformType.common)
+            return project.provider { project.files() }
+        val isJvm =
+            target.platformType == KotlinPlatformType.androidJvm ||
+                target.platformType == KotlinPlatformType.jvm
+
+        val configurationName = "docs-compile-classpath-${target.name}-$usageDescription"
+        return project.configurations
+            .register(configurationName) { config ->
+                config.extendsFrom(multiplatformDocsConfiguration)
+                config.isCanBeConsumed = false
+                config.attributes {
+                    it.attribute(KotlinPlatformType.attribute, target.platformType)
+                    // Use the appropriate usage based on whether this is a jvm target.
+                    val usage =
+                        if (isJvm) {
+                            javaUsage
+                        } else {
+                            kotlinUsage
+                        }
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
+                    it.attribute(
+                        Category.CATEGORY_ATTRIBUTE,
+                        project.objects.named<Category>(Category.LIBRARY),
+                    )
+                    // Add additional attributes based on the target.
+                    target.attributes.keySet().forEach { key ->
+                        if (key.type == String::class.java) {
+                            val attributeValue = target.attributes.getAttribute(key)
+                            @Suppress("UNCHECKED_CAST")
+                            it.attribute(key as Attribute<String>, attributeValue as String)
+                        }
+                    }
+                    // For wasm targets add an extra required attribute which isn't part of the
+                    // target attribute set already.
+                    if (target.platformType == KotlinPlatformType.wasm) {
+                        (target as? KotlinWasmTargetDsl)?.wasmTargetType?.let { wasmTargetType ->
+                            it.attribute(
+                                KotlinWasmTargetAttribute.wasmTargetAttribute,
+                                wasmTargetType.toAttribute(),
+                            )
+                        }
+                    }
+                }
+            }
+            .map { configuration ->
+                configuration.incoming
+                    .artifactView {
+                        // Set the configuration to lenient because not every KMP project will have
+                        // all targets configured.
+                        it.isLenient = true
+                        // For android/jvm projects, make sure to use the classes jar instead of the
+                        // aar for any android dependencies, since dackka can't handle the aars.
+                        if (isJvm) {
+                            it.attributes.attribute(
+                                Attribute.of("artifactType", String::class.java),
+                                "android-classes",
+                            )
+                        }
+                    }
+                    .files
+            }
     }
 
     private fun configureDackka(
@@ -497,25 +542,18 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         unzippedMultiplatformSourcesDirectory: Provider<Directory>,
         unzipJvmSourcesTask: TaskProvider<Sync>,
         configureMultiplatformSourcesTask: TaskProvider<MergeMultiplatformMetadataTask>,
-        unzippedDeprecatedSamplesSources: Provider<Directory>,
-        unzipDeprecatedSamplesTask: TaskProvider<Sync>,
         unzippedJvmSamplesSources: Provider<Directory>,
         unzipJvmSamplesTask: TaskProvider<Sync>,
         unzippedKmpSamplesSources: Provider<Directory>,
-        dependencyClasspath: FileCollection,
+        nonKmpDependencyClasspath: FileCollection,
+        kmpDependencyClasspathMap: Provider<Map<String, FileCollection>>,
         buildOnServer: TaskProvider<*>,
         docsConfiguration: Configuration,
         multiplatformDocsConfiguration: Configuration,
-        mergedProjectMetadata: Provider<RegularFile>
+        mergedProjectMetadata: Provider<RegularFile>,
+        docsType: String,
     ) {
         val generatedDocsDir = project.layout.buildDirectory.dir("docs")
-
-        val dackkaConfiguration =
-            project.configurations.create("dackka") {
-                it.dependencies.add(project.dependencies.create(project.getLibraryByName("dackka")))
-                it.isCanBeConsumed = false
-            }
-
         val generateMetadataTask =
             project.tasks.register("generateMetadata", GenerateMetadataTask::class.java) { task ->
                 val artifacts = docsConfiguration.incoming.artifacts.resolvedArtifacts
@@ -539,7 +577,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             project.tasks.register("docs", DackkaTask::class.java) { task ->
                 var taskStartTime: LocalDateTime? = null
                 task.argsJsonFile.set(
-                    File(project.getDistributionDirectory(), "dackkaArgs-${project.name}.json")
+                    project.getDistributionDirectory().file("dackkaArgs-${project.name}.json")
                 )
                 task.apply {
                     // Remove once there is property version of Copy#destinationDir
@@ -547,18 +585,16 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     // https://github.com/gradle/gradle/issues/25824
                     dependsOn(unzipJvmSourcesTask)
                     dependsOn(unzipJvmSamplesTask)
-                    dependsOn(unzipDeprecatedSamplesTask)
                     dependsOn(configureMultiplatformSourcesTask)
 
                     description =
                         "Generates reference documentation using a Google devsite Dokka" +
-                            " plugin. Places docs in $generatedDocsDir"
+                            " plugin. Places docs in ${generatedDocsDir.get()}"
                     group = JavaBasePlugin.DOCUMENTATION_GROUP
 
-                    dackkaClasspath.from(project.files(dackkaConfiguration))
+                    dackkaClasspath.from(project.getLibraryClasspath("dackka"))
                     destinationDir.set(generatedDocsDir)
                     frameworkSamplesDir.set(File(project.getSupportRootFolder(), "samples"))
-                    samplesDeprecatedDir.set(unzippedDeprecatedSamplesSources)
                     samplesJvmDir.set(unzippedJvmSamplesSources)
                     samplesKmpDir.set(unzippedKmpSamplesSources)
                     jvmSourcesDir.set(unzippedJvmSourcesDirectory)
@@ -566,11 +602,11 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     projectListsDirectory.set(
                         File(project.getSupportRootFolder(), "docs-public/package-lists")
                     )
-                    dependenciesClasspath.from(
-                        dependencyClasspath +
-                            project.getAndroidJar() +
-                            project.getExtraCommonDependencies()
+                    androidJars.setFrom(
+                        project.getAndroidJar(project.defaultAndroidConfig.latestStableCompileSdk)
                     )
+                    nonKmpDependenciesClasspath.from(nonKmpDependencyClasspath)
+                    kmpDependenciesClasspathMap.set(kmpDependencyClasspathMap)
                     excludedPackages.set(hiddenPackages.toSet())
                     excludedPackagesForJava.set(hiddenPackagesJava)
                     excludedPackagesForKotlin.set(emptySet())
@@ -587,9 +623,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     annotationsNotToDisplayKotlin.set(hiddenAnnotationsKotlin)
                     hidingAnnotations.set(annotationsToHideApis)
                     nullabilityAnnotations.set(validNullabilityAnnotations)
-                    versionMetadataFiles.from(
-                        versionMetadataConfiguration.incoming.artifactView {}.files
-                    )
+                    versionMetadataFiles.from(versionMetadataConfiguration.incoming.files)
                     task.doFirst { taskStartTime = LocalDateTime.now() }
                     task.doLast {
                         val cpus =
@@ -629,78 +663,102 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     from(dackkaTask.flatMap { it.destinationDir })
 
                     val baseName = "docs-$docsType"
-                    val buildId = getBuildId()
                     archiveBaseName.set(baseName)
-                    archiveVersion.set(buildId)
                     destinationDirectory.set(project.getDistributionDirectory())
                     group = JavaBasePlugin.DOCUMENTATION_GROUP
-
-                    val filePath = "${project.getDistributionDirectory().canonicalPath}/"
-                    val fileName = "$baseName-$buildId.zip"
-                    val destinationFile = filePath + fileName
-                    description =
-                        "Zips Java and Kotlin documentation (generated via Dackka in the" +
-                            " style of d.android.com) into $destinationFile"
                 }
             }
         buildOnServer.configure { it.dependsOn(zipTask) }
     }
 
     /**
-     * Replace all tests etc with empty task, so we don't run anything it is more effective then
-     * task.enabled = false, because we avoid executing deps as well
+     * Replace all unneeded tasks with an empty task and disables them, to avoid executing deps as
+     * well
      */
     private fun disableUnneededTasks(project: Project) {
         var reentrance = false
-        project.tasks.whenTaskAdded { task ->
+        project.tasks.configureEach { task ->
             if (
-                task is Test ||
-                    task.name.startsWith("assemble") ||
+                task.name.startsWith("assemble") ||
+                    task.name == "jsTest" ||
                     task.name == "lint" ||
                     task.name == "lintDebug" ||
                     task.name == "lintAnalyzeDebug" ||
                     task.name == "transformDexArchiveWithExternalLibsDexMergerForPublicDebug" ||
                     task.name == "transformResourcesWithMergeJavaResForPublicDebug" ||
-                    task.name == "checkPublicDebugDuplicateClasses"
+                    task.name == "checkPublicDebugDuplicateClasses" ||
+                    task.name == "wasmJsTestTestProductionExecutableCompileSync" ||
+                    task.name == "wasmJsTestTestDevelopmentExecutableCompileSync"
             ) {
                 if (!reentrance) {
                     reentrance = true
-                    project.tasks.named(task.name) {
-                        it.actions = emptyList()
-                        it.dependsOn(emptyList<Task>())
-                    }
+                    task.actions = emptyList()
+                    task.dependsOn(emptyList<Task>())
+                    task.enabled = false
                     reentrance = false
                 }
             }
         }
     }
+
+    /** Configures all possible targets, so that all necessary classpaths will be generated. */
+    @OptIn(ExperimentalWasmDsl::class)
+    private fun configureTargets(project: Project, docsType: String) {
+        val multiplatformExtension = project.multiplatformExtension!!
+
+        val androidLibraryTarget =
+            multiplatformExtension.extensions.getByType(
+                KotlinMultiplatformAndroidLibraryTarget::class.java
+            )
+        androidLibraryTarget.compileSdk {
+            version = release(project.defaultAndroidConfig.latestStableCompileSdk)
+        }
+        androidLibraryTarget.buildToolsVersion = project.defaultAndroidConfig.buildToolsVersion
+        androidLibraryTarget.namespace = "androidx.docs.$docsType"
+
+        multiplatformExtension.jvm()
+
+        multiplatformExtension.androidNativeX64()
+        multiplatformExtension.androidNativeX86()
+        multiplatformExtension.androidNativeArm32()
+        multiplatformExtension.androidNativeArm64()
+
+        multiplatformExtension.mingwX64()
+        multiplatformExtension.macosArm64()
+
+        multiplatformExtension.iosArm64()
+        multiplatformExtension.iosSimulatorArm64()
+
+        multiplatformExtension.watchosArm32()
+        multiplatformExtension.watchosArm64()
+        multiplatformExtension.watchosDeviceArm64()
+        multiplatformExtension.watchosSimulatorArm64()
+
+        multiplatformExtension.tvosArm64()
+        multiplatformExtension.tvosSimulatorArm64()
+
+        multiplatformExtension.linuxArm64()
+        multiplatformExtension.linuxX64()
+
+        if (!buildFeatures.isIsolatedProjectsEnabled()) { // KT-80311
+            multiplatformExtension.js { browser() }
+            multiplatformExtension.wasmJs { browser() }
+            multiplatformExtension.wasmWasi { nodejs() }
+        }
+    }
 }
 
 @DisableCachingByDefault(because = "Doesn't benefit from caching")
-open class DocsBuildOnServer : DefaultTask() {
-    @Internal lateinit var docsType: String
-    @Internal lateinit var buildId: String
-    @Internal lateinit var distributionDirectory: File
-
-    @[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
-    fun getRequiredFiles(): List<File> {
-        return listOf(
-            File(distributionDirectory, "docs-$docsType-$buildId.zip"),
-        )
-    }
+abstract class DocsBuildOnServer : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val requiredFile: RegularFileProperty
 
     @TaskAction
     fun checkAllBuildOutputs() {
-        val missingFiles = mutableListOf<String>()
-        getRequiredFiles().forEach { file ->
-            if (!file.exists()) {
-                missingFiles.add(file.path)
-            }
-        }
-
-        if (missingFiles.isNotEmpty()) {
-            val missingFileString = missingFiles.reduce { acc, s -> "$acc, $s" }
-            throw FileNotFoundException("buildOnServer required output missing: $missingFileString")
+        val file = requiredFile.get().asFile
+        if (!file.exists()) {
+            throw FileNotFoundException("buildOnServer required output missing: ${file.path}")
         }
     }
 }
@@ -745,16 +803,12 @@ private val hiddenPackages =
         "androidx.preference.internal",
         "androidx.wear.internal.widget.drawer",
         "androidx.webkit.internal",
-        "androidx.work.impl.*"
+        "androidx.work.impl.*",
     )
 
 // Set of packages to exclude from Java refdoc generation
 private val hiddenPackagesJava =
-    setOf(
-        "androidx.*compose.*",
-        "androidx.*glance.*",
-        "androidx\\.tv\\..*",
-    )
+    setOf("androidx.*compose.*", "androidx.*glance.*", "androidx\\.tv\\..*")
 
 // List of annotations which should not be displayed in the docs
 private val hiddenAnnotations: List<String> =
@@ -781,11 +835,15 @@ private val hiddenAnnotations: List<String> =
         // This annotation is intended to target the compiler and is general not useful for devs.
         "java.lang.Override",
         // This annotation is used by the room processor and isn't useful for developers
-        "androidx.room.Ignore"
+        "androidx.room3.Ignore",
+        // This is an internal annotation only used by the kotlin compiler.
+        "kotlin.ExtensionFunctionType",
     )
 
 val validNullabilityAnnotations =
     listOf(
+        "org.jspecify.annotations.NonNull",
+        "org.jspecify.annotations.Nullable",
         "androidx.annotation.Nullable",
         "android.annotation.Nullable",
         "androidx.annotation.NonNull",
@@ -795,7 +853,7 @@ val validNullabilityAnnotations =
     )
 
 // Annotations which should not be displayed in the Kotlin docs, in addition to hiddenAnnotations
-private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunctionType")
+private val hiddenAnnotationsKotlin: List<String> = emptyList()
 
 // Annotations which should not be displayed in the Java docs, in addition to hiddenAnnotations
 private val hiddenAnnotationsJava: List<String> = emptyList()
@@ -809,12 +867,21 @@ private val annotationsToHideApis: List<String> =
     )
 
 /** Data class that matches JSON structure of kotlin source set metadata */
-data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>)
+data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>) {
+    /** Computes the source sets which are dependent on [name] (including [name]. */
+    fun sourceSetsDependentOn(name: String): List<String> {
+        return sourceSets
+            .filter { otherSourceSet ->
+                name == otherSourceSet.name || name in otherSourceSet.dependencies
+            }
+            .map { it.name }
+    }
+}
 
 data class SourceSetMetadata(
     val name: String,
     val analysisPlatform: String,
-    var dependencies: List<String>
+    var dependencies: List<String>,
 )
 
 @CacheableTask
@@ -825,13 +892,16 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
     @get:OutputDirectory abstract val metadataOutput: DirectoryProperty
 
     @get:OutputDirectory abstract val sourceOutput: DirectoryProperty
+
     @get:OutputDirectory abstract val samplesOutput: DirectoryProperty
 
     @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
     @get:Inject abstract val archiveOperations: ArchiveOperations
 
     @TaskAction
     fun execute() {
+        listOf(sourceOutput, samplesOutput).map { it.get().asFile.deleteRecursively() }
         val (sources, samples) =
             inputJars
                 .get()
@@ -840,12 +910,28 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
                 // Now that we publish sample jars, they can get confused with normal source
                 // jars. We want to handle sample jars separately, so filter by the name.
                 .partition { name -> "samples" !in name }
+
         fileSystemOperations.sync {
             it.duplicatesStrategy = DuplicatesStrategy.FAIL
             it.from(sources.values)
             it.into(sourceOutput)
             it.exclude("META-INF/*")
+            // TODO(b/418945918): Remove when the files below are deduped:
+            // benchmark/benchmark-traceprocessor/src/androidMain/kotlin/perfetto/protos/package-info.java
+            // tracing/tracing-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
+            var seenPath = false
+            it.eachFile { file ->
+                val relPath = file.relativePath.pathString
+                if (relPath == "androidMain/perfetto/protos/package-info.java") {
+                    if (seenPath) {
+                        file.exclude()
+                    }
+                    seenPath = true
+                }
+            }
+            it.rewriteSamplesTags()
         }
+
         fileSystemOperations.sync {
             // Some libraries share samples, e.g. paging. This can be an issue if and only if the
             // consumer libraries have pinned samples version or are not in an atomic group.
@@ -863,6 +949,16 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
             }
         }
     }
+}
+
+/**
+ * To work around a parser issue with `@sample` where when the tag is used in the middle of a kdoc
+ * any links after the sample do not resolve (see b/427708573), rewrite `@sample` tags to
+ * `@author #@sample`. The `@author` tag is not supported by dackka, so as a workaround for the
+ * samples issue it replaces any author tags with samples.
+ */
+internal fun CopySpec.rewriteSamplesTags() {
+    filter { line -> line.replace(" * @sample ", " * @author #@sample ") }
 }
 
 private fun <K, V> Map<K, V>.partition(condition: (K) -> Boolean): Pair<Map<K, V>, Map<K, V>> =
@@ -892,6 +988,10 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
                 mergedMetadata.merge(metadata)
             }
         val gson = GsonBuilder().setPrettyPrinting().create()
+        // Sort sourceSets to ensure that child sourceSets come after their parents, b/404784813
+        // Also ensure deterministic order--mergedMetadata.merge() uses .toSet() to deduplicate.
+        mergedMetadata.sourceSets =
+            mergedMetadata.sourceSets.sortedWith(compareBy({ it.dependencies.size }, { it.name }))
         val json = gson.toJson(mergedMetadata)
         mergedProjectMetadata.get().asFile.apply {
             parentFile.mkdirs()
@@ -913,31 +1013,3 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
         }
     }
 }
-
-private fun Project.getPrebuiltsExternalPath() =
-    File(project.getCheckoutRoot(), "prebuilts/androidx/external/")
-
-private val PLATFORMS =
-    listOf("linuxx64", "macosarm64", "macosx64", "iosx64", "iossimulatorarm64", "iosarm64")
-
-private fun Project.getExtraCommonDependencies(): FileCollection =
-    files(
-        arrayOf(
-            File(
-                getPrebuiltsExternalPath(),
-                "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.6.4/" +
-                    "kotlinx-coroutines-core-1.6.4.jar"
-            ),
-            File(
-                getPrebuiltsExternalPath(),
-                "org/jetbrains/kotlinx/atomicfu/0.17.0/atomicfu-0.17.0.jar"
-            ),
-            File(getPrebuiltsExternalPath(), "com/squareup/okio/okio-jvm/3.1.0/okio-jvm-3.1.0.jar")
-        ) +
-            PLATFORMS.map {
-                File(
-                    getPrebuiltsExternalPath(),
-                    "com/squareup/okio/okio-$it/3.1.0/okio-$it-3.1.0.klib"
-                )
-            }
-    )

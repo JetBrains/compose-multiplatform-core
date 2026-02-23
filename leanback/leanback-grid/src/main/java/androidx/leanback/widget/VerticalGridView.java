@@ -21,10 +21,11 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link android.view.ViewGroup} that shows items in a vertically scrolling list. The items
@@ -84,6 +85,16 @@ public class VerticalGridView extends BaseGridView {
     public void setNumColumns(int numColumns) {
         mLayoutManager.setNumRows(numColumns);
         requestLayout();
+    }
+
+    /**
+     * Returns the number of columns that the GridView is using.  Note that when
+     * {@code setNumColumns(0)} is called, the actual number of columns will be calculated from
+     * columnWidth and grid view width during layout; calling it early may return zero.
+     * @return the number of columns that recyclerview will use to layout.
+     */
+    public int getNumColumns() {
+        return mLayoutManager.getNumRows();
     }
 
     /**

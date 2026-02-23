@@ -23,12 +23,30 @@ import static org.junit.Assert.assertThrows;
 import androidx.appsearch.ast.NegationNode;
 import androidx.appsearch.ast.Node;
 import androidx.appsearch.ast.TextNode;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.List;
 
+@RequiresFlagsEnabled(Flags.FLAG_ENABLE_ABSTRACT_SYNTAX_TREES)
 public class NegationNodeCtsTest {
+    @Rule
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
+
+    @Test
+    public void testEquals_identical() {
+        NegationNode nodeOne = new NegationNode(new TextNode("foo"));
+        NegationNode nodeTwo = new NegationNode(new TextNode("foo"));
+
+        assertThat(nodeOne).isEqualTo(nodeTwo);
+        assertThat(nodeOne.hashCode()).isEqualTo(nodeTwo.hashCode());
+    }
+
     @Test
     public void testSetChildren_throwsOnNullNode() {
         TextNode textNode = new TextNode("foo");
@@ -78,5 +96,13 @@ public class NegationNodeCtsTest {
         NegationNode negationText = new NegationNode(textNode);
 
         assertThat(negationText.getChild()).isEqualTo(textNode);
+    }
+
+    @Test
+    public void testToString_appendsChildNodeStringWithNegation() {
+        TextNode textNode = new TextNode("foo");
+        NegationNode negationNode = new NegationNode(textNode);
+
+        assertThat(negationNode.toString()).isEqualTo("NOT (foo)");
     }
 }

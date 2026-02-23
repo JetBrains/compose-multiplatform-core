@@ -16,6 +16,10 @@
 
 package androidx.compose.ui.test
 
+import android.content.Context
+import android.hardware.input.InputManager
+import android.os.Build
+import android.view.Display.DEFAULT_DISPLAY
 import android.view.InputEvent
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
@@ -28,6 +32,7 @@ import android.view.MotionEvent.ACTION_HOVER_ENTER
 import android.view.MotionEvent.ACTION_HOVER_EXIT
 import android.view.MotionEvent.ACTION_HOVER_MOVE
 import android.view.MotionEvent.ACTION_MOVE
+import android.view.MotionEvent.ACTION_OUTSIDE
 import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT
 import android.view.MotionEvent.ACTION_POINTER_UP
@@ -37,11 +42,14 @@ import android.view.MotionEvent.PointerCoords
 import android.view.MotionEvent.PointerProperties
 import android.view.MotionEvent.TOOL_TYPE_UNKNOWN
 import android.view.ViewConfiguration
+import androidx.collection.intSetOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import androidx.core.view.InputDeviceCompat.SOURCE_MOUSE
 import androidx.core.view.InputDeviceCompat.SOURCE_ROTARY_ENCODER
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCHSCREEN
@@ -49,11 +57,20 @@ import androidx.core.view.MotionEventCompat.AXIS_SCROLL
 import androidx.core.view.ViewConfigurationCompat.getScaledHorizontalScrollFactor
 import androidx.core.view.ViewConfigurationCompat.getScaledVerticalScrollFactor
 
-private val MouseAsTouchEvents = listOf(ACTION_DOWN, ACTION_MOVE, ACTION_UP)
+private val MouseAsTouchEvents =
+    intSetOf(
+        ACTION_DOWN,
+        ACTION_MOVE,
+        ACTION_UP,
+        ACTION_POINTER_DOWN,
+        ACTION_POINTER_UP,
+        ACTION_CANCEL,
+        ACTION_OUTSIDE,
+    )
 
 internal actual fun createInputDispatcher(
     testContext: TestContext,
-    root: RootForTest
+    root: RootForTest,
 ): InputDispatcher {
     require(root is ViewRootForTest) {
         "InputDispatcher only supports dispatching to ViewRootForTest, not to " +
@@ -68,7 +85,7 @@ internal actual fun createInputDispatcher(
                     SOURCE_TOUCHSCREEN -> view.dispatchTouchEvent(it)
                     SOURCE_ROTARY_ENCODER -> view.dispatchGenericMotionEvent(it)
                     SOURCE_MOUSE ->
-                        when (it.action) {
+                        when (it.actionMasked) {
                             in MouseAsTouchEvents -> view.dispatchTouchEvent(it)
                             else -> view.dispatchGenericMotionEvent(it)
                         }
@@ -85,10 +102,10 @@ internal actual fun createInputDispatcher(
 internal class AndroidInputDispatcher(
     private val testContext: TestContext,
     private val root: ViewRootForTest,
-    private val sendEvent: (InputEvent) -> Unit
+    private val sendEvent: (InputEvent) -> Unit,
 ) : InputDispatcher(testContext, root) {
 
-    private val batchLock = Any()
+    private val batchLock = makeSynchronizedObject()
     private var batchedEvents = mutableListOf<InputEvent>()
     private var disposed = false
     private var currentClockTime = currentTime
@@ -109,7 +126,7 @@ internal class AndroidInputDispatcher(
     override fun PartialGesture.enqueueDown(pointerId: Int) {
         enqueueTouchEvent(
             if (lastPositions.size == 1) ACTION_DOWN else ACTION_POINTER_DOWN,
-            lastPositions.keys.sorted().indexOf(pointerId)
+            lastPositions.keys.sorted().indexOf(pointerId),
         )
     }
 
@@ -119,7 +136,7 @@ internal class AndroidInputDispatcher(
 
     override fun PartialGesture.enqueueMoves(
         relativeHistoricalTimes: List<Long>,
-        historicalCoordinates: List<List<Offset>>
+        historicalCoordinates: List<List<Offset>>,
     ) {
         val entries = lastPositions.entries.sortedBy { it.key }
         val absoluteHistoricalTimes = relativeHistoricalTimes.map { currentTime + it }
@@ -130,14 +147,14 @@ internal class AndroidInputDispatcher(
             pointerIds = List(entries.size) { entries[it].key },
             eventTimes = absoluteHistoricalTimes + listOf(currentTime),
             coordinates =
-                List(entries.size) { historicalCoordinates[it] + listOf(entries[it].value) }
+                List(entries.size) { historicalCoordinates[it] + listOf(entries[it].value) },
         )
     }
 
     override fun PartialGesture.enqueueUp(pointerId: Int) {
         enqueueTouchEvent(
             if (lastPositions.size == 1) ACTION_UP else ACTION_POINTER_UP,
-            lastPositions.keys.sorted().indexOf(pointerId)
+            lastPositions.keys.sorted().indexOf(pointerId),
         )
     }
 
@@ -145,43 +162,43 @@ internal class AndroidInputDispatcher(
         enqueueTouchEvent(ACTION_CANCEL, 0)
     }
 
-    override fun MouseInputState.enqueuePress(buttonId: Int) {
+    override fun CursorInputState.enqueueMousePress(buttonId: Int) {
         enqueueMouseEvent(if (hasOneButtonPressed) ACTION_DOWN else ACTION_MOVE)
-        if (isWithinRootBounds(currentMousePosition)) {
+        if (isWithinRootBounds(currentCursorPosition)) {
             enqueueMouseEvent(ACTION_BUTTON_PRESS)
         }
     }
 
-    override fun MouseInputState.enqueueMove() {
-        if (isWithinRootBounds(currentMousePosition)) {
+    override fun CursorInputState.enqueueMouseMove() {
+        if (isWithinRootBounds(currentCursorPosition)) {
             enqueueMouseEvent(if (isEntered) ACTION_HOVER_MOVE else ACTION_MOVE)
         } else if (hasAnyButtonPressed) {
             enqueueMouseEvent(ACTION_MOVE)
         }
     }
 
-    override fun MouseInputState.enqueueRelease(buttonId: Int) {
-        if (isWithinRootBounds(currentMousePosition)) {
+    override fun CursorInputState.enqueueMouseRelease(buttonId: Int) {
+        if (isWithinRootBounds(currentCursorPosition)) {
             enqueueMouseEvent(ACTION_BUTTON_RELEASE)
         }
         enqueueMouseEvent(if (hasNoButtonsPressed) ACTION_UP else ACTION_MOVE)
     }
 
-    override fun MouseInputState.enqueueEnter() {
-        if (isWithinRootBounds(currentMousePosition)) {
+    override fun CursorInputState.enqueueMouseEnter() {
+        if (isWithinRootBounds(currentCursorPosition)) {
             enqueueMouseEvent(ACTION_HOVER_ENTER)
         }
     }
 
-    override fun MouseInputState.enqueueExit() {
+    override fun CursorInputState.enqueueMouseExit() {
         enqueueMouseEvent(ACTION_HOVER_EXIT)
     }
 
-    override fun MouseInputState.enqueueCancel() {
+    override fun CursorInputState.enqueueMouseCancel() {
         enqueueMouseEvent(ACTION_CANCEL)
     }
 
-    override fun MouseInputState.enqueueScroll(delta: Float, scrollWheel: ScrollWheel) {
+    override fun CursorInputState.enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         enqueueMouseEvent(
             ACTION_SCROLL,
             // We invert vertical scrolling to align with another platforms.
@@ -191,8 +208,191 @@ internal class AndroidInputDispatcher(
                 ScrollWheel.Horizontal -> MotionEvent.AXIS_HSCROLL
                 ScrollWheel.Vertical -> MotionEvent.AXIS_VSCROLL
                 else -> -1
-            }
+            },
         )
+    }
+
+    override fun CursorInputState.enqueueMouseScroll(offset: Offset) {
+        enqueueMouseEvent(
+            downTime = downTime,
+            eventTime = currentTime,
+            action = ACTION_SCROLL,
+            coordinate = lastPosition,
+            metaState = keyInputState.constructMetaState(),
+            buttonState = pressedButtons.fold(0) { state, buttonId -> state or buttonId },
+            // We invert vertical scrolling to align with another platforms.
+            // Vertical scrolling on desktop/web have opposite sign.
+            delta = offset.copy(y = -offset.y),
+        )
+    }
+
+    override fun CursorInputState.enqueueTrackpadPress(buttonId: Int) {
+        enqueueTrackpadEvent(if (hasOneButtonPressed) ACTION_DOWN else ACTION_MOVE)
+        if (isWithinRootBounds(currentCursorPosition)) {
+            enqueueTrackpadEvent(ACTION_BUTTON_PRESS)
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadMove() {
+        if (isWithinRootBounds(currentCursorPosition)) {
+            enqueueTrackpadEvent(if (isEntered) ACTION_HOVER_MOVE else ACTION_MOVE)
+        } else if (hasAnyButtonPressed) {
+            enqueueTrackpadEvent(ACTION_MOVE)
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadRelease(buttonId: Int) {
+        if (isWithinRootBounds(currentCursorPosition)) {
+            enqueueTrackpadEvent(ACTION_BUTTON_RELEASE)
+        }
+        enqueueTrackpadEvent(if (hasNoButtonsPressed) ACTION_UP else ACTION_MOVE)
+    }
+
+    override fun CursorInputState.enqueueTrackpadEnter() {
+        if (isWithinRootBounds(currentCursorPosition)) {
+            enqueueTrackpadEvent(ACTION_HOVER_ENTER)
+        }
+    }
+
+    override fun CursorInputState.enqueueTrackpadExit() {
+        enqueueTrackpadEvent(ACTION_HOVER_EXIT)
+    }
+
+    override fun CursorInputState.enqueueTrackpadCancel() {
+        enqueueTrackpadEvent(ACTION_CANCEL)
+    }
+
+    override fun CursorInputState.enqueueTrackpadScroll(offset: Offset) {
+        // A two-finger trackpad scroll on Android is represented by a fake single finger,
+        // moving like a single finger would on the touchscreen to generate a scroll.
+        // To accomplish a full scroll for a specific offset this we need to:
+        // - release all buttons (if any), with an up and enter
+        // - exit hover
+        // - press
+        // - move the correct distance
+        // - release
+        // - enter hover
+        if (hasAnyButtonPressed) {
+            pressedButtons.forEach { buttonId ->
+                unsetButtonBit(buttonId)
+                if (isWithinRootBounds(currentCursorPosition)) {
+                    enqueueTrackpadEvent(ACTION_BUTTON_RELEASE)
+                }
+            }
+            enqueueTrackpadEvent(ACTION_UP)
+            enqueueTrackpadEnter()
+        }
+        enqueueTrackpadExit()
+        val fakeFingerDownTime = currentTime
+        downTime = fakeFingerDownTime
+        enqueueTwoFingerSwipeTrackpadEvent(
+            downTime = fakeFingerDownTime,
+            eventTime = currentTime,
+            action = ACTION_DOWN,
+            coordinate = lastPosition,
+            delta = Offset.Zero,
+            accumulatedDelta = Offset.Zero,
+            metaState = keyInputState.constructMetaState(),
+        )
+        advanceEventTime()
+        enqueueTwoFingerSwipeTrackpadEvent(
+            downTime = fakeFingerDownTime,
+            eventTime = currentTime,
+            action = ACTION_MOVE,
+            coordinate = lastPosition,
+            delta = offset,
+            accumulatedDelta = offset,
+            metaState = keyInputState.constructMetaState(),
+        )
+        advanceEventTime()
+        enqueueTwoFingerSwipeTrackpadEvent(
+            downTime = fakeFingerDownTime,
+            eventTime = currentTime,
+            action = ACTION_UP,
+            coordinate = lastPosition,
+            delta = Offset.Zero,
+            accumulatedDelta = offset,
+            metaState = keyInputState.constructMetaState(),
+        )
+        enqueueTrackpadEnter()
+    }
+
+    override fun CursorInputState.enqueueTrackpadPinch(scaleFactor: Float) {
+        // A trackpad pinch on Android is represented by two fake fingers, moving like two fingers
+        // would on a touchscreen to generate a pinch
+        // To accomplish a full pinch for a specific scale factor we need to
+        // - release all buttons (if any), with an up and enter
+        // - exit hover
+        // - press finger 1 and finger 2 at an initial separation
+        // - move both fingers together or apart by the correct amount
+        // - release finger and finger 2
+        // - enter hover
+        if (hasAnyButtonPressed) {
+            pressedButtons.forEach { buttonId ->
+                unsetButtonBit(buttonId)
+                if (isWithinRootBounds(currentCursorPosition)) {
+                    enqueueTrackpadEvent(ACTION_BUTTON_RELEASE)
+                }
+            }
+            enqueueTrackpadEvent(ACTION_UP)
+            enqueueTrackpadEnter()
+        }
+        enqueueTrackpadExit()
+        val fakeFingersDownTime = currentTime
+        downTime = fakeFingersDownTime
+        enqueuePinchTrackpadEvent(
+            downTime = fakeFingersDownTime,
+            eventTime = currentTime,
+            action = ACTION_DOWN,
+            actionIndex = 0,
+            coordinate = lastPosition,
+            delta = 1f,
+            accumulatedDelta = 1f,
+            metaState = keyInputState.constructMetaState(),
+        )
+        enqueuePinchTrackpadEvent(
+            downTime = fakeFingersDownTime,
+            eventTime = currentTime,
+            action = ACTION_POINTER_DOWN,
+            actionIndex = 1,
+            coordinate = lastPosition,
+            delta = 1f,
+            accumulatedDelta = 1f,
+            metaState = keyInputState.constructMetaState(),
+        )
+        advanceEventTime()
+        enqueuePinchTrackpadEvent(
+            downTime = fakeFingersDownTime,
+            eventTime = currentTime,
+            action = ACTION_MOVE,
+            actionIndex = 0,
+            coordinate = lastPosition,
+            delta = scaleFactor,
+            accumulatedDelta = scaleFactor,
+            metaState = keyInputState.constructMetaState(),
+        )
+        advanceEventTime()
+        enqueuePinchTrackpadEvent(
+            downTime = fakeFingersDownTime,
+            eventTime = currentTime,
+            action = ACTION_POINTER_UP,
+            actionIndex = 1,
+            coordinate = lastPosition,
+            delta = 1f,
+            accumulatedDelta = scaleFactor,
+            metaState = keyInputState.constructMetaState(),
+        )
+        enqueuePinchTrackpadEvent(
+            downTime = fakeFingersDownTime,
+            eventTime = currentTime,
+            action = ACTION_UP,
+            actionIndex = 0,
+            coordinate = lastPosition,
+            delta = 1f,
+            accumulatedDelta = scaleFactor,
+            metaState = keyInputState.constructMetaState(),
+        )
+        enqueueTrackpadEnter()
     }
 
     fun KeyInputState.constructMetaState(): Int {
@@ -234,7 +434,7 @@ internal class AndroidInputDispatcher(
             actionIndex = actionIndex,
             pointerIds = List(entries.size) { entries[it].key },
             eventTimes = listOf(currentTime),
-            coordinates = List(entries.size) { listOf(entries[it].value) }
+            coordinates = List(entries.size) { listOf(entries[it].value) },
         )
     }
 
@@ -245,7 +445,7 @@ internal class AndroidInputDispatcher(
         actionIndex: Int,
         pointerIds: List<Int>,
         eventTimes: List<Long>,
-        coordinates: List<List<Offset>>
+        coordinates: List<List<Offset>>,
     ) {
         check(coordinates.size == pointerIds.size) {
             "Coordinates size should equal pointerIds size " +
@@ -316,7 +516,7 @@ internal class AndroidInputDispatcher(
                         /* deviceId = */ 0,
                         /* edgeFlags = */ 0,
                         /* source = */ SOURCE_TOUCHSCREEN,
-                        /* flags = */ 0
+                        /* flags = */ 0,
                     )
                     .apply {
                         // The current time & coordinates are the last element in the lists, and
@@ -352,7 +552,7 @@ internal class AndroidInputDispatcher(
                                             }
                                     }
                                 },
-                                /* metaState = */ 0
+                                /* metaState = */ 0,
                             )
                         }
                         offsetLocation(-positionInScreen.x, -positionInScreen.y)
@@ -362,7 +562,7 @@ internal class AndroidInputDispatcher(
         }
     }
 
-    private fun MouseInputState.enqueueMouseEvent(action: Int, delta: Float = 0f, axis: Int = -1) {
+    private fun CursorInputState.enqueueMouseEvent(action: Int, delta: Float = 0f, axis: Int = -1) {
         enqueueMouseEvent(
             downTime = downTime,
             eventTime = currentTime,
@@ -371,7 +571,7 @@ internal class AndroidInputDispatcher(
             metaState = keyInputState.constructMetaState(),
             buttonState = pressedButtons.fold(0) { state, buttonId -> state or buttonId },
             axis = axis,
-            axisDelta = delta
+            axisDelta = delta,
         )
     }
 
@@ -383,7 +583,7 @@ internal class AndroidInputDispatcher(
         metaState: Int,
         buttonState: Int,
         axis: Int = -1,
-        axisDelta: Float = 0f
+        axisDelta: Float = 0f,
     ) {
         synchronized(batchLock) {
             ensureNotDisposed {
@@ -430,8 +630,357 @@ internal class AndroidInputDispatcher(
                         /* deviceId = */ 0,
                         /* edgeFlags = */ 0,
                         /* source = */ SOURCE_MOUSE,
-                        /* flags = */ 0
+                        /* flags = */ 0,
                     )
+                    .apply { offsetLocation(-positionInScreen.x, -positionInScreen.y) }
+            )
+        }
+    }
+
+    private fun enqueueMouseEvent(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        coordinate: Offset,
+        metaState: Int,
+        buttonState: Int,
+        axis: Int = -1,
+        delta: Offset,
+    ) {
+        synchronized(batchLock) {
+            ensureNotDisposed {
+                "Can't enqueue mouse event (" +
+                    "downTime=$downTime, " +
+                    "eventTime=$eventTime, " +
+                    "action=$action, " +
+                    "coordinate=$coordinate, " +
+                    "metaState=$metaState, " +
+                    "buttonState=$buttonState, " +
+                    "axis=$axis, " +
+                    "delta=$delta)"
+            }
+            val positionInScreen = run {
+                val array = intArrayOf(0, 0)
+                root.view.getLocationOnScreen(array)
+                Offset(array[0].toFloat(), array[1].toFloat())
+            }
+            batchedEvents.add(
+                MotionEvent.obtain(
+                        /* downTime = */ downTime,
+                        /* eventTime = */ eventTime,
+                        /* action = */ action,
+                        /* pointerCount = */ 1,
+                        /* pointerProperties = */ arrayOf(
+                            PointerProperties().apply {
+                                id = 0
+                                toolType = MotionEvent.TOOL_TYPE_MOUSE
+                            }
+                        ),
+                        /* pointerCoords = */ arrayOf(
+                            PointerCoords().apply {
+                                x = positionInScreen.x + coordinate.x
+                                y = positionInScreen.y + coordinate.y
+                                setAxisValue(MotionEvent.AXIS_HSCROLL, delta.x)
+                                setAxisValue(MotionEvent.AXIS_VSCROLL, delta.y)
+                            }
+                        ),
+                        /* metaState = */ metaState,
+                        /* buttonState = */ buttonState,
+                        /* xPrecision = */ 1f,
+                        /* yPrecision = */ 1f,
+                        /* deviceId = */ 0,
+                        /* edgeFlags = */ 0,
+                        /* source = */ SOURCE_MOUSE,
+                        /* flags = */ 0,
+                    )
+                    .apply { offsetLocation(-positionInScreen.x, -positionInScreen.y) }
+            )
+        }
+    }
+
+    private fun CursorInputState.enqueueTrackpadEvent(action: Int) {
+        enqueueTrackpadEvent(
+            downTime = downTime,
+            eventTime = currentTime,
+            action = action,
+            coordinate = lastPosition,
+            metaState = keyInputState.constructMetaState(),
+            buttonState = pressedButtons.fold(0) { state, buttonId -> state or buttonId },
+        )
+    }
+
+    private fun enqueueTrackpadEvent(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        coordinate: Offset,
+        metaState: Int,
+        buttonState: Int,
+    ) {
+        synchronized(batchLock) {
+            ensureNotDisposed {
+                "Can't enqueue trackpad event (" +
+                    "downTime=$downTime, " +
+                    "eventTime=$eventTime, " +
+                    "action=$action, " +
+                    "coordinate=$coordinate, " +
+                    "metaState=$metaState, " +
+                    "buttonState=$buttonState)"
+            }
+            val positionInScreen = run {
+                val array = intArrayOf(0, 0)
+                root.view.getLocationOnScreen(array)
+                Offset(array[0].toFloat(), array[1].toFloat())
+            }
+            batchedEvents.add(
+                MotionEvent.obtain(
+                        /* downTime = */ downTime,
+                        /* eventTime = */ eventTime,
+                        /* action = */ action,
+                        /* pointerCount = */ 1,
+                        /* pointerProperties = */ arrayOf(
+                            PointerProperties().apply {
+                                id = 0
+                                toolType = MotionEvent.TOOL_TYPE_FINGER
+                            }
+                        ),
+                        /* pointerCoords = */ arrayOf(
+                            PointerCoords().apply {
+                                x = positionInScreen.x + coordinate.x
+                                y = positionInScreen.y + coordinate.y
+                            }
+                        ),
+                        /* metaState = */ metaState,
+                        /* buttonState = */ buttonState,
+                        /* xPrecision = */ 1f,
+                        /* yPrecision = */ 1f,
+                        /* deviceId = */ 0,
+                        /* edgeFlags = */ 0,
+                        /* source = */ SOURCE_MOUSE,
+                        /* flags = */ 0,
+                    )
+                    .apply { offsetLocation(-positionInScreen.x, -positionInScreen.y) }
+            )
+        }
+    }
+
+    private fun enqueueTwoFingerSwipeTrackpadEvent(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        coordinate: Offset,
+        delta: Offset,
+        accumulatedDelta: Offset,
+        metaState: Int,
+    ) {
+        synchronized(batchLock) {
+            ensureNotDisposed {
+                "Can't enqueue trackpad event (" +
+                    "downTime=$downTime, " +
+                    "eventTime=$eventTime, " +
+                    "action=$action, " +
+                    "coordinate=$coordinate, " +
+                    "delta=$delta, " +
+                    "accumulatedDelta=$accumulatedDelta, " +
+                    "metaState=$metaState)"
+            }
+            val positionInScreen = run {
+                val array = intArrayOf(0, 0)
+                root.view.getLocationOnScreen(array)
+                Offset(array[0].toFloat(), array[1].toFloat())
+            }
+            batchedEvents.add(
+                if (Build.VERSION.SDK_INT >= 34) {
+                        MotionEvent.obtain(
+                            /* downTime = */ downTime,
+                            /* eventTime = */ eventTime,
+                            /* action = */ action,
+                            /* pointerCount = */ 1,
+                            /* pointerProperties = */ arrayOf(
+                                PointerProperties().apply {
+                                    id = 0
+                                    toolType = MotionEvent.TOOL_TYPE_FINGER
+                                }
+                            ),
+                            /* pointerCoords = */ arrayOf(
+                                PointerCoords().apply {
+                                    x = positionInScreen.x + coordinate.x + accumulatedDelta.x
+                                    y = positionInScreen.y + coordinate.y + accumulatedDelta.y
+                                    setAxisValue(
+                                        MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE,
+                                        -delta.x,
+                                    )
+                                    setAxisValue(
+                                        MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE,
+                                        -delta.y,
+                                    )
+                                }
+                            ),
+                            /* metaState = */ metaState,
+                            /* buttonState = */ 0,
+                            /* xPrecision = */ 1f,
+                            /* yPrecision = */ 1f,
+                            /* deviceId = */ 0,
+                            /* edgeFlags = */ 0,
+                            /* source = */ SOURCE_MOUSE,
+                            /* displayId = */ DEFAULT_DISPLAY,
+                            /* flags = */ 0,
+                            /* classification = */ MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE,
+                        )!!
+                    } else {
+                        MotionEvent.obtain(
+                            /* downTime = */ downTime,
+                            /* eventTime = */ eventTime,
+                            /* action = */ action,
+                            /* pointerCount = */ 1,
+                            /* pointerProperties = */ arrayOf(
+                                PointerProperties().apply {
+                                    id = 0
+                                    toolType = MotionEvent.TOOL_TYPE_FINGER
+                                }
+                            ),
+                            /* pointerCoords = */ arrayOf(
+                                PointerCoords().apply {
+                                    x = positionInScreen.x + coordinate.x + accumulatedDelta.x
+                                    y = positionInScreen.y + coordinate.y + accumulatedDelta.y
+                                    setAxisValue(
+                                        MotionEvent.AXIS_GESTURE_SCROLL_X_DISTANCE,
+                                        -delta.x,
+                                    )
+                                    setAxisValue(
+                                        MotionEvent.AXIS_GESTURE_SCROLL_Y_DISTANCE,
+                                        -delta.y,
+                                    )
+                                }
+                            ),
+                            /* metaState = */ metaState,
+                            /* buttonState = */ 0,
+                            /* xPrecision = */ 1f,
+                            /* yPrecision = */ 1f,
+                            /* deviceId = */ 0,
+                            /* edgeFlags = */ 0,
+                            /* source = */ SOURCE_MOUSE,
+                            /* flags = */ 0,
+                        )
+                    }
+                    .apply { offsetLocation(-positionInScreen.x, -positionInScreen.y) }
+            )
+        }
+    }
+
+    private fun enqueuePinchTrackpadEvent(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        actionIndex: Int,
+        coordinate: Offset,
+        delta: Float,
+        accumulatedDelta: Float,
+        metaState: Int,
+    ) {
+        synchronized(batchLock) {
+            ensureNotDisposed {
+                "Can't enqueue trackpad event (" +
+                    "downTime=$downTime, " +
+                    "eventTime=$eventTime, " +
+                    "action=$action, " +
+                    "coordinate=$coordinate, " +
+                    "delta=$delta, " +
+                    "accumulatedDelta=$accumulatedDelta, " +
+                    "metaState=$metaState)"
+            }
+            val positionInScreen = run {
+                val array = intArrayOf(0, 0)
+                root.view.getLocationOnScreen(array)
+                Offset(array[0].toFloat(), array[1].toFloat())
+            }
+            val pointerCount: Int
+            val pointerProperties: Array<PointerProperties>
+            val pointerCoords: Array<PointerCoords>
+
+            /**
+             * The initial pinch separation for the fingers as per
+             * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/native/services/inputflinger/reader/mapper/gestures/GestureConverter.h;l=133;drc=af66cee7e92a59e81d1ea4b8872fa2e418a97599
+             */
+            val initialPinchSeparation = 200
+            val scaledSeparationFromCursorPosition = (initialPinchSeparation * accumulatedDelta) / 2
+
+            val firstPointerCoords =
+                PointerCoords().apply {
+                    x = positionInScreen.x + coordinate.x - scaledSeparationFromCursorPosition
+                    y = positionInScreen.y + coordinate.y
+                    setAxisValue(MotionEvent.AXIS_GESTURE_PINCH_SCALE_FACTOR, delta)
+                }
+            val secondPointerCoords =
+                PointerCoords().apply {
+                    x = positionInScreen.x + coordinate.x + scaledSeparationFromCursorPosition
+                    y = positionInScreen.y + coordinate.y
+                }
+
+            if (action == ACTION_DOWN || action == ACTION_UP) {
+                pointerCount = 1
+                pointerProperties =
+                    arrayOf(
+                        PointerProperties().apply {
+                            id = 0
+                            toolType = MotionEvent.TOOL_TYPE_FINGER
+                        }
+                    )
+                pointerCoords = arrayOf(firstPointerCoords)
+            } else {
+                pointerCount = 2
+                pointerProperties =
+                    arrayOf(
+                        PointerProperties().apply {
+                            id = 0
+                            toolType = MotionEvent.TOOL_TYPE_FINGER
+                        },
+                        PointerProperties().apply {
+                            id = 1
+                            toolType = MotionEvent.TOOL_TYPE_FINGER
+                        },
+                    )
+                pointerCoords = arrayOf(firstPointerCoords, secondPointerCoords)
+            }
+
+            batchedEvents.add(
+                if (Build.VERSION.SDK_INT >= 34) {
+                        MotionEvent.obtain(
+                            /* downTime = */ downTime,
+                            /* eventTime = */ eventTime,
+                            /* action = */ action + (actionIndex shl ACTION_POINTER_INDEX_SHIFT),
+                            /* pointerCount = */ pointerCount,
+                            /* pointerProperties = */ pointerProperties,
+                            /* pointerCoords = */ pointerCoords,
+                            /* metaState = */ metaState,
+                            /* buttonState = */ 0,
+                            /* xPrecision = */ 1f,
+                            /* yPrecision = */ 1f,
+                            /* deviceId = */ 0,
+                            /* edgeFlags = */ 0,
+                            /* source = */ SOURCE_MOUSE,
+                            /* displayId = */ DEFAULT_DISPLAY,
+                            /* flags = */ 0,
+                            /* classification = */ MotionEvent.CLASSIFICATION_PINCH,
+                        )!!
+                    } else {
+                        MotionEvent.obtain(
+                            /* downTime = */ downTime,
+                            /* eventTime = */ eventTime,
+                            /* action = */ action + (actionIndex shl ACTION_POINTER_INDEX_SHIFT),
+                            /* pointerCount = */ pointerCount,
+                            /* pointerProperties = */ pointerProperties,
+                            /* pointerCoords = */ pointerCoords,
+                            /* metaState = */ metaState,
+                            /* buttonState = */ 0,
+                            /* xPrecision = */ 1f,
+                            /* yPrecision = */ 1f,
+                            /* deviceId = */ 0,
+                            /* edgeFlags = */ 0,
+                            /* source = */ SOURCE_MOUSE,
+                            /* flags = */ 0,
+                        )!!
+                    }
                     .apply { offsetLocation(-positionInScreen.x, -positionInScreen.y) }
             )
         }
@@ -440,14 +989,14 @@ internal class AndroidInputDispatcher(
     override fun RotaryInputState.enqueueRotaryScrollHorizontally(horizontalScrollPixels: Float) {
         enqueueRotaryScrollEvent(
             eventTime = currentTime,
-            scrollPixels = -horizontalScrollPixels / horizontalScrollFactor
+            scrollPixels = -horizontalScrollPixels / horizontalScrollFactor,
         )
     }
 
     override fun RotaryInputState.enqueueRotaryScrollVertically(verticalScrollPixels: Float) {
         enqueueRotaryScrollEvent(
             eventTime = currentTime,
-            scrollPixels = -verticalScrollPixels / verticalScrollFactor
+            scrollPixels = -verticalScrollPixels / verticalScrollFactor,
         )
     }
 
@@ -477,10 +1026,10 @@ internal class AndroidInputDispatcher(
                     /* buttonState = */ 0,
                     /* xPrecision = */ 1f,
                     /* yPrecision = */ 1f,
-                    /* deviceId = */ 0,
+                    /* deviceId = */ findInputDevice(root.view.context, SOURCE_ROTARY_ENCODER),
                     /* edgeFlags = */ 0,
                     /* source = */ SOURCE_ROTARY_ENCODER,
-                    /* flags = */ 0
+                    /* flags = */ 0,
                 )
             )
         }
@@ -500,7 +1049,7 @@ internal class AndroidInputDispatcher(
             action = action,
             code = keyCode,
             repeat = repeatCount,
-            metaState = metaState
+            metaState = metaState,
         )
     }
 
@@ -511,7 +1060,7 @@ internal class AndroidInputDispatcher(
         action: Int,
         code: Int,
         repeat: Int,
-        metaState: Int
+        metaState: Int,
     ) {
         synchronized(batchLock) {
             ensureNotDisposed {
@@ -533,7 +1082,7 @@ internal class AndroidInputDispatcher(
                     /* repeat = */ repeat,
                     /* metaState = */ metaState,
                     /* deviceId = */ KeyCharacterMap.VIRTUAL_KEYBOARD,
-                    /* scancode = */ 0
+                    /* scancode = */ 0,
                 )
 
             batchedEvents.add(keyEvent)
@@ -559,6 +1108,9 @@ internal class AndroidInputDispatcher(
                 currentClockTime = event.eventTime
                 sendAndRecycleEvent(event)
             }
+            // Run all due tasks to make sure the last event is being handled.
+            // This is necessary in case we're on a confined scheduler.
+            testContext.testOwner.runCurrent()
         }
     }
 
@@ -596,5 +1148,20 @@ internal class AndroidInputDispatcher(
      */
     private fun recycleEventIfPossible(event: InputEvent) {
         (event as? MotionEvent)?.recycle()
+    }
+
+    private fun findInputDevice(context: Context, source: Int): Int {
+        with(context.getSystemService(Context.INPUT_SERVICE) as InputManager) {
+            inputDeviceIds.forEach { deviceId ->
+                getInputDevice(deviceId)?.apply {
+                    motionRanges
+                        .find { it.source == source }
+                        ?.let {
+                            return deviceId
+                        }
+                }
+            }
+        }
+        return 0
     }
 }

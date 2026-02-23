@@ -21,9 +21,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Displays primary and secondary controls for a {@link PlaybackControlsRow}.
@@ -55,9 +56,8 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
     /**
      * Always returns the presenter for primary controls.
      */
-    @Nullable
     @Override
-    public Presenter getPresenter(@Nullable Object item) {
+    public @Nullable Presenter getPresenter(@Nullable Object item) {
         return mPrimaryPresenter;
     }
 
@@ -86,9 +86,8 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
             mLayoutResourceId = layoutResourceId;
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(mLayoutResourceId, parent, false);
             return new ActionViewHolder(v);
@@ -96,7 +95,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
 
         @Override
         public void onBindViewHolder(
-                @NonNull Presenter.ViewHolder viewHolder,
+                Presenter.@NonNull ViewHolder viewHolder,
                 @Nullable Object item
         ) {
             Action action = (Action) item;
@@ -119,7 +118,7 @@ public class ControlButtonPresenterSelector extends PresenterSelector {
         }
 
         @Override
-        public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
+        public void onUnbindViewHolder(Presenter.@NonNull ViewHolder viewHolder) {
             ActionViewHolder vh = (ActionViewHolder) viewHolder;
             vh.mIcon.setImageDrawable(null);
             if (vh.mLabel != null) {

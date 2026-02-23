@@ -18,6 +18,7 @@ package androidx.wear.watchface.complications.datasource;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.os.PersistableBundle;
 import android.util.Log;
 
 import androidx.wear.watchface.complications.data.ComplicationData;
@@ -34,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadows.ShadowLog;
 
@@ -46,13 +48,14 @@ import java.time.Instant;
 
 /** Tests for {@link ComplicationDataTimeline}. */
 @RunWith(ComplicationsTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class ComplicationDataTimelineTest {
     private static final ComplicationDataTimeline TIMELINE_A =
             new ComplicationDataTimeline(
                     new ShortTextComplicationData.Builder(
-                                    new PlainComplicationText.Builder("Hello").build(),
-                                    ComplicationText.EMPTY)
+                            new PlainComplicationText.Builder("Hello").build(),
+                            ComplicationText.EMPTY)
                             .build(),
                     ImmutableList.of(
                             new TimelineEntry(
@@ -60,15 +63,15 @@ public class ComplicationDataTimelineTest {
                                             Instant.ofEpochMilli(100000000),
                                             Instant.ofEpochMilli(200000000)),
                                     new ShortTextComplicationData.Builder(
-                                                    new PlainComplicationText.Builder("Updated")
-                                                            .build(),
-                                                    ComplicationText.EMPTY)
+                                            new PlainComplicationText.Builder("Updated")
+                                                    .build(),
+                                            ComplicationText.EMPTY)
                                             .build())));
     private static final ComplicationDataTimeline TIMELINE_A2 =
             new ComplicationDataTimeline(
                     new ShortTextComplicationData.Builder(
-                                    new PlainComplicationText.Builder("Hello").build(),
-                                    ComplicationText.EMPTY)
+                            new PlainComplicationText.Builder("Hello").build(),
+                            ComplicationText.EMPTY)
                             .build(),
                     ImmutableList.of(
                             new TimelineEntry(
@@ -76,16 +79,16 @@ public class ComplicationDataTimelineTest {
                                             Instant.ofEpochMilli(100000000),
                                             Instant.ofEpochMilli(200000000)),
                                     new ShortTextComplicationData.Builder(
-                                                    new PlainComplicationText.Builder("Updated")
-                                                            .build(),
-                                                    ComplicationText.EMPTY)
+                                            new PlainComplicationText.Builder("Updated")
+                                                    .build(),
+                                            ComplicationText.EMPTY)
                                             .build())));
 
     private static final ComplicationDataTimeline TIMELINE_B =
             new ComplicationDataTimeline(
                     new ShortTextComplicationData.Builder(
-                                    new PlainComplicationText.Builder("World").build(),
-                                    ComplicationText.EMPTY)
+                            new PlainComplicationText.Builder("World").build(),
+                            ComplicationText.EMPTY)
                             .build(),
                     ImmutableList.of(
                             new TimelineEntry(
@@ -93,15 +96,15 @@ public class ComplicationDataTimelineTest {
                                             Instant.ofEpochMilli(120000000),
                                             Instant.ofEpochMilli(220000000)),
                                     new ShortTextComplicationData.Builder(
-                                                    new PlainComplicationText.Builder("Updated")
-                                                            .build(),
-                                                    ComplicationText.EMPTY)
+                                            new PlainComplicationText.Builder("Updated")
+                                                    .build(),
+                                            ComplicationText.EMPTY)
                                             .build())));
     private static final ComplicationDataTimeline TIMELINE_B2 =
             new ComplicationDataTimeline(
                     new ShortTextComplicationData.Builder(
-                                    new PlainComplicationText.Builder("World").build(),
-                                    ComplicationText.EMPTY)
+                            new PlainComplicationText.Builder("World").build(),
+                            ComplicationText.EMPTY)
                             .build(),
                     ImmutableList.of(
                             new TimelineEntry(
@@ -109,9 +112,9 @@ public class ComplicationDataTimelineTest {
                                             Instant.ofEpochMilli(120000000),
                                             Instant.ofEpochMilli(220000000)),
                                     new ShortTextComplicationData.Builder(
-                                                    new PlainComplicationText.Builder("Updated")
-                                                            .build(),
-                                                    ComplicationText.EMPTY)
+                                            new PlainComplicationText.Builder("Updated")
+                                                    .build(),
+                                            ComplicationText.EMPTY)
                                             .build())));
 
     @Before
@@ -151,8 +154,8 @@ public class ComplicationDataTimelineTest {
                                 + "startDateTimeMillis=-1000000000-01-01T00:00:00Z,"
                                 + " endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z),"
                                 + " dataSource=null, persistencePolicy=0, displayPolicy=0, "
-                                + "dynamicValueInvalidationFallback=null),"
-                                + " timelineEntries=["
+                                + "dynamicValueInvalidationFallback=null, "
+                                + "extras=PersistableBundle[{}]), timelineEntries=["
                                 + "TimelineEntry(validity=TimeInterval(start=1970-01-02T03:46:40Z,"
                                 + " end=1970-01-03T07:33:20Z),"
                                 + " complicationData=ShortTextComplicationData("
@@ -166,7 +169,8 @@ public class ComplicationDataTimelineTest {
                                 + "startDateTimeMillis=-1000000000-01-01T00:00:00Z,"
                                 + " endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z),"
                                 + " dataSource=null, persistencePolicy=0, displayPolicy=0, "
-                                + "dynamicValueInvalidationFallback=null))])");
+                                + "dynamicValueInvalidationFallback=null, "
+                                + "extras=PersistableBundle[{}]))])");
     }
 
     @Test
@@ -174,8 +178,8 @@ public class ComplicationDataTimelineTest {
         ComplicationDataTimeline timeline =
                 new ComplicationDataTimeline(
                         new ShortTextComplicationData.Builder(
-                                        new PlainComplicationText.Builder("World").build(),
-                                        ComplicationText.EMPTY)
+                                new PlainComplicationText.Builder("World").build(),
+                                ComplicationText.EMPTY)
                                 .build(),
                         ImmutableList.of(
                                 new TimelineEntry(
@@ -196,8 +200,8 @@ public class ComplicationDataTimelineTest {
         ComplicationDataTimeline timeline =
                 new ComplicationDataTimeline(
                         new LongTextComplicationData.Builder(
-                                        new PlainComplicationText.Builder("Hello").build(),
-                                        ComplicationText.EMPTY)
+                                new PlainComplicationText.Builder("Hello").build(),
+                                ComplicationText.EMPTY)
                                 .build(),
                         ImmutableList.of(
                                 new TimelineEntry(
@@ -206,8 +210,8 @@ public class ComplicationDataTimelineTest {
                                                 Instant.ofEpochMilli(200000000)),
                                         new NoDataComplicationData(
                                                 new LongTextComplicationData.Builder(
-                                                                ComplicationText.PLACEHOLDER,
-                                                                ComplicationText.EMPTY)
+                                                        ComplicationText.PLACEHOLDER,
+                                                        ComplicationText.EMPTY)
                                                         .build()))));
 
         ComplicationData complicationData =
@@ -250,9 +254,40 @@ public class ComplicationDataTimelineTest {
         assertThat(longTextPlaceholder.getText().isPlaceholder()).isTrue();
     }
 
+    @Test
+    public void stripExtrasFromTimeline() {
+        PersistableBundle extras = new PersistableBundle();
+        extras.putInt("Key", 123);
+        ComplicationDataTimeline timeline =
+                new ComplicationDataTimeline(
+                        new LongTextComplicationData.Builder(
+                                new PlainComplicationText.Builder("Hello").build(),
+                                ComplicationText.EMPTY)
+                                .build(),
+                        ImmutableList.of(
+                                new TimelineEntry(
+                                        new TimeInterval(
+                                                Instant.ofEpochMilli(100000000),
+                                                Instant.ofEpochMilli(200000000)),
+                                        new NoDataComplicationData(
+                                                new LongTextComplicationData.Builder(
+                                                        ComplicationText.PLACEHOLDER,
+                                                        ComplicationText.EMPTY)
+                                                        .setExtras(extras)
+                                                        .build()))));
+
+        android.support.wearable.complications.ComplicationData wireData =
+                asWireComplicationData(timeline);
+
+        wireData.stripExtras();
+
+        assertThat(wireData.getTimelineEntries().get(0).getPlaceholder().getExtras().size())
+                .isEqualTo(0);
+    }
+
     @SuppressWarnings("KotlinInternal")
     private android.support.wearable.complications.ComplicationData asWireComplicationData(
             ComplicationDataTimeline timeline) {
-        return timeline.asWireComplicationData$watchface_complications_data_source_release();
+        return timeline.asWireComplicationData$watchface_complications_data_source();
     }
 }

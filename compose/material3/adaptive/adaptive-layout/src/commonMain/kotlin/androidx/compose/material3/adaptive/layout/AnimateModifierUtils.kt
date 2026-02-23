@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.round
 
@@ -29,15 +30,46 @@ internal val InvalidIntSize = IntSize(-1, -1)
 
 internal val InvalidOffset = IntOffset(Int.MIN_VALUE, Int.MIN_VALUE)
 
+internal val InvalidIntRect = IntRect(0, 0, -1, -1)
+
 internal fun Placeable.PlacementScope.lookaheadOffset(lookaheadScope: LookaheadScope): IntOffset =
     with(lookaheadScope) {
         lookaheadScopeCoordinates.localLookaheadPositionOf(coordinates!!).round()
     }
 
-internal fun Placeable.PlacementScope.convertOffsetToLookaheadCoordinates(
+internal fun Placeable.PlacementScope.convertOffsetToCurrentCoordinates(
     offset: IntOffset,
-    lookaheadScope: LookaheadScope
+    lookaheadScope: LookaheadScope,
 ): IntOffset =
     with(lookaheadScope) {
+        // The offset is based on the lookahead coordinates, so we need to convert it to the local
+        // placement scope's coordinates to place it in the correct position. We did that by
+        // acquiring the current origin offset under the lookahead coordinates and then subtracting
+        // it from the lookahead offset.
         offset - lookaheadScopeCoordinates.localPositionOf(coordinates!!, Offset.Zero).round()
     }
+
+internal val IntRect.isValid
+    get() = this != InvalidIntRect
+
+internal val IntSize.isValid
+    get() = this != InvalidIntSize
+
+internal val IntOffset.isValid
+    get() = this != InvalidOffset
+
+internal class Bounds {
+    var topLeft: IntOffset = InvalidOffset
+    var size: IntSize = InvalidIntSize
+
+    val isValid
+        get() = topLeft.isValid && size.isValid
+
+    val rect
+        get() =
+            if (isValid) {
+                IntRect(topLeft, size)
+            } else {
+                InvalidIntRect
+            }
+}

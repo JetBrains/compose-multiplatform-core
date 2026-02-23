@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class which provides a {@link Config} object.
@@ -28,6 +28,5 @@ public interface ConfigProvider<C extends Config> {
     /**
      * Retrieve the {@link Config} object.
      */
-    @NonNull
-    C getConfig();
+    @NonNull C getConfig();
 }

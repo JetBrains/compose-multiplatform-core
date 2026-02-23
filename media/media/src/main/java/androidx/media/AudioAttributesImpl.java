@@ -18,17 +18,17 @@ package androidx.media;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.VersionedParcelable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 // It should be public to allow Parcelizers which never be de/jetified can access the interface.
 @RestrictTo(LIBRARY)
 public interface AudioAttributesImpl extends VersionedParcelable {
     /** Gets framework {@link android.media.AudioAttributes}. */
-    @Nullable
-    Object getAudioAttributes();
+    @Nullable Object getAudioAttributes();
     int getVolumeControlStream();
     int getLegacyStreamType();
     // Returns explicitly set legacy stream type.
@@ -38,15 +38,11 @@ public interface AudioAttributesImpl extends VersionedParcelable {
     int getFlags();
 
     interface Builder {
-        @NonNull
-        AudioAttributesImpl build();
-        @NonNull
-        Builder setUsage(@AudioAttributesCompat.AttributeUsage int usage);
-        @NonNull
-        Builder setContentType(@AudioAttributesCompat.AttributeContentType int contentType);
-        @NonNull
-        Builder setFlags(int flags);
-        @NonNull
-        Builder setLegacyStreamType(int streamType);
+        @NonNull AudioAttributesImpl build();
+        @NonNull Builder setUsage(@AudioAttributesCompat.AttributeUsage int usage);
+        @NonNull Builder setContentType(
+                @AudioAttributesCompat.AttributeContentType int contentType);
+        @NonNull Builder setFlags(int flags);
+        @NonNull Builder setLegacyStreamType(int streamType);
     }
 }

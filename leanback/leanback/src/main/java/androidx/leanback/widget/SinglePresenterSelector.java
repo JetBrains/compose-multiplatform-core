@@ -13,8 +13,8 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link PresenterSelector} that always returns the same {@link Presenter}.
@@ -31,15 +31,13 @@ public final class SinglePresenterSelector extends PresenterSelector {
         mPresenter = presenter;
     }
 
-    @Nullable
     @Override
-    public Presenter getPresenter(@Nullable Object item) {
+    public @Nullable Presenter getPresenter(@Nullable Object item) {
         return mPresenter;
     }
 
-    @NonNull
     @Override
-    public Presenter[] getPresenters() {
+    public Presenter @NonNull [] getPresenters() {
         return new Presenter[]{mPresenter};
     }
 }

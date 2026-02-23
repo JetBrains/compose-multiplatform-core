@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.os.Build;
 import android.util.LayoutDirection;
 import android.util.Size;
 import android.view.Surface;
@@ -40,11 +39,12 @@ import org.robolectric.annotation.internal.DoNotInstrument;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class PreviewViewMeteringPointFactoryTest {
 
     private static final int WIDTH = 800;
     private static final int HEIGHT = 600;
+    private static final Rect SENSOR_RECT = new Rect(0, 0, 4000, 3000);
 
     @UiThreadTest
     @Test
@@ -52,6 +52,7 @@ public class PreviewViewMeteringPointFactoryTest {
         // Arrange.
         PreviewViewMeteringPointFactory previewViewMeteringPointFactory =
                 new PreviewViewMeteringPointFactory(new PreviewTransformation());
+        previewViewMeteringPointFactory.setSensorRect(SENSOR_RECT);
         previewViewMeteringPointFactory.recalculate(new Size(WIDTH, HEIGHT), LayoutDirection.LTR);
 
         // Act.
@@ -78,9 +79,36 @@ public class PreviewViewMeteringPointFactoryTest {
                 /*isFrontCamera=*/false);
         PreviewViewMeteringPointFactory previewViewMeteringPointFactory =
                 new PreviewViewMeteringPointFactory(previewTransformation);
+        previewViewMeteringPointFactory.setSensorRect(SENSOR_RECT);
 
         // Act.
         previewViewMeteringPointFactory.recalculate(new Size(0, 0), LayoutDirection.LTR);
+        PointF meteringPoint = previewViewMeteringPointFactory.convertPoint(0F, 0F);
+
+        // Assume.
+        assertThat(meteringPoint).isEqualTo(PreviewViewMeteringPointFactory.INVALID_POINT);
+    }
+
+    @UiThreadTest
+    @Test
+    public void sensorRectNotSet_createsInvalidMeteringPoint() {
+        // Arrange.
+        PreviewTransformation previewTransformation = new PreviewTransformation();
+        previewTransformation.setTransformationInfo(
+                SurfaceRequest.TransformationInfo.of(
+                        new Rect(0, 0, WIDTH, HEIGHT),
+                        0,
+                        Surface.ROTATION_0,
+                        /*hasCameraTransform=*/true,
+                        /*sensorToBufferTransform=*/new Matrix(),
+                        /*mirroring=*/false),
+                new Size(WIDTH, HEIGHT),
+                /*isFrontCamera=*/false);
+        PreviewViewMeteringPointFactory previewViewMeteringPointFactory =
+                new PreviewViewMeteringPointFactory(previewTransformation);
+
+        // Act.
+        previewViewMeteringPointFactory.recalculate(new Size(WIDTH, WIDTH), LayoutDirection.LTR);
         PointF meteringPoint = previewViewMeteringPointFactory.convertPoint(0F, 0F);
 
         // Assume.
@@ -104,6 +132,7 @@ public class PreviewViewMeteringPointFactoryTest {
                 /*isFrontCamera=*/false);
         PreviewViewMeteringPointFactory previewViewMeteringPointFactory =
                 new PreviewViewMeteringPointFactory(previewTransformation);
+        previewViewMeteringPointFactory.setSensorRect(SENSOR_RECT);
 
         // Act.
         previewViewMeteringPointFactory.recalculate(new Size(WIDTH, HEIGHT), LayoutDirection.LTR);

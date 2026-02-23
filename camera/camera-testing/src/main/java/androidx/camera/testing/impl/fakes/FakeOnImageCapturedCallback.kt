@@ -22,12 +22,13 @@ import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Logger
 import androidx.camera.core.impl.utils.Exif
+import androidx.camera.testing.impl.CountdownDeferred
 import com.google.common.truth.Truth
 import java.io.ByteArrayInputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -40,7 +41,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 public class FakeOnImageCapturedCallback(
     captureCount: Int = 1,
-    private val closeImageOnSuccess: Boolean = true
+    private val closeImageOnSuccess: Boolean = true,
 ) : ImageCapture.OnImageCapturedCallback() {
     public data class CapturedImage(val image: ImageProxy, val properties: ImageProperties)
 
@@ -66,6 +67,7 @@ public class FakeOnImageCapturedCallback(
     public val errors: MutableList<ImageCaptureException> = mutableListOf()
 
     override fun onCaptureSuccess(image: ImageProxy) {
+        Logger.d(TAG, "onCaptureSuccess: image = $image")
         results.add(
             CapturedImage(
                 image = image,
@@ -76,7 +78,7 @@ public class FakeOnImageCapturedCallback(
                         rotationDegrees = image.imageInfo.rotationDegrees,
                         cropRect = image.cropRect,
                         exif = getExif(image),
-                    )
+                    ),
             )
         )
         if (closeImageOnSuccess) {
@@ -86,6 +88,7 @@ public class FakeOnImageCapturedCallback(
     }
 
     override fun onError(exception: ImageCaptureException) {
+        Logger.d(TAG, "onError", exception)
         errors.add(exception)
         latch.countDown()
     }
@@ -105,38 +108,23 @@ public class FakeOnImageCapturedCallback(
         Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
     }
 
+    /** Asserts that capture hasn't been completed within the provided `duration`. */
+    public suspend fun assertNoCapture(timeout: Duration = CAPTURE_TIMEOUT) {
+        Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNull()
+    }
+
     public suspend fun awaitCapturesAndAssert(
         timeout: Duration = CAPTURE_TIMEOUT,
         capturedImagesCount: Int = 0,
-        errorsCount: Int = 0
+        errorsCount: Int = 0,
     ) {
         Truth.assertThat(withTimeoutOrNull(timeout) { latch.await() }).isNotNull()
         Truth.assertThat(results.size).isEqualTo(capturedImagesCount)
         Truth.assertThat(errors.size).isEqualTo(errorsCount)
     }
 
-    private class CountdownDeferred(val count: Int) {
-
-        private val deferredItems =
-            mutableListOf<CompletableDeferred<Unit>>().apply {
-                repeat(count) { add(CompletableDeferred()) }
-            }
-        private var index = 0
-
-        fun countDown() {
-            if (index < count) {
-                deferredItems[index++].complete(Unit)
-            } else {
-                throw IllegalStateException("Countdown already finished")
-            }
-        }
-
-        suspend fun await() {
-            deferredItems.forEach { it.await() }
-        }
-    }
-
     public companion object {
+        private const val TAG = "FakeOnImageCaptureCallback"
         private val CAPTURE_TIMEOUT = 15.seconds
     }
 }

@@ -13,7 +13,6 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-
 <resources>
     <string name="activity_sample_code">Support v4 Demos</string>
 
@@ -233,13 +232,20 @@
 
     <string name="nested_scroll">Widget/Nested Scrolling</string>
     <string name="nested_scroll_3_levels">Widget/Nested Scrolling (3 levels)</string>
+
     <string name="nested_scroll_3_levels_collapsing">Widget/Nested Scrolling (3 levels) with Collapsing Toolbar</string>
     <string name="nested_scroll_3_levels_collapsing_appbar_title">Collapsing Appbar</string>
+
+    <string name="preference_screen_collapsing">Widget/PreferenceScreen with Collapsing Appbar</string>
+    <string name="preference_screen_collapsing_appbar_title">Collapsing Appbar</string>
 
     <string name="nested_scroll_long_text">This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it. This is some long text. It just keeps going. Look at it. Scroll it. Scroll the nested version of it.</string>
     <string name="nested_scroll_short_text">This is shorter text. In fact, it was designed to be half as long as the long text, it is very close. This is shorter text. In fact, it was designed to be half as long as the long text, it is very close. This is shorter text. In fact, it was designed to be half as long as the long text, it is very close. This is shorter text. In fact, it was designed to be half as long as the long text, it is very close. This is shorter text. In fact, it was designed to be half as long as the long text, it is very close.</string>
     <string name="regular">regular</string>
     <string name="round">round</string>
+
+    <string name="recycler_view_with_collapsing_toolbar">Widget/RecyclerView with Collapsing Appbar</string>
+    <string name="recycler_view_with_collapsing_toolbar_title">Header</string>
 
     <string name="drawable_compat_no_tint">Not tint</string>
     <string name="drawable_compat_color_tint">Color tint</string>

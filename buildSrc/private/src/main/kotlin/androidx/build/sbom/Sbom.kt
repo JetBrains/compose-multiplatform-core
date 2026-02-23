@@ -18,7 +18,6 @@ package androidx.build.sbom
 
 import androidx.build.AndroidXPlaygroundRootImplPlugin
 import androidx.build.BundleInsideHelper
-import androidx.build.GMavenZipTask
 import androidx.build.ProjectLayoutType
 import androidx.build.addToBuildOnServer
 import androidx.build.getDistributionDirectory
@@ -33,9 +32,10 @@ import java.net.URI
 import java.util.UUID
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.tasks.Copy
+import org.gradle.api.attributes.Category
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.jvm.tasks.Jar
@@ -53,15 +53,14 @@ import org.spdx.sbom.gradle.project.ScmInfo
  * That is, this tells whether the corresponding Configuration contains dependencies that get
  * embedded into our build artifact
  */
-fun Project.shouldSbomIncludeConfigurationName(configurationName: String): Boolean {
+private fun Project.shouldSbomIncludeConfigurationName(configurationName: String): Boolean {
     return when (configurationName) {
         BundleInsideHelper.CONFIGURATION_NAME -> true
         "shadowed" -> true
         // compileClasspath is included by the Shadow plugin by default but projects that
         // declare a "shadowed" configuration exclude the "compileClasspath" configuration from
         // the shadowJar task
-        "compileClasspath" ->
-            appliesShadowPlugin() && project.configurations.findByName("shadowed") == null
+        "compileClasspath" -> appliesShadowPlugin() && configurations.findByName("shadowed") == null
         EXPORT_INSPECTOR_DEPENDENCIES -> true
         IMPORT_INSPECTOR_DEPENDENCIES -> true
         // https://github.com/spdx/spdx-gradle-plugin/issues/12
@@ -71,7 +70,7 @@ fun Project.shouldSbomIncludeConfigurationName(configurationName: String): Boole
 }
 
 // An empty Configuration for the sbom plugin to ensure it has at least one Configuration
-private val sbomEmptyConfiguration = "sbomEmpty"
+private const val sbomEmptyConfiguration = "sbomEmpty"
 
 // some tasks that don't embed configurations having external dependencies
 private val excludeTaskNames =
@@ -87,7 +86,7 @@ private val excludeTaskNames =
         "bundleAndroidMainAar",
         "bundleAndroidMainLocalLintAar",
         "repackageAndroidMainAar",
-        "repackageAarWithResourceApiAndroidMain"
+        "repackageAarWithResourceApiAndroidMain",
     )
 
 /**
@@ -103,17 +102,17 @@ private val excludeTaskNames =
  * The purpose of this function is to detect new archive tasks and remind developers to update
  * shouldSbomIncludeConfigurationName
  */
-fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTask): List<String> {
-    if (task is Jar && !(task is ShadowJar)) {
+private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTask): List<String> {
+    if (task is Jar && task !is ShadowJar) {
         // Jar tasks don't generally embed other dependencies in them
         return listOf()
     }
-    if (task is GMavenZipTask) {
-        // A GMavenZipTask just zips one or more artifacts we've already built
+    if (task is Zip && task.name.endsWith("Klib")) {
+        // klib zip tasks don't generally embed other dependencies in them
         return listOf()
     }
 
-    val projectPath = project.path
+    val projectPath = path
     val taskName = task.name
 
     // some tasks that embed other configurations
@@ -150,7 +149,7 @@ fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTask): Lis
         val shadowTask = task as? ShadowJar
         if (shadowTask != null) {
             val configurations =
-                project.configurations.filter { conf -> shadowTask.configurations.contains(conf) }
+                configurations.filter { conf -> shadowTask.configurations.contains(conf) }
             return configurations.map { conf -> conf.name }
         }
     }
@@ -167,26 +166,11 @@ fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTask): Lis
     )
 }
 
-/** Returns which configurations are used by the given task that we should list in an sbom */
-fun Project.listSbomConfigurationsForArchive(task: AbstractArchiveTask): List<Configuration> {
-    val configurationNames = listSbomConfigurationNamesForArchive(task)
-    return configurationNames.map { configurationName ->
-        val resolved = project.configurations.findByName(configurationName)
-        if (resolved == null) {
-            throw GradleException(
-                "listSbomConfigurationsForArchive($task) expected to find " +
-                    "configuration $configurationName but it does not exist"
-            )
-        }
-        resolved
-    }
-}
-
 /** Validates that the inputs of the given archive task are recognized */
-fun Project.validateArchiveInputsRecognized(task: AbstractArchiveTask) {
-    val configurationNames = task.project.listSbomConfigurationNamesForArchive(task)
+private fun Project.validateArchiveInputsRecognized(task: AbstractArchiveTask) {
+    val configurationNames = listSbomConfigurationNamesForArchive(task)
     for (configurationName in configurationNames) {
-        if (!task.project.shouldSbomIncludeConfigurationName(configurationName)) {
+        if (!shouldSbomIncludeConfigurationName(configurationName)) {
             throw GradleException(
                 "Task listSbomConfigurationNamesForArchive(\"${task.name}\") = " +
                     "$configurationNames but " +
@@ -199,50 +183,52 @@ fun Project.validateArchiveInputsRecognized(task: AbstractArchiveTask) {
 
 /** Validates that the inputs of each archive task are recognized */
 fun Project.validateAllArchiveInputsRecognized() {
-    project.tasks.withType(Zip::class.java).configureEach { task ->
-        project.validateArchiveInputsRecognized(task)
-    }
-    project.tasks.withType(ShadowJar::class.java).configureEach { task ->
-        project.validateArchiveInputsRecognized(task)
+    tasks.withType(Zip::class.java).configureEach { task -> validateArchiveInputsRecognized(task) }
+    tasks.withType(ShadowJar::class.java).configureEach { task ->
+        validateArchiveInputsRecognized(task)
     }
 }
 
 /** Enables the publishing of an sbom that lists our embedded dependencies */
 fun Project.configureSbomPublishing() {
-    val uuid = project.coordinatesToUUID().toString()
-    val projectName = project.name
-    val projectVersion = project.version.toString()
+    val uuid = coordinatesToUUID().toString()
+    val projectName = name
+    val projectVersion = version.toString()
 
-    project.configurations.create(sbomEmptyConfiguration) { emptyConfiguration ->
+    configurations.create(sbomEmptyConfiguration) { emptyConfiguration ->
         emptyConfiguration.isCanBeConsumed = false
     }
-    project.apply(plugin = "org.spdx.sbom")
+    apply(plugin = "org.spdx.sbom")
     val repos = getRepoPublicUrls()
-    val headShaProvider = getHeadShaProvider(project)
+    val headShaProvider = getHeadShaProvider()
     val supportRootDir = getSupportRootFolder()
 
-    val allowPublicRepos = System.getenv("ALLOW_PUBLIC_REPOS") != null
-    val sbomPublishDir = project.getSbomPublishDir()
-
-    val sbomBuiltFile =
-        project.layout.buildDirectory.file("spdx/release.spdx.json").get().getAsFile()
+    val sbomBuiltFile = layout.buildDirectory.file("spdx/release.spdx.json")
 
     val publishTask =
-        project.tasks.register("exportSboms", Copy::class.java) { publishTask ->
-            publishTask.destinationDir = sbomPublishDir
-            val sbomBuildDir = sbomBuiltFile.parentFile
-            publishTask.from(sbomBuildDir)
-            publishTask.rename(sbomBuiltFile.name, "$projectName-$projectVersion.spdx.json")
-
-            publishTask.doFirst {
-                if (!sbomBuiltFile.exists()) {
-                    throw GradleException("sbom file does not exist: $sbomBuiltFile")
-                }
-            }
+        tasks.register("exportSboms", ExportSbomsTask::class.java) { publishTask ->
+            publishTask.destinationDir.set(getSbomPublishDir())
+            publishTask.sbomFile.set(sbomBuiltFile)
+            publishTask.outputFileName.set("$projectName-$projectVersion.spdx.json")
         }
 
-    project.tasks.withType(SpdxSbomTask::class.java).configureEach { task ->
-        val sbomProjectDir = project.projectDir
+    configurations.register("sbomArtifacts") {
+        it.isCanBeResolved = false
+        it.isCanBeConsumed = true
+        it.attributes { attributes ->
+            attributes.attribute(
+                Category.CATEGORY_ATTRIBUTE,
+                objects.named(Category::class.java, "androidx-sbom-artifacts"),
+            )
+        }
+    }
+    artifacts.add(
+        "sbomArtifacts",
+        publishTask.map { task -> task.destinationDir.file(task.outputFileName.get()) },
+    )
+
+    tasks.withType(SpdxSbomTask::class.java).configureEach { task ->
+        val sbomProjectDir = projectDir
 
         task.taskExtension.set(
             object : DefaultSpdxSbomTaskExtension() {
@@ -254,7 +240,7 @@ fun Project.configureSbomPublishing() {
                         if (uriString.startsWith(ourRepoUrl)) {
                             return URI.create(publicRepoUrl)
                         }
-                        if (allowPublicRepos) {
+                        if (System.getenv("ALLOW_PUBLIC_REPOS") != null) {
                             if (uriString.startsWith(publicRepoUrl)) {
                                 return URI.create(publicRepoUrl)
                             }
@@ -267,7 +253,7 @@ fun Project.configureSbomPublishing() {
 
                 override fun mapScmForProject(
                     original: ScmInfo,
-                    projectInfo: ProjectInfo
+                    projectInfo: ProjectInfo,
                 ): ScmInfo {
                     val url = getGitRemoteUrl(projectInfo.projectDirectory, supportRootDir)
                     return ScmInfo.from("git", url, headShaProvider.get())
@@ -287,13 +273,13 @@ fun Project.configureSbomPublishing() {
         )
     }
 
-    val sbomExtension = project.extensions.getByType<SpdxSbomExtension>()
+    val sbomExtension = extensions.getByType<SpdxSbomExtension>()
     val sbomConfigurations = mutableListOf<String>()
 
-    project.afterEvaluate {
-        project.configurations.configureEach { configuration ->
+    afterEvaluate {
+        configurations.configureEach { configuration ->
             if (shouldSbomIncludeConfigurationName(configuration.name)) {
-                sbomConfigurations.add(configuration.getName())
+                sbomConfigurations.add(configuration.name)
             }
         }
 
@@ -304,27 +290,27 @@ fun Project.configureSbomPublishing() {
             document.creator.set(googleOrganization)
             document.packageSupplier.set(googleOrganization)
 
-            target.getConfigurations().set(sbomConfigurations)
+            target.configurations.set(sbomConfigurations)
         }
-        project.addToBuildOnServer(tasks.named("spdxSbomForRelease"))
+        addToBuildOnServer(tasks.named("spdxSbomForRelease"))
         publishTask.configure { task -> task.dependsOn("spdxSbomForRelease") }
     }
 }
 
 // Returns a UUID whose contents are based on the project's coordinates (group:artifact:version)
-fun Project.coordinatesToUUID(): UUID {
-    val coordinates = "${project.group}:${project.name}:${project.version}"
+private fun Project.coordinatesToUUID(): UUID {
+    val coordinates = "$group:$name:$version"
     val bytes = coordinates.toByteArray()
     return UUID.nameUUIDFromBytes(bytes)
 }
 
-fun pathContains(ancestor: File, child: File): Boolean {
+private fun pathContains(ancestor: File, child: File): Boolean {
     val childNormalized = child.getCanonicalPath() + File.separator
     val ancestorNormalized = ancestor.getCanonicalPath() + File.separator
     return childNormalized.startsWith(ancestorNormalized)
 }
 
-fun getGitRemoteUrl(dir: File, supportRootDir: File): String {
+private fun getGitRemoteUrl(dir: File, supportRootDir: File): String {
     if (pathContains(supportRootDir, dir)) {
         return "android.googlesource.com/platform/frameworks/support"
     }
@@ -341,9 +327,10 @@ fun getGitRemoteUrl(dir: File, supportRootDir: File): String {
     throw GradleException("Could not identify git remote url for project at $dir")
 }
 
-fun Project.getSbomPublishDir(): File {
-    val groupPath = project.group.toString().replace(".", "/")
-    return File(getDistributionDirectory(), "sboms/$groupPath/${project.name}/${project.version}")
+private fun Project.getSbomPublishDir(): Provider<Directory> {
+    val groupPath = group.toString().replace(".", "/")
+    val fullPath = "sboms/$groupPath/$name/$version"
+    return getDistributionDirectory().dir(fullPath)
 }
 
 private const val MAVEN_CENTRAL_REPO_URL = "https://repo.maven.apache.org/maven2"
@@ -354,12 +341,12 @@ private fun Project.getRepoPublicUrls(): Map<String, String> {
     return if (ProjectLayoutType.isPlayground(this)) {
         mapOf(
             MAVEN_CENTRAL_REPO_URL to MAVEN_CENTRAL_REPO_URL,
-            AndroidXPlaygroundRootImplPlugin.INTERNAL_PREBUILTS_REPO_URL to GMAVEN_REPO_URL
+            AndroidXPlaygroundRootImplPlugin.INTERNAL_PREBUILTS_REPO_URL to GMAVEN_REPO_URL,
         )
     } else {
         mapOf(
-            "file:${project.getPrebuiltsRoot()}/androidx/external" to MAVEN_CENTRAL_REPO_URL,
-            "file:${project.getPrebuiltsRoot()}/androidx/internal" to GMAVEN_REPO_URL
+            "file:${getPrebuiltsRoot()}/androidx/external" to MAVEN_CENTRAL_REPO_URL,
+            "file:${getPrebuiltsRoot()}/androidx/internal" to GMAVEN_REPO_URL,
         )
     }
 }

@@ -20,35 +20,35 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public class DefaultRequestProcessorImpl implements RequestProcessorImpl.Callback {
     @Override
-    public void onCaptureStarted(@NonNull RequestProcessorImpl.Request request, long frameNumber,
+    public void onCaptureStarted(RequestProcessorImpl.@NonNull Request request, long frameNumber,
             long timestamp) {
 
     }
 
     @Override
-    public void onCaptureProgressed(@NonNull RequestProcessorImpl.Request request,
+    public void onCaptureProgressed(RequestProcessorImpl.@NonNull Request request,
             @NonNull CaptureResult partialResult) {
 
     }
 
     @Override
-    public void onCaptureCompleted(@NonNull RequestProcessorImpl.Request request,
+    public void onCaptureCompleted(RequestProcessorImpl.@NonNull Request request,
             @NonNull TotalCaptureResult totalCaptureResult) {
 
     }
 
     @Override
-    public void onCaptureFailed(@NonNull RequestProcessorImpl.Request request,
+    public void onCaptureFailed(RequestProcessorImpl.@NonNull Request request,
             @NonNull CaptureFailure captureFailure) {
 
     }
 
     @Override
-    public void onCaptureBufferLost(@NonNull RequestProcessorImpl.Request request, long frameNumber,
+    public void onCaptureBufferLost(RequestProcessorImpl.@NonNull Request request, long frameNumber,
             int outputStreamId) {
 
     }

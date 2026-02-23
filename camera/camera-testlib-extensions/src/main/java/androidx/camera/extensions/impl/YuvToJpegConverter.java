@@ -22,9 +22,10 @@ import android.graphics.YuvImage;
 import android.media.Image;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageProcessingUtil;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -46,8 +47,7 @@ class YuvToJpegConverter {
         yuvMediaImage.getPlanes()[0].getBuffer().rewind();
     }
 
-    @NonNull
-    private static byte[] yuv_420_888toNv21(@NonNull Image image) {
+    private static byte @NonNull [] yuv_420_888toNv21(@NonNull Image image) {
         Image.Plane yPlane = image.getPlanes()[0];
         Image.Plane uPlane = image.getPlanes()[1];
         Image.Plane vPlane = image.getPlanes()[2];

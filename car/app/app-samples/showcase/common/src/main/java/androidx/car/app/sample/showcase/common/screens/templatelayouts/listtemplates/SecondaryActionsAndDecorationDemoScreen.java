@@ -18,7 +18,6 @@ package androidx.car.app.sample.showcase.common.screens.templatelayouts.listtemp
 
 import static androidx.car.app.CarToast.LENGTH_LONG;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -30,8 +29,11 @@ import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.Template;
+import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen demonstrating lists with secondary actions and numeric decorations. */
 @RequiresCarApi(6)
@@ -40,9 +42,15 @@ public class SecondaryActionsAndDecorationDemoScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
+        return buildListTemplate();
+    }
+
+    /**
+     * Helper method to build the ListTemplate.
+     */
+    private ListTemplate buildListTemplate() {
         Action action = new Action.Builder()
                 .setIcon(buildCarIconWithResources(R.drawable.baseline_question_mark_24))
                 .setOnClickListener(() -> CarToast.makeText(getCarContext(),
@@ -58,18 +66,25 @@ public class SecondaryActionsAndDecorationDemoScreen extends Screen {
                 12,
                 action));
 
+        listBuilder.addItem(buildRowForTemplate(
+                R.string.secondary_actions_decoration_test_title_long,
+                9,
+                action));
+
+        Action mapXAction = new Action.Builder()
+                .setTitle("Map+X this!")
+                .setOnClickListener(
+                        () -> getScreenManager().push(
+                                new MapSecondaryActionsDemoScreen(getCarContext())))
+                .build();
+
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
                 .setHeader(new Header.Builder()
                         .setTitle(getCarContext()
                                 .getString(R.string.secondary_actions_decoration_button_demo_title))
                         .setStartHeaderAction(Action.BACK)
-                        .addEndHeaderAction(new Action.Builder()
-                                .setTitle(getCarContext().getString(
-                                        R.string.home_caps_action_title))
-                                .setOnClickListener(
-                                        () -> getScreenManager().popToRoot())
-                                .build())
+                        .addEndHeaderAction(mapXAction)
                         .build())
                 .build();
     }
@@ -77,8 +92,8 @@ public class SecondaryActionsAndDecorationDemoScreen extends Screen {
     private CarIcon buildCarIconWithResources(int imageId) {
         return new CarIcon.Builder(
                 IconCompat.createWithResource(
-                                getCarContext(),
-                                imageId))
+                        getCarContext(),
+                        imageId))
                 .build();
     }
 
@@ -107,5 +122,25 @@ public class SecondaryActionsAndDecorationDemoScreen extends Screen {
                         .getString(R.string.secondary_actions_decoration_test_subtitle))
                 .addAction(action)
                 .build();
+    }
+
+    /**
+     * A new screen that displays the MapWithContentTemplate
+     * containing the exact same ListTemplate.
+     */
+    private class MapSecondaryActionsDemoScreen extends Screen {
+        protected MapSecondaryActionsDemoScreen(@NonNull CarContext carContext) {
+            super(carContext);
+        }
+
+        @Override
+        public @NonNull Template onGetTemplate() {
+            ListTemplate innerTemplate =
+                    SecondaryActionsAndDecorationDemoScreen.this.buildListTemplate();
+
+            return new MapWithContentTemplate.Builder()
+                    .setContentTemplate(innerTemplate)
+                    .build();
+        }
     }
 }

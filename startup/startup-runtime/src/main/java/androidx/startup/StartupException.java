@@ -16,8 +16,9 @@
 
 package androidx.startup;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The Runtime Exception thrown by the android.startup library.

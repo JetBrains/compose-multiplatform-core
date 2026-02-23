@@ -19,7 +19,6 @@ package com.example.androidx.widget.selection.single;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.selection.SelectionPredicates;
 import androidx.recyclerview.selection.SelectionTracker;
@@ -30,6 +29,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * RecyclerView Selection library single-selection mode demo activity.

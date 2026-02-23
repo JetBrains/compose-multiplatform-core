@@ -22,7 +22,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface CaptureSequenceProcessor<
     out TCaptureRequest,
-    TCaptureSequence : CaptureSequence<TCaptureRequest>
+    TCaptureSequence : CaptureSequence<TCaptureRequest>,
 > {
 
     /**
@@ -50,9 +50,10 @@ public interface CaptureSequenceProcessor<
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
-        listeners: List<Request.Listener>,
         sequenceListener: CaptureSequence.CaptureSequenceListener,
+        listeners: List<Request.Listener>,
     ): TCaptureSequence?
 
     /** Issue a previously created [CaptureSequence] to the active camera instance. */

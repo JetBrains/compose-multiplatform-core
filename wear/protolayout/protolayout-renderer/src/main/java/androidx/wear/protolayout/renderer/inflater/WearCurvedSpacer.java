@@ -16,15 +16,18 @@
 
 package androidx.wear.protolayout.renderer.inflater;
 
+import static java.lang.Math.min;
+
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.renderer.R;
 import androidx.wear.widget.ArcLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A lightweight curved widget that represents space between elements inside an Arc. This does no
@@ -36,6 +39,7 @@ public class WearCurvedSpacer extends View implements ArcLayout.Widget {
     private static final int DEFAULT_THICKNESS_PX = 0;
 
     private float mSweepAngleDegrees;
+    private float mLengthPx = 0;
     private int mThicknessPx;
 
     public WearCurvedSpacer(@NonNull Context context) {
@@ -71,6 +75,27 @@ public class WearCurvedSpacer extends View implements ArcLayout.Widget {
     }
 
     @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
+
+        // convert length in px to degrees.
+        if (mLengthPx == 0) {
+            return;
+        }
+
+        int size =
+                min(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(heightMeasureSpec));
+        if (size == 0) {
+            return;
+        }
+
+        float radius = (size - mThicknessPx) / 2F;
+        // Calculate angle in radian from arc length and radius:
+        // ArcAngleInRadian = ArcLength / Radius
+        mSweepAngleDegrees = (float) Math.toDegrees(mLengthPx / radius);
+    }
+
+    @Override
     public float getSweepAngleDegrees() {
         return mSweepAngleDegrees;
     }
@@ -84,6 +109,14 @@ public class WearCurvedSpacer extends View implements ArcLayout.Widget {
     @Override
     public void setSweepAngleDegrees(float sweepAngleDegrees) {
         this.mSweepAngleDegrees = sweepAngleDegrees;
+    }
+
+    /**
+     * Sets the length this spacer, in pixels. If dp length is set, it overrides the degrees value
+     * set by {@link #setSweepAngleDegrees(float)}
+     */
+    public void setLengthPx(float lengthPx) {
+        this.mLengthPx = lengthPx;
     }
 
     /** Sets the thickness of this spacer, in DP. */

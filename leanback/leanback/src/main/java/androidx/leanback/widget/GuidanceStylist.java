@@ -22,9 +22,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -106,8 +107,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
          * Returns the title specified when this Guidance was constructed.
          * @return The title for this Guidance.
          */
-        @Nullable
-        public String getTitle() {
+        public @Nullable String getTitle() {
             return mTitle;
         }
 
@@ -115,8 +115,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
          * Returns the description specified when this Guidance was constructed.
          * @return The description for this Guidance.
          */
-        @Nullable
-        public String getDescription() {
+        public @Nullable String getDescription() {
             return mDescription;
         }
 
@@ -124,8 +123,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
          * Returns the breadcrumb specified when this Guidance was constructed.
          * @return The breadcrumb for this Guidance.
          */
-        @Nullable
-        public String getBreadcrumb() {
+        public @Nullable String getBreadcrumb() {
             return mBreadcrumb;
         }
 
@@ -133,8 +131,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
          * Returns the icon drawable specified when this Guidance was constructed.
          * @return The icon for this Guidance.
          */
-        @Nullable
-        public Drawable getIconDrawable() {
+        public @Nullable Drawable getIconDrawable() {
             return mIconDrawable;
         }
     }
@@ -157,8 +154,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
      * @param guidance The guidance data for the view.
      * @return The view to be added to the caller's view hierarchy.
      */
-    @NonNull
-    public View onCreateView(
+    public @NonNull View onCreateView(
             final @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @NonNull Guidance guidance
@@ -239,8 +235,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
      * Returns the view displaying the title of the guidance.
      * @return The text view object for the title.
      */
-    @Nullable
-    public TextView getTitleView() {
+    public @Nullable TextView getTitleView() {
         return mTitleView;
     }
 
@@ -248,8 +243,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
      * Returns the view displaying the description of the guidance.
      * @return The text view object for the description.
      */
-    @Nullable
-    public TextView getDescriptionView() {
+    public @Nullable TextView getDescriptionView() {
         return mDescriptionView;
     }
 
@@ -257,8 +251,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
      * Returns the view displaying the breadcrumb of the guidance.
      * @return The text view object for the breadcrumb.
      */
-    @Nullable
-    public TextView getBreadcrumbView() {
+    public @Nullable TextView getBreadcrumbView() {
         return mBreadcrumbView;
     }
 
@@ -266,8 +259,7 @@ public class GuidanceStylist implements FragmentAnimationProvider {
      * Returns the view displaying the icon of the guidance.
      * @return The image view object for the icon.
      */
-    @Nullable
-    public ImageView getIconView() {
+    public @Nullable ImageView getIconView() {
         return mIconView;
     }
 

@@ -27,9 +27,10 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -65,10 +66,8 @@ public final class MasterKey {
 
     private static final int DEFAULT_AUTHENTICATION_VALIDITY_DURATION_SECONDS = 5 * 60;
 
-    @NonNull
-    private final String mKeyAlias;
-    @Nullable
-    private final KeyGenParameterSpec mKeyGenParameterSpec;
+    private final @NonNull String mKeyAlias;
+    private final @Nullable KeyGenParameterSpec mKeyGenParameterSpec;
 
     /**
      * Algorithm/Cipher choices used for the master key.
@@ -158,16 +157,14 @@ public final class MasterKey {
         return Api28Impl.isStrongBoxBacked(mKeyGenParameterSpec);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "MasterKey{keyAlias=" + mKeyAlias
                 + ", isKeyStoreBacked=" + isKeyStoreBacked()
                 + "}";
     }
 
-    @NonNull
-    /* package */ String getKeyAlias() {
+    /* package */ @NonNull String getKeyAlias() {
         return mKeyAlias;
     }
 
@@ -177,13 +174,10 @@ public final class MasterKey {
      */
     @Deprecated
     public static final class Builder {
-        @NonNull
-        final String mKeyAlias;
+        final @NonNull String mKeyAlias;
 
-        @Nullable
-        KeyGenParameterSpec mKeyGenParameterSpec;
-        @Nullable
-        KeyScheme mKeyScheme;
+        @Nullable KeyGenParameterSpec mKeyGenParameterSpec;
+        @Nullable KeyScheme mKeyScheme;
 
         boolean mAuthenticationRequired;
         int mUserAuthenticationValidityDurationSeconds;
@@ -222,8 +216,7 @@ public final class MasterKey {
          * @param keyScheme The KeyScheme to use.
          * @return This builder.
          */
-        @NonNull
-        public Builder setKeyScheme(@NonNull KeyScheme keyScheme) {
+        public @NonNull Builder setKeyScheme(@NonNull KeyScheme keyScheme) {
             switch (keyScheme) {
                 case AES256_GCM:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -252,8 +245,7 @@ public final class MasterKey {
          *                               the key.
          * @return This builder.
          */
-        @NonNull
-        public Builder setUserAuthenticationRequired(boolean authenticationRequired) {
+        public @NonNull Builder setUserAuthenticationRequired(boolean authenticationRequired) {
             return setUserAuthenticationRequired(authenticationRequired,
                     getDefaultAuthenticationValidityDurationSeconds());
         }
@@ -271,8 +263,7 @@ public final class MasterKey {
          *                                                  authentication.
          * @return This builder.
          */
-        @NonNull
-        public Builder setUserAuthenticationRequired(boolean authenticationRequired,
+        public @NonNull Builder setUserAuthenticationRequired(boolean authenticationRequired,
                 @IntRange(from = 1) int userAuthenticationValidityDurationSeconds) {
             mAuthenticationRequired = authenticationRequired;
             mUserAuthenticationValidityDurationSeconds = userAuthenticationValidityDurationSeconds;
@@ -287,8 +278,7 @@ public final class MasterKey {
          * @param requestStrongBoxBacked Whether to request to use strongbox
          * @return This builder.
          */
-        @NonNull
-        public Builder setRequestStrongBoxBacked(boolean requestStrongBoxBacked) {
+        public @NonNull Builder setRequestStrongBoxBacked(boolean requestStrongBoxBacked) {
             mRequestStrongBoxBacked = requestStrongBoxBacked;
             return this;
         }
@@ -302,9 +292,9 @@ public final class MasterKey {
          * @param keyGenParameterSpec The key spec to use.
          * @return This builder.
          */
-        @NonNull
         @RequiresApi(Build.VERSION_CODES.M)
-        public Builder setKeyGenParameterSpec(@NonNull KeyGenParameterSpec keyGenParameterSpec) {
+        public @NonNull Builder setKeyGenParameterSpec(
+                @NonNull KeyGenParameterSpec keyGenParameterSpec) {
             if (mKeyScheme != null) {
                 throw new IllegalArgumentException("KeyGenParamSpec set after setting a "
                         + "KeyScheme");
@@ -323,8 +313,7 @@ public final class MasterKey {
          *
          * @return The master key.
          */
-        @NonNull
-        public MasterKey build() throws GeneralSecurityException, IOException {
+        public @NonNull MasterKey build() throws GeneralSecurityException, IOException {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 return Api23Impl.build(this);
             } else {

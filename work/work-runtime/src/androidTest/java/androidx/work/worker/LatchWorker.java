@@ -18,9 +18,10 @@ package androidx.work.worker;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -34,9 +35,8 @@ public class LatchWorker extends Worker {
         super(context, workerParams);
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         try {
             mEntrySignal.countDown();
             mLatch.await();

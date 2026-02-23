@@ -23,8 +23,9 @@ import android.net.Uri;
 import android.os.Handler;
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 

@@ -18,7 +18,6 @@ package androidx.window.area.adapter
 
 import androidx.window.area.WindowAreaCapability
 import androidx.window.area.WindowAreaController
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.core.ExtensionsUtil
 import androidx.window.extensions.area.WindowAreaComponent
 
@@ -26,13 +25,12 @@ import androidx.window.extensions.area.WindowAreaComponent
  * Adapter object to assist in translating values received from [WindowAreaComponent] to developer
  * friendly values in [WindowAreaController]
  */
-@ExperimentalWindowApi
 internal object WindowAreaAdapter {
 
     internal fun translate(
         status: @WindowAreaComponent.WindowAreaStatus Int,
         sessionActive: Boolean = false,
-        vendorApiLevel: Int = ExtensionsUtil.safeVendorApiLevel
+        vendorApiLevel: Int = ExtensionsUtil.safeVendorApiLevel,
     ): WindowAreaCapability.Status {
         return if (vendorApiLevel <= 3) {
             WindowAreaAdapterApi3.translate(status, sessionActive)

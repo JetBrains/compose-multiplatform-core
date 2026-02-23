@@ -17,8 +17,8 @@
 package androidx.navigation.compose.lint
 
 import androidx.compose.lint.test.Stubs
-import androidx.navigation.lint.common.NAVIGATION_STUBS
-import androidx.navigation.lint.common.TEST_CODE
+import androidx.navigation.lint.test.NAVIGATION_STUBS
+import androidx.navigation.lint.test.TEST_CLASS
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
@@ -52,7 +52,7 @@ class WrongStartDestinationTypeDetectorTest() : LintDetectorTest() {
                     )
                     .indented(),
                 *STUBS,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .skipTestModes(TestMode.FULLY_QUALIFIED)
             .run()
@@ -93,7 +93,7 @@ class WrongStartDestinationTypeDetectorTest() : LintDetectorTest() {
                     )
                     .indented(),
                 *STUBS,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expectClean()
@@ -128,7 +128,7 @@ class WrongStartDestinationTypeDetectorTest() : LintDetectorTest() {
                     )
                     .indented(),
                 *STUBS,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expectClean()
@@ -168,7 +168,7 @@ class WrongStartDestinationTypeDetectorTest() : LintDetectorTest() {
                     )
                     .indented(),
                 *STUBS,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expect(
@@ -262,4 +262,7 @@ you can also pass in its KClass reference Companion::class [WrongStartDestinatio
         mutableListOf(WrongStartDestinationTypeDetector.WrongStartDestinationType)
 }
 
-private val STUBS = arrayOf(TEST_CODE, COMPOSABLE_NAV_HOST, *NAVIGATION_STUBS)
+private val STUBS =
+    arrayOf(*NAVIGATION_STUBS, TEST_CLASS, COMPOSABLE_NAV_HOST)
+        .map { it.toTestBytecodeStub() }
+        .toTypedArray()

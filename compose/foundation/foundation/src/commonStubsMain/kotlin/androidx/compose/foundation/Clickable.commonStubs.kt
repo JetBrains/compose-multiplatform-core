@@ -16,16 +16,9 @@
 
 package androidx.compose.foundation
 
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.node.DelegatableNode
 
 internal actual fun DelegatableNode.isComposeRootInScrollableContainer(): Boolean =
     implementedInJetBrainsFork()
 
 internal actual val TapIndicationDelay: Long = implementedInJetBrainsFork()
-
-internal actual val KeyEvent.isPress: Boolean
-    get() = implementedInJetBrainsFork()
-
-internal actual val KeyEvent.isClick: Boolean
-    get() = implementedInJetBrainsFork()

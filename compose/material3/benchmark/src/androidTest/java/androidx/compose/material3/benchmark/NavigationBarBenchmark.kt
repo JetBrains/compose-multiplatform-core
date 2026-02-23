@@ -57,7 +57,7 @@ class NavigationBarBenchmark {
 
     @Test
     fun firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
     }
 
     @Test
@@ -70,7 +70,7 @@ class NavigationBarBenchmark {
 
     @Test
     fun shortNavigationBar_topIcon_firstPixel() {
-        benchmarkRule.benchmarkFirstRenderUntilStable(shortNavBarTopIconTestCaseFactory)
+        benchmarkRule.benchmarkToFirstPixel(shortNavBarTopIconTestCaseFactory)
     }
 
     @Test
@@ -98,8 +98,7 @@ class NavigationBarBenchmark {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class NavigationBarTestCase(
     private val isShortNavBar: Boolean = false,
-    private val shortNavBarIconPosition: NavigationItemIconPosition =
-        NavigationItemIconPosition.Top,
+    private val shortNavBarIconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
 ) : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var selectedIndexState: MutableIntState
 
@@ -114,14 +113,14 @@ internal class NavigationBarTestCase(
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
                     iconPosition = shortNavBarIconPosition,
-                    label = { Spacer(Modifier.size(24.dp)) }
+                    label = { Spacer(Modifier.size(24.dp)) },
                 )
                 ShortNavigationBarItem(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
                     iconPosition = shortNavBarIconPosition,
-                    label = { Spacer(Modifier.size(24.dp)) }
+                    label = { Spacer(Modifier.size(24.dp)) },
                 )
             }
         } else {

@@ -16,15 +16,17 @@
 
 package androidx.webkit.internal;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Looper;
 import android.webkit.TracingController;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.TracingConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.OutputStream;
 import java.util.concurrent.Executor;
@@ -42,8 +44,7 @@ public class ApiHelperForP {
     /**
      * @see TracingController#getInstance()
      */
-    @NonNull
-    public static TracingController getTracingControllerInstance() {
+    public static @NonNull TracingController getTracingControllerInstance() {
         return TracingController.getInstance();
     }
 
@@ -61,6 +62,7 @@ public class ApiHelperForP {
      */
     public static void start(@NonNull TracingController tracingController,
             @NonNull TracingConfig tracingConfig) {
+        @SuppressLint("WrongConstant") // Mapping AndroidX constants to framework constants.
         android.webkit.TracingConfig config =
                 new android.webkit.TracingConfig.Builder()
                         .addCategories(tracingConfig.getPredefinedCategories())
@@ -81,16 +83,14 @@ public class ApiHelperForP {
     /**
      * @see WebView#getWebViewClassLoader()
      */
-    @NonNull
-    public static ClassLoader getWebViewClassLoader() {
+    public static @NonNull ClassLoader getWebViewClassLoader() {
         return WebView.getWebViewClassLoader();
     }
 
     /**
      * @see WebView#getWebViewLooper()
      */
-    @NonNull
-    public static Looper getWebViewLooper(@NonNull WebView webView) {
+    public static @NonNull Looper getWebViewLooper(@NonNull WebView webView) {
         return webView.getWebViewLooper();
     }
 

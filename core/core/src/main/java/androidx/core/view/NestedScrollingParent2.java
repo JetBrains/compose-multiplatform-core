@@ -20,9 +20,10 @@ package androidx.core.view;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat.NestedScrollType;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This interface should be implemented by {@link android.view.ViewGroup ViewGroup} subclasses
@@ -144,7 +145,7 @@ public interface NestedScrollingParent2 extends NestedScrollingParent {
      * @param consumed Output. The horizontal and vertical scroll distance consumed by this parent
      * @param type the type of input which cause this scroll event
      */
-    void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
+    void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull [] consumed,
             @NestedScrollType int type);
 
 }

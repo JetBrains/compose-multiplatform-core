@@ -16,12 +16,15 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
+import static androidx.camera.core.impl.utils.Threads.runOnMainSync;
+
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A fake lifecycle owner which obeys the lifecycle transition rules.
@@ -39,8 +42,10 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      */
     public FakeLifecycleOwner() {
         mLifecycleRegistry = new LifecycleRegistry(this);
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.INITIALIZED);
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        runOnMainSync(() -> {
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.INITIALIZED);
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        });
     }
 
     /**
@@ -50,11 +55,13 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      * the CREATED state or an exception is thrown.
      */
     public void startAndResume() {
-        if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
-            throw new IllegalStateException("Invalid state transition.");
-        }
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.RESUMED);
+        runOnMainSync(() -> {
+            if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
+                throw new IllegalStateException("Invalid state transition.");
+            }
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.RESUMED);
+        });
     }
 
     /**
@@ -64,10 +71,12 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      * state or an exception is thrown.
      */
     public void start() {
-        if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
-            throw new IllegalStateException("Invalid state transition.");
-        }
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+        runOnMainSync(() -> {
+            if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
+                throw new IllegalStateException("Invalid state transition.");
+            }
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+        });
     }
 
     /**
@@ -77,11 +86,13 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      * the RESUMED state or an exception is thrown.
      */
     public void pauseAndStop() {
-        if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.RESUMED) {
-            throw new IllegalStateException("Invalid state transition.");
-        }
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        runOnMainSync(() -> {
+            if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.RESUMED) {
+                throw new IllegalStateException("Invalid state transition.");
+            }
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.STARTED);
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        });
     }
 
     /**
@@ -91,10 +102,12 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      * state or an exception is thrown.
      */
     public void stop() {
-        if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.STARTED) {
-            throw new IllegalStateException("Invalid state transition.");
-        }
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        runOnMainSync(() -> {
+            if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.STARTED) {
+                throw new IllegalStateException("Invalid state transition.");
+            }
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.CREATED);
+        });
     }
 
     /**
@@ -104,10 +117,12 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
      * CREATED state or an exception is thrown.
      */
     public void destroy() {
-        if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
-            throw new IllegalStateException("Invalid state transition.");
-        }
-        mLifecycleRegistry.setCurrentState(Lifecycle.State.DESTROYED);
+        runOnMainSync(() -> {
+            if (mLifecycleRegistry.getCurrentState() != Lifecycle.State.CREATED) {
+                throw new IllegalStateException("Invalid state transition.");
+            }
+            mLifecycleRegistry.setCurrentState(Lifecycle.State.DESTROYED);
+        });
     }
 
     /** Returns the number of observers of this lifecycle. */
@@ -115,9 +130,8 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
         return mLifecycleRegistry.getObserverCount();
     }
 
-    @NonNull
     @Override
-    public Lifecycle getLifecycle() {
+    public @NonNull Lifecycle getLifecycle() {
         return mLifecycleRegistry;
     }
 }

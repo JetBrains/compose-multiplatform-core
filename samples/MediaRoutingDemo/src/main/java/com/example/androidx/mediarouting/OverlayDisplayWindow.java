@@ -37,8 +37,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Manages an overlay display window, used for simulating remote playback.
@@ -57,8 +57,7 @@ public abstract class OverlayDisplayWindow {
     protected final int mWidth;
     protected final int mHeight;
     protected final int mGravity;
-    @Nullable
-    protected OverlayWindowListener mListener;
+    protected @Nullable OverlayWindowListener mListener;
 
     protected OverlayDisplayWindow(@NonNull Context context, @NonNull String name, int width,
             int height, int gravity) {
@@ -74,9 +73,8 @@ public abstract class OverlayDisplayWindow {
      *
      * @return the created overlay window.
      */
-    @NonNull
-    public static OverlayDisplayWindow create(@NonNull Context context, @NonNull String name,
-            int width, int height, int gravity) {
+    public static @NonNull OverlayDisplayWindow create(@NonNull Context context,
+            @NonNull String name, int width, int height, int gravity) {
         return new JellybeanMr1Impl(context, name, width, height, gravity);
     }
 
@@ -84,8 +82,7 @@ public abstract class OverlayDisplayWindow {
         mListener = listener;
     }
 
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -109,8 +106,7 @@ public abstract class OverlayDisplayWindow {
      *
      * @return a bitmap representing the snapshot of the window.
      */
-    @Nullable
-    public abstract Bitmap getSnapshot();
+    public abstract @Nullable Bitmap getSnapshot();
 
     /**
      * Watches for significant changes in the overlay display window lifecycle.
@@ -214,9 +210,8 @@ public abstract class OverlayDisplayWindow {
             relayout();
         }
 
-        @NonNull
         @Override
-        public Bitmap getSnapshot() {
+        public @NonNull Bitmap getSnapshot() {
             return mTextureView.getBitmap();
         }
 

@@ -26,20 +26,19 @@ import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.R;
 import androidx.emoji2.viewsintegration.EmojiEditTextHelper;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for using EmojiCompat from TextView in appcompat.
  */
 class AppCompatEmojiEditTextHelper {
 
-    @NonNull
-    private final EditText mView;
-    @NonNull
-    private final EmojiEditTextHelper mEmojiEditTextHelper;
+    private final @NonNull EditText mView;
+    private final @NonNull EmojiEditTextHelper mEmojiEditTextHelper;
 
     /**
      * Helper for integrating EmojiCompat into an EditText subclass.
@@ -106,8 +105,7 @@ class AppCompatEmojiEditTextHelper {
     /**
      * Attaches EmojiCompat KeyListener to the widget. Should be called from {@link
      * TextView#setKeyListener(KeyListener)}. Existing keyListener is wrapped into EmojiCompat
-     * KeyListener. When used on devices running API 18 or below, this method returns
-     * {@code keyListener} that is given as a parameter.
+     * KeyListener.
      *
      * This should always be installed even when emoji processing is disabled, as it enables
      * correct behavior for editing existing emoji spans.
@@ -116,8 +114,7 @@ class AppCompatEmojiEditTextHelper {
      *
      * @return a new KeyListener instance that wraps {@code keyListener}, or null if passed null.
      */
-    @Nullable
-    KeyListener getKeyListener(@Nullable KeyListener keyListener) {
+    @Nullable KeyListener getKeyListener(@Nullable KeyListener keyListener) {
         // add a guard for NumberkeyListener both here and in emoji2 to avoid release dependency.
         // this allows appcompat 1.4.1 to ship without a dependency on emoji2 1.1.
         if (isEmojiCapableKeyListener(keyListener)) {
@@ -129,9 +126,8 @@ class AppCompatEmojiEditTextHelper {
 
     /**
      * Updates the InputConnection with emoji support. Should be called from {@link
-     * TextView#onCreateInputConnection(EditorInfo)}. When used on devices running API 18 or below,
-     * this method returns {@code inputConnection} that is given as a parameter. If
-     * {@code inputConnection} is {@code null}, returns {@code null}.
+     * TextView#onCreateInputConnection(EditorInfo)}. If {@code inputConnection} is
+     * {@code null}, returns {@code null}.
      *
      * This should always be installed even when emoji processing is disabled, as it enables
      * correct behavior for editing existing emoji spans.
@@ -142,8 +138,7 @@ class AppCompatEmojiEditTextHelper {
      *
      * @return a new InputConnection instance that wraps {@code inputConnection}
      */
-    @Nullable
-    InputConnection onCreateInputConnection(@Nullable InputConnection inputConnection,
+    @Nullable InputConnection onCreateInputConnection(@Nullable InputConnection inputConnection,
             @NonNull EditorInfo outAttrs) {
         return mEmojiEditTextHelper.onCreateInputConnection(inputConnection, outAttrs);
     }

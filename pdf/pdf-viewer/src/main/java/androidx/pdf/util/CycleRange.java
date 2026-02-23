@@ -16,8 +16,9 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Cycles through a range of numbers from [0 to size-1], but starting at any number between the two.
@@ -53,8 +54,7 @@ public class CycleRange implements Iterable<Integer> {
     }
 
     /** Static factory. */
-    @NonNull
-    public static CycleRange of(int start, int size, @NonNull Direction direction) {
+    public static @NonNull CycleRange of(int start, int size, @NonNull Direction direction) {
         return new CycleRange(start, size, direction);
     }
 
@@ -65,9 +65,8 @@ public class CycleRange implements Iterable<Integer> {
         this.direction = direction;
     }
 
-    @NonNull
     @Override
-    public Iterator iterator() {
+    public @NonNull Iterator iterator() {
         return new Iterator();
     }
 
@@ -83,8 +82,7 @@ public class CycleRange implements Iterable<Integer> {
         /**
          *
          */
-        @NonNull
-        public Integer peekNext() {
+        public @NonNull Integer peekNext() {
             return (start + getAddend() + size) % size;
         }
 
@@ -113,8 +111,7 @@ public class CycleRange implements Iterable<Integer> {
             throw new UnsupportedOperationException("remove not supported");
         }
 
-        @NonNull
-        public Direction getDirection() {
+        public @NonNull Direction getDirection() {
             return direction;
         }
     }

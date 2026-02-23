@@ -35,8 +35,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.BitmapRecycler;
@@ -46,6 +44,9 @@ import androidx.pdf.util.TileBoard;
 import androidx.pdf.util.overlays.ViewWithOverlays;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -121,20 +122,15 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
     /** The bounds of the image, which will define the measures of this view. */
     private final Rect mBounds = new Rect();
 
-    @NonNull
-    protected BitmapRecycler mBitmapRecycler;
+    protected @NonNull BitmapRecycler mBitmapRecycler;
 
-    @NonNull
-    protected BitmapSource mBitmapSource;
+    protected @NonNull BitmapSource mBitmapSource;
 
-    @Nullable
-    protected TileBoard mTileBoard;
+    protected @Nullable TileBoard mTileBoard;
 
-    @Nullable
-    private Bitmap mBitmap;
+    private @Nullable Bitmap mBitmap;
 
-    @Nullable
-    private String mFailure;
+    private @Nullable String mFailure;
 
     /**
      * The tiles of this view, if applicable. This is a type-safe and indexed replica of the
@@ -217,8 +213,7 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
         void cancelTiles(@NonNull Iterable<Integer> tileIds);
     }
 
-    @NonNull
-    public Rect getBounds() {
+    public @NonNull Rect getBounds() {
         return mBounds;
     }
 
@@ -227,8 +222,7 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
         return super.onTouchEvent(event);
     }
 
-    @NonNull
-    protected Dimensions getPageDimensionsAtWidth(int width) {
+    protected @NonNull Dimensions getPageDimensionsAtWidth(int width) {
         int height = width * mBounds.height() / mBounds.width();
         return new Dimensions(width, height);
     }
@@ -309,8 +303,7 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
         mBaseZoom = zoom;
     }
 
-    @NonNull
-    protected TileBoard createTileBoard(@NonNull Dimensions viewSize) {
+    protected @NonNull TileBoard createTileBoard(@NonNull Dimensions viewSize) {
         return new TileBoard(getId(), viewSize, mBitmapRecycler,
                 new TileBoard.CancelTilesCallback() {
                     @Override
@@ -495,8 +488,7 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
      * Returns the portion of this View that is visible on the screen, in this View's coordinates -
      * so relative to (0, 0) - (getWidth(), getHeight()).
      */
-    @NonNull
-    public Rect getViewArea() {
+    public @NonNull Rect getViewArea() {
         return mViewArea;
     }
 
@@ -583,7 +575,7 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
     }
 
     /** Set tile bitmap. */
-    public void setTileBitmap(@NonNull TileBoard.TileInfo tileInfo, @NonNull Bitmap tileBitmap) {
+    public void setTileBitmap(TileBoard.@NonNull TileInfo tileInfo, @NonNull Bitmap tileBitmap) {
         Preconditions.checkNotNull(tileBitmap, "Use removePageBitmap() instead.");
         if (mTileBoard != null && mTileBoard.setTile(tileInfo, tileBitmap)) {
             TileView tile = getTileByIndex(tileInfo.getIndex());
@@ -675,9 +667,8 @@ public class MosaicView extends ViewGroup implements ViewWithOverlays {
         return Math.min(Math.min(a, b), c);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return getLogTag() + String.format(" bg: %s /t: %s",
                 (mBitmap != null ? mBitmap.getWidth() : "x"),
                 (mTileBoard != null ? mTileBoard.toString() : "no tiles"));

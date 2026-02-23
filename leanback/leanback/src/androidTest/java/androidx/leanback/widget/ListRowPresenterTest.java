@@ -29,14 +29,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -62,9 +62,8 @@ public class ListRowPresenterTest {
             mHeight = height;
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
             View view = new View(parent.getContext());
             view.setFocusable(true);
             view.setId(R.id.lb_action_button);
@@ -414,8 +413,7 @@ public class ListRowPresenterTest {
                     .mOverlayColor;
             result.mShadowOverlayContainerOverlayZ = ViewCompat.getZ(view);
             result.mShadowOverlayContainerOpticalBounds = view.getWidth() > 100;
-            result.mShadowOverlayContainerClipToOutline = Build.VERSION.SDK_INT >= 21
-                    ? view.getClipToOutline() : false;
+            result.mShadowOverlayContainerClipToOutline = view.getClipToOutline();
         } else {
             result.mShadowOverlayContainer = false;
         }
@@ -425,7 +423,7 @@ public class ListRowPresenterTest {
                 : Color.TRANSPARENT;
         result.mViewZ = ViewCompat.getZ(view);
         result.mViewOpticalBounds = view.getWidth() > 100;
-        result.mViewClipToOutline = Build.VERSION.SDK_INT >= 21 ? view.getClipToOutline() : false;
+        result.mViewClipToOutline = view.getClipToOutline();
         return result;
     }
 

@@ -21,9 +21,10 @@ import android.os.Build;
 import android.os.LocaleList;
 import android.telephony.mbms.ServiceInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Set;
@@ -49,8 +50,7 @@ public final class MbmsHelper {
      * @return The best name to display to the user for the service, or {@code null} if nothing
      * matches.
      */
-    @Nullable
-    public static CharSequence getBestNameForService(@NonNull Context context,
+    public static @Nullable CharSequence getBestNameForService(@NonNull Context context,
             @NonNull ServiceInfo serviceInfo) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.getBestNameForService(context, serviceInfo);

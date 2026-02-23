@@ -17,30 +17,39 @@
 package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.FocusableNode
 import androidx.compose.foundation.content.MediaType
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
 import androidx.compose.foundation.content.internal.dragAndDropRequestPermission
 import androidx.compose.foundation.content.internal.getReceiveContentConfiguration
 import androidx.compose.foundation.content.readPlainText
-import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.handwriting.StylusHandwritingNode
-import androidx.compose.foundation.text.handwriting.isStylusHandwritingSupported
+import androidx.compose.foundation.text.LocalAutofillHighlightBrush
+import androidx.compose.foundation.text.LocalAutofillHighlightColor
+import androidx.compose.foundation.text.autofillHighlightColor
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState
+import androidx.compose.foundation.text.resolveAutofillHighlight
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFromText
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusEventModifierNode
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.FocusRequesterModifierNode
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.requestFocus
+import androidx.compose.ui.focus.FocusProperties
+import androidx.compose.ui.focus.FocusPropertiesModifierNode
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -50,6 +59,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -59,6 +69,7 @@ import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateSemantics
 import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.node.requestAutofill
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -71,14 +82,19 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.establishTextInputSession
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.copyText
 import androidx.compose.ui.semantics.cutText
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.getTextLayoutResult
+import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.insertTextAtCursor
 import androidx.compose.ui.semantics.isEditable
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.onImeAction
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.password
@@ -95,9 +111,10 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class) private val MediaTypesText = setOf(MediaType.Text)
@@ -122,7 +139,8 @@ internal data class TextFieldDecoratorModifier(
     private val keyboardActionHandler: KeyboardActionHandler?,
     private val singleLine: Boolean,
     private val interactionSource: MutableInteractionSource,
-    private val isPassword: Boolean
+    private val isPassword: Boolean,
+    private val stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
 ) : ModifierNodeElement<TextFieldDecoratorModifierNode>() {
     override fun create(): TextFieldDecoratorModifierNode =
         TextFieldDecoratorModifierNode(
@@ -136,7 +154,8 @@ internal data class TextFieldDecoratorModifier(
             keyboardActionHandler = keyboardActionHandler,
             singleLine = singleLine,
             interactionSource = interactionSource,
-            isPassword = isPassword
+            isPassword = isPassword,
+            stylusHandwritingTrigger = stylusHandwritingTrigger,
         )
 
     override fun update(node: TextFieldDecoratorModifierNode) {
@@ -151,7 +170,8 @@ internal data class TextFieldDecoratorModifier(
             keyboardActionHandler = keyboardActionHandler,
             singleLine = singleLine,
             interactionSource = interactionSource,
-            isPassword = isPassword
+            isPassword = isPassword,
+            stylusHandwritingTrigger = stylusHandwritingTrigger,
         )
     }
 
@@ -173,36 +193,49 @@ internal class TextFieldDecoratorModifierNode(
     var keyboardActionHandler: KeyboardActionHandler?,
     var singleLine: Boolean,
     var interactionSource: MutableInteractionSource,
-    var isPassword: Boolean
+    var isPassword: Boolean,
+    var stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
 ) :
     DelegatingNode(),
+    DrawModifierNode,
     PlatformTextInputModifierNode,
     SemanticsModifierNode,
-    FocusRequesterModifierNode,
-    FocusEventModifierNode,
     GlobalPositionAwareModifierNode,
     PointerInputModifierNode,
     KeyInputModifierNode,
     CompositionLocalConsumerModifierNode,
     ModifierLocalModifierNode,
     ObserverModifierNode,
-    LayoutAwareModifierNode {
+    LayoutAwareModifierNode,
+    FocusPropertiesModifierNode {
 
-    private val editable
-        get() = enabled && !readOnly
+    init {
+        textFieldSelectionState.requestAutofillAction = { requestAutofill() }
+    }
 
-    private var backingStylusHandwritingTrigger: MutableSharedFlow<Unit>? = null
-    private val stylusHandwritingTrigger: MutableSharedFlow<Unit>?
-        get() {
-            val finalStylusHandwritingTrigger = backingStylusHandwritingTrigger
-            if (finalStylusHandwritingTrigger != null) return finalStylusHandwritingTrigger
-            if (!isStylusHandwritingSupported) return null
-            return MutableSharedFlow<Unit>(
-                    replay = 1,
-                    onBufferOverflow = BufferOverflow.DROP_LATEST
-                )
-                .also { backingStylusHandwritingTrigger = it }
-        }
+    private val focusableNode =
+        FocusableNode(
+            interactionSource = interactionSource,
+            onFocusChange = { isFocused ->
+                val editable = enabled && !readOnly
+                if (isFocused) {
+                    if (editable) {
+                        startInputSession(fromTap = false)
+                    }
+                } else {
+                    disposeInputSession()
+                    // only clear the composing region when element loses focus. Window focus lost
+                    // should not clear the composing region.
+                    textFieldState.editUntransformedTextAsUser { commitComposition() }
+                    // Deselect when losing focus even if readonly.
+                    textFieldState.collapseSelectionToMax()
+                }
+
+                // updateWindowFocus eventually makes a call to `onFocusChange`, so we don't need to
+                // trigger it from here.
+                updateWindowFocus()
+            },
+        )
 
     private val pointerInputNode =
         delegate(
@@ -223,7 +256,7 @@ internal class TextFieldDecoratorModifierNode(
                                         startInputSession(fromTap = true)
                                     }
                                 },
-                                interactionSource = interactionSource
+                                interactionSource = interactionSource,
                             )
                         }
                         launch(start = CoroutineStart.UNDISPATCHED) {
@@ -234,52 +267,11 @@ internal class TextFieldDecoratorModifierNode(
             }
         )
 
-    private val stylusHandwritingNode =
-        delegate(
-            StylusHandwritingNode {
-                if (!isFocused) {
-                    requestFocus()
-                }
-
-                // If this is a password field, we can't trigger handwriting.
-                // The expected behavior is 1) request focus 2) show software keyboard.
-                // Note: TextField will show software keyboard automatically when it
-                // gain focus. 3) show a toast message telling that handwriting is not
-                // supported for password fields. TODO(b/335294152)
-                if (
-                    keyboardOptions.keyboardType != KeyboardType.Password &&
-                        keyboardOptions.keyboardType != KeyboardType.NumberPassword
-                ) {
-                    // Send the handwriting start signal to platform.
-                    // The editor should send the signal when it is focused or is about
-                    // to gain focus, Here are more details:
-                    //   1) if the editor already has an active input session, the
-                    //   platform handwriting service should already listen to this flow
-                    //   and it'll start handwriting right away.
-                    //
-                    //   2) if the editor is not focused, but it'll be focused and
-                    //   create a new input session, one handwriting signal will be
-                    //   replayed when the platform collect this flow. And the platform
-                    //   should trigger handwriting accordingly.
-                    stylusHandwritingTrigger?.tryEmit(Unit)
-                }
-                return@StylusHandwritingNode true
-            }
-        )
-
     /**
      * The last enter event that was submitted to [interactionSource] from [dragAndDropNode]. We
      * need to keep a reference to this event to send a follow-up exit event.
-     *
-     * We are using interaction source hover state as a hacky capsule to carry dragging events to
-     * core modifier node which draws the cursor and shows the magnifier. TextFields are not really
-     * focused when a dragging text hovers over them. Focused TextFields should have active input
-     * connections that is not required in a drag and drop scenario.
-     *
-     * When proper hover events are implemented for [interactionSource], the below code in
-     * [dragAndDropNode] should be revised.
      */
-    private var dragEnterEvent: HoverInteraction.Enter? = null
+    private var dragEnterEvent: DragAndDropHoverInteraction.Enter? = null
 
     /** Special Drag and Drop node for BasicTextField that is also aware of `receiveContent` API. */
     private val dragAndDropNode =
@@ -301,7 +293,8 @@ internal class TextFieldDecoratorModifierNode(
                     }
                 },
                 onEntered = {
-                    dragEnterEvent = HoverInteraction.Enter().also { interactionSource.tryEmit(it) }
+                    dragEnterEvent =
+                        DragAndDropHoverInteraction.Enter().also { interactionSource.tryEmit(it) }
                     // Although BasicTextField itself is not a `receiveContent` node, it should
                     // behave like one. Delegate the enter event to the ancestor nodes just like
                     // `receiveContent` itself would.
@@ -310,7 +303,9 @@ internal class TextFieldDecoratorModifierNode(
                 onMoved = { position ->
                     val positionOnTextField = textLayoutState.fromWindowToDecoration(position)
                     val cursorPosition = textLayoutState.getOffsetForPosition(positionOnTextField)
-                    textFieldState.selectCharsIn(TextRange(cursorPosition))
+                    if (cursorPosition >= 0) {
+                        textFieldState.selectCharsIn(TextRange(cursorPosition))
+                    }
                     textFieldSelectionState.updateHandleDragging(Handle.Cursor, positionOnTextField)
                 },
                 onDrop = { clipEntry, clipMetadata ->
@@ -326,7 +321,7 @@ internal class TextFieldDecoratorModifierNode(
                             TransferableContent(
                                 clipEntry,
                                 clipMetadata,
-                                TransferableContent.Source.DragAndDrop
+                                TransferableContent.Source.DragAndDrop,
                             )
 
                         val remaining =
@@ -346,32 +341,26 @@ internal class TextFieldDecoratorModifierNode(
                     // `receiveContent` itself would.
                     getReceiveContentConfiguration()?.receiveContentListener?.onDragExit()
                 },
-                onEnded = { emitDragExitEvent() }
+                onEnded = { emitDragExitEvent() },
             )
         )
-
-    /**
-     * Needs to be kept separate from a window focus so we can restart an input session when the
-     * window receives the focus back. Element can stay focused even if the window loses its focus.
-     */
-    private var isElementFocused: Boolean = false
 
     /** Keeps focus state of the window */
     private var windowInfo: WindowInfo? = null
 
     private val isFocused: Boolean
         get() {
-            // make sure that we read both window focus and element focus for snapshot aware
-            // callers to successfully update when either one changes
-            val isWindowFocused = windowInfo?.isWindowFocused == true
-            return isElementFocused && isWindowFocused
+            // Avoid reading WindowInfo.isWindowFocused when the text field is not focused;
+            // otherwise all text fields in a window will be recomposed when it becomes focused.
+            return focusableNode.focusState.isFocused && windowInfo?.isWindowFocused == true
         }
 
     /**
      * We observe text changes to show/hide text toolbar and cursor handles. This job is only run
-     * when [isFocused] is true, and cancels when focus is lost.
+     * when [isFocused] is true, and cancels when focus is lost. It should also be restarted
+     * whenever [textFieldSelectionState] instance changes.
      */
-    private var observeChangesJob: Job? = null
+    private var toolbarAndHandlesVisibilityObserverJob: Job? = null
 
     /**
      * Manages key events. These events often are sourced by a hardware keyboard but it's also
@@ -381,24 +370,26 @@ internal class TextFieldDecoratorModifierNode(
 
     private val keyboardActionScope =
         object : KeyboardActionScope {
-            private val focusManager: FocusManager
-                get() = currentValueOf(LocalFocusManager)
-
             override fun defaultKeyboardAction(imeAction: ImeAction) {
-                when (imeAction) {
-                    ImeAction.Next -> {
-                        focusManager.moveFocus(FocusDirection.Next)
-                    }
-                    ImeAction.Previous -> {
-                        focusManager.moveFocus(FocusDirection.Previous)
-                    }
-                    ImeAction.Done -> {
-                        requireKeyboardController().hide()
-                    }
-                    else -> Unit
-                }
+                defaultKeyboardActionWithResult(imeAction)
             }
         }
+
+    /**
+     * A handler dedicated for Clipboard related key commands. We extracted it from
+     * [textFieldKeyEventHandler] because Clipboard actions require a [coroutineScope] which is
+     * available here.
+     */
+    private val clipboardKeyCommandsHandler = ClipboardKeyCommandsHandler { keyCommand ->
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            when (keyCommand) {
+                KeyCommand.COPY -> textFieldSelectionState.copy(false)
+                KeyCommand.CUT -> textFieldSelectionState.cut()
+                KeyCommand.PASTE -> textFieldSelectionState.paste()
+                else -> Unit
+            }
+        }
+    }
 
     /**
      * A coroutine job that observes text and layout changes in selection state to react to those
@@ -408,6 +399,34 @@ internal class TextFieldDecoratorModifierNode(
 
     private val receiveContentConfigurationProvider: () -> ReceiveContentConfiguration? = {
         getReceiveContentConfiguration()
+    }
+
+    // Mutable state to hold the autofillHighlightOn value
+    private var autofillHighlightOn by mutableStateOf(false)
+
+    override fun ContentDrawScope.draw() {
+        drawContent()
+
+        // Autofill highlight is drawn on top of the content — this way the coloring appears over
+        // any Material background applied.
+        if (autofillHighlightOn) {
+            @Suppress("DEPRECATION")
+            drawRect(
+                brush =
+                    resolveAutofillHighlight(
+                        brush = currentValueOf(LocalAutofillHighlightBrush),
+                        color = currentValueOf(LocalAutofillHighlightColor),
+                        defaultColor = autofillHighlightColor(),
+                    )
+            )
+        }
+    }
+
+    private suspend fun observeUntransformedTextChanges() {
+        snapshotFlow { textFieldState.untransformedText.toString() }
+            .drop(1)
+            .take(1)
+            .collect { autofillHighlightOn = false }
     }
 
     /** Updates all the related properties and invalidates internal state based on the changes. */
@@ -422,18 +441,19 @@ internal class TextFieldDecoratorModifierNode(
         keyboardActionHandler: KeyboardActionHandler?,
         singleLine: Boolean,
         interactionSource: MutableInteractionSource,
-        isPassword: Boolean
+        isPassword: Boolean,
+        stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
     ) {
         // Find the diff: current previous and new values before updating current.
-        val previousEditable = this.editable
-        val editable = enabled && !readOnly
-
+        val previousEditable = this.enabled && !this.readOnly
         val previousEnabled = this.enabled
         val previousTextFieldState = this.textFieldState
         val previousKeyboardOptions = this.keyboardOptions
         val previousTextFieldSelectionState = this.textFieldSelectionState
         val previousInteractionSource = this.interactionSource
         val previousIsPassword = this.isPassword
+        val previousStylusHandwritingTrigger = this.stylusHandwritingTrigger
+        val editable = enabled && !readOnly
 
         // Apply the diff.
         this.textFieldState = textFieldState
@@ -447,15 +467,17 @@ internal class TextFieldDecoratorModifierNode(
         this.singleLine = singleLine
         this.interactionSource = interactionSource
         this.isPassword = isPassword
+        this.stylusHandwritingTrigger = stylusHandwritingTrigger
 
         // React to diff.
         // Something about the session changed, restart the session.
         if (
             editable != previousEditable ||
                 textFieldState != previousTextFieldState ||
-                keyboardOptions != previousKeyboardOptions
+                keyboardOptions != previousKeyboardOptions ||
+                stylusHandwritingTrigger != previousStylusHandwritingTrigger
         ) {
-            if (editable && isFocused) {
+            if (editable && (isFocused || inputSessionJob != null)) {
                 // The old session will be implicitly disposed.
                 startInputSession(fromTap = false)
             } else if (!editable) {
@@ -475,16 +497,35 @@ internal class TextFieldDecoratorModifierNode(
 
         if (textFieldSelectionState != previousTextFieldSelectionState) {
             pointerInputNode.resetPointerInputHandler()
-            stylusHandwritingNode.resetPointerInputHandler()
             if (isAttached) {
                 textFieldSelectionState.receiveContentConfiguration =
                     receiveContentConfigurationProvider
+
+                if (isFocused && toolbarAndHandlesVisibilityObserverJob != null) {
+                    toolbarAndHandlesVisibilityObserverJob?.cancel()
+                    toolbarAndHandlesVisibilityObserverJob =
+                        coroutineScope.launch {
+                            textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                        }
+                }
             }
+            textFieldSelectionState.requestAutofillAction = { requestAutofill() }
         }
 
         if (interactionSource != previousInteractionSource) {
             pointerInputNode.resetPointerInputHandler()
-            stylusHandwritingNode.resetPointerInputHandler()
+            if (focusableNode.isAttached) {
+                focusableNode.update(interactionSource)
+            }
+        }
+
+        if (enabled != previousEnabled) {
+            if (enabled) {
+                delegate(focusableNode)
+                focusableNode.update(interactionSource)
+            } else {
+                undelegate(focusableNode)
+            }
         }
     }
 
@@ -495,13 +536,42 @@ internal class TextFieldDecoratorModifierNode(
     override fun SemanticsPropertyReceiver.applySemantics() {
         val text = textFieldState.outputText
         val selection = text.selection
+        inputText = AnnotatedString(textFieldState.untransformedText.toString())
         editableText = AnnotatedString(text.toString())
         textSelectionRange = selection
 
         if (!enabled) disabled()
         if (isPassword) password()
 
-        isEditable = this@TextFieldDecoratorModifierNode.editable
+        val editable = enabled && !readOnly
+        isEditable = editable
+
+        // The developer will set `contentType`. TF populates the other autofill-related
+        // semantics. And since we're in a TextField, set the `contentDataType` to be "Text".
+        this.contentDataType = ContentDataType.Text
+        FillableData.createFromText(text)?.let { this.fillableData = it }
+        onFillData { dataValue ->
+            if (!editable) return@onFillData false
+            dataValue.textValue?.let { textFieldState.replaceAll(it) }
+            autofillHighlightOn = true
+            coroutineScope.launch { observeUntransformedTextChanges() }
+            true
+        }
+
+        when (keyboardOptions.keyboardType) {
+            KeyboardType.Email -> {
+                contentType = ContentType.EmailAddress
+            }
+            KeyboardType.Password -> {
+                contentType = ContentType.Password
+            }
+            KeyboardType.NumberPassword -> {
+                contentType = ContentType.Password
+            }
+            KeyboardType.Phone -> {
+                contentType = ContentType.PhoneNumber
+            }
+        }
 
         getTextLayoutResult {
             textLayoutState.layoutResult?.let { result -> it.add(result) } ?: false
@@ -585,66 +655,66 @@ internal class TextFieldDecoratorModifierNode(
         }
         if (!selection.collapsed && !isPassword) {
             copyText {
-                textFieldSelectionState.copy()
+                coroutineScope.launch { textFieldSelectionState.copy() }
                 true
             }
             if (enabled && !readOnly) {
                 cutText {
-                    textFieldSelectionState.cut()
+                    coroutineScope.launch { textFieldSelectionState.cut() }
                     true
                 }
             }
         }
         if (editable) {
             pasteText {
-                textFieldSelectionState.paste()
+                coroutineScope.launch { textFieldSelectionState.paste() }
                 true
             }
         }
 
         filter?.let { with(it) { applySemantics() } }
+
+        if (enabled) {
+            with(focusableNode) { applySemantics() }
+        }
     }
 
-    override fun onFocusEvent(focusState: FocusState) {
-        if (isElementFocused == focusState.isFocused) {
-            return
+    private fun requestFocus() {
+        if (focusableNode.isAttached) {
+            focusableNode.requestFocus()
         }
-        isElementFocused = focusState.isFocused
-        onFocusChange()
-
-        if (focusState.isFocused) {
-            // Deselect when losing focus even if readonly.
-            if (editable) {
-                startInputSession(fromTap = false)
-            }
-        } else {
-            disposeInputSession()
-            // only clear the composing region when element loses focus. Window focus lost should
-            // not clear the composing region.
-            textFieldState.editUntransformedTextAsUser { finishComposingText() }
-            textFieldState.collapseSelectionToMax()
-        }
-        stylusHandwritingNode.onFocusEvent(focusState)
     }
 
     /**
-     * Should be called when either [isElementFocused] or [WindowInfo.isWindowFocused] change since
-     * they are used in evaluation of [isFocused].
+     * Must be called whenever the focus state of [focusableNode] or the window's focus state
+     * ([WindowInfo.isWindowFocused]) changes. The [isFocused] state is derived from these two
+     * sources, so any change to them requires this method to be invoked.
      */
-    private fun onFocusChange() {
+    private fun onIsFocusedUpdated() {
         textFieldSelectionState.isFocused = this.isFocused
-        if (isFocused && observeChangesJob == null) {
+        if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
             // only start a new job is there's not an ongoing one.
-            observeChangesJob = coroutineScope.launch { textFieldSelectionState.observeChanges() }
+            toolbarAndHandlesVisibilityObserverJob =
+                coroutineScope.launch {
+                    textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                }
         } else if (!isFocused) {
-            observeChangesJob?.cancel()
-            observeChangesJob = null
+            toolbarAndHandlesVisibilityObserverJob?.cancel()
+            toolbarAndHandlesVisibilityObserverJob = null
         }
+    }
+
+    override fun applyFocusProperties(focusProperties: FocusProperties) {
+        focusProperties.focusRect = textFieldSelectionState.getFocusRect()
     }
 
     override fun onAttach() {
         onObservedReadsChanged()
         textFieldSelectionState.receiveContentConfiguration = receiveContentConfigurationProvider
+
+        if (enabled) {
+            delegate(focusableNode)
+        }
     }
 
     override fun onDetach() {
@@ -654,19 +724,21 @@ internal class TextFieldDecoratorModifierNode(
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         textLayoutState.decoratorNodeCoordinates = coordinates
+
+        if (enabled) {
+            focusableNode.onGloballyPositioned(coordinates)
+        }
     }
 
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
-        stylusHandwritingNode.onPointerEvent(pointerEvent, pass, bounds)
         pointerInputNode.onPointerEvent(pointerEvent, pass, bounds)
     }
 
     override fun onCancelPointerInput() {
-        stylusHandwritingNode.onCancelPointerInput()
         pointerInputNode.onCancelPointerInput()
     }
 
@@ -675,8 +747,9 @@ internal class TextFieldDecoratorModifierNode(
             event = event,
             textFieldState = textFieldState,
             textFieldSelectionState = textFieldSelectionState,
+            // remove after `ComposeFoundationFlags.isTextFieldDpadNavigationFixEnabled` is removed
             focusManager = currentValueOf(LocalFocusManager),
-            keyboardController = requireKeyboardController()
+            keyboardController = requireKeyboardController(),
         )
     }
 
@@ -686,16 +759,22 @@ internal class TextFieldDecoratorModifierNode(
             textFieldState = textFieldState,
             textLayoutState = textLayoutState,
             textFieldSelectionState = textFieldSelectionState,
+            clipboardKeyCommandsHandler = clipboardKeyCommandsHandler,
+            keyboardController = requireKeyboardController(),
             editable = enabled && !readOnly,
             singleLine = singleLine,
-            onSubmit = { onImeActionPerformed(keyboardOptions.imeActionOrDefault) }
+            onSubmit = { onImeActionPerformed(keyboardOptions.imeActionOrDefault) },
         )
     }
 
     override fun onObservedReadsChanged() {
+        updateWindowFocus()
+    }
+
+    private fun updateWindowFocus() {
         observeReads {
             windowInfo = currentValueOf(LocalWindowInfo)
-            onFocusChange()
+            onIsFocusedUpdated()
         }
     }
 
@@ -727,8 +806,14 @@ internal class TextFieldDecoratorModifierNode(
                         imeOptions = keyboardOptions.toImeOptions(singleLine),
                         receiveContentConfiguration = receiveContentConfiguration,
                         onImeAction = ::onImeActionPerformed,
+                        updateSelectionState = {
+                            textFieldSelectionState.updateTextToolbarState(
+                                TextToolbarState.Selection
+                            )
+                        },
                         stylusHandwritingTrigger = stylusHandwritingTrigger,
-                        viewConfiguration = currentValueOf(LocalViewConfiguration)
+                        viewConfiguration = currentValueOf(LocalViewConfiguration),
+                        updateTouchMode = { textFieldSelectionState.isInTouchMode = it },
                     )
                 }
             }
@@ -746,26 +831,43 @@ internal class TextFieldDecoratorModifierNode(
 
     private fun emitDragExitEvent() {
         dragEnterEvent?.let {
-            interactionSource.tryEmit(HoverInteraction.Exit(it))
+            interactionSource.tryEmit(DragAndDropHoverInteraction.Exit(it))
             dragEnterEvent = null
         }
     }
 
-    private fun onImeActionPerformed(imeAction: ImeAction) {
+    private fun onImeActionPerformed(imeAction: ImeAction): Boolean {
         if (
             imeAction == ImeAction.None ||
                 imeAction == ImeAction.Default ||
                 keyboardActionHandler == null
         ) {
             // this should never happen but better be safe
-            keyboardActionScope.defaultKeyboardAction(imeAction)
-            return
+            return defaultKeyboardActionWithResult(imeAction)
         }
 
         keyboardActionHandler?.onKeyboardAction(
             performDefaultAction = { keyboardActionScope.defaultKeyboardAction(imeAction) }
         )
+        return true
     }
+
+    private fun defaultKeyboardActionWithResult(imeAction: ImeAction): Boolean =
+        when (imeAction) {
+            ImeAction.Next -> {
+                currentValueOf(LocalFocusManager).moveFocus(FocusDirection.Next)
+                true
+            }
+            ImeAction.Previous -> {
+                currentValueOf(LocalFocusManager).moveFocus(FocusDirection.Previous)
+                true
+            }
+            ImeAction.Done -> {
+                requireKeyboardController().hide()
+                true
+            }
+            else -> false
+        }
 }
 
 /** Runs platform-specific text input logic. */
@@ -775,6 +877,8 @@ internal expect suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     imeOptions: ImeOptions,
     receiveContentConfiguration: ReceiveContentConfiguration?,
     onImeAction: ((ImeAction) -> Unit)?,
+    updateSelectionState: (() -> Unit)? = null,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>? = null,
-    viewConfiguration: ViewConfiguration? = null
+    viewConfiguration: ViewConfiguration? = null,
+    updateTouchMode: (Boolean) -> Unit,
 ): Nothing

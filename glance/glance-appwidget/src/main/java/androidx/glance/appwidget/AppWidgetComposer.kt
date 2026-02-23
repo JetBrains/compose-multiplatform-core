@@ -62,7 +62,7 @@ import kotlinx.coroutines.withContext
  * If you need to call compose concurrently, you can omit [id] so that a random fake ID will be
  * used. Otherwise, call compose sequentially when using the same [id].
  */
-suspend fun GlanceAppWidget.compose(
+public suspend fun GlanceAppWidget.compose(
     @Suppress("ContextFirst") context: Context,
     id: GlanceId = createFakeAppWidgetId(),
     options: Bundle? = null,
@@ -74,7 +74,7 @@ suspend fun GlanceAppWidget.compose(
             id = id,
             options = options ?: Bundle(),
             sizes = size?.let { listOf(size) },
-            state = state
+            state = state,
         )
         .first()
 
@@ -96,15 +96,21 @@ suspend fun GlanceAppWidget.compose(
  *
  * If you need to call runComposition concurrently, you can omit [id] so that a random fake ID will
  * be used. Otherwise, call runComposition sequentially when using the same [id].
+ *
+ * By default, this function uses [UnmanagedSessionReceiver] as the [lambdaReceiver] target to
+ * receive any lambda actions while this function is running. If you need to run this function in a
+ * non-default process, you can declare a sub-class of UnmanagedSessionReceiver in that process and
+ * pass its [ComponentName] here.
  */
 @SuppressLint("PrimitiveInCollection")
 @ExperimentalGlanceApi
-fun GlanceAppWidget.runComposition(
+public fun GlanceAppWidget.runComposition(
     @Suppress("ContextFirst") context: Context,
     id: GlanceId = createFakeAppWidgetId(),
     options: Bundle = Bundle(),
     sizes: List<DpSize>? = null,
     state: Any? = null,
+    lambdaReceiver: ComponentName = ComponentName(context, UnmanagedSessionReceiver::class.java),
 ): Flow<RemoteViews> = flow {
     val session =
         AppWidgetSession(
@@ -113,7 +119,7 @@ fun GlanceAppWidget.runComposition(
             initialOptions =
                 sizes?.let { optionsBundleOf(it).apply { putAll(options) } } ?: options,
             initialGlanceState = state,
-            lambdaReceiver = ComponentName(context, UnmanagedSessionReceiver::class.java),
+            lambdaReceiver = lambdaReceiver,
             sizeMode =
                 if (sizes != null) {
                     // If sizes are provided to this function, override to SizeMode.Exact so we can
@@ -165,8 +171,14 @@ fun GlanceAppWidget.runComposition(
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN],
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD], or
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_SEARCHBOX].
+ *
+ * @param context context to provide to [GlanceAppWidget.providePreview]
+ * @param widgetCategory widget category to provide to [GlanceAppWidget.providePreview]
+ * @param info the size of the composition is determined by the minimum width defined in this
+ *   [AppWidgetProviderInfo]
+ * @return the preview composition translated to a [RemoteViews]
  */
-suspend fun GlanceAppWidget.composeForPreview(
+public suspend fun GlanceAppWidget.composeForPreview(
     context: Context,
     widgetCategory: Int,
     info: AppWidgetProviderInfo? = null,
@@ -184,7 +196,7 @@ suspend fun GlanceAppWidget.composeForPreview(
             if (content.replayCache.isEmpty()) {
                 Log.w(
                     GlanceAppWidgetTag,
-                    "${this@composeForPreview::class} did not call provideContent in providePreview"
+                    "${this@composeForPreview::class} did not call provideContent in providePreview",
                 )
                 content.emit {}
             }
@@ -197,9 +209,7 @@ suspend fun GlanceAppWidget.composeForPreview(
     val recomposer = Recomposer(coroutineContext)
     val composition = Composition(applier, recomposer)
     composition.setContent {
-        CompositionLocalProvider(
-            LocalContext provides context,
-        ) {
+        CompositionLocalProvider(LocalContext provides context) {
             ForEachSize(previewSizeMode, minSize, content)
         }
     }
@@ -208,14 +218,15 @@ suspend fun GlanceAppWidget.composeForPreview(
         recomposer.close()
         recomposer.join()
     }
-    normalizeCompositionTree(root, isPreviewComposition = true)
+    normalizeCompositionTree(root, backendOverrideRequest = null, isPreviewComposition = true)
+    val layoutConfig = LayoutConfiguration.create(context, appWidgetId = -1)
     val remoteViews =
         translateComposition(
             context = context,
             appWidgetId = -1,
             element = root,
-            layoutConfiguration = null,
-            rootViewIndex = 0,
+            layoutConfiguration = layoutConfig,
+            rootViewIndex = layoutConfig.addLayout(root),
             layoutSize = DpSize.Unspecified,
         )
     return remoteViews

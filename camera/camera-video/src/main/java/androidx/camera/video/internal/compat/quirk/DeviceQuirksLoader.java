@@ -16,9 +16,10 @@
 
 package androidx.camera.video.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettings;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,25 +36,14 @@ public class DeviceQuirksLoader {
      * Goes through all defined video related quirks, and returns those that should be loaded
      * on the current device.
      */
-    @NonNull
-    static List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
+    static @NonNull List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
         final List<Quirk> quirks = new ArrayList<>();
 
         // Load all video specific quirks
         if (quirkSettings.shouldEnableQuirk(
-                MediaFormatMustNotUseFrameRateToFindEncoderQuirk.class,
-                MediaFormatMustNotUseFrameRateToFindEncoderQuirk.load())) {
-            quirks.add(new MediaFormatMustNotUseFrameRateToFindEncoderQuirk());
-        }
-        if (quirkSettings.shouldEnableQuirk(
                 MediaCodecInfoReportIncorrectInfoQuirk.class,
                 MediaCodecInfoReportIncorrectInfoQuirk.load())) {
             quirks.add(new MediaCodecInfoReportIncorrectInfoQuirk());
-        }
-        if (quirkSettings.shouldEnableQuirk(
-                DeactivateEncoderSurfaceBeforeStopEncoderQuirk.class,
-                DeactivateEncoderSurfaceBeforeStopEncoderQuirk.load())) {
-            quirks.add(new DeactivateEncoderSurfaceBeforeStopEncoderQuirk());
         }
         if (quirkSettings.shouldEnableQuirk(
                 CameraUseInconsistentTimebaseQuirk.class,
@@ -64,11 +54,6 @@ public class DeviceQuirksLoader {
                 ReportedVideoQualityNotSupportedQuirk.class,
                 ReportedVideoQualityNotSupportedQuirk.load())) {
             quirks.add(new ReportedVideoQualityNotSupportedQuirk());
-        }
-        if (quirkSettings.shouldEnableQuirk(
-                EncoderNotUsePersistentInputSurfaceQuirk.class,
-                EncoderNotUsePersistentInputSurfaceQuirk.load())) {
-            quirks.add(new EncoderNotUsePersistentInputSurfaceQuirk());
         }
         if (quirkSettings.shouldEnableQuirk(
                 VideoEncoderCrashQuirk.class,
@@ -149,6 +134,31 @@ public class DeviceQuirksLoader {
                 PrematureEndOfStreamVideoQuirk.class,
                 PrematureEndOfStreamVideoQuirk.load())) {
             quirks.add(PrematureEndOfStreamVideoQuirk.INSTANCE);
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                MediaCodecDefaultDataSpaceQuirk.class,
+                MediaCodecDefaultDataSpaceQuirk.load())) {
+            quirks.add(new MediaCodecDefaultDataSpaceQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                HdrRepeatingRequestFailureQuirk.class,
+                HdrRepeatingRequestFailureQuirk.load())) {
+            quirks.add(new HdrRepeatingRequestFailureQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                PreviewFreezeAfterHighSpeedRecordingQuirk.class,
+                PreviewFreezeAfterHighSpeedRecordingQuirk.load())) {
+            quirks.add(PreviewFreezeAfterHighSpeedRecordingQuirk.INSTANCE);
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                GLProcessingStuckOnCodecFlushQuirk.class,
+                GLProcessingStuckOnCodecFlushQuirk.load())) {
+            quirks.add(GLProcessingStuckOnCodecFlushQuirk.INSTANCE);
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                VideoInterlacingQuirk.class,
+                VideoInterlacingQuirk.load())) {
+            quirks.add(VideoInterlacingQuirk.INSTANCE);
         }
         return quirks;
     }

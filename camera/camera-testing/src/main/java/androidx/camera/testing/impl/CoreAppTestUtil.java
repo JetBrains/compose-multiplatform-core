@@ -31,15 +31,16 @@ import android.os.Build;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.testing.impl.activity.ForegroundTestActivity;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.idling.CountingIdlingResource;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.AssumptionViolatedException;
 
 import java.io.IOException;
@@ -255,9 +256,9 @@ public final class CoreAppTestUtil {
      * @param <T>             The Activity class under test
      * @return Returns the reference to the activity for test.
      */
-    @Nullable
-    public static <T extends Activity> T launchActivity(@NonNull Instrumentation instrumentation,
-            @NonNull Class<T> activityClass, @Nullable Intent startIntent) {
+    public static <T extends Activity> @Nullable T launchActivity(
+            @NonNull Instrumentation instrumentation, @NonNull Class<T> activityClass,
+            @Nullable Intent startIntent) {
         Context context = instrumentation.getTargetContext();
 
         // inject custom intent, if provided
@@ -279,5 +280,36 @@ public final class CoreAppTestUtil {
         instrumentation.waitForIdleSync();
 
         return activityRef;
+    }
+
+    /**
+     * Launch a auto-closed {@link ForegroundTestActivity}.
+     *
+     * <p>The launched activity will make the callee activity enter PAUSE state and return to
+     * RESUME state after the activity is closed.
+     *
+     * <p>If the <code>countingIdlingResource</code> is specified, the activity will wait for it
+     * becoming idle to close the activity. This can be used to control the activity close speed to
+     * make it work more like the real user behavior.
+     */
+    public static void launchAutoClosedForegroundActivity(
+            @NonNull Context context,
+            @NonNull Instrumentation instrumentation,
+            @Nullable CountingIdlingResource countingIdlingResource
+    ) {
+        ForegroundTestActivity foregroundTestActivity = launchActivity(
+                instrumentation,
+                ForegroundTestActivity.class,
+                new Intent(context, ForegroundTestActivity.class)
+        );
+        try {
+            if (countingIdlingResource != null) {
+                IdlingRegistry.getInstance().register(countingIdlingResource);
+                Espresso.onIdle();
+                IdlingRegistry.getInstance().unregister(countingIdlingResource);
+            }
+        } finally {
+            foregroundTestActivity.finish();
+        }
     }
 }

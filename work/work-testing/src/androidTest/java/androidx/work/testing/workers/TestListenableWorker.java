@@ -18,12 +18,13 @@ package androidx.work.testing.workers;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.work.ListenableWorker;
 import androidx.work.WorkerParameters;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 public class TestListenableWorker extends ListenableWorker {
     public TestListenableWorker(
@@ -32,9 +33,8 @@ public class TestListenableWorker extends ListenableWorker {
         super(context, workerParameters);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Result> startWork() {
+    public @NonNull ListenableFuture<Result> startWork() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             completer.set(Result.success());
             return "successfully completed future";

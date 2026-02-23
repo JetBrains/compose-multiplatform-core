@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.samples
 
+import androidx.annotation.Sampled
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
@@ -24,7 +25,7 @@ import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.forEach
@@ -37,18 +38,23 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.samples.AnchoredDraggableSampleValue.Center
 import androidx.compose.foundation.samples.AnchoredDraggableSampleValue.End
 import androidx.compose.foundation.samples.AnchoredDraggableSampleValue.HalfEnd
 import androidx.compose.foundation.samples.AnchoredDraggableSampleValue.HalfStart
 import androidx.compose.foundation.samples.AnchoredDraggableSampleValue.Start
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -64,13 +70,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 private enum class AnchoredDraggableSampleValue {
     Start,
     HalfStart,
     Center,
     HalfEnd,
-    End
+    End,
 }
 
 @Composable
@@ -104,8 +111,8 @@ fun AnchoredDraggableAnchorsFromCompositionSample() {
                     flingBehavior =
                         AnchoredDraggableDefaults.flingBehavior(
                             state,
-                            positionalThreshold = { distance -> distance * 0.25f }
-                        )
+                            positionalThreshold = { distance -> distance * 0.25f },
+                        ),
                 )
                 .background(Color.Red)
         )
@@ -167,7 +174,7 @@ fun AnchoredDraggableCustomAnchoredSample() {
                     initialValue = offset,
                     initialVelocity = velocity,
                     targetValue = targetOffset,
-                    animationSpec = snapAnimationSpec
+                    animationSpec = snapAnimationSpec,
                 ) { value, velocity ->
                     dragTo(value, velocity)
                 }
@@ -185,7 +192,7 @@ fun AnchoredDraggableWithOverscrollSample() {
         }
     val draggableSize = 80.dp
     val draggableSizePx = with(LocalDensity.current) { draggableSize.toPx() }
-    val overscrollEffect = ScrollableDefaults.overscrollEffect()
+    val overscrollEffect = rememberOverscrollEffect()
 
     Box(
         Modifier.fillMaxWidth().onSizeChanged { layoutSize ->
@@ -206,7 +213,7 @@ fun AnchoredDraggableWithOverscrollSample() {
                 .anchoredDraggable(
                     state,
                     Orientation.Horizontal,
-                    overscrollEffect = overscrollEffect
+                    overscrollEffect = overscrollEffect,
                 )
                 .overscroll(overscrollEffect)
                 .background(Color.Red)
@@ -287,17 +294,146 @@ fun DraggableAnchorsSample() {
                             offset =
                                 (offset + delta).coerceIn(
                                     anchors.minPosition(),
-                                    anchors.maxPosition()
+                                    anchors.maxPosition(),
                                 )
                         },
                     orientation = Orientation.Horizontal,
                     onDragStopped = { velocity ->
                         val closestAnchor = anchors.positionOf(anchors.closestAnchor(offset)!!)
                         animate(offset, closestAnchor, velocity) { value, _ -> offset = value }
-                    }
+                    },
                 )
                 .background(Color.Red)
         )
+    }
+}
+
+@Sampled
+@Composable
+fun AnchoredDraggableDynamicAnchorsSample() {
+    val open = "Open"
+    val closed = "Closed"
+
+    @Composable
+    fun DrawerLayout(
+        state: AnchoredDraggableState<String>,
+        activePositions: List<String> = listOf(open, closed),
+        modifier: Modifier = Modifier,
+        drawerContent: @Composable () -> Unit,
+        content: @Composable () -> Unit,
+    ) {
+        Box(modifier) {
+            Box(Modifier.anchoredDraggable(state, Orientation.Horizontal)) { content() }
+            Box(
+                Modifier.onSizeChanged { measuredSize ->
+                        state.updateAnchors(
+                            DraggableAnchors {
+                                if (closed in activePositions) {
+                                    closed at -measuredSize.width.toFloat()
+                                }
+                                if (open in activePositions) {
+                                    open at 0f
+                                }
+                            }
+                        )
+                    }
+                    .offset { IntOffset(x = state.requireOffset().roundToInt(), y = 0) }
+            ) {
+                drawerContent()
+            }
+        }
+    }
+
+    val state =
+        rememberSaveable(saver = AnchoredDraggableState.Saver()) {
+            AnchoredDraggableState(initialValue = closed)
+        }
+    val activePositions = remember { mutableStateListOf(open, closed) }
+    DrawerLayout(
+        state,
+        activePositions,
+        drawerContent = {
+            Button(
+                onClick = {
+                    if (closed in activePositions) {
+                        activePositions.remove(closed)
+                    } else {
+                        activePositions.add(closed)
+                    }
+                }
+            ) {
+                val text =
+                    if (closed in activePositions) {
+                        "Click to disallow closing drawer"
+                    } else {
+                        "Click to allow closing"
+                    }
+                Text(text)
+            }
+        },
+    ) {
+        Text("Swipe to expand Drawer")
+    }
+}
+
+/**
+ * Showcases how to perform a programmatic fling through [AnchoredDraggableState] and
+ * [AnchoredDraggableDefaults.flingBehavior]. Note that this is an advanced use case.
+ */
+@Composable
+fun AnchoredDraggableProgrammaticFlingSample() {
+    val state =
+        rememberSaveable(saver = AnchoredDraggableState.Saver()) {
+            AnchoredDraggableState(initialValue = Center)
+        }
+    val flingBehavior = AnchoredDraggableDefaults.flingBehavior(state)
+    Column(
+        Modifier.fillMaxWidth()
+            .onSizeChanged { layoutSize ->
+                state.updateAnchors(
+                    DraggableAnchors {
+                        Start at 0f
+                        Center at layoutSize.width * .5f
+                        End at layoutSize.width.toFloat()
+                    }
+                )
+            }
+            .visualizeDraggableAnchors(state, Orientation.Horizontal)
+    ) {
+        Box(
+            Modifier.size(60.dp)
+                .offset { IntOffset(x = state.requireOffset().roundToInt(), y = 0) }
+                .anchoredDraggable(
+                    state = state,
+                    orientation = Orientation.Horizontal,
+                    flingBehavior = flingBehavior,
+                )
+                .background(Color.Red)
+        )
+        val scope = rememberCoroutineScope()
+        Button(
+            onClick = {
+                scope.launch {
+                    // We first obtain the lock on the state
+                    state.anchoredDrag {
+                        // The ScrollScope's lifecycle is tied to the AnchoredDragScope we receive
+                        //  from anchoredDrag. It is used to bridge AnchoredDraggable and
+                        //  FlingBehavior.
+                        val scrollFlingScope =
+                            object : ScrollScope {
+                                override fun scrollBy(pixels: Float): Float {
+                                    dragTo(state.offset + pixels)
+                                    return pixels
+                                }
+                            }
+                        // Perform a fling with the fling behavior and scroll scope
+                        with(flingBehavior) { scrollFlingScope.performFling(100f) }
+                    }
+                }
+            }
+        ) {
+            Text("Click to call performFling")
+        }
     }
 }
 
@@ -318,26 +454,26 @@ private fun Modifier.visualizeDraggableAnchors(
     orientation: Orientation,
     lineColor: Color = Color.Black,
     lineStrokeWidth: Float = 10f,
-    linePathEffect: PathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 30f))
+    linePathEffect: PathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 30f)),
 ) = drawWithContent {
     drawContent()
     state.anchors.forEach { _, position ->
         val startOffset =
             Offset(
                 x = if (orientation == Orientation.Horizontal) position else 0f,
-                y = if (orientation == Orientation.Vertical) position else 0f
+                y = if (orientation == Orientation.Vertical) position else 0f,
             )
         val endOffset =
             Offset(
                 x = if (orientation == Orientation.Horizontal) startOffset.x else size.height,
-                y = if (orientation == Orientation.Vertical) startOffset.y else size.width
+                y = if (orientation == Orientation.Vertical) startOffset.y else size.width,
             )
         drawLine(
             color = lineColor,
             start = startOffset,
             end = endOffset,
             strokeWidth = lineStrokeWidth,
-            pathEffect = linePathEffect
+            pathEffect = linePathEffect,
         )
     }
 }

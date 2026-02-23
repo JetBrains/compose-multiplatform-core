@@ -25,16 +25,15 @@ import static org.mockito.Mockito.when;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.view.View;
 
 import androidx.pdf.find.FindInFileView;
+import androidx.pdf.metrics.EventCallback;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.ZoomView;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -44,10 +43,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @SuppressWarnings("unchecked")
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class PageViewFactoryTest {
     private final PdfLoader mMockPdfLoader = mock(PdfLoader.class);
 
@@ -58,6 +55,9 @@ public class PageViewFactoryTest {
     private final SingleTapHandler mMockSingleTapHandler = mock(SingleTapHandler.class);
 
     private final FindInFileView mMockFindInFileView = mock(FindInFileView.class);
+
+    private final EventCallback mMockEventCallback = mock(
+            EventCallback.class);
 
     @Before
     public void setup() {
@@ -75,7 +75,8 @@ public class PageViewFactoryTest {
                 PageViewFactory.PageView.class);
         PageViewFactory mockPageViewFactory = new MockPageViewAccessbilityDisabledFactory(
                 ApplicationProvider.getApplicationContext(), mMockPdfLoader, mMockPaginatedView,
-                mMockZoomView, mMockSingleTapHandler, mMockFindInFileView
+                mMockZoomView, mMockSingleTapHandler, mMockFindInFileView,
+                mMockEventCallback
         );
 
         // Act
@@ -106,7 +107,8 @@ public class PageViewFactoryTest {
                 PageViewFactory.PageView.class);
         PageViewFactory mockPageViewFactory = new MockPageViewAccessbilityEnabledFactory(
                 ApplicationProvider.getApplicationContext(), mMockPdfLoader, mMockPaginatedView,
-                mMockZoomView, mMockSingleTapHandler, mMockFindInFileView
+                mMockZoomView, mMockSingleTapHandler, mMockFindInFileView,
+                mMockEventCallback
         );
 
         // Act

@@ -21,7 +21,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;

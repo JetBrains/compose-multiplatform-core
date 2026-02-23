@@ -23,9 +23,8 @@ import androidx.window.core.layout.computeWindowSizeClass
 import androidx.window.layout.WindowMetrics
 
 /** A convenience function for computing the [WindowSizeClass] from the [WindowMetrics] */
-fun Set<WindowSizeClass>.computeWindowSizeClass(windowMetrics: WindowMetrics): WindowSizeClass {
-    val density = windowMetrics.density
-    val widthDp = (windowMetrics.bounds.width() * 160) / density
-    val heightDp = (windowMetrics.bounds.height() * 160) / density
-    return computeWindowSizeClass(widthDp, heightDp)
+public fun Set<WindowSizeClass>.computeWindowSizeClass(
+    windowMetrics: WindowMetrics
+): WindowSizeClass {
+    return computeWindowSizeClass(windowMetrics.widthDp, windowMetrics.heightDp)
 }

@@ -16,11 +16,12 @@
 
 package androidx.work.multiprocess;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.OneTimeWorkRequest;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -58,8 +59,7 @@ public abstract class RemoteWorkContinuation {
      * @return A {@link RemoteWorkContinuation} that allows for further chaining of dependent
      *         {@link OneTimeWorkRequest}s
      */
-    @NonNull
-    public abstract RemoteWorkContinuation then(@NonNull List<OneTimeWorkRequest> work);
+    public abstract @NonNull RemoteWorkContinuation then(@NonNull List<OneTimeWorkRequest> work);
 
     /**
      * Enqueues the instance of {@link RemoteWorkContinuation} on the background thread.
@@ -67,8 +67,7 @@ public abstract class RemoteWorkContinuation {
      * @return An {@link ListenableFuture} that can be used to determine when the enqueue
      * has completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> enqueue();
+    public abstract @NonNull ListenableFuture<Void> enqueue();
 
     /**
      * Combines multiple {@link RemoteWorkContinuation}s as prerequisites for a new
@@ -78,8 +77,7 @@ public abstract class RemoteWorkContinuation {
      *                      prerequisites for the return value
      * @return A {@link RemoteWorkContinuation} that allows further chaining
      */
-    @NonNull
-    public static RemoteWorkContinuation combine(
+    public static @NonNull RemoteWorkContinuation combine(
             @NonNull List<RemoteWorkContinuation> continuations) {
 
         return continuations.get(0).combineInternal(continuations);
@@ -88,7 +86,6 @@ public abstract class RemoteWorkContinuation {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    protected abstract RemoteWorkContinuation combineInternal(
+    protected abstract @NonNull RemoteWorkContinuation combineInternal(
             @NonNull List<RemoteWorkContinuation> continuations);
 }

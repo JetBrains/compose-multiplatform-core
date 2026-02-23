@@ -31,21 +31,18 @@ class TargetApiAnnotationDetectorTest :
 
     @Test
     fun `Detection of TargetApi usage in Java sources`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.TargetApiUsageJava"),
-            )
+        val input = arrayOf(javaSample("androidx.TargetApiUsageJava"))
 
         val expected =
             """
-src/androidx/TargetApiUsageJava.java:22: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
-@TargetApi(29)
-~~~~~~~~~~~~~~
-src/androidx/TargetApiUsageJava.java:25: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
-    @TargetApi(30)
-    ~~~~~~~~~~~~~~
-2 errors, 0 warnings
-        """
+            src/androidx/TargetApiUsageJava.java:22: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
+            @TargetApi(29)
+            ~~~~~~~~~~~~~~
+            src/androidx/TargetApiUsageJava.java:25: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
+                @TargetApi(30)
+                ~~~~~~~~~~~~~~
+            2 errors, 0 warnings
+            """
                 .trimIndent()
 
         check(*input).expect(expected)
@@ -53,21 +50,18 @@ src/androidx/TargetApiUsageJava.java:25: Error: Use @RequiresApi instead of @Tar
 
     @Test
     fun `Detection of TargetApi usage in Kotlin sources`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.TargetApiUsageKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.TargetApiUsageKotlin"))
 
         val expected =
             """
-src/androidx/TargetApiUsageKotlin.kt:22: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
-@TargetApi(29)
-~~~~~~~~~~~~~~
-src/androidx/TargetApiUsageKotlin.kt:25: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
-    @TargetApi(30) fun someMethod() {}
-    ~~~~~~~~~~~~~~
-2 errors, 0 warnings
-        """
+            src/androidx/TargetApiUsageKotlin.kt:22: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
+            @TargetApi(29)
+            ~~~~~~~~~~~~~~
+            src/androidx/TargetApiUsageKotlin.kt:25: Error: Use @RequiresApi instead of @TargetApi [BanTargetApiAnnotation]
+                @TargetApi(30) fun someMethod() {}
+                ~~~~~~~~~~~~~~
+            2 errors, 0 warnings
+            """
                 .trimIndent()
 
         check(*input).expect(expected)

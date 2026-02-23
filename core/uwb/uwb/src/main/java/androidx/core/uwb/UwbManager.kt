@@ -18,6 +18,7 @@ package androidx.core.uwb
 
 import android.content.Context
 import androidx.core.uwb.impl.UwbManagerImpl
+import java.util.concurrent.Executor
 
 @JvmDefaultWithCompatibility
 public
@@ -62,4 +63,28 @@ interface UwbManager {
      *   not available on the device.
      */
     public suspend fun controllerSessionScope(): UwbControllerSessionScope
+
+    /**
+     * Checks whether UWB service is available or not. Airplane mode or turning the UWB off will
+     * cause the uwb service to be unavailable. When unavailable, the user cannot create session
+     * scope through this interface. Also, user should check the hardware support for UWB by using
+     * `PackageManager.hasSystemFeature("android.hardware.uwb")`.
+     *
+     * @return true if UWB service is available, false otherwise
+     * @throws [androidx.core.uwb.exceptions.UwbHardwareNotAvailableException] if the hardware is
+     *   not available on the device.
+     */
+    public suspend fun isAvailable(): Boolean
+
+    /**
+     * Subscribes to UWB availability. The user will be notified by the callback when UWB state
+     * changes.
+     *
+     * @param executor an executor to execute the callback
+     * @param observer a callback to receive UWB state change
+     */
+    public fun setUwbAvailabilityCallback(executor: Executor, observer: UwbAvailabilityCallback)
+
+    /** Unsubscribes from UWB availability. */
+    public fun clearUwbAvailabilityCallback()
 }

@@ -25,10 +25,11 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Controller that handles the swipe-to-dismiss gesture for dismiss the frame layout

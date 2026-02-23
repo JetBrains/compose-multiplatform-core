@@ -22,7 +22,7 @@ import static android.car.VehiclePropertyIds.EV_CHARGE_PORT_OPEN;
 import static android.car.VehiclePropertyIds.FUEL_LEVEL;
 import static android.car.VehiclePropertyIds.FUEL_LEVEL_LOW;
 import static android.car.VehiclePropertyIds.FUEL_VOLUME_DISPLAY_UNITS;
-import static android.car.VehiclePropertyIds.INFO_EV_BATTERY_CAPACITY;
+import static android.car.VehiclePropertyIds.EV_CURRENT_BATTERY_CAPACITY;
 import static android.car.VehiclePropertyIds.INFO_EV_CONNECTOR_TYPE;
 import static android.car.VehiclePropertyIds.INFO_FUEL_CAPACITY;
 import static android.car.VehiclePropertyIds.INFO_FUEL_TYPE;
@@ -43,7 +43,6 @@ import static java.util.Objects.requireNonNull;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -61,6 +60,8 @@ import androidx.car.app.utils.LogTags;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -278,7 +279,7 @@ public class AutomotiveCarInfo implements CarInfo {
         List<GetPropertyRequest> request = new ArrayList<>();
 
         // Add "evConnector" and "fuel" type of the vehicle to the requests.
-        request.add(GetPropertyRequest.create(INFO_EV_BATTERY_CAPACITY));
+        request.add(GetPropertyRequest.create(EV_CURRENT_BATTERY_CAPACITY));
         request.add(GetPropertyRequest.create(INFO_FUEL_CAPACITY));
         ListenableFuture<List<CarPropertyResponse<?>>> capacityFuture =
                 mPropertyManager.submitGetPropertyRequest(request, executor);
@@ -303,7 +304,7 @@ public class AutomotiveCarInfo implements CarInfo {
                 return;
             }
             for (CarPropertyResponse<?> carPropertyResponse : carPropertyResponses) {
-                if (carPropertyResponse.getPropertyId() == INFO_EV_BATTERY_CAPACITY) {
+                if (carPropertyResponse.getPropertyId() == EV_CURRENT_BATTERY_CAPACITY) {
                     energyLevelListener.updateEvBatteryCapacityPropertyResponse(
                             carPropertyResponse);
                 }
@@ -624,7 +625,7 @@ public class AutomotiveCarInfo implements CarInfo {
                 mEnergyLevelOnCarDataAvailableListener;
         private final Executor mExecutor;
         private CarPropertyResponse<?> mEvBatteryCapacityPropertyResponse = CarPropertyResponse
-                .builder().setPropertyId(INFO_EV_BATTERY_CAPACITY).setStatus(STATUS_UNKNOWN)
+                .builder().setPropertyId(EV_CURRENT_BATTERY_CAPACITY).setStatus(STATUS_UNKNOWN)
                 .build();
         private CarPropertyResponse<?> mFuelCapacityPropertyResponse = CarPropertyResponse.builder()
                 .setPropertyId(INFO_FUEL_CAPACITY).setStatus(STATUS_UNKNOWN).build();

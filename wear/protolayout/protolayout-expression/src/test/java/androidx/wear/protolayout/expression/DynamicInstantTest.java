@@ -16,9 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInstantFromProto;
+
+import static com.google.common.truth.Truth.assertThat;
 
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
@@ -27,8 +27,10 @@ import androidx.wear.protolayout.proto.FingerprintProto.NodeFingerprint;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class DynamicInstantTest {
     private static final String STATE_KEY = "state-key";
 

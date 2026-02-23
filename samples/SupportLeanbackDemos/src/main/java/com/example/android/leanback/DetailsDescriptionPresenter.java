@@ -13,8 +13,9 @@
  */
 package com.example.android.leanback;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
+
+import org.jspecify.annotations.NonNull;
 
 public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPresenter {
 

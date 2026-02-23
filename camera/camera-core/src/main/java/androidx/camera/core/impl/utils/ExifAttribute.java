@@ -16,9 +16,10 @@
 
 package androidx.camera.core.impl.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -88,8 +89,8 @@ final class ExifAttribute {
         this.bytes = bytes;
     }
 
-    @NonNull
-    public static ExifAttribute createUShort(@NonNull int[] values, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createUShort(int @NonNull [] values,
+            @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_USHORT] * values.length]);
         buffer.order(byteOrder);
@@ -99,13 +100,12 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_USHORT, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createUShort(int value, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createUShort(int value, @NonNull ByteOrder byteOrder) {
         return createUShort(new int[] {value}, byteOrder);
     }
 
-    @NonNull
-    public static ExifAttribute createULong(@NonNull long[] values, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createULong(long @NonNull [] values,
+            @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_ULONG] * values.length]);
         buffer.order(byteOrder);
@@ -115,13 +115,12 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_ULONG, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createULong(long value, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createULong(long value, @NonNull ByteOrder byteOrder) {
         return createULong(new long[] {value}, byteOrder);
     }
 
-    @NonNull
-    public static ExifAttribute createSLong(@NonNull int[] values, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createSLong(int @NonNull [] values,
+            @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_SLONG] * values.length]);
         buffer.order(byteOrder);
@@ -131,13 +130,11 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_SLONG, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createSLong(int value, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createSLong(int value, @NonNull ByteOrder byteOrder) {
         return createSLong(new int[] {value}, byteOrder);
     }
 
-    @NonNull
-    public static ExifAttribute createByte(@NonNull String value) {
+    public static @NonNull ExifAttribute createByte(@NonNull String value) {
         // Exception for GPSAltitudeRef tag
         if (value.length() == 1 && value.charAt(0) >= '0' && value.charAt(0) <= '1') {
             final byte[] bytes = new byte[] { (byte) (value.charAt(0) - '0') };
@@ -147,14 +144,12 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_BYTE, ascii.length, ascii);
     }
 
-    @NonNull
-    public static ExifAttribute createString(@NonNull String value) {
+    public static @NonNull ExifAttribute createString(@NonNull String value) {
         final byte[] ascii = (value + '\0').getBytes(ASCII);
         return new ExifAttribute(IFD_FORMAT_STRING, ascii.length, ascii);
     }
 
-    @NonNull
-    public static ExifAttribute createURational(@NonNull LongRational[] values,
+    public static @NonNull ExifAttribute createURational(LongRational @NonNull [] values,
             @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_URATIONAL] * values.length]);
@@ -166,14 +161,12 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_URATIONAL, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createURational(@NonNull LongRational value,
+    public static @NonNull ExifAttribute createURational(@NonNull LongRational value,
             @NonNull ByteOrder byteOrder) {
         return createURational(new LongRational[] {value}, byteOrder);
     }
 
-    @NonNull
-    public static ExifAttribute createSRational(@NonNull LongRational[] values,
+    public static @NonNull ExifAttribute createSRational(LongRational @NonNull [] values,
             @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_SRATIONAL] * values.length]);
@@ -185,14 +178,12 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_SRATIONAL, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createSRational(@NonNull LongRational value,
+    public static @NonNull ExifAttribute createSRational(@NonNull LongRational value,
             @NonNull ByteOrder byteOrder) {
         return createSRational(new LongRational[] {value}, byteOrder);
     }
 
-    @NonNull
-    public static ExifAttribute createDouble(@NonNull double[] values,
+    public static @NonNull ExifAttribute createDouble(double @NonNull [] values,
             @NonNull ByteOrder byteOrder) {
         final ByteBuffer buffer = ByteBuffer.wrap(
                 new byte[IFD_FORMAT_BYTES_PER_FORMAT[IFD_FORMAT_DOUBLE] * values.length]);
@@ -203,8 +194,7 @@ final class ExifAttribute {
         return new ExifAttribute(IFD_FORMAT_DOUBLE, values.length, buffer.array());
     }
 
-    @NonNull
-    public static ExifAttribute createDouble(double value, @NonNull ByteOrder byteOrder) {
+    public static @NonNull ExifAttribute createDouble(double value, @NonNull ByteOrder byteOrder) {
         return createDouble(new double[] {value}, byteOrder);
     }
 
@@ -400,8 +390,7 @@ final class ExifAttribute {
         throw new NumberFormatException("Couldn't find a integer value");
     }
 
-    @Nullable
-    public String getStringValue(@NonNull ByteOrder byteOrder) {
+    public @Nullable String getStringValue(@NonNull ByteOrder byteOrder) {
         Object value = getValue(byteOrder);
         if (value == null) {
             return null;

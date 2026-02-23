@@ -19,8 +19,8 @@ package androidx.recommendation.app;
 import android.app.Notification;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>
@@ -140,7 +140,7 @@ public final class RecommendationExtender implements Notification.Extender {
      * @param types Array of predefined type tags (see the <code>CONTENT_TYPE_*</code> constants)
      *            that describe the content referred to by a notification.
      */
-    public @NonNull RecommendationExtender setContentTypes(@Nullable String[] types) {
+    public @NonNull RecommendationExtender setContentTypes(String @Nullable [] types) {
         mTypes = types;
         return this;
     }
@@ -154,7 +154,7 @@ public final class RecommendationExtender implements Notification.Extender {
      *         describe the content associated with the notification.
      * @see RecommendationExtender#setContentTypes
      */
-    public @Nullable String[] getContentTypes() {
+    public String @Nullable [] getContentTypes() {
         return mTypes;
     }
 
@@ -181,7 +181,7 @@ public final class RecommendationExtender implements Notification.Extender {
      * @param genres Array of genre string tags that describe the content referred to by a
      *            notification.
      */
-    public @NonNull RecommendationExtender setGenres(@Nullable String[] genres) {
+    public @NonNull RecommendationExtender setGenres(String @Nullable [] genres) {
         mGenres = genres;
         return this;
     }
@@ -193,7 +193,7 @@ public final class RecommendationExtender implements Notification.Extender {
      * @return An array of genre tags that describe the content associated with the notification.
      * @see RecommendationExtender#setGenres
      */
-    public @Nullable String[] getGenres() {
+    public String @Nullable [] getGenres() {
         return mGenres;
     }
 
@@ -209,7 +209,7 @@ public final class RecommendationExtender implements Notification.Extender {
      * @return This object for method chaining.
      */
     public @NonNull RecommendationExtender setPricingInformation(
-            @Nullable @ContentRecommendation.ContentPricing String priceType,
+            @ContentRecommendation.ContentPricing @Nullable String priceType,
             @Nullable String priceValue) {
         mPricingType = priceType;
         mPricingValue = priceValue;
@@ -278,7 +278,7 @@ public final class RecommendationExtender implements Notification.Extender {
      *            constants).
      */
     public @NonNull RecommendationExtender setMaturityRating(
-            @Nullable @ContentRecommendation.ContentMaturity String maturityRating) {
+            @ContentRecommendation.ContentMaturity @Nullable String maturityRating) {
         mMaturityRating = maturityRating;
         return this;
     }

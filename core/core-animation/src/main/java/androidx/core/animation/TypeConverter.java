@@ -16,7 +16,7 @@
 
 package androidx.core.animation;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract base class used convert type T to another type V. This

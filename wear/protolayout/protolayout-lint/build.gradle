@@ -15,13 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -35,7 +34,6 @@ dependencies {
 
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.kotlinReflect)
-    testImplementation(libs.kotlinStdlibJdk8)
     testImplementation(libs.androidLint)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
@@ -44,7 +42,7 @@ dependencies {
 
 androidx {
     name = "ProtoLayout Lint Checks"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2023"
     description = "Lint checks for ProtoLayout API usage. The linter mainly enforces version checking for calling any non 1.0 API."
 }

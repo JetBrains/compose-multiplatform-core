@@ -16,12 +16,13 @@
 
 package androidx.camera.view.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.view.CameraController;
 import androidx.camera.view.PreviewView;
 import androidx.camera.view.ScreenFlashView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -41,25 +42,21 @@ public class ScreenFlashUiInfo {
         SCREEN_FLASH_VIEW
     }
 
-    @NonNull
-    private final ProviderType mProviderType;
+    private final @NonNull ProviderType mProviderType;
 
-    @Nullable
-    private final ImageCapture.ScreenFlash mScreenFlash;
+    private final ImageCapture.@Nullable ScreenFlash mScreenFlash;
 
     public ScreenFlashUiInfo(@NonNull ProviderType providerType,
-            @Nullable ImageCapture.ScreenFlash screenFlash) {
+            ImageCapture.@Nullable ScreenFlash screenFlash) {
         mProviderType = providerType;
         mScreenFlash = screenFlash;
     }
 
-    @NonNull
-    public ProviderType getProviderType() {
+    public @NonNull ProviderType getProviderType() {
         return mProviderType;
     }
 
-    @Nullable
-    public ImageCapture.ScreenFlash getScreenFlash() {
+    public ImageCapture.@Nullable ScreenFlash getScreenFlash() {
         return mScreenFlash;
     }
 

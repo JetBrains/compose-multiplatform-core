@@ -38,18 +38,32 @@ import androidx.compose.ui.unit.LayoutDirection
  * @property clippingEnabled Whether to allow the popup window to extend beyond the bounds of the
  *   screen. By default the window is clipped to the screen boundaries. Setting this to false will
  *   allow windows to be accurately positioned. The default value is true.
+ * @property usePlatformDefaultWidth Whether the width of the popup's content should be limited to
+ *   the platform default, which is smaller than the screen width.
  */
 @Immutable
-expect class PopupProperties(
-    focusable: Boolean = false,
-    dismissOnBackPress: Boolean = true,
-    dismissOnClickOutside: Boolean = true,
-    clippingEnabled: Boolean = true,
-) {
+expect class PopupProperties {
+    constructor(
+        focusable: Boolean = false,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        clippingEnabled: Boolean = true,
+        usePlatformDefaultWidth: Boolean = false,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        focusable: Boolean = false,
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        clippingEnabled: Boolean = true,
+    )
+
     val focusable: Boolean
     val dismissOnBackPress: Boolean
     val dismissOnClickOutside: Boolean
     val clippingEnabled: Boolean
+    val usePlatformDefaultWidth: Boolean
 }
 
 /** Calculates the position of a [Popup] on screen. */
@@ -73,7 +87,7 @@ interface PopupPositionProvider {
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset
 }
 
@@ -83,7 +97,7 @@ internal class AlignmentOffsetPositionProvider(val alignment: Alignment, val off
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         // TODO: Decide which is the best way to round to result without reimplementing
         // Alignment.align
@@ -126,7 +140,7 @@ expect fun Popup(
     offset: IntOffset = IntOffset(0, 0),
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -134,7 +148,7 @@ expect fun Popup(
  *
  * The popup is positioned using a custom [popupPositionProvider].
  *
- * @sample androidx.compose.ui.samples.PopupSample
+ * @sample androidx.compose.ui.samples.PopupWithPositionProviderSample
  * @param popupPositionProvider Provides the screen position of the popup.
  * @param onDismissRequest Executes when the user clicks outside of the popup.
  * @param properties [PopupProperties] for further customization of this popup's behavior.
@@ -145,5 +159,5 @@ expect fun Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)? = null,
     properties: PopupProperties = PopupProperties(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )

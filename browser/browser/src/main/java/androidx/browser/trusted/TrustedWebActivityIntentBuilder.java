@@ -22,8 +22,6 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
@@ -31,6 +29,9 @@ import androidx.browser.customtabs.TrustedWebUtils;
 import androidx.browser.trusted.sharing.ShareData;
 import androidx.browser.trusted.sharing.ShareTarget;
 import androidx.browser.trusted.splashscreens.SplashScreenParamKey;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,31 +70,56 @@ public class TrustedWebActivityIntentBuilder {
     /** Extra for the share data, see {@link #setShareParams}. */
     public static final String EXTRA_SHARE_DATA = "androidx.browser.trusted.extra.SHARE_DATA";
 
+    /** Extra for the opened files data, see {@link #setHandledFiles}. */
+    public static final String EXTRA_FILE_HANDLING_DATA =
+            "androidx.browser.trusted.extra.FILE_HANDLING_DATA";
+
     /** Extra for the {@link TrustedWebActivityDisplayMode}, see {@link #setDisplayMode}. */
     public static final String EXTRA_DISPLAY_MODE = "androidx.browser.trusted.extra.DISPLAY_MODE";
+
+    /** Extra for the display override list, see {@link #setDisplayOverrideList} */
+    public static final String EXTRA_DISPLAY_OVERRIDE =
+            "androidx.browser.trusted.extra.DISPLAY_OVERRIDE";
 
     /** Extra for the screenOrientation, see {@link #setScreenOrientation}. */
     public static final String EXTRA_SCREEN_ORIENTATION =
             "androidx.browser.trusted.extra.SCREEN_ORIENTATION";
 
-    @NonNull
-    private final Uri mUri;
-    @NonNull
-    private final CustomTabsIntent.Builder mIntentBuilder = new CustomTabsIntent.Builder();
+    /**
+     * If the TWA is being launched using a Protocol Handler, the original URL (with the custom
+     * scheme) is provided here, set using {@link #setOriginalLaunchUrl(Uri)}.
+     *
+     * @see TrustedWebActivityIntent#getOriginalLaunchUrl()
+     */
+    public static final String EXTRA_ORIGINAL_LAUNCH_URL =
+            "androidx.browser.trusted.extra.ORIGINAL_LAUNCH_URL";
 
-    @Nullable
-    private List<String> mAdditionalTrustedOrigins;
-    @Nullable
-    private Bundle mSplashScreenParams;
+    /**
+     * If a TWA is being launched using Launch Handler API, its client mode value is provided,
+     * see {@link #setLaunchHandlerClientMode}.
+     */
+    public static final String EXTRA_LAUNCH_HANDLER_CLIENT_MODE =
+            "androidx.browser.trusted.extra.LAUNCH_HANDLER_CLIENT_MODE";
 
-    @Nullable
-    private ShareData mShareData;
-    @Nullable
-    private ShareTarget mShareTarget;
+    private final @NonNull Uri mUri;
+    private final CustomTabsIntent.@NonNull Builder mIntentBuilder = new CustomTabsIntent.Builder();
 
-    @NonNull
-    private TrustedWebActivityDisplayMode mDisplayMode =
+    private @Nullable List<String> mAdditionalTrustedOrigins;
+    private @Nullable Bundle mSplashScreenParams;
+
+    private @Nullable ShareData mShareData;
+    private @Nullable ShareTarget mShareTarget;
+
+    private @Nullable FileHandlingData mFileHandlingData;
+
+    private @Nullable Uri mOriginalLaunchUrl;
+
+    @LaunchHandlerClientMode.ClientMode
+    private int mLaunchHandlerClientMode = LaunchHandlerClientMode.AUTO;
+
+    private @NonNull TrustedWebActivityDisplayMode mDisplayMode =
             new TrustedWebActivityDisplayMode.DefaultMode();
+    private @Nullable List<TrustedWebActivityDisplayMode> mDisplayOverrideList;
 
     @ScreenOrientation.LockType
     private int mScreenOrientation = ScreenOrientation.DEFAULT;
@@ -118,8 +144,7 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int color) {
         mIntentBuilder.setToolbarColor(color);
         return this;
     }
@@ -130,8 +155,7 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int color) {
         mIntentBuilder.setNavigationBarColor(color);
         return this;
     }
@@ -143,8 +167,8 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setNavigationBarDividerColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setNavigationBarDividerColor(
+            @ColorInt int color) {
         mIntentBuilder.setNavigationBarDividerColor(color);
         return this;
     }
@@ -158,8 +182,7 @@ public class TrustedWebActivityIntentBuilder {
      *                    {@link CustomTabsIntent#COLOR_SCHEME_LIGHT}, and
      *                    {@link CustomTabsIntent#COLOR_SCHEME_DARK}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setColorScheme(
+    public @NonNull TrustedWebActivityIntentBuilder setColorScheme(
             @CustomTabsIntent.ColorScheme int colorScheme) {
         mIntentBuilder.setColorScheme(colorScheme);
         return this;
@@ -171,8 +194,7 @@ public class TrustedWebActivityIntentBuilder {
      * Trusted Web Activity will automatically apply the correct color according to current system
      * settings. For more details see {@link CustomTabsIntent.Builder#setColorSchemeParams}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setColorSchemeParams(
+    public @NonNull TrustedWebActivityIntentBuilder setColorSchemeParams(
             @CustomTabsIntent.ColorScheme int colorScheme,
             @NonNull CustomTabColorSchemeParams params) {
         mIntentBuilder.setColorSchemeParams(colorScheme, params);
@@ -187,8 +209,7 @@ public class TrustedWebActivityIntentBuilder {
      *
      * @param params An instance of {@link CustomTabColorSchemeParams}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(
+    public @NonNull TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(
             @NonNull CustomTabColorSchemeParams params) {
         mIntentBuilder.setDefaultColorSchemeParams(params);
         return this;
@@ -206,8 +227,7 @@ public class TrustedWebActivityIntentBuilder {
      * Alternatively, use {@link CustomTabsSession#validateRelationship} to validate additional
      * origins asynchronously, but that would delay launching the Trusted Web Activity.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setAdditionalTrustedOrigins(
+    public @NonNull TrustedWebActivityIntentBuilder setAdditionalTrustedOrigins(
             @NonNull List<String> origins) {
         mAdditionalTrustedOrigins = origins;
         return this;
@@ -228,8 +248,7 @@ public class TrustedWebActivityIntentBuilder {
      * The splash screen will be removed on the first paint of the page, or when the page load
      * fails.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setSplashScreenParams(
+    public @NonNull TrustedWebActivityIntentBuilder setSplashScreenParams(
             @NonNull Bundle splashScreenParams) {
         mSplashScreenParams = splashScreenParams;
         return this;
@@ -242,11 +261,35 @@ public class TrustedWebActivityIntentBuilder {
      * @param shareData   A {@link ShareData} object containing the data to be sent to the Web Share
      *                    Target.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setShareParams(@NonNull ShareTarget shareTarget,
+    public @NonNull TrustedWebActivityIntentBuilder setShareParams(@NonNull ShareTarget shareTarget,
             @NonNull ShareData shareData) {
         mShareTarget = shareTarget;
         mShareData = shareData;
+        return this;
+    }
+
+    /**
+     * Sets the parameters for delivering launch files to the launch queue.
+     *
+     * A web application can declare "file_handlers" in its web manifest, enabling it to handle
+     * file opening requests from users. The opened files are then made available by the browser
+     * to the web app through the LaunchQueue interface of the Launch Handler API. LaunchQueue
+     * implementation depends on a browser receiving a TrustedWebActivityIntent.
+     *
+     * This method provides the support for file handling in Trusted Web Activities.
+     * {@link FileHandlingData} should contain the URIs list of files opened by a user and captured
+     * by an intent filter declared in the app manifest. API doesn't perform URI validation and it
+     * entirely dependents on a browser receiving a TrustedWebActivityIntent.
+     *
+     * The API passes read/write permissions for the files to the browser to allow the web
+     * application to read and write a file as it required by LaunchQueue interface specification.
+     *
+     * @param fileHandlingData A {@link FileHandlingData} object containing the data to be sent
+     * to browser launch queue.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setFileHandlingData(
+            @NonNull FileHandlingData fileHandlingData) {
+        mFileHandlingData = fileHandlingData;
         return this;
     }
 
@@ -255,10 +298,31 @@ public class TrustedWebActivityIntentBuilder {
      * (see {@link TrustedWebActivityDisplayMode.ImmersiveMode}. Not setting it means
      * {@link TrustedWebActivityDisplayMode.DefaultMode} will be used.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setDisplayMode(
+    public @NonNull TrustedWebActivityIntentBuilder setDisplayMode(
             @NonNull TrustedWebActivityDisplayMode displayMode) {
         mDisplayMode = displayMode;
+        return this;
+    }
+
+    /**
+     * Sets the display override fallback list for a Trusted Web Activity.
+     *
+     * Web applications can declare a "display_override" list to specify the preferred order of
+     * display modes. This is useful for more advanced display modes that may have limited browser
+     * support ({@see https://wicg.github.io/manifest-incubations/#display_override-member}). The
+     * browser will use the first display mode in the list that it supports, and fall back to the
+     * `display` manifest field if none are supported.
+     *
+     * @param displayOverrideList A list of {@link TrustedWebActivityDisplayMode} that represents
+     * the fallback order of display modes.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setDisplayOverrideList(
+            @Nullable List<TrustedWebActivityDisplayMode> displayOverrideList) {
+        if (displayOverrideList == null) {
+            mDisplayOverrideList = new ArrayList<>();
+        } else {
+            mDisplayOverrideList = displayOverrideList;
+        }
         return this;
     }
 
@@ -269,10 +333,37 @@ public class TrustedWebActivityIntentBuilder {
      * @param orientation A {@link ScreenOrientation} lock type for a Trusted Web Activity.
      *                    Not setting it means {@link ScreenOrientation#DEFAULT} will be used.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setScreenOrientation(
+    public @NonNull TrustedWebActivityIntentBuilder setScreenOrientation(
             @ScreenOrientation.LockType int orientation) {
         mScreenOrientation = orientation;
+        return this;
+    }
+
+    /**
+     * Sets the original launch URL. This is used by Protocol Handlers to let the browser see
+     * the URL that was opened before being processed an modified (the original URL will usually
+     * have a custom data scheme and no host, as opposed to the full http/https location in the
+     * Intent data).
+     *
+     * @see TrustedWebActivityIntent#getOriginalLaunchUrl()
+     *
+     * @param originalLaunchUrl The URL that was originally opened, before being processed and
+     *                          modified by a Protocol Handler.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setOriginalLaunchUrl(
+            @NonNull Uri originalLaunchUrl) {
+        mOriginalLaunchUrl = originalLaunchUrl;
+        return this;
+    }
+
+    /**
+     * Sets the parameter for delivering Launch Handler API client mode via a Trusted Web Activity.
+     *
+     * @param launchHandlerClientMode A string describing the client mode.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setLaunchHandlerClientMode(
+            @LaunchHandlerClientMode.ClientMode int launchHandlerClientMode) {
+        mLaunchHandlerClientMode = launchHandlerClientMode;
         return this;
     }
 
@@ -281,8 +372,7 @@ public class TrustedWebActivityIntentBuilder {
      *
      * @param session The {@link CustomTabsSession} to use for launching a Trusted Web Activity.
      */
-    @NonNull
-    public TrustedWebActivityIntent build(@NonNull CustomTabsSession session) {
+    public @NonNull TrustedWebActivityIntent build(@NonNull CustomTabsSession session) {
         if (session == null) {
             throw new NullPointerException("CustomTabsSession is required for launching a TWA");
         }
@@ -307,9 +397,29 @@ public class TrustedWebActivityIntentBuilder {
                 sharedUris = mShareData.uris;
             }
         }
+        List<Uri> fileHandlingUris = Collections.emptyList();
+        if (mFileHandlingData != null) {
+            intent.putExtra(EXTRA_FILE_HANDLING_DATA, mFileHandlingData.toBundle());
+            if (mFileHandlingData.uris != null) {
+                fileHandlingUris = mFileHandlingData.uris;
+            }
+        }
         intent.putExtra(EXTRA_DISPLAY_MODE, mDisplayMode.toBundle());
+        if (mDisplayOverrideList != null) {
+            ArrayList<Bundle> bundles = new ArrayList<>();
+            for (TrustedWebActivityDisplayMode displayMode : mDisplayOverrideList) {
+                bundles.add(displayMode.toBundle());
+            }
+            intent.putExtra(EXTRA_DISPLAY_OVERRIDE, bundles);
+        }
         intent.putExtra(EXTRA_SCREEN_ORIENTATION, mScreenOrientation);
-        return new TrustedWebActivityIntent(intent, sharedUris);
+        if (mOriginalLaunchUrl != null) {
+            intent.putExtra(EXTRA_ORIGINAL_LAUNCH_URL, mOriginalLaunchUrl);
+        }
+
+        intent.putExtra(EXTRA_LAUNCH_HANDLER_CLIENT_MODE, mLaunchHandlerClientMode);
+
+        return new TrustedWebActivityIntent(intent, sharedUris, fileHandlingUris);
     }
 
     /**
@@ -317,24 +427,21 @@ public class TrustedWebActivityIntentBuilder {
      * Can be useful for falling back to Custom Tabs when Trusted Web Activity providers are
      * unavailable.
      */
-    @NonNull
-    public CustomTabsIntent buildCustomTabsIntent() {
+    public @NonNull CustomTabsIntent buildCustomTabsIntent() {
         return mIntentBuilder.build();
     }
 
     /**
      * Returns the {@link Uri} to be launched with this Builder.
      */
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
     /**
      * Returns {@link TrustedWebActivityDisplayMode} set on this Builder.
      */
-    @NonNull
-    public TrustedWebActivityDisplayMode getDisplayMode() {
+    public @NonNull TrustedWebActivityDisplayMode getDisplayMode() {
         return mDisplayMode;
     }
 }

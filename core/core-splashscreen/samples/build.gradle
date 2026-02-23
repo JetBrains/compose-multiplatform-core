@@ -15,33 +15,30 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        applicationId "androidx.core.splashscreen.samples"
+        applicationId = "androidx.core.splashscreen.samples"
     }
-    namespace "androidx.core.splashscreen.sample"
+    namespace = "androidx.core.splashscreen.sample"
 }
 
 dependencies {
     implementation(project(":core:core-splashscreen"))
-    implementation(project(":core:core-ktx"))
-    implementation(project(":appcompat:appcompat"))
-    implementation("androidx.annotation:annotation:1.8.1")
-    implementation(project(":interpolator:interpolator"))
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
+    implementation("androidx.interpolator:interpolator:1.0.0")
 }

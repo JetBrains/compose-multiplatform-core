@@ -18,15 +18,22 @@ package androidx.browser.customtabs;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
-import androidx.annotation.NonNull;
+import androidx.browser.auth.AuthTabCallback;
+import androidx.browser.auth.AuthTabSession;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.concurrent.Executor;
 
 /**
  * Utilities for unit testing Custom Tabs.
@@ -34,21 +41,18 @@ import androidx.annotation.NonNull;
 // minSdk For Bundle#getBinder
 public class TestUtil {
 
-    @NonNull
-    public static CustomTabsSession makeMockSession() {
+    public static @NonNull CustomTabsSession makeMockSession() {
         return new CustomTabsSession(mock(ICustomTabsService.class),
                 mock(ICustomTabsCallback.class), new ComponentName("", ""),
                 makeMockPendingIntent());
     }
 
-    @NonNull
-    public static CustomTabsSession.PendingSession makeMockPendingSession() {
+    public static CustomTabsSession.@NonNull PendingSession makeMockPendingSession() {
         return new CustomTabsSession.PendingSession(
                 mock(CustomTabsCallback.class), makeMockPendingIntent());
     }
 
-    @NonNull
-    public static PendingIntent makeMockPendingIntent() {
+    public static @NonNull PendingIntent makeMockPendingIntent() {
         return PendingIntent.getBroadcast(mock(Context.class), 0, new Intent(), 0);
     }
 
@@ -58,5 +62,19 @@ public class TestUtil {
         assertEquals(session.getBinder(), intent.getExtras().getBinder(
                 CustomTabsIntent.EXTRA_SESSION));
         assertEquals(session.getId(), intent.getParcelableExtra(CustomTabsIntent.EXTRA_SESSION_ID));
+    }
+
+    /** Create s a mock {@link AuthTabSession} for testing. */
+    @NonNull
+    public static AuthTabSession makeMockAuthTabSession() {
+        IAuthTabCallback callback = mock(IAuthTabCallback.class);
+        when(callback.asBinder()).thenReturn(mock(IAuthTabCallback.Stub.class));
+        return new AuthTabSession(callback, new ComponentName("", ""), makeMockPendingIntent());
+    }
+
+    /** Creates a mock {@link AuthTabSession.PendingSession} for testing. */
+    public static AuthTabSession.@NonNull PendingSession makeMockPendingAuthTabSession() {
+        return new AuthTabSession.PendingSession(makeMockPendingIntent(), mock(Executor.class),
+                mock(AuthTabCallback.class));
     }
 }

@@ -18,12 +18,13 @@ package androidx.work.multiprocess;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkContinuation;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,23 +45,20 @@ public class RemoteWorkContinuationImpl extends RemoteWorkContinuation {
         mContinuation = continuation;
     }
 
-    @NonNull
     @Override
     @SuppressLint("EnqueueWork")
-    public RemoteWorkContinuation then(@NonNull List<OneTimeWorkRequest> work) {
+    public @NonNull RemoteWorkContinuation then(@NonNull List<OneTimeWorkRequest> work) {
         return new RemoteWorkContinuationImpl(mClient, mContinuation.then(work));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueue() {
+    public @NonNull ListenableFuture<Void> enqueue() {
         return mClient.enqueue(mContinuation);
     }
 
-    @NonNull
     @Override
     @SuppressLint("EnqueueWork")
-    protected RemoteWorkContinuation combineInternal(
+    protected @NonNull RemoteWorkContinuation combineInternal(
             @NonNull List<RemoteWorkContinuation> continuations) {
 
         int size = continuations.size();

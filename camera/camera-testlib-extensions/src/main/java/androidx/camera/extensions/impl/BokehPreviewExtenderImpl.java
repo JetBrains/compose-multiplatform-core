@@ -25,8 +25,8 @@ import android.util.Pair;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -70,15 +70,13 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
         return CameraCharacteristicAvailability.isEffectAvailable(cameraCharacteristics, EFFECT);
     }
 
-    @NonNull
     @Override
-    public CaptureStageImpl getCaptureStage() {
+    public @NonNull CaptureStageImpl getCaptureStage() {
         return mCaptureStage;
     }
 
-    @NonNull
     @Override
-    public ProcessorType getProcessorType() {
+    public @NonNull ProcessorType getProcessorType() {
         return ProcessorType.PROCESSOR_TYPE_REQUEST_UPDATE_ONLY;
     }
 
@@ -121,15 +119,13 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     };
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public ProcessorImpl getProcessor() {
+    public @Nullable ProcessorImpl getProcessor() {
         return mRequestUpdateProcessor;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
@@ -145,9 +141,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
 
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // The CaptureRequest parameters will be set via SessionConfiguration#setSessionParameters
         // (CaptureRequest) which only supported from API level 28.
         if (Build.VERSION.SDK_INT < 28) {
@@ -163,9 +158,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -175,9 +169,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);

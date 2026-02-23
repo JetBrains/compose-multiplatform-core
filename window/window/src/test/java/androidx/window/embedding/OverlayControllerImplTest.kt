@@ -19,7 +19,6 @@ package androidx.window.embedding
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Rect
-import androidx.core.view.WindowInsetsCompat
 import androidx.window.WindowSdkExtensionsRule
 import androidx.window.core.PredicateAdapter
 import androidx.window.embedding.OverlayController.Companion.OVERLAY_FEATURE_VERSION
@@ -80,9 +79,9 @@ class OverlayControllerImplTest {
         calculateOverlayAttributes(
             TAG_TEST,
             initialOverlayAttrs,
-            WindowMetrics(Rect(), WindowInsetsCompat.CONSUMED, density = 1f),
+            WindowMetrics(Rect(), density = 1f),
             Configuration(),
-            WindowLayoutInfo(emptyList())
+            WindowLayoutInfo(emptyList()),
         )
 
     companion object {
@@ -98,11 +97,11 @@ class OverlayControllerImplTest {
     }
 
     private class TestableOverlayControllerImpl(
-        mockExtension: ActivityEmbeddingComponent = mock<ActivityEmbeddingComponent>(),
+        mockExtension: ActivityEmbeddingComponent = mock<ActivityEmbeddingComponent>()
     ) :
         OverlayControllerImpl(
             mockExtension,
-            EmbeddingAdapter(PredicateAdapter(ClassLoader.getSystemClassLoader()))
+            EmbeddingAdapter(PredicateAdapter(ClassLoader.getSystemClassLoader())),
         ) {
         val overlayTagToAttributesMap = HashMap<String, OverlayAttributes>()
 
@@ -111,7 +110,7 @@ class OverlayControllerImplTest {
 
         override fun updateOverlayAttributes(
             overlayTag: String,
-            overlayAttributes: OverlayAttributes
+            overlayAttributes: OverlayAttributes,
         ) {
             overlayTagToAttributesMap[overlayTag] = overlayAttributes
         }

@@ -25,6 +25,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.os.PersistableBundle
 import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.IntDef
@@ -62,9 +63,9 @@ import java.util.Objects
  */
 @SuppressLint("BanParcelableUsage")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class ComplicationData
+public class ComplicationData
 private constructor(
-    @ComplicationType val type: Int,
+    @ComplicationType public val type: Int,
     private val fields: MutableMap<String, Any>,
     // This should only be set at the constructor for a fully-owned Bundle, as this Bundle can be
     // mutated by methods of this class.
@@ -80,7 +81,7 @@ private constructor(
     ) : this(
         input.readInt(),
         input.readBundle(ComplicationData::class.java.classLoader)
-            ?: Bundle().also { Log.w(TAG, "ComplicationData parcel input has null bundle.") }
+            ?: Bundle().also { Log.w(TAG, "ComplicationData parcel input has null bundle.") },
     )
 
     // This constructor should only be used with a fully-owned Bundle, as this Bundle can be mutated
@@ -107,16 +108,16 @@ private constructor(
         TYPE_GOAL_PROGRESS,
         TYPE_WEIGHTED_ELEMENTS,
         EXP_TYPE_PROTO_LAYOUT,
-        EXP_TYPE_LIST
+        EXP_TYPE_LIST,
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
-    annotation class ComplicationType
+    public annotation class ComplicationType
 
     @IntDef(IMAGE_STYLE_PHOTO, IMAGE_STYLE_ICON)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
-    annotation class ImageStyle
+    public annotation class ImageStyle
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private class SerializedForm
@@ -132,6 +133,11 @@ private constructor(
             oos.writeInt(type)
             oos.writeInt(complicationData.persistencePolicy)
             oos.writeInt(complicationData.displayPolicy)
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                if (Build.VERSION.SDK_INT > 30) {
+                    complicationData.extras.writeToStream(oos)
+                }
+            }
             if (isFieldValidForType(FIELD_LONG_TEXT, type)) {
                 oos.writeObject(complicationData.longText)
             }
@@ -272,6 +278,11 @@ private constructor(
             val fields = mutableMapOf<String, Any>()
             fields[FIELD_PERSISTENCE_POLICY] = ois.readInt()
             fields[FIELD_DISPLAY_POLICY] = ois.readInt()
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                if (Build.VERSION.SDK_INT > 30) {
+                    fields[FIELD_EXTRAS] = PersistableBundle.readFromStream(ois)
+                }
+            }
             if (isFieldValidForType(FIELD_LONG_TEXT, type)) {
                 putIfNotNull(fields, FIELD_LONG_TEXT, ois.readObject() as ComplicationText?)
             }
@@ -288,7 +299,7 @@ private constructor(
                 putIfNotNull(
                     fields,
                     FIELD_CONTENT_DESCRIPTION,
-                    ois.readObject() as ComplicationText?
+                    ois.readObject() as ComplicationText?,
                 )
             }
             if (isFieldValidForType(FIELD_ICON, type)) {
@@ -298,7 +309,7 @@ private constructor(
                 putIfNotNull(
                     fields,
                     FIELD_ICON_BURN_IN_PROTECTION,
-                    IconSerializableHelper.read(ois)
+                    IconSerializableHelper.read(ois),
                 )
             }
             if (isFieldValidForType(FIELD_SMALL_IMAGE, type)) {
@@ -308,7 +319,7 @@ private constructor(
                 putIfNotNull(
                     fields,
                     FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                    IconSerializableHelper.read(ois)
+                    IconSerializableHelper.read(ois),
                 )
             }
             if (isFieldValidForType(FIELD_IMAGE_STYLE, type)) {
@@ -443,12 +454,12 @@ private constructor(
         fun readResolve(): Any = complicationData!!
 
         companion object {
-            private const val VERSION_NUMBER = 20
+            private const val VERSION_NUMBER = 21
 
             internal fun putIfNotNull(
                 fields: MutableMap<String, Any>,
                 field: String,
-                value: Parcelable?
+                value: Parcelable?,
             ) {
                 if (value != null) {
                     fields[field] = value
@@ -457,14 +468,14 @@ private constructor(
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.P) fun writeReplace(): Any = SerializedForm(this)
+    @RequiresApi(api = Build.VERSION_CODES.P) public fun writeReplace(): Any = SerializedForm(this)
 
     @Throws(InvalidObjectException::class)
     private fun readObject(@Suppress("UNUSED_PARAMETER") stream: ObjectInputStream) {
         throw InvalidObjectException("Use SerializedForm")
     }
 
-    override fun describeContents() = 0
+    override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeInt(type)
@@ -477,21 +488,51 @@ private constructor(
      *
      * This must be checked for any time for which the complication will be displayed.
      */
-    fun isActiveAt(dateTimeMillis: Long) = dateTimeMillis in startDateTimeMillis..endDateTimeMillis
+    public fun isActiveAt(dateTimeMillis: Long): Boolean =
+        dateTimeMillis in startDateTimeMillis..endDateTimeMillis
+
+    /**
+     * Removes any extras from this complication data, including from placeholders and timelines.
+     */
+    public fun stripExtras() {
+        fields.remove(FIELD_EXTRAS)
+
+        (fields[FIELD_PLACEHOLDER_FIELDS] as ComplicationData?)?.stripExtras()
+        (fields[FIELD_ORIGINAL_FIELDS] as ComplicationData?)?.stripExtras()
+
+        timelineEntries?.let {
+            for (complicationEntry in it) {
+                complicationEntry.stripExtras()
+            }
+        }
+    }
 
     /**
      * TapAction unfortunately can't be serialized. Returns true if tapAction has been lost due to
      * serialization (e.g. due to being read from the local cache). The next complication update
      * from the system would replace this with one with a tapAction.
      */
-    val tapActionLostDueToSerialization: Boolean
+    public val tapActionLostDueToSerialization: Boolean
         get() = fields[FIELD_TAP_ACTION_LOST] as Boolean? ?: false
+
+    /** Expansion point for OEM watch faces and complications. */
+    public var extras: PersistableBundle
+        get() = (fields[FIELD_EXTRAS] as PersistableBundle?) ?: PersistableBundle.EMPTY
+        set(extraBundle) {
+            if (extraBundle.isEmpty) {
+                fields.remove(FIELD_EXTRAS)
+                _bundle?.remove(FIELD_EXTRAS)
+            } else {
+                fields[FIELD_EXTRAS] = extraBundle
+                _bundle?.putParcelable(FIELD_EXTRAS, extraBundle)
+            }
+        }
 
     /**
      * For timeline entries. The epoch second at which this timeline entry becomes * valid or `null`
      * if it's not set.
      */
-    var timelineStartEpochSecond: Long?
+    public var timelineStartEpochSecond: Long?
         get() = fields[FIELD_TIMELINE_START_TIME] as Long?
         set(epochSecond) {
             if (epochSecond == null) {
@@ -507,7 +548,7 @@ private constructor(
      * For timeline entries. The epoch second at which this timeline entry becomes invalid or `null`
      * if it's not set.
      */
-    var timelineEndEpochSecond: Long?
+    public var timelineEndEpochSecond: Long?
         get() = fields[FIELD_TIMELINE_END_TIME] as Long?
         set(epochSecond) {
             if (epochSecond == null) {
@@ -520,12 +561,12 @@ private constructor(
         }
 
     /** The list of [ComplicationData] timeline entries. */
-    val timelineEntries: List<ComplicationData>?
+    public val timelineEntries: List<ComplicationData>?
         @Suppress("UNCHECKED_CAST")
         get() = fields[FIELD_TIMELINE_ENTRIES] as List<ComplicationData>?
 
     /** Sets the list of [ComplicationData] timeline entries. */
-    fun setTimelineEntryCollection(timelineEntries: Collection<ComplicationData>?) {
+    public fun setTimelineEntryCollection(timelineEntries: Collection<ComplicationData>?) {
         if (timelineEntries == null) {
             fields.remove(FIELD_TIMELINE_ENTRIES)
             _bundle?.remove(FIELD_TIMELINE_ENTRIES)
@@ -539,20 +580,20 @@ private constructor(
                         it.bundle.putInt(FIELD_TIMELINE_ENTRY_TYPE, it.type)
                         it.bundle
                     }
-                    .toTypedArray()
+                    .toTypedArray(),
             )
         }
     }
 
     /** The list of [ComplicationData] entries for a ListComplicationData. */
-    val listEntries: List<ComplicationData>?
+    public val listEntries: List<ComplicationData>?
         @Suppress("UNCHECKED_CAST")
         get() = fields[EXP_FIELD_LIST_ENTRIES] as List<ComplicationData>?
 
     /**
      * The [ComponentName] of the ComplicationDataSourceService that provided this ComplicationData.
      */
-    var dataSource: ComponentName?
+    public var dataSource: ComponentName?
         // The safer alternative is not available on Wear OS yet.
         get() = fields[FIELD_DATA_SOURCE] as ComponentName?
         set(provider) {
@@ -569,7 +610,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged value. I.e. if [rangedValue] can
      * succeed.
      */
-    fun hasRangedValue(): Boolean = isFieldValidForType(FIELD_VALUE, type)
+    public fun hasRangedValue(): Boolean = isFieldValidForType(FIELD_VALUE, type)
 
     /**
      * Returns the *value* field for this complication.
@@ -577,7 +618,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE] and
      * [TYPE_GOAL_PROGRESS], otherwise returns zero.
      */
-    val rangedValue: Float
+    public val rangedValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_VALUE, type)
             return fields[FIELD_VALUE] as Float? ?: 0f
@@ -587,7 +628,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged dynamic value. I.e. if
      * [rangedDynamicValue] can succeed.
      */
-    fun hasRangedDynamicValue(): Boolean =
+    public fun hasRangedDynamicValue(): Boolean =
         isFieldValidForType(FIELD_DYNAMIC_VALUE, type) && fields.containsKey(FIELD_DYNAMIC_VALUE)
 
     /**
@@ -596,7 +637,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE] and
      * [TYPE_GOAL_PROGRESS].
      */
-    val rangedDynamicValue: DynamicFloat?
+    public val rangedDynamicValue: DynamicFloat?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_DYNAMIC_VALUE, type)
             return fields[FIELD_DYNAMIC_VALUE] as DynamicFloat?
@@ -606,7 +647,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged max type. I.e. if [rangedValueType]
      * can succeed.
      */
-    fun hasRangedValueType(): Boolean = isFieldValidForType(FIELD_VALUE_TYPE, type)
+    public fun hasRangedValueType(): Boolean = isFieldValidForType(FIELD_VALUE_TYPE, type)
 
     /**
      * Returns the *value* field for this complication.
@@ -614,7 +655,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE], otherwise returns
      * zero.
      */
-    val rangedValueType: Int
+    public val rangedValueType: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_VALUE_TYPE, type)
             return fields[FIELD_VALUE_TYPE] as Int? ?: 0
@@ -624,7 +665,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged max value. I.e. if [rangedMinValue]
      * can succeed.
      */
-    fun hasRangedMinValue(): Boolean = isFieldValidForType(FIELD_MIN_VALUE, type)
+    public fun hasRangedMinValue(): Boolean = isFieldValidForType(FIELD_MIN_VALUE, type)
 
     /**
      * Returns the *min value* field for this complication.
@@ -632,7 +673,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE], otherwise returns
      * zero.
      */
-    val rangedMinValue: Float
+    public val rangedMinValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_MIN_VALUE, type)
             return fields[FIELD_MIN_VALUE] as Float? ?: 0f
@@ -642,7 +683,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged max value. I.e. if [rangedMaxValue]
      * can succeed.
      */
-    fun hasRangedMaxValue(): Boolean = isFieldValidForType(FIELD_MAX_VALUE, type)
+    public fun hasRangedMaxValue(): Boolean = isFieldValidForType(FIELD_MAX_VALUE, type)
 
     /**
      * Returns the *max value* field for this complication.
@@ -650,7 +691,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE], otherwise returns
      * zero.
      */
-    val rangedMaxValue: Float
+    public val rangedMaxValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_MAX_VALUE, type)
             return fields[FIELD_MAX_VALUE] as Float? ?: 0f
@@ -660,7 +701,7 @@ private constructor(
      * Returns true if the ComplicationData contains a ranged max value. I.e. if [targetValue] can
      * succeed.
      */
-    fun hasTargetValue(): Boolean = isFieldValidForType(FIELD_TARGET_VALUE, type)
+    public fun hasTargetValue(): Boolean = isFieldValidForType(FIELD_TARGET_VALUE, type)
 
     /**
      * Returns the *value* field for this complication.
@@ -668,7 +709,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_GOAL_PROGRESS], otherwise returns
      * zero.
      */
-    val targetValue: Float
+    public val targetValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_TARGET_VALUE, type)
             return fields[FIELD_TARGET_VALUE] as Float? ?: 0f
@@ -681,7 +722,7 @@ private constructor(
      * [TYPE_GOAL_PROGRESS].
      */
     @get:ColorInt
-    val colorRamp: IntArray?
+    public val colorRamp: IntArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_COLOR_RAMP, type)
             return fields[FIELD_COLOR_RAMP] as IntArray?
@@ -696,7 +737,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_RANGED_VALUE] or
      * [TYPE_GOAL_PROGRESS].
      */
-    val isColorRampInterpolated: Boolean?
+    public val isColorRampInterpolated: Boolean?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_COLOR_RAMP_INTERPOLATED, type)
             return fields[FIELD_COLOR_RAMP_INTERPOLATED] as Boolean?
@@ -706,7 +747,7 @@ private constructor(
      * Returns true if the ComplicationData contains a short title. I.e. if [shortTitle] can
      * succeed.
      */
-    fun hasShortTitle(): Boolean =
+    public fun hasShortTitle(): Boolean =
         isFieldValidForType(FIELD_SHORT_TITLE, type) && fields.containsKey(FIELD_SHORT_TITLE)
 
     /**
@@ -725,7 +766,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_SHORT_TEXT], [TYPE_RANGED_VALUE],
      * or [TYPE_NO_PERMISSION], otherwise returns null.
      */
-    val shortTitle: ComplicationText?
+    public val shortTitle: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SHORT_TITLE, type)
             return fields[FIELD_SHORT_TITLE] as ComplicationText?
@@ -734,7 +775,7 @@ private constructor(
     /**
      * Returns true if the ComplicationData contains short text. I.e. if [shortText] can succeed.
      */
-    fun hasShortText(): Boolean =
+    public fun hasShortText(): Boolean =
         isFieldValidForType(FIELD_SHORT_TEXT, type) && fields.containsKey(FIELD_SHORT_TEXT)
 
     /**
@@ -753,7 +794,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_SHORT_TEXT], [TYPE_RANGED_VALUE],
      * or [TYPE_NO_PERMISSION], otherwise returns null.
      */
-    val shortText: ComplicationText?
+    public val shortText: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SHORT_TEXT, type)
             return fields[FIELD_SHORT_TEXT] as ComplicationText?
@@ -762,7 +803,7 @@ private constructor(
     /**
      * Returns true if the ComplicationData contains a long title. I.e. if [longTitle] can succeed.
      */
-    fun hasLongTitle(): Boolean =
+    public fun hasLongTitle(): Boolean =
         isFieldValidForType(FIELD_LONG_TITLE, type) && fields.containsKey(FIELD_LONG_TITLE)
 
     /**
@@ -774,14 +815,14 @@ private constructor(
      *
      * Valid only if the type of this complication data is [TYPE_LONG_TEXT], otherwise returns null.
      */
-    val longTitle: ComplicationText?
+    public val longTitle: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LONG_TITLE, type)
             return fields[FIELD_LONG_TITLE] as ComplicationText?
         }
 
     /** Returns true if the ComplicationData contains long text. I.e. if [longText] can succeed. */
-    fun hasLongText(): Boolean =
+    public fun hasLongText(): Boolean =
         isFieldValidForType(FIELD_LONG_TEXT, type) && fields.containsKey(FIELD_LONG_TEXT)
 
     /**
@@ -792,14 +833,15 @@ private constructor(
      *
      * Valid only if the type of this complication data is [TYPE_LONG_TEXT], otherwise returns null.
      */
-    val longText: ComplicationText?
+    public val longText: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LONG_TEXT, type)
             return fields[FIELD_LONG_TEXT] as ComplicationText?
         }
 
     /** Returns true if the ComplicationData contains an Icon. I.e. if [icon] can succeed. */
-    fun hasIcon(): Boolean = isFieldValidForType(FIELD_ICON, type) && fields.containsKey(FIELD_ICON)
+    public fun hasIcon(): Boolean =
+        isFieldValidForType(FIELD_ICON, type) && fields.containsKey(FIELD_ICON)
 
     /**
      * Returns the *icon* field for this complication, or `null` if no value was provided for the
@@ -813,7 +855,7 @@ private constructor(
      * Valid for the types [TYPE_SHORT_TEXT], [TYPE_LONG_TEXT], [TYPE_RANGED_VALUE], [TYPE_ICON], or
      * [TYPE_NO_PERMISSION], otherwise returns null.
      */
-    val icon: Icon?
+    public val icon: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ICON, type)
             return fields[FIELD_ICON] as Icon?
@@ -823,7 +865,7 @@ private constructor(
      * Returns true if the ComplicationData contains a burn in protection Icon. I.e. if
      * [burnInProtectionIcon] can succeed.
      */
-    fun hasBurnInProtectionIcon(): Boolean =
+    public fun hasBurnInProtectionIcon(): Boolean =
         isFieldValidForType(FIELD_ICON_BURN_IN_PROTECTION, type) &&
             fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION)
 
@@ -841,7 +883,7 @@ private constructor(
      * Valid for the types [TYPE_SHORT_TEXT], [TYPE_LONG_TEXT], [TYPE_RANGED_VALUE], [TYPE_ICON], or
      * [TYPE_NO_PERMISSION], otherwise returns null.
      */
-    val burnInProtectionIcon: Icon?
+    public val burnInProtectionIcon: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ICON_BURN_IN_PROTECTION, type)
             return fields[FIELD_ICON_BURN_IN_PROTECTION] as Icon?
@@ -851,7 +893,7 @@ private constructor(
      * Returns true if the ComplicationData contains a small image. I.e. if [smallImage] can
      * succeed.
      */
-    fun hasSmallImage(): Boolean =
+    public fun hasSmallImage(): Boolean =
         isFieldValidForType(FIELD_SMALL_IMAGE, type) && fields.containsKey(FIELD_SMALL_IMAGE)
 
     /**
@@ -868,7 +910,7 @@ private constructor(
      *
      * Valid for the types [TYPE_LONG_TEXT] and [TYPE_SMALL_IMAGE]. Otherwise returns null.
      */
-    val smallImage: Icon?
+    public val smallImage: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SMALL_IMAGE, type)
             return fields[FIELD_SMALL_IMAGE] as Icon?
@@ -880,7 +922,7 @@ private constructor(
      *
      * @throws IllegalStateException for invalid types
      */
-    fun hasBurnInProtectionSmallImage(): Boolean =
+    public fun hasBurnInProtectionSmallImage(): Boolean =
         isFieldValidForType(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION, type) &&
             fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION)
 
@@ -898,11 +940,11 @@ private constructor(
      *
      * Valid for the types [TYPE_LONG_TEXT] and [TYPE_SMALL_IMAGE]. Otherwise returns null.
      */
-    val burnInProtectionSmallImage: Icon?
+    public val burnInProtectionSmallImage: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(
                 FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                type
+                type,
             )
             return fields[FIELD_SMALL_IMAGE_BURN_IN_PROTECTION] as Icon?
         }
@@ -920,7 +962,7 @@ private constructor(
      * @see IMAGE_STYLE_ICON which can be recolored but not cropped.
      */
     @ImageStyle
-    val smallImageStyle: Int
+    public val smallImageStyle: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_IMAGE_STYLE, type)
             return fields[FIELD_IMAGE_STYLE] as Int? ?: 0
@@ -930,7 +972,7 @@ private constructor(
      * Returns true if the ComplicationData contains a large image. I.e. if [largeImage] can
      * succeed.
      */
-    fun hasLargeImage(): Boolean =
+    public fun hasLargeImage(): Boolean =
         isFieldValidForType(FIELD_LARGE_IMAGE, type) && fields.containsKey(FIELD_LARGE_IMAGE)
 
     /**
@@ -944,7 +986,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_LARGE_IMAGE]. Otherwise returns
      * null.
      */
-    val largeImage: Icon?
+    public val largeImage: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LARGE_IMAGE, type)
             return fields[FIELD_LARGE_IMAGE] as Icon?
@@ -953,7 +995,7 @@ private constructor(
     /**
      * Returns true if the ComplicationData contains a tap action. I.e. if [tapAction] can succeed.
      */
-    fun hasTapAction(): Boolean =
+    public fun hasTapAction(): Boolean =
         isFieldValidForType(FIELD_TAP_ACTION, type) && fields.containsKey(FIELD_TAP_ACTION)
 
     /**
@@ -963,7 +1005,7 @@ private constructor(
      *
      * Valid for all non-empty types, otherwise returns null.
      */
-    val tapAction: PendingIntent?
+    public val tapAction: PendingIntent?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_TAP_ACTION, type)
             return fields[FIELD_TAP_ACTION] as PendingIntent?
@@ -973,7 +1015,7 @@ private constructor(
      * Returns true if the ComplicationData contains a content description. I.e. if
      * [contentDescription] can succeed.
      */
-    fun hasContentDescription(): Boolean =
+    public fun hasContentDescription(): Boolean =
         isFieldValidForType(FIELD_CONTENT_DESCRIPTION, type) &&
             fields.containsKey(FIELD_CONTENT_DESCRIPTION)
 
@@ -983,7 +1025,7 @@ private constructor(
      *
      * Valid for all non-empty types.
      */
-    val contentDescription: ComplicationText?
+    public val contentDescription: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_CONTENT_DESCRIPTION, type)
             return fields[FIELD_CONTENT_DESCRIPTION] as ComplicationText?
@@ -995,7 +1037,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_WEIGHTED_ELEMENTS]. Otherwise
      * returns null.
      */
-    val elementWeights: FloatArray?
+    public val elementWeights: FloatArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_WEIGHTS, type)
             return fields[FIELD_ELEMENT_WEIGHTS] as FloatArray?
@@ -1007,7 +1049,7 @@ private constructor(
      * Valid only if the type of this complication data is [TYPE_WEIGHTED_ELEMENTS]. Otherwise
      * returns null.
      */
-    val elementColors: IntArray?
+    public val elementColors: IntArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_COLORS, type)
             return fields[FIELD_ELEMENT_COLORS] as IntArray?
@@ -1020,7 +1062,7 @@ private constructor(
      * returns 0.
      */
     @get:ColorInt
-    val elementBackgroundColor: Int
+    public val elementBackgroundColor: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_BACKGROUND_COLOR, type)
             return fields[FIELD_ELEMENT_BACKGROUND_COLOR] as Int? ?: 0
@@ -1030,14 +1072,14 @@ private constructor(
      * Returns true if the ComplicationData contains a placeholder. I.e. if [placeholder] can
      * succeed.
      */
-    fun hasPlaceholder(): Boolean =
+    public fun hasPlaceholder(): Boolean =
         isFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type) &&
             isFieldValidForType(FIELD_PLACEHOLDER_TYPE, type) &&
             fields.containsKey(FIELD_PLACEHOLDER_FIELDS) &&
             fields.containsKey(FIELD_PLACEHOLDER_TYPE)
 
     /** Returns the placeholder ComplicationData if there is one or `null`. */
-    val placeholder: ComplicationData?
+    public val placeholder: ComplicationData?
         get() {
             checkFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type)
             checkFieldValidForType(FIELD_PLACEHOLDER_TYPE, type)
@@ -1048,7 +1090,7 @@ private constructor(
      * Returns true if the ComplicationData contains a content description. I.e. if
      * [contentDescription] can succeed.
      */
-    fun hasInvalidatedData(): Boolean =
+    public fun hasInvalidatedData(): Boolean =
         isFieldValidForType(FIELD_ORIGINAL_FIELDS, type) &&
             isFieldValidForType(FIELD_ORIGINAL_TYPE, type) &&
             fields.containsKey(FIELD_ORIGINAL_FIELDS)
@@ -1057,7 +1099,7 @@ private constructor(
      * Returns the invalidated [ComplicationData] used in [TYPE_NO_DATA] when generated by dynamic
      * value invalidation, or `null`.
      */
-    val invalidatedData: ComplicationData?
+    public val invalidatedData: ComplicationData?
         get() {
             checkFieldValidForType(FIELD_ORIGINAL_FIELDS, type)
             checkFieldValidForType(FIELD_ORIGINAL_TYPE, type)
@@ -1065,7 +1107,7 @@ private constructor(
         }
 
     /** Returns the bytes of the proto layout. */
-    val interactiveLayout: ByteArray?
+    public val interactiveLayout: ByteArray?
         get() = fields[EXP_FIELD_PROTO_LAYOUT_INTERACTIVE] as ByteArray?
 
     /**
@@ -1073,23 +1115,23 @@ private constructor(
      *
      * Valid only if the type of this complication data is [EXP_TYPE_LIST]. Otherwise returns zero.
      */
-    val listStyleHint: Int
+    public val listStyleHint: Int
         get() {
             checkFieldValidForType(EXP_FIELD_LIST_STYLE_HINT, type)
             return fields[EXP_FIELD_LIST_STYLE_HINT] as Int? ?: 0
         }
 
     /** Returns the bytes of the ambient proto layout. */
-    val ambientLayout: ByteArray?
+    public val ambientLayout: ByteArray?
         get() = fields[EXP_FIELD_PROTO_LAYOUT_AMBIENT] as ByteArray?
 
     /** Returns the bytes of the proto layout resources. */
-    val layoutResources: ByteArray?
+    public val layoutResources: ByteArray?
         get() = fields[EXP_FIELD_PROTO_LAYOUT_RESOURCES] as ByteArray?
 
     /** Return's the complication's [ComplicationPersistencePolicies]. */
     @ComplicationPersistencePolicy
-    val persistencePolicy: Int
+    public val persistencePolicy: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_PERSISTENCE_POLICY, type)
             return fields[FIELD_PERSISTENCE_POLICY] as Int?
@@ -1098,7 +1140,7 @@ private constructor(
 
     /** Return's the complication's [ComplicationDisplayPolicy]. */
     @ComplicationDisplayPolicy
-    val displayPolicy: Int
+    public val displayPolicy: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_DISPLAY_POLICY, type)
             return fields[FIELD_DISPLAY_POLICY] as Int?
@@ -1109,18 +1151,18 @@ private constructor(
      * Returns the start time for this complication data (i.e. the first time at which it should be
      * considered active and displayed), this may be 0. See also [isActiveAt].
      */
-    val startDateTimeMillis: Long
+    public val startDateTimeMillis: Long
         get() = fields[FIELD_START_TIME] as Long? ?: 0L
 
     /**
      * Returns the end time for this complication data (i.e. the last time at which it should be
      * considered active and displayed), this may be [Long.MAX_VALUE]. See also [isActiveAt].
      */
-    val endDateTimeMillis: Long
+    public val endDateTimeMillis: Long
         get() = fields[FIELD_END_TIME] as Long? ?: Long.MAX_VALUE
 
     /** Returns `true` if the complication contains a dynamic value that needs to be evaluated. */
-    fun hasDynamicValues(): Boolean =
+    public fun hasDynamicValues(): Boolean =
         (hasRangedDynamicValue() && rangedDynamicValue != null) ||
             (hasLongText() && longText?.dynamicValue != null) ||
             (hasLongTitle() && longTitle?.dynamicValue != null) ||
@@ -1136,7 +1178,7 @@ private constructor(
      * Returns true if the complication data contains at least one text field with a value that may
      * change based on the current time.
      */
-    val isTimeDependent: Boolean
+    public val isTimeDependent: Boolean
         get() =
             isTimeDependentField(FIELD_SHORT_TEXT) ||
                 isTimeDependentField(FIELD_SHORT_TITLE) ||
@@ -1148,7 +1190,7 @@ private constructor(
         return text != null && text.isTimeDependent
     }
 
-    override fun toString() =
+    override fun toString(): String =
         if (shouldRedact()) {
             "ComplicationData{mType=$type, mFields=REDACTED}"
         } else {
@@ -1156,7 +1198,7 @@ private constructor(
         }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    fun toStringNoRedaction() = "ComplicationData{mType=$type, mFields=$fields}"
+    public fun toStringNoRedaction(): String = "ComplicationData{mType=$type, mFields=$fields}"
 
     override fun equals(other: Any?): Boolean =
         other is ComplicationData &&
@@ -1180,7 +1222,7 @@ private constructor(
             (!isFieldValidForType(EXP_FIELD_LIST_ENTRIES, type) || listEntries == other.listEntries)
 
     /** Similar to [equals], but avoids comparing evaluated fields (if dynamic values exist). */
-    infix fun equalsUnevaluated(other: ComplicationData): Boolean =
+    public infix fun equalsUnevaluated(other: ComplicationData): Boolean =
         equalsWithoutDynamicValues(other) &&
             if (!isFieldValidForType(FIELD_DYNAMIC_VALUE, type) || rangedDynamicValue == null) {
                 !isFieldValidForType(FIELD_VALUE, type) || rangedValue == other.rangedValue
@@ -1286,7 +1328,9 @@ private constructor(
                 (!isFieldValidForType(FIELD_START_TIME, type) ||
                     startDateTimeMillis == other.startDateTimeMillis) &&
                 (!isFieldValidForType(FIELD_END_TIME, type) ||
-                    endDateTimeMillis == other.endDateTimeMillis))
+                    endDateTimeMillis == other.endDateTimeMillis) &&
+                (!isFieldValidForType(FIELD_EXTRAS, type) ||
+                    PersistableBundleHelper.equals(extras, other.extras)))
 
     override fun hashCode(): Int =
         Objects.hash(
@@ -1379,31 +1423,48 @@ private constructor(
             if (isFieldValidForType(FIELD_DISPLAY_POLICY, type)) displayPolicy else null,
             if (isFieldValidForType(FIELD_START_TIME, type)) startDateTimeMillis else null,
             if (isFieldValidForType(FIELD_END_TIME, type)) endDateTimeMillis else null,
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                // PersistableBundle does not implement hashCode
+                PersistableBundleHelper.hashCode(extras)
+            } else {
+                null
+            },
         )
 
     /** Builder class for [ComplicationData]. */
-    class Builder(
+    public class Builder(
         @ComplicationType internal val type: Int,
         internal val fields: MutableMap<String, Any>,
     ) {
         /** Creates a builder from given [ComplicationData], copying its type and data. */
-        constructor(data: ComplicationData) : this(data.type, data.fields.toMutableMap())
+        public constructor(data: ComplicationData) : this(data.type, data.fields.toMutableMap())
 
-        constructor(@ComplicationType type: Int) : this(type, mutableMapOf()) {
+        public constructor(@ComplicationType type: Int) : this(type, mutableMapOf()) {
             if (type == TYPE_SMALL_IMAGE || type == TYPE_LONG_TEXT) {
                 setSmallImageStyle(IMAGE_STYLE_PHOTO)
             }
         }
 
-        /** Sets the complication's [ComplicationPersistencePolicy]. */
-        fun setPersistencePolicy(@ComplicationPersistencePolicy cachePolicy: Int) = apply {
-            fields[FIELD_PERSISTENCE_POLICY] = cachePolicy
+        /** Sets any extras. */
+        public fun setExtras(extras: PersistableBundle): Builder = apply {
+            if (extras.isEmpty) {
+                fields.remove(FIELD_EXTRAS)
+            } else {
+                fields[FIELD_EXTRAS] = extras
+            }
         }
 
+        /** Sets the complication's [ComplicationPersistencePolicy]. */
+        public fun setPersistencePolicy(@ComplicationPersistencePolicy cachePolicy: Int): Builder =
+            apply {
+                fields[FIELD_PERSISTENCE_POLICY] = cachePolicy
+            }
+
         /** Sets the complication's [ComplicationDisplayPolicy]. */
-        fun setDisplayPolicy(@ComplicationDisplayPolicy displayPolicy: Int) = apply {
-            fields[FIELD_DISPLAY_POLICY] = displayPolicy
-        }
+        public fun setDisplayPolicy(@ComplicationDisplayPolicy displayPolicy: Int): Builder =
+            apply {
+                fields[FIELD_DISPLAY_POLICY] = displayPolicy
+            }
 
         /**
          * Sets the start time for this complication data. This is optional for any type.
@@ -1414,7 +1475,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setStartDateTimeMillis(startDateTimeMillis: Long) = apply {
+        public fun setStartDateTimeMillis(startDateTimeMillis: Long): Builder = apply {
             fields[FIELD_START_TIME] = startDateTimeMillis
         }
 
@@ -1423,7 +1484,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun clearStartDateTime() = apply { fields.remove(FIELD_START_TIME) }
+        public fun clearStartDateTime(): Builder = apply { fields.remove(FIELD_START_TIME) }
 
         /**
          * Sets the end time for this complication data. This is optional for any type.
@@ -1435,7 +1496,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setEndDateTimeMillis(endDateTimeMillis: Long) = apply {
+        public fun setEndDateTimeMillis(endDateTimeMillis: Long): Builder = apply {
             fields[FIELD_END_TIME] = endDateTimeMillis
         }
 
@@ -1444,7 +1505,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun clearEndDateTime() = apply { fields.remove(FIELD_END_TIME) }
+        public fun clearEndDateTime(): Builder = apply { fields.remove(FIELD_END_TIME) }
 
         /**
          * Sets the *value* field. This is required for the [TYPE_RANGED_VALUE] type, and the
@@ -1460,7 +1521,9 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedValue(value: Float?) = apply { putOrRemoveField(FIELD_VALUE, value) }
+        public fun setRangedValue(value: Float?): Builder = apply {
+            putOrRemoveField(FIELD_VALUE, value)
+        }
 
         /**
          * Sets the *dynamicValue* field. It is evaluated to a value with the same limitations as
@@ -1470,7 +1533,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedDynamicValue(value: DynamicFloat?) = apply {
+        public fun setRangedDynamicValue(value: DynamicFloat?): Builder = apply {
             putOrRemoveField(FIELD_DYNAMIC_VALUE, value)
         }
 
@@ -1478,7 +1541,9 @@ private constructor(
          * Sets the *value type* field which provides meta data about the value. This is optional
          * for the [TYPE_RANGED_VALUE] type.
          */
-        fun setRangedValueType(valueType: Int) = apply { putField(FIELD_VALUE_TYPE, valueType) }
+        public fun setRangedValueType(valueType: Int): Builder = apply {
+            putField(FIELD_VALUE_TYPE, valueType)
+        }
 
         /**
          * Sets the *min value* field. This is required for the [TYPE_RANGED_VALUE] type, and is not
@@ -1490,7 +1555,9 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedMinValue(minValue: Float) = apply { putField(FIELD_MIN_VALUE, minValue) }
+        public fun setRangedMinValue(minValue: Float): Builder = apply {
+            putField(FIELD_MIN_VALUE, minValue)
+        }
 
         /**
          * Sets the *max value* field. This is required for the [TYPE_RANGED_VALUE] type, and is not
@@ -1502,7 +1569,9 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedMaxValue(maxValue: Float) = apply { putField(FIELD_MAX_VALUE, maxValue) }
+        public fun setRangedMaxValue(maxValue: Float): Builder = apply {
+            putField(FIELD_MAX_VALUE, maxValue)
+        }
 
         /**
          * Sets the *targetValue* field. This is required for the [TYPE_GOAL_PROGRESS] type, and is
@@ -1514,7 +1583,9 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setTargetValue(targetValue: Float) = apply { putField(FIELD_TARGET_VALUE, targetValue) }
+        public fun setTargetValue(targetValue: Float): Builder = apply {
+            putField(FIELD_TARGET_VALUE, targetValue)
+        }
 
         /**
          * Sets the *long title* field. This is optional for the [TYPE_LONG_TEXT] type, and is not
@@ -1527,7 +1598,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setLongTitle(longTitle: ComplicationText?) = apply {
+        public fun setLongTitle(longTitle: ComplicationText?): Builder = apply {
             putOrRemoveField(FIELD_LONG_TITLE, longTitle)
         }
 
@@ -1542,7 +1613,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setLongText(longText: ComplicationText?) = apply {
+        public fun setLongText(longText: ComplicationText?): Builder = apply {
             putOrRemoveField(FIELD_LONG_TEXT, longText)
         }
 
@@ -1561,7 +1632,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setShortTitle(shortTitle: ComplicationText?) = apply {
+        public fun setShortTitle(shortTitle: ComplicationText?): Builder = apply {
             putOrRemoveField(FIELD_SHORT_TITLE, shortTitle)
         }
 
@@ -1581,7 +1652,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setShortText(shortText: ComplicationText?) = apply {
+        public fun setShortText(shortText: ComplicationText?): Builder = apply {
             putOrRemoveField(FIELD_SHORT_TEXT, shortText)
         }
 
@@ -1599,7 +1670,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setIcon(icon: Icon?) = apply { putOrRemoveField(FIELD_ICON, icon) }
+        public fun setIcon(icon: Icon?): Builder = apply { putOrRemoveField(FIELD_ICON, icon) }
 
         /**
          * Sets the burn-in protection version of the *icon* field. This should be provided if the
@@ -1618,7 +1689,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setBurnInProtectionIcon(icon: Icon?) = apply {
+        public fun setBurnInProtectionIcon(icon: Icon?): Builder = apply {
             putOrRemoveField(FIELD_ICON_BURN_IN_PROTECTION, icon)
         }
 
@@ -1630,7 +1701,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setSmallImage(smallImage: Icon?) = apply {
+        public fun setSmallImage(smallImage: Icon?): Builder = apply {
             putOrRemoveField(FIELD_SMALL_IMAGE, smallImage)
         }
 
@@ -1648,7 +1719,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setBurnInProtectionSmallImage(smallImage: Icon?) = apply {
+        public fun setBurnInProtectionSmallImage(smallImage: Icon?): Builder = apply {
             putOrRemoveField(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION, smallImage)
         }
 
@@ -1664,7 +1735,7 @@ private constructor(
          * @see .IMAGE_STYLE_PHOTO which can be cropped but not recolored.
          * @see .IMAGE_STYLE_ICON which can be recolored but not cropped.
          */
-        fun setSmallImageStyle(@ImageStyle imageStyle: Int) = apply {
+        public fun setSmallImageStyle(@ImageStyle imageStyle: Int): Builder = apply {
             putField(FIELD_IMAGE_STYLE, imageStyle)
         }
 
@@ -1678,7 +1749,7 @@ private constructor(
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setLargeImage(largeImage: Icon?) = apply {
+        public fun setLargeImage(largeImage: Icon?): Builder = apply {
             putOrRemoveField(FIELD_LARGE_IMAGE, largeImage)
         }
 
@@ -1688,7 +1759,7 @@ private constructor(
          * Valid only if the type of this complication data is [EXP_TYPE_LIST]. Otherwise returns
          * zero.
          */
-        fun setListStyleHint(listStyleHint: Int) = apply {
+        public fun setListStyleHint(listStyleHint: Int): Builder = apply {
             putField(EXP_FIELD_LIST_STYLE_HINT, listStyleHint)
         }
 
@@ -1700,7 +1771,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setTapAction(pendingIntent: PendingIntent?) = apply {
+        public fun setTapAction(pendingIntent: PendingIntent?): Builder = apply {
             putOrRemoveField(FIELD_TAP_ACTION, pendingIntent)
         }
 
@@ -1719,7 +1790,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setContentDescription(description: ComplicationText?) = apply {
+        public fun setContentDescription(description: ComplicationText?): Builder = apply {
             putOrRemoveField(FIELD_CONTENT_DESCRIPTION, description)
         }
 
@@ -1728,7 +1799,9 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setTapActionLostDueToSerialization(tapActionLostDueToSerialization: Boolean) = apply {
+        public fun setTapActionLostDueToSerialization(
+            tapActionLostDueToSerialization: Boolean
+        ): Builder = apply {
             if (tapActionLostDueToSerialization) {
                 fields[FIELD_TAP_ACTION_LOST] = true
             } else {
@@ -1741,7 +1814,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setPlaceholder(placeholder: ComplicationData?) = apply {
+        public fun setPlaceholder(placeholder: ComplicationData?): Builder = apply {
             if (placeholder == null) {
                 fields.remove(FIELD_PLACEHOLDER_FIELDS)
                 fields.remove(FIELD_PLACEHOLDER_TYPE)
@@ -1757,7 +1830,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setInvalidatedData(invalidatedData: ComplicationData?) = apply {
+        public fun setInvalidatedData(invalidatedData: ComplicationData?): Builder = apply {
             if (invalidatedData == null) {
                 fields.remove(FIELD_ORIGINAL_FIELDS)
                 fields.remove(FIELD_ORIGINAL_TYPE)
@@ -1774,7 +1847,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setDataSource(provider: ComponentName?) = apply {
+        public fun setDataSource(provider: ComponentName?): Builder = apply {
             putOrRemoveField(FIELD_DATA_SOURCE, provider)
         }
 
@@ -1783,7 +1856,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setAmbientLayout(ambientProtoLayout: ByteArray) = apply {
+        public fun setAmbientLayout(ambientProtoLayout: ByteArray): Builder = apply {
             putField(EXP_FIELD_PROTO_LAYOUT_AMBIENT, ambientProtoLayout)
         }
 
@@ -1792,7 +1865,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setInteractiveLayout(protoLayout: ByteArray) = apply {
+        public fun setInteractiveLayout(protoLayout: ByteArray): Builder = apply {
             putField(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, protoLayout)
         }
 
@@ -1801,7 +1874,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setLayoutResources(resources: ByteArray) = apply {
+        public fun setLayoutResources(resources: ByteArray): Builder = apply {
             putField(EXP_FIELD_PROTO_LAYOUT_RESOURCES, resources)
         }
 
@@ -1810,7 +1883,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setColorRamp(colorRamp: IntArray?) = apply {
+        public fun setColorRamp(colorRamp: IntArray?): Builder = apply {
             putOrRemoveField(FIELD_COLOR_RAMP, colorRamp)
         }
 
@@ -1820,8 +1893,8 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setColorRampIsSmoothShaded(isSmoothShaded: Boolean?) = apply {
-            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isSmoothShaded)
+        public fun setColorRampInterpolated(isColorRampInterpolated: Boolean?): Builder = apply {
+            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isColorRampInterpolated)
         }
 
         /**
@@ -1829,20 +1902,21 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setListEntryCollection(listEntries: Collection<ComplicationData>?) = apply {
-            if (listEntries == null) {
-                fields.remove(EXP_FIELD_LIST_ENTRIES)
-            } else {
-                fields[EXP_FIELD_LIST_ENTRIES] = listEntries.toList()
+        public fun setListEntryCollection(listEntries: Collection<ComplicationData>?): Builder =
+            apply {
+                if (listEntries == null) {
+                    fields.remove(EXP_FIELD_LIST_ENTRIES)
+                } else {
+                    fields[EXP_FIELD_LIST_ENTRIES] = listEntries.toList()
+                }
             }
-        }
 
         /**
          * Sets the element weights for this complication.
          *
          * Returns this Builder to allow chaining.
          */
-        fun setElementWeights(elementWeights: FloatArray?) = apply {
+        public fun setElementWeights(elementWeights: FloatArray?): Builder = apply {
             putOrRemoveField(FIELD_ELEMENT_WEIGHTS, elementWeights)
         }
 
@@ -1851,7 +1925,7 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setElementColors(elementColors: IntArray?) = apply {
+        public fun setElementColors(elementColors: IntArray?): Builder = apply {
             putOrRemoveField(FIELD_ELEMENT_COLORS, elementColors)
         }
 
@@ -1860,9 +1934,10 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setElementBackgroundColor(@ColorInt elementBackgroundColor: Int) = apply {
-            putOrRemoveField(FIELD_ELEMENT_BACKGROUND_COLOR, elementBackgroundColor)
-        }
+        public fun setElementBackgroundColor(@ColorInt elementBackgroundColor: Int): Builder =
+            apply {
+                putOrRemoveField(FIELD_ELEMENT_BACKGROUND_COLOR, elementBackgroundColor)
+            }
 
         /**
          * Constructs and returns [ComplicationData] with the provided fields. All required fields
@@ -1870,30 +1945,29 @@ private constructor(
          *
          * @throws IllegalStateException if the required fields have not been populated
          */
-        fun build(): ComplicationData {
+        public fun build(): ComplicationData {
             // Validate.
-            for (requiredField in REQUIRED_FIELDS[type]!!) {
-                check(fields.containsKey(requiredField)) {
-                    "Field $requiredField is required for type $type"
-                }
-                check(
-                    !(fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION) &&
-                        !fields.containsKey(FIELD_ICON))
-                ) {
-                    "Field ICON must be provided when field ICON_BURN_IN_PROTECTION is provided."
-                }
-                check(
-                    !(fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION) &&
-                        !fields.containsKey(FIELD_SMALL_IMAGE))
-                ) {
-                    "Field SMALL_IMAGE must be provided when field SMALL_IMAGE_BURN_IN_PROTECTION" +
-                        " is provided."
-                }
+            check(REQUIRED_FIELDS[type]!!.all { fields.containsKey(it) }) {
+                val missingField = REQUIRED_FIELDS[type]!!.first { !fields.containsKey(it) }
+                "Field $missingField is required for type $type"
             }
-            for (requiredOneOfFieldGroup in REQUIRED_ONE_OF_FIELDS[type]!!) {
-                check(requiredOneOfFieldGroup.count { fields.containsKey(it) } >= 1) {
-                    "One of $requiredOneOfFieldGroup must be provided."
-                }
+            check(
+                !(fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION) &&
+                    !fields.containsKey(FIELD_ICON))
+            ) {
+                "Field ICON must be provided when field ICON_BURN_IN_PROTECTION is provided."
+            }
+            check(
+                !(fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION) &&
+                    !fields.containsKey(FIELD_SMALL_IMAGE))
+            ) {
+                "Field SMALL_IMAGE must be provided when field SMALL_IMAGE_BURN_IN_PROTECTION" +
+                    " is provided."
+            }
+            check(REQUIRED_ONE_OF_FIELDS[type]!!.all { group -> group.any(fields::containsKey) }) {
+                val missingField =
+                    REQUIRED_ONE_OF_FIELDS[type]!!.first { grp -> grp.none(fields::containsKey) }
+                "One of $missingField must be provided."
             }
             return ComplicationData(this)
         }
@@ -1914,9 +1988,9 @@ private constructor(
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "ComplicationData"
-        const val PLACEHOLDER_STRING = "__placeholder__"
+        public const val PLACEHOLDER_STRING: String = "__placeholder__"
 
         /**
          * Type sent when a complication does not have a provider configured. The system will send
@@ -1926,7 +2000,7 @@ private constructor(
          *
          * No fields may be populated for complication data of this type.
          */
-        const val TYPE_NOT_CONFIGURED = 1
+        public const val TYPE_NOT_CONFIGURED: Int = 1
 
         /**
          * Type sent when the user has specified that an active complication should have no
@@ -1935,7 +2009,7 @@ private constructor(
          *
          * No fields may be populated for complication data of this type.
          */
-        const val TYPE_EMPTY = 2
+        public const val TYPE_EMPTY: Int = 2
 
         /**
          * Type that can be sent by any provider, regardless of the configured type, when the
@@ -1944,7 +2018,7 @@ private constructor(
          *
          * No fields may be populated for complication data of this type.
          */
-        const val TYPE_NO_DATA = 10
+        public const val TYPE_NO_DATA: Int = 10
 
         /**
          * Type used for complications where the primary piece of data is a short piece of text
@@ -1958,7 +2032,7 @@ private constructor(
          * type. If only one of these is provided, it is expected that it will be displayed. If both
          * are provided, it is expected that one of these will be displayed.
          */
-        const val TYPE_SHORT_TEXT = 3
+        public const val TYPE_SHORT_TEXT: Int = 3
 
         /**
          * Type used for complications where the primary piece of data is a piece of text. The text
@@ -1972,7 +2046,7 @@ private constructor(
          * The *icon* (and *burnInProtectionIcon*) and *small image* fields are also optional for
          * this type. If provided, at least one of these should be displayed.
          */
-        const val TYPE_LONG_TEXT = 4
+        public const val TYPE_LONG_TEXT: Int = 4
 
         /**
          * Type used for complications including a numerical value within a range, such as a
@@ -1985,7 +2059,7 @@ private constructor(
          * optional for this type, but at least one must be defined. The watch face may choose which
          * of these fields to display, if any.
          */
-        const val TYPE_RANGED_VALUE = 5
+        public const val TYPE_RANGED_VALUE: Int = 5
 
         /**
          * Type used for complications which consist only of a tintable icon.
@@ -2000,7 +2074,7 @@ private constructor(
          *
          * No other fields are valid for this type.
          */
-        const val TYPE_ICON = 6
+        public const val TYPE_ICON: Int = 6
 
         /**
          * Type used for complications which consist only of a small image.
@@ -2015,7 +2089,7 @@ private constructor(
          *
          * No other fields are valid for this type.
          */
-        const val TYPE_SMALL_IMAGE = 7
+        public const val TYPE_SMALL_IMAGE: Int = 7
 
         /**
          * Type used for complications which consist only of a large image. A large image here is
@@ -2030,7 +2104,7 @@ private constructor(
          *
          * No other fields are valid for this type.
          */
-        const val TYPE_LARGE_IMAGE = 8
+        public const val TYPE_LARGE_IMAGE: Int = 8
 
         /**
          * Type sent by the system when the watch face does not have permission to receive
@@ -2043,7 +2117,7 @@ private constructor(
          * It is recommended that, where possible, tapping on the complication when in this state
          * should trigger a permission request.
          */
-        const val TYPE_NO_PERMISSION = 9
+        public const val TYPE_NO_PERMISSION: Int = 9
 
         /**
          * Type used for complications which indicate progress towards a goal. The value may be
@@ -2057,7 +2131,7 @@ private constructor(
          * optional for this type, but at least one must be defined. The watch face may choose which
          * of these fields to display, if any.
          */
-        const val TYPE_GOAL_PROGRESS = 13
+        public const val TYPE_GOAL_PROGRESS: Int = 13
 
         /**
          * Type used for complications to display a series of weighted values e.g. in a pie chart.
@@ -2070,14 +2144,14 @@ private constructor(
          * optional for this type, but at least one must be defined. The watch face may choose which
          * of these fields to display, if any.
          */
-        const val TYPE_WEIGHTED_ELEMENTS = 14
+        public const val TYPE_WEIGHTED_ELEMENTS: Int = 14
 
         // The following types are experimental, and they have negative IDs.
         /** Type that specifies a proto layout based complication. */
-        const val EXP_TYPE_PROTO_LAYOUT = -11
+        public const val EXP_TYPE_PROTO_LAYOUT: Int = -11
 
         /** Type that specifies a list of complication values. E.g. to support linear 3. */
-        const val EXP_TYPE_LIST = -12
+        public const val EXP_TYPE_LIST: Int = -12
 
         /**
          * Style for small images which are photos that are expected to fill the space available.
@@ -2086,7 +2160,7 @@ private constructor(
          *
          * This is the default value.
          */
-        const val IMAGE_STYLE_PHOTO = 1
+        public const val IMAGE_STYLE_PHOTO: Int = 1
 
         /**
          * Style for small images that have a transparent background and are expected to be drawn
@@ -2094,7 +2168,7 @@ private constructor(
          * when drawing these images, but should never crop these images. Icons may be recolored to
          * fit the complication style.
          */
-        const val IMAGE_STYLE_ICON = 2
+        public const val IMAGE_STYLE_ICON: Int = 2
         private const val FIELD_COLOR_RAMP = "COLOR_RAMP"
         private const val FIELD_COLOR_RAMP_INTERPOLATED = "COLOR_RAMP_INTERPOLATED"
         private const val FIELD_DATA_SOURCE = "FIELD_DATA_SOURCE"
@@ -2103,6 +2177,7 @@ private constructor(
         private const val FIELD_ELEMENT_COLORS = "ELEMENT_COLORS"
         private const val FIELD_ELEMENT_WEIGHTS = "ELEMENT_WEIGHTS"
         private const val FIELD_END_TIME = "END_TIME"
+        private const val FIELD_EXTRAS = "EXTRAS"
         private const val FIELD_ICON = "ICON"
         private const val FIELD_ICON_BURN_IN_PROTECTION = "ICON_BURN_IN_PROTECTION"
         private const val FIELD_IMAGE_STYLE = "IMAGE_STYLE"
@@ -2225,6 +2300,7 @@ private constructor(
                 FIELD_TIMELINE_END_TIME,
                 FIELD_START_TIME,
                 FIELD_END_TIME,
+                FIELD_EXTRAS,
                 FIELD_TIMELINE_ENTRIES,
                 FIELD_TIMELINE_ENTRY_TYPE,
                 // Placeholder or fallback.
@@ -2272,20 +2348,10 @@ private constructor(
                         FIELD_COLOR_RAMP_INTERPOLATED,
                         FIELD_VALUE_TYPE,
                     ),
-                TYPE_ICON to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        FIELD_ICON_BURN_IN_PROTECTION,
-                    ),
+                TYPE_ICON to setOf(*COMMON_OPTIONAL_FIELDS, FIELD_ICON_BURN_IN_PROTECTION),
                 TYPE_SMALL_IMAGE to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                    ),
-                TYPE_LARGE_IMAGE to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                    ),
+                    setOf(*COMMON_OPTIONAL_FIELDS, FIELD_SMALL_IMAGE_BURN_IN_PROTECTION),
+                TYPE_LARGE_IMAGE to setOf(*COMMON_OPTIONAL_FIELDS),
                 TYPE_NO_PERMISSION to
                     setOf(
                         *COMMON_OPTIONAL_FIELDS,
@@ -2331,15 +2397,8 @@ private constructor(
                         EXP_FIELD_PROTO_LAYOUT_INTERACTIVE,
                         EXP_FIELD_PROTO_LAYOUT_RESOURCES,
                     ),
-                EXP_TYPE_PROTO_LAYOUT to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                    ),
-                EXP_TYPE_LIST to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        EXP_FIELD_LIST_STYLE_HINT,
-                    ),
+                EXP_TYPE_PROTO_LAYOUT to setOf(*COMMON_OPTIONAL_FIELDS),
+                EXP_TYPE_LIST to setOf(*COMMON_OPTIONAL_FIELDS, EXP_FIELD_LIST_STYLE_HINT),
                 TYPE_GOAL_PROGRESS to
                     setOf(
                         *COMMON_OPTIONAL_FIELDS,
@@ -2367,7 +2426,7 @@ private constructor(
             )
 
         @JvmField
-        val CREATOR =
+        public val CREATOR: Parcelable.Creator<ComplicationData> =
             object : Parcelable.Creator<ComplicationData> {
                 override fun createFromParcel(source: Parcel) = ComplicationData(source)
 
@@ -2388,10 +2447,7 @@ private constructor(
                         ComplicationData(bundle.getInt(typeKey), bundle.getBundle(fieldsKey)!!)
                 }
             }
-            fun putComplicationDataArrayFromBundle(
-                arrayKey: String,
-                entryTypeKey: String,
-            ) {
+            fun putComplicationDataArrayFromBundle(arrayKey: String, entryTypeKey: String) {
                 putFromBundle(arrayKey) { key ->
                     @Suppress("DEPRECATION")
                     bundle.getParcelableArray(key)?.map {
@@ -2411,6 +2467,7 @@ private constructor(
             }
             putFromBundle(FIELD_START_TIME) { bundle.getLong(it, 0) }
             putFromBundle(FIELD_END_TIME) { bundle.getLong(it, Long.MAX_VALUE) }
+            putFromBundle(FIELD_EXTRAS) { GetParcelableHelper.getPersistableBundle(bundle, it) }
             putFromBundle(FIELD_VALUE, bundle::getFloat)
             putFromBundle(FIELD_DYNAMIC_VALUE) { key ->
                 bundle.getByteArray(key)?.let { DynamicFloat.fromByteArray(it) }
@@ -2493,10 +2550,7 @@ private constructor(
                     bundle.putBundle(fieldsKey, (fields[fieldsKey] as ComplicationData).bundle)
                 }
             }
-            fun putComplicationDataArrayFromFields(
-                arrayKey: String,
-                entryTypeKey: String,
-            ) {
+            fun putComplicationDataArrayFromFields(arrayKey: String, entryTypeKey: String) {
                 if (arrayKey in fields) {
                     @Suppress("UNCHECKED_CAST")
                     bundle.putParcelableArray(
@@ -2506,7 +2560,7 @@ private constructor(
                                 it.bundle.putInt(entryTypeKey, it.type)
                                 it.bundle
                             }
-                            .toTypedArray()
+                            .toTypedArray(),
                     )
                 }
             }
@@ -2516,6 +2570,9 @@ private constructor(
             putFromFields(FIELD_DISPLAY_POLICY, bundle::putInt)
             putFromFields(FIELD_START_TIME, bundle::putLong)
             putFromFields(FIELD_END_TIME, bundle::putLong)
+            putFromFields<PersistableBundle>(FIELD_EXTRAS) { key, value ->
+                bundle.putParcelable(key, value)
+            }
             putFromFields(FIELD_VALUE, bundle::putFloat)
             putFromFields<DynamicFloat>(FIELD_DYNAMIC_VALUE) { key, value ->
                 bundle.putByteArray(key, value.toDynamicFloatByteArray())
@@ -2578,12 +2635,12 @@ private constructor(
                     TAG,
                     "Could not unparcel ComplicationData. Provider apps must exclude wearable " +
                         "support complication classes from proguard.",
-                    e
+                    e,
                 )
                 null
             }
 
-        fun isFieldValidForType(field: String, @ComplicationType type: Int): Boolean {
+        public fun isFieldValidForType(field: String, @ComplicationType type: Int): Boolean {
             return REQUIRED_FIELDS[type]!!.contains(field) ||
                 REQUIRED_ONE_OF_FIELDS[type]!!.any { it.contains(field) } ||
                 OPTIONAL_FIELDS[type]!!.contains(field)
@@ -2616,15 +2673,81 @@ private constructor(
         }
 
         /** Returns whether or not we should redact complication data in toString(). */
-        @JvmStatic fun shouldRedact() = !Log.isLoggable(TAG, Log.DEBUG)
+        @JvmStatic
+        public fun shouldRedact(): Boolean =
+            !Log.isLoggable(TAG, Log.DEBUG) && !Build.TYPE.equals("userdebug")
 
         @JvmStatic
-        fun maybeRedact(unredacted: CharSequence?): String =
+        public fun maybeRedact(unredacted: CharSequence?): String =
             if (unredacted == null) "(null)" else maybeRedact(unredacted.toString())
 
         @JvmSynthetic
         private fun maybeRedact(unredacted: String): String =
             if (!shouldRedact() || unredacted == PLACEHOLDER_STRING) unredacted else "REDACTED"
+    }
+}
+
+internal object GetParcelableHelperApi33 {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun getPersistableBundle(bundle: Bundle, key: String) =
+        bundle.getParcelable(key, PersistableBundle::class.java)
+}
+
+internal object GetParcelableHelper {
+    @Suppress("deprecation")
+    fun getPersistableBundle(bundle: Bundle, key: String): PersistableBundle? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return GetParcelableHelperApi33.getPersistableBundle(bundle, key)
+        } else {
+            return bundle.getParcelable(key) as PersistableBundle?
+        }
+    }
+}
+
+/** [PersistableBundle] doesn't implement equals or hashCode, but we need them. */
+internal object PersistableBundleHelper {
+    @Suppress("deprecation")
+    fun equals(a: PersistableBundle?, b: PersistableBundle?): Boolean {
+        if (a === b) {
+            return true
+        }
+        if (a == null || b == null) {
+            return false
+        }
+        if (a.size() != b.size()) {
+            return false
+        }
+        for (key in a.keySet()) {
+            val aVal = a.get(key)!!
+            val bVal = b.get(key) ?: return false
+            if (aVal is PersistableBundle && bVal is PersistableBundle) {
+                if (!equals(aVal, bVal)) {
+                    return false
+                }
+            } else {
+                if (aVal != bVal) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    @Suppress("deprecation")
+    fun hashCode(bundle: PersistableBundle?): Int {
+        if (bundle == null) {
+            return -1
+        }
+        var hash = 0
+        for (key in bundle.keySet()) {
+            val v = bundle.get(key)!!
+            if (v is PersistableBundle) {
+                hash = hash * 33 + hashCode(v)
+            } else {
+                hash = hash * 33 + v.hashCode()
+            }
+        }
+        return hash
     }
 }
 

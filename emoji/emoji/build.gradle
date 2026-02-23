@@ -1,12 +1,15 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
+import org.gradle.work.DisableCachingByDefault
+
+import javax.inject.Inject
 
 plugins {
     id("AndroidXPlugin")
@@ -25,6 +28,7 @@ BundleInsideHelper.forInsideAar(
 )
 
 dependencies {
+    api(libs.jspecify)
     bundleInside(project(":noto-emoji-compat-flatbuffers"))
 
     api("androidx.core:core:1.3.0")
@@ -34,35 +38,39 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {
-    sourceSets {
-        main {
-            res.srcDirs += "src/main/res-public"
-            resources {
-                srcDirs += [fontDir.getAbsolutePath()]
-                includes += ["LICENSE_UNICODE", "LICENSE_OFL"]
-            }
-        }
+    namespace = "androidx.emoji"
+}
 
-        androidTest {
-            assets {
-                srcDirs = [new File(fontDir, "font").getAbsolutePath(),
-                           new File(fontDir, "supported-emojis").getAbsolutePath()]
-            }
+def copyFontLicenses = tasks.register("copyFontLicenses", LicenseCopyTask) { task ->
+    task.description = "Copies specific font license files for inclusion in resources"
+    task.inputDir.set(fontDir)
+    task.outputDir.set(layout.buildDirectory.dir("generated/resources/font-licenses"))
+}
+
+androidComponents {
+    def fontPath = new File(fontDir, "font").getAbsolutePath()
+    def emojiPath = new File(fontDir, "supported-emojis").getAbsolutePath()
+
+    onVariants(selector().all()) { variant ->
+        variant.sources.resources.addGeneratedSourceDirectory(copyFontLicenses) { task ->
+            task.outputDir
         }
+        def testAssets = (variant as HasAndroidTest).androidTest.sources.assets
+        testAssets.addStaticSourceDirectory(fontPath)
+        testAssets.addStaticSourceDirectory(emojiPath)
     }
-    namespace "androidx.emoji"
 }
 
 androidx {
     name = "Emoji"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.EMOJI
     inceptionYear = "2017"
     description = "Core library to enable emoji compatibility in Kitkat and newer devices to avoid the empty emoji characters."
@@ -75,5 +83,26 @@ androidx {
     extraLicense {
         name = "Unicode, Inc. License"
         url = "https://www.unicode.org/license.html"
+    }
+}
+
+@DisableCachingByDefault(because = "Primarily filesystem operations")
+abstract class LicenseCopyTask extends DefaultTask {
+    @InputDirectory
+    abstract DirectoryProperty getInputDir()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @Inject
+    abstract FileSystemOperations getFileSystemOperations()
+
+    @TaskAction
+    void taskAction() {
+        getFileSystemOperations().copy {
+            from(inputDir)
+            include("LICENSE_UNICODE", "LICENSE_OFL")
+            into(outputDir)
+        }
     }
 }

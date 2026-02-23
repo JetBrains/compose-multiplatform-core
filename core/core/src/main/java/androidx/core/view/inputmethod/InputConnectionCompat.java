@@ -37,14 +37,15 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
 import android.view.inputmethod.InputContentInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
 import androidx.core.view.ContentInfoCompat;
 import androidx.core.view.OnReceiveContentListener;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link InputConnection} introduced after API level 13 in a
@@ -265,8 +266,7 @@ public final class InputConnectionCompat {
      * {@link ViewCompat#setOnReceiveContentListener} instead.
      */
     @Deprecated
-    @NonNull
-    public static InputConnection createWrapper(@NonNull InputConnection inputConnection,
+    public static @NonNull InputConnection createWrapper(@NonNull InputConnection inputConnection,
             @NonNull EditorInfo editorInfo,
             @NonNull OnCommitContentListener onCommitContentListener) {
         ObjectsCompat.requireNonNull(inputConnection, "inputConnection must be non-null");
@@ -341,8 +341,7 @@ public final class InputConnectionCompat {
      * @return A wrapper {@link InputConnection} object that can be returned to the IME.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static InputConnection createWrapper(@NonNull View view,
+    public static @NonNull InputConnection createWrapper(@NonNull View view,
             @NonNull InputConnection inputConnection, @NonNull EditorInfo editorInfo) {
         OnCommitContentListener onCommitContentListener =
                 createOnCommitContentListenerUsingPerformReceiveContent(view);
@@ -354,9 +353,9 @@ public final class InputConnectionCompat {
      * {@link ViewCompat#performReceiveContent} to insert content. This is useful for widgets
      * that support content insertion using an {@link OnReceiveContentListener}.
      */
-    @NonNull
-    private static OnCommitContentListener createOnCommitContentListenerUsingPerformReceiveContent(
-            @NonNull View view) {
+    private static @NonNull OnCommitContentListener
+            createOnCommitContentListenerUsingPerformReceiveContent(
+                    @NonNull View view) {
         Preconditions.checkNotNull(view);
         return (inputContentInfo, flags, opts) -> {
             Bundle extras = opts;

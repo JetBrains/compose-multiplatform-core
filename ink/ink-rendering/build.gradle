@@ -14,56 +14,52 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
-  id("AndroidXPlugin")
-  id("com.android.library")
+    id("AndroidXPlugin")
 }
 
 androidXMultiplatform {
-  android()
-
-  defaultPlatform(PlatformIdentifier.ANDROID)
-
-  sourceSets {
-
-    androidMain {
-      dependencies {
-        implementation("androidx.collection:collection:1.4.3")
-        implementation(project(":core:core"))
-        implementation(project(":ink:ink-nativeloader"))
-        implementation(project(":ink:ink-geometry"))
-        implementation(project(":ink:ink-brush"))
-        implementation(project(":ink:ink-strokes"))
-      }
+    androidLibrary {
+        namespace = "androidx.ink.rendering"
+        compileSdk { version = release(35) }
+        androidResources.enable = true
     }
 
-    androidInstrumentedTest {
-      dependencies {
-        implementation(libs.testExtJunit)
-        implementation(libs.testRules)
-        implementation(libs.testRunner)
-        implementation(libs.espressoCore)
-        implementation(libs.junit)
-        implementation(libs.truth)
-	implementation(project(":test:screenshot:screenshot"))
-      }
-    }
-  }
-}
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
-android {
-  namespace = "androidx.ink.rendering"
-  compileSdk = 35
-  sourceSets.androidTest.assets.srcDirs +=
-      project.rootDir.absolutePath + "/../../golden/ink/ink-rendering"
+    sourceSets {
+        androidMain.dependencies {
+            implementation("androidx.collection:collection:1.4.3")
+            implementation("androidx.core:core:1.16.0")
+            implementation("androidx.core:core-ktx:1.16.0")
+            implementation(project(":ink:ink-nativeloader"))
+            implementation(project(":ink:ink-geometry"))
+            implementation(project(":ink:ink-brush"))
+            implementation(project(":ink:ink-strokes"))
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testExtJunit)
+            implementation(libs.testRules)
+            implementation(libs.testRunner)
+            implementation(libs.espressoCore)
+            implementation(libs.junit)
+            implementation(libs.kotlinTest)
+            implementation(libs.testParameterInjector)
+            implementation("androidx.core:core-ktx:1.15.0")
+            implementation(project(":test:screenshot:screenshot"))
+            implementation(project(":ink:ink-storage"))
+        }
+    }
 }
 
 androidx {
     name = "Ink Rendering"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Display beautiful strokes"
+    addGoldenImageAssets()
 }

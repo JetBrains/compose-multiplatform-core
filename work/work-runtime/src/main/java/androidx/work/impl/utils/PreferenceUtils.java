@@ -18,17 +18,17 @@ package androidx.work.impl.utils;
 
 import static android.content.Context.MODE_PRIVATE;
 
-
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Transformations;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.work.impl.WorkDatabase;
 import androidx.work.impl.model.Preference;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Preference Utils for WorkManager.
@@ -71,8 +71,7 @@ public class PreferenceUtils {
      * @return A {@link LiveData} of the last time (in milliseconds) a {@code cancelAll} method was
      *         called
      */
-    @NonNull
-    public LiveData<Long> getLastCancelAllTimeMillisLiveData() {
+    public @NonNull LiveData<Long> getLastCancelAllTimeMillisLiveData() {
         LiveData<Long> observableValue =
                 mWorkDatabase.preferenceDao().getObservableLongValue(KEY_LAST_CANCEL_ALL_TIME_MS);
         return Transformations.map(observableValue, (Long value) -> value != null ? value : 0L);

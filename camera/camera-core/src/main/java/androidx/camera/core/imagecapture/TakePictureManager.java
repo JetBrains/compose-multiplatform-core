@@ -17,13 +17,14 @@
 package androidx.camera.core.imagecapture;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -85,29 +86,25 @@ public interface TakePictureManager {
      * Returns the capture request being processed currently.
      */
     @VisibleForTesting
-    @Nullable
-    RequestWithCallback getCapturingRequest();
+    @Nullable RequestWithCallback getCapturingRequest();
 
     /**
      * Returns the requests that have not received a result or an error yet.
      */
-    @NonNull
     @VisibleForTesting
-    List<RequestWithCallback> getIncompleteRequests();
+    @NonNull List<RequestWithCallback> getIncompleteRequests();
 
     /**
      * Returns the {@link ImagePipeline} instance used under the hood.
      */
     @VisibleForTesting
-    @NonNull
-    ImagePipeline getImagePipeline();
+    @NonNull ImagePipeline getImagePipeline();
 
     @AutoValue
     abstract static class CaptureError {
         abstract int getRequestId();
 
-        @NonNull
-        abstract ImageCaptureException getImageCaptureException();
+        abstract @NonNull ImageCaptureException getImageCaptureException();
 
         static CaptureError of(int requestId,
                 @NonNull ImageCaptureException imageCaptureException) {
@@ -126,7 +123,6 @@ public interface TakePictureManager {
          *                                  {@link ImageCapture} instance.
          * @return                          The {@code TakePictureManager} instance.
          */
-        @NonNull
-        TakePictureManager newInstance(@NonNull ImageCaptureControl imageCaptureControl);
+        @NonNull TakePictureManager newInstance(@NonNull ImageCaptureControl imageCaptureControl);
     }
 }

@@ -21,11 +21,11 @@ import android.os.Build;
 import android.util.Log;
 import android.util.LongSparseArray;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import org.jspecify.annotations.NonNull;
+
 import java.lang.reflect.Field;
-import java.util.Map;
 
 class ResourcesFlusher {
     private static final String TAG = "ResourcesFlusher";
@@ -42,45 +42,18 @@ class ResourcesFlusher {
     private static Field sResourcesImplField;
     private static boolean sResourcesImplFieldFetched;
 
-    static void flush(@NonNull final Resources resources) {
+    static void flush(final @NonNull Resources resources) {
         if (Build.VERSION.SDK_INT >= 28) {
             // no-op on P and above
             return;
         } else if (Build.VERSION.SDK_INT >= 24) {
             flushNougats(resources);
-        } else if (Build.VERSION.SDK_INT >= 23) {
+        } else {
             flushMarshmallows(resources);
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            flushLollipops(resources);
         }
     }
 
-    @RequiresApi(21)
-    private static void flushLollipops(@NonNull final Resources resources) {
-        if (!sDrawableCacheFieldFetched) {
-            try {
-                sDrawableCacheField = Resources.class.getDeclaredField("mDrawableCache");
-                sDrawableCacheField.setAccessible(true);
-            } catch (NoSuchFieldException e) {
-                Log.e(TAG, "Could not retrieve Resources#mDrawableCache field", e);
-            }
-            sDrawableCacheFieldFetched = true;
-        }
-        if (sDrawableCacheField != null) {
-            Map drawableCache = null;
-            try {
-                drawableCache = (Map) sDrawableCacheField.get(resources);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "Could not retrieve value from Resources#mDrawableCache", e);
-            }
-            if (drawableCache != null) {
-                drawableCache.clear();
-            }
-        }
-    }
-
-    @RequiresApi(23)
-    private static void flushMarshmallows(@NonNull final Resources resources) {
+    private static void flushMarshmallows(final @NonNull Resources resources) {
         if (!sDrawableCacheFieldFetched) {
             try {
                 sDrawableCacheField = Resources.class.getDeclaredField("mDrawableCache");
@@ -109,7 +82,7 @@ class ResourcesFlusher {
     }
 
     @RequiresApi(24)
-    private static void flushNougats(@NonNull final Resources resources) {
+    private static void flushNougats(final @NonNull Resources resources) {
         if (!sResourcesImplFieldFetched) {
             try {
                 sResourcesImplField = Resources.class.getDeclaredField("mResourcesImpl");
@@ -161,7 +134,7 @@ class ResourcesFlusher {
         }
     }
 
-    private static void flushThemedResourcesCache(@NonNull final Object cache) {
+    private static void flushThemedResourcesCache(final @NonNull Object cache) {
         if (!sThemedResourceCacheClazzFetched) {
             try {
                 sThemedResourceCacheClazz = Class.forName("android.content.res.ThemedResourceCache");

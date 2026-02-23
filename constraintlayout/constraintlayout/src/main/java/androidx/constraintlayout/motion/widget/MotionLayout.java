@@ -33,7 +33,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -49,8 +48,6 @@ import android.view.animation.Interpolator;
 import android.widget.TextView;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.constraintlayout.core.motion.utils.KeyCache;
 import androidx.constraintlayout.core.widgets.ConstraintAnchor;
 import androidx.constraintlayout.core.widgets.ConstraintWidget;
@@ -68,12 +65,14 @@ import androidx.constraintlayout.widget.Constraints;
 import androidx.constraintlayout.widget.R;
 import androidx.core.view.NestedScrollingParent3;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 
 /**
  * A subclass of ConstraintLayout that supports animating between
@@ -3161,7 +3160,7 @@ public class MotionLayout extends ConstraintLayout implements
     public void onNestedPreScroll(@NonNull View target,
                                   int dx,
                                   int dy,
-                                  @NonNull int[] consumed,
+                                  int @NonNull [] consumed,
                                   int type) {
 
         MotionScene scene = mScene;
@@ -3206,16 +3205,14 @@ public class MotionLayout extends ConstraintLayout implements
             float dir = scene.getProgressDirection(dx, dy);
             if ((mTransitionLastPosition <= 0.0f && (dir < 0))
                     || (mTransitionLastPosition >= 1.0f && (dir > 0))) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    target.setNestedScrollingEnabled(false);
-                    // TODO find a better hack
-                    target.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            target.setNestedScrollingEnabled(true);
-                        }
-                    });
-                }
+                target.setNestedScrollingEnabled(false);
+                // TODO find a better hack
+                target.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        target.setNestedScrollingEnabled(true);
+                    }
+                });
                 return;
             }
         }

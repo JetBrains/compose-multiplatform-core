@@ -24,8 +24,8 @@ import android.os.RemoteException;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.IPostMessageService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A service to receive postMessage related communication from a Custom Tabs provider.
@@ -46,11 +46,15 @@ public class PostMessageService extends Service {
                 @NonNull String message, @Nullable Bundle extras) throws RemoteException {
             callback.onPostMessage(message, extras);
         }
+
+        @Override
+        public int getInterfaceVersion() {
+            return super.VERSION;
+        }
     };
 
     @Override
-    @NonNull
-    public IBinder onBind(@Nullable Intent intent) {
+    public @NonNull IBinder onBind(@Nullable Intent intent) {
         return mBinder;
     }
 }

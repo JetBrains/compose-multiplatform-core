@@ -17,7 +17,7 @@
 package androidx.compose.foundation.text.input.internal.undo
 
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.internal.setSelection
+import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.foundation.text.timeNowMillis
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
@@ -44,7 +44,7 @@ internal class TextUndoOperation(
     val preSelection: TextRange,
     val postSelection: TextRange,
     val timeInMillis: Long = timeNowMillis(),
-    val canMerge: Boolean = true
+    val canMerge: Boolean = true,
 ) {
 
     /**
@@ -90,7 +90,7 @@ internal class TextUndoOperation(
                         value.preSelection.end,
                         value.postSelection.start,
                         value.postSelection.end,
-                        value.timeInMillis
+                        value.timeInMillis,
                     )
 
                 override fun restore(value: Any): TextUndoOperation {
@@ -113,7 +113,7 @@ internal class TextUndoOperation(
 internal fun TextFieldState.undo(op: TextUndoOperation) {
     editWithNoSideEffects {
         replace(op.index, op.index + op.postText.length, op.preText)
-        setSelection(op.preSelection.start, op.preSelection.end)
+        setSelectionCoerced(op.preSelection.start, op.preSelection.end)
     }
 }
 
@@ -121,7 +121,7 @@ internal fun TextFieldState.undo(op: TextUndoOperation) {
 internal fun TextFieldState.redo(op: TextUndoOperation) {
     editWithNoSideEffects {
         replace(op.index, op.index + op.preText.length, op.postText)
-        setSelection(op.postSelection.start, op.postSelection.end)
+        setSelectionCoerced(op.postSelection.start, op.postSelection.end)
     }
 }
 
@@ -134,7 +134,7 @@ internal fun TextFieldState.redo(op: TextUndoOperation) {
 internal enum class TextEditType {
     Insert,
     Delete,
-    Replace
+    Replace,
 }
 
 /**
@@ -153,7 +153,7 @@ internal enum class TextDeleteType {
     Start,
     End,
     Inner,
-    NotByUser
+    NotByUser,
 }
 
 /**
@@ -166,5 +166,5 @@ internal enum class TextDeleteType {
 internal enum class TextFieldEditUndoBehavior {
     MergeIfPossible,
     ClearHistory,
-    NeverMerge
+    NeverMerge,
 }

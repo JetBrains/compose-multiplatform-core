@@ -30,9 +30,10 @@ import android.view.KeyEvent;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,10 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Playback state for a {@link MediaSessionCompat}. This includes a state like
- * {@link PlaybackStateCompat#STATE_PLAYING}, the current playback position,
- * and the current control capabilities.
+ * Playback state for a {@link MediaSessionCompat}. This includes a state like {@link
+ * PlaybackStateCompat#STATE_PLAYING}, the current playback position, and the current control
+ * capabilities.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class PlaybackStateCompat implements Parcelable {
 
@@ -799,7 +804,7 @@ public final class PlaybackStateCompat implements Parcelable {
      * @return An equivalent {@link PlaybackStateCompat} object, or null if none.
      */
     public static PlaybackStateCompat fromPlaybackState(Object stateObj) {
-        if (stateObj != null && Build.VERSION.SDK_INT >= 21) {
+        if (stateObj != null) {
             PlaybackState stateFwk = (PlaybackState) stateObj;
             List<PlaybackState.CustomAction> customActionFwks =
                     Api21Impl.getCustomActions(stateFwk);
@@ -845,7 +850,7 @@ public final class PlaybackStateCompat implements Parcelable {
      * @return An equivalent {@link android.media.session.PlaybackState} object, or null if none.
      */
     public Object getPlaybackState() {
-        if (mStateFwk == null && Build.VERSION.SDK_INT >= 21) {
+        if (mStateFwk == null) {
             PlaybackState.Builder builder = Api21Impl.createBuilder();
             Api21Impl.setState(builder, mState, mPosition, mSpeed, mUpdateTime);
             Api21Impl.setBufferedPosition(builder, mBufferedPosition);
@@ -878,10 +883,14 @@ public final class PlaybackStateCompat implements Parcelable {
     };
 
     /**
-     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to
-     * extend the capabilities of the standard transport controls by exposing
-     * app specific actions to {@link MediaControllerCompat Controllers}.
+     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to extend the capabilities
+     * of the standard transport controls by exposing app specific actions to {@link
+     * MediaControllerCompat Controllers}.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class CustomAction implements Parcelable {
         private final String mAction;
         private final CharSequence mName;
@@ -932,7 +941,7 @@ public final class PlaybackStateCompat implements Parcelable {
          * @return An equivalent {@link PlaybackStateCompat.CustomAction} object, or null if none.
          */
         public static PlaybackStateCompat.CustomAction fromCustomAction(Object customActionObj) {
-            if (customActionObj == null || Build.VERSION.SDK_INT < 21) {
+            if (customActionObj == null) {
                 return null;
             }
 
@@ -961,7 +970,7 @@ public final class PlaybackStateCompat implements Parcelable {
          * or null if none.
          */
         public Object getCustomAction() {
-            if (mCustomActionFwk != null || Build.VERSION.SDK_INT < 21) {
+            if (mCustomActionFwk != null) {
                 return mCustomActionFwk;
             }
 
@@ -1102,7 +1111,11 @@ public final class PlaybackStateCompat implements Parcelable {
 
     /**
      * Builder for {@link PlaybackStateCompat} objects.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private final List<PlaybackStateCompat.CustomAction> mCustomActions = new ArrayList<>();
 
@@ -1374,7 +1387,6 @@ public final class PlaybackStateCompat implements Parcelable {
         }
     }
 
-    @RequiresApi(21)
     private static class Api21Impl {
         private Api21Impl() {}
 

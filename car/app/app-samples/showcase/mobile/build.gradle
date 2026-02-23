@@ -15,13 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,26 +29,25 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.car.app.sample.showcase"
-        minSdkVersion 23
+        applicationId = "androidx.car.app.sample.showcase"
         // Increment this to generate signed builds for uploading to Playstore
         // Make sure this is different from the showcase-automotive version
-        versionCode 106
-        versionName "106"
+        versionCode = 106
+        versionName = "106"
     }
 
     buildTypes {
         debug {
-            pseudoLocalesEnabled true
+            pseudoLocalesEnabled = true
         }
         release {
             // Enables code shrinking, obfuscation, and optimization.
-            minifyEnabled true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt')
         }
     }
-    namespace "androidx.car.app.sample.showcase"
+    namespace = "androidx.car.app.sample.showcase"
 }
 
 dependencies {

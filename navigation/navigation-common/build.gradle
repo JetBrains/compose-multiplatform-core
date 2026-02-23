@@ -15,70 +15,115 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("kotlin-android")
     alias(libs.plugins.kotlinSerialization)
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.navigation.common"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
     }
-    namespace "androidx.navigation.common"
+    desktop()
+    linux()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        configureEach {
+            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+        }
+
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
+            api("androidx.lifecycle:lifecycle-common:2.9.4")
+            api("androidx.lifecycle:lifecycle-runtime:2.9.4")
+            api("androidx.lifecycle:lifecycle-viewmodel:2.9.4")
+            api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4")
+            api("androidx.savedstate:savedstate:1.4.0")
+            implementation("androidx.collection:collection:1.5.0")
+            implementation(libs.kotlinSerializationCore)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(project(":kruth:kruth"))
+            implementation(project(":navigation:navigation-testing"))
+        }
+
+        androidMain.dependencies {
+            api(project(":lifecycle:lifecycle-runtime"))
+            api(project(":lifecycle:lifecycle-viewmodel"))
+            api(project(":savedstate:savedstate-ktx"))
+            implementation("androidx.core:core-ktx:1.1.0")
+            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+        }
+
+        androidHostTest.dependencies {
+            implementation("androidx.arch.core:core-testing:2.2.0")
+            implementation(libs.junit)
+            implementation(libs.mockitoCore4)
+            implementation(libs.truth)
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinCoroutinesTest)
+            runtimeOnly(libs.kotlinTestJunit)
+            runtimeOnly(libs.testCore)
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.testExtJunit)
+            implementation(libs.testRunner)
+            implementation(libs.truth)
+            implementation(libs.mockitoCore)
+            implementation(libs.dexmakerMockito)
+        }
+
+        create("androidTest").dependsOn(jvmAndAndroidTest)
+        androidDeviceTest.dependsOn(androidTest)
+        androidHostTest.dependsOn(androidTest)
+
+        create("nonAndroidMain").dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nativeMain.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
+
+        create("nonAndroidTest").dependsOn(commonTest)
+        desktopTest.dependsOn(nonAndroidTest)
+        nativeTest.dependsOn(nonAndroidTest)
+        webTest.dependsOn(nonAndroidTest)
+    }
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.8.1")
-    api("androidx.lifecycle:lifecycle-common:2.6.2")
-    api("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-    api("androidx.savedstate:savedstate-ktx:1.2.1")
-    api("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2")
-    implementation("androidx.core:core-ktx:1.1.0")
-    implementation("androidx.collection:collection-ktx:1.4.2")
-    implementation("androidx.profileinstaller:profileinstaller:1.4.0")
-    implementation(libs.kotlinSerializationCore)
-
-    api(libs.kotlinStdlib)
-    testImplementation(project(":navigation:navigation-testing"))
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore4)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.kotlinTest)
-
-    androidTestImplementation(libs.kotlinTestJunit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(libs.kotlinStdlib)
-
-    lintPublish(project(':navigation:navigation-common-lint'))
+    lintPublish(project(":navigation:navigation-common-lint"))
 }
 
 androidx {
     name = "Navigation Common"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Common"
-    legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

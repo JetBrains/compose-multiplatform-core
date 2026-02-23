@@ -72,6 +72,9 @@ internal expect value class Strings constructor(val value: Int) {
         val DateRangePickerDayInRange: Strings
         val DateRangeInputTitle: Strings
         val DateRangeInputInvalidRangeInput: Strings
+        val FloatingToolbarCollapse: Strings
+        val FloatingToolbarExpand: Strings
+        val FloatingToolbarMoreOptions: Strings
         val BottomSheetPaneTitle: Strings
         val BottomSheetDragHandleDescription: Strings
         val BottomSheetPartialExpandDescription: Strings
@@ -90,8 +93,16 @@ internal expect value class Strings constructor(val value: Int) {
         val TimePickerMinute: Strings
         val TimePickerHourTextField: Strings
         val TimePickerMinuteTextField: Strings
+        val TimePickerDialogTitle: Strings
+        val TimeInputDialogTitle: Strings
+        val TimePickerToggleKeyboard: Strings
+        val TimePickerToggleTouch: Strings
+        val TimePickerMinuteError: Strings
+        val TimePickerHourError: Strings
+        val TimePicker24HourError: Strings
         val TooltipPaneDescription: Strings
         val WideNavigationRailPaneTitle: Strings
+        val ButtonGroupMoreOptions: Strings
     }
 }
 
@@ -100,3 +111,5 @@ internal expect value class Strings constructor(val value: Int) {
 @Composable
 @ReadOnlyComposable
 internal expect fun getString(string: Strings, vararg formatArgs: Any): String
+
+internal expect fun formatString(string: String, vararg formatArgs: Any?): String

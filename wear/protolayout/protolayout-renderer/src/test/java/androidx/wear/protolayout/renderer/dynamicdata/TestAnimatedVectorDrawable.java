@@ -18,7 +18,7 @@ package androidx.wear.protolayout.renderer.dynamicdata;
 
 import android.graphics.drawable.AnimatedVectorDrawable;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;

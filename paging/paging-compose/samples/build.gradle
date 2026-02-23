@@ -15,23 +15,21 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.compose.foundation:foundation:1.5.0")
@@ -42,12 +40,12 @@ dependencies {
 
 androidx {
     name = "Paging Compose Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2020"
     description = "Contains the sample code for the Androidx Paging library compose interop"
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.paging.compose.samples"
+    compileSdk { version = release(35) }
+    namespace = "androidx.paging.compose.samples"
 }

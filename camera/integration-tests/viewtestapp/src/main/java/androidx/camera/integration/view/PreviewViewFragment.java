@@ -30,6 +30,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -42,8 +44,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Spinner;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfoUnavailableException;
@@ -65,6 +65,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -194,7 +197,7 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressWarnings("WeakerAccess")
-    boolean areFrontOrBackCameraAvailable(@NonNull final ProcessCameraProvider cameraProvider) {
+    boolean areFrontOrBackCameraAvailable(final @NonNull ProcessCameraProvider cameraProvider) {
         try {
             return cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
                     || cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA);
@@ -203,8 +206,8 @@ public class PreviewViewFragment extends Fragment {
         }
     }
 
-    void setUpTargetRotationButton(@NonNull final ProcessCameraProvider cameraProvider,
-            @NonNull final View rootView) {
+    void setUpTargetRotationButton(final @NonNull ProcessCameraProvider cameraProvider,
+            final @NonNull View rootView) {
         Button button = rootView.findViewById(R.id.target_rotation);
         updateTargetRotationButtonText(button);
         button.setOnClickListener(view -> {
@@ -252,8 +255,8 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressWarnings("WeakerAccess")
-    void setUpToggleVisibility(@NonNull final ProcessCameraProvider cameraProvider,
-            @NonNull final View rootView) {
+    void setUpToggleVisibility(final @NonNull ProcessCameraProvider cameraProvider,
+            final @NonNull View rootView) {
         final ViewGroup previewViewContainer = rootView.findViewById(R.id.container);
         final Button toggleVisibilityButton = rootView.findViewById(R.id.toggle_visibility);
         toggleVisibilityButton.setEnabled(true);
@@ -269,7 +272,7 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressWarnings("WeakerAccess")
-    void setUpCameraLensFacing(@NonNull final ProcessCameraProvider cameraProvider) {
+    void setUpCameraLensFacing(final @NonNull ProcessCameraProvider cameraProvider) {
         try {
             // Get extra option for setting initial camera direction
             boolean isCameraDirectionValid = false;
@@ -308,8 +311,8 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressWarnings("WeakerAccess")
-    void setUpToggleCamera(@NonNull final ProcessCameraProvider cameraProvider,
-            @NonNull final View rootView) {
+    void setUpToggleCamera(final @NonNull ProcessCameraProvider cameraProvider,
+            final @NonNull View rootView) {
         final Button toggleCameraButton = rootView.findViewById(R.id.toggle_camera);
         try {
             if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
@@ -326,8 +329,8 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressWarnings("WeakerAccess")
-    void setUpScaleTypeSelect(@NonNull final ProcessCameraProvider cameraProvider,
-            @NonNull final View rootView) {
+    void setUpScaleTypeSelect(final @NonNull ProcessCameraProvider cameraProvider,
+            final @NonNull View rootView) {
         final ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_item,
                 PreviewViewScaleTypePresenter.getScaleTypesLiterals());
@@ -376,7 +379,7 @@ public class PreviewViewFragment extends Fragment {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void setUpFocusAndMetering(@NonNull final Camera camera) {
+    private void setUpFocusAndMetering(final @NonNull Camera camera) {
         mPreviewView.setOnTouchListener((view, motionEvent) -> {
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -407,7 +410,7 @@ public class PreviewViewFragment extends Fragment {
         });
     }
 
-    private void animateToggleCamera(@NonNull final View rootView) {
+    private void animateToggleCamera(final @NonNull View rootView) {
         final Bitmap snapshot = mPreviewView.getBitmap();
         if (snapshot == null) {
             return;
@@ -434,7 +437,7 @@ public class PreviewViewFragment extends Fragment {
                 });
     }
 
-    private void toggleCamera(@NonNull final ProcessCameraProvider cameraProvider) {
+    private void toggleCamera(final @NonNull ProcessCameraProvider cameraProvider) {
         cameraProvider.unbindAll();
 
         if (mCurrentLensFacing == CameraSelector.LENS_FACING_BACK) {
@@ -452,8 +455,24 @@ public class PreviewViewFragment extends Fragment {
     }
 
     // region For preview updates testing
-    @Nullable
-    private CountDownLatch mPreviewUpdatingLatch;
+    private @Nullable CountDownLatch mPreviewUpdatingLatch;
+    private Handler mUiThreadHandler = new Handler(Looper.getMainLooper());
+    private @Nullable CountDownLatch mPreviewNotUpdatingLatch;
+    private long mLastOnPreDrawTime = -1;
+
+    private Runnable mPreviewNotUpdatingRunnable = () -> {
+        if (mLastOnPreDrawTime == -1) {
+            return;
+        }
+        if (System.currentTimeMillis() - mLastOnPreDrawTime > 1000) {
+            if (mPreviewNotUpdatingLatch != null && mPreviewNotUpdatingLatch.getCount() > 0) {
+                mPreviewNotUpdatingLatch.countDown();
+            }
+        } else {
+            // Post the runnable in 50 ms to check again.
+            mUiThreadHandler.postDelayed(this.mPreviewNotUpdatingRunnable, 50);
+        }
+    };
 
     // Here we use OnPreDrawListener in ViewTreeObserver to detect if view is being updating.
     // If yes, preview should be working to update the view. We could use more precise approach
@@ -464,6 +483,10 @@ public class PreviewViewFragment extends Fragment {
         if (mPreviewUpdatingLatch != null) {
             mPreviewUpdatingLatch.countDown();
         }
+
+        // Records the last OnPreDrawListener event time.
+        mLastOnPreDrawTime = System.currentTimeMillis();
+
         return true;
     };
 
@@ -484,6 +507,18 @@ public class PreviewViewFragment extends Fragment {
     @VisibleForTesting
     void setPreviewUpdatingLatch(@NonNull CountDownLatch previewUpdatingLatch) {
         mPreviewUpdatingLatch = previewUpdatingLatch;
+    }
+
+    /**
+     * The given count down latch will be counted down if no OnPreDrawListener event is received
+     * in the recent 1000 ms.
+     */
+    @VisibleForTesting
+    void setPreviewNotUpdatingLatch(@NonNull CountDownLatch previewNotUpdatingLatch) {
+        mPreviewNotUpdatingLatch = previewNotUpdatingLatch;
+        // Post the runnable to check whether there is no OnPreDrawListener event received in
+        // 1000 ms.
+        mUiThreadHandler.postDelayed(mPreviewNotUpdatingRunnable, 1000);
     }
     // endregion
 }

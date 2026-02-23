@@ -21,20 +21,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedSplitButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledSplitButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedSplitButton
-import androidx.compose.material3.SplitButton
+import androidx.compose.material3.SplitButtonDefaults
+import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
-import androidx.compose.material3.TonalSplitButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.LayeredComposeTestCase
+import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
 import androidx.compose.testutils.benchmark.benchmarkFirstDraw
@@ -92,56 +89,77 @@ class SplitButtonBenchmark(private val type: SplitButtonType) {
     }
 }
 
-internal class SplitButtonTestCase(private val type: SplitButtonType) : LayeredComposeTestCase() {
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal class SplitButtonTestCase(private val type: SplitButtonType) :
+    LayeredComposeTestCase(), ToggleableTestCase {
+    private var trailingButtonChecked = mutableStateOf(false)
+
     @Composable
     override fun MeasuredContent() {
         when (type) {
-            SplitButtonType.SplitButton ->
-                SplitButton(
+            SplitButtonType.Filled ->
+                SplitButtonLayout(
                     leadingButton = {
-                        Button(onClick = { /* Do something! */ }) { Text("Button") }
+                        SplitButtonDefaults.LeadingButton(onClick = { /* Do Nothing */ }) {
+                            leadingContent()
+                        }
                     },
                     trailingButton = {
-                        IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(
-                                Icons.Outlined.Edit,
-                                contentDescription = "Localized description",
-                            )
+                        SplitButtonDefaults.TrailingButton(
+                            checked = trailingButtonChecked.value,
+                            onCheckedChange = { /* Do Nothing */ },
+                        ) {
+                            trailingContent()
                         }
-                    }
-                )
-            SplitButtonType.Filled ->
-                FilledSplitButton(
-                    onLeadingButtonClick = {},
-                    checked = false,
-                    onTrailingButtonClick = { /* Do Nothing */ },
-                    leadingContent = { leadingContent() },
-                    trailingContent = { trailingContent() },
+                    },
                 )
             SplitButtonType.Tonal ->
-                TonalSplitButton(
-                    onLeadingButtonClick = {},
-                    checked = false,
-                    onTrailingButtonClick = { /* Do Nothing */ },
-                    leadingContent = { leadingContent() },
-                    trailingContent = { trailingContent() },
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.TonalLeadingButton(onClick = { /* Do Nothing */ }) {
+                            leadingContent()
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.TonalTrailingButton(
+                            checked = trailingButtonChecked.value,
+                            onCheckedChange = { /* Do Nothing */ },
+                        ) {
+                            trailingContent()
+                        }
+                    },
                 )
             SplitButtonType.Elevated ->
-                ElevatedSplitButton(
-                    onLeadingButtonClick = {},
-                    checked = false,
-                    onTrailingButtonClick = { /* Do Nothing */ },
-                    leadingContent = { leadingContent() },
-                    trailingContent = { trailingContent() },
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.ElevatedLeadingButton(onClick = { /* Do Nothing */ }) {
+                            leadingContent()
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.ElevatedTrailingButton(
+                            checked = trailingButtonChecked.value,
+                            onCheckedChange = { /* Do Nothing */ },
+                        ) {
+                            trailingContent()
+                        }
+                    },
                 )
             SplitButtonType.Outlined ->
-                OutlinedSplitButton(
-                    onLeadingButtonClick = {},
-                    checked = false,
-                    onTrailingButtonClick = { /* Do Nothing */ },
-                    leadingContent = { leadingContent() },
-                    trailingContent = { trailingContent() },
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.OutlinedLeadingButton(onClick = { /* Do Nothing */ }) {
+                            leadingContent()
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.OutlinedTrailingButton(
+                            checked = trailingButtonChecked.value,
+                            onCheckedChange = { /* Do Nothing */ },
+                        ) {
+                            trailingContent()
+                        }
+                    },
                 )
         }
     }
@@ -150,14 +168,15 @@ internal class SplitButtonTestCase(private val type: SplitButtonType) : LayeredC
     override fun ContentWrappers(content: @Composable () -> Unit) {
         MaterialTheme { content() }
     }
+
+    override fun toggleState() {
+        trailingButtonChecked.value = !trailingButtonChecked.value
+    }
 }
 
 @Composable
 private fun leadingContent() {
-    Icon(
-        Icons.Outlined.Edit,
-        contentDescription = "Localized description",
-    )
+    Icon(Icons.Outlined.Edit, contentDescription = "Localized description")
     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
     Text("My Button")
 }
@@ -168,7 +187,6 @@ private fun trailingContent() {
 }
 
 enum class SplitButtonType {
-    SplitButton,
     Filled,
     Tonal,
     Elevated,

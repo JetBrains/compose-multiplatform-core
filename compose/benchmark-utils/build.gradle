@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -27,15 +26,13 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api("androidx.activity:activity:1.2.0")
     api(project(":compose:test-utils"))
-    api(project(":benchmark:benchmark-junit4"))
+    api(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
 
-    implementation(libs.kotlinStdlibCommon)
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":tracing:tracing-ktx"))
@@ -56,11 +53,9 @@ tasks.withType(KotlinCompile).configureEach {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.benchmarkutils"
+    compileSdk { version = release(35) }
+    namespace = "androidx.compose.benchmarkutils"
 
     // workarounds for b/328649293
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 }

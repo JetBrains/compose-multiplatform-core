@@ -20,9 +20,9 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
 
 /**
  * Class containing helpers for querying wearable navigation pattern

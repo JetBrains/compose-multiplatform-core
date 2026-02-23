@@ -48,7 +48,6 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.SystemClock;
 import androidx.work.WorkManagerTest;
-import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.worker.TestWorker;
 
@@ -59,7 +58,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobInfoConverterTest extends WorkManagerTest {
 
     private static final long TEST_INTERVAL_DURATION =
@@ -230,8 +228,10 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 29)
+    @SdkSuppress(minSdkVersion = 29, maxSdkVersion = 34)
     public void testConvert_setImportantWhileForeground() {
+        // Switch maxSdkVersion to 35 after B gets an official SDK version.
+        // setImportantWhileInForeground() turns into a no-op starting API 36.
         WorkSpec workSpec = getTestWorkSpecWithConstraints(new Constraints.Builder().build());
         workSpec.lastEnqueueTime = System.currentTimeMillis();
         JobInfo jobInfo = mConverter.convert(workSpec, JOB_ID);
@@ -340,7 +340,7 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 23)
+    @SdkSuppress(maxSdkVersion = 23)
     public void testConvertNetworkType_notRoaming_returnAnyBeforeApi24() {
         assertThat(SystemJobInfoConverter.convertNetworkType(NOT_ROAMING),
                 is(JobInfo.NETWORK_TYPE_ANY));
@@ -356,7 +356,7 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL, maxSdkVersion = 25)
+    @SdkSuppress(maxSdkVersion = 25)
     public void testConvertNetworkType_metered_returnsAnyBeforeApi26() {
         assertThat(SystemJobInfoConverter.convertNetworkType(METERED),
                 is(JobInfo.NETWORK_TYPE_ANY));
@@ -382,6 +382,7 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
         assertTrue(networkRequest.hasCapability(NET_CAPABILITY_TEMPORARILY_NOT_METERED));
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/452723223
     @Test
     @SmallTest
     public void testNetworkRequest() {

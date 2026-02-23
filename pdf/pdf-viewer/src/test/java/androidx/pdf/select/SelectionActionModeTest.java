@@ -17,30 +17,31 @@
 package androidx.pdf.select;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.os.Build;
+import android.view.ActionMode;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.Observables;
-import androidx.pdf.viewer.PageMosaicView;
-import androidx.pdf.viewer.PageViewFactory;
 import androidx.pdf.viewer.PaginatedView;
+import androidx.pdf.widget.ZoomView;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class SelectionActionModeTest {
 
     @Mock
@@ -55,16 +56,13 @@ public class SelectionActionModeTest {
     private PaginatedView mPaginatedView;
 
     @Mock
-    private PageMosaicView mPageMosaicView;
-
-    @Mock
     private PageSelection mPageSelection;
 
     @Mock
-    Observables.ExposedValue<PageSelection> mSelection;
+    private Observables.ExposedValue<PageSelection> mSelection;
 
     @Mock
-    PageViewFactory.PageView mPageView;
+    private ZoomView mZoomView;
 
 
     @Before
@@ -74,21 +72,23 @@ public class SelectionActionModeTest {
 
     @Test
     public void testStartActionMode() {
+        when(mZoomView.post(any())).thenAnswer(invocation -> {
+            Runnable action = invocation.getArgument(0);
+            action.run();
+            return true;
+        });
         SelectionModel<PageSelection> selectionModel = new SelectionModel<PageSelection>() {
 
-            @NonNull
             @Override
-            public ObservableValue<PageSelection> selection() {
+            public @NonNull ObservableValue<PageSelection> selection() {
                 return new ObservableValue<PageSelection>() {
-                    @Nullable
                     @Override
-                    public PageSelection get() {
+                    public @Nullable PageSelection get() {
                         return mPageSelection;
                     }
 
-                    @NonNull
                     @Override
-                    public Object addObserver(ValueObserver<PageSelection> observer) {
+                    public @NonNull Object addObserver(ValueObserver<PageSelection> observer) {
                         observer.onChange(null, mPageSelection);
                         return observer;
                     }
@@ -99,9 +99,9 @@ public class SelectionActionModeTest {
                     }
                 };
             }
-            @NonNull
+
             @Override
-            public String getText() {
+            public @NonNull String getText() {
                 return "";
             }
 
@@ -109,20 +109,18 @@ public class SelectionActionModeTest {
 
         selectionModel.setSelection(mPageSelection);
 
-        when(mPaginatedView.getViewAt(anyInt())).thenReturn(mPageView);
-        when(mPageView.getPageView()).thenReturn(mPageMosaicView);
+        mSelectionActionMode = new SelectionActionMode(mContext, mPaginatedView, mZoomView,
+                selectionModel);
 
-        mSelectionActionMode = new SelectionActionMode(mContext, mPaginatedView, selectionModel);
-
-        verify(mPaginatedView).getViewAt(anyInt());
-        verify(mPageMosaicView).startActionMode(any(), anyInt());
+        verify(mZoomView).startActionMode(any(), eq(ActionMode.TYPE_FLOATING));
     }
 
     @Test
     public void testDestroyRemoveObserver() {
         when(mSelectionModel.selection()).thenReturn(mSelection);
 
-        mSelectionActionMode = new SelectionActionMode(mContext, mPaginatedView, mSelectionModel);
+        mSelectionActionMode = new SelectionActionMode(mContext, mPaginatedView, mZoomView,
+                mSelectionModel);
 
         mSelectionActionMode.destroy();
 

@@ -19,8 +19,8 @@ package androidx.browser.trusted.sharing;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,16 +40,13 @@ public final class ShareData {
     public static final String KEY_URIS = "androidx.browser.trusted.sharing.KEY_URIS";
 
     /** Title of the shared message. */
-    @Nullable
-    public final String title;
+    public final @Nullable String title;
 
     /** Text of the shared message. */
-    @Nullable
-    public final String text;
+    public final @Nullable String text;
 
     /** URIs of files to be shared. */
-    @Nullable
-    public final List<Uri> uris;
+    public final @Nullable List<Uri> uris;
 
     /**
      * Creates a {@link ShareData} with the given parameters.
@@ -64,8 +61,7 @@ public final class ShareData {
     }
 
     /** Packs the object into a {@link Bundle} */
-    @NonNull
-    public Bundle toBundle() {
+    public @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         bundle.putString(KEY_TITLE, title);
         bundle.putString(KEY_TEXT, text);
@@ -76,9 +72,8 @@ public final class ShareData {
     }
 
     /** Unpacks the object from a {@link Bundle}. */
-    @NonNull
     @SuppressWarnings("deprecation")
-    public static ShareData fromBundle(@NonNull Bundle bundle) {
+    public static @NonNull ShareData fromBundle(@NonNull Bundle bundle) {
         return new ShareData(bundle.getString(KEY_TITLE),
                 bundle.getString(KEY_TEXT),
                 bundle.getParcelableArrayList(KEY_URIS));

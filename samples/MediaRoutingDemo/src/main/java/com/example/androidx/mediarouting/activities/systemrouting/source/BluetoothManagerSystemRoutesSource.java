@@ -28,11 +28,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRouteItem;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutesSourceItem;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,19 +41,14 @@ import java.util.List;
 /** Implements {@link SystemRoutesSource} using {@link BluetoothManager}. */
 public final class BluetoothManagerSystemRoutesSource extends SystemRoutesSource {
 
-    @NonNull
-    private final Context mContext;
-    @NonNull
-    private final BluetoothManager mBluetoothManager;
-    @NonNull
-    private final BluetoothAdapter mBluetoothAdapter;
-    @NonNull
-    private final DeviceStateChangedReceiver mDeviceStateChangedReceiver =
+    private final @NonNull Context mContext;
+    private final @NonNull BluetoothManager mBluetoothManager;
+    private final @NonNull BluetoothAdapter mBluetoothAdapter;
+    private final @NonNull DeviceStateChangedReceiver mDeviceStateChangedReceiver =
             new DeviceStateChangedReceiver();
 
     /** Returns a new instance. */
-    @NonNull
-    public static BluetoothManagerSystemRoutesSource create(@NonNull Context context) {
+    public static @NonNull BluetoothManagerSystemRoutesSource create(@NonNull Context context) {
         BluetoothManager bluetoothManager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         return new BluetoothManagerSystemRoutesSource(context, bluetoothManager);
@@ -83,16 +79,14 @@ public final class BluetoothManagerSystemRoutesSource extends SystemRoutesSource
         mContext.unregisterReceiver(mDeviceStateChangedReceiver);
     }
 
-    @NonNull
     @Override
-    public SystemRoutesSourceItem getSourceItem() {
+    public @NonNull SystemRoutesSourceItem getSourceItem() {
         return new SystemRoutesSourceItem(/* name= */ "BluetoothManager");
     }
 
-    @NonNull
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     @Override
-    public List<SystemRouteItem> fetchSourceRouteItems() {
+    public @NonNull List<SystemRouteItem> fetchSourceRouteItems() {
         List<SystemRouteItem> out = new ArrayList<>();
 
         for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices()) {
@@ -107,9 +101,8 @@ public final class BluetoothManagerSystemRoutesSource extends SystemRoutesSource
         throw new UnsupportedOperationException();
     }
 
-    @NonNull
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private SystemRouteItem createRouteItemFor(@NonNull BluetoothDevice device) {
+    private @NonNull SystemRouteItem createRouteItemFor(@NonNull BluetoothDevice device) {
         return new SystemRouteItem.Builder(getSourceId(), /* id= */ device.getAddress())
                 .setName(device.getName())
                 .setAddress(device.getAddress())

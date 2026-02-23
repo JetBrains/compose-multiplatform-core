@@ -20,8 +20,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.customtabs.IEngagementSignalsCallback;
 
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.Nullable;
 import org.mockito.Mockito;
 
 /**
@@ -50,6 +49,11 @@ public class TestEngagementSignalsCallback implements EngagementSignalsCallback 
         @Override
         public void onSessionEnded(boolean didUserInteract, Bundle extras) throws RemoteException {
             TestEngagementSignalsCallback.this.onSessionEnded(didUserInteract, extras);
+        }
+
+        @Override
+        public int getInterfaceVersion() {
+            return super.VERSION;
         }
     };
 

@@ -16,7 +16,7 @@
 
 package androidx.camera.video.internal.audio;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An exception thrown to indicate an error has occurred during configuring an audio source. */
 public class AudioSourceAccessException extends Exception {

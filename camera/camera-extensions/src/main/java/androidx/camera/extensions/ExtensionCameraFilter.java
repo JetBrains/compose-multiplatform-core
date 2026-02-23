@@ -18,7 +18,6 @@ package androidx.camera.extensions;
 
 import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.impl.CameraInfoInternal;
@@ -26,6 +25,8 @@ import androidx.camera.core.impl.Identifier;
 import androidx.camera.extensions.internal.ExtensionsUtils;
 import androidx.camera.extensions.internal.VendorExtender;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,15 +45,13 @@ final class ExtensionCameraFilter implements CameraFilter {
         mVendorExtender = vendorExtender;
     }
 
-    @NonNull
     @Override
-    public Identifier getIdentifier() {
+    public @NonNull Identifier getIdentifier() {
         return mId;
     }
 
-    @NonNull
     @Override
-    public List<CameraInfo> filter(@NonNull List<CameraInfo> cameraInfos) {
+    public @NonNull List<CameraInfo> filter(@NonNull List<CameraInfo> cameraInfos) {
         List<CameraInfo> result = new ArrayList<>();
         for (CameraInfo cameraInfo : cameraInfos) {
             Preconditions.checkArgument(cameraInfo instanceof CameraInfoInternal,

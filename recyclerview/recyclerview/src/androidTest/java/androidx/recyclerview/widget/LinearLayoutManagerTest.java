@@ -36,7 +36,6 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.StateSet;
@@ -46,13 +45,13 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,7 +59,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * Includes tests for {@link LinearLayoutManager}.
@@ -1300,7 +1298,6 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
                 mLayoutManager.findLastVisibleItemPosition());
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Test
     public void onInitializeAccessibilityNodeInfo_addActionScrollToPosition_notAddedWithEmptyList()
             throws Throwable {
@@ -1320,7 +1317,6 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
                 AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_SCROLL_TO_POSITION));
     }
 
-    @SdkSuppress(minSdkVersion = 23) // b/271602453
     @Test
     public void onInitializeAccessibilityNodeInfo_addActionScrollToPosition_addedWithNonEmptyList()
             throws Throwable {
@@ -1406,6 +1402,7 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
         assertFirstItemIsAtTop();
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427263206
     @Test
     public void performAccessibilityAction_actionScrollToPosition_verticalWithRowArg_scrolls()
             throws Throwable {

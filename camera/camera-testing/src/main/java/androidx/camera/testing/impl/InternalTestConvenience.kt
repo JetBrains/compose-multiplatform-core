@@ -17,8 +17,10 @@
 package androidx.camera.testing.impl
 
 import android.app.Activity
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.Logger
 import androidx.test.core.app.ActivityScenario
+import org.junit.Assume.assumeTrue
 
 /**
  * Utility object to hold the convenience functions for internal testing.
@@ -40,7 +42,7 @@ public object InternalTestConvenience {
      * @return the result of [block] function invoked on this resource.
      */
     public inline fun <A : Activity, R> ActivityScenario<A>.useInCameraTest(
-        block: (ActivityScenario<A>) -> R,
+        block: (ActivityScenario<A>) -> R
     ): R {
         try {
             return block(this)
@@ -55,6 +57,25 @@ public object InternalTestConvenience {
                     throw e
                 }
             }
+        }
+    }
+
+    /**
+     * Ignores a test for CameraPipe config, only outside CameraX lab test by default.
+     *
+     * The default behavior is not to ignore in lab environment so that the true failure rate can be
+     * tracked in CameraX internal dashboards without blocking in other environments like AndroidX
+     * presubmit.
+     *
+     * @param message A message to pass to [assumeTrue].
+     * @param evenInLab False by default, does not ignore the test if it's running in CameraX lab
+     *   environment. If true, this behavior is overridden and ignored in lab environment as well.
+     * @receiver A `String` that represents the name of the [CameraXConfig] used in CameraX tests,
+     *   e.g. the `CameraPipeConfig::class.simpleName` or `Camera2Config::class.simpleName`.
+     */
+    public fun String.ignoreTestForCameraPipe(message: String, evenInLab: Boolean = false) {
+        if (!LabTestRule.isInLabTest() || evenInLab) {
+            assumeTrue(message, !this.contains("CameraPipeConfig"))
         }
     }
 }

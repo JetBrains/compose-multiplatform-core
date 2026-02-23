@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamFormat
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.testing.FakeCameraDeviceWrapper
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceListener
@@ -73,14 +74,14 @@ internal class Camera2CaptureSequenceProcessorTest {
         CameraStream.Config.create(
             Size(1024, 768),
             StreamFormat.PRIVATE,
-            streamUseCase = OutputStream.StreamUseCase.PREVIEW
+            streamUseCase = OutputStream.StreamUseCase.PREVIEW,
         )
 
     private val stream4Config =
         CameraStream.Config.create(
             Size(1024, 768),
             StreamFormat.PRIVATE,
-            streamUseCase = OutputStream.StreamUseCase.VIDEO_RECORD
+            streamUseCase = OutputStream.StreamUseCase.VIDEO_RECORD,
         )
 
     private val graphConfig =
@@ -93,13 +94,13 @@ internal class Camera2CaptureSequenceProcessorTest {
         CameraGraph.Config(
             camera = testCamera.cameraId,
             streams = listOf(stream3Config, stream4Config),
-            sessionMode = CameraGraph.OperatingMode.HIGH_SPEED
+            sessionMode = CameraGraph.OperatingMode.HIGH_SPEED,
         )
 
-    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock())
+    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock())
 
     private val highSpeedStreamGraph =
-        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock())
+        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock(), mock())
 
     private val surface1 =
         Surface(
@@ -145,6 +146,10 @@ internal class Camera2CaptureSequenceProcessorTest {
     fun teardown() {
         mainLooper.idle()
         RobolectricCameras.clear()
+        surface1.release()
+        surface2.release()
+        surface3.release()
+        surface4.release()
     }
 
     @Test
@@ -153,15 +158,15 @@ internal class Camera2CaptureSequenceProcessorTest {
         // Parameters
         requestBuilder.set(
             CaptureRequest.CONTROL_AE_MODE,
-            CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+            CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
         )
         requestBuilder.set(
             CaptureRequest.CONTROL_AF_MODE,
-            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
         )
         requestBuilder.set(
             CaptureRequest.CONTROL_AF_MODE,
-            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO,
         )
 
         // Surfaces
@@ -186,7 +191,13 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1, stream2.id to surface2),
-                streamGraph
+                outputToSurfaceMap =
+                    mapOf(
+                        stream1.outputs.single().id to surface1,
+                        stream2.outputs.single().id to surface2,
+                    ),
+                streamGraph,
+                StrictMode(true),
             )
 
         val sequence =
@@ -198,15 +209,16 @@ internal class Camera2CaptureSequenceProcessorTest {
                         CaptureRequest.CONTROL_AE_MODE to
                             CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                         CaptureRequest.CONTROL_AF_MODE to
-                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
                     ),
+                graphParameters = mapOf<Any, Any?>(),
                 requiredParameters =
                     mapOf<Any, Any?>(
                         CaptureRequest.CONTROL_AF_MODE to
                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
                     ),
+                sequenceListener = FakeCaptureSequenceListener(),
                 listeners = listOf(),
-                sequenceListener = FakeCaptureSequenceListener()
             )
 
         val result = captureSequenceProcessor.submit(sequence!!)
@@ -227,16 +239,19 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
-                streamGraph
+                mapOf(stream1.outputs.single().id to surface1),
+                streamGraph,
+                StrictMode(true),
             )
         val captureSequence =
             captureSequenceProcessor.build(
                 isRepeating = false,
                 requests = listOf(Request(listOf(stream1.id, stream2.id))),
                 defaultParameters = mapOf<Any, Any?>(),
+                graphParameters = mapOf<Any, Any?>(),
                 requiredParameters = mapOf<Any, Any?>(),
+                sequenceListener = FakeCaptureSequenceListener(),
                 listeners = emptyList(),
-                sequenceListener = FakeCaptureSequenceListener()
             )
         assertThat(captureSequence).isNotNull()
 
@@ -253,7 +268,9 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
-                streamGraph
+                mapOf(stream1.outputs.single().id to surface1),
+                streamGraph,
+                StrictMode(true),
             )
 
         // Key part is that only stream1 has a surface, but stream2 is requested.
@@ -262,9 +279,10 @@ internal class Camera2CaptureSequenceProcessorTest {
                 isRepeating = false,
                 requests = listOf(Request(listOf(stream2.id))),
                 defaultParameters = mapOf<Any, Any?>(),
+                graphParameters = mapOf<Any, Any?>(),
                 requiredParameters = mapOf<Any, Any?>(),
+                sequenceListener = FakeCaptureSequenceListener(),
                 listeners = emptyList(),
-                sequenceListener = FakeCaptureSequenceListener()
             )
 
         assertThat(captureSequence).isNull()
@@ -278,16 +296,19 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream1.id to surface1),
-                streamGraph
+                mapOf(stream1.outputs.single().id to surface1),
+                streamGraph,
+                StrictMode(true),
             )
         val captureSequence =
             captureSequenceProcessor.build(
                 isRepeating = false,
                 requests = listOf(Request(listOf(stream1.id, stream2.id))),
                 defaultParameters = mapOf<Any, Any?>(),
+                graphParameters = mapOf<Any, Any?>(),
                 requiredParameters = mapOf<Any, Any?>(),
+                sequenceListener = FakeCaptureSequenceListener(),
                 listeners = emptyList(),
-                sequenceListener = FakeCaptureSequenceListener()
             )
 
         assertThat(captureSequence).isNotNull()
@@ -307,7 +328,12 @@ internal class Camera2CaptureSequenceProcessorTest {
                 FakeThreads.fromTestScope(this),
                 RequestTemplate(1),
                 mapOf(stream3.id to surface3, stream4.id to surface4),
-                highSpeedStreamGraph
+                mapOf(
+                    stream3.outputs.single().id to surface3,
+                    stream4.outputs.single().id to surface4,
+                ),
+                highSpeedStreamGraph,
+                StrictMode(true),
             )
 
         val sequence =
@@ -319,15 +345,16 @@ internal class Camera2CaptureSequenceProcessorTest {
                         CaptureRequest.CONTROL_AE_MODE to
                             CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                         CaptureRequest.CONTROL_AF_MODE to
-                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
                     ),
+                graphParameters = mapOf<Any, Any?>(),
                 requiredParameters =
                     mapOf<Any, Any?>(
                         CaptureRequest.CONTROL_AF_MODE to
                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
                     ),
+                sequenceListener = FakeCaptureSequenceListener(),
                 listeners = listOf(),
-                sequenceListener = FakeCaptureSequenceListener()
             )
 
         val result = captureSequenceProcessor.submit(sequence!!)

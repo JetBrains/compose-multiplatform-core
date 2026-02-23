@@ -20,11 +20,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.Openable.Open;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,24 +64,20 @@ public class DisplayData {
         this.mOpenable = Preconditions.checkNotNull(openable);
     }
 
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
-    @NonNull
-    public String getName() {
+    public @NonNull String getName() {
         return mName;
     }
 
-    @NonNull
-    public Openable getOpenable() {
+    public @NonNull Openable getOpenable() {
         return mOpenable;
     }
 
     /** Converts an Opener into ParcelFileDescriptor */
-    @Nullable
-    public ParcelFileDescriptor openFd(@NonNull Opener opener) {
+    public @Nullable ParcelFileDescriptor openFd(@NonNull Opener opener) {
         // TODO: StrictMode: close() not explicitly called on PFD.
         try {
             return open(opener).getFd();
@@ -90,8 +87,7 @@ public class DisplayData {
     }
 
     /** Converts Opener to InputStream */
-    @Nullable
-    public InputStream openInputStream(@NonNull Opener opener) throws IOException {
+    public @Nullable InputStream openInputStream(@NonNull Opener opener) throws IOException {
         return open(opener).getInputStream();
     }
 
@@ -105,16 +101,14 @@ public class DisplayData {
     /**
      *
      */
-    @NonNull
-    private Open open(Opener opener) throws IOException {
+    private @NonNull Open open(Opener opener) throws IOException {
         return mOpenable.openWith(opener);
     }
 
     /**
      *
      */
-    @NonNull
-    public Bundle asBundle() {
+    public @NonNull Bundle asBundle() {
         Bundle bundle = new Bundle();
         bundle.putString(KEY_NAME, mName);
         bundle.putParcelable(KEY_URI, mUri);
@@ -126,9 +120,8 @@ public class DisplayData {
     /**
      *
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    public static DisplayData fromBundle(@NonNull Bundle bundle) {
+    public static @NonNull DisplayData fromBundle(@NonNull Bundle bundle) {
         bundle.setClassLoader(DisplayData.class.getClassLoader());
         Uri uri = bundle.getParcelable(KEY_URI);
         String name = bundle.getString(KEY_NAME);
@@ -137,9 +130,8 @@ public class DisplayData {
         return new DisplayData(uri, name, openable);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format(
                 "Display Data [%s] +%s, uri: %s",
                 mName, mOpenable.getClass().getSimpleName(), mUri);

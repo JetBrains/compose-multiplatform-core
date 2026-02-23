@@ -16,16 +16,13 @@
 
 package androidx.camera.integration.core
 
-import android.content.Context
-import android.os.Build
-import androidx.camera.core.CameraSelector
-import androidx.camera.integration.core.util.getFakeConfigCameraProvider
-import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
+import androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA
+import androidx.camera.testing.rules.FakeCameraTestRule
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.TimeUnit
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -34,30 +31,17 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraXInitTest {
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-    private lateinit var cameraProvider: ProcessCameraProvider
+    @get:Rule val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 
-    @Before
-    fun setup() {
-        cameraProvider = getFakeConfigCameraProvider(context)
-    }
-
-    @After
-    fun tearDown() {
-        if (::cameraProvider.isInitialized) {
-            cameraProvider.shutdownAsync()[10, TimeUnit.SECONDS]
-        }
+    @Test
+    fun hasBackCamera_whenInitSuccessfully() = runBlocking {
+        assertThat(fakeCameraRule.cameraProvider.hasCamera(DEFAULT_BACK_CAMERA)).isTrue()
     }
 
     @Test
-    fun hasBackCamera_whenInitSuccessfully() {
-        assertThat(cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)).isTrue()
-    }
-
-    @Test
-    fun hasFrontCamera_whenInitSuccessfully() {
-        assertThat(cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)).isTrue()
+    fun hasFrontCamera_whenInitSuccessfully() = runBlocking {
+        assertThat(fakeCameraRule.cameraProvider.hasCamera(DEFAULT_FRONT_CAMERA)).isTrue()
     }
 }

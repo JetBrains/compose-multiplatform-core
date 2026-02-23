@@ -29,7 +29,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
-import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.internal.HandwritingGestureApi34.performHandwritingGesture
 import androidx.compose.foundation.text.input.internal.HandwritingGestureApi34.previewHandwritingGesture
@@ -53,8 +52,10 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     imeOptions: ImeOptions,
     receiveContentConfiguration: ReceiveContentConfiguration?,
     onImeAction: ((ImeAction) -> Unit)?,
+    updateSelectionState: (() -> Unit)?,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
+    updateTouchMode: (Boolean) -> Unit,
 ): Nothing {
     platformSpecificTextInputSession(
         state = state,
@@ -62,9 +63,11 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         imeOptions = imeOptions,
         receiveContentConfiguration = receiveContentConfiguration,
         onImeAction = onImeAction,
+        updateSelectionState = updateSelectionState,
         composeImm = ComposeInputMethodManager(view),
         stylusHandwritingTrigger = stylusHandwritingTrigger,
-        viewConfiguration = viewConfiguration
+        viewConfiguration = viewConfiguration,
+        updateTouchMode = updateTouchMode,
     )
 }
 
@@ -75,33 +78,28 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
     imeOptions: ImeOptions,
     receiveContentConfiguration: ReceiveContentConfiguration?,
     onImeAction: ((ImeAction) -> Unit)?,
+    updateSelectionState: (() -> Unit)?,
     composeImm: ComposeInputMethodManager,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
+    updateTouchMode: (Boolean) -> Unit,
 ): Nothing {
     coroutineScope {
         launch(start = CoroutineStart.UNDISPATCHED) {
-            state.collectImeNotifications { oldValue, newValue, restartImeIfContentChanges ->
+            state.collectImeNotifications { oldValue, newValue, restartIme ->
                 val oldSelection = oldValue.selection
-                val newSelection = newValue.selection
                 val oldComposition = oldValue.composition
+                val newSelection = newValue.selection
                 val newComposition = newValue.composition
 
-                // No need to restart the IME if there wasn't a composing region. This is useful
-                // to not unnecessarily restart filtered digit only, or password fields.
-                if (
-                    restartImeIfContentChanges &&
-                        oldValue.composition != null &&
-                        !oldValue.contentEquals(newValue)
-                ) {
+                if (restartIme) {
                     composeImm.restartInput()
                 } else if (oldSelection != newSelection || oldComposition != newComposition) {
-                    // Don't call updateSelection if input is going to be restarted anyway
                     composeImm.updateSelection(
                         selectionStart = newSelection.min,
                         selectionEnd = newSelection.max,
                         compositionStart = newComposition?.min ?: -1,
-                        compositionEnd = newComposition?.max ?: -1
+                        compositionEnd = newComposition?.max ?: -1,
                     )
                 }
             }
@@ -129,17 +127,14 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
         startInputMethod { outAttrs ->
             logDebug { "createInputConnection(value=\"${state.visualText}\")" }
 
+            val imeEditCommandScope = DefaultImeEditCommandScope(state)
             val textInputSession =
-                object : TextInputSession {
+                object : TextInputSession, ImeEditCommandScope by imeEditCommandScope {
                     override val text: TextFieldCharSequence
                         get() = state.visualText
 
-                    override fun requestEdit(block: TextFieldBuffer.() -> Unit) {
-                        state.editUntransformedTextAsUser(
-                            restartImeIfContentChanges = false,
-                            block = block
-                        )
-                    }
+                    override val transformedLength: Int
+                        get() = imeEditCommandScope.transformedLength
 
                     override fun sendKeyEvent(keyEvent: KeyEvent) {
                         composeImm.sendKeyEvent(keyEvent)
@@ -165,7 +160,8 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                             return state.performHandwritingGesture(
                                 gesture,
                                 layoutState,
-                                viewConfiguration
+                                updateSelectionState,
+                                viewConfiguration,
                             )
                         }
                         return InputConnection.HANDWRITING_GESTURE_RESULT_UNSUPPORTED
@@ -173,16 +169,20 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
 
                     override fun previewHandwritingGesture(
                         gesture: PreviewableHandwritingGesture,
-                        cancellationSignal: CancellationSignal?
+                        cancellationSignal: CancellationSignal?,
                     ): Boolean {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             return state.previewHandwritingGesture(
                                 gesture,
                                 layoutState,
-                                cancellationSignal
+                                cancellationSignal,
                             )
                         }
                         return false
+                    }
+
+                    override fun updateTouchMode(isInTouchMode: Boolean) {
+                        updateTouchMode.invoke(isInTouchMode)
                     }
                 }
 
@@ -191,7 +191,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                 selection = state.visualText.selection,
                 imeOptions = imeOptions,
                 // only pass AllMimeTypes if we have a ReceiveContentConfiguration.
-                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES }
+                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES },
             )
             StatelessInputConnection(textInputSession, outAttrs)
         }
@@ -206,7 +206,7 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
  */
 private val ALL_MIME_TYPES = arrayOf("*/*", "image/*", "video/*")
 
-private fun logDebug(tag: String = TIA_TAG, content: () -> String) {
+private inline fun logDebug(tag: String = TIA_TAG, content: () -> String) {
     if (TIA_DEBUG) {
         Log.d(tag, content())
     }

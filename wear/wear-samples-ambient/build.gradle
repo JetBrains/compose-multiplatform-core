@@ -15,29 +15,26 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(project(":wear:wear"))
     implementation("androidx.core:core:1.6.0")
-    implementation(libs.kotlinStdlib)
 }
 
 androidx {
     name = "Android Wear Ambient Sample"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.WEAR
     inceptionYear = "2021"
     description = "Contains the sample code for the ambient APIs defined in the androidx.wear:wear library"
@@ -45,14 +42,14 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk { version = release(25) }
     }
 
     buildTypes {
 	release {
-	    minifyEnabled true
-	    shrinkResources true
-	    proguardFiles getDefaultProguardFile('proguard-android.txt')
+	    minifyEnabled = true
+	    shrinkResources = true
+	    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
 	}
     }
 
@@ -60,5 +57,5 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-    namespace "androidx.wear.samples.ambient"
+    namespace = "androidx.wear.samples.ambient"
 }

@@ -62,6 +62,7 @@ import androidx.credentials.internal.FrameworkClassParsingException
  *   [GetRestoreCredentialOption] with another option (i.e. [GetPasswordOption] or
  *   [GetPublicKeyCredentialOption]).
  */
+@OptIn(ExperimentalDigitalCredentialApi::class)
 class GetCredentialRequest
 @JvmOverloads
 constructor(
@@ -76,6 +77,16 @@ constructor(
     init {
         require(credentialOptions.isNotEmpty()) { "credentialOptions should not be empty" }
         if (credentialOptions.size > 1) {
+            val digitalCredentialOptionCount =
+                credentialOptions.count { it is GetDigitalCredentialOption }
+            if (
+                digitalCredentialOptionCount > 0 &&
+                    digitalCredentialOptionCount != credentialOptions.size
+            ) {
+                throw IllegalArgumentException(
+                    "Digital Credential Option cannot be used with other credential option."
+                )
+            }
             for (option in credentialOptions) {
                 if (option is GetRestoreCredentialOption) {
                     throw IllegalArgumentException(
@@ -163,7 +174,7 @@ constructor(
                 origin,
                 preferIdentityDocUi,
                 preferUiBrandingComponentName,
-                preferImmediatelyAvailableCredentials
+                preferImmediatelyAvailableCredentials,
             )
         }
     }
@@ -190,11 +201,11 @@ constructor(
             bundle.putBoolean(BUNDLE_KEY_PREFER_IDENTITY_DOC_UI, request.preferIdentityDocUi)
             bundle.putBoolean(
                 BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-                request.preferImmediatelyAvailableCredentials
+                request.preferImmediatelyAvailableCredentials,
             )
             bundle.putParcelable(
                 BUNDLE_KEY_PREFER_UI_BRANDING_COMPONENT_NAME,
-                request.preferUiBrandingComponentName
+                request.preferUiBrandingComponentName,
             )
             return bundle
         }
@@ -214,7 +225,7 @@ constructor(
             return createFrom(
                 request.credentialOptions.map { CredentialOption.createFrom(it) },
                 request.origin,
-                request.data
+                request.data,
             )
         }
 
@@ -233,7 +244,7 @@ constructor(
         fun createFrom(
             credentialOptions: List<CredentialOption>,
             origin: String?,
-            metadata: Bundle
+            metadata: Bundle,
         ): GetCredentialRequest {
             try {
                 val preferIdentityDocUi = metadata.getBoolean(BUNDLE_KEY_PREFER_IDENTITY_DOC_UI)

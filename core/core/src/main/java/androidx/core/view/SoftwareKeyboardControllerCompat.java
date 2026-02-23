@@ -24,9 +24,10 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.InputMethodManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,10 +47,8 @@ public final class SoftwareKeyboardControllerCompat {
     public SoftwareKeyboardControllerCompat(@NonNull View view) {
         if (SDK_INT >= 30) {
             mImpl = new Impl30(view);
-        } else if (SDK_INT >= 20) {
-            mImpl = new Impl20(view);
         } else {
-            mImpl = new Impl();
+            mImpl = new Impl20(view);
         }
     }
 
@@ -93,11 +92,9 @@ public final class SoftwareKeyboardControllerCompat {
         }
     }
 
-    @RequiresApi(20)
     private static class Impl20 extends Impl {
 
-        @Nullable
-        private final View mView;
+        private final @Nullable View mView;
 
         Impl20(@Nullable View view) {
             mView = view;
@@ -152,11 +149,9 @@ public final class SoftwareKeyboardControllerCompat {
     @RequiresApi(30)
     private static class Impl30 extends Impl20 {
 
-        @Nullable
-        private View mView;
+        private @Nullable View mView;
 
-        @Nullable
-        private WindowInsetsController mWindowInsetsController;
+        private @Nullable WindowInsetsController mWindowInsetsController;
 
         Impl30(@NonNull View view) {
             super(view);

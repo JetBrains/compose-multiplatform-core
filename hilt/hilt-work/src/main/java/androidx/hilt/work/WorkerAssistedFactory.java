@@ -18,10 +18,11 @@ package androidx.hilt.work;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ListenableWorker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory interface to be implemented by generated code.

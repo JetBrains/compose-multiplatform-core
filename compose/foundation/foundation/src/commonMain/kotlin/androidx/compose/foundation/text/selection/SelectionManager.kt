@@ -21,21 +21,36 @@ import androidx.collection.LongObjectMap
 import androidx.collection.emptyLongObjectMap
 import androidx.collection.mutableLongIntMapOf
 import androidx.collection.mutableLongObjectMapOf
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.contextmenu.ContextMenuScope
+import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitAllPointersUpWithSlopDetection
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitPrimaryFirstDown
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextContextMenuItems.*
 import androidx.compose.foundation.text.TextDragObserver
+import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
+import androidx.compose.foundation.text.contextmenu.modifier.showTextContextMenuOnSecondaryClick
+import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuToolbarHandler
+import androidx.compose.foundation.text.contextmenu.modifier.translateRootToDestination
 import androidx.compose.foundation.text.input.internal.coerceIn
 import androidx.compose.foundation.text.isPositionInsideSelection
 import androidx.compose.foundation.text.selection.Selection.AnchorInfo
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -49,17 +64,17 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
@@ -69,6 +84,8 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMapNotNull
 import kotlin.math.absoluteValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** A bridge class between user interaction to the text composables for text selection. */
 internal class SelectionManager(private val selectionRegistrar: SelectionRegistrarImpl) {
@@ -118,17 +135,30 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
     /** [HapticFeedback] handle to perform haptic feedback. */
     var hapticFeedBack: HapticFeedback? = null
 
-    /** [ClipboardManager] to perform clipboard features. */
-    var clipboardManager: ClipboardManager? = null
+    /** A handler to perform a Copy action */
+    var onCopyHandler: ((AnnotatedString) -> Unit)? = null
 
     /** [TextToolbar] to show floating toolbar(post-M) or primary toolbar(pre-M). */
     var textToolbar: TextToolbar? = null
 
+    @VisibleForTesting internal var toolbarRequester: ToolbarRequester = ToolbarRequesterImpl()
+
     /** Focus requester used to request focus when selection becomes active. */
     var focusRequester: FocusRequester = FocusRequester()
 
-    /** Return true if the corresponding SelectionContainer is focused. */
+    /** Return true if the corresponding SelectionContainer has a child that is focused. */
     var hasFocus: Boolean by mutableStateOf(false)
+
+    /** Return true if dragging gesture is currently in process. */
+    private val isDraggingInProgress
+        get() = draggingHandle != null
+
+    /**
+     * When set to true, it will make SelectionManager ignore a copy key event (Ctrl/Cmd + C). It's
+     * necessary when it's preferred to handle the native Clipboard copy event, rather than the key
+     * event.
+     */
+    internal var shouldIgnoreCopyKeyEvent: Boolean = false
 
     /** Modifier for selection container. */
     val modifier
@@ -137,15 +167,15 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 .onGloballyPositioned { containerLayoutCoordinates = it }
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
-                    if (!focusState.isFocused && hasFocus) {
+                    if (!focusState.hasFocus && hasFocus) {
                         onRelease()
                     }
-                    hasFocus = focusState.isFocused
+                    this.hasFocus = focusState.hasFocus
                 }
                 .focusable()
                 .updateSelectionTouchMode { isInTouchMode = it }
                 .onKeyEvent {
-                    if (isCopyKeyEvent(it)) {
+                    if (!shouldIgnoreCopyKeyEvent && isCopyKeyEvent(it)) {
                         copy()
                         true
                     } else {
@@ -153,6 +183,39 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     }
                 }
                 .then(if (shouldShowMagnifier) Modifier.selectionMagnifier(this) else Modifier)
+                .addContextMenuComponents()
+
+    private val derivedContentRect: Rect? by derivedStateOf { getContentRect() }
+
+    val contextMenuAreaModifier
+        get() =
+            Modifier.showTextContextMenuOnSecondaryClick { clickLocation ->
+                    getContextTextAndSelection()?.let { (text, selection) ->
+                        platformSelectionBehaviors?.onShowContextMenu(
+                            text = text,
+                            selection = selection,
+                            secondaryClickLocation = clickLocation,
+                        )
+                    }
+                }
+                .textContextMenuToolbarHandler(
+                    requester = toolbarRequester,
+                    computeContentBounds = { destinationCoordinates ->
+                        val rootBounds =
+                            derivedContentRect ?: return@textContextMenuToolbarHandler null
+                        val localCoordinates = checkPreconditionNotNull(containerLayoutCoordinates)
+                        translateRootToDestination(
+                            rootContentBounds = rootBounds,
+                            localCoordinates = localCoordinates,
+                            destinationCoordinates = destinationCoordinates,
+                        )
+                    },
+                    onShow = {
+                        getContextTextAndSelection()?.let { (text, selection) ->
+                            platformSelectionBehaviors?.onShowSelectionToolbar(text, selection)
+                        }
+                    },
+                )
 
     private var previousPosition: Offset? = null
 
@@ -169,6 +232,9 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 }
             }
         }
+
+    /** Updated whenever a position change is received on a selected text. */
+    private var positionChangeState by mutableStateOf(Unit, neverEqualPolicy())
 
     /**
      * The beginning position of the drag gesture. Every time a new drag gesture starts, it wil be
@@ -207,6 +273,22 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
     var draggingHandle: Handle? by mutableStateOf(null)
         private set
 
+    /** Line height on start handle position */
+    val startHandleLineHeight: Float
+        get() {
+            val selection = this.selection ?: return 0f
+            val selectable = selection.start.let(::getAnchorSelectable) ?: return 0f
+            return selectable.getLineHeight(selection.start.offset)
+        }
+
+    /** Line height on end handle position */
+    val endHandleLineHeight: Float
+        get() {
+            val selection = this.selection ?: return 0f
+            val selectable = selection.end.let(::getAnchorSelectable) ?: return 0f
+            return selectable.getLineHeight(selection.end.offset)
+        }
+
     /**
      * When a handle is being dragged (i.e. [draggingHandle] is non-null), this is the last position
      * of the actual drag event. It is not clamped to handle positions. Null when not being dragged.
@@ -215,13 +297,27 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         private set
 
     private val shouldShowMagnifier
-        get() = draggingHandle != null && isInTouchMode && !isTriviallyCollapsedSelection()
+        get() = isDraggingInProgress && isInTouchMode && !isTriviallyCollapsedSelection()
 
     @VisibleForTesting internal var previousSelectionLayout: SelectionLayout? = null
+
+    /**
+     * Whether the user performed selection via a long press, double click or triple click
+     * selection. If user performed drag after the initial long press or double/triple click, and
+     * also the drag updated the selection, then this value is false. Otherwise, it is true. This
+     * variable is only meaningful after onSelectionUpdateStartCallback is called and become
+     * meaningless after onSelectionUpdateEndCallback is called.
+     */
+    private var isLongPressOrClickSelection: Boolean = false
+
+    internal var coroutineScope: CoroutineScope? = null
+
+    internal var platformSelectionBehaviors: PlatformSelectionBehaviors? = null
 
     init {
         selectionRegistrar.onPositionChangeCallback = { selectableId ->
             if (selectableId in selectionRegistrar.subselections) {
+                positionChangeState = Unit
                 updateHandleOffsets()
                 updateSelectionToolbar()
             }
@@ -246,20 +342,18 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     startSelection(
                         position = positionInContainer,
                         isStartHandle = false,
-                        adjustment = selectionMode
+                        adjustment = selectionMode,
                     )
 
                     focusRequester.requestFocus()
                     showToolbar = false
+                    isLongPressOrClickSelection = true
                 }
             }
 
         selectionRegistrar.onSelectionUpdateSelectAll = { isInTouchMode, selectableId ->
             val (newSelection, newSubselection) =
-                selectAllInSelectable(
-                    selectableId = selectableId,
-                    previousSelection = selection,
-                )
+                selectAllInSelectable(selectableId = selectableId, previousSelection = selection)
             if (newSelection != selection) {
                 selectionRegistrar.subselections = newSubselection
                 onSelectionChange(newSelection)
@@ -288,7 +382,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     newPosition = newPositionInContainer,
                     previousPosition = previousPositionInContainer,
                     isStartHandle = isStartHandle,
-                    adjustment = selectionMode
+                    adjustment = selectionMode,
                 )
             }
 
@@ -298,6 +392,11 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             // the original selection drag.
             draggingHandle = null
             currentDragPosition = null
+
+            if (isLongPressOrClickSelection && isNonEmptySelection()) {
+                suggestSelectionForLongPressOrDoubleClick()
+            }
+            isLongPressOrClickSelection = false
         }
 
         // This function is meant to handle changes in the selectable content,
@@ -323,6 +422,74 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             if (selectableId in selectionRegistrar.subselections) {
                 // Unsubscribing the selectable may make the selection empty, which would hide it.
                 updateSelectionToolbar()
+            }
+        }
+    }
+
+    private fun suggestSelectionForLongPressOrDoubleClick() {
+        // The text surrounding the selected text.
+        var textInSelectable: CharSequence? = null
+        var selectionInSelectable: TextRange? = null
+        var targetSelectableId: Long = SelectionRegistrar.InvalidSelectableId
+
+        forEachSelectableWithSelection { selectableId, text, selection, isLastSelectable ->
+            // Long press, double click and triple click only select text within one
+            // selectable. We check here that only one selectable is selected, and record
+            // the text, selection and selectable id for following operations.
+            if (isLastSelectable) {
+                textInSelectable = text
+                selectionInSelectable = selection
+                targetSelectableId = selectableId
+            }
+            false
+        }
+
+        if (
+            textInSelectable != null &&
+                selectionInSelectable != null &&
+                targetSelectableId != SelectionRegistrar.InvalidSelectableId &&
+                textInSelectable.isNotEmpty()
+        ) {
+            coroutineScope?.launch {
+                val newSelectionRange =
+                    platformSelectionBehaviors?.suggestSelectionForLongPressOrDoubleClick(
+                        textInSelectable,
+                        selectionInSelectable,
+                    )
+                if (newSelectionRange != null && newSelectionRange != selectionInSelectable) {
+                    val selectable = selectionRegistrar.selectableMap[targetSelectableId]
+                    // Make sure selectable is still valid. And text is not updated since
+                    // we made the query.
+                    if (selectable != null && selectable.getText() === textInSelectable) {
+                        val textLayout = selectable.textLayoutResult() ?: return@launch
+                        val newSelection =
+                            Selection(
+                                start =
+                                    AnchorInfo(
+                                        direction =
+                                            textLayout.getTextDirectionForOffset(
+                                                newSelectionRange.start
+                                            ),
+                                        offset = newSelectionRange.start,
+                                        selectableId = targetSelectableId,
+                                    ),
+                                end =
+                                    AnchorInfo(
+                                        direction =
+                                            textLayout.getTextDirectionForOffset(
+                                                newSelectionRange.end
+                                            ),
+                                        offset = newSelectionRange.end,
+                                        selectableId = targetSelectableId,
+                                    ),
+                            )
+
+                        selectionRegistrar.subselections =
+                            mutableLongObjectMapOf(targetSelectableId, newSelection)
+                        onSelectionChange(newSelection)
+                        previousSelectionLayout = null
+                    }
+                }
             }
         }
     }
@@ -395,7 +562,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
 
     internal fun selectAllInSelectable(
         selectableId: Long,
-        previousSelection: Selection?
+        previousSelection: Selection?,
     ): Pair<Selection?, LongObjectMap<Selection>> {
         val subselections = mutableLongObjectMapOf<Selection>()
         val newSelection =
@@ -522,30 +689,105 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         }
 
         return buildAnnotatedString {
-            selectionRegistrar.sort(requireContainerCoordinates()).fastForEach { selectable ->
-                selectionRegistrar.subselections[selectable.selectableId]?.let { subSelection ->
-                    val currentText = selectable.getText()
-                    val currentSelectedText =
-                        if (subSelection.handlesCrossed) {
-                            currentText.subSequence(
-                                subSelection.end.offset,
-                                subSelection.start.offset
-                            )
-                        } else {
-                            currentText.subSequence(
-                                subSelection.start.offset,
-                                subSelection.end.offset
-                            )
-                        }
+            forEachSelectableWithSelection { _, text, selection, isLastSelectable ->
+                append(text, selection.min, selection.max)
+                if (!isLastSelectable) append('\n')
+                true
+            }
+        }
+    }
 
-                    append(currentSelectedText)
+    /**
+     * Returns the selected text along with some surrounding context from the selectable(s).
+     * - For a single selected selectable, returns its full text, with the `TextRange` marking the
+     *   original selection within that text.
+     * - For multiple selected selectables, concatenates their relevant portions:
+     *     - First selectable: Text from its start up to the end of its selection, joined by '\n'.
+     *     - Intermediate selectables: Their selected text portions, joined by `\n`.
+     *     - Last selectable: Text from the start of its selection to its end. The `TextRange` marks
+     *       the overall selection bounds within this concatenated string.
+     *
+     * Returns `null` if there's no selection or no selectables.
+     *
+     * @return A `Pair` of the context [AnnotatedString] and the [TextRange] of the selection within
+     *   it, or `null` if no selection.
+     */
+    internal fun getContextTextAndSelection(): Pair<AnnotatedString, TextRange>? {
+        if (selection == null || selectionRegistrar.selectables.isEmpty()) {
+            return null
+        }
+
+        var start = -1
+        var end = -1
+        val text = buildAnnotatedString {
+            forEachSelectableWithSelection { _, text, selection, isLastSelectable ->
+                if (start == -1) {
+                    start = selection.min
+                    append(text, 0, selection.min)
                 }
+
+                append(text, selection.min, selection.max)
+                if (!isLastSelectable) {
+                    append('\n')
+                } else {
+                    // set end to current length in AnnotatedString. Builder before appending the
+                    // trailing text in the last selectable.
+                    end = length
+                    append(text, selection.max, text.length)
+                }
+                true
+            }
+        }
+        if (start == -1 || end == -1) return null
+
+        return Pair(text, TextRange(start, end))
+    }
+
+    /**
+     * Iterates over each selectable that is currently part of the selection, in their sorted order.
+     *
+     * For each such selectable, the provided [block] is invoked with:
+     * 1. `text`: The [AnnotatedString] content of the current selectable.
+     * 2. `selectionRange`: The [TextRange] representing the portion of `text` that is selected
+     *    within this specific selectable. This range is relative to the start of `text`.
+     * 3. `isLastSelectable`: A [Boolean] indicating whether this the last selected selectable. The
+     *    [block] returns a [Boolean] indicating whether it should continue iterating over the rest
+     *    of [Selectable]s.
+     */
+    internal inline fun forEachSelectableWithSelection(
+        crossinline block:
+            (
+                selectableId: Long,
+                text: AnnotatedString,
+                selection: TextRange,
+                isLastSelectable: Boolean,
+            ) -> Boolean
+    ) {
+        val sortedSelectables = selectionRegistrar.sort(requireContainerCoordinates())
+        val lastSelectableIndex =
+            sortedSelectables.indexOfLast {
+                val subSelection = selectionRegistrar.subselections[it.selectableId]
+                subSelection != null && subSelection.start.offset != subSelection.end.offset
+            }
+        // No selectable is selected.
+        if (lastSelectableIndex == -1) return
+
+        sortedSelectables.fastForEachIndexed { selectableIndex, selectable ->
+            selectionRegistrar.subselections[selectable.selectableId]?.let { subSelection ->
+                val currentText = selectable.getText()
+                val selectionRange = TextRange(subSelection.start.offset, subSelection.end.offset)
+                val isLastSelectable = (selectableIndex >= lastSelectableIndex)
+                val shouldContinue =
+                    block(selectable.selectableId, currentText, selectionRange, isLastSelectable)
+                if (!shouldContinue) return
             }
         }
     }
 
     internal fun copy() {
-        getSelectedText()?.takeIf { it.isNotEmpty() }?.let { clipboardManager?.setText(it) }
+        getSelectedText()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { textToCopy -> onCopyHandler?.invoke(textToCopy) }
     }
 
     /**
@@ -563,18 +805,36 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         onRelease()
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     private fun updateSelectionToolbar() {
         if (!hasFocus) {
             return
         }
 
+        if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+            if (showToolbar && isInTouchMode) {
+                derivedContentRect ?: return
+                toolbarRequester.show()
+            } else {
+                toolbarRequester.hide()
+            }
+        } else {
+            updateSelectionTextToolbar()
+        }
+    }
+
+    // No need to show the "Copy" context menu item if onCopyHandler is not provided
+    internal fun canCopy(): Boolean = onCopyHandler != null && isNonEmptySelection()
+
+    private fun updateSelectionTextToolbar() {
         val textToolbar = textToolbar ?: return
         if (showToolbar && isInTouchMode) {
             val rect = getContentRect() ?: return
             textToolbar.showMenu(
                 rect = rect,
-                onCopyRequested = if (isNonEmptySelection()) ::toolbarCopy else null,
+                onCopyRequested = if (canCopy()) ::toolbarCopy else null,
                 onSelectAllRequested = if (isEntireContainerSelected()) null else ::selectAll,
+                onAutofillRequested = null,
             )
         } else if (textToolbar.status == TextToolbarStatus.Shown) {
             textToolbar.hide()
@@ -586,6 +846,10 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
      * entire selection, coerced into visible bounds.
      */
     private fun getContentRect(): Rect? {
+        // TODO(grantapher) Instead of a useless state read, the state should be incorporated into
+        //   the selectables themselves.
+        positionChangeState // State read. Updated when a selected text position changes.
+
         selection ?: return null
         val containerCoordinates = containerLayoutCoordinates ?: return null
         if (!containerCoordinates.isAttached) return null
@@ -655,7 +919,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 showToolbar = false
             }
 
-            override fun onStart(startPoint: Offset) {
+            override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
                 draggingHandle ?: return
 
                 val selection = selection!!
@@ -701,7 +965,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                         newPosition = endPosition,
                         previousPosition = dragBeginPosition,
                         isStartHandle = isStartHandle,
-                        adjustment = SelectionAdjustment.CharacterWithWordAccelerate
+                        adjustment = SelectionAdjustment.CharacterWithWordAccelerate,
                     )
                 if (consumed) {
                     dragBeginPosition = endPosition
@@ -722,18 +986,34 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             override fun onCancel() = done()
         }
 
-    /** Detect tap without consuming the up event. */
-    private suspend fun PointerInputScope.detectNonConsumingTap(onTap: (Offset) -> Unit) {
-        awaitEachGesture { waitForUpOrCancellation()?.let { onTap(it.position) } }
-    }
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun Modifier.addContextMenuComponents(): Modifier =
+        if (ComposeFoundationFlags.isNewContextMenuEnabled)
+            addSelectionContainerTextContextMenuComponents(this@SelectionManager)
+        else this
 
-    private fun Modifier.onClearSelectionRequested(block: () -> Unit): Modifier {
-        return if (hasFocus) pointerInput(Unit) { detectNonConsumingTap { block() } } else this
-    }
+    /** Clear the selection on up event that isn't a drag-end. */
+    private fun Modifier.onClearSelectionRequested(block: () -> Unit): Modifier =
+        pointerInput(Unit) {
+            awaitEachGesture {
+                // Wait for primary pointer to be down. It's required to explicitly filter
+                // secondary mouse button to make context menu work correctly.
+                val primaryFirstDown = awaitPrimaryFirstDown(requireUnconsumed = false)
+
+                // Wait for all pointers to be up, and if we're not dragging, clear the selection.
+                // Do it in the initial phase so that when this happens while dragging, we check
+                // isDraggingInProgress before the drag-end event clears it.
+                val pointerSlopReached =
+                    awaitAllPointersUpWithSlopDetection(primaryFirstDown, PointerEventPass.Initial)
+                if (!pointerSlopReached && !isDraggingInProgress) {
+                    block()
+                }
+            }
+        }
 
     private fun convertToContainerCoordinates(
         layoutCoordinates: LayoutCoordinates,
-        offset: Offset
+        offset: Offset,
     ): Offset {
         val coordinates = containerLayoutCoordinates
         if (coordinates == null || !coordinates.isAttached) return Offset.Unspecified
@@ -754,14 +1034,14 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
     private fun startSelection(
         position: Offset,
         isStartHandle: Boolean,
-        adjustment: SelectionAdjustment
+        adjustment: SelectionAdjustment,
     ) {
         previousSelectionLayout = null
         updateSelection(
             position = position,
             previousHandlePosition = Offset.Unspecified,
             isStartHandle = isStartHandle,
-            adjustment = adjustment
+            adjustment = adjustment,
         )
     }
 
@@ -787,7 +1067,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
             position = newPosition,
             previousHandlePosition = previousPosition,
             isStartHandle = isStartHandle,
-            adjustment = adjustment
+            adjustment = adjustment,
         )
     }
 
@@ -827,6 +1107,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
         val newSelection = adjustment.adjust(selectionLayout)
         if (newSelection != selection) {
             selectionChanged(selectionLayout, newSelection)
+            isLongPressOrClickSelection = false
         }
         previousSelectionLayout = selectionLayout
         return true
@@ -897,14 +1178,14 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 val textLayoutResult = selectable.textLayoutResult() ?: return@fastAny false
                 textLayoutResult.isPositionInsideSelection(
                     position = positionInSelectable,
-                    selectionRange = selection.toTextRange()
+                    selectionRange = selection.toTextRange(),
                 )
             }
         if (!isClickedPositionInsideSelection) {
             startSelection(
                 position = position,
                 isStartHandle = true,
-                adjustment = SelectionAdjustment.Word
+                adjustment = SelectionAdjustment.Word,
             )
         }
     }
@@ -918,12 +1199,29 @@ internal expect fun isCopyKeyEvent(keyEvent: KeyEvent): Boolean
 
 internal expect fun Modifier.selectionMagnifier(manager: SelectionManager): Modifier
 
+internal expect fun Modifier.addSelectionContainerTextContextMenuComponents(
+    selectionManager: SelectionManager
+): Modifier
+
+internal fun SelectionManager.contextMenuBuilder(
+    state: ContextMenuState
+): ContextMenuScope.() -> Unit = {
+    fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
+        TextItem(state, label, enabled, operation)
+    }
+
+    listOf(
+        selectionItem(Copy, enabled = isNonEmptySelection()) { copy() },
+        selectionItem(SelectAll, enabled = !isEntireContainerSelected()) { selectAll() },
+    )
+}
+
 private val invertedInfiniteRect =
     Rect(
         left = Float.POSITIVE_INFINITY,
         top = Float.POSITIVE_INFINITY,
         right = Float.NEGATIVE_INFINITY,
-        bottom = Float.NEGATIVE_INFINITY
+        bottom = Float.NEGATIVE_INFINITY,
     )
 
 private fun <T> List<T>.firstAndLast(): List<T> =
@@ -985,7 +1283,7 @@ internal fun getSelectedRegionRect(
 
 internal fun calculateSelectionMagnifierCenterAndroid(
     manager: SelectionManager,
-    magnifierSize: IntSize
+    magnifierSize: IntSize,
 ): Offset {
     val selection = manager.selection ?: return Offset.Unspecified
     return when (manager.draggingHandle) {
@@ -999,7 +1297,7 @@ internal fun calculateSelectionMagnifierCenterAndroid(
 private fun getMagnifierCenter(
     manager: SelectionManager,
     magnifierSize: IntSize,
-    anchor: AnchorInfo
+    anchor: AnchorInfo,
 ): Offset {
     val selectable = manager.getAnchorSelectable(anchor) ?: return Offset.Unspecified
     val containerCoordinates = manager.containerLayoutCoordinates ?: return Offset.Unspecified
@@ -1056,7 +1354,7 @@ private fun getMagnifierCenter(
 
     return containerCoordinates.localPositionOf(
         sourceCoordinates = selectableCoordinates,
-        relativeToSource = Offset(textConstrainedX, lineCenterY)
+        relativeToSource = Offset(textConstrainedX, lineCenterY),
     )
 }
 

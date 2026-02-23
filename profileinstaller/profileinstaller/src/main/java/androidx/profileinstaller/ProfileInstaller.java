@@ -24,10 +24,11 @@ import android.content.res.AssetManager;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -56,7 +57,8 @@ public class ProfileInstaller {
 
     private static final String TAG = "ProfileInstaller";
 
-    private static final String PROFILE_BASE_DIR = "/data/misc/profiles/cur/0";
+    private static final String PROFILE_BASE_DIR = "/data/misc/profiles/cur/"
+            + UserInfo.getCurrentUserId();
     private static final String PROFILE_FILE = "primary.prof";
     private static final String PROFILE_META_LOCATION = "dexopt/baseline.profm";
     private static final String PROFILE_INSTALLER_SKIP_FILE_NAME =
@@ -118,8 +120,7 @@ public class ProfileInstaller {
         }
     };
 
-    @NonNull
-    static final DiagnosticsCallback LOG_DIAGNOSTICS = new DiagnosticsCallback() {
+    static final @NonNull DiagnosticsCallback LOG_DIAGNOSTICS = new DiagnosticsCallback() {
         static final String TAG = "ProfileInstaller";
         @Override
         public void onDiagnosticReceived(int code, @Nullable Object data) {

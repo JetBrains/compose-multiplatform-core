@@ -24,9 +24,10 @@ import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
 import android.provider.DocumentsProvider;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -74,9 +75,7 @@ public final class DocumentsContractCompat {
      * @see DocumentsContract#isTreeUri(Uri)
      */
     public static boolean isTreeUri(@NonNull Uri uri) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            return false;
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             // While "tree" Uris were added in 21, the check was only (publicly) added in 24
             final List<String> paths = uri.getPathSegments();
             return (paths.size() >= 2 && PATH_TREE.equals(paths.get(0)));
@@ -90,8 +89,7 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#getDocumentId(Uri)
      */
-    @Nullable
-    public static String getDocumentId(@NonNull Uri documentUri) {
+    public static @Nullable String getDocumentId(@NonNull Uri documentUri) {
         return DocumentsContract.getDocumentId(documentUri);
     }
 
@@ -100,12 +98,8 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#getTreeDocumentId(Uri)
      */
-    @Nullable
-    public static String getTreeDocumentId(@NonNull Uri documentUri) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.getTreeDocumentId(documentUri);
-        }
-        return null;
+    public static @Nullable String getTreeDocumentId(@NonNull Uri documentUri) {
+        return DocumentsContract.getTreeDocumentId(documentUri);
     }
 
     /**
@@ -115,8 +109,8 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#buildDocumentUri(String, String)
      */
-    @Nullable
-    public static Uri buildDocumentUri(@NonNull String authority, @NonNull String documentId) {
+    public static @Nullable Uri buildDocumentUri(@NonNull String authority,
+            @NonNull String documentId) {
         return DocumentsContract.buildDocumentUri(authority, documentId);
     }
 
@@ -125,12 +119,9 @@ public final class DocumentsContractCompat {
      * a document provider. When queried, a provider will return a single row
      * with columns defined by {@link Document}.
      */
-    @Nullable
-    public static Uri buildDocumentUriUsingTree(@NonNull Uri treeUri, @NonNull String documentId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.buildDocumentUriUsingTree(treeUri, documentId);
-        }
-        return null;
+    public static @Nullable Uri buildDocumentUriUsingTree(@NonNull Uri treeUri,
+            @NonNull String documentId) {
+        return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
     }
 
     /**
@@ -139,12 +130,9 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#buildTreeDocumentUri(String, String)
      */
-    @Nullable
-    public static Uri buildTreeDocumentUri(@NonNull String authority, @NonNull String documentId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.buildTreeDocumentUri(authority, documentId);
-        }
-        return null;
+    public static @Nullable Uri buildTreeDocumentUri(@NonNull String authority,
+            @NonNull String documentId) {
+        return DocumentsContract.buildTreeDocumentUri(authority, documentId);
     }
 
     /**
@@ -154,13 +142,9 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#buildChildDocumentsUri(String, String)
      */
-    @Nullable
-    public static Uri buildChildDocumentsUri(@NonNull String authority,
+    public static @Nullable Uri buildChildDocumentsUri(@NonNull String authority,
             @Nullable String parentDocumentId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.buildChildDocumentsUri(authority, parentDocumentId);
-        }
-        return null;
+        return DocumentsContract.buildChildDocumentsUri(authority, parentDocumentId);
     }
 
     /**
@@ -170,14 +154,9 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#buildChildDocumentsUriUsingTree(Uri, String)
      */
-    @Nullable
-    public static Uri buildChildDocumentsUriUsingTree(@NonNull Uri treeUri,
+    public static @Nullable Uri buildChildDocumentsUriUsingTree(@NonNull Uri treeUri,
             @NonNull String parentDocumentId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.buildChildDocumentsUriUsingTree(treeUri,
-                    parentDocumentId);
-        }
-        return null;
+        return DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId);
     }
 
     /**
@@ -189,15 +168,10 @@ public final class DocumentsContractCompat {
      * @param displayName       name of new document
      * @return newly created document, or {@code null} if failed
      */
-    @Nullable
-    public static Uri createDocument(@NonNull ContentResolver content,
+    public static @Nullable Uri createDocument(@NonNull ContentResolver content,
             @NonNull Uri parentDocumentUri, @NonNull String mimeType, @NonNull String displayName)
             throws FileNotFoundException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.createDocument(content, parentDocumentUri, mimeType,
-                    displayName);
-        }
-        return null;
+        return DocumentsContract.createDocument(content, parentDocumentUri, mimeType, displayName);
     }
 
     /**
@@ -205,13 +179,9 @@ public final class DocumentsContractCompat {
      *
      * @see DocumentsContract#renameDocument(ContentResolver, Uri, String)
      */
-    @Nullable
-    public static Uri renameDocument(@NonNull ContentResolver content,
+    public static @Nullable Uri renameDocument(@NonNull ContentResolver content,
             @NonNull Uri documentUri, @NonNull String displayName) throws FileNotFoundException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return DocumentsContractApi21Impl.renameDocument(content, documentUri, displayName);
-        }
-        return null;
+        return DocumentsContract.renameDocument(content, documentUri, displayName);
     }
 
     /**
@@ -235,44 +205,6 @@ public final class DocumentsContractCompat {
                     parentDocumentUri);
         } else {
             return DocumentsContract.deleteDocument(content, documentUri);
-        }
-    }
-
-    @RequiresApi(21)
-    private static class DocumentsContractApi21Impl {
-        static String getTreeDocumentId(Uri documentUri) {
-            return DocumentsContract.getTreeDocumentId(documentUri);
-        }
-
-        public static Uri buildTreeDocumentUri(String authority, String documentId) {
-            return DocumentsContract.buildTreeDocumentUri(authority, documentId);
-        }
-
-        static Uri buildDocumentUriUsingTree(Uri treeUri, String documentId) {
-            return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
-        }
-
-        static Uri buildChildDocumentsUri(String authority, String parentDocumentId) {
-            return DocumentsContract.buildChildDocumentsUri(authority, parentDocumentId);
-        }
-
-        static Uri buildChildDocumentsUriUsingTree(Uri treeUri, String parentDocumentId) {
-            return DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId);
-        }
-
-        static Uri createDocument(ContentResolver content, Uri parentDocumentUri,
-                String mimeType, String displayName) throws FileNotFoundException {
-            return DocumentsContract.createDocument(content, parentDocumentUri, mimeType,
-                    displayName);
-        }
-
-        static Uri renameDocument(@NonNull ContentResolver content,
-                @NonNull Uri documentUri, @NonNull String displayName)
-                throws FileNotFoundException {
-            return DocumentsContract.renameDocument(content, documentUri, displayName);
-        }
-
-        private DocumentsContractApi21Impl() {
         }
     }
 

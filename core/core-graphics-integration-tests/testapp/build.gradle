@@ -17,20 +17,19 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        applicationId "androidx.core.graphics.sample"
+        applicationId = "androidx.core.graphics.sample"
     }
-    namespace "androidx.core.graphics.sample"
+    namespace = "androidx.core.graphics.sample"
 }
 
 dependencies {
-    implementation(project(":core:core-ktx"))
-    implementation(project(":appcompat:appcompat"))
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.annotation:annotation:1.8.1")
     compileOnly(project(":annotation:annotation-sampled"))
 }

@@ -20,13 +20,14 @@ import android.net.Network;
 import android.net.Uri;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import kotlin.coroutines.CoroutineContext;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -238,7 +239,6 @@ public final class WorkerParameters {
         public @NonNull List<Uri> triggeredContentUris = Collections.emptyList();
 
         @RequiresApi(28)
-        @Nullable
-        public Network network;
+        public @Nullable Network network;
     }
 }

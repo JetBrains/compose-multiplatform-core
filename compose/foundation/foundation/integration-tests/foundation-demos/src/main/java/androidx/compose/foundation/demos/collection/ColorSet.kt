@@ -24,15 +24,18 @@
     "NOTHING_TO_INLINE",
     "UnusedImport",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.compose.foundation.demos.collection
 
+import androidx.annotation.IntRange
 import androidx.collection.LongSet
 import androidx.collection.MutableLongSet
 import androidx.collection.emptyLongSet
 import androidx.collection.mutableLongSetOf
 import androidx.compose.ui.graphics.Color
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmInline
 
@@ -58,22 +61,13 @@ internal inline fun colorSetOf(element1: Color): ColorSet =
 /** Returns a new read-only [ColorSet] with only [element1] and [element2] in it. */
 @Suppress("UNCHECKED_CAST")
 internal fun colorSetOf(element1: Color, element2: Color): ColorSet =
-    ColorSet(
-        mutableLongSetOf(
-            element1.value.toLong(),
-            element2.value.toLong(),
-        )
-    )
+    ColorSet(mutableLongSetOf(element1.value.toLong(), element2.value.toLong()))
 
 /** Returns a new read-only [ColorSet] with only [element1], [element2], and [element3] in it. */
 @Suppress("UNCHECKED_CAST")
 internal fun colorSetOf(element1: Color, element2: Color, element3: Color): ColorSet =
     ColorSet(
-        mutableLongSetOf(
-            element1.value.toLong(),
-            element2.value.toLong(),
-            element3.value.toLong(),
-        )
+        mutableLongSetOf(element1.value.toLong(), element2.value.toLong(), element3.value.toLong())
     )
 
 /** Returns a new [MutableColorSet]. */
@@ -85,22 +79,40 @@ internal fun mutableColorSetOf(element1: Color): MutableColorSet =
 
 /** Returns a new [MutableColorSet] with only [element1] and [element2] in it. */
 internal fun mutableColorSetOf(element1: Color, element2: Color): MutableColorSet =
-    MutableColorSet(
-        mutableLongSetOf(
-            element1.value.toLong(),
-            element2.value.toLong(),
-        )
-    )
+    MutableColorSet(mutableLongSetOf(element1.value.toLong(), element2.value.toLong()))
 
 /** Returns a new [MutableColorSet] with only [element1], [element2], and [element3] in it. */
 internal fun mutableColorSetOf(element1: Color, element2: Color, element3: Color): MutableColorSet =
     MutableColorSet(
-        mutableLongSetOf(
-            element1.value.toLong(),
-            element2.value.toLong(),
-            element3.value.toLong(),
-        )
+        mutableLongSetOf(element1.value.toLong(), element2.value.toLong(), element3.value.toLong())
     )
+
+/**
+ * Builds a new [ColorSet] by populating a [MutableColorSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ */
+internal inline fun buildColorSet(builderAction: MutableColorSet.() -> Unit): ColorSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableColorSet().apply(builderAction).asColorSet()
+}
+
+/**
+ * Builds a new [ColorSet] by populating a [MutableColorSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ */
+internal inline fun buildColorSet(
+    initialCapacity: Int,
+    builderAction: MutableColorSet.() -> Unit,
+): ColorSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableColorSet(initialCapacity).apply(builderAction).asColorSet()
+}
 
 /**
  * [ColorSet] is a container with a [Set]-like interface designed to avoid allocations, including
@@ -116,19 +128,18 @@ internal fun mutableColorSetOf(element1: Color, element2: Color, element3: Color
  *
  * @see [MutableColorSet]
  */
-@OptIn(ExperimentalContracts::class)
 @JvmInline
 internal value class ColorSet(val set: LongSet) {
     /**
      * Returns the number of elements that can be stored in this set without requiring internal
      * storage reallocation.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val capacity: Int
         get() = set.capacity
 
     /** Returns the number of elements in this set. */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val size: Int
         get() = set.size
 
@@ -200,7 +211,7 @@ internal value class ColorSet(val set: LongSet) {
     }
 
     /** Returns the number of elements in this set. */
-    @androidx.annotation.IntRange(from = 0) public inline fun count(): Int = set.count()
+    @IntRange(from = 0) public inline fun count(): Int = set.count()
 
     /**
      * Returns the number of elements matching the given [predicate].
@@ -208,7 +219,7 @@ internal value class ColorSet(val set: LongSet) {
      * @param predicate Called for all elements in the set to count the number for which it returns
      *   `true`.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(predicate: (element: Color) -> Boolean): Int {
         contract { callsInPlace(predicate) }
         return set.count { predicate(Color(it.toULong())) }
@@ -256,19 +267,18 @@ internal value class ColorSet(val set: LongSet) {
  * and one or more threads modify the structure of the set (insertion or removal for instance), the
  * calling code must provide the appropriate synchronization. Concurrent reads are however safe.
  */
-@OptIn(ExperimentalContracts::class)
 @JvmInline
 internal value class MutableColorSet(val set: MutableLongSet) {
     /**
      * Returns the number of elements that can be stored in this set without requiring internal
      * storage reallocation.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val capacity: Int
         get() = set.capacity
 
     /** Returns the number of elements in this set. */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val size: Int
         get() = set.size
 
@@ -340,7 +350,7 @@ internal value class MutableColorSet(val set: MutableLongSet) {
     }
 
     /** Returns the number of elements in this set. */
-    @androidx.annotation.IntRange(from = 0) public inline fun count(): Int = set.count()
+    @IntRange(from = 0) public inline fun count(): Int = set.count()
 
     /**
      * Returns the number of elements matching the given [predicate].
@@ -348,7 +358,7 @@ internal value class MutableColorSet(val set: MutableLongSet) {
      * @param predicate Called for all elements in the set to count the number for which it returns
      *   `true`.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(predicate: (element: Color) -> Boolean): Int {
         contract { callsInPlace(predicate) }
         return set.count { predicate(Color(it.toULong())) }
@@ -485,5 +495,5 @@ internal value class MutableColorSet(val set: MutableLongSet) {
      * Returns the number of empty elements removed from this set's storage. Returns 0 if no
      * trimming is necessary or possible.
      */
-    @androidx.annotation.IntRange(from = 0) public inline fun trim(): Int = set.trim()
+    @IntRange(from = 0) public inline fun trim(): Int = set.trim()
 }

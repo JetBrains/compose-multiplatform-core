@@ -20,11 +20,12 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import static androidx.core.google.shortcuts.builders.Constants.CAPABILITY_PARAMETER_KEY;
 import static androidx.core.google.shortcuts.builders.Constants.CAPABILITY_TYPE;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.android.gms.appindex.builders.IndexableBuilder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Builder for the Capability section in the Shortcut Corpus.
@@ -39,15 +40,13 @@ public class CapabilityBuilder extends IndexableBuilder<CapabilityBuilder> {
     }
 
     /** Sets one or more parameters for the given capability. */
-    @NonNull
-    public CapabilityBuilder setParameter(
-            @NonNull ParameterBuilder... parameter) {
+    public @NonNull CapabilityBuilder setParameter(
+            ParameterBuilder @NonNull ... parameter) {
         mParameters = parameter;
         return put(CAPABILITY_PARAMETER_KEY, parameter);
     }
 
-    @Nullable
-    public ParameterBuilder[] getParameters() {
+    public ParameterBuilder @Nullable [] getParameters() {
         return mParameters;
     }
 }

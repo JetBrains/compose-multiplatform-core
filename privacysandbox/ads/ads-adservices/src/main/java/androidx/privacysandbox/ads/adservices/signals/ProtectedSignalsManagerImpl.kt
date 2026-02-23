@@ -29,9 +29,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 @ExperimentalFeatures.Ext12OptIn
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("NewApi", "ClassVerificationFailure")
+@SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 12)
-open class ProtectedSignalsManagerImpl(
+public open class ProtectedSignalsManagerImpl(
     private val protectedSignalsManager: android.adservices.signals.ProtectedSignalsManager
 ) : ProtectedSignalsManager() {
     @DoNotInline
@@ -41,7 +41,7 @@ open class ProtectedSignalsManagerImpl(
             protectedSignalsManager.updateSignals(
                 convertUpdateRequest(request),
                 Runnable::run,
-                continuation.asOutcomeReceiver()
+                continuation.asOutcomeReceiver(),
             )
         }
     }

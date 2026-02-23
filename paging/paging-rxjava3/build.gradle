@@ -15,26 +15,24 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
     api(project(":paging:paging-common"))
     api("androidx.arch.core:core-runtime:2.2.0")
     api(libs.rxjava3)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesRx3)
 
     testImplementation(project(":internal-testutils-common"))
@@ -53,12 +51,12 @@ dependencies {
 
 androidx {
     name = "Paging-RxJava3"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Paging-RxJava3"
     legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.paging.rxjava3"
+    namespace = "androidx.paging.rxjava3"
 }

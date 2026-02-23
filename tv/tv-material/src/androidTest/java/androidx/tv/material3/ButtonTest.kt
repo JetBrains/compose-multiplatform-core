@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -39,7 +38,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
@@ -48,15 +47,16 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 @RunWith(AndroidJUnit4::class)
 class ButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun filledButton_defaultSemantics() {
@@ -82,7 +82,7 @@ class ButtonTest {
                 Button(
                     modifier = Modifier.testTag(FilledButtonTag),
                     onClick = {},
-                    onLongClick = {}
+                    onLongClick = {},
                 ) {
                     Text("FilledButton")
                 }
@@ -104,7 +104,7 @@ class ButtonTest {
                 Button(
                     modifier = Modifier.testTag(FilledButtonTag),
                     onClick = {},
-                    enabled = false
+                    enabled = false,
                 ) {
                     Text("FilledButton")
                 }
@@ -147,7 +147,7 @@ class ButtonTest {
                 Button(
                     modifier = Modifier.testTag(FilledButtonTag),
                     onClick = {},
-                    onLongClick = onLongClick
+                    onLongClick = onLongClick,
                 ) {
                     Text(text)
                 }
@@ -168,7 +168,7 @@ class ButtonTest {
                 Button(
                     modifier = Modifier.testTag(FilledButtonTag),
                     onClick = { enabled = false },
-                    enabled = enabled
+                    enabled = enabled,
                 ) {
                     Text("Hello")
                 }
@@ -233,7 +233,7 @@ class ButtonTest {
                 Text(
                     "FilledButton",
                     modifier =
-                        Modifier.testTag(FilledButtonTextTag).semantics(mergeDescendants = true) {}
+                        Modifier.testTag(FilledButtonTextTag).semantics(mergeDescendants = true) {},
                 )
             }
         }
@@ -243,12 +243,12 @@ class ButtonTest {
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
             16.dp,
-            "padding between the start of the button and the start of the text."
+            "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             16.dp,
-            "padding between the end of the text and the end of the button."
+            "padding between the end of the text and the end of the button.",
         )
     }
 
@@ -258,7 +258,7 @@ class ButtonTest {
             Button(
                 onClick = {},
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                modifier = Modifier.testTag(FilledButtonTag)
+                modifier = Modifier.testTag(FilledButtonTag),
             ) {
                 Box(
                     modifier =
@@ -270,7 +270,7 @@ class ButtonTest {
                 Text(
                     "Liked it",
                     modifier =
-                        Modifier.testTag(FilledButtonTextTag).semantics(mergeDescendants = true) {}
+                        Modifier.testTag(FilledButtonTextTag).semantics(mergeDescendants = true) {},
                 )
             }
         }
@@ -281,17 +281,17 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expected = 12.dp,
-            subject = "Padding between start of button and start of icon."
+            subject = "Padding between start of button and start of icon.",
         )
 
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             expected = FilledButtonIconSpacing,
-            subject = "Padding between end of icon and start of text."
+            subject = "Padding between end of icon and start of text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expected = 16.dp,
-            subject = "padding between end of text and end of button."
+            subject = "padding between end of text and end of button.",
         )
     }
 
@@ -319,7 +319,7 @@ class ButtonTest {
                 OutlinedButton(
                     modifier = Modifier.testTag(OutlinedButtonTag),
                     onClick = {},
-                    onLongClick = {}
+                    onLongClick = {},
                 ) {
                     Text("OutlinedButton")
                 }
@@ -341,7 +341,7 @@ class ButtonTest {
                 OutlinedButton(
                     modifier = Modifier.testTag(OutlinedButtonTag),
                     onClick = {},
-                    enabled = false
+                    enabled = false,
                 ) {
                     Text("OutlinedButton")
                 }
@@ -384,7 +384,7 @@ class ButtonTest {
                 OutlinedButton(
                     modifier = Modifier.testTag(OutlinedButtonTag),
                     onClick = {},
-                    onLongClick = onLongClick
+                    onLongClick = onLongClick,
                 ) {
                     Text(text)
                 }
@@ -405,7 +405,7 @@ class ButtonTest {
                 OutlinedButton(
                     modifier = Modifier.testTag(OutlinedButtonTag),
                     onClick = { enabled = false },
-                    enabled = enabled
+                    enabled = enabled,
                 ) {
                     Text("Hello")
                 }
@@ -437,13 +437,13 @@ class ButtonTest {
             Column {
                 OutlinedButton(
                     modifier = Modifier.testTag(watchButtonTag),
-                    onClick = watchButtonOnClick
+                    onClick = watchButtonOnClick,
                 ) {
                     Text("Watch")
                 }
                 OutlinedButton(
                     modifier = Modifier.testTag(playButtonTag),
-                    onClick = playButtonOnClick
+                    onClick = playButtonOnClick,
                 ) {
                     Text("Play")
                 }
@@ -478,7 +478,7 @@ class ButtonTest {
                     modifier =
                         Modifier.testTag(OutlinedButtonTextTag).semantics(
                             mergeDescendants = true
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -488,12 +488,12 @@ class ButtonTest {
 
         (textBounds.left - buttonBounds.left).assertIsEqualTo(
             16.dp,
-            "padding between the start of the button and the start of the text."
+            "padding between the start of the button and the start of the text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             16.dp,
-            "padding between the end of the text and the end of the button."
+            "padding between the end of the text and the end of the button.",
         )
     }
 
@@ -503,7 +503,7 @@ class ButtonTest {
             OutlinedButton(
                 onClick = {},
                 contentPadding = OutlinedButtonDefaults.ButtonWithIconContentPadding,
-                modifier = Modifier.testTag(OutlinedButtonTag)
+                modifier = Modifier.testTag(OutlinedButtonTag),
             ) {
                 Box(
                     modifier =
@@ -517,7 +517,7 @@ class ButtonTest {
                     modifier =
                         Modifier.testTag(OutlinedButtonTextTag).semantics(
                             mergeDescendants = true
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -528,17 +528,17 @@ class ButtonTest {
 
         (iconBounds.left - buttonBounds.left).assertIsEqualTo(
             expected = 12.dp,
-            subject = "Padding between start of button and start of icon."
+            subject = "Padding between start of button and start of icon.",
         )
 
         (textBounds.left - iconBounds.right).assertIsEqualTo(
             expected = OutlinedButtonIconSpacing,
-            subject = "Padding between end of icon and start of text."
+            subject = "Padding between end of icon and start of text.",
         )
 
         (buttonBounds.right - textBounds.right).assertIsEqualTo(
             expected = 16.dp,
-            subject = "padding between end of text and end of button."
+            subject = "padding between end of text and end of button.",
         )
     }
 }

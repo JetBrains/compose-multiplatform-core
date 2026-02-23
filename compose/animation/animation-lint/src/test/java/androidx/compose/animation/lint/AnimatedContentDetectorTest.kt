@@ -36,7 +36,7 @@ class AnimatedContentDetectorTest : LintDetectorTest() {
     override fun getIssues(): MutableList<Issue> =
         mutableListOf(
             AnimatedContentDetector.UnusedContentLambdaTargetStateParameter,
-            AnimatedContentDetector.UnusedTargetStateInContentKeyLambda
+            AnimatedContentDetector.UnusedTargetStateInContentKeyLambda,
         )
 
     // Simplified AnimatedContent.kt stubs
@@ -250,7 +250,7 @@ class AnimatedContentDetectorTest : LintDetectorTest() {
         P11pVzoTZHZnJlOEp88bW88ac//ZlHvelEvMxabsDNmopXkRy5R3SDFDb8/u
         wa5jro6bdczjFkHcruMO7u6BKdzDwh79dZhQuK/wQKGkkFeoKEwqTCuM/QaR
         /XoCyAMAAA==
-        """
+        """,
         )
 
     @Test
@@ -259,7 +259,7 @@ class AnimatedContentDetectorTest : LintDetectorTest() {
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.animation.*
                 import androidx.compose.runtime.*
@@ -320,80 +320,80 @@ class AnimatedContentDetectorTest : LintDetectorTest() {
             """
                 ),
                 AnimatedContentStub,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expect(
-                """src/foo/test.kt:14: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+                """src/test/foo/test.kt:14: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                     ) { if (foo) { /**/ } else { /**/ } }
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:18: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:18: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                         content = { if (foo) { /**/ } else { /**/ } }
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:23: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:23: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                     ) { param -> if (foo) { /**/ } else { /**/ } }
                         ~~~~~
-src/foo/test.kt:27: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:27: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                         content = { param -> if (foo) { /**/ } else { /**/ } }
                                     ~~~~~
-src/foo/test.kt:32: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:32: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
                     ) { _ -> if (foo) { /**/ } else { /**/ } }
                         ~
-src/foo/test.kt:36: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:36: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
                         content = { _ -> if (foo) { /**/ } else { /**/ } }
                                     ~
-src/foo/test.kt:40: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:40: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                     ) { if (foo) { /**/ } else { /**/ } }
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:43: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:43: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                         content = { if (foo) { /**/ } else { /**/ } }
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:47: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:47: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                     ) { param -> if (foo) { /**/ } else { /**/ } }
                         ~~~~~
-src/foo/test.kt:50: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:50: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                         content = { param -> if (foo) { /**/ } else { /**/ } }
                                     ~~~~~
-src/foo/test.kt:54: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:54: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
                     ) { _ -> if (foo) { /**/ } else { /**/ } }
                         ~
-src/foo/test.kt:57: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:57: Error: Target state parameter _ is not used [UnusedContentLambdaTargetStateParameter]
                         content = { _ -> if (foo) { /**/ } else { /**/ } }
                                     ~
-src/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { if (foo) { /**/ } else { /**/ } }
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:17: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:17: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { if (foo) { /**/ } else { /**/ } },
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param -> if (foo) { /**/ } else { /**/ } }
                                        ~~~~~
-src/foo/test.kt:26: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:26: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param -> if (foo) { /**/ } else { /**/ } },
                                        ~~~~~
-src/foo/test.kt:31: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:31: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { _ -> if (foo) { /**/ } else { /**/ } }
                                        ~
-src/foo/test.kt:35: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:35: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { _ -> if (foo) { /**/ } else { /**/ } },
                                        ~
-src/foo/test.kt:39: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:39: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { if (foo) { /**/ } else { /**/ } }
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:42: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:42: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { if (foo) { /**/ } else { /**/ } },
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:46: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:46: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param -> if (foo) { /**/ } else { /**/ } }
                                        ~~~~~
-src/foo/test.kt:49: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:49: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param -> if (foo) { /**/ } else { /**/ } },
                                        ~~~~~
-src/foo/test.kt:53: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:53: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { _ -> if (foo) { /**/ } else { /**/ } }
                                        ~
-src/foo/test.kt:56: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:56: Error: Target state parameter _ is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { _ -> if (foo) { /**/ } else { /**/ } },
                                        ~
 24 errors, 0 warnings"""
@@ -406,7 +406,7 @@ src/foo/test.kt:56: Error: Target state parameter _ is not used [UnusedTargetSta
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.animation.*
                 import androidx.compose.runtime.*
@@ -484,32 +484,32 @@ src/foo/test.kt:56: Error: Target state parameter _ is not used [UnusedTargetSta
             """
                 ),
                 AnimatedContentStub,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expect(
-                """src/foo/test.kt:22: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+                """src/test/foo/test.kt:22: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                     ) {
                       ^
-src/foo/test.kt:39: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:39: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                     ) { param ->
                         ~~~~~
-src/foo/test.kt:55: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:55: Error: Target state parameter it is not used [UnusedContentLambdaTargetStateParameter]
                     ) {
                       ^
-src/foo/test.kt:71: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
+src/test/foo/test.kt:71: Error: Target state parameter param is not used [UnusedContentLambdaTargetStateParameter]
                     ) { param ->
                         ~~~~~
-src/foo/test.kt:15: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:15: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = {
                                      ^
-src/foo/test.kt:34: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:34: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param ->
                                        ~~~~~
-src/foo/test.kt:48: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:48: Error: Target state parameter it is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = {
                                      ^
-src/foo/test.kt:66: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
+src/test/foo/test.kt:66: Error: Target state parameter param is not used [UnusedTargetStateInContentKeyLambda]
                         contentKey = { param ->
                                        ~~~~~
 8 errors, 0 warnings"""
@@ -522,7 +522,7 @@ src/foo/test.kt:66: Error: Target state parameter param is not used [UnusedTarge
             .files(
                 kotlin(
                     """
-            package foo
+            package test.foo
 
             import androidx.compose.animation.*
             import androidx.compose.runtime.*
@@ -618,7 +618,7 @@ src/foo/test.kt:66: Error: Target state parameter param is not used [UnusedTarge
         """
                 ),
                 AnimatedContentStub,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expectClean()

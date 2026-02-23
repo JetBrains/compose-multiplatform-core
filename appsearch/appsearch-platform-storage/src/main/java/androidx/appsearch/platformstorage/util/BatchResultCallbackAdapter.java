@@ -18,14 +18,15 @@ package androidx.appsearch.platformstorage.util;
 import android.app.appsearch.BatchResultCallback;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.platformstorage.converter.AppSearchResultToPlatformConverter;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -45,8 +46,7 @@ public final class BatchResultCallbackAdapter<K, PlatformValue, JetpackValue>
         implements BatchResultCallback<K, PlatformValue> {
     private final ResolvableFuture<AppSearchBatchResult<K, JetpackValue>> mFuture;
     private final Function<PlatformValue, JetpackValue> mValueMapper;
-    @Nullable
-    private final Function<AppSearchBatchResult<K, JetpackValue>, AppSearchBatchResult<K,
+    private final @Nullable Function<AppSearchBatchResult<K, JetpackValue>, AppSearchBatchResult<K,
             JetpackValue>>
             mResultTransformer;
 
@@ -88,7 +88,7 @@ public final class BatchResultCallbackAdapter<K, PlatformValue, JetpackValue>
 
     @Override
     public void onResult(
-            @NonNull android.app.appsearch.AppSearchBatchResult<K, PlatformValue> platformResult) {
+            android.app.appsearch.@NonNull AppSearchBatchResult<K, PlatformValue> platformResult) {
         AppSearchBatchResult<K, JetpackValue> jetpackResult =
                 AppSearchResultToPlatformConverter.platformAppSearchBatchResultToJetpack(
                         platformResult, mValueMapper);
@@ -107,8 +107,7 @@ public final class BatchResultCallbackAdapter<K, PlatformValue, JetpackValue>
      * Returns a {@link androidx.appsearch.platformstorage.util.BatchResultCallbackAdapter} where
      * the Platform value is identical to the Jetpack value, needing no transformation.
      */
-    @NonNull
-    public static <K, V> BatchResultCallbackAdapter<K, V, V> forSameValueType(
+    public static <K, V> @NonNull BatchResultCallbackAdapter<K, V, V> forSameValueType(
             @NonNull ResolvableFuture<AppSearchBatchResult<K, V>> future) {
         return new BatchResultCallbackAdapter<>(future, Function.identity());
     }

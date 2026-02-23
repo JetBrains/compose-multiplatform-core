@@ -17,8 +17,13 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,17 +32,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.ArcProgressIndicator
+import androidx.wear.compose.material3.ArcProgressIndicatorDefaults
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.CircularProgressIndicatorDefaults
 import androidx.wear.compose.material3.Icon
@@ -46,6 +58,9 @@ import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import androidx.wear.compose.material3.SegmentedCircularProgressIndicator
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.drawCircularProgressIndicator
+import kotlinx.coroutines.flow.collectLatest
 
 @Sampled
 @Composable
@@ -56,11 +71,7 @@ fun FullScreenProgressIndicatorSample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        CircularProgressIndicator(
-            progress = { 0.25f },
-            startAngle = 120f,
-            endAngle = 60f,
-        )
+        CircularProgressIndicator(progress = { 0.25f }, startAngle = 120f, endAngle = 60f)
     }
 }
 
@@ -68,37 +79,45 @@ fun FullScreenProgressIndicatorSample() {
 @Composable
 fun MediaButtonProgressIndicatorSample() {
     var isPlaying by remember { mutableStateOf(false) }
-    val progressPadding = 4.dp
+    val buttonPadding = 4.dp
+    val progressStrokeWidth = 4.dp
     val progress = 0.75f
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(
+        // The CircularProgressIndicator should be around the IconButton, with an extra gap between
+        // then of 'buttonPadding'. We multiply by 2 because the size includes progressStrokeWidth
+        // at top and bottom and the buttonPadding at top and bottom.
+        CircularProgressIndicator(
             modifier =
                 Modifier.align(Alignment.Center)
-                    .size(IconButtonDefaults.DefaultButtonSize + progressPadding)
+                    .size(
+                        IconButtonDefaults.DefaultButtonSize +
+                            progressStrokeWidth * 2 +
+                            buttonPadding * 2
+                    ),
+            progress = { progress },
+            strokeWidth = progressStrokeWidth,
+        )
+
+        IconButton(
+            modifier =
+                Modifier.align(Alignment.Center)
+                    .semantics {
+                        // Set custom progress semantics for accessibility.
+                        contentDescription =
+                            String.format(
+                                "Play/pause button, track progress: %.0f%%",
+                                progress * 100,
+                            )
+                    }
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
+            onClick = { isPlaying = !isPlaying },
         ) {
-            CircularProgressIndicator(progress = { progress }, strokeWidth = progressPadding)
-            IconButton(
-                modifier =
-                    Modifier.align(Alignment.Center)
-                        .semantics {
-                            // Set custom progress semantics for accessibility.
-                            contentDescription =
-                                String.format(
-                                    "Play/pause button, track progress: %.0f%%",
-                                    progress * 100
-                                )
-                        }
-                        .padding(progressPadding)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
-                onClick = { isPlaying = !isPlaying }
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Filled.Close else Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                )
-            }
+            Icon(
+                imageVector = if (isPlaying) Icons.Filled.Close else Icons.Filled.PlayArrow,
+                contentDescription = null,
+            )
         }
     }
 }
@@ -137,8 +156,49 @@ fun SmallValuesProgressIndicatorSample() {
             colors =
                 ProgressIndicatorDefaults.colors(
                     indicatorColor = Color.Green,
-                    trackColor = Color.White
+                    trackColor = Color.White,
                 ),
+        )
+    }
+}
+
+@Sampled
+@Composable
+fun CircularProgressIndicatorCustomAnimationSample() {
+    val progress = remember { mutableFloatStateOf(0f) }
+    val animatedProgress = remember { Animatable(0f) }
+    val colors =
+        ProgressIndicatorDefaults.colors(indicatorColor = Color.Green, trackColor = Color.White)
+
+    LaunchedEffect(Unit) {
+        snapshotFlow(progress::value).collectLatest {
+            animatedProgress.animateTo(it, tween(durationMillis = 1024, easing = LinearEasing))
+        }
+    }
+
+    Box(
+        modifier =
+            Modifier.background(MaterialTheme.colorScheme.background)
+                .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
+                .fillMaxSize()
+    ) {
+        Button(
+            modifier = Modifier.align(Alignment.Center).padding(12.dp),
+            onClick = { progress.floatValue = if (progress.floatValue == 0f) 1f else 0f },
+            label = { Text("Animate") },
+        )
+
+        // Draw the circular progress indicator with custom animation
+        Spacer(
+            Modifier.fillMaxSize().focusable().drawBehind {
+                drawCircularProgressIndicator(
+                    progress = animatedProgress.value,
+                    strokeWidth = 10.dp,
+                    colors = colors,
+                    startAngle = 120f,
+                    endAngle = 60f,
+                )
+            }
         )
     }
 }
@@ -153,6 +213,18 @@ fun IndeterminateProgressIndicatorSample() {
 
 @Sampled
 @Composable
+fun IndeterminateProgressArcSample() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        ArcProgressIndicator(
+            modifier =
+                Modifier.align(Alignment.Center)
+                    .size(ArcProgressIndicatorDefaults.recommendedIndeterminateDiameter)
+        )
+    }
+}
+
+@Sampled
+@Composable
 fun SegmentedProgressIndicatorSample() {
     Box(
         modifier =
@@ -160,10 +232,7 @@ fun SegmentedProgressIndicatorSample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        SegmentedCircularProgressIndicator(
-            segmentCount = 5,
-            progress = { 0.5f },
-        )
+        SegmentedCircularProgressIndicator(segmentCount = 5, progress = { 0.5f })
     }
 }
 
@@ -176,10 +245,7 @@ fun SegmentedProgressIndicatorBinarySample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        SegmentedCircularProgressIndicator(
-            segmentCount = 5,
-            segmentValue = { it % 2 != 0 },
-        )
+        SegmentedCircularProgressIndicator(segmentCount = 5, segmentValue = { it % 2 != 0 })
     }
 }
 
@@ -188,9 +254,21 @@ fun SegmentedProgressIndicatorBinarySample() {
 fun SmallSegmentedProgressIndicatorSample() {
     Box(modifier = Modifier.fillMaxSize()) {
         SegmentedCircularProgressIndicator(
+            segmentCount = 6,
+            progress = { 0.75f },
+            modifier = Modifier.align(Alignment.Center).size(80.dp),
+        )
+    }
+}
+
+@Sampled
+@Composable
+fun SmallSegmentedProgressIndicatorBinarySample() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        SegmentedCircularProgressIndicator(
             segmentCount = 8,
             segmentValue = { it % 2 != 0 },
-            modifier = Modifier.align(Alignment.Center).size(80.dp)
+            modifier = Modifier.align(Alignment.Center).size(80.dp),
         )
     }
 }

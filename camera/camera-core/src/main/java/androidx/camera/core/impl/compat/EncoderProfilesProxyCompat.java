@@ -20,10 +20,11 @@ import android.media.CamcorderProfile;
 import android.media.EncoderProfiles;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.EncoderProfilesProxy;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features of {@link EncoderProfiles} and {@link CamcorderProfile} in a
@@ -35,8 +36,7 @@ public final class EncoderProfilesProxyCompat {
 
     /** Creates an EncoderProfilesProxy instance from {@link EncoderProfiles}. */
     @RequiresApi(31)
-    @NonNull
-    public static EncoderProfilesProxy from(@NonNull EncoderProfiles encoderProfiles) {
+    public static @NonNull EncoderProfilesProxy from(@NonNull EncoderProfiles encoderProfiles) {
         if (Build.VERSION.SDK_INT >= 33) {
             return EncoderProfilesProxyCompatApi33Impl.from(encoderProfiles);
         } else if (Build.VERSION.SDK_INT >= 31) {
@@ -49,8 +49,7 @@ public final class EncoderProfilesProxyCompat {
     }
 
     /** Creates an EncoderProfilesProxy instance from {@link CamcorderProfile}. */
-    @NonNull
-    public static EncoderProfilesProxy from(@NonNull CamcorderProfile camcorderProfile) {
+    public static @NonNull EncoderProfilesProxy from(@NonNull CamcorderProfile camcorderProfile) {
         if (Build.VERSION.SDK_INT >= 31) {
             Logger.w(TAG, "Should use from(EncoderProfiles) on API " + Build.VERSION.SDK_INT
                     + "instead. CamcorderProfile is deprecated on API 31.");

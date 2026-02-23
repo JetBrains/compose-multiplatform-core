@@ -64,7 +64,7 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  *   swipe-to-dismiss threshold.
  */
 @Composable
-fun SwipeToDismissBox(
+public fun SwipeToDismissBox(
     state: SwipeToDismissBoxState,
     modifier: Modifier = Modifier,
     backgroundScrimColor: Color = MaterialTheme.colorScheme.background,
@@ -72,11 +72,11 @@ fun SwipeToDismissBox(
     backgroundKey: Any = SwipeToDismissKeys.Background,
     contentKey: Any = SwipeToDismissKeys.Content,
     userSwipeEnabled: Boolean = true,
-    content: @Composable BoxScope.(isBackground: Boolean) -> Unit
+    content: @Composable BoxScope.(isBackground: Boolean) -> Unit,
 ) {
     CompositionLocalProvider(
         LocalSwipeToDismissBackgroundScrimColor provides backgroundScrimColor,
-        LocalSwipeToDismissContentScrimColor provides contentScrimColor
+        LocalSwipeToDismissContentScrimColor provides contentScrimColor,
     ) {
         androidx.wear.compose.foundation.BasicSwipeToDismissBox(
             state = state,
@@ -84,7 +84,7 @@ fun SwipeToDismissBox(
             backgroundKey = backgroundKey,
             contentKey = contentKey,
             userSwipeEnabled = userSwipeEnabled,
-            content = content
+            content = content,
         )
     }
 }
@@ -127,7 +127,7 @@ fun SwipeToDismissBox(
  *   swipe-to-dismiss threshold.
  */
 @Composable
-fun SwipeToDismissBox(
+public fun SwipeToDismissBox(
     onDismissed: () -> Unit,
     modifier: Modifier = Modifier,
     state: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
@@ -136,11 +136,11 @@ fun SwipeToDismissBox(
     backgroundKey: Any = SwipeToDismissKeys.Background,
     contentKey: Any = SwipeToDismissKeys.Content,
     userSwipeEnabled: Boolean = true,
-    content: @Composable BoxScope.(isBackground: Boolean) -> Unit
+    content: @Composable BoxScope.(isBackground: Boolean) -> Unit,
 ) {
     CompositionLocalProvider(
         LocalSwipeToDismissBackgroundScrimColor provides backgroundScrimColor,
-        LocalSwipeToDismissContentScrimColor provides contentScrimColor
+        LocalSwipeToDismissContentScrimColor provides contentScrimColor,
     ) {
         androidx.wear.compose.foundation.BasicSwipeToDismissBox(
             state = state,
@@ -149,7 +149,7 @@ fun SwipeToDismissBox(
             backgroundKey = backgroundKey,
             contentKey = contentKey,
             userSwipeEnabled = userSwipeEnabled,
-            content = content
+            content = content,
         )
     }
 }

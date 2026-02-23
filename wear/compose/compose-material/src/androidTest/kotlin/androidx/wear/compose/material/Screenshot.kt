@@ -16,4 +16,4 @@
 
 package androidx.wear.compose.material
 
-internal const val SCREENSHOT_GOLDEN_PATH = "wear/compose/material"
+internal const val SCREENSHOT_GOLDEN_PATH = "wear/compose/compose-material"

@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation
 
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.jvm.JvmField
 
 /**
@@ -48,7 +46,7 @@ import kotlin.jvm.JvmField
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeFoundationFlags {
+ *      -assumevalues class androidx.compose.foundation.ComposeFoundationFlags {
  *          public static boolean SomeFeatureEnabled return false
  *      }
  */
@@ -56,20 +54,107 @@ import kotlin.jvm.JvmField
 object ComposeFoundationFlags {
 
     /**
-     * Selecting flag to enable the change in Fling Propagation behavior in nested Scrollables. When
-     * this is true, an ongoing fling that causes the scrollable container to hit the bounds will be
-     * cancelled so the next scrollable in the chain can take over and fling with velocity left. We
-     * are doing a flagged roll out of this behavior change.
+     * Whether to use the new context menu API and default implementations in
+     * [SelectionContainer][androidx.compose.foundation.text.selection.SelectionContainer], and all
+     * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
+     * context menu that has no public APIs will be used instead.
      */
-    @Suppress("MutableBareField") @JvmField var NewNestedFlingPropagationEnabled = true
+    @field:Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = true
 
     /**
-     * We have removed the implicit [graphicsLayer] from [BasicText]. This also affects the `Text`
-     * composable in material modules.
-     *
-     * This change ideally improves the initial rendering performance of [BasicText] but it may have
-     * negative effect on recomposition or redraw since [BasicText]s draw operations would not be
-     * cached in a separate layer.
+     * Whether to use the new smart selection feature in
+     * [androidx.compose.foundation.text.selection.SelectionContainer] and all
+     * [androidx.compose.foundation.text.BasicTextField]s.
      */
-    @JvmField @Suppress("MutableBareField") var RemoveBasicTextGraphicsLayerEnabled: Boolean = true
+    @field:Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
+
+    /**
+     * Whether to support inherited text styles. If enabled, text styles set by the styles API will
+     * be inherited by text composables contained in a style box.
+     */
+    @field:Suppress("MutableBareField") @JvmField var isInheritedTextStyleEnabled = true
+
+    /**
+     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
+     * change allows us to distribute work we need to do during the prefetch better, for example we
+     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
+     * and then continue composing the rest of it in the next frames.
+     */
+    @field:Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
+
+    /**
+     * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
+     * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
+     * currently composed items, this includes visible and items composed through beyond bounds.
+     */
+    @field:Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
+
+    /**
+     * When Pager was used with a keyboard in RTL the pages would bounce indefinitely due to the
+     * bring into view animation. If this flag is off the fix for that behavior will be disabled.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isBringIntoViewRltBouncyBehaviorInPagerFixEnabled: Boolean = true
+
+    /**
+     * If this flag is enabled, for lazy layout implementations that use
+     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow], if the dataset changes, the
+     * window mechanism will understand that it needs to re-fill the window from scratch. This is
+     * because there is no good way for the window to know that a possible non-visible item has
+     * changed. For instance, if C and D are 2 items in the cache window and later they're removed
+     * from the dataset, the cache window won't know it until it tries to prefetch them.
+     */
+    @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = true
+
+    /**
+     * With this flag enabled,
+     * [androidx.compose.foundation.gestures.AnchoredDraggableState.targetValue] correctly returns
+     * the [androidx.compose.foundation.gestures.AnchoredDraggableState.currentValue] when no
+     * [androidx.compose.foundation.gestures.AnchoredDraggableState.anchoredDrag] is in progress.
+     * Previously, [androidx.compose.foundation.gestures.AnchoredDraggableState.targetValue]
+     * incorrectly returned the last-inserted anchor when there were two or more anchors with the
+     * same offset, for example: `DraggableAnchors { Expanded at 100f; HalfExpanded at 0f; Hidden at
+     * 0f;}` Disabling the flag restores this previous behavior.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isAnchoredDraggableTargetValueCalculationFixEnabled = true
+
+    /**
+     * If this flag is enabled, Clickable will detect if it should delay press by using the new
+     * GestureNode structure where nodes can indicate if they're interested in a given
+     * PointerInputEvent. Moreover, all containers where a drag gesture happens (e.g. scrollable,
+     * draggable, anchored draggable) will cause the presses to be delayed.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isDelayPressesUsingGestureConsumptionEnabled = true
+
+    /**
+     * Enables support of trackpad gesture events in foundation components.
+     *
+     * This uses the additional trackpad gesture information enabled by
+     * `ComposeUiFlags.isTrackpadGestureHandlingEnabled`
+     */
+    // TODO: b/475634969 remove the temporary flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isTrackpadGestureHandlingEnabled: Boolean = true
+
+    /**
+     * With this flag on, nested draggable components (e.g. Lists, Pagers, Grids) will handle
+     * conflicting gestures by deciding which has a higher priority.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isNestedDraggablesTouchConflictFixEnabled = true
+
+    /**
+     * With this flag on we don't use suspend pointer input as part of Modifier.combinedClickable
+     * implementation as an optimization.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isNonSuspendingPointerInputInCombinedClickableEnabled = true
 }

@@ -20,6 +20,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
+
 public class SearchResultInternalTest {
     @Test
     public void testSearchResultBuilderCopyConstructor() {
@@ -75,6 +78,22 @@ public class SearchResultInternalTest {
     }
 
     @Test
+    public void testSearchResultBuilderCopyConstructor_parentType() {
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "schemaType1").build();
+        SearchResult searchResult = new SearchResult.Builder("package", "database")
+                .setGenericDocument(document)
+                .setParentTypeMap(Map.of(
+                        "schemaType1", List.of("parent1", "parent2"),
+                        "schemaType2", List.of("parent3", "parent4")
+                ))
+                .build();
+        SearchResult searchResultCopy = new SearchResult.Builder(searchResult).build();
+        assertThat(searchResultCopy.getParentTypeMap()).containsExactlyEntriesIn(
+                searchResult.getParentTypeMap());
+    }
+
+    @Test
     public void testSearchResultBuilder_clearJoinedResults() {
         GenericDocument document =
                 new GenericDocument.Builder<>("namespace", "id", "schemaType").build();
@@ -103,5 +122,51 @@ public class SearchResultInternalTest {
         assertThat(matchInfoCopy.getExactMatchRange()).isEqualTo(exactMatchRange);
         assertThat(matchInfoCopy.getSubmatchRange()).isEqualTo(submatchRange);
         assertThat(matchInfoCopy.getSnippetRange()).isEqualTo(snippetMatchRange);
+    }
+
+    @Test
+    public void testMatchInfoBuilderCopyConstructor_embeddingMatchInfoEnabled() {
+        SearchResult.MatchRange exactMatchRange = new SearchResult.MatchRange(3, 8);
+        SearchResult.MatchRange submatchRange = new SearchResult.MatchRange(3, 5);
+        SearchResult.MatchRange snippetMatchRange = new SearchResult.MatchRange(1, 10);
+
+        double semanticScore = 1.1d;
+        int queryEmbeddingVectorIndex = 1;
+        int embeddingSearchMetricType = SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_COSINE;
+        SearchResult.EmbeddingMatchInfo embeddingMatchInfo =
+                new SearchResult.EmbeddingMatchInfo(semanticScore, queryEmbeddingVectorIndex,
+                        embeddingSearchMetricType);
+
+        SearchResult.MatchInfo matchInfo1 =
+                new SearchResult.MatchInfo.Builder("propertyPath1")
+                        .setExactMatchRange(exactMatchRange)
+                        .setSubmatchRange(submatchRange)
+                        .setSnippetRange(snippetMatchRange)
+                        .build();
+
+        SearchResult.MatchInfo matchInfo2 =
+                new SearchResult.MatchInfo.Builder("propertyPath2")
+                        .setEmbeddingMatch(embeddingMatchInfo)
+                        .build();
+
+        SearchResult.MatchInfo matchInfoCopy1 =
+                new SearchResult.MatchInfo.Builder(matchInfo1).build();
+        assertThat(matchInfoCopy1.getPropertyPath()).isEqualTo("propertyPath1");
+        assertThat(matchInfoCopy1.getTextMatch()).isNotNull();
+        assertThat(matchInfoCopy1.getTextMatch().getExactMatchRange()).isEqualTo(exactMatchRange);
+        assertThat(matchInfoCopy1.getTextMatch().getSubmatchRange()).isEqualTo(submatchRange);
+        assertThat(matchInfoCopy1.getTextMatch().getSnippetRange()).isEqualTo(snippetMatchRange);
+        assertThat(matchInfoCopy1.getEmbeddingMatch()).isNull();
+
+        SearchResult.MatchInfo matchInfoCopy2 =
+                new SearchResult.MatchInfo.Builder(matchInfo2).build();
+        assertThat(matchInfoCopy2.getPropertyPath()).isEqualTo("propertyPath2");
+        assertThat(matchInfoCopy2.getEmbeddingMatch()).isNotNull();
+        assertThat(matchInfoCopy2.getEmbeddingMatch().getSemanticScore()).isEqualTo(semanticScore);
+        assertThat(matchInfoCopy2.getEmbeddingMatch().getQueryEmbeddingVectorIndex()).isEqualTo(
+                queryEmbeddingVectorIndex);
+        assertThat(matchInfoCopy2.getEmbeddingMatch().getEmbeddingSearchMetricType()).isEqualTo(
+                embeddingSearchMetricType);
+        assertThat(matchInfoCopy2.getTextMatch()).isNull();
     }
 }

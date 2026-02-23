@@ -18,17 +18,24 @@ package androidx.appsearch.safeparcel.stub;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.CommitBlobResponse;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.JoinSpec;
+import androidx.appsearch.app.OpenBlobForReadResponse;
+import androidx.appsearch.app.OpenBlobForWriteResponse;
+import androidx.appsearch.app.RemoveBlobResponse;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SearchResult;
+import androidx.appsearch.app.SearchResult.EmbeddingMatchInfo;
 import androidx.appsearch.app.SearchResult.MatchInfo;
+import androidx.appsearch.app.SearchResult.MatchRange;
+import androidx.appsearch.app.SearchResult.TextMatchInfo;
 import androidx.appsearch.app.SearchResultPage;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.app.SearchSuggestionResult;
@@ -170,8 +177,20 @@ public class StubCreators {
     public static class SearchResultCreator extends AbstractCreator<SearchResult> {
     }
 
-    /** Stub creator for {@link androidx.appsearch.app.MatchInfo}. */
+    /** Stub creator for {@link androidx.appsearch.app.SearchResult.MatchInfo}. */
     public static class MatchInfoCreator extends AbstractCreator<MatchInfo> {
+    }
+
+    /** Stub creator for {@link androidx.appsearch.app.SearchResult.TextMatchInfo}. */
+    public static class TextMatchInfoCreator extends AbstractCreator<TextMatchInfo> {
+    }
+
+    /** Stub creator for {@link androidx.appsearch.app.SearchResult.EmbeddingMatchInfo}. */
+    public static class EmbeddingMatchInfoCreator extends AbstractCreator<EmbeddingMatchInfo> {
+    }
+
+    /** Stub creator for {@link androidx.appsearch.app.SearchResult.MatchRange}. */
+    public static class MatchRangeCreator extends AbstractCreator<MatchRange> {
     }
 
     /** Stub creator for {@link androidx.appsearch.app.SearchResultPage}. */
@@ -200,5 +219,25 @@ public class StubCreators {
     /** Stub creator for {@link androidx.appsearch.app.AppSearchBlobHandle}. */
     public static class AppSearchBlobHandleCreator extends
             AbstractCreator<AppSearchBlobHandle> {
+    }
+
+    /** Stub creator for {@link OpenBlobForWriteResponse}. */
+    public static class OpenBlobForWriteResponseCreator extends
+            AbstractCreator<OpenBlobForWriteResponse> {
+    }
+
+    /** Stub creator for {@link CommitBlobResponse}. */
+    public static class CommitBlobResponseCreator extends
+            AbstractCreator<CommitBlobResponse> {
+    }
+
+    /** Stub creator for {@link OpenBlobForReadResponse}. */
+    public static class OpenBlobForReadResponseCreator extends
+            AbstractCreator<OpenBlobForReadResponse> {
+    }
+
+    /** Stub creator for {@link RemoveBlobResponse}. */
+    public static class RemoveBlobResponseCreator extends
+            AbstractCreator<RemoveBlobResponse> {
     }
 }

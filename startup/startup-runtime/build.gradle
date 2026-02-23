@@ -15,28 +15,25 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-    namespace "androidx.startup"
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
+    namespace = "androidx.startup"
 }
 
 dependencies {
+    api(libs.jspecify)
     // Ideally startup would depend on profileinstaller so startup gets the benefit of its
     // baseline profile rules, but profileinstaller calls startup APIs, so we have to avoid
     // the circular dependency
@@ -44,7 +41,6 @@ dependencies {
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.tracing:tracing:1.0.0")
     lintPublish(project(":startup:startup-runtime-lint"))
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -56,7 +52,7 @@ dependencies {
 
 androidx {
     name = "Startup Runtime"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android App Startup Runtime"
     legacyDisableKotlinStrictApiMode = true

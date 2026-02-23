@@ -20,10 +20,11 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wrapper around {@link Context} to give shortcut access to commonly used values.
@@ -84,8 +85,7 @@ public class Screen {
     }
 
     /** Shortcut method for getting a string from its resource id. */
-    @NonNull
-    public String getString(int id, @NonNull Object... formatArgs) {
+    public @NonNull String getString(int id, Object @NonNull ... formatArgs) {
         return mRes.getString(id, formatArgs);
     }
 

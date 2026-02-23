@@ -22,10 +22,8 @@ import static androidx.pdf.util.CycleRange.Direction.FORWARDS;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.graphics.Rect;
-import android.os.Build;
 
 import androidx.pdf.models.MatchRects;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,10 +34,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class SelectedMatchTest {
 
     @Test

@@ -49,7 +49,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.PlatformTransferableContent
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.foundation.text.input.PlacedAnnotation
-import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.getSelectedText
 import androidx.compose.foundation.text.input.getTextAfterSelection
@@ -90,7 +89,7 @@ private const val EXTRA_INPUT_CONTENT_INFO = "EXTRA_INPUT_CONTENT_INFO"
 @OptIn(ExperimentalFoundationApi::class)
 internal class StatelessInputConnection(
     private val session: TextInputSession,
-    editorInfo: EditorInfo
+    editorInfo: EditorInfo,
 ) : InputConnection {
     /**
      * The depth of the batch session. 0 means no session.
@@ -110,7 +109,7 @@ internal class StatelessInputConnection(
         get() = session.text
 
     /** Recording of editing operations for batch editing */
-    private val editCommands = mutableVectorOf<TextFieldBuffer.() -> Unit>()
+    private val editCommands = mutableVectorOf<ImeEditCommandScope.() -> Unit>()
 
     /**
      * Wraps this StatelessInputConnection to halt a possible infinite loop in [commitContent]
@@ -138,7 +137,7 @@ internal class StatelessInputConnection(
             override fun commitContent(
                 inputContentInfo: InputContentInfo,
                 flags: Int,
-                opts: Bundle?
+                opts: Bundle?,
             ): Boolean {
                 return false
             }
@@ -174,7 +173,7 @@ internal class StatelessInputConnection(
                 override fun onCommitContent(
                     inputContentInfo: InputContentInfoCompat,
                     flags: Int,
-                    opts: Bundle?
+                    opts: Bundle?,
                 ): Boolean {
                     // The below code is mostly copied from `InputConnectionCompat.java`
                     var extras: Bundle? = opts
@@ -203,23 +202,8 @@ internal class StatelessInputConnection(
                     }
                     return session.onCommitContent(inputContentInfo.toTransferableContent(extras))
                 }
-            }
+            },
         )
-
-    /**
-     * Add edit op to internal list with wrapping batch edit. It's not guaranteed by IME that batch
-     * editing will be used for every operation. Instead, [StatelessInputConnection] creates its own
-     * mini batches for every edit op. These batches are only applied when batch depth reaches 0,
-     * meaning that artificial batches won't be applied until the real batches are completed.
-     */
-    private fun addEditCommandWithBatch(editCommand: TextFieldBuffer.() -> Unit) {
-        beginBatchEditInternal()
-        try {
-            editCommands.add(editCommand)
-        } finally {
-            endBatchEditInternal()
-        }
-    }
 
     // region Methods for batch editing and session control
     override fun beginBatchEdit(): Boolean {
@@ -227,25 +211,14 @@ internal class StatelessInputConnection(
         return beginBatchEditInternal()
     }
 
-    private fun beginBatchEditInternal(): Boolean {
-        batchDepth++
-        return true
-    }
+    private fun beginBatchEditInternal() = session.beginBatchEdit()
 
     override fun endBatchEdit(): Boolean {
         logDebug("endBatchEdit()")
         return endBatchEditInternal()
     }
 
-    private fun endBatchEditInternal(): Boolean {
-        batchDepth--
-        if (batchDepth == 0 && editCommands.isNotEmpty()) {
-            // apply the changes to active input session in order.
-            session.requestEdit { editCommands.forEach { it.invoke(this) } }
-            editCommands.clear()
-        }
-        return batchDepth > 0
-    }
+    private fun endBatchEditInternal() = session.endBatchEdit()
 
     override fun closeConnection() {
         logDebug("closeConnection()")
@@ -260,50 +233,49 @@ internal class StatelessInputConnection(
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
         logDebug("commitText(\"$text\", $newCursorPosition)")
         if (text == null) return true
-        addEditCommandWithBatch { commitText(text.toString(), newCursorPosition) }
+        session.commitText(text.toString(), newCursorPosition)
         return true
     }
 
     override fun setComposingRegion(start: Int, end: Int): Boolean {
         logDebug("setComposingRegion($start, $end)")
-        addEditCommandWithBatch { setComposingRegion(start, end) }
+        session.setComposingRegion(start, end)
         return true
     }
 
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
         logDebug("setComposingText(\"$text\", $newCursorPosition)")
         if (text == null) return true
-        addEditCommandWithBatch {
-            this@addEditCommandWithBatch.setComposingText(
-                text = text.toString(),
-                newCursorPosition = newCursorPosition,
-                annotations = (text as? Spanned)?.toAnnotationList()
-            )
-        }
+        session.setComposingText(
+            text = text.toString(),
+            newCursorPosition = newCursorPosition,
+            annotations = (text as? Spanned)?.toAnnotationList(),
+        )
         return true
     }
 
     override fun deleteSurroundingTextInCodePoints(beforeLength: Int, afterLength: Int): Boolean {
         logDebug("deleteSurroundingTextInCodePoints($beforeLength, $afterLength)")
-        addEditCommandWithBatch { deleteSurroundingTextInCodePoints(beforeLength, afterLength) }
+        session.deleteSurroundingTextInCodePoints(beforeLength, afterLength)
         return true
     }
 
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
         logDebug("deleteSurroundingText($beforeLength, $afterLength)")
-        addEditCommandWithBatch { deleteSurroundingText(beforeLength, afterLength) }
+        session.deleteSurroundingText(beforeLength, afterLength)
         return true
     }
 
     override fun setSelection(start: Int, end: Int): Boolean {
         logDebug("setSelection($start, $end)")
-        addEditCommandWithBatch { this@addEditCommandWithBatch.setSelection(start, end) }
+        session.setSelection(start, end)
+        session.updateTouchMode(false)
         return true
     }
 
     override fun finishComposingText(): Boolean {
         logDebug("finishComposingText()")
-        addEditCommandWithBatch { finishComposingText() }
+        session.finishComposingText()
         return true
     }
 
@@ -353,7 +325,7 @@ internal class StatelessInputConnection(
     override fun performHandwritingGesture(
         gesture: HandwritingGesture,
         executor: Executor?,
-        consumer: IntConsumer?
+        consumer: IntConsumer?,
     ) {
         logDebug("performHandwritingGesture($gesture, $executor, $consumer)")
         // This InputConnection#performHandwritingGesture is added on Api 34. No need to support
@@ -365,13 +337,13 @@ internal class StatelessInputConnection(
             session,
             gesture,
             executor,
-            consumer
+            consumer,
         )
     }
 
     override fun previewHandwritingGesture(
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         logDebug("previewHandwritingGesture($gesture, $cancellationSignal)")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return false
@@ -379,7 +351,7 @@ internal class StatelessInputConnection(
         return Api34PerformHandwritingGestureImpl.previewHandwritingGesture(
             session,
             gesture,
-            cancellationSignal
+            cancellationSignal,
         )
     }
 
@@ -407,11 +379,7 @@ internal class StatelessInputConnection(
     override fun performContextMenuAction(id: Int): Boolean {
         logDebug("performContextMenuAction($id)")
         when (id) {
-            android.R.id.selectAll -> {
-                addEditCommandWithBatch {
-                    this@addEditCommandWithBatch.setSelection(0, text.length)
-                }
-            }
+            android.R.id.selectAll -> session.setSelection(0, text.length)
             // TODO(siyamed): Need proper connection to cut/copy/paste
             android.R.id.cut -> sendSynthesizedKeyEvent(KeyEvent.KEYCODE_CUT)
             android.R.id.copy -> sendSynthesizedKeyEvent(KeyEvent.KEYCODE_COPY)
@@ -506,7 +474,7 @@ internal class StatelessInputConnection(
     override fun commitContent(
         inputContentInfo: InputContentInfo,
         flags: Int,
-        opts: Bundle?
+        opts: Bundle?,
     ): Boolean {
         logDebug("commitContent($inputContentInfo, $flags, $opts)")
         return if (Build.VERSION.SDK_INT >= 25) {
@@ -514,7 +482,7 @@ internal class StatelessInputConnection(
                 inputConnection = commitContentDelegateInputConnection,
                 inputContentInfo = inputContentInfo,
                 flags = flags,
-                opts = opts
+                opts = opts,
             )
         } else {
             // This should never happen. Platform does not know about `commitContent` below API 25
@@ -539,7 +507,7 @@ private object Api25CommitContentImpl {
         inputConnection: InputConnection,
         inputContentInfo: InputContentInfo,
         flags: Int,
-        opts: Bundle?
+        opts: Bundle?,
     ): Boolean {
         return inputConnection.commitContent(inputContentInfo, flags, opts)
     }
@@ -551,7 +519,7 @@ private object Api34PerformHandwritingGestureImpl {
         session: TextInputSession,
         gesture: HandwritingGesture,
         executor: Executor?,
-        intConsumer: IntConsumer?
+        intConsumer: IntConsumer?,
     ) {
         val result = session.performHandwritingGesture(gesture)
         if (intConsumer == null) return
@@ -566,7 +534,7 @@ private object Api34PerformHandwritingGestureImpl {
     fun previewHandwritingGesture(
         session: TextInputSession,
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         return session.previewHandwritingGesture(gesture, cancellationSignal)
     }
@@ -592,7 +560,7 @@ internal fun InputContentInfoCompat.toTransferableContent(extras: Bundle?): Tran
         source = TransferableContent.Source.Keyboard,
         clipMetadata = description.toClipMetadata(),
         platformTransferableContent =
-            PlatformTransferableContent(linkUri = linkUri, extras = extras ?: Bundle.EMPTY)
+            PlatformTransferableContent(linkUri = linkUri, extras = extras ?: Bundle.EMPTY),
     )
 }
 
@@ -609,7 +577,7 @@ internal fun Spanned.toAnnotationList(): List<PlacedAnnotation>? {
                 AnnotatedString.Range(
                     item = annotation,
                     start = getSpanStart(span),
-                    end = getSpanEnd(span)
+                    end = getSpanEnd(span),
                 )
             )
         }

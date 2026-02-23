@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.adselection
 
-import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions
@@ -33,8 +32,8 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
  *   selection.
  * @param renderUri A render URL for the winning ad.
  */
-@SuppressLint("ClassVerificationFailure")
-class AdSelectionOutcome public constructor(val adSelectionId: Long, val renderUri: Uri) {
+public class AdSelectionOutcome
+public constructor(public val adSelectionId: Long, public val renderUri: Uri) {
 
     /** Checks whether two [AdSelectionOutcome] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -56,16 +55,16 @@ class AdSelectionOutcome public constructor(val adSelectionId: Long, val renderU
     }
 
     @ExperimentalFeatures.Ext10OptIn
-    fun hasOutcome(): Boolean {
+    public fun hasOutcome(): Boolean {
         return this != NO_OUTCOME
     }
 
     @ExperimentalFeatures.Ext10OptIn
-    companion object {
+    public companion object {
         /** Represents an AdSelectionOutcome with empty results. */
         @ExperimentalFeatures.Ext10OptIn
         @JvmField
-        public val NO_OUTCOME = AdSelectionOutcome(0, Uri.EMPTY)
+        public val NO_OUTCOME: AdSelectionOutcome = AdSelectionOutcome(0, Uri.EMPTY)
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)

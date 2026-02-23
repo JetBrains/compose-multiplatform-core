@@ -23,15 +23,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class DeferrableSurfaceTest {
     private DeferrableSurface mDeferrableSurface;
 
@@ -52,8 +51,7 @@ public class DeferrableSurfaceTest {
     public void setup() {
         mDeferrableSurface = new DeferrableSurface() {
             @Override
-            @NonNull
-            public ListenableFuture<Surface> provideSurface() {
+            public @NonNull ListenableFuture<Surface> provideSurface() {
                 return Futures.immediateFuture(null);
             }
         };

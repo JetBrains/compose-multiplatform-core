@@ -119,11 +119,11 @@ function unzipInPlace() {
 }
 function doBuild() {
   # build androidx
-  echoAndDo ./gradlew createArchive zipDocs --no-daemon --rerun-tasks --offline -Pandroidx.highMemory
-  archiveName="top-of-tree-m2repository-all-0.zip"
-  unzipInPlace "${tempOutPath}/dist/top-of-tree-m2repository-all-0.zip"
-  unzipInPlace "${tempOutPath}/dist/docs-tip-of-tree-0.zip"
-  unzipInPlace "${tempOutPath}/dist/docs-public-0.zip"
+  echoAndDo ./gradlew createAllArchives zipDocs --no-daemon --rerun-tasks --offline -Pandroidx.highMemory -Pandroidx.constraints=true
+  archiveName="top-of-tree-m2repository-all.zip"
+  unzipInPlace "${tempOutPath}/dist/top-of-tree-m2repository-all.zip"
+  unzipInPlace "${tempOutPath}/dist/docs-tip-of-tree.zip"
+  unzipInPlace "${tempOutPath}/dist/docs-public.zip"
 }
 
 nonNamedArgs=()
@@ -186,5 +186,5 @@ mv "$tempOutPath" "$oldOutPath"
 echo
 echo diffing results
 # This script performs the diff, and filters out known issues and non-issues with baselines
-python development/validateRefactorHelper.py "$passThruArgs"
+python3 development/validateRefactorHelper.py "$passThruArgs"
 echo end of difference

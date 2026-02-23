@@ -51,7 +51,7 @@ class SubjectKruthTest {
     }
 
     @Test
-    fun isEqualTo_doublePositiveNegativeZero() {
+    fun isEqualTo_doublePositiveNegativeZero() = assumeNotJs {
         assertFailsWith<AssertionError> { assertThat(-0.0).isEqualTo(0.0) }
     }
 
@@ -68,7 +68,7 @@ class SubjectKruthTest {
     }
 
     @Test
-    fun isEqualTo_floatPositiveNegativeZero() {
+    fun isEqualTo_floatPositiveNegativeZero() = assumeNotJs {
         assertFailsWith<AssertionError> { assertThat(-0.0f).isEqualTo(0.0f) }
     }
 

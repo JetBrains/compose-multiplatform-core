@@ -29,12 +29,12 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.FontResourcesParserCompat.FontFamilyFilesResourceEntry;
 import androidx.core.content.res.FontResourcesParserCompat.FontFileResourceEntry;
 import androidx.core.provider.FontsContractCompat.FontInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,12 +44,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-
 /**
  * Implementation of the Typeface compat methods for API 21 and above.
  */
 @RestrictTo(LIBRARY_GROUP_PREFIX)
-@RequiresApi(21)
 class TypefaceCompatApi21Impl extends TypefaceCompatBaseImpl {
     private static final String TAG = "TypefaceCompatApi21Impl";
 
@@ -144,7 +142,7 @@ class TypefaceCompatApi21Impl extends TypefaceCompatBaseImpl {
 
     @Override
     public Typeface createFromFontInfo(Context context, CancellationSignal cancellationSignal,
-            @NonNull FontInfo[] fonts, int style) {
+            FontInfo @NonNull [] fonts, int style) {
         if (fonts.length < 1) {
             return null;
         }
@@ -198,9 +196,8 @@ class TypefaceCompatApi21Impl extends TypefaceCompatBaseImpl {
         return createFromFamiliesWithDefault(family);
     }
 
-    @NonNull
     @Override
-    Typeface createWeightStyle(@NonNull Context context,
+    @NonNull Typeface createWeightStyle(@NonNull Context context,
             @NonNull Typeface base, int weight, boolean italic) {
         Typeface out = null;
         try {

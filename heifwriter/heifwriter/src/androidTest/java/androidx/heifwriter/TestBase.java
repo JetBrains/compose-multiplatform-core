@@ -31,17 +31,15 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.opengl.GLES20;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -90,7 +88,7 @@ public class TestBase {
         return 132 + (long)frameIndex * 1000000;
     }
 
-    protected void fillYuvBuffer(int frameIndex, @NonNull byte[] data, int width, int height,
+    protected void fillYuvBuffer(int frameIndex, byte @NonNull [] data, int width, int height,
         @Nullable FileInputStream inputStream) throws IOException {
         if (inputStream != null) {
             inputStream.read(data);

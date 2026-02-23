@@ -22,7 +22,6 @@ import androidx.camera.core.ImageProxy;
 import androidx.camera.testing.impl.fakes.FakeImageInfo;
 import androidx.camera.testing.impl.fakes.FakeImageProxy;
 
-
 /**
  * Shared code for transform tests.
  */

@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import androidx.build.Publish
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
-    compileOnly project(":annotation:annotation-sampled")
-    implementation project(":graphics:graphics-core")
+    compileOnly(project(":annotation:annotation-sampled"))
+    implementation(project(":graphics:graphics-core"))
     implementation "androidx.annotation:annotation:1.8.1"
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.graphics.core.samples"
+    compileSdk { version = release(35) }
+    namespace = "androidx.graphics.core.samples"
 }
 
 androidx {
     name = "Graphics-Core Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2023"
     description = "Contains samples of APIs included in the graphics-core Androidx library"
     mavenVersion = LibraryVersions.GRAPHICS_CORE

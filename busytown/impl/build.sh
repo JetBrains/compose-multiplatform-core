@@ -13,17 +13,30 @@ if [ "$OUT_DIR" == "" ]; then
 fi
 mkdir -p "$OUT_DIR"
 export OUT_DIR="$(cd $OUT_DIR && pwd)"
-if [ "$DIST_DIR" == "" ]; then
-  DIST_DIR="$OUT_DIR/dist"
+
+# Save the original DIST_DIR so we can copy to it later
+# We update DIST_DIR below to a subdirectory of OUT_DIR to preserve Gradle config cache.
+if [ -n "${DIST_DIR:-}" ]; then
+  export ORIGINAL_DIST_DIR="$DIST_DIR"
 fi
+export DIST_DIR="$OUT_DIR/dist"
 mkdir -p "$DIST_DIR"
-export DIST_DIR="$DIST_DIR"
+
 if [ "$CHANGE_INFO" != "" ]; then
-  cp "$CHANGE_INFO" "$DIST_DIR/"
-  if [ "$MANIFEST" == "" ]; then
-    export MANIFEST="$DIST_DIR/manifest_${BUILD_NUMBER}.xml"
+  cp "$CHANGE_INFO" "$ORIGINAL_DIST_DIR/"
+  if [ "$MANIFEST" == "" ] && [ -f "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" ]; then
+    export MANIFEST="$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml"
   fi
 fi
+
+# Determine if this is a postsubmit build to push remote cache
+if [ -n "$BUILD_NUMBER" ] && [[ ! "$BUILD_NUMBER" == P* ]]; then
+  IS_POSTSUBMIT=true
+else
+  IS_POSTSUBMIT=false
+fi
+export IS_POSTSUBMIT
+export IS_ANDROIDX_CI=true
 
 # parse arguments
 if [ "$1" == "--diagnose" ]; then
@@ -64,53 +77,10 @@ function run() {
   fi
 }
 
-# export some variables depending on the platform
-if [[ "$(uname)" == Darwin* ]]; then
-  ANDROID_HOME=../../prebuilts/fullsdk-darwin
-else
-  ANDROID_HOME=../../prebuilts/fullsdk-linux
-  # Remove when b/365535238 is fixed as the Linux image will contain Python3
-  export PATH="$ANDROID_HOME/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/python3/bin:$PATH"
-  # Remove when b/366010045 is resolved: android platform build requires either en_US.UTF-8 or C.UTF-8 to exist
-  export LC_ALL=C.UTF-8
-fi
-
 BUILD_STATUS=0
 # enable remote build cache unless explicitly disabled
 if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" ]; then
   export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
-fi
-
-# Make sure that our native dependencies are new enough for KMP/konan
-# If our existing native libraries are newer, then we don't downgrade them because
-# something else (like Bash) might be requiring the newer version.
-function areNativeLibsNewEnoughForKonan() {
-  if [[ "$(uname)" == Darwin* ]]; then
-    # we don't have any Macs having native dependencies too old to build KMP/konan
-    true
-  elif [[ -f /etc/os-release ]]; then
-    . /etc/os-release
-    version=${VERSION_ID//./}  # Remove dots for comparison
-    if (( version >= 2004 )); then
-      true
-    else
-      # on Ubuntu < 20.04 we check whether we have a sufficiently new GLIBCXX
-      gcc --print-file-name=libstdc++.so.6 | xargs readelf -a -W | grep GLIBCXX_3.4.21 >/dev/null
-    fi
-  else
-    true
-  fi
-}
-
-if ! areNativeLibsNewEnoughForKonan; then
-  KONAN_HOST_LIBS="$OUT_DIR/konan-host-libs"
-  LOG="$KONAN_HOST_LIBS.log"
-  if $SCRIPT_DIR/prepare-linux-sysroot.sh "$KONAN_HOST_LIBS" > $LOG 2>$LOG; then
-    export LD_LIBRARY_PATH=$KONAN_HOST_LIBS
-  else
-    cat $LOG >&2
-    exit 1
-  fi
 fi
 
 # list kotlin sessions in case there are several, b/279739438
@@ -135,7 +105,11 @@ busytown/impl/monitor.sh 3600 busytown/impl/showJavaStacks.sh &
 
 # run the build
 if run ./gradlew --ci "$@"; then
-  echo build passed
+  echo "build passed"
+  if [[ "$IS_POSTSUBMIT" == "true" && "$ENABLE_PRESUBMIT_COMPATIBLE_CC_STORE" == "true" ]]; then
+    echo "Caching configuration for reuse in presubmit."
+    run IS_POSTSUBMIT=false ./gradlew --ci "$@" --dry-run
+  fi
 else
   if [ "$DIAGNOSE" == "true" ]; then
     # see if diagnose-build-failure.sh can identify the root cauase
@@ -154,7 +128,17 @@ else
 fi
 
 # check that no unexpected modifications were made to the source repository, such as new cache directories
-DIST_DIR=$DIST_DIR $SCRIPT_DIR/verify_no_caches_in_source_repo.sh $BUILD_START_MARKER
+if ! DIST_DIR=$DIST_DIR $SCRIPT_DIR/verify_no_caches_in_source_repo.sh $BUILD_START_MARKER; then
+  BUILD_STATUS=1 # failure
+fi
+
+# copy problem report to DIST_DIR so we can see them
+PROBLEM_REPORTS_EXPORTED=$DIST_DIR/problem-reports
+PROBLEM_REPORTS=$OUT_DIR/androidx/build/reports/problems
+if [ -d "$PROBLEM_REPORTS" ]; then
+    rm -rf "$PROBLEM_REPORTS_EXPORTED"
+    cp -r "$PROBLEM_REPORTS" "$PROBLEM_REPORTS_EXPORTED"
+fi
 
 # copy configuration cache reports to DIST_DIR so we can see them b/250893051
 CONFIGURATION_CACHE_REPORTS_EXPORTED=$DIST_DIR/configuration-cache-reports
@@ -162,6 +146,16 @@ CONFIGURATION_CACHE_REPORTS=$OUT_DIR/androidx/build/reports/configuration-cache
 if [ -d "$CONFIGURATION_CACHE_REPORTS" ]; then
     rm -rf "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
     cp -r "$CONFIGURATION_CACHE_REPORTS" "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
+fi
+
+# stop Gradle daemon to clean up after ourselves
+./gradlew --stop
+
+# Move DIST_DIR back to its original location
+if [ -n "${ORIGINAL_DIST_DIR:-}" ] && [ "$ORIGINAL_DIST_DIR" != "$DIST_DIR" ]; then
+  mkdir -p "$ORIGINAL_DIST_DIR"
+  cp -a "$DIST_DIR"/. "$ORIGINAL_DIST_DIR"/
+  rm -rf "$DIST_DIR"
 fi
 
 exit "$BUILD_STATUS"

@@ -14,41 +14,64 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
- *
- * Please use that script when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("kotlin-android")
 }
 
-dependencies {
-    implementation("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    testImplementation(libs.junit)
+androidXMultiplatform {
+    desktop()
+    androidLibrary {
+        namespace = "androidx.tracing"
+    }
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api(libs.androidx.annotation)
+            implementation("androidx.collection:collection:1.4.5")
+        }
+
+        commonTest.dependencies {
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinCoroutinesTest)
+        }
+
+        androidMain.dependencies {
+            implementation("androidx.annotation:annotation:1.8.1")
+        }
+
+        desktopTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.truth)
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.DelicateTracingApi")
+    }
 }
 
 androidx {
     name = "Tracing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Android Tracing"
-    legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
     }
-}
-
-android {
-    namespace "androidx.tracing"
 }

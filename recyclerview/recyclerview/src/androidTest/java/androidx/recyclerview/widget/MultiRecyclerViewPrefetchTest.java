@@ -20,16 +20,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
-import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +37,6 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 @SmallTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(AndroidJUnit4.class)
 public class MultiRecyclerViewPrefetchTest {
     private RecyclerView.RecycledViewPool mRecycledViewPool;
@@ -118,17 +115,16 @@ public class MultiRecyclerViewPrefetchTest {
 
             // first view 50x100 pixels, rest are 100x100 so second column is offset
             rv.setAdapter(new RecyclerView.Adapter() {
-                @NonNull
                 @Override
-                public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
-                        int viewType) {
+                public RecyclerView.@NonNull ViewHolder onCreateViewHolder(
+                        @NonNull ViewGroup parent, int viewType) {
                     registerTimePassingMs(5);
                     return new RecyclerView.ViewHolder(new View(parent.getContext())) {};
                 }
 
                 @Override
                 public void onBindViewHolder(
-                        @NonNull RecyclerView.ViewHolder holder, int position) {
+                        RecyclerView.@NonNull ViewHolder holder, int position) {
                     registerTimePassingMs(5);
                     holder.itemView.setMinimumWidth(100);
                     holder.itemView.setMinimumHeight(position == 0 ? 50 : 100);

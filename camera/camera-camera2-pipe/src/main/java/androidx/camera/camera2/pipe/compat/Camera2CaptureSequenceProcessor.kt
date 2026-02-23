@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraExtensionSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
@@ -27,6 +28,7 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CaptureSequence
 import androidx.camera.camera2.pipe.CaptureSequenceProcessor
 import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestMetadata
@@ -34,6 +36,7 @@ import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.MonitoredLogMessages.REPEATING_REQUEST_STARTED_TIMEOUT
@@ -45,13 +48,12 @@ import androidx.camera.camera2.pipe.writeParameters
 import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withTimeout
 
 internal interface Camera2CaptureSequenceProcessorFactory {
     fun create(
         session: CameraCaptureSessionWrapper,
-        surfaceMap: Map<StreamId, Surface>
+        streamToSurfaceMap: Map<StreamId, Surface>,
+        outputToSurfaceMap: Map<OutputId, Surface>,
     ): CaptureSequenceProcessor<*, *>
 }
 
@@ -62,19 +64,23 @@ constructor(
     private val graphConfig: CameraGraph.Config,
     private val streamGraph: StreamGraphImpl,
     private val quirks: Camera2Quirks,
+    private val strictMode: StrictMode,
 ) : Camera2CaptureSequenceProcessorFactory {
     @Suppress("UNCHECKED_CAST")
     override fun create(
         session: CameraCaptureSessionWrapper,
-        surfaceMap: Map<StreamId, Surface>
+        streamToSurfaceMap: Map<StreamId, Surface>,
+        outputToSurfaceMap: Map<OutputId, Surface>,
     ): CaptureSequenceProcessor<*, CaptureSequence<Any>> {
         return Camera2CaptureSequenceProcessor(
             session,
             threads,
             graphConfig.defaultTemplate,
-            surfaceMap,
+            streamToSurfaceMap,
+            outputToSurfaceMap,
             streamGraph,
-            quirks.shouldWaitForRepeatingRequestStartOnDisconnect(graphConfig)
+            strictMode,
+            quirks.shouldWaitForRepeatingRequestStartOnDisconnect(graphConfig),
         )
             as CaptureSequenceProcessor<Any, CaptureSequence<Any>>
     }
@@ -95,14 +101,16 @@ internal class Camera2CaptureSequenceProcessor(
     private val session: CameraCaptureSessionWrapper,
     private val threads: Threads,
     private val template: RequestTemplate,
-    private val surfaceMap: Map<StreamId, Surface>,
+    private val streamToSurfaceMap: Map<StreamId, Surface>,
+    private val outputToSurfaceMap: Map<OutputId, Surface>,
     private val streamGraph: StreamGraph,
+    private val strictMode: StrictMode,
     private val awaitRepeatingRequestOnDisconnect: Boolean = false,
 ) : CaptureSequenceProcessor<CaptureRequest, Camera2CaptureSequence> {
     private val debugId = captureSequenceProcessorDebugIds.incrementAndGet()
     private val lock = Any()
 
-    @GuardedBy("lock") private var closed = false
+    @GuardedBy("lock") private var disconnected = false
 
     @GuardedBy("lock")
     private var lastSingleRepeatingRequestSequence: Camera2CaptureSequence? = null
@@ -111,21 +119,25 @@ internal class Camera2CaptureSequenceProcessor(
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
+        sequenceListener: CaptureSequence.CaptureSequenceListener,
         listeners: List<Request.Listener>,
-        sequenceListener: CaptureSequence.CaptureSequenceListener
     ): Camera2CaptureSequence? {
         val requestList = ArrayList<Camera2RequestMetadata>(requests.size)
         val captureRequests = ArrayList<CaptureRequest>(requests.size)
 
         val surfaceToStreamMap = ArrayMap<Surface, StreamId>()
+        val surfaceToOutputMap = ArrayMap<Surface, OutputId>()
         val streamToSurfaceMap = ArrayMap<StreamId, Surface>()
 
         if (!validateRequestList(requests, session)) {
             return null
         }
 
-        if (!buildSurfaceMaps(requests, surfaceToStreamMap, streamToSurfaceMap)) {
+        if (
+            !buildSurfaceMaps(requests, surfaceToStreamMap, surfaceToOutputMap, streamToSurfaceMap)
+        ) {
             return null
         }
 
@@ -155,11 +167,20 @@ internal class Camera2CaptureSequenceProcessor(
             // surface per request.
             check(hasSurface)
 
-            if (request.inputRequest != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                checkNotNull(imageWriter) {
-                    "Failed to create ImageWriter for capture session: $session"
+            if (request.inputRequest != null) {
+                if (imageWriter == null) {
+                    Log.error {
+                        "Failed to queue request to ImageWriter - No ImageWriter available!"
+                    }
+                    return null
                 }
                 val image = request.inputRequest.image
+                synchronized(lock) {
+                    if (disconnected) {
+                        Log.warn { "$this disconnected. $image can't be queued to $imageWriter" }
+                        return null
+                    }
+                }
                 Log.debug { "Queuing image $image for reprocessing to ImageWriter $imageWriter" }
                 // TODO(b/321603591): Queue image closer to when capture request is submitted
                 if (!imageWriter.queueInputImage(image)) {
@@ -174,6 +195,9 @@ internal class Camera2CaptureSequenceProcessor(
             } else {
                 // Apply default parameters to the builder first.
                 requestBuilder.writeParameters(defaultParameters)
+
+                // Apply CameraGraph parameters to the builder.
+                requestBuilder.writeParameters(graphParameters)
 
                 // Apply request parameters to the builder.
                 requestBuilder.writeParameters(request.parameters)
@@ -220,12 +244,13 @@ internal class Camera2CaptureSequenceProcessor(
                             session,
                             highSpeedRequestList[0],
                             defaultParameters,
+                            graphParameters,
                             requiredParameters,
                             streamToSurfaceMap,
                             requestTemplate,
                             isRepeating,
                             request,
-                            requestNumber
+                            requestNumber,
                         )
                     captureRequests.add(highSpeedRequestList[0])
                     requestList.add(metadata)
@@ -238,12 +263,13 @@ internal class Camera2CaptureSequenceProcessor(
                                 session,
                                 highSpeedRequestList[i],
                                 defaultParameters,
+                                graphParameters,
                                 requiredParameters,
                                 streamToSurfaceMap,
                                 requestTemplate,
                                 isRepeating,
                                 request,
-                                requestNumber
+                                requestNumber,
                             )
 
                         captureRequests.add(highSpeedRequestList[i])
@@ -256,12 +282,13 @@ internal class Camera2CaptureSequenceProcessor(
                         session,
                         captureRequest,
                         defaultParameters,
+                        graphParameters,
                         requiredParameters,
                         streamToSurfaceMap,
                         requestTemplate,
                         isRepeating,
                         request,
-                        requestNumber
+                        requestNumber,
                     )
                 captureRequests.add(captureRequest)
                 requestList.add(metadata)
@@ -276,14 +303,17 @@ internal class Camera2CaptureSequenceProcessor(
             requestList,
             listeners,
             sequenceListener,
-            surfaceToStreamMap
+            surfaceToStreamMap,
+            surfaceToOutputMap,
+            streamGraph,
+            strictMode,
         )
     }
 
     override fun submit(captureSequence: Camera2CaptureSequence): Int? =
         synchronized(lock) {
-            if (closed) {
-                Log.warn { "$this closed. $captureSequence won't be submitted" }
+            if (disconnected) {
+                Log.warn { "$this disconnected. $captureSequence won't be submitted" }
                 return null
             }
             val captureCallback = captureSequence as CameraCaptureSession.CaptureCallback
@@ -298,7 +328,7 @@ internal class Camera2CaptureSequenceProcessor(
                     }
                     session.setRepeatingRequest(
                         captureSequence.captureRequestList[0],
-                        captureCallback
+                        captureCallback,
                     )
                 } else {
                     session.capture(captureSequence.captureRequestList[0], captureSequence)
@@ -325,24 +355,26 @@ internal class Camera2CaptureSequenceProcessor(
         }
 
     override suspend fun shutdown() {
-        val captureSequence: Camera2CaptureSequence?
-        synchronized(lock) {
-            if (closed) {
-                return
-            }
-            closed = true
-            captureSequence = lastSingleRepeatingRequestSequence
-        }
+        disconnect()
+    }
 
-        if (awaitRepeatingRequestOnDisconnect && captureSequence != null) {
-            awaitRepeatingRequestStarted(captureSequence)
-        }
-
+    internal fun disconnect() {
         // Shutdown is responsible for releasing resources that are no longer in use.
-        Debug.trace("$this#close") {
-            synchronized(lock) {
-                imageWriter?.close()
-                session.inputSurface?.release()
+        Debug.trace("$this#disconnect") {
+            val captureSequence: Camera2CaptureSequence? =
+                synchronized(lock) {
+                    if (!disconnected) {
+                        disconnected = true
+                        imageWriter?.close()
+                        session.inputSurface?.release()
+                        lastSingleRepeatingRequestSequence
+                    } else {
+                        null
+                    }
+                }
+            // Wait for the last submitted repeating request sequence to start, if one was set.
+            if (awaitRepeatingRequestOnDisconnect && captureSequence != null) {
+                awaitRepeatingRequestStarted(captureSequence)
             }
         }
     }
@@ -351,7 +383,7 @@ internal class Camera2CaptureSequenceProcessor(
         return "Camera2CaptureSequenceProcessor-$debugId"
     }
 
-    private suspend fun awaitRepeatingRequestStarted(captureSequence: Camera2CaptureSequence) {
+    private fun awaitRepeatingRequestStarted(captureSequence: Camera2CaptureSequence) {
         Log.debug { "Waiting for the last repeating request sequence: $captureSequence" }
         // On certain devices, the submitted repeating request sequence may not give
         // us onCaptureStarted() or onCaptureSequenceAborted() [1]. Hence we wrap
@@ -359,15 +391,13 @@ internal class Camera2CaptureSequenceProcessor(
         //
         // [1] b/307588161 - [ANR] at
         // androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessor.close
-        try {
-            withTimeout(WAIT_FOR_REPEATING_TIMEOUT_MS) { captureSequence.awaitStarted() }
-        } catch (e: TimeoutCancellationException) {
-            Log.error {
+        threads.runBlockingCheckedOrNull(WAIT_FOR_REPEATING_TIMEOUT_MS) {
+            captureSequence.awaitStarted()
+        }
+            ?: Log.error {
                 "$this#close: $REPEATING_REQUEST_STARTED_TIMEOUT" +
                     ", lastSingleRepeatingRequestSequence = $captureSequence"
             }
-            throw e
-        }
     }
 
     /**
@@ -375,21 +405,31 @@ internal class Camera2CaptureSequenceProcessor(
      * created, assuming it's a reprocessing session.
      */
     private val imageWriter =
-        if (streamGraph.inputs.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (streamGraph.inputs.isNotEmpty()) {
             val inputStream = streamGraph.inputs.first()
             val sessionInputSurface = session.inputSurface
             checkNotNull(sessionInputSurface) {
                 "inputSurface is required to create instance of imageWriter."
             }
             val androidImageWriter =
-                AndroidImageWriter.create(
-                    sessionInputSurface,
-                    inputStream.id,
-                    inputStream.maxImages,
-                    inputStream.format,
-                    threads.camera2Handler
-                )
-            Log.debug { "Created ImageWriter $androidImageWriter for session $session" }
+                try {
+                    AndroidImageWriter.create(
+                        sessionInputSurface,
+                        inputStream.id,
+                        inputStream.maxImages,
+                        inputStream.format,
+                        threads.camera2Handler,
+                    )
+                } catch (e: RuntimeException) {
+                    Log.error(e) {
+                        "Failed to create ImageWriter for session $session! " +
+                            "Reprocessing will not be supported!"
+                    }
+                    null
+                }
+            if (androidImageWriter != null) {
+                Log.debug { "Created ImageWriter $androidImageWriter for session $session" }
+            }
             androidImageWriter
         } else {
             null
@@ -397,7 +437,7 @@ internal class Camera2CaptureSequenceProcessor(
 
     private fun validateRequestList(
         requests: List<Request>,
-        session: CameraCaptureSessionWrapper
+        session: CameraCaptureSessionWrapper,
     ): Boolean {
         check(requests.isNotEmpty()) {
             "build(...) should never be called with an empty request list!"
@@ -478,7 +518,8 @@ internal class Camera2CaptureSequenceProcessor(
     private fun buildSurfaceMaps(
         requests: List<Request>,
         surfaceToStreamMap: MutableMap<Surface, StreamId>,
-        streamToSurfaceMap: MutableMap<StreamId, Surface>
+        surfaceToOutputMap: MutableMap<Surface, OutputId>,
+        streamToSurfaceMap: MutableMap<StreamId, Surface>,
     ): Boolean {
         check(requests.isNotEmpty()) {
             "build(...) should never be called with an empty request list!"
@@ -494,12 +535,17 @@ internal class Camera2CaptureSequenceProcessor(
                     continue
                 }
 
-                val surface = surfaceMap[stream]
+                val surface = this@Camera2CaptureSequenceProcessor.streamToSurfaceMap[stream]
                 if (surface != null) {
                     // TODO(codelogic) There should be a more efficient way to do these lookups than
                     // having two maps.
                     surfaceToStreamMap[surface] = stream
                     streamToSurfaceMap[stream] = surface
+                    val cameraStream = checkNotNull(streamGraph[stream])
+                    for (outputStream in cameraStream.outputs) {
+                        val surface = checkNotNull(outputToSurfaceMap[outputStream.id])
+                        surfaceToOutputMap[surface] = outputStream.id
+                    }
                     hasSurface = true
                 } else if (REQUIRE_SURFACE_FOR_ALL_STREAMS) {
                     Log.info { "  Failed to bind surface for $stream" }
@@ -535,21 +581,17 @@ internal class Camera2CaptureSequenceProcessor(
      */
     private fun buildCaptureRequestBuilder(
         request: Request,
-        requestTemplate: RequestTemplate
+        requestTemplate: RequestTemplate,
     ): CaptureRequest.Builder? {
         val requestBuilder =
             if (request.inputRequest != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val totalCaptureResult =
-                        request.inputRequest.frameInfo.unwrapAs(TotalCaptureResult::class)
-                    checkNotNull(totalCaptureResult) {
-                        "Failed to unwrap FrameInfo ${request.inputRequest.frameInfo} as " +
-                            "TotalCaptureResult"
-                    }
-                    session.device.createReprocessCaptureRequest(totalCaptureResult)
-                } else {
-                    null
+                val totalCaptureResult =
+                    request.inputRequest.frameInfo.unwrapAs(TotalCaptureResult::class)
+                checkNotNull(totalCaptureResult) {
+                    "Failed to unwrap FrameInfo ${request.inputRequest.frameInfo} as " +
+                        "TotalCaptureResult"
                 }
+                session.device.createReprocessCaptureRequest(totalCaptureResult)
             } else {
                 session.device.createCaptureRequest(requestTemplate)
             }
@@ -578,12 +620,13 @@ internal class Camera2RequestMetadata(
     private val cameraCaptureSessionWrapper: CameraCaptureSessionWrapper,
     private val captureRequest: CaptureRequest,
     private val defaultParameters: Map<*, Any?>,
+    private val graphParameters: Map<*, Any?>,
     private val requiredParameters: Map<*, Any?>,
     override val streams: Map<StreamId, Surface>,
     override val template: RequestTemplate,
     override val repeating: Boolean,
     override val request: Request,
-    override val requestNumber: RequestNumber
+    override val requestNumber: RequestNumber,
 ) : RequestMetadata {
     override fun <T> get(key: CaptureRequest.Key<T>): T? = captureRequest[key]
 
@@ -598,6 +641,9 @@ internal class Camera2RequestMetadata(
             request.extras.containsKey(key) -> {
                 request.extras[key] as T?
             }
+            graphParameters.containsKey(key) -> {
+                graphParameters[key] as T?
+            }
             else -> {
                 defaultParameters[key] as T?
             }
@@ -605,12 +651,16 @@ internal class Camera2RequestMetadata(
 
     override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = get(key) ?: default
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "NewApi")
     override fun <T : Any> unwrapAs(type: KClass<T>): T? =
         when (type) {
             CaptureRequest::class -> captureRequest as T
             CameraCaptureSession::class ->
                 cameraCaptureSessionWrapper.unwrapAs(CameraCaptureSession::class) as? T
+            CameraExtensionSession::class -> {
+                check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                cameraCaptureSessionWrapper.unwrapAs(CameraExtensionSession::class) as? T
+            }
             else -> null
         }
 }

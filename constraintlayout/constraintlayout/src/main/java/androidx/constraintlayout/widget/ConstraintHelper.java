@@ -27,11 +27,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
-import androidx.annotation.NonNull;
 import androidx.constraintlayout.core.widgets.ConstraintWidget;
 import androidx.constraintlayout.core.widgets.ConstraintWidgetContainer;
 import androidx.constraintlayout.core.widgets.Helper;
 import androidx.constraintlayout.core.widgets.HelperWidget;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -465,18 +466,13 @@ public abstract class ConstraintHelper extends View {
      */
     protected void applyLayoutFeatures(ConstraintLayout container) {
         int visibility = getVisibility();
-        float elevation = 0;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            elevation = getElevation();
-        }
+        float elevation = getElevation();
         for (int i = 0; i < mCount; i++) {
             int id = mIds[i];
             View view = container.getViewById(id);
             if (view != null) {
                 view.setVisibility(visibility);
-                if (elevation > 0
-                        && android.os.Build.VERSION.SDK_INT
-                        >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                if (elevation > 0) {
                     view.setTranslationZ(view.getTranslationZ() + elevation);
                 }
             }

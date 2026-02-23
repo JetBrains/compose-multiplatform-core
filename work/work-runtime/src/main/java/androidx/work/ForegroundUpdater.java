@@ -18,9 +18,9 @@ package androidx.work;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -38,8 +38,7 @@ public interface ForegroundUpdater {
      * {@link ListenableWorker} transitions to running in the context of a foreground
      * {@link android.app.Service}.
      */
-    @NonNull
-    ListenableFuture<Void> setForegroundAsync(
+    @NonNull ListenableFuture<Void> setForegroundAsync(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull ForegroundInfo foregroundInfo);

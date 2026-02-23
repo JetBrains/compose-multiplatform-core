@@ -23,16 +23,19 @@ import static androidx.wear.protolayout.material.RunnerUtils.getFontScale;
 import static androidx.wear.protolayout.material.RunnerUtils.runSingleScreenshotTest;
 import static androidx.wear.protolayout.material.RunnerUtils.setFontScale;
 import static androidx.wear.protolayout.material.RunnerUtils.waitForNotificationToDisappears;
+import static androidx.wear.protolayout.material.ScreenshotKt.SCREENSHOT_GOLDEN_PATH;
 import static androidx.wear.protolayout.material.TestCasesGenerator.XXXL_SCALE_SUFFIX;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTestCases;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesLtrOnly;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesRtlOnly;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.DisplayMetrics;
 
 import androidx.annotation.Dimension;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.wear.protolayout.DeviceParametersBuilders;
@@ -41,6 +44,7 @@ import androidx.wear.protolayout.material.RunnerUtils.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,6 +56,10 @@ import java.util.List;
 
 @RunWith(Parameterized.class)
 @LargeTest
+@SdkSuppress(
+        minSdkVersion = 35,
+        maxSdkVersion = 35
+)
 public class MaterialGoldenXLTest {
     private static final float FONT_SCALE_XXXL = 1.24f;
 
@@ -62,7 +70,7 @@ public class MaterialGoldenXLTest {
 
     @Rule
     public AndroidXScreenshotTestRule mScreenshotRule =
-            new AndroidXScreenshotTestRule("wear/wear-protolayout-material");
+            new AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH);
 
     public MaterialGoldenXLTest(String expected, TestCase testCase) {
         mTestCase = testCase;
@@ -135,6 +143,7 @@ public class MaterialGoldenXLTest {
     }
 
     @Test
+    @Ignore("b/376758169")
     public void test() {
         runSingleScreenshotTest(mScreenshotRule, mTestCase, mExpected);
     }

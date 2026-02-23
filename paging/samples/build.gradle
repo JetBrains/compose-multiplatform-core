@@ -15,26 +15,25 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 android {
-    namespace "androidx.paging.samples"
+    namespace = "androidx.paging.samples"
 }
 
 dependencies {
+    api(libs.jspecify)
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation("androidx.appcompat:appcompat:1.2.0")
@@ -57,7 +56,7 @@ dependencies {
 
 androidx {
     name = "Paging Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Paging library"
 }

@@ -22,10 +22,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * RowHeaderPresenter provides a default presentation for {@link HeaderItem} using a
@@ -123,9 +124,8 @@ public class RowHeaderPresenter extends Presenter {
         }
     }
 
-    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+    public Presenter.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         View root = LayoutInflater.from(parent.getContext())
                 .inflate(mLayoutResourceId, parent, false);
 
@@ -137,7 +137,7 @@ public class RowHeaderPresenter extends Presenter {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, @Nullable Object item) {
+    public void onBindViewHolder(Presenter.@NonNull ViewHolder viewHolder, @Nullable Object item) {
         HeaderItem headerItem = item == null ? null : ((Row) item).getHeaderItem();
         RowHeaderPresenter.ViewHolder vh = (RowHeaderPresenter.ViewHolder)viewHolder;
         if (headerItem == null) {
@@ -170,7 +170,7 @@ public class RowHeaderPresenter extends Presenter {
     }
 
     @Override
-    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(Presenter.@NonNull ViewHolder viewHolder) {
         RowHeaderPresenter.ViewHolder vh = (ViewHolder)viewHolder;
         if (vh.mTitleView != null) {
             vh.mTitleView.setText(null);

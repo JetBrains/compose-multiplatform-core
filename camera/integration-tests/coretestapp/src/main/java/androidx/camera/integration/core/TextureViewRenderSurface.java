@@ -23,8 +23,9 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.ViewStub;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities for instantiating a {@link TextureView} and attaching to an {@link OpenGLRenderer}.
@@ -39,8 +40,7 @@ public final class TextureViewRenderSurface {
      * @param renderer Renderer which will be used to update the TextureView.
      * @return The inflated TextureView.
      */
-    @NonNull
-    public static TextureView inflateWith(@NonNull ViewStub viewStub,
+    public static @NonNull TextureView inflateWith(@NonNull ViewStub viewStub,
             @NonNull OpenGLRenderer renderer) {
         Log.d(TAG, "Inflating TextureView into view stub.");
         viewStub.setLayoutResource(R.layout.texture_view_render_surface);

@@ -18,16 +18,19 @@ package androidx.pdf.widget;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.R;
 import androidx.pdf.data.Range;
 import androidx.pdf.util.Accessibility;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -90,7 +93,6 @@ public class PageIndicator extends ReusableToast {
             mPageNumberView.setContentDescription(desc);
             if (mCurrentRange != null) {
                 // Do not show on the first time, only when updating
-                show();
                 shown = true;
             }
 
@@ -99,7 +101,8 @@ public class PageIndicator extends ReusableToast {
 
         if (zoom != mCurrentZoom && stable) {
             // Override announcement with zoom info.
-            announceStr = getDescription(range) + "\n" + getZoomDescription(zoom);
+            announceStr = (announceStr != null) ? announceStr + getZoomDescription(zoom) :
+                    getZoomDescription(zoom);
             mCurrentZoom = zoom;
         }
         if (announceStr != null && mAccessibility.isAccessibilityEnabled(mContext)) {
@@ -109,8 +112,7 @@ public class PageIndicator extends ReusableToast {
         return shown;
     }
 
-    @NonNull
-    public TextView getTextView() {
+    public @NonNull TextView getTextView() {
         return mPageNumberView;
     }
 
@@ -123,7 +125,7 @@ public class PageIndicator extends ReusableToast {
         Resources res = mContext.getResources();
         switch (range.length()) {
             case 0:
-                return res.getString(R.string.label_page_single, range.getLast() + 1, mNumPages);
+                return res.getString(R.string.label_page_single, range.getLast(), mNumPages);
             case 1:
                 return res.getString(R.string.label_page_single, range.getFirst() + 1, mNumPages);
             default:
@@ -167,5 +169,30 @@ public class PageIndicator extends ReusableToast {
 
         // Clear the text content of the TextView
         mPageNumberView.setText(DEFAULT_PAGE_TEXT);
+    }
+
+    /**
+     * Set the background to a given Drawable, or remove the background.
+     *
+     * @param drawable The Drawable to use as the background, or null to remove the background.
+     */
+    public void setBackground(@Nullable Drawable drawable) {
+        mPageNumberView.setBackground(drawable);
+    }
+
+    /**
+     * Sets the relative right margin. Margin values should be positive.
+     *
+     * @param marginRight the end margin size.
+     */
+    public void setMarginRight(int marginRight) {
+        if (mPageNumberView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams params =
+                    (ViewGroup.MarginLayoutParams) mPageNumberView.getLayoutParams();
+            // Since FastScrollView currently doesn't support RTL mode,
+            // explicitly set it as right margin.
+            params.rightMargin = marginRight;
+            mPageNumberView.setLayoutParams(params);
+        }
     }
 }

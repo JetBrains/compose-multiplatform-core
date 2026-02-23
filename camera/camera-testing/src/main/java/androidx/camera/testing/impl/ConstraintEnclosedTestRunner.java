@@ -18,9 +18,9 @@ package androidx.camera.testing.impl;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.runners.Suite;
 import org.junit.runners.model.RunnerBuilder;
 
@@ -43,8 +43,7 @@ public class ConstraintEnclosedTestRunner extends Suite {
         super(builder, klass, filterClasses(klass));
     }
 
-    @NonNull
-    private static Class<?>[] filterClasses(@NonNull Class<?> klass) {
+    private static Class<?> @NonNull [] filterClasses(@NonNull Class<?> klass) {
         List<Class<?>> filteredList = new ArrayList<>();
 
         boolean outerSdkCheckResult = checkTestTargetSdk(klass);

@@ -16,11 +16,11 @@
 
 package androidx.wear.protolayout.expression;
 
+import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInt32FromProto;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-
-import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInt32FromProto;
 
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32;
@@ -30,8 +30,10 @@ import androidx.wear.protolayout.proto.FingerprintProto.NodeFingerprint;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class DynamicInt32Test {
     private static final String STATE_KEY = "state-key";
     private static final int CONSTANT_VALUE = 42;

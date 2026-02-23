@@ -16,7 +16,7 @@
 
 package androidx.core.content.res;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Viewing conditions define parameters of where a color was seen. Used, along with a color, to
@@ -91,8 +91,7 @@ final class ViewingConditions {
         return mNc;
     }
 
-    @NonNull
-    float[] getRgbD() {
+    float @NonNull [] getRgbD() {
         return mRgbD;
     }
 
@@ -123,8 +122,7 @@ final class ViewingConditions {
     }
 
     /** Create a custom camFrame. */
-    @NonNull
-    static ViewingConditions make(@NonNull float[] whitepoint, float adaptingLuminance,
+    static @NonNull ViewingConditions make(float @NonNull [] whitepoint, float adaptingLuminance,
             float backgroundLstar, float surround, boolean discountingIlluminant) {
         // Transform white point XYZ to 'cone'/'rgb' responses
         float[][] matrix = CamUtils.XYZ_TO_CAM16RGB;

@@ -23,17 +23,17 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.cardview.R;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A FrameLayout with a rounded corner background and shadow.
@@ -84,11 +84,7 @@ public class CardView extends FrameLayout {
     private static final CardViewImpl IMPL;
 
     static {
-        if (Build.VERSION.SDK_INT >= 21) {
-            IMPL = new CardViewApi21Impl();
-        } else {
-            IMPL = new CardViewBaseImpl();
-        }
+        IMPL = new CardViewApi21Impl();
         IMPL.initStatic();
     }
 
@@ -301,8 +297,7 @@ public class CardView extends FrameLayout {
      *
      * @return The background color state list of the CardView.
      */
-    @NonNull
-    public ColorStateList getCardBackgroundColor() {
+    public @NonNull ColorStateList getCardBackgroundColor() {
         return IMPL.getBackgroundColor(mCardViewDelegate);
     }
 

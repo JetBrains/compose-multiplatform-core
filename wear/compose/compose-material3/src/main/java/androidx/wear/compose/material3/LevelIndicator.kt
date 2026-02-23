@@ -16,9 +16,13 @@
 
 package androidx.wear.compose.material3
 
+import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -27,45 +31,41 @@ import kotlin.math.sin
 
 /**
  * Creates a [LevelIndicator] for screens that that control a setting such as volume with either
- * rotating side button, rotating bezel or a [Stepper].
+ * rotating side button, rotating bezel.
  *
- * Example of [LevelIndicator] with a [Stepper]:
+ * Example of [LevelIndicator]:
  *
- * @sample androidx.wear.compose.material3.samples.StepperSample
- * @param value Value of the indicator in the [valueRange].
+ * @sample androidx.wear.compose.material3.samples.LevelIndicatorSample
+ * @param value Value of the indicator as a fraction in the range [0,1]. Values outside of the range
+ *   [0,1] will be coerced.
  * @param modifier Modifier to be applied to the component
- * @param valueRange range of values that [value] can take
  * @param enabled Controls the enabled state of [LevelIndicator] - when false, disabled colors will
  *   be used.
  * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [LevelIndicator] in different states
  * @param strokeWidth The stroke width for the indicator and track strokes
- * @param sweepAngle The angle covered by the curved LevelIndicator
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
  * @param reverseDirection Reverses direction of PositionIndicator if true
  */
 @Composable
-fun LevelIndicator(
+public fun LevelIndicator(
     value: () -> Float,
     modifier: Modifier = Modifier,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     enabled: Boolean = true,
     colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
     strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
-    sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ) {
+    val updatedValue by rememberUpdatedState(value)
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
     val paddingHorizontal = LevelIndicatorDefaults.edgePadding
     val radius = screenWidthDp / 2 - paddingHorizontal.value - strokeWidth.value / 2
     // Calculate indicator height based on a triangle of the top half of the sweep angle
-    // and subtract the end caps
-    val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius - strokeWidth.value
+    val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius
 
     IndicatorImpl(
-        state =
-            FractionPositionStateAdapter {
-                (value() - valueRange.start) / (valueRange.endInclusive - valueRange.start)
-            },
+        state = FractionPositionStateAdapter { updatedValue().coerceIn(0f, 1f) },
         indicatorHeight = indicatorHeight.dp,
         indicatorWidth = strokeWidth,
         paddingHorizontal = paddingHorizontal,
@@ -78,8 +78,47 @@ fun LevelIndicator(
 }
 
 /**
- * Creates a [LevelIndicator] for screens that that control a setting such as volume with either
- * rotating side button, rotating bezel or a [Stepper].
+ * Creates a [StepperLevelIndicator] for screens that that control a setting, such as volume, with a
+ * [Stepper].
+ *
+ * Example of [LevelIndicator] with a [Stepper]:
+ *
+ * @sample androidx.wear.compose.material3.samples.StepperSample
+ * @param value Value of the indicator in the [valueRange].
+ * @param modifier Modifier to be applied to the component
+ * @param valueRange range of values that [value] can take
+ * @param enabled Controls the enabled state of [LevelIndicator] - when false, disabled colors will
+ *   be used.
+ * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
+ *   for this [LevelIndicator] in different states
+ * @param strokeWidth The stroke width for the indicator and track strokes
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
+ * @param reverseDirection Reverses direction of PositionIndicator if true
+ */
+@Composable
+public fun StepperLevelIndicator(
+    value: () -> Float,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    enabled: Boolean = true,
+    colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
+    strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    reverseDirection: Boolean = false,
+): Unit =
+    LevelIndicator(
+        value = { (value() - valueRange.start) / (valueRange.endInclusive - valueRange.start) },
+        modifier = modifier,
+        enabled = enabled,
+        colors = colors,
+        strokeWidth = strokeWidth,
+        sweepAngle = sweepAngle,
+        reverseDirection = reverseDirection,
+    )
+
+/**
+ * Creates a [StepperLevelIndicator] for screens that that control a setting, such as volume, with a
+ * [Stepper].
  *
  * Example of [LevelIndicator] with a [Stepper] working on an [IntProgression]:
  *
@@ -87,46 +126,49 @@ fun LevelIndicator(
  * @param value Current value of the Stepper. If outside of [valueProgression] provided, value will
  *   be coerced to this range.
  * @param modifier Modifier to be applied to the component
- * @param valueProgression Progression of values that [LevelIndicator] value can take. Consists of
- *   rangeStart, rangeEnd and step. Range will be equally divided by step size
+ * @param valueProgression Progression of values that [StepperLevelIndicator] value can take.
+ *   Consists of rangeStart, rangeEnd and step. Range will be equally divided by step size.
  * @param enabled Controls the enabled state of [LevelIndicator] - when false, disabled colors will
  *   be used.
  * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [LevelIndicator] in different states
  * @param strokeWidth The stroke width for the indicator and track strokes
- * @param sweepAngle The angle covered by the curved LevelIndicator
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
  * @param reverseDirection Reverses direction of PositionIndicator if true
  */
 @Composable
-fun LevelIndicator(
+public fun StepperLevelIndicator(
     value: () -> Int,
     valueProgression: IntProgression,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
     strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
-    sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
-) {
+): Unit =
     LevelIndicator(
-        value = { value().toFloat() },
+        value = {
+            (value() - valueProgression.first) /
+                (valueProgression.last - valueProgression.first).toFloat()
+        },
         modifier = modifier,
-        valueRange = valueProgression.first.toFloat()..valueProgression.last.toFloat(),
         enabled = enabled,
         colors = colors,
         strokeWidth = strokeWidth,
         sweepAngle = sweepAngle,
         reverseDirection = reverseDirection,
     )
-}
 
 /** Contains the default values used for [LevelIndicator]. */
-object LevelIndicatorDefaults {
+public object LevelIndicatorDefaults {
     /**
      * Creates a [LevelIndicatorColors] that represents the default colors used in a
      * [LevelIndicator].
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultLevelIndicatorColors
+    @Composable
+    public fun colors(): LevelIndicatorColors =
+        MaterialTheme.colorScheme.defaultLevelIndicatorColors
 
     /**
      * Creates a [LevelIndicatorColors] with modified colors used in [LevelIndicator].
@@ -137,12 +179,12 @@ object LevelIndicatorDefaults {
      * @param disabledTrackColor The disabled track color.
      */
     @Composable
-    fun colors(
+    public fun colors(
         indicatorColor: Color = Color.Unspecified,
         trackColor: Color = Color.Unspecified,
         disabledIndicatorColor: Color = Color.Unspecified,
         disabledTrackColor: Color = Color.Unspecified,
-    ) =
+    ): LevelIndicatorColors =
         MaterialTheme.colorScheme.defaultLevelIndicatorColors.copy(
             indicatorColor = indicatorColor,
             trackColor = trackColor,
@@ -150,11 +192,14 @@ object LevelIndicatorDefaults {
             disabledTrackColor = disabledTrackColor,
         )
 
-    /** The sweep angle for the curved [LevelIndicator]. */
-    const val SweepAngle = 72f
+    /**
+     * The sweep angle for the curved [LevelIndicator], measured up to the centers of the stroke
+     * caps. The default value of 72 degrees equates to 20% of the circumference, i.e. 360/5.
+     */
+    public val SweepAngle: Float = 72f
 
     /** The default stroke width for the indicator and track strokes */
-    val StrokeWidth = 6.dp
+    public val StrokeWidth: Dp = 6.dp
 
     internal val edgePadding = PaddingDefaults.edgePadding
 
@@ -185,23 +230,34 @@ object LevelIndicatorDefaults {
  * @param disabledTrackColor Color used to draw the track of [LevelIndicator] when it is not
  *   enabled.
  */
-class LevelIndicatorColors(
-    val indicatorColor: Color,
-    val trackColor: Color,
-    val disabledIndicatorColor: Color,
-    val disabledTrackColor: Color
+public class LevelIndicatorColors(
+    public val indicatorColor: Color,
+    public val trackColor: Color,
+    public val disabledIndicatorColor: Color,
+    public val disabledTrackColor: Color,
 ) {
-    internal fun copy(
-        indicatorColor: Color? = null,
-        trackColor: Color? = null,
-        disabledIndicatorColor: Color? = null,
-        disabledTrackColor: Color? = null,
-    ) =
+    /**
+     * Returns a copy of this LevelIndicatorColors optionally overriding some of the values.
+     *
+     * @param indicatorColor Color used to draw the indicator of [LevelIndicator].
+     * @param trackColor Color used to draw the track of [LevelIndicator].
+     * @param disabledIndicatorColor Color used to draw the indicator of [LevelIndicator] when it is
+     *   not enabled.
+     * @param disabledTrackColor Color used to draw the track of [LevelIndicator] when it is not
+     *   enabled.
+     */
+    public fun copy(
+        indicatorColor: Color = this.indicatorColor,
+        trackColor: Color = this.trackColor,
+        disabledIndicatorColor: Color = this.disabledIndicatorColor,
+        disabledTrackColor: Color = this.disabledTrackColor,
+    ): LevelIndicatorColors =
         LevelIndicatorColors(
-            indicatorColor = indicatorColor ?: this.indicatorColor,
-            trackColor = trackColor ?: this.trackColor,
-            disabledIndicatorColor = disabledIndicatorColor ?: this.disabledIndicatorColor,
-            disabledTrackColor = disabledTrackColor ?: this.disabledTrackColor,
+            indicatorColor = indicatorColor.takeOrElse { this.indicatorColor },
+            trackColor = trackColor.takeOrElse { this.trackColor },
+            disabledIndicatorColor =
+                disabledIndicatorColor.takeOrElse { this.disabledIndicatorColor },
+            disabledTrackColor = disabledTrackColor.takeOrElse { this.disabledTrackColor },
         )
 
     /**
@@ -250,9 +306,8 @@ class LevelIndicatorColors(
  * @param valueFraction the value fraction to adapt to a ScrollIndicatorState
  * @VisibleForTesting
  */
-internal class FractionPositionStateAdapter(
-    private val valueFraction: () -> Float,
-) : IndicatorState {
+internal class FractionPositionStateAdapter(private val valueFraction: () -> Float) :
+    IndicatorState {
 
     override val positionFraction = 1f // LevelIndicator always starts at the bottom
 

@@ -39,8 +39,6 @@ import android.view.KeyEvent;
 import android.widget.Toast;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -50,6 +48,9 @@ import androidx.mediarouter.media.MediaRouter.RouteInfo;
 
 import com.example.androidx.mediarouting.R;
 import com.example.androidx.mediarouting.data.PlaylistItem;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstraction of common playback operations of media items, such as play,
@@ -77,15 +78,11 @@ public abstract class Player {
     private static final PlaybackStateCompat INIT_PLAYBACK_STATE = new PlaybackStateCompat.Builder()
             .setState(PlaybackStateCompat.STATE_NONE, 0, .0f).build();
 
-    @NonNull
-    protected Context mContext;
-    @NonNull
-    protected Callback mCallback;
-    @NonNull
-    protected MediaSessionCompat mMediaSession;
+    protected @NonNull Context mContext;
+    protected @NonNull Callback mCallback;
+    protected @NonNull MediaSessionCompat mMediaSession;
 
-    @NonNull
-    protected String mNotificationChannelId;
+    protected @NonNull String mNotificationChannelId;
     private NotificationCompat.Action mPlayAction;
     private NotificationCompat.Action mPauseAction;
 
@@ -167,8 +164,7 @@ public abstract class Player {
      * @param iid
      * @return
      */
-    @NonNull
-    public abstract PlaylistItem remove(@NonNull String iid);
+    public abstract @NonNull PlaylistItem remove(@NonNull String iid);
 
     /**
      * Takes player snapshot.
@@ -176,8 +172,7 @@ public abstract class Player {
     public void takeSnapshot() {
     }
 
-    @Nullable
-    public Bitmap getSnapshot() {
+    public @Nullable Bitmap getSnapshot() {
         return null;
     }
 
@@ -195,8 +190,7 @@ public abstract class Player {
      * Creates a {@link Player} for the given {@code route}, whose UI is hosted by the given {@code
      * activity}.
      */
-    @NonNull
-    public static Player createPlayerForActivity(
+    public static @NonNull Player createPlayerForActivity(
             @NonNull Activity activity,
             @NonNull RouteInfo route,
             @NonNull MediaSessionCompat session) {
@@ -214,8 +208,7 @@ public abstract class Player {
     }
 
     /** Creates a {@link Player} for playback on an overlay. */
-    @NonNull
-    public static Player createPlayerForOverlay(@NonNull Context context) {
+    public static @NonNull Player createPlayerForOverlay(@NonNull Context context) {
         Player player = new LocalPlayer.OverlayPlayer(context);
         player.setPlayPauseNotificationAction();
         return player;

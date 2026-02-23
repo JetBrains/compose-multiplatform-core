@@ -31,10 +31,11 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link android.view.ViewGroup} that shows items in a horizontal scrolling list. The items
@@ -113,6 +114,16 @@ public class HorizontalGridView extends BaseGridView {
     public void setNumRows(int numRows) {
         mLayoutManager.setNumRows(numRows);
         requestLayout();
+    }
+
+    /**
+     * Returns the number of rows that the GridView is using.  Note that when {@code setNumRows(0)}
+     * is called, the actual number of rows will be calculated from rowHeight and grid view
+     * height during layout; calling it early may return zero.
+     * @return the number of rows that recyclerview will use to layout.
+     */
+    public int getNumRows() {
+        return mLayoutManager.getNumRows();
     }
 
     /**

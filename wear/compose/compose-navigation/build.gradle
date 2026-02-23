@@ -15,30 +15,29 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api("androidx.compose.ui:ui:1.7.0")
-    api("androidx.compose.runtime:runtime:1.7.0")
+    api("androidx.compose.animation:animation:1.9.0")
+    api("androidx.compose.ui:ui:1.9.0")
+    api("androidx.compose.runtime:runtime:1.9.0")
     api("androidx.navigation:navigation-runtime:2.6.0")
     api(project(":wear:compose:compose-material"))
-    api("androidx.activity:activity-compose:1.7.0")
+    api("androidx.activity:activity-compose:1.9.0")
     api("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.navigation:navigation-common:2.6.0")
     implementation("androidx.navigation:navigation-compose:2.6.0")
     implementation("androidx.profileinstaller:profileinstaller:1.4.0")
@@ -54,27 +53,22 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk { version = release(35) }
 
     defaultConfig {
-        minSdkVersion 25
-    }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
-    buildTypes.configureEach {
+        minSdk { version = release(25) }
         consumerProguardFiles("proguard-rules.pro")
     }
-    namespace "androidx.wear.compose.navigation"
+    namespace = "androidx.wear.compose.navigation"
 }
 
 androidx {
     name = "Android Wear Compose Navigation"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "WearOS Compose Navigation Library. This library makes it easier for developers" +
             "to write Jetpack Compose applications for Wearable devices by providing " +
             "functionality to support navigation. " +
             "It builds upon the Jetpack Compose libraries."
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:compose:compose-navigation-samples"))
 }

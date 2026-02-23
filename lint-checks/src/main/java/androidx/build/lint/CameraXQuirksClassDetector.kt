@@ -59,11 +59,11 @@ class CameraXQuirksClassDetector : Detector(), Detector.UastScanner {
                     ) {
                         val implForInsertion =
                             """
-                         * <p>QuirkSummary
-                         *     Bug Id:
-                         *     Description:
-                         *     Device(s):
-                        """
+                            * <p>QuirkSummary
+                            *     Bug Id:
+                            *     Description:
+                            *     Device(s):
+                            """
                                 .trimIndent()
 
                         val incident =
@@ -92,7 +92,7 @@ class CameraXQuirksClassDetector : Detector(), Detector.UastScanner {
                 severity = Severity.ERROR,
                 enabledByDefault = false,
                 implementation =
-                    Implementation(CameraXQuirksClassDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                    Implementation(CameraXQuirksClassDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
     }
 }

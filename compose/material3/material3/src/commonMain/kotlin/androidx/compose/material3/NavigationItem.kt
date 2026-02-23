@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
@@ -24,6 +23,9 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.internal.MappedInteractionSource
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -58,14 +61,15 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastFirstOrNull
@@ -76,7 +80,6 @@ import kotlin.math.roundToInt
 
 /** Class that describes the different supported icon positions of the navigation item. */
 @JvmInline
-@ExperimentalMaterial3ExpressiveApi
 value class NavigationItemIconPosition private constructor(private val value: Int) {
     companion object {
         /* The icon is positioned on top of the label. */
@@ -221,13 +224,11 @@ constructor(
  *   respond to user input, and it will appear visually disabled and disabled to accessibility
  *   services
  * @param label the text label for this item
- * @param badge optional badge to show on this item, typically a [Badge]
  * @param iconPosition the [NavigationItemIconPosition] for this icon
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
  *   for this item. You can create and pass in your own `remember`ed instance to observe
  *   [Interaction]s and customize the appearance / behavior of this item in different states
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun NavigationItem(
     selected: Boolean,
@@ -245,12 +246,12 @@ internal fun NavigationItem(
     modifier: Modifier,
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
-    badge: (@Composable () -> Unit)?,
     iconPosition: NavigationItemIconPosition,
-    interactionSource: MutableInteractionSource
+    interactionSource: MutableInteractionSource,
 ) {
-    val iconWithBadge: @Composable () -> Unit = {
-        StyledIcon(selected, icon, colors, enabled, badge)
+    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
+    val styledIcon: @Composable () -> Unit = {
+        CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
     val styledLabel: @Composable (() -> Unit)? =
         if (label == null) {
@@ -273,7 +274,7 @@ internal fun NavigationItem(
             )
             .defaultMinSize(
                 minWidth = LocalMinimumInteractiveComponentSize.current,
-                minHeight = LocalMinimumInteractiveComponentSize.current
+                minHeight = LocalMinimumInteractiveComponentSize.current,
             )
             .onSizeChanged { itemWidth = it.width },
         contentAlignment = Alignment.Center,
@@ -285,17 +286,18 @@ internal fun NavigationItem(
             // The entire item is selectable, but only the indicator pill shows the ripple. To
             // achieve this, we re-map the coordinates of the item's InteractionSource into the
             // coordinates of the indicator.
-            val deltaOffset: Offset
-            with(LocalDensity.current) {
-                deltaOffset =
+            val density = LocalDensity.current
+            val calculateDeltaOffset = {
+                with(density) {
                     Offset(
                         (itemWidth - indicatorWidth.roundToPx()).toFloat() / 2,
-                        IndicatorVerticalOffset.toPx()
+                        IndicatorVerticalOffset.toPx(),
                     )
+                }
             }
             offsetInteractionSource =
-                remember(interactionSource, deltaOffset) {
-                    MappedInteractionSource(interactionSource, deltaOffset)
+                remember(interactionSource, calculateDeltaOffset) {
+                    MappedInteractionSource(interactionSource, calculateDeltaOffset)
                 }
         }
 
@@ -303,7 +305,7 @@ internal fun NavigationItem(
             interactionSource = offsetInteractionSource ?: interactionSource,
             indicatorColor = colors.selectedIndicatorColor,
             indicatorShape = indicatorShape,
-            icon = iconWithBadge,
+            icon = styledIcon,
             iconPosition = iconPosition,
             label = styledLabel,
             indicatorAnimationProgress = { indicatorAnimationProgress.value.coerceAtLeast(0f) },
@@ -311,7 +313,7 @@ internal fun NavigationItem(
             indicatorVerticalPadding = indicatorVerticalPadding,
             indicatorToLabelVerticalPadding = indicatorToLabelVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            topIconItemVerticalPadding = topIconItemVerticalPadding
+            topIconItemVerticalPadding = topIconItemVerticalPadding,
         )
     }
 }
@@ -322,7 +324,6 @@ internal fun NavigationItem(
  *
  * This item will animate its elements when the value of [iconPosition] changes.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun AnimatedNavigationItem(
     selected: Boolean,
@@ -332,23 +333,21 @@ internal fun AnimatedNavigationItem(
     topIconIndicatorWidth: Dp,
     topIconLabelTextStyle: TextStyle,
     startIconLabelTextStyle: TextStyle,
-    topIconIndicatorHorizontalPadding: Dp,
-    topIconIndicatorVerticalPadding: Dp,
+    indicatorPadding: PaddingValues,
     topIconIndicatorToLabelVerticalPadding: Dp,
-    startIconIndicatorHorizontalPadding: Dp,
-    startIconIndicatorVerticalPadding: Dp,
+    noLabelIndicatorPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    startIconItemPadding: Dp,
+    itemHorizontalPadding: Dp,
     colors: NavigationItemColors,
     modifier: Modifier,
     enabled: Boolean,
-    label: @Composable (() -> Unit),
-    badge: (@Composable () -> Unit)?,
+    label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
-    interactionSource: MutableInteractionSource
+    interactionSource: MutableInteractionSource,
 ) {
-    val iconWithBadge: @Composable () -> Unit = {
-        StyledIcon(selected, icon, colors, enabled, badge)
+    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
+    val styledIcon: @Composable () -> Unit = {
+        CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
     }
 
     var itemWidth by remember { mutableIntStateOf(0) }
@@ -365,7 +364,7 @@ internal fun AnimatedNavigationItem(
             )
             .defaultMinSize(
                 minWidth = LocalMinimumInteractiveComponentSize.current,
-                minHeight = LocalMinimumInteractiveComponentSize.current
+                minHeight = LocalMinimumInteractiveComponentSize.current,
             )
             .onSizeChanged { itemWidth = it.width },
         contentAlignment = Alignment.Center,
@@ -377,54 +376,28 @@ internal fun AnimatedNavigationItem(
             animateFloatAsState(
                 targetValue = if (isIconPositionTop) 0f else 1f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
             )
 
-        // We'll always display only one label, but for the animation to be correct we need two
-        // separate composables that will fade in/out appropriately.
-        val labelTopIconAlphaProgress by
-            animateFloatAsState(
-                targetValue = if (isIconPositionTop) 1f else 0f,
-                // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
-                visibilityThreshold =
-                    if (isIconPositionTop) Spring.DefaultDisplacementThreshold
-                    else LabelAnimationVisibilityThreshold
-            )
-        val labelTopIcon: @Composable (() -> Unit) = {
-            Box(
-                modifier =
-                    Modifier.graphicsLayer { alpha = labelTopIconAlphaProgress }
-                        .then(
-                            if (isIconPositionTop) {
-                                Modifier
-                            } else {
-                                // If this label is not being displayed, remove semantics so item's
-                                // label isn't announced twice.
-                                Modifier.clearAndSetSemantics {}
-                            }
-                        )
-            ) {
-                StyledLabel(selected, topIconLabelTextStyle, colors, enabled, label)
+        val textStyle by remember {
+            derivedStateOf {
+                if (isIconPositionTop && iconPositionProgress < 0.5f) topIconLabelTextStyle
+                else startIconLabelTextStyle
             }
         }
-        val labelStartIcon =
-            @Composable {
-                Box(
-                    modifier =
-                        Modifier.graphicsLayer { alpha = 1f - labelTopIconAlphaProgress }
-                            .then(
-                                if (isIconPositionTop) {
-                                    // If this label is not being displayed, remove semantics so
-                                    // item's label isn't announced twice.
-                                    Modifier.clearAndSetSemantics {}
-                                } else {
-                                    Modifier
-                                }
-                            )
-                ) {
-                    StyledLabel(selected, startIconLabelTextStyle, colors, enabled, label)
+        val styledLabel: @Composable (() -> Unit)? =
+            if (label != null) {
+                {
+                    StyledLabel(
+                        selected = selected,
+                        labelTextStyle = textStyle,
+                        colors = colors,
+                        enabled = enabled,
+                        content = label,
+                    )
                 }
+            } else {
+                null
             }
 
         var offsetInteractionSource: MappedInteractionSource? = null
@@ -432,17 +405,18 @@ internal fun AnimatedNavigationItem(
             // The entire item is selectable, but only the indicator pill shows the ripple. To
             // achieve this, we re-map the coordinates of the item's InteractionSource into the
             // coordinates of the indicator.
-            val deltaOffset: Offset
-            with(LocalDensity.current) {
-                deltaOffset =
+            val density = LocalDensity.current
+            val calculateDeltaOffset = {
+                with(density) {
                     Offset(
                         (itemWidth - topIconIndicatorWidth.roundToPx()).toFloat() / 2,
-                        IndicatorVerticalOffset.toPx()
+                        IndicatorVerticalOffset.toPx(),
                     )
+                }
             }
             offsetInteractionSource =
-                remember(interactionSource, deltaOffset) {
-                    MappedInteractionSource(interactionSource, deltaOffset)
+                remember(interactionSource, calculateDeltaOffset) {
+                    MappedInteractionSource(interactionSource, calculateDeltaOffset)
                 }
         }
 
@@ -451,23 +425,19 @@ internal fun AnimatedNavigationItem(
             indicatorColor = colors.selectedIndicatorColor,
             indicatorShape = indicatorShape,
             indicatorAnimationProgress = { indicatorAnimationProgress.value.coerceAtLeast(0f) },
-            icon = iconWithBadge,
+            icon = styledIcon,
             iconPosition = iconPosition,
             iconPositionProgress = { iconPositionProgress.coerceAtLeast(0f) },
-            labelTopIcon = labelTopIcon,
-            labelStartIcon = labelStartIcon,
-            topIconIndicatorHorizontalPadding = topIconIndicatorHorizontalPadding,
-            topIconIndicatorVerticalPadding = topIconIndicatorVerticalPadding,
+            label = styledLabel,
+            indicatorPadding = indicatorPadding,
             topIconIndicatorToLabelVerticalPadding = topIconIndicatorToLabelVerticalPadding,
-            startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
-            startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
+            noLabelIndicatorPadding = noLabelIndicatorPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            startIconItemPadding = startIconItemPadding
+            itemHorizontalPadding = itemHorizontalPadding,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NavigationItemLayout(
     interactionSource: InteractionSource,
@@ -481,7 +451,7 @@ private fun NavigationItemLayout(
     indicatorVerticalPadding: Dp,
     indicatorToLabelVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    topIconItemVerticalPadding: Dp
+    topIconItemVerticalPadding: Dp,
 ) {
     Layout(
         modifier = Modifier.badgeBounds(),
@@ -506,7 +476,7 @@ private fun NavigationItemLayout(
                     indicatorHorizontalPadding,
                     indicatorVerticalPadding,
                     indicatorToLabelVerticalPadding,
-                    topIconItemVerticalPadding
+                    topIconItemVerticalPadding,
                 )
             } else {
                 StartIconMeasurePolicy(
@@ -515,11 +485,10 @@ private fun NavigationItemLayout(
                     indicatorVerticalPadding,
                     startIconToLabelHorizontalPadding,
                 )
-            }
+            },
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AnimatedNavigationItemLayout(
     interactionSource: InteractionSource,
@@ -529,15 +498,12 @@ private fun AnimatedNavigationItemLayout(
     icon: @Composable () -> Unit,
     iconPosition: NavigationItemIconPosition,
     iconPositionProgress: () -> Float,
-    labelTopIcon: @Composable (() -> Unit),
-    labelStartIcon: @Composable (() -> Unit),
-    topIconIndicatorHorizontalPadding: Dp,
-    topIconIndicatorVerticalPadding: Dp,
+    label: @Composable (() -> Unit)?,
+    indicatorPadding: PaddingValues,
     topIconIndicatorToLabelVerticalPadding: Dp,
-    startIconIndicatorHorizontalPadding: Dp,
-    startIconIndicatorVerticalPadding: Dp,
+    noLabelIndicatorPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    startIconItemPadding: Dp,
+    itemHorizontalPadding: Dp,
 ) {
     Layout(
         modifier = Modifier.badgeBounds(),
@@ -550,22 +516,32 @@ private fun AnimatedNavigationItemLayout(
 
             Box(Modifier.layoutId(IconLayoutIdTag)) { icon() }
 
-            Box(Modifier.layoutId(AnimatedLabelTopIconLayoutIdTag)) { labelTopIcon() }
-            Box(Modifier.layoutId(AnimatedLabelStartIconLayoutIdTag)) { labelStartIcon() }
+            if (label != null) {
+                Box(Modifier.layoutId(LabelLayoutIdTag)) { label() }
+            }
         },
         measurePolicy =
-            AnimatedMeasurePolicy(
-                iconPosition = iconPosition,
-                iconPositionProgress = iconPositionProgress,
-                indicatorAnimationProgress = indicatorAnimationProgress,
-                topIconIndicatorHorizontalPadding = topIconIndicatorHorizontalPadding,
-                topIconIndicatorVerticalPadding = topIconIndicatorVerticalPadding,
-                topIconIndicatorToLabelVerticalPadding = topIconIndicatorToLabelVerticalPadding,
-                startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
-                startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
-                startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-                startIconItemPadding = startIconItemPadding
-            )
+            if (label != null) {
+                AnimatedMeasurePolicy(
+                    iconPosition = iconPosition,
+                    iconPositionProgress = iconPositionProgress,
+                    indicatorAnimationProgress = indicatorAnimationProgress,
+                    indicatorPadding = indicatorPadding,
+                    topIconIndicatorToLabelVerticalPadding = topIconIndicatorToLabelVerticalPadding,
+                    startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
+                    itemHorizontalPadding = itemHorizontalPadding,
+                )
+            } else {
+                // If no label, default to circular indicator for the item.
+                TopIconOrIconOnlyMeasurePolicy(
+                    hasLabel = false,
+                    indicatorAnimationProgress = indicatorAnimationProgress,
+                    indicatorHorizontalPadding = noLabelIndicatorPadding,
+                    indicatorVerticalPadding = noLabelIndicatorPadding,
+                    indicatorToLabelVerticalPadding = 0.dp,
+                    topIconItemVerticalPadding = 0.dp,
+                )
+            },
     )
 }
 
@@ -579,7 +555,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
@@ -590,7 +566,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 .measure(
                     looseConstraints.offset(
                         horizontal = -(indicatorHorizontalPadding * 2).roundToPx(),
-                        vertical = -(indicatorVerticalPadding * 2).roundToPx()
+                        vertical = -(indicatorVerticalPadding * 2).roundToPx(),
                     )
                 )
         // Next, when measuring the indicator and ripple, still need to obey looseConstraints.
@@ -636,7 +612,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 constraints,
                 indicatorToLabelVerticalPadding,
                 indicatorVerticalPadding,
-                topIconItemVerticalPadding
+                topIconItemVerticalPadding,
             )
         } else {
             placeIcon(iconPlaceable, indicatorRipplePlaceable, indicatorPlaceable, constraints)
@@ -645,7 +621,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val iconHeight =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicHeight(width)
@@ -671,25 +647,20 @@ private class StartIconMeasurePolicy(
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
         // When measuring icon, account for the indicator in its constraints.
-        val iconConstraints =
-            looseConstraints.offset(
-                horizontal = -(indicatorHorizontalPadding * 2).roundToPx(),
-                vertical = -(indicatorVerticalPadding * 2).roundToPx()
-            )
         val iconPlaceable =
-            measurables.fastFirst { it.layoutId == IconLayoutIdTag }.measure(iconConstraints)
+            measurables.fastFirst { it.layoutId == IconLayoutIdTag }.measure(looseConstraints)
         // When measuring the label, account for the indicator, the icon, and the padding between
         // icon and label.
         val labelPlaceable =
             measurables
                 .fastFirst { it.layoutId == LabelLayoutIdTag }
                 .measure(
-                    iconConstraints.offset(
+                    looseConstraints.offset(
                         horizontal =
                             -(iconPlaceable.width + startIconToLabelHorizontalPadding.roundToPx())
                     )
@@ -727,13 +698,13 @@ private class StartIconMeasurePolicy(
             indicatorRipplePlaceable,
             indicatorPlaceable,
             constraints,
-            startIconToLabelHorizontalPadding
+            startIconToLabelHorizontalPadding,
         )
     }
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val iconWidth =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicWidth(height)
@@ -747,7 +718,7 @@ private class StartIconMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val iconHeight =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicHeight(width)
@@ -759,22 +730,18 @@ private class StartIconMeasurePolicy(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private class AnimatedMeasurePolicy(
     val iconPosition: NavigationItemIconPosition,
     val iconPositionProgress: () -> Float,
     val indicatorAnimationProgress: () -> Float,
-    val topIconIndicatorHorizontalPadding: Dp,
-    val topIconIndicatorVerticalPadding: Dp,
+    val indicatorPadding: PaddingValues,
     val topIconIndicatorToLabelVerticalPadding: Dp,
-    val startIconIndicatorHorizontalPadding: Dp,
-    val startIconIndicatorVerticalPadding: Dp,
     val startIconToLabelHorizontalPadding: Dp,
-    val startIconItemPadding: Dp,
+    val itemHorizontalPadding: Dp,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val iconPositionProgressValue = iconPositionProgress()
@@ -783,35 +750,36 @@ private class AnimatedMeasurePolicy(
         val iconPlaceable =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.measure(looseConstraints)
 
-        val labelPlaceableTopIcon =
-            measurables
-                .fastFirst { it.layoutId == AnimatedLabelTopIconLayoutIdTag }
-                .measure(looseConstraints)
-        val labelPlaceableStartIcon =
-            measurables
-                .fastFirst { it.layoutId == AnimatedLabelStartIconLayoutIdTag }
-                .measure(looseConstraints)
+        val labelPlaceable =
+            measurables.fastFirst { it.layoutId == LabelLayoutIdTag }.measure(looseConstraints)
 
-        val topIconIndicatorWidth =
-            iconPlaceable.width + (topIconIndicatorHorizontalPadding * 2).roundToPx()
-        val topIconIndicatorHeight =
-            iconPlaceable.height + (topIconIndicatorVerticalPadding * 2).roundToPx()
+        if (indicatorPadding is DynamicPaddingValues) {
+            indicatorPadding.progress = iconPositionProgressValue
+        }
+
+        val indicatorHorizontalPadding =
+            indicatorPadding.calculateStartPadding(layoutDirection) +
+                indicatorPadding.calculateEndPadding(layoutDirection)
+        val indicatorVerticalPadding =
+            indicatorPadding.calculateTopPadding() + indicatorPadding.calculateBottomPadding()
+        val topIconIndicatorWidth = iconPlaceable.width
+        val topIconIndicatorHeight = iconPlaceable.height
 
         val startIconIndicatorWidth =
             iconPlaceable.width +
-                labelPlaceableStartIcon.width +
-                (startIconToLabelHorizontalPadding + startIconIndicatorHorizontalPadding * 2)
-                    .roundToPx()
-        val startIconIndicatorHeight =
-            max(iconPlaceable.height, labelPlaceableStartIcon.height) +
-                (startIconIndicatorVerticalPadding * 2).roundToPx()
+                labelPlaceable.width +
+                (startIconToLabelHorizontalPadding).roundToPx()
+
+        val startIconIndicatorHeight = max(iconPlaceable.height, labelPlaceable.height)
 
         val indicatorWidthProgress =
-            lerp(topIconIndicatorWidth, startIconIndicatorWidth, iconPositionProgressValue)
+            lerp(topIconIndicatorWidth, startIconIndicatorWidth, iconPositionProgressValue) +
+                indicatorHorizontalPadding.roundToPx()
         val animatedIndicatorWidth =
             (indicatorWidthProgress * indicatorAnimationProgress).roundToInt()
         val indicatorHeightProgress =
-            lerp(topIconIndicatorHeight, startIconIndicatorHeight, iconPositionProgressValue)
+            lerp(topIconIndicatorHeight, startIconIndicatorHeight, iconPositionProgressValue) +
+                indicatorVerticalPadding.roundToPx()
 
         val indicatorRipplePlaceable =
             measurables
@@ -820,7 +788,7 @@ private class AnimatedMeasurePolicy(
                     looseConstraints.constrain(
                         Constraints.fixed(
                             width = indicatorWidthProgress,
-                            height = indicatorHeightProgress
+                            height = indicatorHeightProgress,
                         )
                     )
                 )
@@ -831,7 +799,7 @@ private class AnimatedMeasurePolicy(
                     looseConstraints.constrain(
                         Constraints.fixed(
                             width = animatedIndicatorWidth,
-                            height = indicatorHeightProgress
+                            height = indicatorHeightProgress,
                         )
                     )
                 )
@@ -839,46 +807,41 @@ private class AnimatedMeasurePolicy(
         return placeAnimatedLabelAndIcon(
             iconPosition = iconPosition,
             iconPositionProgress = iconPositionProgress,
-            labelPlaceableTopIcon = labelPlaceableTopIcon,
-            labelPlaceableStartIcon = labelPlaceableStartIcon,
+            labelPlaceable = labelPlaceable,
             iconPlaceable = iconPlaceable,
             indicatorRipplePlaceable = indicatorRipplePlaceable,
             indicatorPlaceable = indicatorPlaceable,
+            indicatorPadding = indicatorPadding,
             topIconIndicatorWidth = topIconIndicatorWidth,
             constraints = looseConstraints,
             topIconIndicatorToLabelVerticalPadding = topIconIndicatorToLabelVerticalPadding,
-            topIconIndicatorVerticalPadding = topIconIndicatorVerticalPadding,
-            startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
-            startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            startIconItemPadding = startIconItemPadding
+            itemHorizontalPadding = itemHorizontalPadding,
         )
     }
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val iconWidth =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicWidth(height)
-        if (iconPosition == NavigationItemIconPosition.Top) {
-            val labelWidth =
-                measurables
-                    .fastFirst { it.layoutId == AnimatedLabelTopIconLayoutIdTag }
-                    .maxIntrinsicWidth(height)
-            val paddings = (topIconIndicatorHorizontalPadding * 2).roundToPx()
+        val labelWidth =
+            measurables.fastFirst { it.layoutId == LabelLayoutIdTag }.maxIntrinsicWidth(height)
 
-            return maxOf(labelWidth, (iconWidth + paddings))
+        val indicatorHorizontalPadding =
+            (indicatorPadding.calculateStartPadding(layoutDirection) +
+                    indicatorPadding.calculateEndPadding(layoutDirection))
+                .roundToPx()
+
+        return if (iconPosition == NavigationItemIconPosition.Top) {
+            val paddings = indicatorHorizontalPadding + (itemHorizontalPadding * 2).roundToPx()
+            maxOf(labelWidth, (iconWidth + paddings))
         } else {
-            val labelWidth =
-                measurables
-                    .fastFirst { it.layoutId == AnimatedLabelStartIconLayoutIdTag }
-                    .maxIntrinsicWidth(height)
             val paddings =
-                (startIconIndicatorHorizontalPadding * 2 + startIconToLabelHorizontalPadding)
-                    .roundToPx()
-
-            return iconWidth + labelWidth + paddings
+                indicatorHorizontalPadding +
+                    (startIconToLabelHorizontalPadding + itemHorizontalPadding).roundToPx()
+            iconWidth + labelWidth + paddings
         }
     }
 }
@@ -895,7 +858,7 @@ private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
     val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
@@ -986,7 +949,7 @@ private fun MeasureScope.placeLabelAndStartIcon(
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
     constraints: Constraints,
-    startIconToLabelHorizontalPadding: Dp
+    startIconToLabelHorizontalPadding: Dp,
 ): MeasureResult {
     val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
     val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
@@ -1010,105 +973,101 @@ private fun MeasureScope.placeLabelAndStartIcon(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun MeasureScope.placeAnimatedLabelAndIcon(
     iconPosition: NavigationItemIconPosition,
     iconPositionProgress: () -> Float,
-    labelPlaceableTopIcon: Placeable,
-    labelPlaceableStartIcon: Placeable,
+    labelPlaceable: Placeable,
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
     topIconIndicatorWidth: Int,
     constraints: Constraints,
     topIconIndicatorToLabelVerticalPadding: Dp,
-    topIconIndicatorVerticalPadding: Dp,
-    startIconIndicatorHorizontalPadding: Dp,
-    startIconIndicatorVerticalPadding: Dp,
+    indicatorPadding: PaddingValues,
     startIconToLabelHorizontalPadding: Dp,
-    startIconItemPadding: Dp,
+    itemHorizontalPadding: Dp,
 ): MeasureResult {
     @Suppress("NAME_SHADOWING") val iconPositionProgress = iconPositionProgress()
     val isIconPositionTop = iconPosition == NavigationItemIconPosition.Top
     val widthTopIcon =
-        constraints.constrainWidth(maxOf(labelPlaceableTopIcon.width, topIconIndicatorWidth))
-    val widthStartIcon = constraints.constrainWidth(indicatorRipplePlaceable.width)
+        constraints.constrainWidth(
+            maxOf(
+                labelPlaceable.width,
+                (topIconIndicatorWidth + (itemHorizontalPadding * 2).roundToPx()) +
+                    (indicatorPadding.calculateEndPadding(layoutDirection) +
+                            indicatorPadding.calculateStartPadding(layoutDirection))
+                        .roundToPx(),
+            )
+        )
+    val widthStartIcon =
+        constraints.constrainWidth(
+            indicatorRipplePlaceable.width + itemHorizontalPadding.roundToPx()
+        )
     val width = widthTopIcon + (widthStartIcon - widthTopIcon) * iconPositionProgress
-
     val heightTopIcon =
         constraints.constrainHeight(
             (indicatorRipplePlaceable.height +
                     topIconIndicatorToLabelVerticalPadding.toPx() +
-                    labelPlaceableTopIcon.height)
+                    labelPlaceable.height)
                 .roundToInt()
         )
     val heightStartIcon = constraints.constrainHeight(indicatorRipplePlaceable.height)
     val height = lerp(heightTopIcon, heightStartIcon, iconPositionProgress)
 
-    val topIconHorizontalOffset = startIconItemPadding.roundToPx() * iconPositionProgress
-
-    val indicatorXTopIcon =
-        ((widthTopIcon - indicatorPlaceable.width) / 2 + topIconHorizontalOffset).roundToInt()
-    val indicatorXStartIcon = (widthStartIcon - indicatorPlaceable.width) / 2
-    val indicatorX = lerp(indicatorXTopIcon, indicatorXStartIcon, iconPositionProgress)
-
-    val rippleXTopIcon = (width - indicatorRipplePlaceable.width) / 2 + topIconHorizontalOffset
-    val rippleXStartIcon = (width - indicatorRipplePlaceable.width) / 2
+    val rippleXTopIcon = itemHorizontalPadding.roundToPx()
+    val rippleXStartIcon =
+        ((itemHorizontalPadding.roundToPx() + width - indicatorRipplePlaceable.width) / 2)
+            .roundToInt()
     val rippleX = lerp(rippleXTopIcon, rippleXStartIcon, iconPositionProgress)
 
-    val iconXTopIcon = (widthTopIcon - iconPlaceable.width) / 2
-    val iconXStartIcon = startIconIndicatorHorizontalPadding.roundToPx()
+    val indicatorX = itemHorizontalPadding.roundToPx()
+    val iconX =
+        itemHorizontalPadding.roundToPx() +
+            indicatorPadding.calculateStartPadding(layoutDirection).roundToPx()
 
-    val iconYTopIcon = topIconIndicatorVerticalPadding.roundToPx()
-    val iconYStartIcon = startIconIndicatorVerticalPadding.roundToPx()
+    val iconYTopIcon = indicatorPadding.calculateTopPadding().roundToPx()
+    val iconYStartIcon = (height - iconPlaceable.height) / 2 - iconYTopIcon
 
-    val iconX = lerp(iconXTopIcon, iconXStartIcon, iconPositionProgress)
-    val iconY = lerp(iconYTopIcon, iconYStartIcon, iconPositionProgress)
+    val iconY = lerp(0, iconYStartIcon, iconPositionProgress) + iconYTopIcon
+    val indicatorHorizontalPadding =
+        indicatorPadding.calculateStartPadding(layoutDirection) +
+            indicatorPadding.calculateEndPadding(layoutDirection)
 
-    val labelXTopIcon = (widthTopIcon - labelPlaceableTopIcon.width) / 2
+    val labelXTopIcon =
+        ((iconPlaceable.width +
+            (indicatorHorizontalPadding + (itemHorizontalPadding * 2)).roundToPx()) -
+            labelPlaceable.width) / 2
+
     val labelYTopIcon =
         iconY +
             iconPlaceable.height +
-            (topIconIndicatorToLabelVerticalPadding + topIconIndicatorToLabelVerticalPadding)
+            (indicatorPadding.calculateBottomPadding() + topIconIndicatorToLabelVerticalPadding)
                 .roundToPx()
 
     val labelXStartIconHorizontalOffset =
         if (isIconPositionTop && iconPositionProgress > 0f) {
             0f
         } else {
-            startIconItemPadding.roundToPx() * (1f - iconPositionProgress)
+            itemHorizontalPadding.roundToPx() * (1f - iconPositionProgress)
         }
     val labelXStartIcon =
         iconX + iconPlaceable.width + startIconToLabelHorizontalPadding.roundToPx() -
             labelXStartIconHorizontalOffset
-    val labelYStartIcon = (height - labelPlaceableStartIcon.height) / 2
-
+    val labelYStartIcon = (height - labelPlaceable.height) / 2
+    val labelX =
+        if (iconPositionProgress < 0.5f) labelXTopIcon else labelXStartIcon * iconPositionProgress
+    val labelY = if (iconPositionProgress < 0.5f) labelYTopIcon else labelYStartIcon
     return layout(width.roundToInt(), height) {
-        indicatorPlaceable.placeRelative(indicatorX, 0)
-        iconPlaceable.placeRelative(iconX, iconY)
-        labelPlaceableTopIcon.placeRelative(labelXTopIcon, labelYTopIcon)
-        labelPlaceableStartIcon.placeRelative(labelXStartIcon.roundToInt(), labelYStartIcon)
-        indicatorRipplePlaceable.placeRelative(rippleX.roundToInt(), 0)
-    }
-}
-
-@Composable
-private fun StyledIcon(
-    selected: Boolean,
-    icon: @Composable () -> Unit,
-    colors: NavigationItemColors,
-    enabled: Boolean,
-    badge: (@Composable () -> Unit)?,
-) {
-    val iconColor = colors.iconColor(selected = selected, enabled = enabled)
-    val styledIcon: @Composable () -> Unit = {
-        CompositionLocalProvider(LocalContentColor provides iconColor, content = icon)
-    }
-
-    if (badge != null) {
-        BadgedBox(badge = { badge() }) { styledIcon() }
-    } else {
-        styledIcon()
+        indicatorPlaceable.placeRelativeWithLayer(indicatorX, 0)
+        iconPlaceable.placeRelativeWithLayer(iconX, iconY)
+        labelPlaceable.placeRelativeWithLayer(
+            x = labelX.toInt(),
+            y = labelY,
+            layerBlock = {
+                alpha = 4 * (iconPositionProgress - 0.5f) * (iconPositionProgress - 0.5f)
+            },
+        )
+        indicatorRipplePlaceable.placeRelativeWithLayer(rippleX, 0)
     }
 }
 
@@ -1124,7 +1083,7 @@ private fun StyledLabel(
     ProvideContentColorTextStyle(
         contentColor = textColor,
         textStyle = labelTextStyle,
-        content = content
+        content = content,
     )
 }
 
@@ -1133,7 +1092,7 @@ private fun animateIndicatorProgressAsState(selected: Boolean) =
     animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
         // TODO Load the motionScheme tokens from the component tokens file
-        animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+        animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
     )
 
 @Composable
@@ -1154,19 +1113,57 @@ private fun Indicator(
     Box(
         Modifier.layoutId(IndicatorLayoutIdTag)
             .graphicsLayer { alpha = indicatorAnimationProgress() }
-            .background(
-                color = indicatorColor,
-                shape = indicatorShape,
-            )
+            .background(color = indicatorColor, shape = indicatorShape)
     )
+}
+
+internal class DynamicPaddingValues(
+    val collapsedPaddingValues: PaddingValues,
+    val expandedPaddingValues: PaddingValues,
+    isExpanded: Boolean,
+) : PaddingValues {
+
+    var progress: Float = if (isExpanded) 1f else 0f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+        }
+
+    override fun calculateBottomPadding(): Dp {
+        return lerp(
+            collapsedPaddingValues.calculateBottomPadding(),
+            expandedPaddingValues.calculateBottomPadding(),
+            progress,
+        )
+    }
+
+    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
+        return lerp(
+            collapsedPaddingValues.calculateLeftPadding(layoutDirection),
+            expandedPaddingValues.calculateLeftPadding(layoutDirection),
+            progress,
+        )
+    }
+
+    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
+        return lerp(
+            collapsedPaddingValues.calculateRightPadding(layoutDirection),
+            expandedPaddingValues.calculateRightPadding(layoutDirection),
+            progress,
+        )
+    }
+
+    override fun calculateTopPadding(): Dp {
+        return lerp(
+            collapsedPaddingValues.calculateTopPadding(),
+            expandedPaddingValues.calculateTopPadding(),
+            progress,
+        )
+    }
 }
 
 private const val IndicatorRippleLayoutIdTag: String = "indicatorRipple"
 private const val IndicatorLayoutIdTag: String = "indicator"
 private const val IconLayoutIdTag: String = "icon"
 private const val LabelLayoutIdTag: String = "label"
-private const val AnimatedLabelTopIconLayoutIdTag: String = "animatedLabelTopIcon"
-private const val AnimatedLabelStartIconLayoutIdTag: String = "animatedLabelStartIcon"
-private const val LabelAnimationVisibilityThreshold: Float = 0.35f
 
 private val IndicatorVerticalOffset: Dp = 12.dp

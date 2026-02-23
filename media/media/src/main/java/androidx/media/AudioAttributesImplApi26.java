@@ -21,10 +21,11 @@ import static androidx.media.AudioAttributesCompat.INVALID_STREAM_TYPE;
 
 import android.media.AudioAttributes;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 @VersionedParcelize(jetifyAs = "android.support.v4.media.AudioAttributesImplApi26")
 @RestrictTo(LIBRARY)
@@ -59,14 +60,12 @@ public class AudioAttributesImplApi26 extends AudioAttributesImplApi21 {
         }
 
         @Override
-        @NonNull
-        public AudioAttributesImpl build() {
+        public @NonNull AudioAttributesImpl build() {
             return new AudioAttributesImplApi26(mFwkBuilder.build());
         }
 
         @Override
-        @NonNull
-        public Builder setUsage(int usage) {
+        public @NonNull Builder setUsage(int usage) {
             mFwkBuilder.setUsage(usage);
             return this;
         }

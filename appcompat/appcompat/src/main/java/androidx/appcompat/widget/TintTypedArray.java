@@ -24,16 +24,15 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleableRes;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.res.ResourcesCompat;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * A class that wraps a {@link TypedArray} and provides the same public API
@@ -112,9 +111,8 @@ public class TintTypedArray {
      * @throws UnsupportedOperationException if the attribute is defined but is
      *         not a font resource.
      */
-    @Nullable
-    public Typeface getFont(@StyleableRes int index, int style,
-            @Nullable ResourcesCompat.FontCallback fontCallback) {
+    public @Nullable Typeface getFont(@StyleableRes int index, int style,
+            ResourcesCompat.@Nullable FontCallback fontCallback) {
         final int resourceId = mWrapped.getResourceId(index, 0);
         if (resourceId == 0) {
             return null;
@@ -224,15 +222,7 @@ public class TintTypedArray {
     }
 
     public int getType(int index) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getType(mWrapped, index);
-        } else {
-            if (mTypedValue == null) {
-                mTypedValue = new TypedValue();
-            }
-            mWrapped.getValue(index, mTypedValue);
-            return mTypedValue.type;
-        }
+        return mWrapped.getType(index);
     }
 
     public boolean hasValue(int index) {
@@ -251,23 +241,7 @@ public class TintTypedArray {
         mWrapped.recycle();
     }
 
-    @RequiresApi(21)
     public int getChangingConfigurations() {
-        return Api21Impl.getChangingConfigurations(mWrapped);
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static int getType(TypedArray typedArray, int index) {
-            return typedArray.getType(index);
-        }
-
-        static int getChangingConfigurations(TypedArray typedArray) {
-            return typedArray.getChangingConfigurations();
-        }
+        return mWrapped.getChangingConfigurations();
     }
 }

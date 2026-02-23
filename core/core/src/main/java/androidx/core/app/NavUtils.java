@@ -26,8 +26,8 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * NavUtils provides helper functionality for applications implementing
@@ -118,8 +118,7 @@ public final class NavUtils {
      * @param sourceActivity Activity to fetch a parent intent for
      * @return a new Intent targeting the defined parent activity of sourceActivity
      */
-    @Nullable
-    public static Intent getParentActivityIntent(@NonNull Activity sourceActivity) {
+    public static @Nullable Intent getParentActivityIntent(@NonNull Activity sourceActivity) {
         // Prefer the "real" JB definition, else fall back to the meta-data element.
         Intent result = sourceActivity.getParentActivityIntent();
         if (result != null) {
@@ -153,8 +152,7 @@ public final class NavUtils {
      * @return a new Intent targeting the defined parent activity of sourceActivity
      * @throws NameNotFoundException if the ComponentName for sourceActivityClass is invalid
      */
-    @Nullable
-    public static Intent getParentActivityIntent(@NonNull Context context,
+    public static @Nullable Intent getParentActivityIntent(@NonNull Context context,
             @NonNull Class<?> sourceActivityClass)
             throws NameNotFoundException {
         String parentActivity = getParentActivityName(context,
@@ -180,8 +178,7 @@ public final class NavUtils {
      * @return a new Intent targeting the defined parent activity of sourceActivity
      * @throws NameNotFoundException if the ComponentName for sourceActivityClass is invalid
      */
-    @Nullable
-    public static Intent getParentActivityIntent(@NonNull Context context,
+    public static @Nullable Intent getParentActivityIntent(@NonNull Context context,
             @NonNull ComponentName componentName)
             throws NameNotFoundException {
         String parentActivity = getParentActivityName(context, componentName);
@@ -206,8 +203,7 @@ public final class NavUtils {
      * @return The fully qualified class name of sourceActivity's parent activity or null if
      *         it was not specified
      */
-    @Nullable
-    public static String getParentActivityName(@NonNull Activity sourceActivity) {
+    public static @Nullable String getParentActivityName(@NonNull Activity sourceActivity) {
         try {
             return getParentActivityName(sourceActivity, sourceActivity.getComponentName());
         } catch (NameNotFoundException e) {
@@ -225,8 +221,7 @@ public final class NavUtils {
      * @return The fully qualified class name of sourceActivity's parent activity or null if
      *         it was not specified
      */
-    @Nullable
-    public static String getParentActivityName(@NonNull Context context,
+    public static @Nullable String getParentActivityName(@NonNull Context context,
             @NonNull ComponentName componentName)
             throws NameNotFoundException {
         PackageManager pm = context.getPackageManager();

@@ -16,15 +16,17 @@
 
 package androidx.appsearch.ast;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link Node} that stores a child node to be logically negated with a negative sign ("-")
@@ -74,8 +76,7 @@ public final class NegationNode implements Node{
      * logically negated that could be cast to a type that implements {@link Node}
      */
     @Override
-    @NonNull
-    public List<Node> getChildren() {
+    public @NonNull List<Node> getChildren() {
         return Collections.unmodifiableList(mChildren);
     }
 
@@ -89,8 +90,7 @@ public final class NegationNode implements Node{
      * @return The child {@link Node} representing a query that is being logically negated
      * that could be cast to a type that implements {@link Node}
      */
-    @NonNull
-    public Node getChild() {
+    public @NonNull Node getChild() {
         return mChildren.get(0);
     }
 
@@ -105,5 +105,29 @@ public final class NegationNode implements Node{
      */
     public void setChild(@NonNull Node child) {
         mChildren.set(0, Preconditions.checkNotNull(child));
+    }
+
+    /**
+     * Get the string representation of {@link NegationNode}.
+     *
+     * <p>The string representation of {@link NegationNode} is "NOT" prepended to the string
+     * representation of the child {@link Node}.
+     */
+    @Override
+    public @NonNull String toString() {
+        return "NOT " + getChild();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NegationNode that = (NegationNode) o;
+        return Objects.equals(mChildren, that.mChildren);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mChildren);
     }
 }

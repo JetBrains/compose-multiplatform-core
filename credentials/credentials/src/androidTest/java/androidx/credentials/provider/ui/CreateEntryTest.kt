@@ -21,11 +21,13 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
-import androidx.core.os.BuildCompat
+import android.os.Bundle
 import androidx.credentials.provider.CreateEntry
 import androidx.credentials.provider.CreateEntry.Companion.fromCreateEntry
 import androidx.credentials.provider.CreateEntry.Companion.fromSlice
+import androidx.credentials.provider.CreateEntry.Companion.marshall
 import androidx.credentials.provider.CreateEntry.Companion.toSlice
+import androidx.credentials.provider.CreateEntry.Companion.unmarshallCreateEntries
 import androidx.credentials.provider.ui.UiUtils.Companion.testBiometricPromptData
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -89,7 +91,7 @@ class CreateEntryTest {
     fun constructor_emptyAccountName_throwsIAE() {
         Assert.assertThrows(
             "Expected empty account name to throw NPE",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
             CreateEntry("", mPendingIntent)
         }
@@ -138,6 +140,39 @@ class CreateEntryTest {
         assertEntryWithAllParams(entry!!)
     }
 
+    @Test
+    fun createFromBundle_success() {
+        val expectedEntry =
+            CreateEntry(
+                "accountName",
+                mPendingIntent,
+                "Description",
+                Instant.ofEpochMilli(1760047936000L),
+                ICON,
+                2,
+                3,
+                20,
+                true,
+            )
+        val bundle = Bundle()
+        listOf(expectedEntry).marshall(bundle)
+
+        val actualEntry = bundle.unmarshallCreateEntries().single()
+
+        assertThat(actualEntry.accountName).isEqualTo(expectedEntry.accountName)
+        assertThat(actualEntry.pendingIntent).isEqualTo(expectedEntry.pendingIntent)
+        assertThat(actualEntry.description).isEqualTo(expectedEntry.description)
+        assertThat(actualEntry.getPasswordCredentialCount())
+            .isEqualTo(expectedEntry.getPasswordCredentialCount())
+        assertThat(actualEntry.getPublicKeyCredentialCount())
+            .isEqualTo(expectedEntry.getPublicKeyCredentialCount())
+        assertThat(actualEntry.getTotalCredentialCount())
+            .isEqualTo(expectedEntry.getTotalCredentialCount())
+        assertThat(actualEntry.lastUsedTime!!.toEpochMilli())
+            .isEqualTo(expectedEntry.lastUsedTime?.toEpochMilli())
+        assertThat(actualEntry.isAutoSelectAllowed).isEqualTo(expectedEntry.isAutoSelectAllowed)
+    }
+
     private fun constructEntryWithRequiredParams(): CreateEntry {
         return CreateEntry(ACCOUNT_NAME, mPendingIntent)
     }
@@ -149,7 +184,7 @@ class CreateEntryTest {
     }
 
     private fun constructEntryWithAllParams(): CreateEntry {
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             return CreateEntry(
                 ACCOUNT_NAME,
                 mPendingIntent,
@@ -160,7 +195,7 @@ class CreateEntryTest {
                 PUBLIC_KEY_CREDENTIAL_COUNT,
                 TOTAL_COUNT,
                 AUTO_SELECT_BIT,
-                testBiometricPromptData()
+                testBiometricPromptData(),
             )
         } else {
             return CreateEntry(
@@ -172,7 +207,7 @@ class CreateEntryTest {
                 PASSWORD_COUNT,
                 PUBLIC_KEY_CREDENTIAL_COUNT,
                 TOTAL_COUNT,
-                AUTO_SELECT_BIT
+                AUTO_SELECT_BIT,
             )
         }
     }
@@ -186,7 +221,7 @@ class CreateEntryTest {
         assertThat(PUBLIC_KEY_CREDENTIAL_COUNT).isEqualTo(entry.getPublicKeyCredentialCount())
         assertThat(TOTAL_COUNT).isEqualTo(entry.getTotalCredentialCount())
         assertThat(AUTO_SELECT_BIT).isTrue()
-        if (BuildCompat.isAtLeastV() && entry.biometricPromptData != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.biometricPromptData != null) {
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)
         } else {

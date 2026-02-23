@@ -18,9 +18,9 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaCodec;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -40,16 +40,14 @@ public interface EncodedData extends AutoCloseable {
      * make sure not to use this byte buffer after {@link #close} is called, otherwise it may get
      * uncertain behavior.
      */
-    @NonNull
-    ByteBuffer getByteBuffer();
+    @NonNull ByteBuffer getByteBuffer();
 
     /**
      * Gets the {@link ByteBuffer}'s additional information.
      *
      * @see MediaCodec.BufferInfo
      */
-    @NonNull
-    MediaCodec.BufferInfo getBufferInfo();
+    MediaCodec.@NonNull BufferInfo getBufferInfo();
 
     /** Gets the timestamp of the encoded data in microseconds. */
     long getPresentationTimeUs();
@@ -65,6 +63,5 @@ public interface EncodedData extends AutoCloseable {
     void close();
 
     /** The {@link ListenableFuture} that is complete when {@link #close} is called. */
-    @NonNull
-    ListenableFuture<Void> getClosedFuture();
+    @NonNull ListenableFuture<Void> getClosedFuture();
 }

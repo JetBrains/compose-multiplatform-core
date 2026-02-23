@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.EMPTY_OBJECTS
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -55,12 +60,7 @@ public fun <K> objectLongMapOf(key1: K, value1: Long): ObjectLongMap<K> =
  * Returns a new [ObjectLongMap] with only [key1] and [key2] associated with [value1] and [value2],
  * respectively.
  */
-public fun <K> objectLongMapOf(
-    key1: K,
-    value1: Long,
-    key2: K,
-    value2: Long,
-): ObjectLongMap<K> =
+public fun <K> objectLongMapOf(key1: K, value1: Long, key2: K, value2: Long): ObjectLongMap<K> =
     MutableObjectLongMap<K>().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -133,10 +133,8 @@ public fun <K> objectLongMapOf(
 public fun <K> mutableObjectLongMapOf(): MutableObjectLongMap<K> = MutableObjectLongMap()
 
 /** Returns a new [MutableObjectLongMap] with only [key1] associated with [value1]. */
-public fun <K> mutableObjectLongMapOf(
-    key1: K,
-    value1: Long,
-): MutableObjectLongMap<K> = MutableObjectLongMap<K>().also { map -> map[key1] = value1 }
+public fun <K> mutableObjectLongMapOf(key1: K, value1: Long): MutableObjectLongMap<K> =
+    MutableObjectLongMap<K>().also { map -> map[key1] = value1 }
 
 /**
  * Returns a new [MutableObjectLongMap] with only [key1] and [key2] associated with [value1] and
@@ -215,6 +213,40 @@ public fun <K> mutableObjectLongMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [ObjectLongMap] by populating a [MutableObjectLongMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableObjectLongMap] can be populated.
+ */
+public inline fun <K> buildObjectLongMap(
+    builderAction: MutableObjectLongMap<K>.() -> Unit
+): ObjectLongMap<K> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableObjectLongMap<K>().apply(builderAction)
+}
+
+/**
+ * Builds a new [ObjectLongMap] by populating a [MutableObjectLongMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableObjectLongMap] can be populated.
+ */
+public inline fun <K> buildObjectLongMap(
+    initialCapacity: Int,
+    builderAction: MutableObjectLongMap<K>.() -> Unit,
+): ObjectLongMap<K> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableObjectLongMap<K>(initialCapacity).apply(builderAction)
+}
 
 /**
  * [ObjectLongMap] is a container with a [Map]-like interface for keys with reference types and
@@ -396,13 +428,13 @@ public sealed class ObjectLongMap<K> {
         return count
     }
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
-    public operator fun contains(key: K): Boolean = findKeyIndex(key) >= 0
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
+    public inline operator fun contains(key: K): Boolean = containsKey(key)
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
     public fun containsKey(key: K): Boolean = findKeyIndex(key) >= 0
 
-    /** Returns true if the specified [value] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [value] is present in this map, false otherwise. */
     public fun containsValue(value: Long): Boolean {
         forEachValue { v -> if (value == v) return true }
         return false
@@ -425,19 +457,21 @@ public sealed class ObjectLongMap<K> {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectLongMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectLongMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -457,20 +491,22 @@ public sealed class ObjectLongMap<K> {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: K, value: Long) -> CharSequence
+        crossinline transform: (key: K, value: Long) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectLongMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectLongMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -509,7 +545,8 @@ public sealed class ObjectLongMap<K> {
         @Suppress("UNCHECKED_CAST") val o = other as ObjectLongMap<Any?>
 
         forEach { key, value ->
-            if (value != o[key]) {
+            val index = o.findKeyIndex(key)
+            if (index < 0 || value != o.values[index]) {
                 return false
             }
         }

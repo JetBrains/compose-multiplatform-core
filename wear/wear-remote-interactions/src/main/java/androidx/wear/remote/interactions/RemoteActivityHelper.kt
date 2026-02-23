@@ -20,13 +20,16 @@ import android.content.Intent
 import android.content.res.Resources.NotFoundException
 import android.os.Build
 import android.os.Bundle
+import android.os.OutcomeReceiver
 import android.os.Parcel
 import android.os.ResultReceiver
 import androidx.annotation.IntDef
+import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.remote.interactions.RemoteInteractionsUtil.isCurrentDeviceAWatch
+import androidx.wear.remote.interactions.RemoteInteractionsUtil.logDOrNotUser
 import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
 import com.google.common.util.concurrent.ListenableFuture
@@ -73,7 +76,7 @@ public class RemoteActivityHelper
 @JvmOverloads
 constructor(
     private val context: Context,
-    private val executor: Executor = Executors.newSingleThreadExecutor()
+    private val executor: Executor = Executors.newSingleThreadExecutor(),
 ) {
     public companion object {
         @SuppressWarnings("ActionValue")
@@ -81,7 +84,7 @@ constructor(
             "com.google.android.wearable.intent.action.REMOTE_INTENT"
 
         /** The remote activity's availability is unknown. */
-        public const val STATUS_UNKNOWN = 0
+        public const val STATUS_UNKNOWN: Int = 0
 
         /**
          * The remote auth's availability is unknown.
@@ -90,7 +93,7 @@ constructor(
          * states. To preserve compatibility with existing devices behavior, try
          * [startRemoteActivity] and handle error codes accordingly.
          */
-        public const val STATUS_UNAVAILABLE = 1
+        public const val STATUS_UNAVAILABLE: Int = 1
 
         /**
          * Indicates that remote activity is temporarily unavailable.
@@ -98,14 +101,14 @@ constructor(
          * There is a known paired device, but it is not currently connected or reachable to handle
          * the remote interaction.
          */
-        public const val STATUS_TEMPORARILY_UNAVAILABLE = 2
+        public const val STATUS_TEMPORARILY_UNAVAILABLE: Int = 2
 
         /**
          * Indicates that remote activity is available.
          *
          * There is a connected device capable to handle the remote interaction.
          */
-        public const val STATUS_AVAILABLE = 3
+        public const val STATUS_AVAILABLE: Int = 3
 
         private const val EXTRA_INTENT: String = "com.google.android.wearable.intent.extra.INTENT"
 
@@ -113,6 +116,8 @@ constructor(
 
         private const val EXTRA_RESULT_RECEIVER: String =
             "com.google.android.wearable.intent.extra.RESULT_RECEIVER"
+
+        private var sUseWearSdkImpl: Boolean = false
 
         /**
          * Result code passed to [ResultReceiver.send] when a remote intent was sent successfully.
@@ -231,15 +236,34 @@ constructor(
     }
 
     /**
-     * Start an activity on another device. This api currently supports sending intents with action
-     * set to [android.content.Intent.ACTION_VIEW], a data uri populated using
+     * Start an activity on another device.
+     *
+     * This API currently supports sending intents with action set to
+     * [android.content.Intent.ACTION_VIEW], a data URI populated using
      * [android.content.Intent.setData], and with the category
-     * [android.content.Intent.CATEGORY_BROWSABLE] present. If the current device is a watch, the
-     * activity will start on the companion phone device. Otherwise, the activity will start on all
-     * connected watch devices.
+     * [android.content.Intent.CATEGORY_BROWSABLE] present.
+     *
+     * When [targetNodeId] is unspecified, if the current device is a watch, the activity will start
+     * on the companion phone device. Otherwise, the activity will start on all connected watch
+     * devices.
+     *
+     * If the intent passed in sets a different action or does not contain the CATEGORY_BROWSABLE
+     * category or does not set a data URI, the call will be rejected and a
+     * [kotlin.IllegalArgumentException] thrown.
+     *
+     * Besides the mandated action and category, the caller must provide a data URI and an optional
+     * set of categories to be delivered to the remote device.
+     *
+     * If any additional attributes of the intent are set (for examples, extras, package,
+     * component), they will be stripped from the intent. Only an intent with ACTION_VIEW,
+     * CATEGORY_BROWSABLE, any other specified categories, and the provided data URI will be
+     * delivered to the remote devices.
+     *
+     * From Wear 6, the Wear SDK on the Watch will be used for starting remote activities on the
+     * connected companion.
      *
      * @param targetIntent The intent to open on the remote device. Action must be set to
-     *   [android.content.Intent.ACTION_VIEW], a data uri must be populated using
+     *   [android.content.Intent.ACTION_VIEW], a data URI must be populated using
      *   [android.content.Intent.setData], and the category
      *   [android.content.Intent.CATEGORY_BROWSABLE] must be present.
      * @param targetNodeId Wear OS node id for the device where the activity should be started. If
@@ -254,18 +278,34 @@ constructor(
         targetIntent: Intent,
         targetNodeId: String? = null,
     ): ListenableFuture<Void> {
-        return CallbackToFutureAdapter.getFuture {
-            require(Intent.ACTION_VIEW == targetIntent.action) {
-                "Only ${Intent.ACTION_VIEW} action is currently supported for starting a" +
-                    " remote activity"
-            }
-            requireNotNull(targetIntent.data) {
-                "Data Uri is required when starting a remote activity"
-            }
-            require(targetIntent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
-                "The category ${Intent.CATEGORY_BROWSABLE} must be present on the intent"
-            }
+        if (remoteInteractionsManager.isWearSdkApiStartRemoteActivitySupported) {
+            return startRemoteActivity(remoteInteractionsManager, targetIntent, executor)
+        }
+        return startRemoteActivityLegacy(targetIntent, targetNodeId)
+    }
 
+    private fun checkTargetIntentPrecondition(targetIntent: Intent) {
+        require(Intent.ACTION_VIEW == targetIntent.action) {
+            "Only ${Intent.ACTION_VIEW} action is currently supported for starting a" +
+                " remote activity"
+        }
+        requireNotNull(targetIntent.data) { "Data URI is required when starting a remote activity" }
+        require(targetIntent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
+            "The category ${Intent.CATEGORY_BROWSABLE} must be present on the intent"
+        }
+    }
+
+    /**
+     * The legacy implementation of startRemoteActivity and will be called when the sdk version is
+     * older than API 36 / Wear SDK version 6.
+     */
+    @VisibleForTesting
+    internal fun startRemoteActivityLegacy(
+        targetIntent: Intent,
+        targetNodeId: String? = null,
+    ): ListenableFuture<Void> {
+        return CallbackToFutureAdapter.getFuture {
+            checkTargetIntentPrecondition(targetIntent)
             startCreatingIntentForRemoteActivity(
                 targetIntent,
                 targetNodeId,
@@ -279,8 +319,36 @@ constructor(
                     override fun onFailure(exception: Exception) {
                         it.setException(exception)
                     }
-                }
+                },
             )
+        }
+    }
+
+    @RequiresApi(36)
+    private fun startRemoteActivity(
+        @NonNull remoteInteractionsManager: IRemoteInteractionsManager,
+        targetIntent: Intent,
+        @NonNull executor: Executor,
+    ): ListenableFuture<Void> {
+        return CallbackToFutureAdapter.getFuture { completer ->
+            checkTargetIntentPrecondition(targetIntent)
+            remoteInteractionsManager.startRemoteActivity(
+                targetIntent.data!!, // Already checked previously so it's safe.
+                targetIntent.categories!!.toList(), // Already checked previously so it's safe.
+                executor,
+                object : OutcomeReceiver<Void?, Throwable> {
+                    override fun onResult(result: Void?) {
+                        logDOrNotUser("startRemoteActivity", "onResult")
+                        completer.set(null)
+                    }
+
+                    override fun onError(error: Throwable) {
+                        logDOrNotUser("startRemoteActivity", "onError:$error")
+                        completer.setException(error)
+                    }
+                },
+            )
+            "startRemoteActivity"
         }
     }
 
@@ -289,7 +357,7 @@ constructor(
         nodeId: String?,
         completer: CallbackToFutureAdapter.Completer<Void>,
         nodeClient: NodeClient,
-        callback: Callback
+        callback: Callback,
     ) {
         if (isCurrentDeviceAWatch(context)) {
             callback.intentCreated(
@@ -297,7 +365,7 @@ constructor(
                     intent,
                     RemoteIntentResultReceiver(completer, numNodes = 1),
                     nodeId,
-                    DEFAULT_PACKAGE
+                    DEFAULT_PACKAGE,
                 )
             )
             return
@@ -317,7 +385,7 @@ constructor(
                                 intent,
                                 RemoteIntentResultReceiver(completer, numNodes = 1),
                                 nodeId,
-                                packageName
+                                packageName,
                             )
                         )
                     }
@@ -358,7 +426,7 @@ constructor(
         extraIntent: Intent?,
         resultReceiver: ResultReceiver?,
         nodeId: String?,
-        packageName: String? = null
+        packageName: String? = null,
     ): Intent {
         val remoteIntent = Intent(ACTION_REMOTE_INTENT)
         // Put the extra when non-null value is passed in
@@ -366,7 +434,7 @@ constructor(
         resultReceiver?.let {
             remoteIntent.putExtra(
                 EXTRA_RESULT_RECEIVER,
-                getResultReceiverForSending(resultReceiver)
+                getResultReceiverForSending(resultReceiver),
             )
         }
         nodeId?.let { remoteIntent.putExtra(EXTRA_NODE_ID, nodeId) }
@@ -389,7 +457,7 @@ constructor(
 
     private class RemoteIntentResultReceiver(
         private val completer: CallbackToFutureAdapter.Completer<Void>,
-        private var numNodes: Int
+        private var numNodes: Int,
     ) : ResultReceiver(null) {
         private var numFailedResults: Int = 0
 

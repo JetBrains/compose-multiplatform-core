@@ -24,7 +24,6 @@ import static androidx.core.view.HapticFeedbackConstantsCompat.GESTURE_START;
 import static androidx.core.view.HapticFeedbackConstantsCompat.GESTURE_THRESHOLD_ACTIVATE;
 import static androidx.core.view.HapticFeedbackConstantsCompat.GESTURE_THRESHOLD_DEACTIVATE;
 import static androidx.core.view.HapticFeedbackConstantsCompat.KEYBOARD_RELEASE;
-import static androidx.core.view.HapticFeedbackConstantsCompat.KEYBOARD_TAP;
 import static androidx.core.view.HapticFeedbackConstantsCompat.LONG_PRESS;
 import static androidx.core.view.HapticFeedbackConstantsCompat.NO_HAPTICS;
 import static androidx.core.view.HapticFeedbackConstantsCompat.REJECT;
@@ -40,13 +39,13 @@ import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Acces
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -58,26 +57,28 @@ import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.BaseInstrumentationTestCase;
 import android.view.Display;
 import android.view.View;
-import android.view.autofill.AutofillId;
 import android.view.contentcapture.ContentCaptureSession;
+import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.test.R;
 import androidx.core.view.autofill.AutofillIdCompat;
 import androidx.core.view.contentcapture.ContentCaptureSessionCompat;
+import androidx.core.viewtree.ViewTree;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -130,6 +131,23 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         final View view = new View(mActivityTestRule.getActivity());
         ViewCompat.setTransitionName(view, "abc");
         assertEquals("abc", ViewCompat.getTransitionName(view));
+    }
+
+    @Test
+    public void testGetDisjointParentOfOverlay() throws Throwable {
+        final Activity activity = mActivityTestRule.getActivity();
+        FrameLayout overlayHost = new FrameLayout(activity);
+        View overlaidView = new View(activity);
+
+        mActivityTestRule.runOnUiThread(() -> {
+            activity.setContentView(overlayHost);
+            ViewCompat.addOverlayView(overlayHost, overlaidView);
+        });
+
+        assertEquals(
+                overlayHost,
+                ViewTree.getParentOrViewTreeDisjointParent((View) overlaidView.getParent())
+        );
     }
 
     @Test
@@ -224,7 +242,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public void  dispatchNestedScroll_viewIsNotAndroidXNestedScrollingChild_callsCorrectMethod() {
         final ViewSubclass viewSubclass = mock(ViewSubclass.class);
 
@@ -271,7 +288,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         View container = mActivityTestRule.getActivity().findViewById(R.id.container);
 
         // action_bar isn't present inside container
-        ViewCompat.requireViewById(container, R.id.action_bar);
+        ViewCompat.requireViewById(container, androidx.appcompat.R.id.action_bar);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -302,7 +319,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
     @Test
     @UiThreadTest
-    @SdkSuppress(minSdkVersion = 20) // dispatchApplyWindowInsets only works on API 20+
     public void dispatchApplyWindowInsets_correctReturnValue() {
         final View view = mActivityTestRule.getActivity().findViewById(R.id.container);
 
@@ -321,7 +337,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertTrue(result.isConsumed());
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     public void testPerformAction_ExpectedActionAndArguments() {
         AccessibilityActionCompat actionCompat = AccessibilityActionCompat.ACTION_PRESS_AND_HOLD;
@@ -350,16 +365,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         AutofillIdCompat result = ViewCompat.getAutofillId(mView);
 
         assertEquals(mView.getAutofillId(), result.toAutofillId());
-    }
-
-    @SdkSuppress(minSdkVersion = 28)
-    @Test
-    public void testSetAutofillId_throwsIllegalStateExceptionAboveSDK28() {
-        AutofillId id = mock(AutofillId.class);
-        AutofillIdCompat idCompat = AutofillIdCompat.toAutofillIdCompat(id);
-        // Some final methods in the mock object throw IllegalStateException.
-        assertThrows(IllegalStateException.class,
-                () -> ViewCompat.setAutofillId(mView, idCompat));
     }
 
     @SdkSuppress(maxSdkVersion = 29)
@@ -457,13 +462,22 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
     }
 
-    @SdkSuppress(minSdkVersion = 27, maxSdkVersion = 29)
+    @SdkSuppress(maxSdkVersion = 29)
     @Test
     public void testPerformHapticFeedback_useFallbackForConstantsFromSdk30() {
-        // Maintain constants supported in SDK >= 27
-        assertHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        // Maintain constants supported in SDK >= 23
+        assertHapticFeedbackPerformed(CONTEXT_CLICK);
+
+        if (Build.VERSION.SDK_INT >= 27) {
+            // Maintain constants supported in SDK >= 27
+            assertHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
+            assertHapticFeedbackPerformed(KEYBOARD_RELEASE);
+            assertHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        } else {
+            assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
+            assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
+            assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        }
 
         // Fallbacks for constants from SDK >= 30
         assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
@@ -477,78 +491,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_OFF);
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_FREQUENT_TICK);
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
-    }
-
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 26)
-    @Test
-    public void testPerformHapticFeedback_useFallbackForConstantsFromSdk27() {
-        // Maintain constants supported in SDK >= 23
-        assertHapticFeedbackPerformed(CONTEXT_CLICK);
-
-        // Fallbacks for constants from SDK >= 27
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, REJECT);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, CONFIRM);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, GESTURE_START);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, GESTURE_END);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, TOGGLE_ON);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, SEGMENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, GESTURE_THRESHOLD_ACTIVATE);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_OFF);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_FREQUENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
-        assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
-    }
-
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 22)
-    @Test
-    public void testPerformHapticFeedback_useFallbackForConstantsFromSdk23() {
-        // Maintain constants supported in SDK >= 21
-        assertHapticFeedbackPerformed(CLOCK_TICK);
-
-        // Fallbacks for constants from SDK >= 23
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, REJECT);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, CONFIRM);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, GESTURE_START);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_END);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_ON);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_ACTIVATE);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_OFF);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_FREQUENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, CONTEXT_CLICK);
-        assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
-    }
-
-    @SdkSuppress(maxSdkVersion = 20)
-    @Test
-    public void testPerformHapticFeedback_useFallbackForConstantsFromSdk21() {
-        // Maintain constants supported in SDK < 21
-        assertHapticFeedbackPerformed(KEYBOARD_TAP);
-
-        // Fallbacks for constants from SDK >= 21
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, REJECT);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, CONFIRM);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, GESTURE_START);
-        assertNoHapticFeedbackPerformed(GESTURE_END);
-        assertNoHapticFeedbackPerformed(TOGGLE_ON);
-        assertNoHapticFeedbackPerformed(SEGMENT_TICK);
-        assertNoHapticFeedbackPerformed(GESTURE_THRESHOLD_ACTIVATE);
-        assertNoHapticFeedbackPerformed(TOGGLE_OFF);
-        assertNoHapticFeedbackPerformed(SEGMENT_FREQUENT_TICK);
-        assertNoHapticFeedbackPerformed(GESTURE_THRESHOLD_DEACTIVATE);
-        assertNoHapticFeedbackPerformed(CONTEXT_CLICK);
-        assertNoHapticFeedbackPerformed(CLOCK_TICK);
-        assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
     }
 
     private void assertHapticFeedbackPerformed(int feedbackConstant) {
@@ -602,7 +544,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow) {
             return true;
         }
     }
@@ -616,7 +558,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
             return true;
         }
     }
@@ -630,8 +572,54 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type,
-                @NonNull int[] consumed) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type,
+                int @NonNull [] consumed) {
         }
+    }
+
+    @Test
+    public void testTransformMatrixToGlobal() throws Throwable {
+        View container = mActivityTestRule.getActivity().findViewById(R.id.container);
+        View view = mActivityTestRule.getActivity().findViewById(R.id.view);
+        mActivityTestRule.runOnUiThread(() -> {
+            container.setScrollX(1);
+            container.setScrollY(2);
+            container.setScaleX(3);
+            container.setScaleY(4);
+            container.setLeft(6);
+            container.setRight(7);
+            view.setScrollX(10);
+            view.setScrollY(20);
+            view.setScaleX(30);
+            view.setScaleY(40);
+            view.setLeft(60);
+            view.setRight(70);
+        });
+        Matrix resultMatrix = new Matrix();
+        ViewCompat.transformMatrixToGlobal(view, resultMatrix);
+        float[] resultVals = new float[9];
+        resultMatrix.getValues(resultVals);
+
+        Matrix fallbackResultMatrix = new Matrix();
+        ViewCompat.fallbackTransformMatrixToGlobal(view, fallbackResultMatrix);
+        float[] fallbackResultVals = new float[9];
+        fallbackResultMatrix.getValues(fallbackResultVals);
+
+        int[] viewTopLeftScreenPositionOldInt = new int[2];
+        view.getLocationOnScreen(viewTopLeftScreenPositionOldInt);
+        float[] viewTopLeftScreenPositionOld = new float[]{
+                viewTopLeftScreenPositionOldInt[0], viewTopLeftScreenPositionOldInt[1]};
+        float[] viewTopLeftScreenPositionNew = new float[]{0.0f, 0.0f};
+        resultMatrix.mapPoints(viewTopLeftScreenPositionNew);
+        assertArrayEquals(viewTopLeftScreenPositionOld, viewTopLeftScreenPositionNew, 1.0f);
+
+        Matrix expectedMatrix = new Matrix();
+        expectedMatrix.setScale(30.0f * 3.0f, 40.0f * 4.0f);
+        expectedMatrix.postTranslate(
+                viewTopLeftScreenPositionOld[0], viewTopLeftScreenPositionOld[1]);
+        float[] expectedVals = new float[9];
+        expectedMatrix.getValues(expectedVals);
+        assertArrayEquals(expectedVals, resultVals, 1.0f);
+        assertArrayEquals(expectedVals, fallbackResultVals, 1.0f);
     }
 }

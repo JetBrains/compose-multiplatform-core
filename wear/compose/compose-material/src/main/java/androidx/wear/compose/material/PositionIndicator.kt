@@ -88,15 +88,15 @@ import kotlinx.coroutines.launch
  */
 @kotlin.jvm.JvmInline
 public value class PositionIndicatorVisibility internal constructor(internal val value: Int) {
-    companion object {
+    public companion object {
         /** Show the Position Indicator. */
-        val Show = PositionIndicatorVisibility(1)
+        public val Show: PositionIndicatorVisibility = PositionIndicatorVisibility(1)
 
         /** Hide the Position Indicator. */
-        val Hide = PositionIndicatorVisibility(2)
+        public val Hide: PositionIndicatorVisibility = PositionIndicatorVisibility(2)
 
         /** Hide the Position Indicator after a short delay. */
-        val AutoHide = PositionIndicatorVisibility(3)
+        public val AutoHide: PositionIndicatorVisibility = PositionIndicatorVisibility(3)
     }
 }
 
@@ -113,12 +113,12 @@ public value class PositionIndicatorVisibility internal constructor(internal val
  * of 5 / 50 = 0.1f to indicate that 10% of the visible items are currently visible.
  */
 @Stable
-interface PositionIndicatorState {
+public interface PositionIndicatorState {
     /**
      * Position of the indicator in the range [0f,1f]. 0f means it is at the top|start, 1f means it
      * is positioned at the bottom|end.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val positionFraction: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val positionFraction: Float
 
     /**
      * Size of the indicator in the range [0f,1f]. 1f means it takes the whole space.
@@ -127,7 +127,7 @@ interface PositionIndicatorState {
      *   orientation of the indicator, (height for vertical, width for horizontal)
      */
     @FloatRange(from = 0.0, to = 1.0)
-    fun sizeFraction(@FloatRange(from = 0.0) scrollableContainerSizePx: Float): Float
+    public fun sizeFraction(@FloatRange(from = 0.0) scrollableContainerSizePx: Float): Float
 
     /**
      * Should we show the Position Indicator
@@ -135,7 +135,7 @@ interface PositionIndicatorState {
      * @param scrollableContainerSizePx the height or width of the container in pixels depending on
      *   orientation of the indicator, (height for vertical, width for horizontal)
      */
-    fun visibility(
+    public fun visibility(
         @FloatRange(from = 0.0) scrollableContainerSizePx: Float
     ): PositionIndicatorVisibility
 }
@@ -171,8 +171,8 @@ public fun PositionIndicator(
     reverseDirection: Boolean = false,
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
-    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec,
+): Unit =
     PositionIndicator(
         ScrollStateAdapter(scrollState),
         indicatorHeight = 50.dp,
@@ -182,7 +182,7 @@ public fun PositionIndicator(
         reverseDirection = reverseDirection,
         fadeInAnimationSpec = fadeInAnimationSpec,
         fadeOutAnimationSpec = fadeOutAnimationSpec,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 
 /**
@@ -201,18 +201,18 @@ public fun PositionIndicator(
         "Compose for Wear OS 1.2." +
         "A newer overload is available with additional fadeInAnimationSpec, " +
         "fadeOutAnimationSpec and positionAnimationSpec parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun PositionIndicator(
     scrollState: ScrollState,
     modifier: Modifier = Modifier,
-    reverseDirection: Boolean = false
-) =
+    reverseDirection: Boolean = false,
+): Unit =
     PositionIndicator(
         scrollState = scrollState,
         modifier = modifier,
-        reverseDirection = reverseDirection
+        reverseDirection = reverseDirection,
     )
 
 /**
@@ -247,8 +247,8 @@ public fun PositionIndicator(
     reverseDirection: Boolean = false,
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
-    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec,
+): Unit =
     PositionIndicator(
         state = ScalingLazyColumnStateAdapter(state = scalingLazyListState),
         indicatorHeight = 50.dp,
@@ -258,7 +258,7 @@ public fun PositionIndicator(
         reverseDirection = reverseDirection,
         fadeInAnimationSpec = fadeInAnimationSpec,
         fadeOutAnimationSpec = fadeOutAnimationSpec,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 
 /**
@@ -278,18 +278,18 @@ public fun PositionIndicator(
         "Compose for Wear OS 1.2." +
         "A newer overload is available with additional fadeInAnimationSpec, " +
         "fadeOutAnimationSpec and positionAnimationSpec parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun PositionIndicator(
     scalingLazyListState: ScalingLazyListState,
     modifier: Modifier = Modifier,
-    reverseDirection: Boolean = false
-) =
+    reverseDirection: Boolean = false,
+): Unit =
     PositionIndicator(
         scalingLazyListState = scalingLazyListState,
         modifier = modifier,
-        reverseDirection = reverseDirection
+        reverseDirection = reverseDirection,
     )
 
 /**
@@ -309,21 +309,21 @@ public fun PositionIndicator(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1." +
         "A newer overload is available which uses ScalingLazyListState from " +
         "androidx.wear.compose.foundation.lazy package",
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 @Composable
 public fun PositionIndicator(
     scalingLazyListState: androidx.wear.compose.material.ScalingLazyListState,
     modifier: Modifier = Modifier,
-    reverseDirection: Boolean = false
-) =
+    reverseDirection: Boolean = false,
+): Unit =
     PositionIndicator(
         state = MaterialScalingLazyColumnStateAdapter(state = scalingLazyListState),
         indicatorHeight = 50.dp,
         indicatorWidth = 4.dp,
         paddingHorizontal = PositionIndicatorDefaults.horizontalPadding,
         modifier = modifier,
-        reverseDirection = reverseDirection
+        reverseDirection = reverseDirection,
     )
 
 /**
@@ -357,8 +357,8 @@ public fun PositionIndicator(
     reverseDirection: Boolean = false,
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
-    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec,
+): Unit =
     PositionIndicator(
         state = LazyColumnStateAdapter(state = lazyListState),
         indicatorHeight = 50.dp,
@@ -368,7 +368,7 @@ public fun PositionIndicator(
         reverseDirection = reverseDirection,
         fadeInAnimationSpec = fadeInAnimationSpec,
         fadeOutAnimationSpec = fadeOutAnimationSpec,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 
 /**
@@ -387,29 +387,29 @@ public fun PositionIndicator(
         "Compose for Wear OS 1.2." +
         "A newer overload is available with additional fadeInAnimationSpec, " +
         "fadeOutAnimationSpec and positionAnimationSpec parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun PositionIndicator(
     lazyListState: LazyListState,
     modifier: Modifier = Modifier,
-    reverseDirection: Boolean = false
-) =
+    reverseDirection: Boolean = false,
+): Unit =
     PositionIndicator(
         lazyListState = lazyListState,
         modifier = modifier,
-        reverseDirection = reverseDirection
+        reverseDirection = reverseDirection,
     )
 
 /** Specifies where in the screen the Position indicator will be. */
 @kotlin.jvm.JvmInline
-value class PositionIndicatorAlignment internal constructor(internal val pos: Int) {
-    companion object {
+public value class PositionIndicatorAlignment internal constructor(internal val pos: Int) {
+    public companion object {
         /**
          * Position the indicator at the end of the layout (at the right for LTR and left for RTL)
          * This is the norm for scroll indicators.
          */
-        val End = PositionIndicatorAlignment(0)
+        public val End: PositionIndicatorAlignment = PositionIndicatorAlignment(0)
 
         // TODO(b/224770222): Add tests.
         /**
@@ -418,21 +418,21 @@ value class PositionIndicatorAlignment internal constructor(internal val pos: In
          * RSB indicators as we want to avoid it being obscured when the user is interacting with
          * the RSB.
          */
-        val OppositeRsb = PositionIndicatorAlignment(1)
+        public val OppositeRsb: PositionIndicatorAlignment = PositionIndicatorAlignment(1)
 
         /**
          * Position the indicator at the left of the screen. This is useful to implement custom
          * positioning, but usually [PositionIndicatorAlignment#End] or
          * [PositionIndicatorAlignment#OppositeRsb] should be used.
          */
-        val Left = PositionIndicatorAlignment(2)
+        public val Left: PositionIndicatorAlignment = PositionIndicatorAlignment(2)
 
         /**
          * Position the indicator at the right of the screen This is useful to implement custom
          * positioning, but usually [PositionIndicatorAlignment#End] or
          * [PositionIndicatorAlignment#OppositeRsb] should be used.
          */
-        val Right = PositionIndicatorAlignment(3)
+        public val Right: PositionIndicatorAlignment = PositionIndicatorAlignment(3)
     }
 
     override fun toString(): String {
@@ -484,8 +484,8 @@ public fun PositionIndicator(
     position: PositionIndicatorAlignment = PositionIndicatorAlignment.OppositeRsb,
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
-    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec,
+): Unit =
     PositionIndicator(
         state =
             FractionPositionIndicatorState {
@@ -500,7 +500,7 @@ public fun PositionIndicator(
         position = position,
         fadeInAnimationSpec = fadeInAnimationSpec,
         fadeOutAnimationSpec = fadeOutAnimationSpec,
-        positionAnimationSpec = positionAnimationSpec
+        positionAnimationSpec = positionAnimationSpec,
     )
 
 /**
@@ -523,7 +523,7 @@ public fun PositionIndicator(
         "Compose for Wear OS 1.2." +
         "A newer overload is available with additional fadeInAnimationSpec, " +
         "fadeOutAnimationSpec and positionAnimationSpec parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun PositionIndicator(
@@ -532,15 +532,15 @@ public fun PositionIndicator(
     range: ClosedFloatingPointRange<Float> = 0f..1f,
     color: Color = MaterialTheme.colors.onBackground,
     reverseDirection: Boolean = false,
-    position: PositionIndicatorAlignment = PositionIndicatorAlignment.OppositeRsb
-) =
+    position: PositionIndicatorAlignment = PositionIndicatorAlignment.OppositeRsb,
+): Unit =
     PositionIndicator(
         value = value,
         modifier = modifier,
         range = range,
         color = color,
         reverseDirection = reverseDirection,
-        position = position
+        position = position,
     )
 
 /**
@@ -612,7 +612,7 @@ public fun PositionIndicator(
     position: PositionIndicatorAlignment = PositionIndicatorAlignment.End,
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
-    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
+    positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec,
 ) {
     val isScreenRound = isRoundDevice()
     val layoutDirection = LocalLayoutDirection.current
@@ -655,7 +655,7 @@ public fun PositionIndicator(
                     r - sqrt((sqr(r) - sqr(indicatorHeight.toPx() / 2)).coerceAtLeast(0f))
                 } else 0f) + paddingHorizontal.toPx() + indicatorWidth.toPx())
                 .roundToInt(),
-            (indicatorHeight.toPx() + indicatorWidth.toPx()).roundToInt()
+            (indicatorHeight.toPx() + indicatorWidth.toPx()).roundToInt(),
         )
     }
 
@@ -664,7 +664,7 @@ public fun PositionIndicator(
         val indicatorSize = boundsSize()
         IntOffset(
             if (indicatorOnTheRight) containerSize.width - indicatorSize.width else 0,
-            (containerSize.height - indicatorSize.height) / 2
+            (containerSize.height - indicatorSize.height) / 2,
         )
     }
 
@@ -688,7 +688,7 @@ public fun PositionIndicator(
                     DisplayState(
                         state.positionFraction,
                         state.sizeFraction(containerSize.height.toFloat()),
-                        state.visibility(containerSize.height.toFloat())
+                        state.visibility(containerSize.height.toFloat()),
                     )
                 }
                 .collectLatest {
@@ -714,13 +714,13 @@ public fun PositionIndicator(
                         launch {
                             sizeFractionAnimatable.animateTo(
                                 it.size,
-                                animationSpec = updatedPositionAnimationSpec
+                                animationSpec = updatedPositionAnimationSpec,
                             )
                         }
                         launch {
                             positionFractionAnimatable.animateTo(
                                 it.position,
-                                animationSpec = updatedPositionAnimationSpec
+                                animationSpec = updatedPositionAnimationSpec,
                             )
                         }
 
@@ -738,7 +738,7 @@ public fun PositionIndicator(
                             handleFadeOut(
                                 updatedFadeOutAnimationSpec,
                                 animateAlphaChannel,
-                                alphaValue
+                                alphaValue,
                             )
                         }
 
@@ -761,7 +761,7 @@ public fun PositionIndicator(
                                 handleFadeOut(
                                     updatedFadeInAnimationSpec,
                                     animateAlphaChannel,
-                                    alphaValue
+                                    alphaValue,
                                 )
                             }
                         }
@@ -784,8 +784,8 @@ public fun PositionIndicator(
                             animationSpec =
                                 tween(
                                     durationMillis = 150,
-                                    easing = CubicBezierEasing(0f, 0f, 0.2f, 1f)
-                                )
+                                    easing = CubicBezierEasing(0f, 0f, 0.2f, 1f),
+                                ),
                         ) { value, _ ->
                             highlightAlpha = value
                         }
@@ -796,8 +796,8 @@ public fun PositionIndicator(
                             animationSpec =
                                 tween(
                                     durationMillis = 500,
-                                    easing = CubicBezierEasing(0.25f, 0f, 0.75f, 1f)
-                                )
+                                    easing = CubicBezierEasing(0.25f, 0f, 0.75f, 1f),
+                                ),
                         ) { value, _ ->
                             highlightAlpha = value
                         }
@@ -814,7 +814,7 @@ public fun PositionIndicator(
                 targetValue,
                 animationSpec =
                     if (targetValue >= 1f) updatedFadeInAnimationSpec
-                    else updatedFadeOutAnimationSpec
+                    else updatedFadeOutAnimationSpec,
             ) { value, _ ->
                 alphaValue.floatValue = value
             }
@@ -869,7 +869,7 @@ public fun PositionIndicator(
                                     indicatorWidthPx,
                                     indicatorStart,
                                     sizeFractionAnimatable.value,
-                                    highlightAlpha
+                                    highlightAlpha,
                                 )
                             } else {
                                 drawStraightIndicator(
@@ -881,7 +881,7 @@ public fun PositionIndicator(
                                     indicatorHeight.toPx(),
                                     indicatorStart,
                                     sizeFractionAnimatable.value,
-                                    highlightAlpha
+                                    highlightAlpha,
                                 )
                             }
                         }
@@ -924,7 +924,7 @@ public fun PositionIndicator(
         "Compose for Wear OS 1.2." +
         "A newer overload is available with additional fadeInAnimationSpec, " +
         "fadeOutAnimationSpec and positionAnimationSpec parameters.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun PositionIndicator(
@@ -936,7 +936,7 @@ public fun PositionIndicator(
     background: Color = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
     color: Color = MaterialTheme.colors.onBackground,
     reverseDirection: Boolean = false,
-    position: PositionIndicatorAlignment = PositionIndicatorAlignment.End
+    position: PositionIndicatorAlignment = PositionIndicatorAlignment.End,
 ) {
     PositionIndicator(
         state = state,
@@ -947,7 +947,7 @@ public fun PositionIndicator(
         background = background,
         color = color,
         reverseDirection = reverseDirection,
-        position = position
+        position = position,
     )
 }
 
@@ -957,14 +957,14 @@ public object PositionIndicatorDefaults {
      * [AnimationSpec] used for position animation. To disable this animation, pass [snap]
      * AnimationSpec instead
      */
-    val positionAnimationSpec: AnimationSpec<Float> =
+    public val positionAnimationSpec: AnimationSpec<Float> =
         tween(durationMillis = 500, easing = CubicBezierEasing(0f, 0f, 0f, 1f))
 
     /**
      * [AnimationSpec] used for visibility (fade-in and fade-out) animations. To disable this
      * animation, pass [snap] AnimationSpec instead
      */
-    val visibilityAnimationSpec: AnimationSpec<Float> =
+    public val visibilityAnimationSpec: AnimationSpec<Float> =
         spring(stiffness = Spring.StiffnessMediumLow)
 
     /** Horizontal padding from the PositionIndicator to the screen edge. */
@@ -974,7 +974,7 @@ public object PositionIndicatorDefaults {
 internal fun handleFadeOut(
     fadeOutAnimationSpec: AnimationSpec<Float>,
     animateAlphaChannel: Channel<Float>,
-    alphaValue: MutableFloatState
+    alphaValue: MutableFloatState,
 ) {
     // Sending 0f to the channel, or changing alphaValue directly here
     if (fadeOutAnimationSpec is SnapSpec) {
@@ -988,7 +988,7 @@ internal fun handleFadeOut(
 internal class DisplayState(
     val position: Float,
     val size: Float,
-    val visibility: PositionIndicatorVisibility
+    val visibility: PositionIndicatorVisibility,
 ) {
     override fun hashCode(): Int {
         var result = position.hashCode()
@@ -1412,13 +1412,13 @@ private fun ContentDrawScope.drawCurvedIndicator(
     indicatorWidthPx: Float,
     indicatorStart: Float,
     indicatorSize: Float,
-    highlightAlpha: Float
+    highlightAlpha: Float,
 ) {
     val diameter = max(size.width, size.height)
     val arcSize =
         Size(
             diameter - 2 * paddingHorizontalPx - indicatorWidthPx,
-            diameter - 2 * paddingHorizontalPx - indicatorWidthPx
+            diameter - 2 * paddingHorizontalPx - indicatorWidthPx,
         )
     val arcTopLeft =
         Offset(
@@ -1433,7 +1433,7 @@ private fun ContentDrawScope.drawCurvedIndicator(
         useCenter = false,
         topLeft = arcTopLeft,
         size = arcSize,
-        style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round)
+        style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round),
     )
     drawArc(
         lerp(color, Color.White, highlightAlpha),
@@ -1442,7 +1442,7 @@ private fun ContentDrawScope.drawCurvedIndicator(
         useCenter = false,
         topLeft = arcTopLeft,
         size = arcSize,
-        style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round)
+        style = Stroke(width = indicatorWidthPx, cap = StrokeCap.Round),
     )
 }
 
@@ -1455,7 +1455,7 @@ private fun ContentDrawScope.drawStraightIndicator(
     indicatorHeightPx: Float,
     indicatorStart: Float,
     indicatorSize: Float,
-    highlightAlpha: Float
+    highlightAlpha: Float,
 ) {
     val x =
         if (indicatorOnTheRight) {
@@ -1470,14 +1470,14 @@ private fun ContentDrawScope.drawStraightIndicator(
         lineTop,
         lineBottom,
         strokeWidth = indicatorWidthPx,
-        cap = StrokeCap.Round
+        cap = StrokeCap.Round,
     )
     drawLine(
         lerp(color, Color.White, highlightAlpha),
         lerp(lineTop, lineBottom, indicatorStart),
         lerp(lineTop, lineBottom, indicatorStart + indicatorSize),
         strokeWidth = indicatorWidthPx,
-        cap = StrokeCap.Round
+        cap = StrokeCap.Round,
     )
 }
 

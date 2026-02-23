@@ -49,7 +49,7 @@ internal class TilesConnectionBinder(
     private val context: Context,
     private val componentName: ComponentName,
     private val coroutineScope: CoroutineScope,
-    private val backgroundCoroutineDispatcher: CoroutineDispatcher
+    private val backgroundCoroutineDispatcher: CoroutineDispatcher,
 ) {
     companion object {
         internal val BIND_TIMEOUT_MILLIS = SECONDS.toMillis(10)
@@ -140,7 +140,7 @@ internal class TilesConnectionBinder(
                         object : ServiceConnection {
                             override fun onServiceConnected(
                                 name: ComponentName?,
-                                service: IBinder?
+                                service: IBinder?,
                             ) {
                                 val boundTileProvider = TileProvider.Stub.asInterface(service)
                                 continuation.resume(boundTileProvider)
@@ -173,7 +173,13 @@ internal class TilesConnectionBinder(
     }
 
     private fun disconnectFromService() {
-        connection?.let(context::unbindService)
+        try {
+            connection?.let(context::unbindService)
+        } catch (_: NullPointerException) {
+            // Depending on the test timing, this could end up running after Robolectric has cleared
+            // its RuntimeEnvironment. This isn't a proper fix, but this shouldn't happen in
+            // non-test environments.
+        }
         connection = null
         connectBinderJob = null
         tileProvider = null

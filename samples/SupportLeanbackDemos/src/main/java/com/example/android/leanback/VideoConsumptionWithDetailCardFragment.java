@@ -19,12 +19,13 @@ package com.example.android.leanback;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.app.VideoFragment;
 import androidx.leanback.app.VideoFragmentGlueHost;
 import androidx.leanback.media.MediaPlayerAdapter;
 import androidx.leanback.media.PlaybackBannerControlGlue;
 import androidx.leanback.media.PlaybackGlue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Fragment used as Control Glue's host

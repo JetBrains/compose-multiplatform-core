@@ -16,44 +16,42 @@
 
 package androidx.credentials.registry.digitalcredentials.mdoc
 
-import androidx.annotation.RestrictTo
 import androidx.credentials.registry.provider.digitalcredentials.DigitalCredentialEntry
-import androidx.credentials.registry.provider.digitalcredentials.EntryDisplayData
+import androidx.credentials.registry.provider.digitalcredentials.EntryDisplayProperties
 
 /**
  * Mdoc entry, a mobile document entry whose format follows
  * [the ISO/IEC 18013-5:2021 specification](https://www.iso.org/standard/69084.html).
  *
- * @constructor
  * @property docType the DocType, e.g. "org.iso.18013.5.1.mDL" for a mobile driving license
- * @property entryDisplayData a set of entry display metadata, each serving a different UI style
- *   variant
+ * @property entryDisplayPropertySet a set of entry display metadata, each serving a different UI
+ *   style variant
  * @property id the unique identifier of this credential entry, which can be used to identify the
  *   exact credential that the user has chosen
  * @property fields the given mdoc's individual properties used both for filtering and display
  *   purposes
+ * @constructor
+ * @throws IllegalArgumentException if [id] length is greater than 64 characters
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MdocEntry(
     public val docType: String,
     public val fields: List<MdocField>,
-    entryDisplayData: Set<EntryDisplayData>,
-    id: String
-) : DigitalCredentialEntry(id = id, entryDisplayData = entryDisplayData) {
+    entryDisplayPropertySet: Set<EntryDisplayProperties>,
+    id: String,
+) : DigitalCredentialEntry(id = id, entryDisplayPropertySet = entryDisplayPropertySet) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MdocEntry) return false
         return this.id == other.id &&
-            this.entryDisplayData == other.entryDisplayData &&
+            this.entryDisplayPropertySet == other.entryDisplayPropertySet &&
             this.docType == other.docType &&
             this.fields == other.fields &&
-            this.entryDisplayData == other.entryDisplayData &&
-            this.id == other.id
+            this.entryDisplayPropertySet == other.entryDisplayPropertySet
     }
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + entryDisplayData.hashCode()
+        result = 31 * result + entryDisplayPropertySet.hashCode()
         result = 31 * result + docType.hashCode()
         result = 31 * result + fields.hashCode()
         return result

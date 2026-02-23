@@ -19,11 +19,12 @@ package androidx.wear.ongoing;
 import android.content.Context;
 import android.text.format.DateUtils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.NonParcelField;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -82,9 +83,8 @@ class TimerStatusPart extends StatusPart {
     /**
      * See {@link TimeDependentText#getText(Context, long)}]
      */
-    @NonNull
     @Override
-    public CharSequence getText(@NonNull Context context, long timeNowMillis) {
+    public @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis) {
         long timeMillis = isPaused() ? mPausedAtMillis : timeNowMillis;
         long milliSeconds = timeMillis - mTimeZeroMillis;
         long seconds = milliSeconds >= 0 ? milliSeconds / 1000

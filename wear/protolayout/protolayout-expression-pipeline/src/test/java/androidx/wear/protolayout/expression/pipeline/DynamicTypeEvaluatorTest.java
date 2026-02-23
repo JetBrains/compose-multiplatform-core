@@ -26,17 +26,18 @@ import static java.lang.Integer.MAX_VALUE;
 
 import android.icu.util.ULocale;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool;
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString;
 import androidx.wear.protolayout.expression.PlatformDataKey;
 import androidx.wear.protolayout.expression.PlatformHealthSources;
 import androidx.wear.protolayout.expression.pipeline.DynamicTypeEvaluator.EvaluationException;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
 import androidx.wear.protolayout.expression.proto.FixedProto;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -44,6 +45,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 @RunWith(AndroidJUnit4.class)
@@ -153,21 +155,52 @@ public class DynamicTypeEvaluatorTest {
         }
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
+    @Test
+    public void deduplication_enabled() throws EvaluationException {
+        DynamicTypeEvaluator evaluator = createEvaluatorWithDeduplication(true);
+        List<String> results = new ArrayList<>();
+        DynamicString duplicatedPart = DynamicString.from(new AppDataKey<>("key"));
+        DynamicTypeBindingRequest request =
+                DynamicTypeBindingRequest.forDynamicString(
+                        duplicatedPart.concat(duplicatedPart),
+                        ULocale.ENGLISH,
+                        new MainThreadExecutor(),
+                        new AddToListCallback<>(results));
+
+        BoundDynamicType boundDynamicType = evaluator.bind(request);
+
+        assertThat(boundDynamicType.getDynamicNodeCost()).isEqualTo(2);
+    }
+
+    @Test
+    public void deduplication_disabled() throws EvaluationException {
+        DynamicTypeEvaluator evaluator = createEvaluatorWithDeduplication(false);
+        List<String> results = new ArrayList<>();
+        DynamicString duplicatedPart = DynamicString.from(new AppDataKey<>("key"));
+        DynamicTypeBindingRequest request =
+                DynamicTypeBindingRequest.forDynamicString(
+                        duplicatedPart.concat(duplicatedPart),
+                        ULocale.ENGLISH,
+                        new MainThreadExecutor(),
+                        new AddToListCallback<>(results));
+
+        BoundDynamicType boundDynamicType = evaluator.bind(request);
+
+        assertThat(boundDynamicType.getDynamicNodeCost()).isEqualTo(3);
+    }
+
+    private static @NonNull DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
             ArrayList<Boolean> results) {
         return createDynamicBoolRequest(DynamicBool.from(new AppDataKey<>("key")), results);
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createDynamicBoolRequest(
+    private static @NonNull DynamicTypeBindingRequest createDynamicBoolRequest(
             DynamicBuilders.DynamicBool dynamicBool, ArrayList<Boolean> results) {
         return DynamicTypeBindingRequest.forDynamicBool(
                 dynamicBool, new MainThreadExecutor(), new AddToListCallback<>(results));
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
+    private static @NonNull DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
             ArrayList<Integer> results) {
         return DynamicTypeBindingRequest.forDynamicInt32Internal(
                 DynamicProto.DynamicInt32.newBuilder()
@@ -185,9 +218,8 @@ public class DynamicTypeEvaluatorTest {
                 new AddToListCallback<Integer>(results));
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicStringFromTimePlatformRequest(
-            ArrayList<String> results) {
+    private static @NonNull DynamicTypeBindingRequest
+            createSingleNodeDynamicStringFromTimePlatformRequest(ArrayList<String> results) {
         return DynamicTypeBindingRequest.forDynamicString(
                 DynamicBuilders.DynamicInstant.platformTimeWithSecondsPrecision()
                         .durationUntil(
@@ -231,6 +263,14 @@ public class DynamicTypeEvaluatorTest {
                         .setStateStore(stateStore)
                         .setAnimationQuotaManager(animationQuota)
                         .setDynamicTypesQuotaManager(dynamicTypesQuota)
+                        .build());
+    }
+
+    private static DynamicTypeEvaluator createEvaluatorWithDeduplication(
+            boolean enableDeduplication) {
+        return new DynamicTypeEvaluator(
+                new DynamicTypeEvaluator.Config.Builder()
+                        .setEnableExpressionDeduplication(enableDeduplication)
                         .build());
     }
 

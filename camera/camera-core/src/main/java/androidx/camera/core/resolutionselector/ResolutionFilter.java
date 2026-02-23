@@ -19,11 +19,12 @@ package androidx.camera.core.resolutionselector;
 import android.util.Size;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.ImageOutputConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -61,7 +62,6 @@ public interface ResolutionFilter {
      * @return the desired ordered sizes list for resolution selection. The returned list should
      * only include sizes in the provided input supported sizes list.
      */
-    @NonNull
-    List<Size> filter(@NonNull List<Size> supportedSizes,
+    @NonNull List<Size> filter(@NonNull List<Size> supportedSizes,
             @ImageOutputConfig.RotationDegreesValue int rotationDegrees);
 }

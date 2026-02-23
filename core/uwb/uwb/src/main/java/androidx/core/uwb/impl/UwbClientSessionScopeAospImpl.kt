@@ -21,6 +21,7 @@ import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.RangingMeasurement
 import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.RangingResult
+import androidx.core.uwb.RangingResult.Companion.fromId
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.backend.IRangingSessionCallback
@@ -32,6 +33,7 @@ import androidx.core.uwb.backend.UwbRangeDataNtfConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 
@@ -135,7 +137,11 @@ internal open class UwbClientSessionScopeAospImpl(
         val callback =
             object : IRangingSessionCallback.Stub() {
                 override fun onRangingInitialized(device: UwbDevice) {
-                    Log.i(TAG, "Started UWB ranging.")
+                    trySend(
+                        RangingResult.RangingResultInitialized(
+                            androidx.core.uwb.UwbDevice(UwbAddress(device.address?.address!!))
+                        )
+                    )
                 }
 
                 override fun onRangingResult(device: UwbDevice, position: RangingPosition) {
@@ -146,19 +152,25 @@ internal open class UwbClientSessionScopeAospImpl(
                                 position.distance?.let { RangingMeasurement(it.value) },
                                 position.azimuth?.let { RangingMeasurement(it.value) },
                                 position.elevation?.let { RangingMeasurement(it.value) },
-                                position.elapsedRealtimeNanos
-                            )
+                                position.elapsedRealtimeNanos,
+                            ),
                         )
                     )
                 }
 
                 override fun onRangingSuspended(device: UwbDevice, reason: Int) {
                     trySend(
-                        RangingResult.RangingResultPeerDisconnected(
-                            androidx.core.uwb.UwbDevice(UwbAddress(device.address?.address!!))
+                            RangingResult.RangingResultFailure(
+                                androidx.core.uwb.UwbDevice(UwbAddress(device.address?.address!!)),
+                                fromId(reason),
+                            )
                         )
-                    )
+                        .onFailure { throwable ->
+                            Log.w(TAG, "Failed to send RangingResultFailure", throwable)
+                        }
                 }
+
+                override fun getInterfaceVersion(): Int = VERSION
             }
 
         try {
@@ -172,6 +184,7 @@ internal open class UwbClientSessionScopeAospImpl(
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 try {
                     uwbClient.stopRanging(callback)
+                    sessionStarted = false
                 } catch (e: Exception) {
                     throw (e)
                 }
@@ -182,7 +195,7 @@ internal open class UwbClientSessionScopeAospImpl(
     override suspend fun reconfigureRangeDataNtf(
         configType: Int,
         proximityNear: Int,
-        proximityFar: Int
+        proximityFar: Int,
     ) {
         try {
             uwbClient.reconfigureRangeDataNtf(configType, proximityNear, proximityFar)

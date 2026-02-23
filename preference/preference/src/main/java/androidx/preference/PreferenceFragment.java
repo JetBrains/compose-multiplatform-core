@@ -33,13 +33,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.XmlRes;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Shows a hierarchy of {@link Preference} objects as lists. These preferences will automatically
@@ -183,10 +184,9 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
     @Deprecated
     public abstract void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey);
 
-    @NonNull
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @NonNull View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         TypedArray a = mStyledContext.obtainStyledAttributes(null,
                 R.styleable.PreferenceFragment,
@@ -545,8 +545,7 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
      * @deprecated Use {@link PreferenceFragmentCompat} instead
      */
     @Deprecated
-    @NonNull
-    public RecyclerView onCreateRecyclerView(@NonNull LayoutInflater inflater,
+    public @NonNull RecyclerView onCreateRecyclerView(@NonNull LayoutInflater inflater,
             @NonNull ViewGroup parent, @Nullable Bundle savedInstanceState) {
         // If device detected is Auto, use Auto's custom layout that contains a custom ViewGroup
         // wrapping a RecyclerView
@@ -576,8 +575,7 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
      * @deprecated Use {@link PreferenceFragmentCompat} instead
      */
     @Deprecated
-    @NonNull
-    public RecyclerView.LayoutManager onCreateLayoutManager() {
+    public RecyclerView.@NonNull LayoutManager onCreateLayoutManager() {
         return new LinearLayoutManager(getActivity());
     }
 
@@ -590,8 +588,8 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
      * @deprecated Use {@link PreferenceFragmentCompat} instead
      */
     @Deprecated
-    @NonNull
-    protected RecyclerView.Adapter onCreateAdapter(@NonNull PreferenceScreen preferenceScreen) {
+    protected RecyclerView.@NonNull Adapter onCreateAdapter(
+            @NonNull PreferenceScreen preferenceScreen) {
         return new PreferenceGroupAdapter(preferenceScreen);
     }
 
@@ -761,7 +759,7 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
         private final Preference mPreference;
         private final String mKey;
 
-        ScrollToPreferenceObserver(@NonNull RecyclerView.Adapter<?> adapter,
+        ScrollToPreferenceObserver(RecyclerView.@NonNull Adapter<?> adapter,
                 @NonNull RecyclerView list, Preference preference, String key) {
             mAdapter = adapter;
             mList = list;
@@ -825,7 +823,7 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
 
         @Override
         public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent,
-                @NonNull RecyclerView.State state) {
+                RecyclerView.@NonNull State state) {
             if (mDivider == null) {
                 return;
             }
@@ -843,7 +841,7 @@ public abstract class PreferenceFragment extends android.app.Fragment implements
 
         @Override
         public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
-                @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                @NonNull RecyclerView parent, RecyclerView.@NonNull State state) {
             if (shouldDrawDividerBelow(view, parent)) {
                 outRect.bottom = mDividerHeight;
             }

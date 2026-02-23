@@ -21,7 +21,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
@@ -61,7 +64,12 @@ private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
     val pagerState: PagerState = rememberPagerState(initialPage = 1) { pages }
     val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(MaterialTheme.colors.background)
+                .windowInsetsPadding(WindowInsets.safeContent)
+    ) {
         Button(
             onClick = {
                 coroutineScope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
@@ -72,7 +80,7 @@ private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.semantics { contentDescription = "Pager" }
+            modifier = Modifier.semantics { contentDescription = "Pager" },
         ) { page: Int ->
             Grid(gridItems, page)
         }
@@ -82,10 +90,7 @@ private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
 @Composable
 private fun Grid(itemCount: Int, pageNum: Int) {
     val text = remember(pageNum) { "Hello + $pageNum" }
-    LazyVerticalGrid(
-        modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Fixed(3),
-    ) {
+    LazyVerticalGrid(modifier = Modifier.fillMaxSize(), columns = GridCells.Fixed(3)) {
         items(itemCount, contentType = { "cell" }) { _ ->
             Button(onClick = {}) { Text(text = text) }
         }

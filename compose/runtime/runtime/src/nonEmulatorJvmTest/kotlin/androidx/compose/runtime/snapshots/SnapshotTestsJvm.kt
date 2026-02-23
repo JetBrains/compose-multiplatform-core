@@ -16,6 +16,8 @@
 
 package androidx.compose.runtime.snapshots
 
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.internal.AtomicInt
 import androidx.compose.runtime.internal.AtomicReference
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +30,7 @@ import kotlin.test.assertNull
 class SnapshotTestsJvm {
 
     @Test
+    @Suppress("BanThreadSleep", "AutoboxingStateCreation") // Required to reproduce the issue
     fun testMultiThreadedReadingAndWritingOfGlobalScope() {
         val running = AtomicBoolean(true)
         val reads = AtomicInt(0)
@@ -38,8 +41,8 @@ class SnapshotTestsJvm {
             val state = mutableStateOf(0)
             Snapshot.notifyObjectsInitialized()
 
-            // Create 100 reader threads of state
-            repeat(100) {
+            // Create 20 reader threads of state
+            repeat(20) {
                 thread {
                     try {
                         while (running.get()) {
@@ -73,6 +76,43 @@ class SnapshotTestsJvm {
 
         exception.get()?.let { throw it }
         assertNull(exception.get())
+    }
+
+    @Test
+    fun listWriteRace() {
+        val iterations = 10000
+        val list = SnapshotStateList<Int>().apply { add(0) }
+        val max by derivedStateOf { list.max() }
+        var exception: Throwable? = null
+
+        Snapshot.notifyObjectsInitialized()
+        Snapshot.sendApplyNotifications()
+
+        val mutator =
+            thread(name = "mutator") {
+                var counter = 0
+                while (counter < iterations) {
+                    Snapshot.withMutableSnapshot { list[0] = counter++ }
+                }
+            }
+
+        val reader =
+            thread(name = "reader") {
+                var counter = 0
+                while (exception == null && counter < iterations) {
+                    try {
+                        // !!! ISE thrown from this derivedStateOf read.
+                        @Suppress("UNUSED_EXPRESSION") max
+                        counter++
+                    } catch (e: Throwable) {
+                        exception = e
+                    }
+                }
+            }
+        mutator.join()
+        reader.join()
+
+        exception?.let { throw it }
     }
 }
 

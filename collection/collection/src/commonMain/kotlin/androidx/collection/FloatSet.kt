@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
     "KotlinRedundantDiagnosticSuppress",
@@ -21,13 +22,17 @@
     "PropertyName",
     "ConstPropertyName",
     "PrivatePropertyName",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.annotation.IntRange
 import androidx.collection.internal.requirePrecondition
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -98,6 +103,36 @@ public fun mutableFloatSetOf(element1: Float, element2: Float, element3: Float):
 /** Returns a new [MutableFloatSet] with the specified elements. */
 public fun mutableFloatSetOf(vararg elements: Float): MutableFloatSet =
     MutableFloatSet(elements.size).apply { plusAssign(elements) }
+
+/**
+ * Builds a new [FloatSet] by populating a [MutableFloatSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableFloatSet] can be populated.
+ */
+public inline fun buildFloatSet(builderAction: MutableFloatSet.() -> Unit): FloatSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatSet().apply(builderAction)
+}
+
+/**
+ * Builds a new [FloatSet] by populating a [MutableFloatSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableFloatSet] can be populated.
+ */
+public inline fun buildFloatSet(
+    initialCapacity: Int,
+    builderAction: MutableFloatSet.() -> Unit,
+): FloatSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatSet(initialCapacity).apply(builderAction)
+}
 
 /**
  * [FloatSet] is a container with a [Set]-like interface designed to avoid allocations, including
@@ -290,17 +325,19 @@ public sealed class FloatSet {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@FloatSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@FloatSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
-            index++
         }
         append(postfix)
     }
@@ -320,20 +357,22 @@ public sealed class FloatSet {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (Float) -> CharSequence
+        crossinline transform: (Float) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@FloatSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@FloatSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
-            index++
         }
         append(postfix)
     }

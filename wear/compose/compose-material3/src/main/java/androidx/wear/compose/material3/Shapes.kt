@@ -48,25 +48,24 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  *   4dp [CornerSize] (used by bundled Cards).
  * @param small By default, provides [ShapeDefaults.Small], a [RoundedCornerShape] with 8dp
  *   [CornerSize].
- * @param medium By default, provides [ShapeDefaults.Medium], a [RoundedCornerShape] with 16dp
+ * @param medium By default, provides [ShapeDefaults.Medium], a [RoundedCornerShape] with 18dp
  *   [CornerSize] (used by shape-shifting Buttons and rounded rectangle buttons).
- * @param large By default, provides [ShapeDefaults.Large], a [RoundedCornerShape] with 24dp
+ * @param large By default, provides [ShapeDefaults.Large], a [RoundedCornerShape] with 26dp
  *   [CornerSize] (used by Cards).
  * @param extraLarge By default, provides [ShapeDefaults.ExtraLarge], a [RoundedCornerShape] with
- *   32dp [CornerSize].
- *
- * TODO(b/273226734) Review documentation with references to components that use the shape themes.
+ *   36dp [CornerSize].
  */
+// TODO(b/273226734) Review documentation with references to components that use the shape themes.
 @Immutable
-class Shapes(
-    val extraSmall: CornerBasedShape = ShapeDefaults.ExtraSmall,
-    val small: CornerBasedShape = ShapeDefaults.Small,
-    val medium: CornerBasedShape = ShapeDefaults.Medium,
-    val large: CornerBasedShape = ShapeDefaults.Large,
-    val extraLarge: CornerBasedShape = ShapeDefaults.ExtraLarge,
+public class Shapes(
+    public val extraSmall: CornerBasedShape = ShapeDefaults.ExtraSmall,
+    public val small: CornerBasedShape = ShapeDefaults.Small,
+    public val medium: CornerBasedShape = ShapeDefaults.Medium,
+    public val large: CornerBasedShape = ShapeDefaults.Large,
+    public val extraLarge: CornerBasedShape = ShapeDefaults.ExtraLarge,
 ) {
     /** Returns a copy of this Shapes, optionally overriding some of the values. */
-    fun copy(
+    public fun copy(
         extraSmall: CornerBasedShape = this.extraSmall,
         small: CornerBasedShape = this.small,
         medium: CornerBasedShape = this.medium,
@@ -109,30 +108,45 @@ class Shapes(
             "large=$large, " +
             "extraLarge=$extraLarge)"
     }
+
+    /** Cached shapes used in components */
+    internal var defaultIconButtonShapesCached: IconButtonShapes? = null
+    internal var defaultIconButtonAnimatedShapesCached: IconButtonShapes? = null
+
+    internal var defaultTextButtonShapesCached: TextButtonShapes? = null
+    internal var defaultTextButtonAnimatedShapesCached: TextButtonShapes? = null
+
+    internal var defaultTextToggleButtonShapesCached: TextToggleButtonShapes? = null
+    internal var defaultTextToggleButtonAnimatedShapesCached: TextToggleButtonShapes? = null
+    internal var defaultTextToggleButtonVariantAnimatedShapesCached: TextToggleButtonShapes? = null
+
+    internal var defaultIconToggleButtonShapesCached: IconToggleButtonShapes? = null
+    internal var defaultIconToggleButtonAnimatedShapesCached: IconToggleButtonShapes? = null
+    internal var defaultIconToggleButtonVariantShapesCached: IconToggleButtonShapes? = null
 }
 
 /** Contains the default values used by [Shapes] */
-object ShapeDefaults {
+public object ShapeDefaults {
 
     /** Extra small sized corner shape */
-    val ExtraSmall = ShapeTokens.CornerExtraSmall
+    public val ExtraSmall: RoundedCornerShape = ShapeTokens.CornerExtraSmall
 
     /** Small sized corner shape */
-    val Small = ShapeTokens.CornerSmall
+    public val Small: RoundedCornerShape = ShapeTokens.CornerSmall
 
     /** Medium sized corner shape */
-    val Medium = ShapeTokens.CornerMedium
+    public val Medium: RoundedCornerShape = ShapeTokens.CornerMedium
 
     /** Large sized corner shape */
-    val Large = ShapeTokens.CornerLarge
+    public val Large: RoundedCornerShape = ShapeTokens.CornerLarge
 
     /** Extra large sized corner shape */
-    val ExtraLarge = ShapeTokens.CornerExtraLarge
+    public val ExtraLarge: RoundedCornerShape = ShapeTokens.CornerExtraLarge
 }
 
 /**
  * Helper function for component shape tokens. Here is an example on how to use component color
- * tokens: ``MaterialTheme.shapes.fromToken(FabPrimarySmallTokens.ContainerShape)``
+ * tokens: ``MaterialTheme.shapes.fromToken(IconButtonTokens.ContainerShape)``
  */
 internal fun Shapes.fromToken(value: ShapeKeyTokens): Shape {
     return when (value) {

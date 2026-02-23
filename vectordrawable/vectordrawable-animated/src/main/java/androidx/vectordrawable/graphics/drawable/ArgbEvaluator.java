@@ -21,8 +21,9 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.animation.TypeEvaluator;
 import android.animation.ValueAnimator;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This evaluator can be used to perform type interpolation between integer
@@ -39,8 +40,7 @@ public class ArgbEvaluator implements TypeEvaluator<Object> {
      *
      * @return An instance of <code>ArgbEvalutor</code>.
      */
-    @NonNull
-    public static ArgbEvaluator getInstance() {
+    public static @NonNull ArgbEvaluator getInstance() {
         return sInstance;
     }
 

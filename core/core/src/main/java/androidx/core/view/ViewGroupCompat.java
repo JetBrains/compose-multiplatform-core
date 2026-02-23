@@ -19,12 +19,13 @@ package androidx.core.view;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.R;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link ViewGroup}.
@@ -46,6 +47,10 @@ public final class ViewGroupCompat {
      * such as shadows and glows, to be drawn.
      */
     public static final int LAYOUT_MODE_OPTICAL_BOUNDS = 1;
+
+    private static final WindowInsets CONSUMED = WindowInsetsCompat.CONSUMED.toWindowInsets();
+
+    static boolean sCompatInsetsDispatchInstalled = false;
 
     /*
      * Hide the constructor.
@@ -147,11 +152,7 @@ public final class ViewGroupCompat {
      *                          together.
      */
     public static void setTransitionGroup(@NonNull ViewGroup group, boolean isTransitionGroup) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setTransitionGroup(group, isTransitionGroup);
-        } else {
-            group.setTag(R.id.tag_transition_group, isTransitionGroup);
-        }
+        group.setTransitionGroup(isTransitionGroup);
     }
 
     /**
@@ -160,13 +161,7 @@ public final class ViewGroupCompat {
      * individually during the transition.
      */
     public static boolean isTransitionGroup(@NonNull ViewGroup group) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.isTransitionGroup(group);
-        }
-        Boolean explicit = (Boolean) group.getTag(R.id.tag_transition_group);
-        return (explicit != null && explicit)
-                || group.getBackground() != null
-                || ViewCompat.getTransitionName(group) != null;
+        return group.isTransitionGroup();
     }
 
     /**
@@ -184,31 +179,79 @@ public final class ViewGroupCompat {
     @ScrollAxis
     @SuppressWarnings("RedundantCast") // Intentionally invoking interface method.
     public static int getNestedScrollAxes(@NonNull ViewGroup group) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getNestedScrollAxes(group);
-        }
-        if (group instanceof NestedScrollingParent) {
-            return ((NestedScrollingParent) group).getNestedScrollAxes();
-        }
-        return ViewCompat.SCROLL_AXIS_NONE;
+        return group.getNestedScrollAxes();
     }
 
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
+    /**
+     * Installs a custom {@link View.OnApplyWindowInsetsListener} which dispatches WindowInsets to
+     * the given root and its descendants in a way compatible with Android R+ that consuming or
+     * modifying insets will only affect the descendants.
+     * <P>
+     * Note: When using this method, ensure that ViewCompat.setOnApplyWindowInsetsListener() is used
+     * instead of the platform call.
+     *
+     * @param root The root view that the custom listener is installed on. Note: the listener will
+     *             consume the insets, so make sure the given root is the root view of the window,
+     *             or its siblings might not be able to get insets dispatched.
+     */
+    public static void installCompatInsetsDispatch(@NonNull View root) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            return;
         }
+        final View.OnApplyWindowInsetsListener listener = (view, windowInsets) -> {
+            dispatchApplyWindowInsets(view, windowInsets);
 
-        static void setTransitionGroup(ViewGroup viewGroup, boolean isTransitionGroup) {
-            viewGroup.setTransitionGroup(isTransitionGroup);
-        }
+            // The insets have been dispatched to descendants of the given view. Here returns the
+            // consumed insets to prevent redundant dispatching by the framework.
+            return CONSUMED;
+        };
+        root.setTag(R.id.tag_compat_insets_dispatch, listener);
+        root.setOnApplyWindowInsetsListener(listener);
+        sCompatInsetsDispatchInstalled = true;
+    }
 
-        static boolean isTransitionGroup(ViewGroup viewGroup) {
-            return viewGroup.isTransitionGroup();
-        }
+    @NonNull
+    static WindowInsets dispatchApplyWindowInsets(View view, WindowInsets windowInsets) {
+        final Object wrappedUserListener = view.getTag(R.id.tag_on_apply_window_listener);
+        final Object animCallback = view.getTag(R.id.tag_window_insets_animation_callback);
+        final View.OnApplyWindowInsetsListener listener =
+                (wrappedUserListener instanceof View.OnApplyWindowInsetsListener)
+                        ? (View.OnApplyWindowInsetsListener) wrappedUserListener
+                        : (animCallback instanceof View.OnApplyWindowInsetsListener)
+                                ? (View.OnApplyWindowInsetsListener) animCallback
+                                : null;
 
-        static int getNestedScrollAxes(ViewGroup viewGroup) {
-            return viewGroup.getNestedScrollAxes();
+        // Don't call View#onApplyWindowInsets directly, but via View#dispatchApplyWindowInsets.
+        // Otherwise, the view won't get PFLAG3_APPLYING_INSETS and it will dispatch insets on its
+        // own.
+        final WindowInsets[] outInsets = {CONSUMED};
+        view.setOnApplyWindowInsetsListener((v, w) -> {
+            outInsets[0] = listener != null
+                    ? listener.onApplyWindowInsets(v, w)
+                    : v.onApplyWindowInsets(w);
+
+            // Only apply window insets to this view.
+            return CONSUMED;
+        });
+        // If our OnApplyWindowInsetsListener doesn't get called, it means the view has its own
+        // dispatching logic, the outInsets will remain CONSUMED, and we don't have to dispatch
+        // insets to its child views.
+        view.dispatchApplyWindowInsets(windowInsets);
+
+        // Restore the listener.
+        final Object compatInsetsDispatch = view.getTag(R.id.tag_compat_insets_dispatch);
+        view.setOnApplyWindowInsetsListener(
+                compatInsetsDispatch instanceof View.OnApplyWindowInsetsListener
+                        ? (View.OnApplyWindowInsetsListener) compatInsetsDispatch
+                        : listener);
+
+        if (outInsets[0] != null && !outInsets[0].isConsumed() && view instanceof ViewGroup) {
+            final ViewGroup parent = (ViewGroup) view;
+            final int count = parent.getChildCount();
+            for (int i = 0; i < count; i++) {
+                dispatchApplyWindowInsets(parent.getChildAt(i), outInsets[0]);
+            }
         }
+        return outInsets[0] != null ? outInsets[0] : CONSUMED;
     }
 }

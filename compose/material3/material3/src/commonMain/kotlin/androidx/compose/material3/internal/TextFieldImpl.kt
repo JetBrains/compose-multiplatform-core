@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.structuralEqualityPolicy
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Size
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.error
@@ -65,12 +67,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 
 internal enum class TextFieldType {
     Filled,
-    Outlined
+    Outlined,
 }
 
 @Composable
@@ -122,12 +125,12 @@ internal fun CommonDecorationBox(
                 if (overrideLabelTextStyleColor) this.takeOrElse { labelColor } else this
             },
         labelColor = labelColor,
-        showExpandedLabel = label != null && !labelPosition.alwaysMinimize,
+        showExpandedLabel = label != null && labelPosition.showExpandedLabel,
     ) { labelProgress, labelTextStyleColor, labelContentColor, placeholderAlpha, prefixSuffixAlpha
         ->
         val labelScope = remember {
             object : TextFieldLabelScope {
-                override val progress: Float
+                override val labelMinimizedProgress: Float
                     get() = labelProgress.value
             }
         }
@@ -160,7 +163,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = placeholderColor,
                             textStyle = bodyLarge,
-                            content = placeholder
+                            content = placeholder,
                         )
                     }
                 }
@@ -177,7 +180,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = prefixColor,
                             textStyle = bodyLarge,
-                            content = prefix
+                            content = prefix,
                         )
                     }
                 }
@@ -191,7 +194,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = suffixColor,
                             textStyle = bodyLarge,
-                            content = suffix
+                            content = suffix,
                         )
                     }
                 }
@@ -216,7 +219,7 @@ internal fun CommonDecorationBox(
                     Decoration(
                         contentColor = supportingTextColor,
                         textStyle = bodySmall,
-                        content = it
+                        content = it,
                     )
                 }
             }
@@ -242,9 +245,8 @@ internal fun CommonDecorationBox(
                     supporting = decoratedSupporting,
                     singleLine = singleLine,
                     labelPosition = labelPosition,
-                    // TODO(b/271000818): progress state read should be deferred to layout phase
-                    labelProgress = labelProgress.value,
-                    paddingValues = contentPadding
+                    labelProgress = labelProgress::value,
+                    paddingValues = contentPadding,
                 )
             }
             TextFieldType.Outlined -> {
@@ -256,9 +258,9 @@ internal fun CommonDecorationBox(
                             .outlineCutout(
                                 labelSize = cutoutSize::value,
                                 alignment = labelPosition.minimizedAlignment,
-                                paddingValues = contentPadding
+                                paddingValues = contentPadding,
                             ),
-                        propagateMinConstraints = true
+                        propagateMinConstraints = true,
                     ) {
                         container()
                     }
@@ -276,7 +278,7 @@ internal fun CommonDecorationBox(
                     supporting = decoratedSupporting,
                     singleLine = singleLine,
                     onLabelMeasured = {
-                        if (labelPosition !is TextFieldLabelPosition.Default) {
+                        if (labelPosition is TextFieldLabelPosition.Above) {
                             return@OutlinedTextFieldLayout
                         }
                         val progress = labelProgress.value
@@ -290,15 +292,33 @@ internal fun CommonDecorationBox(
                         }
                     },
                     labelPosition = labelPosition,
-                    // TODO(b/271000818): progress state read should be deferred to layout phase
-                    labelProgress = labelProgress.value,
+                    labelProgress = labelProgress::value,
                     container = borderContainerWithId,
-                    paddingValues = contentPadding
+                    paddingValues = contentPadding,
                 )
             }
         }
     }
 }
+
+private val TextFieldLabelPosition.showExpandedLabel: Boolean
+    get() = this is TextFieldLabelPosition.Attached && !alwaysMinimize
+
+internal val TextFieldLabelPosition.minimizedAlignment: Alignment.Horizontal
+    get() =
+        when (this) {
+            is TextFieldLabelPosition.Above -> alignment
+            is TextFieldLabelPosition.Attached -> minimizedAlignment
+            else -> throw IllegalArgumentException("Unknown position: $this")
+        }
+
+internal val TextFieldLabelPosition.expandedAlignment: Alignment.Horizontal
+    get() =
+        when (this) {
+            is TextFieldLabelPosition.Above -> alignment
+            is TextFieldLabelPosition.Attached -> expandedAlignment
+            else -> throw IllegalArgumentException("Unknown position: $this")
+        }
 
 /** Decorates [content] with [contentColor] and [textStyle]. */
 @Composable
@@ -321,13 +341,25 @@ internal fun Modifier.defaultErrorSemantics(
  * Replacement for Modifier.background which takes color lazily to avoid recomposition while
  * animating.
  */
-internal fun Modifier.textFieldBackground(
-    color: ColorProducer,
-    shape: Shape,
-): Modifier =
+internal fun Modifier.textFieldBackground(color: ColorProducer, shape: Shape): Modifier =
     this.drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         onDrawBehind { drawOutline(outline, color = color()) }
+    }
+
+/**
+ * Replacement for Modifier.heightIn which takes the constraint lazily to avoid recomposition while
+ * animating.
+ */
+internal fun Modifier.textFieldLabelMinHeight(minHeight: () -> Dp): Modifier =
+    this.layout { measurable, constraints ->
+        @Suppress("NAME_SHADOWING") val minHeight = minHeight()
+        val resolvedMinHeight =
+            constraints.constrainHeight(
+                if (minHeight != Dp.Unspecified) minHeight.roundToPx() else 0
+            )
+        val placeable = measurable.measure(constraints.copy(minHeight = resolvedMinHeight))
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 
 @Suppress("BanInlineOptIn")
@@ -346,7 +378,7 @@ private inline fun TextFieldTransitionScope(
             labelContentColor: State<Color>,
             placeholderOpacity: State<Float>,
             prefixSuffixOpacity: State<Float>,
-        ) -> Unit
+        ) -> Unit,
 ) {
     // Transitions from/to InputPhase.Focused are the most critical in the transition below.
     // UnfocusedEmpty <-> UnfocusedNotEmpty are needed when a single state is used to control
@@ -380,7 +412,7 @@ private inline fun TextFieldTransitionScope(
                 } else {
                     fastOpacityTransitionSpec
                 }
-            }
+            },
         ) {
             when (it) {
                 InputPhase.Focused -> 1f
@@ -392,7 +424,7 @@ private inline fun TextFieldTransitionScope(
     val prefixSuffixOpacity =
         transition.animateFloat(
             label = "PrefixSuffixOpacity",
-            transitionSpec = { fastOpacityTransitionSpec }
+            transitionSpec = { fastOpacityTransitionSpec },
         ) {
             when (it) {
                 InputPhase.Focused -> 1f
@@ -405,7 +437,7 @@ private inline fun TextFieldTransitionScope(
     val labelTextStyleColor =
         transition.animateColor(
             transitionSpec = { colorTransitionSpec },
-            label = "LabelTextStyleColor"
+            label = "LabelTextStyleColor",
         ) {
             when (it) {
                 InputPhase.Focused -> focusedLabelTextStyleColor
@@ -418,7 +450,7 @@ private inline fun TextFieldTransitionScope(
         transition.animateColor(
             transitionSpec = { colorTransitionSpec },
             label = "LabelContentColor",
-            targetValueByState = { labelColor }
+            targetValueByState = { labelColor },
         )
 
     content(
@@ -437,7 +469,7 @@ internal fun animateBorderStrokeAsState(
     focused: Boolean,
     colors: TextFieldColors,
     focusedBorderThickness: Dp,
-    unfocusedBorderThickness: Dp
+    unfocusedBorderThickness: Dp,
 ): State<BorderStroke> {
     // TODO Load the motionScheme tokens from the component tokens file
     val targetColor = colors.indicatorColor(enabled, isError, focused)
@@ -470,7 +502,7 @@ private enum class InputPhase {
     UnfocusedEmpty,
 
     // Text field is not focused but input text is not empty
-    UnfocusedNotEmpty
+    UnfocusedNotEmpty,
 }
 
 internal const val TextFieldId = "TextField"

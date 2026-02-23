@@ -27,14 +27,13 @@ API level, (2) the latest stable API level, (3) API levels with major changes,
 pre-release API level.
 
 In practice, this is limited by device and emulator availability and
-reliability. As of November 2023, we run tests on the following API levels:
+reliability. As of January 2025, we run tests on the following API levels:
 
 -   API level 21: the lowest API level supported by Firebase Test Lab (FTL)
 -   API level 26: the lowest supported ARM-based emulator FTL runner, which has
     much greater performance and stability
--   API level 28: provides coverage between 26 and 30
--   API levels 30, 31, 33: the latest supported API levels, which represent the
-    majority of devices in the field
+-   API levels 30, 33, 34, 35: the latest supported API levels, which represent
+    the majority of devices in the field
 
 ## Adding tests {#adding}
 
@@ -166,7 +165,13 @@ Step 2: Click on the “Update scuba goldens” below:
 ![alt_text](onboarding_images/image8.png "Update scuba button")
 
 Step 3: Select the tests for which you want to update the golden images. Confirm
-the images look correct and click on “Approve Changes”
+the images look correct and click on “Approve Changes”.
+
+Note: If Scuba isn't loading correctly, you likely need to sign into your Google
+Account. A sign-in prompt should appear in Chrome. If it doesn't, try opening
+Scuba in an incognito window or clear your browser's cookies and then try
+loading Scuba again.
+
 ![alt_text](onboarding_images/image9.png "Button to approve scuba changes")
 
 Step 4: In the Approve changes dialog box, enter the following details and click
@@ -184,8 +189,8 @@ new goldens. And re-run presubmit. Your tests should now pass!
 
 #### Running manually / debugging
 
-Screenshot tests can be run locally using pixel 2 api33 emulator. Start the
-emulator using [these](#emulator) steps.
+Screenshot tests can be run locally using medium phone API 35 emulator. Start
+the emulator using [these](#emulator) steps.
 
 Wait until the emulator is running and run the tests as you would on a regular
 device.
@@ -348,7 +353,9 @@ prebuilts/fullsdk-darwin ln -s ~/Library/Android/sdk/emulator emulator ln -s
 ~/Library/Android/sdk/system-images system-images` (substituting `fullsdk-linux`
 and your local SDK path as appropriate)
 
-## Debugging with platform SDK sources {#sources}
+## Debugging tests
+
+### Using custom platform SDK sources {#sources}
 
 The platform SDK sources that are checked into the development branch may not
 match up with the build of Android present on the emulator or your physical
@@ -371,6 +378,39 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 **not** the same as the `Project Structure` dialog that will allow you to
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
+
+### Flaky Tests
+
+If you are seeing flakiness on emulator runners (not Cuttlefish) then it is
+possible that tests are not cleaning up after themselves, causing
+misconfiguration between tests in the same module.
+
+Cuttlefish does not run tests with module isolation; it runs multiple test
+modules on the same instance, so pollution between modules is possible, making
+it harder to find the cause of the flakiness
+
+### Accessing FTL outputs
+
+When we run tests on Firebase Test Lab devices, we transfer the results and
+logcat output back to Android's test result infrastructure; however, FTL also
+captures screen recordings of the entire test run.
+
+To access these videos from the Android Test Investigate page for a failed test
+run:
+
+-   For the failing test, go to `Artifacts tab` in the Android Test Investigate
+    page
+-   Disable `Hide empty folders` (if enabled) by clicking on it
+-   Under `Run artifacts`, click on "i" icon next to the test module to open the
+    Information tab
+-   In the Information tab to the right, click on the link next to the `logs`
+    property
+
+The full logcat output and screen recording are available from the `Devices` tab
+by clicking on the test device under `Device details` and using the `Logs` and
+`Video` tabs, respectively.
+
+Per-test logcat output and videos are available from the `Test cases` tab.
 
 ## Running unit and integration tests {#running}
 
@@ -407,10 +447,13 @@ from `framework/support`:
 
 # Run instrumentation tests in Firebase Test Lab (remote)
 ./gradlew <project-name>:ftlnexus4api21
-./gradlew <project-name>:ftlpixel2api26
-./gradlew <project-name>:ftlpixel2api28
-./gradlew <project-name>:ftlpixel2api30
-./gradlew <project-name>:ftlpixel2api33
+./gradlew <project-name>:ftlmediumphoneapi26
+./gradlew <project-name>:ftlmediumphoneapi30
+./gradlew <project-name>:ftlmediumphoneapi33
+./gradlew <project-name>:ftlmediumphoneapi34
+./gradlew <project-name>:ftlmediumphoneapi35
+
+./gradlew <project-name>:ftlmediumphoneapi28 (For compose tests only)
 
 # Run local unit tests
 ./gradlew <project-name>:test
@@ -426,7 +469,7 @@ To run a specific instrumentation test in a given project, run
     -Pandroid.testInstrumentationRunnerArguments.class=<fully-qualified-class>[\#testName]
 
 # Run instrumentation tests on in Firebase Test Lab (remote)
-./gradlew <project-name>:ftlpixel2api30 --className=<fully-qualified-class>
+./gradlew <project-name>:ftlmediumphoneapi30 --className=<fully-qualified-class>
 ```
 
 substituting the Gradle project name (ex. `viewpager`) and fully-qualified class

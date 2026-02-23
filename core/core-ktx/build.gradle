@@ -1,16 +1,14 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -19,29 +17,39 @@ dependencies {
         implementation(project(":core:core"))
     }
 
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":core:core"))
 
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":internal-testutils-truth"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.testCore)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.testRules)
+    testImplementation(libs.truth)
+    testImplementation(project(":internal-testutils-truth"))
 }
 
 androidx {
     name = "Core Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.CORE
     inceptionYear = "2018"
     description = "Kotlin extensions for 'core' artifact"
     legacyDisableKotlinStrictApiMode = true
+
+    enableRobolectric()
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.core.ktx"
+    compileSdk { version = release(36) }
+    namespace = "androidx.core.ktx"
 }

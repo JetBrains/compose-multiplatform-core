@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
@@ -35,8 +34,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.LeakDetector;
@@ -55,6 +52,8 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -90,14 +89,8 @@ public class BrowseSupportFragmentTest {
         PollingCheck.waitFor(WAIT_TRANSIITON_TIMEOUT, new PollingCheck.PollingCheckCondition() {
             @Override
             public boolean canProceed() {
-                if (Build.VERSION.SDK_INT >= 21) {
-                    return mActivity.getBrowseTestSupportFragment() != null
-                            && mActivity.getBrowseTestSupportFragment().mEntranceTransitionEnded;
-                } else {
-                    // when entrance transition not supported, wait main fragment loaded.
-                    return mActivity.getBrowseTestSupportFragment() != null
-                            && mActivity.getBrowseTestSupportFragment().getMainFragment() != null;
-                }
+                return mActivity.getBrowseTestSupportFragment() != null
+                        && mActivity.getBrowseTestSupportFragment().mEntranceTransitionEnded;
             }
         });
     }
@@ -129,6 +122,7 @@ public class BrowseSupportFragmentTest {
         });
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/460508283
     @Test
     public void testTouchMode() throws Throwable {
         Intent intent = new Intent();
@@ -206,10 +200,9 @@ public class BrowseSupportFragmentTest {
         BrowseSupportFragment.MainFragmentAdapter<MyFragment> mMainFragmentAdapter =
                 new BrowseSupportFragment.MainFragmentAdapter<>(this);
 
-        @Nullable
         @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                @Nullable Bundle savedInstanceState) {
+        public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+                @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
             return new FrameLayout(container.getContext());
         }
 
@@ -373,7 +366,6 @@ public class BrowseSupportFragmentTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP) // API 17 retains local Variable
     @Test
     public void viewLeakTest() throws Throwable {
         Intent intent = new Intent();

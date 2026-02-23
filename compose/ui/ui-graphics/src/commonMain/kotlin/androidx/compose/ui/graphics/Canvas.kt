@@ -27,7 +27,7 @@ fun Canvas(image: ImageBitmap): Canvas = ActualCanvas(image)
 
 internal expect fun ActualCanvas(image: ImageBitmap): Canvas
 
-expect class NativeCanvas
+@Deprecated("Use direct reference to platform type instead of typealias") expect class NativeCanvas
 
 /**
  * Saves a copy of the current transform and clip on the save stack and executes the provided lambda
@@ -38,7 +38,7 @@ expect class NativeCanvas
  *
  * [Canvas.saveLayer], which does the same thing but additionally also groups the commands
  */
-/* expect */ inline fun Canvas.withSave(block: () -> Unit) {
+inline fun Canvas.withSave(block: () -> Unit) {
     try {
         save()
         block()
@@ -145,9 +145,6 @@ fun Canvas.scale(sx: Float, sy: Float = sx, pivotX: Float, pivotY: Float) {
     scale(sx, sy)
     translate(-pivotX, -pivotY)
 }
-
-/** Return an instance of the native primitive that implements the Canvas interface */
-expect val Canvas.nativeCanvas: NativeCanvas
 
 @JvmDefaultWithCompatibility
 interface Canvas {
@@ -296,7 +293,7 @@ interface Canvas {
         top: Float,
         right: Float,
         bottom: Float,
-        clipOp: ClipOp = ClipOp.Intersect
+        clipOp: ClipOp = ClipOp.Intersect,
     )
 
     /** Reduces the clip region to the intersection of the current clip and the given [Path]. */
@@ -320,7 +317,7 @@ interface Canvas {
             top = rect.top,
             right = rect.right,
             bottom = rect.bottom,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -346,7 +343,7 @@ interface Canvas {
         bottom: Float,
         radiusX: Float,
         radiusY: Float,
-        paint: Paint
+        paint: Paint,
     )
 
     /**
@@ -359,7 +356,7 @@ interface Canvas {
             top = rect.top,
             right = rect.right,
             bottom = rect.bottom,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -396,7 +393,7 @@ interface Canvas {
         startAngle: Float,
         sweepAngle: Float,
         useCenter: Boolean,
-        paint: Paint
+        paint: Paint,
     ) =
         drawArc(
             left = rect.left,
@@ -406,7 +403,7 @@ interface Canvas {
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = useCenter,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -437,7 +434,7 @@ interface Canvas {
         startAngle: Float,
         sweepAngle: Float,
         useCenter: Boolean,
-        paint: Paint
+        paint: Paint,
     )
 
     /**
@@ -455,7 +452,7 @@ interface Canvas {
         startAngleRad: Float,
         sweepAngleRad: Float,
         useCenter: Boolean,
-        paint: Paint
+        paint: Paint,
     ) {
         drawArc(rect, degrees(startAngleRad), degrees(sweepAngleRad), useCenter, paint)
     }
@@ -494,7 +491,7 @@ interface Canvas {
         srcSize: IntSize = IntSize(image.width, image.height),
         dstOffset: IntOffset = IntOffset.Zero,
         dstSize: IntSize = srcSize,
-        paint: Paint
+        paint: Paint,
     )
 
     /**

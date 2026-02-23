@@ -21,14 +21,15 @@ import android.app.ActivityOptions;
 import android.os.IBinder;
 import android.view.WindowMetrics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.WindowExtensions;
 import androidx.window.extensions.core.util.function.Consumer;
 import androidx.window.extensions.core.util.function.Function;
 import androidx.window.extensions.util.SetCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -62,7 +63,7 @@ public interface ActivityEmbeddingComponent {
     @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     @SuppressWarnings("ExecutorRegistration") // Jetpack will post it on the app-provided executor.
-    void setSplitInfoCallback(@NonNull java.util.function.Consumer<List<SplitInfo>> consumer);
+    void setSplitInfoCallback(java.util.function.@NonNull Consumer<List<SplitInfo>> consumer);
 
     /**
      * Sets the callback that notifies WM Jetpack about changes in split states from the Extensions
@@ -184,8 +185,7 @@ public interface ActivityEmbeddingComponent {
      */
     @Deprecated
     @RequiresVendorApiLevel(level = 3, deprecatedSince = 5)
-    @NonNull
-    default ActivityOptions setLaunchingActivityStack(@NonNull ActivityOptions options,
+    default @NonNull ActivityOptions setLaunchingActivityStack(@NonNull ActivityOptions options,
             @NonNull IBinder token) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
@@ -255,7 +255,7 @@ public interface ActivityEmbeddingComponent {
      */
     @SuppressWarnings("deprecation") // Use finishActivityStacks(Set).
     @RequiresVendorApiLevel(level = 5)
-    default void updateSplitAttributes(@NonNull SplitInfo.Token splitInfoToken,
+    default void updateSplitAttributes(SplitInfo.@NonNull Token splitInfoToken,
             @NonNull SplitAttributes splitAttributes) {
         updateSplitAttributes(splitInfoToken.getRawToken(), splitAttributes);
     }
@@ -267,9 +267,8 @@ public interface ActivityEmbeddingComponent {
      * @param activityStackToken the token of an {@link ActivityStack}.
      */
     @RequiresVendorApiLevel(level = OVERLAY_FEATURE_API_LEVEL)
-    @Nullable
-    default ParentContainerInfo getParentContainerInfo(
-            @NonNull ActivityStack.Token activityStackToken) {
+    default @Nullable ParentContainerInfo getParentContainerInfo(
+            ActivityStack.@NonNull Token activityStackToken) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
     }
@@ -315,7 +314,7 @@ public interface ActivityEmbeddingComponent {
      * @param activityStackAttributes The attributes to be applied
      */
     @RequiresVendorApiLevel(level = OVERLAY_FEATURE_API_LEVEL)
-    default void updateActivityStackAttributes(@NonNull ActivityStack.Token token,
+    default void updateActivityStackAttributes(ActivityStack.@NonNull Token token,
             @NonNull ActivityStackAttributes activityStackAttributes) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
@@ -341,8 +340,7 @@ public interface ActivityEmbeddingComponent {
      * if there's no such an {@link ActivityStack}.
      */
     @RequiresVendorApiLevel(level = OVERLAY_FEATURE_API_LEVEL)
-    @Nullable
-    default ActivityStack.Token getActivityStackToken(@NonNull String tag) {
+    default ActivityStack.@Nullable Token getActivityStackToken(@NonNull String tag) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
     }
@@ -443,8 +441,29 @@ public interface ActivityEmbeddingComponent {
      * @param activity the {@link Activity} to get {@link EmbeddedActivityWindowInfo} for.
      */
     @RequiresVendorApiLevel(level = 6)
-    @Nullable
-    default EmbeddedActivityWindowInfo getEmbeddedActivityWindowInfo(@NonNull Activity activity) {
+    default @Nullable EmbeddedActivityWindowInfo getEmbeddedActivityWindowInfo(
+            @NonNull Activity activity) {
+        throw new UnsupportedOperationException("This method must not be called unless there is a"
+                + " corresponding override implementation on the device.");
+    }
+
+    /**
+     * Sets whether to auto save the embedding state to the system, which can be used to restore the
+     * app embedding state once the app process is restarted (if applicable).
+     *
+     * The embedding state is not saved by default, in which case the embedding state and the
+     * embedded activities are removed once the app process is killed.
+     *
+     * **Note** that the applications should set the {@link EmbeddingRule}s using
+     * {@link #setEmbeddingRules} when the application is initializing, such as configured in
+     * [android.app.Application.onCreate], in order to allow the library to restore the state
+     * properly. Otherwise, the state may not be restored and the activities may not be started
+     * and layout as expected.
+     *
+     * @param saveEmbeddingState whether to save the embedding state.
+     */
+    @RequiresVendorApiLevel(level = 8)
+    default void setAutoSaveEmbeddingState(boolean saveEmbeddingState) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
     }

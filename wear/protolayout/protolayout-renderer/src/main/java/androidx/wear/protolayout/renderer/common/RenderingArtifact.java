@@ -16,48 +16,58 @@
 
 package androidx.wear.protolayout.renderer.common;
 
-import androidx.annotation.NonNull;
+import android.view.View;
+
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.renderer.common.ProviderStatsLogger.InflaterStatsLogger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Artifacts resulted from the layout rendering. */
 @RestrictTo(Scope.LIBRARY_GROUP)
 public interface RenderingArtifact {
 
     /** Creates a {@link RenderingArtifact} instance. */
-    @NonNull
-    static RenderingArtifact create(@NonNull InflaterStatsLogger inflaterStatsLogger) {
-        return new SuccessfulRenderingArtifact(inflaterStatsLogger);
+    static @NonNull RenderingArtifact create(
+            @NonNull InflaterStatsLogger inflaterStatsLogger, @Nullable View inflatedParent) {
+        return new SuccessfulRenderingArtifact(inflaterStatsLogger, inflatedParent);
     }
 
     /** Creates a {@link RenderingArtifact} instance for a skipped inflation. */
-    @NonNull
-    static RenderingArtifact skipped() {
+    static @NonNull RenderingArtifact skipped() {
         return new SkippedRenderingArtifact();
     }
 
     /** Creates a {@link RenderingArtifact} instance for a failed inflation. */
-    @NonNull
-    static RenderingArtifact failed() {
+    static @NonNull RenderingArtifact failed() {
         return new FailedRenderingArtifact();
     }
 
     /** Artifacts resulted from a successful layout rendering. */
     class SuccessfulRenderingArtifact implements RenderingArtifact {
-        @NonNull private final InflaterStatsLogger mInflaterStatsLogger;
+        private final @NonNull InflaterStatsLogger mInflaterStatsLogger;
 
-        private SuccessfulRenderingArtifact(@NonNull InflaterStatsLogger inflaterStatsLogger) {
+        private final @Nullable View mInflatedParent;
+
+        private SuccessfulRenderingArtifact(
+                @NonNull InflaterStatsLogger inflaterStatsLogger, @Nullable View inflatedParent) {
             mInflaterStatsLogger = inflaterStatsLogger;
+            mInflatedParent = inflatedParent;
         }
 
         /**
          * Returns the {@link ProviderStatsLogger.InflaterStatsLogger} used log inflation stats.
          * This will return {@code null} if the inflation was skipped or failed.
          */
-        @NonNull
-        public InflaterStatsLogger getInflaterStatsLogger() {
+        public @NonNull InflaterStatsLogger getInflaterStatsLogger() {
             return mInflaterStatsLogger;
+        }
+
+        /** Returns the inflated parent view. */
+        public @Nullable View getInflatedParent() {
+            return mInflatedParent;
         }
     }
 

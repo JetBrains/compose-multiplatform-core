@@ -28,8 +28,9 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,8 +114,7 @@ import java.util.List;
     }
 
     @Override
-    @Nullable
-    public MenuItem getItem(int index) {
+    public @Nullable MenuItem getItem(int index) {
         if ((index < 0) || (index >= mItems.size())) {
             return null;
         }

@@ -20,16 +20,17 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core:1.1.0")
     implementation(project(":core:core-animation"))
     implementation(project(":core:core-animation-testing"))
 
-    implementation(libs.testExtJunit, excludes.espresso)
-    implementation(libs.testCore, excludes.espresso)
-    implementation(libs.testRules, excludes.espresso)
+    implementation(libs.testExtJunit)
+    implementation(libs.testCore)
+    implementation(libs.testRules)
 }
 
 android {
-    namespace "androidx.core.animation.testapp"
+    namespace = "androidx.core.animation.testapp"
 }

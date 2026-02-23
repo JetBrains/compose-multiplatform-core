@@ -16,11 +16,12 @@
 
 package androidx.camera.core.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.impl.ReadableConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Configuration containing options used to identify the target class and object being configured.
@@ -37,15 +38,14 @@ public interface TargetConfig<T> extends ReadableConfig {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    Option<String> OPTION_TARGET_NAME = Option.create("camerax.core.target.name", String.class);
+    @NonNull Option<String> OPTION_TARGET_NAME =
+            Option.create("camerax.core.target.name", String.class);
     /**
      * Option: camerax.core.target.class
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    Option<Class<?>> OPTION_TARGET_CLASS =
+    @NonNull Option<Class<?>> OPTION_TARGET_CLASS =
             Option.create("camerax.core.target.class", Class.class);
 
     // *********************************************************************************************
@@ -58,8 +58,7 @@ public interface TargetConfig<T> extends ReadableConfig {
      * configuration.
      */
     @SuppressWarnings("unchecked")
-    @Nullable
-    default Class<T> getTargetClass(@Nullable Class<T> valueIfMissing) {
+    default @Nullable Class<T> getTargetClass(@Nullable Class<T> valueIfMissing) {
         return (Class<T>) retrieveOption(OPTION_TARGET_CLASS, valueIfMissing);
     }
 
@@ -70,8 +69,7 @@ public interface TargetConfig<T> extends ReadableConfig {
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
     @SuppressWarnings("unchecked")
-    @NonNull
-    default Class<T> getTargetClass() {
+    default @NonNull Class<T> getTargetClass() {
         return (Class<T>) retrieveOption(OPTION_TARGET_CLASS);
     }
 
@@ -85,8 +83,7 @@ public interface TargetConfig<T> extends ReadableConfig {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    default String getTargetName(@Nullable String valueIfMissing) {
+    default @Nullable String getTargetName(@Nullable String valueIfMissing) {
         return retrieveOption(OPTION_TARGET_NAME, valueIfMissing);
     }
 
@@ -99,8 +96,7 @@ public interface TargetConfig<T> extends ReadableConfig {
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    default String getTargetName() {
+    default @NonNull String getTargetName() {
         return retrieveOption(OPTION_TARGET_NAME);
     }
 
@@ -125,8 +121,7 @@ public interface TargetConfig<T> extends ReadableConfig {
          *                    configured.
          * @return the current Builder.
          */
-        @NonNull
-        B setTargetClass(@NonNull Class<T> targetClass);
+        @NonNull B setTargetClass(@NonNull Class<T> targetClass);
 
         /**
          * Sets the name of the target object being configured.
@@ -138,7 +133,6 @@ public interface TargetConfig<T> extends ReadableConfig {
          *                   configured.
          * @return the current Builder.
          */
-        @NonNull
-        B setTargetName(@NonNull String targetName);
+        @NonNull B setTargetName(@NonNull String targetName);
     }
 }

@@ -15,24 +15,21 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testExtJunit)
@@ -42,12 +39,9 @@ dependencies {
 
 androidx {
     name = "Inspection"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "Experimental AndroidX Inspection Project"
-    runApiTasks =  new RunApiTasks.Yes(
-            "Interfaces provided in this artifact should be binary compatible to guarantee " +
-                    "that old inspectors are compatible with newer Android Studio versions")
     legacyDisableKotlinStrictApiMode = true
     doNotDocumentReason = "Not shipped externally"
 }
@@ -55,14 +49,14 @@ androidx {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk { version = release(26) }
     }
 
     externalNativeBuild {
         cmake {
             path "src/main/native/CMakeLists.txt"
-            version "3.22.1"
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.inspection"
+    namespace = "androidx.inspection"
 }

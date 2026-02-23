@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
+import androidx.build.SoftwareType
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 dependencies {
 
-    androidTestImplementation project(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:foundation:foundation-layout")
-    androidTestImplementation project(":compose:material:material")
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:foundation:foundation-layout"))
+    androidTestImplementation(project(":compose:material:material"))
     androidTestImplementation("androidx.compose.material:material-icons-core:1.6.7")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinReflect)
-    androidTestImplementation(libs.kotlinTestCommon)
+    androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.foundation.layout.benchmark"
+    compileSdk { version = release(35) }
+    namespace = "androidx.compose.foundation.layout.benchmark"
+}
+
+androidx {
+    type = SoftwareType.BENCHMARK
 }

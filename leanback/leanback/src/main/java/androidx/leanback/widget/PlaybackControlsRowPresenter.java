@@ -27,12 +27,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 import androidx.leanback.widget.ControlBarPresenter.OnControlClickedListener;
 import androidx.leanback.widget.ControlBarPresenter.OnControlSelectedListener;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A PlaybackControlsRowPresenter renders a {@link PlaybackControlsRow} to display a
@@ -237,8 +238,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     /**
      * Returns the listener for {@link Action} click events.
      */
-    @Nullable
-    public OnActionClickedListener getOnActionClickedListener() {
+    public @Nullable OnActionClickedListener getOnActionClickedListener() {
         return mOnActionClickedListener;
     }
 
@@ -315,7 +315,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    public void onReappear(@NonNull RowPresenter.ViewHolder rowViewHolder) {
+    public void onReappear(RowPresenter.@NonNull ViewHolder rowViewHolder) {
         showPrimaryActions((ViewHolder) rowViewHolder);
     }
 
@@ -336,9 +336,8 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
         return context.getResources().getColor(R.color.lb_playback_progress_color_no_theme);
     }
 
-    @NonNull
     @Override
-    protected RowPresenter.ViewHolder createRowViewHolder(@NonNull ViewGroup parent) {
+    protected RowPresenter.@NonNull ViewHolder createRowViewHolder(@NonNull ViewGroup parent) {
         View v = LayoutInflater.from(parent.getContext())
             .inflate(R.layout.lb_playback_controls_row, parent, false);
         ViewHolder vh = new ViewHolder(v, mDescriptionPresenter);
@@ -380,7 +379,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
 
     @Override
     protected void onBindRowViewHolder(
-            @NonNull RowPresenter.ViewHolder holder,
+            RowPresenter.@NonNull ViewHolder holder,
             @NonNull Object item
     ) {
         super.onBindRowViewHolder(holder, item);
@@ -458,7 +457,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder holder) {
+    protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder holder) {
         ViewHolder vh = (ViewHolder) holder;
         PlaybackControlsRow row = (PlaybackControlsRow) vh.getRow();
 
@@ -473,7 +472,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewSelected(@NonNull RowPresenter.ViewHolder vh, boolean selected) {
+    protected void onRowViewSelected(RowPresenter.@NonNull ViewHolder vh, boolean selected) {
         super.onRowViewSelected(vh, selected);
         if (selected) {
             ((ViewHolder) vh).dispatchItemSelection();
@@ -481,7 +480,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewAttachedToWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewAttachedToWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewAttachedToWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewAttachedToWindow(
@@ -490,7 +489,7 @@ public class PlaybackControlsRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewDetachedFromWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewDetachedFromWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewDetachedFromWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewDetachedFromWindow(

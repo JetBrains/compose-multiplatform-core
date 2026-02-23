@@ -38,7 +38,7 @@ class SwitchUsageXmlDetectorTest {
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 </LinearLayout>
-        """
+        """,
                 )
                 .indented()
                 .within("res")
@@ -66,7 +66,7 @@ class SwitchUsageXmlDetectorTest {
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 </LinearLayout>
-        """
+        """,
                 )
                 .indented()
                 .within("res")
@@ -79,10 +79,10 @@ class SwitchUsageXmlDetectorTest {
             .run()
             .expect(
                 """
-res/layout/switch.xml:6: Warning: Use SwitchCompat from AppCompat or MaterialSwitch from Material library [UseSwitchCompatOrMaterialXml]
-    <Switch
-    ^
-0 errors, 1 warnings
+                res/layout/switch.xml:6: Warning: Use SwitchCompat from AppCompat or MaterialSwitch from Material library [UseSwitchCompatOrMaterialXml]
+                    <Switch
+                    ^
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )

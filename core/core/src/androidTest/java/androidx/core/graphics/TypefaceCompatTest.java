@@ -34,7 +34,6 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.content.res.FontResourcesParserCompat;
@@ -51,6 +50,7 @@ import androidx.testutils.WeightStyleFont;
 
 import com.google.common.truth.Truth;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,6 +58,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -146,7 +147,7 @@ public class TypefaceCompatTest {
         final FontRequest parsedRequest = entry.getRequest();
         final FontRequest request = new FontRequest(parsedRequest.getProviderAuthority(),
                 parsedRequest.getProviderPackage(), parsedRequest.getQuery(), SIGNATURE);
-        return new ProviderResourceEntry(request, null /* fallbackRequest */,
+        return new ProviderResourceEntry(Collections.singletonList(request),
                 entry.getFetchStrategy(), entry.getTimeout(), entry.getSystemFontFamilyName());
     }
 
@@ -501,7 +502,8 @@ public class TypefaceCompatTest {
         assertNotNull(family);
 
         final AppCompatTextView appCompatTextView = new AppCompatTextView(
-                new ContextThemeWrapper(mContext, R.style.Theme_AppCompat_Light));
+                new ContextThemeWrapper(mContext,
+                        androidx.appcompat.R.style.Theme_AppCompat_Light));
         assertNotNull(appCompatTextView);
 
         appCompatTextView.setTypeface(family, Typeface.NORMAL);

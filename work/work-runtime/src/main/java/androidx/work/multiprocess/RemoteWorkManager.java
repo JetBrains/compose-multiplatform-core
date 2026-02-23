@@ -18,7 +18,6 @@ package androidx.work.multiprocess;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -36,6 +35,8 @@ import androidx.work.impl.WorkManagerImpl;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +46,15 @@ import java.util.UUID;
  * multiple processes.
  */
 public abstract class RemoteWorkManager {
+
+    /** The default time (in milliseconds) before the remote session unbinds **/
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final long DEFAULT_SESSION_TIMEOUT_MILLIS = 10 * 60 * 1000L; // 10 minutes
+
+    /** The maximum time (in milliseconds) before the remote session unbinds **/
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final long MAX_SESSION_TIMEOUT_MILLIS = 20 * 60 * 1000L; // 20 minutes
+
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -59,8 +69,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> enqueue(@NonNull WorkRequest request);
+    public abstract @NonNull ListenableFuture<Void> enqueue(@NonNull WorkRequest request);
 
     /**
      * Enqueues one or more items for background processing.
@@ -69,8 +78,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> enqueue(@NonNull List<WorkRequest> requests);
+    public abstract @NonNull ListenableFuture<Void> enqueue(@NonNull List<WorkRequest> requests);
 
     /**
      * This method allows you to enqueue {@code work} requests to a uniquely-named
@@ -91,8 +99,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
-    public final ListenableFuture<Void> enqueueUniqueWork(
+    public final @NonNull ListenableFuture<Void> enqueueUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull OneTimeWorkRequest work) {
@@ -121,8 +128,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> enqueueUniqueWork(
+    public abstract @NonNull ListenableFuture<Void> enqueueUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull List<OneTimeWorkRequest> work);
@@ -145,8 +151,7 @@ public abstract class RemoteWorkManager {
      * @return An {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> enqueueUniquePeriodicWork(
+    public abstract @NonNull ListenableFuture<Void> enqueueUniquePeriodicWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingPeriodicWorkPolicy existingPeriodicWorkPolicy,
             @NonNull PeriodicWorkRequest periodicWork);
@@ -162,8 +167,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link RemoteWorkContinuation} that allows for further chaining of dependent
      * {@link OneTimeWorkRequest}
      */
-    @NonNull
-    public final RemoteWorkContinuation beginWith(@NonNull OneTimeWorkRequest work) {
+    public final @NonNull RemoteWorkContinuation beginWith(@NonNull OneTimeWorkRequest work) {
         return beginWith(Collections.singletonList(work));
     }
 
@@ -178,8 +182,8 @@ public abstract class RemoteWorkManager {
      * @return A {@link RemoteWorkContinuation} that allows for further chaining of dependent
      * {@link OneTimeWorkRequest}
      */
-    @NonNull
-    public abstract RemoteWorkContinuation beginWith(@NonNull List<OneTimeWorkRequest> work);
+    public abstract @NonNull RemoteWorkContinuation beginWith(
+            @NonNull List<OneTimeWorkRequest> work);
 
     /**
      * This method allows you to begin unique chains of work for situations where you only want one
@@ -208,8 +212,7 @@ public abstract class RemoteWorkManager {
      *             leaf nodes labelled with {@code uniqueWorkName}.
      * @return A {@link RemoteWorkContinuation} that allows further chaining
      */
-    @NonNull
-    public final RemoteWorkContinuation beginUniqueWork(
+    public final @NonNull RemoteWorkContinuation beginUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull OneTimeWorkRequest work) {
@@ -243,8 +246,7 @@ public abstract class RemoteWorkManager {
      *             as a child of all leaf nodes labelled with {@code uniqueWorkName}.
      * @return A {@link RemoteWorkContinuation} that allows further chaining
      */
-    @NonNull
-    public abstract RemoteWorkContinuation beginUniqueWork(
+    public abstract @NonNull RemoteWorkContinuation beginUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull List<OneTimeWorkRequest> work);
@@ -255,9 +257,8 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the enqueue has
      * completed
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract ListenableFuture<Void> enqueue(@NonNull WorkContinuation continuation);
+    public abstract @NonNull ListenableFuture<Void> enqueue(@NonNull WorkContinuation continuation);
 
     /**
      * Cancels work with the given id if it isn't finished.  Note that cancellation is a best-effort
@@ -268,8 +269,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the cancelWorkById has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> cancelWorkById(@NonNull UUID id);
+    public abstract @NonNull ListenableFuture<Void> cancelWorkById(@NonNull UUID id);
 
     /**
      * Cancels all unfinished work with the given tag.  Note that cancellation is a best-effort
@@ -280,8 +280,7 @@ public abstract class RemoteWorkManager {
      * @return An {@link ListenableFuture} that can be used to determine when the
      * cancelAllWorkByTag has completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> cancelAllWorkByTag(@NonNull String tag);
+    public abstract @NonNull ListenableFuture<Void> cancelAllWorkByTag(@NonNull String tag);
 
     /**
      * Cancels all unfinished work in the work chain with the given name.  Note that cancellation is
@@ -292,8 +291,8 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the cancelUniqueWork
      * has completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> cancelUniqueWork(@NonNull String uniqueWorkName);
+    public abstract @NonNull ListenableFuture<Void> cancelUniqueWork(
+            @NonNull String uniqueWorkName);
 
     /**
      * Cancels all unfinished work.  <b>Use this method with extreme caution!</b>  By invoking it,
@@ -306,8 +305,7 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the cancelAllWork has
      * completed
      */
-    @NonNull
-    public abstract ListenableFuture<Void> cancelAllWork();
+    public abstract @NonNull ListenableFuture<Void> cancelAllWork();
 
     /**
      * Gets the {@link ListenableFuture} of the {@link List} of {@link WorkInfo} for all work
@@ -317,8 +315,8 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} of the {@link List} of {@link WorkInfo} for work
      * referenced by this {@link WorkQuery}.
      */
-    @NonNull
-    public abstract ListenableFuture<List<WorkInfo>> getWorkInfos(@NonNull WorkQuery workQuery);
+    public abstract @NonNull ListenableFuture<List<WorkInfo>> getWorkInfos(
+            @NonNull WorkQuery workQuery);
 
     /**
      * Updates progress information for a {@link ListenableWorker}.
@@ -328,9 +326,9 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the setProgress
      * has completed.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract ListenableFuture<Void> setProgress(@NonNull UUID id, @NonNull Data data);
+    public abstract @NonNull ListenableFuture<Void> setProgress(@NonNull UUID id,
+            @NonNull Data data);
 
     /**
      * Delegates the call to {@link ListenableWorker#setForegroundAsync(ForegroundInfo)} to the
@@ -341,9 +339,8 @@ public abstract class RemoteWorkManager {
      * @return A {@link ListenableFuture} that can be used to determine when the setForeground
      * has completed.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract ListenableFuture<Void> setForegroundAsync(
+    public abstract @NonNull ListenableFuture<Void> setForegroundAsync(
             @NonNull String id,
             @NonNull ForegroundInfo foregroundInfo);
 
@@ -354,8 +351,7 @@ public abstract class RemoteWorkManager {
      * @param context The application context.
      * @return The instance of {@link RemoteWorkManager}.
      */
-    @NonNull
-    public static RemoteWorkManager getInstance(@NonNull Context context) {
+    public static @NonNull RemoteWorkManager getInstance(@NonNull Context context) {
         WorkManagerImpl workManager = WorkManagerImpl.getInstance(context);
         RemoteWorkManager remoteWorkManager = workManager.getRemoteWorkManager();
         if (remoteWorkManager == null) {

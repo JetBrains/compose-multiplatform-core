@@ -23,9 +23,10 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Holder of details of a complication provider, for use by watch faces (for example, to show the
@@ -38,8 +39,7 @@ import androidx.annotation.RestrictTo;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class ComplicationProviderInfo implements Parcelable {
 
-    @NonNull
-    public static final Creator<ComplicationProviderInfo> CREATOR =
+    public static final @NonNull Creator<ComplicationProviderInfo> CREATOR =
             new Creator<ComplicationProviderInfo>() {
                 @Override
                 public ComplicationProviderInfo createFromParcel(Parcel source) {
@@ -58,12 +58,12 @@ public final class ComplicationProviderInfo implements Parcelable {
     private static final String KEY_PROVIDER_ICON = "provider_icon";
     private static final String KEY_PROVIDER_TYPE = "complication_type";
 
-    @Nullable private String mAppName;
-    @Nullable private String mProviderName;
-    @Nullable private Icon mProviderIcon;
+    private @Nullable String mAppName;
+    private @Nullable String mProviderName;
+    private @Nullable Icon mProviderIcon;
     @ComplicationData.ComplicationType private int mComplicationType;
     /** This field is only populate in Android R and up and it is null otherwise. */
-    @Nullable private ComponentName mProviderComponentName;
+    private @Nullable ComponentName mProviderComponentName;
 
     /**
      * Constructs a {@link ComplicationProviderInfo} with the details of a complication provider.
@@ -118,8 +118,7 @@ public final class ComplicationProviderInfo implements Parcelable {
     }
 
     /** Returns the name of the application containing the complication provider. */
-    @Nullable
-    public String getAppName() {
+    public @Nullable String getAppName() {
         return mAppName;
     }
 
@@ -129,8 +128,7 @@ public final class ComplicationProviderInfo implements Parcelable {
     }
 
     /** Returns the name of the complication provider. */
-    @Nullable
-    public String getProviderName() {
+    public @Nullable String getProviderName() {
         return mProviderName;
     }
 
@@ -140,8 +138,7 @@ public final class ComplicationProviderInfo implements Parcelable {
     }
 
     /** Returns the icon for the complication provider. */
-    @Nullable
-    public Icon getProviderIcon() {
+    public @Nullable Icon getProviderIcon() {
         return mProviderIcon;
     }
 
@@ -175,9 +172,8 @@ public final class ComplicationProviderInfo implements Parcelable {
         return 0;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "ComplicationProviderInfo{"
                 + "appName='"
                 + mAppName

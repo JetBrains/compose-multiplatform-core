@@ -16,9 +16,10 @@
 
 package androidx.camera.view;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link LiveData} whose value is based on a source {@link LiveData} of the same type.

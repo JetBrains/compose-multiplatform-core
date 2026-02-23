@@ -18,6 +18,7 @@
 package androidx.activity
 
 import android.view.View
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 
 /**
  * Set the [FullyDrawnReporterOwner] associated with the given [View]. Calls to
@@ -30,7 +31,9 @@ import android.view.View
  * @param fullyDrawnReporterOwner [FullyDrawnReporterOwner] associated with the [View]
  */
 @JvmName("set")
-fun View.setViewTreeFullyDrawnReporterOwner(fullyDrawnReporterOwner: FullyDrawnReporterOwner) {
+public fun View.setViewTreeFullyDrawnReporterOwner(
+    fullyDrawnReporterOwner: FullyDrawnReporterOwner
+) {
     setTag(R.id.report_drawn, fullyDrawnReporterOwner)
 }
 
@@ -42,8 +45,14 @@ fun View.setViewTreeFullyDrawnReporterOwner(fullyDrawnReporterOwner: FullyDrawnR
  *   ancestors
  */
 @JvmName("get")
-fun View.findViewTreeFullyDrawnReporterOwner(): FullyDrawnReporterOwner? {
-    return generateSequence(this) { it.parent as? View }
-        .mapNotNull { it.getTag(R.id.report_drawn) as? FullyDrawnReporterOwner }
-        .firstOrNull()
+public fun View.findViewTreeFullyDrawnReporterOwner(): FullyDrawnReporterOwner? {
+    var currentView: View? = this
+    while (currentView != null) {
+        val reporterOwner = currentView.getTag(R.id.report_drawn) as? FullyDrawnReporterOwner
+        if (reporterOwner != null) {
+            return reporterOwner
+        }
+        currentView = currentView.getParentOrViewTreeDisjointParent() as? View
+    }
+    return null
 }

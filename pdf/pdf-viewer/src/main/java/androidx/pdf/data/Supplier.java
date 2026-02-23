@@ -16,8 +16,9 @@
 
 package androidx.pdf.data;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Supply a value that may take a long time to complete.

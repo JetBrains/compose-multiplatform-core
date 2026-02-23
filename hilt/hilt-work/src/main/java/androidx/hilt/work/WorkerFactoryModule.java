@@ -16,18 +16,19 @@
 
 package androidx.hilt.work;
 
-import androidx.annotation.NonNull;
 import androidx.work.ListenableWorker;
-
-import java.util.Map;
-
-import javax.inject.Provider;
 
 import dagger.Module;
 import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
 import dagger.multibindings.Multibinds;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.Map;
+
+import javax.inject.Provider;
 
 /**
  * Hilt Modules for providing the Worker factory.
@@ -36,13 +37,12 @@ import dagger.multibindings.Multibinds;
 @InstallIn(SingletonComponent.class)
 abstract class WorkerFactoryModule {
 
-    @NonNull
     @Multibinds
-    abstract Map<String, WorkerAssistedFactory<? extends ListenableWorker>> workerFactoriesMap();
+    abstract @NonNull Map<String, WorkerAssistedFactory<? extends ListenableWorker>>
+    workerFactoriesMap();
 
-    @NonNull
     @Provides
-    static HiltWorkerFactory provideFactory(@NonNull Map<String,
+    static @NonNull HiltWorkerFactory provideFactory(@NonNull Map<String,
             Provider<WorkerAssistedFactory<? extends ListenableWorker>>> workerFactories) {
         return new HiltWorkerFactory(workerFactories);
     }

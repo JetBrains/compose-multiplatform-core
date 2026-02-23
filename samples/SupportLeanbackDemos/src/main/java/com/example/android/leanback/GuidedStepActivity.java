@@ -31,8 +31,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.leanback.app.GuidedStepFragment;
 import androidx.leanback.widget.GuidanceStylist;
@@ -40,6 +38,9 @@ import androidx.leanback.widget.GuidanceStylist.Guidance;
 import androidx.leanback.widget.GuidedAction;
 import androidx.leanback.widget.GuidedActionsStylist;
 import androidx.leanback.widget.GuidedDatePickerAction;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -196,8 +197,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
+        public @NonNull Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
             String title = getString(R.string.guidedstep_first_title);
             String breadcrumb = getString(R.string.guidedstep_first_breadcrumb);
             String description = getString(R.string.guidedstep_first_description);
@@ -280,8 +280,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
+        public @NonNull Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
             String title = getString(R.string.guidedstep_newpayment_title);
             String breadcrumb = getString(R.string.guidedstep_newpayment_breadcrumb);
             String description = getString(R.string.guidedstep_newpayment_description);
@@ -395,8 +394,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public GuidedActionsStylist onCreateActionsStylist() {
+        public @NonNull GuidedActionsStylist onCreateActionsStylist() {
             return new GuidedActionsStylist() {
                 @Override
                 protected void setupImeOptions(GuidedActionsStylist.ViewHolder vh,
@@ -412,8 +410,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
+        public @NonNull Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
             String title = getString(R.string.guidedstep_second_title);
             String breadcrumb = getString(R.string.guidedstep_second_breadcrumb);
             String description = getString(R.string.guidedstep_second_description);
@@ -510,9 +507,8 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @Nullable
-        public View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
-                @Nullable Bundle savedInstanceState) {
+        public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+                @NonNull ViewGroup container, @Nullable Bundle savedInstanceState) {
             View view = super.onCreateView(inflater, container, savedInstanceState);
             if (mExpandPaymentListInOnCreateView) {
                 expandAction(findActionById(PAYMENT), false);
@@ -544,8 +540,7 @@ public class GuidedStepActivity extends Activity {
         private long mSelectedOption = DEFAULT_OPTION;
 
         @Override
-        @NonNull
-        public Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
+        public @NonNull Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
             String title = getString(R.string.guidedstep_third_title);
             String breadcrumb = getString(R.string.guidedstep_third_breadcrumb);
             String description = getString(R.string.guidedstep_third_description);
@@ -556,8 +551,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public GuidanceStylist onCreateGuidanceStylist() {
+        public @NonNull GuidanceStylist onCreateGuidanceStylist() {
             return new GuidanceStylist() {
                 @Override
                 public int onProvideLayoutId() {
@@ -631,8 +625,7 @@ public class GuidedStepActivity extends Activity {
         }
 
         @Override
-        @NonNull
-        public Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
+        public @NonNull Guidance onCreateGuidance(@Nullable Bundle savedInstanceState) {
             String title = getString(R.string.guidedstep_fourth_title);
             String breadcrumb = getString(R.string.guidedstep_fourth_breadcrumb);
             String description = "You chose: " + OPTION_NAMES[(int) getOption()];

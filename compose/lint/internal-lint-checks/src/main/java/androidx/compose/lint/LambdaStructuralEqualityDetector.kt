@@ -66,7 +66,7 @@ class LambdaStructuralEqualityDetector : Detector(), SourceCodeScanner {
                                 .text(op.text)
                                 .with(replacement)
                                 .autoFix()
-                                .build()
+                                .build(),
                         )
                     }
                 }
@@ -85,7 +85,7 @@ class LambdaStructuralEqualityDetector : Detector(), SourceCodeScanner {
         }
 
     private fun KtExpression.isFunctionType(): Boolean =
-        analyze(this) { getKtType()?.isFunctionType == true }
+        analyze(this) { expressionType?.isFunctionType == true }
 
     companion object {
         private const val BriefDescription =
@@ -108,8 +108,8 @@ class LambdaStructuralEqualityDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     LambdaStructuralEqualityDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }
