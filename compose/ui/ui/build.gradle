@@ -70,13 +70,16 @@ androidXMultiplatform {
     configureDarwinFlags()
 
     sourceSets {
+		def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+        def savedstateVersion =
+                project.findProperty('artifactRedirection.version.androidx.savedstate')
         commonMain.dependencies {
             implementation(libs.kotlinCoroutinesCore)
             api("androidx.annotation:annotation:1.9.1")
             implementation("androidx.collection:collection:1.5.0")
             // when updating the runtime version please also update the runtime-saveable version
             implementation(project(":compose:runtime:runtime"))
-            api(project(":compose:runtime:runtime-retain"))
+			api("androidx.compose.runtime:runtime-retain:$composeVersion")
             api(project(":compose:runtime:runtime-saveable"))
 
             api(project(":compose:ui:ui-geometry"))
@@ -201,12 +204,20 @@ androidXMultiplatform {
         skikoMain {
             dependsOn(commonMain)
             dependencies {
+				api(project(":compose:ui:ui-graphics"))
+                api(project(":compose:ui:ui-text"))
                 api(libs.skiko)
                 implementation(libs.atomicFu)
 
                 // Keep this dependency for compatibility due to https://youtrack.jetbrains.com/issue/KT-60874
                 implementation(project(":compose:ui:ui-backhandler"))
-                implementation(project(":navigationevent:navigationevent"))
+				
+				// Use direct dependency to AOSP's artifact instead of using project reference
+                // because this module supports all KMP platforms from the beginning.
+                // Project dependency (commented out version) is required for `integration` branch setup
+                // implementation(project(":navigationevent:navigationevent"))
+                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
             }
         }
 
@@ -218,6 +229,7 @@ androidXMultiplatform {
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":navigationevent:navigationevent-compose"))
                 implementation(project(":compose:ui:ui-test"))
+                implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
             }
         }
 

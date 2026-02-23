@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3.adaptive.layout
+package androidx.compose.ui.platform
 
-@Suppress("NOTHING_TO_INLINE")
-internal actual inline fun androidx.compose.ui.Modifier.Element.isGraphicsLayerElement(): Boolean {
-    // TODO: remove this after update to kotlin 2.3.0, where qualifiedName is available for k/wasm
-    return this::class.simpleName == "GraphicsLayerElement"
+import platform.AppKit.NSWorkspace
+import platform.Foundation.NSURL
+
+private class MacosUriHandler : UriHandler {
+    override fun openUri(uri: String) {
+        val nsUrl = NSURL.URLWithString(uri) ?: return
+        NSWorkspace.sharedWorkspace.openURL(nsUrl)
+    }
 }
+
+internal actual fun createPlatformUriHandler(): UriHandler = MacosUriHandler()

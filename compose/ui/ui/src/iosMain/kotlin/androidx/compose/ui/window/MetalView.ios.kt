@@ -36,9 +36,32 @@ import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
 import platform.UIKit.UIViewMeta
 
-internal class MetalView(
+/**
+ * Hides implementation details of LegacyMetalView and SurfaceMetalView.
+ * Must be removed after https://youtrack.jetbrains.com/issue/CMP-9722
+ */
+internal sealed interface MetalViewHolder {
+    val view: UIView
+    val redrawer: MetalRedrawer
+    var canBeOpaque: Boolean
+    fun dispose()
+}
+
+internal fun MetalView(
     retrieveInteropTransaction: () -> UIKitInteropTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
+    render: (Canvas, nanoTime: Long) -> Unit,
+): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
+    SurfaceMetalView(retrieveInteropTransaction, render).holder
+} else {
+    LegacyMetalView(retrieveInteropTransaction, render).holder
+}
+
+// https://youtrack.jetbrains.com/issue/CMP-9722
+// Copy of the class SurfaceMetalView with a different layer.
+// All changes made here must also be implemented in the `SurfaceMetalView`.
+private class LegacyMetalView(
+    retrieveInteropTransaction: () -> UIKitInteropTransaction,
     render: (Canvas, nanoTime: Long) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
@@ -50,21 +73,19 @@ internal class MetalView(
         MTLCreateSystemDefaultDevice()
             ?: throw IllegalStateException("Metal is not supported on this system")
 
-    val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
+    private val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
     private var canvasBackground: Int = Color.TRANSPARENT
 
-    val redrawer = MetalRedrawer(
+    val holder: MetalViewHolder get() = LegacyMetalViewHolder(this)
+
+    val redrawer = LegacyMetalRedrawer(
         metalLayer,
-        retrieveInteropTransaction,
-        useSeparateRenderThreadWhenPossible
+        retrieveInteropTransaction
     ) { canvas, targetTimestamp ->
         canvas.clear(canvasBackground)
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
-    /**
-     * @see [MetalRedrawer.canBeOpaque]
-     */
     var canBeOpaque: Boolean
         get() = redrawer.canBeOpaque
         set(value) {
@@ -112,9 +133,7 @@ internal class MetalView(
     override fun didMoveToWindow() {
         super.didMoveToWindow()
 
-        val window = window ?: return
-
-        val screen = window.screen
+        val screen = window?.screen ?: return
         contentScaleFactor = screen.scale
         redrawer.maximumFramesPerSecond = screen.maximumFramesPerSecond
         redrawer.preferredFramesPerSecond = screen.maximumFramesPerSecond
@@ -140,4 +159,13 @@ internal class MetalView(
     }
 
     override fun canBecomeFirstResponder() = false
+}
+
+private class LegacyMetalViewHolder(
+    private val metalView: LegacyMetalView
+): MetalViewHolder {
+    override val view: UIView get() = metalView
+    override val redrawer: MetalRedrawer get() = metalView.redrawer
+    override var canBeOpaque: Boolean by metalView::canBeOpaque
+    override fun dispose() = metalView.dispose()
 }
