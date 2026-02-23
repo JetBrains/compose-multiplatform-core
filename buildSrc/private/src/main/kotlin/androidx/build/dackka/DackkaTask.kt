@@ -27,9 +27,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
@@ -62,35 +60,9 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
     // Classpath containing Dackka
     @get:Classpath abstract val dackkaClasspath: ConfigurableFileCollection
 
-    // Classpath containing dependencies needed to resolve types for the non-KMP source set
+    // Classpath containing dependencies of libraries needed to resolve types in docs
     @get:[InputFiles Classpath]
-    abstract val nonKmpDependenciesClasspath: ConfigurableFileCollection
-
-    /**
-     * A mapping from KMP target name to classpath containing dependencies needed to resolve types
-     * for that target.
-     *
-     * This is [Internal] but [getAllKmpDependencies] lists the dependencies as [InputFiles].
-     */
-    @get:Internal abstract val kmpDependenciesClasspathMap: MapProperty<String, FileCollection>
-
-    /**
-     * The Android jars to be used in the classpath of the non-KMP source set as well as any
-     * android/jvm KMP source sets.
-     */
-    @get:[InputFiles Classpath]
-    abstract val androidJars: ConfigurableFileCollection
-
-    /** Lists all classpath files (jars and klibs) from [kmpDependenciesClasspathMap]. */
-    @InputFiles
-    @PathSensitive(PathSensitivity.NONE)
-    fun getAllKmpDependencies(): Provider<FileCollection> {
-        return kmpDependenciesClasspathMap.map {
-            it.values.reduce { allDependencies, sourceSetClasspath ->
-                sourceSetClasspath + allDependencies
-            }
-        }
-    }
+    abstract val dependenciesClasspath: ConfigurableFileCollection
 
     // Directory containing the code samples from framework
     @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
@@ -205,9 +177,8 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                     metadata.sourceSets
                         .sortedWith(compareBy({ it.dependencies.size }, { it.name }))
                         .mapNotNull { sourceSet ->
-                            val sourceDir = sourceDirForSourceSet(sourceSet.name)
-                            // The source set metadata includes source sets with no source files,
-                            // skip these ones.
+                            val sourceDir =
+                                multiplatformSourcesDir.get().asFile.resolve(sourceSet.name)
                             if (!sourceDir.exists()) return@mapNotNull null
                             val analysisPlatform =
                                 DokkaAnalysisPlatform.valueOf(
@@ -245,14 +216,10 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                         objects.fileCollection()
                                     },
                                 includes = objects.fileCollection().from(includesFiles(sourceDir)),
-                                classpath =
-                                    classpathForSourceSet(
-                                        metadata.sourceSetsDependentOn(sourceSet.name),
-                                        analysisPlatform,
-                                    ),
+                                classpath = dependenciesClasspath,
                                 externalDocumentationLinks = externalDocs,
                                 dependentSourceSets =
-                                    dependentSourceSets.map { sourceSetIdForSourceSet(it) },
+                                    sourceSet.dependencies.map { sourceSetIdForSourceSet(it) },
                                 noJdkLink = !analysisPlatform.androidOrJvm(),
                                 noAndroidSdkLink =
                                     analysisPlatform != DokkaAnalysisPlatform.ANDROID,
@@ -276,7 +243,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                         getSampleSourceFileCollection()
                     },
                 includes = objects.fileCollection().from(includesFiles(jvmSourcesDir.get().asFile)),
-                classpath = nonKmpDependenciesClasspath + androidJars,
+                classpath = dependenciesClasspath,
                 externalDocumentationLinks = externalDocs,
                 dependentSourceSets = emptyList(),
                 noJdkLink = false,
@@ -286,42 +253,6 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 sourceLinks = emptyList(),
             )
         ) + multiplatformSourceSets
-    }
-
-    /**
-     * Returns the source directory for the KMP source set with [name]. The returned directory is
-     * not guaranteed to exist.
-     */
-    private fun sourceDirForSourceSet(name: String): File {
-        return multiplatformSourcesDir.get().asFile.resolve(name)
-    }
-
-    /**
-     * Computes the classpath for a source set based on the [dependentSourceSets] and the
-     * [analysisPlatform].
-     *
-     * The [dependentSourceSets] should be the names of all source sets with a depends on
-     * relationship to this one. All the classpaths for [dependentSourceSets] from
-     * [kmpDependenciesClasspathMap] will be included in this classpath.
-     */
-    private fun classpathForSourceSet(
-        dependentSourceSets: List<String>,
-        analysisPlatform: DokkaAnalysisPlatform,
-    ): FileCollection {
-        // Find the classpaths associated with any targets matching dependentSourceSets.
-        val associatedClasspaths =
-            kmpDependenciesClasspathMap.get().filterKeys { it in dependentSourceSets }
-        // Aggregate all associated classpaths into one file collection.
-        val classpath = associatedClasspaths.values.reduce { acc, files -> acc + files }
-
-        // Also include android jars when the source set could be part of an android compilation.
-        return if (
-            analysisPlatform.androidOrJvm() || analysisPlatform == DokkaAnalysisPlatform.COMMON
-        ) {
-            classpath + androidJars
-        } else {
-            classpath
-        }
     }
 
     // Documentation for Dackka command line usage and arguments can be found at

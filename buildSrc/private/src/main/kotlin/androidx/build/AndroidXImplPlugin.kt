@@ -726,7 +726,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
             project.configureVerifyELFRegionAlignment(variant)
-            variant.aarMetadata.configureMinAgpVersion()
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -889,7 +888,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 }
             }
             project.configureVerifyELFRegionAlignment(variant)
-            variant.aarMetadata.configureMinAgpVersion()
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
