@@ -1006,7 +1006,8 @@ public class SpatialSceneRuntimeTest {
     @Test
     public void createPointerCaptureComponent_returnsComponent() {
         PointerCaptureComponent pointerCaptureComponent =
-                mRuntime.createPointerCaptureComponent(null, (inputEvent) -> {}, (state) -> {});
+                mRuntime.createPointerCaptureComponent(
+                        mFakeExecutor, (inputEvent) -> {}, (state) -> {});
 
         assertThat(pointerCaptureComponent).isNotNull();
     }

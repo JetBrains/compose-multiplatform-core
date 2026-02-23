@@ -46,7 +46,6 @@ import androidx.xr.glimmer.Text
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
@@ -125,16 +124,9 @@ class TiltGestureTrackingActivity : ComponentActivity() {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
-                    when (
+                    val configResult =
                         session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
-                    ) {
-                        is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                            Log.e(
-                                TAG,
-                                "Google Play Services Location Library is not linked, this should not happen.",
-                            )
-                        }
-
+                    when (configResult) {
                         is SessionConfigureSuccess -> {
                             Log.i(TAG, "Session created successfully!!")
                         }
@@ -155,6 +147,10 @@ class TiltGestureTrackingActivity : ComponentActivity() {
             is SessionCreateUnsupportedDevice -> {
                 Log.e(TAG, "Can't create session, unsupported device")
                 finish()
+            }
+
+            else -> {
+                Log.e(TAG, "Unexpected ${result::class.simpleName}")
             }
         }
     }

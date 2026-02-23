@@ -201,9 +201,7 @@ internal class XrResourcesManager {
             when (runtimeTrackable) {
                 is RuntimePlane -> Plane(runtimeTrackable, this)
                 is RuntimeObject -> AugmentedObject(runtimeTrackable, this)
-                // TODO b/452702634: uncomment when API updates are approved and we can make Face a
-                // Trackable
-                // is RuntimeFace -> Face(runtimeTrackable, this)
+                is RuntimeFace -> Face(runtimeTrackable, this)
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported trackable type: ${runtimeTrackable.javaClass}"

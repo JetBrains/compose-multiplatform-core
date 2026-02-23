@@ -32,6 +32,7 @@ import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
+import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
@@ -386,6 +387,12 @@ public constructor(
                 } catch (e: FaceTrackingNotCalibratedException) {
                     return@withLock SessionConfigureCalibrationRequired(
                         RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
+                    )
+                } catch (e: GooglePlayServicesLocationLibraryNotLinkedException) {
+                    // TODO b/486249372 use a new Exception type that includes the correct library
+                    // name provided by the runtime
+                    return@withLock SessionConfigureLibraryNotLinked(
+                        "com.google.android.gms:play-services-location"
                     )
                 }
                 this@Session.config = config

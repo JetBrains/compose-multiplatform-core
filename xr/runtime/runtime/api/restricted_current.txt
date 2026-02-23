@@ -462,8 +462,14 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.RequiredCalibrationType calibrationType;
   }
 
-  public final class SessionConfigureGooglePlayServicesLocationLibraryNotLinked extends androidx.xr.runtime.SessionConfigureResult {
-    ctor public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
+  @Deprecated public final class SessionConfigureGooglePlayServicesLocationLibraryNotLinked extends androidx.xr.runtime.SessionConfigureResult {
+    ctor @Deprecated public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
+  }
+
+  public final class SessionConfigureLibraryNotLinked extends androidx.xr.runtime.SessionConfigureResult {
+    ctor public SessionConfigureLibraryNotLinked(String libraryName);
+    method @InaccessibleFromKotlin public String getLibraryName();
+    property public String libraryName;
   }
 
   public abstract sealed exhaustive class SessionConfigureResult {
@@ -471,6 +477,12 @@ package androidx.xr.runtime {
 
   public final class SessionConfigureSuccess extends androidx.xr.runtime.SessionConfigureResult {
     ctor public SessionConfigureSuccess();
+  }
+
+  public final class SessionConfigureUnknownError extends androidx.xr.runtime.SessionConfigureResult {
+    ctor public SessionConfigureUnknownError(String errorMessage);
+    method @InaccessibleFromKotlin public String getErrorMessage();
+    property public String errorMessage;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SessionConnector {
@@ -493,15 +505,18 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.Session session;
   }
 
+  public final class SessionCreateTimedOut extends androidx.xr.runtime.SessionCreateResult {
+    ctor public SessionCreateTimedOut();
+  }
+
+  public final class SessionCreateUnknownError extends androidx.xr.runtime.SessionCreateResult {
+    ctor public SessionCreateUnknownError(String errorMessage);
+    method @InaccessibleFromKotlin public String getErrorMessage();
+    property public String errorMessage;
+  }
+
   public final class SessionCreateUnsupportedDevice extends androidx.xr.runtime.SessionCreateResult {
     ctor public SessionCreateUnsupportedDevice();
-  }
-
-  public abstract sealed exhaustive class SessionResumeResult {
-  }
-
-  public final class SessionResumeSuccess extends androidx.xr.runtime.SessionResumeResult {
-    ctor public SessionResumeSuccess();
   }
 
   public final class SpatialApiVersionHelper {

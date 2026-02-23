@@ -832,19 +832,13 @@ package androidx.xr.scenecore.runtime {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class SpatialEnvironment.SpatialEnvironmentPreference {
     ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource? skybox, androidx.xr.scenecore.runtime.GltfModelResource? geometry);
-    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource? skybox, androidx.xr.scenecore.runtime.GltfModelResource? geometry, optional androidx.xr.scenecore.runtime.MaterialResource? geometryMaterial);
-    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource? skybox, androidx.xr.scenecore.runtime.GltfModelResource? geometry, optional androidx.xr.scenecore.runtime.MaterialResource? geometryMaterial, optional String? geometryNodeName);
-    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource? skybox, androidx.xr.scenecore.runtime.GltfModelResource? geometry, optional androidx.xr.scenecore.runtime.MaterialResource? geometryMaterial, optional String? geometryNodeName, optional String? geometryAnimationName);
-    ctor @BytecodeOnly public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource!, androidx.xr.scenecore.runtime.GltfModelResource!, androidx.xr.scenecore.runtime.MaterialResource!, String!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource? skybox, androidx.xr.scenecore.runtime.GltfModelResource? geometry, optional androidx.xr.scenecore.runtime.GltfEntity? geometryEntity);
+    ctor @BytecodeOnly public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.runtime.ExrImageResource!, androidx.xr.scenecore.runtime.GltfModelResource!, androidx.xr.scenecore.runtime.GltfEntity!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.GltfModelResource? getGeometry();
-    method @InaccessibleFromKotlin public String? getGeometryAnimationName();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.MaterialResource? getGeometryMaterial();
-    method @InaccessibleFromKotlin public String? getGeometryNodeName();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.GltfEntity? getGeometryEntity();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.ExrImageResource? getSkybox();
     property public androidx.xr.scenecore.runtime.GltfModelResource? geometry;
-    property public String? geometryAnimationName;
-    property public androidx.xr.scenecore.runtime.MaterialResource? geometryMaterial;
-    property public String? geometryNodeName;
+    property public androidx.xr.scenecore.runtime.GltfEntity? geometryEntity;
     property public androidx.xr.scenecore.runtime.ExrImageResource? skybox;
   }
 

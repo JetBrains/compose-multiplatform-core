@@ -51,7 +51,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -137,7 +136,6 @@ class FaceTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun collect_collectReturnsFaceMeshes() =
         runTest(testDispatcher) {
             session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
@@ -193,7 +191,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun createAnchor_unsupported_throws_UnsupportedOperationException() {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -206,7 +203,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun createAnchor_usesGivenPose() {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -223,7 +219,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun createAnchor_anchorLimitReached_returnsAnchorResourcesExhaustedResult() {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -240,7 +235,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun createAnchor_anchorLimitReached_returns_AnchorCreateResourcesExhausted() {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -255,7 +249,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_trackingStateMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.BLEND_SHAPES))
         val runtimeFace = FakeRuntimeFace()
@@ -270,7 +263,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_centerPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -284,7 +276,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_noseTipPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -299,7 +290,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_foreheadLeftPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -314,7 +304,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_foreheadRightPoseMatchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
@@ -329,7 +318,6 @@ class FaceTest {
     }
 
     @Test
-    @Ignore("b/452702634 Remove @Ignore when Face is made a Trackable after API approval")
     fun update_mesh_matchesRuntime() = runBlocking {
         session.configure(Config(faceTracking = FaceTrackingMode.MESHES))
         val runtimeFace = FakeRuntimeFace()
