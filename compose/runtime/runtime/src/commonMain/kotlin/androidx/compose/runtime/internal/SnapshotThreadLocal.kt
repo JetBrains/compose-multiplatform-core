@@ -16,8 +16,8 @@
 
 package androidx.compose.runtime.internal
 
-import androidx.compose.runtime.SynchronizedObject
-import androidx.compose.runtime.synchronized
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 
 /**
  * This is similar to a [ThreadLocal] but has lower overhead because it avoids a weak reference.
@@ -30,7 +30,7 @@ import androidx.compose.runtime.synchronized
  */
 internal class SnapshotThreadLocal<T> {
     private val map = AtomicReference(emptyThreadMap)
-    private val writeMutex = SynchronizedObject()
+    private val writeMutex = makeSynchronizedObject()
 
     private var mainThreadValue: T? = null
 
@@ -61,7 +61,7 @@ internal class SnapshotThreadLocal<T> {
 internal class ThreadMap(
     private val size: Int,
     private val keys: LongArray,
-    private val values: Array<Any?>
+    private val values: Array<Any?>,
 ) {
     fun get(key: Long): Any? {
         val index = find(key)

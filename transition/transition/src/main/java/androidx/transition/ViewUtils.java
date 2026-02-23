@@ -22,8 +22,8 @@ import android.os.Build;
 import android.util.Property;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Compatibility utilities for platform features of {@link View}.
@@ -40,10 +40,8 @@ class ViewUtils {
             IMPL = new ViewUtilsApi23();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
             IMPL = new ViewUtilsApi22();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            IMPL = new ViewUtilsApi21();
         } else {
-            IMPL = new ViewUtilsApi19();
+            IMPL = new ViewUtilsApi21();
         }
     }
 

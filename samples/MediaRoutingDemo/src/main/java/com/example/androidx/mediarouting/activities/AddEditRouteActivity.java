@@ -30,8 +30,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.util.Consumer;
 
@@ -40,11 +38,14 @@ import com.example.androidx.mediarouting.RoutesManager;
 import com.example.androidx.mediarouting.data.RouteItem;
 import com.example.androidx.mediarouting.services.SampleDynamicGroupMediaRouteProviderService;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /** Allows the user to add and edit routes. */
 public class AddEditRouteActivity extends AppCompatActivity {
     private static final String EXTRA_ROUTE_ID_KEY = "routeId";
 
-    @Nullable private SampleDynamicGroupMediaRouteProviderService mService;
+    private @Nullable SampleDynamicGroupMediaRouteProviderService mService;
     private ServiceConnection mConnection;
     private RoutesManager mRoutesManager;
     private RouteItem mRouteItem;

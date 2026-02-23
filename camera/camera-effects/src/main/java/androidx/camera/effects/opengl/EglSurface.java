@@ -19,10 +19,10 @@ package androidx.camera.effects.opengl;
 import android.opengl.EGLSurface;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Surface with its corresponding EGLSurface and size.
@@ -30,9 +30,8 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 abstract class EglSurface {
 
-    @NonNull
-    static EglSurface of(@NonNull EGLSurface eglSurface, @Nullable Surface surface, int width,
-            int height) {
+    static @NonNull EglSurface of(@NonNull EGLSurface eglSurface, @Nullable Surface surface,
+            int width, int height) {
         return new AutoValue_EglSurface(eglSurface, surface, width, height);
     }
 
@@ -40,11 +39,9 @@ abstract class EglSurface {
      * {@link EGLSurface} created based on the {@link #getSurface()}. If {@link #getSurface()} is
      * null, then this value is based on Pbuffer.
      */
-    @NonNull
-    abstract EGLSurface getEglSurface();
+    abstract @NonNull EGLSurface getEglSurface();
 
-    @Nullable
-    abstract Surface getSurface();
+    abstract @Nullable Surface getSurface();
 
     abstract int getWidth();
 

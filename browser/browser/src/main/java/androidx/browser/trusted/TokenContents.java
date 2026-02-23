@@ -16,8 +16,8 @@
 
 package androidx.browser.trusted;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,28 +50,26 @@ final class TokenContents {
      * The signatures are stored in lexicographically sorted order. This allows us to compare two
      * Tokens by doing a raw comparison of the underlying byte array.
      */
-    @NonNull private final byte[] mContents;
+    private final byte @NonNull [] mContents;
 
-    @Nullable private String mPackageName;
-    @Nullable private List<byte[]> mFingerprints;
+    private @Nullable String mPackageName;
+    private @Nullable List<byte[]> mFingerprints;
 
-    @NonNull
-    static TokenContents deserialize(@NonNull byte[] serialized) {
+    static @NonNull TokenContents deserialize(byte @NonNull [] serialized) {
         return new TokenContents(serialized);
     }
 
-    private TokenContents(@NonNull byte[] contents) {
+    private TokenContents(byte @NonNull [] contents) {
         mContents = contents;
     }
 
-    @NonNull
-    static TokenContents create(String packageName, List<byte[]> fingerprints)
+    static @NonNull TokenContents create(String packageName, List<byte[]> fingerprints)
             throws IOException {
         return new TokenContents(
                 createToken(packageName, fingerprints), packageName, fingerprints);
     }
 
-    private TokenContents(@NonNull byte[] contents, @NonNull String packageName,
+    private TokenContents(byte @NonNull [] contents, @NonNull String packageName,
             @NonNull List<byte[]> fingerprints) {
         mContents = contents;
         mPackageName = packageName;
@@ -83,8 +81,7 @@ final class TokenContents {
         }
     }
 
-    @NonNull
-    public String getPackageName() throws IOException {
+    public @NonNull String getPackageName() throws IOException {
         parseIfNeeded();
         if (mPackageName == null) throw new IllegalStateException();  // Required for NullAway.
         return mPackageName;
@@ -96,15 +93,13 @@ final class TokenContents {
         return mFingerprints.size();
     }
 
-    @NonNull
-    public byte[] getFingerprint(int i) throws IOException {
+    public byte @NonNull [] getFingerprint(int i) throws IOException {
         parseIfNeeded();
         if (mFingerprints == null) throw new IllegalStateException();  // Required for NullAway.
         return Arrays.copyOf(mFingerprints.get(i), mFingerprints.get(i).length);
     }
 
-    @NonNull
-    public byte[] serialize() {
+    public byte @NonNull [] serialize() {
         return Arrays.copyOf(mContents, mContents.length);
     }
 
@@ -121,8 +116,7 @@ final class TokenContents {
         return Arrays.hashCode(mContents);
     }
 
-    @NonNull
-    private static byte[] createToken(@NonNull String packageName,
+    private static byte @NonNull [] createToken(@NonNull String packageName,
             @NonNull List<byte[]> fingerprints) throws IOException {
         // The entries of signatures may be in any order, we sort them so that we can just do
         // a byte by byte comparison on the resulting byte array.

@@ -16,14 +16,14 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 
 /** Provides information about the Window that is hosting this compose hierarchy. */
 @Stable
@@ -38,34 +38,51 @@ interface WindowInfo {
     val isWindowFocused: Boolean
 
     /** Indicates the state of keyboard modifiers (pressed or not). */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val keyboardModifiers: PointerKeyboardModifiers
         get() = WindowInfoImpl.GlobalKeyboardModifiers.value
-}
 
-@Composable
-internal fun WindowFocusObserver(onWindowFocusChanged: (isWindowFocused: Boolean) -> Unit) {
-    val windowInfo = LocalWindowInfo.current
-    val callback = rememberUpdatedState(onWindowFocusChanged)
-    LaunchedEffect(windowInfo) {
-        snapshotFlow { windowInfo.isWindowFocused }.collect { callback.value(it) }
-    }
+    /**
+     * Size of the window. This size excludes insets, such as any system bars, so it is not safe to
+     * assume that this size matches the available space of the compose hierarchy hosted inside this
+     * window. Instead this size should be used as a breakpoint when changing between UI
+     * configurations, or similar window-dependent configuration.
+     */
+    val containerSize: IntSize
+        get() = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
+
+    /**
+     * Size of the window represented as [DpSize]. This size excludes insets, such as any system
+     * bars, so it is not safe to assume that this size matches the available space of the compose
+     * hierarchy hosted inside this window. Instead this size should be used as a breakpoint when
+     * changing between UI configurations, or similar window-dependent configuration.
+     */
+    val containerDpSize: DpSize
+        get() = DpSize.Unspecified
 }
 
 internal class WindowInfoImpl : WindowInfo {
-    private val _isWindowFocused = mutableStateOf(false)
+    private val _containerSize = mutableStateOf(IntSize.Zero)
 
-    override var isWindowFocused: Boolean
-        set(value) {
-            _isWindowFocused.value = value
-        }
-        get() = _isWindowFocused.value
+    private val _containerDpSize = mutableStateOf(DpSize.Zero)
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    override var isWindowFocused: Boolean by mutableStateOf(false)
+
     override var keyboardModifiers: PointerKeyboardModifiers
         get() = GlobalKeyboardModifiers.value
         set(value) {
             GlobalKeyboardModifiers.value = value
+        }
+
+    override var containerSize: IntSize
+        get() = _containerSize.value
+        set(value) {
+            _containerSize.value = value
+        }
+
+    override var containerDpSize: DpSize
+        get() = _containerDpSize.value
+        set(value) {
+            _containerDpSize.value = value
         }
 
     companion object {

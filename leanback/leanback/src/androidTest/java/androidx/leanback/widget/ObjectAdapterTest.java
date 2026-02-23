@@ -31,14 +31,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -175,9 +175,8 @@ public class ObjectAdapterTest {
             return oldItem.equals(newItem);
         }
 
-        @Nullable
         @Override
-        public Object getChangePayload(@NonNull AdapterItem oldItem,
+        public @Nullable Object getChangePayload(@NonNull AdapterItem oldItem,
                 @NonNull AdapterItem newItem) {
             Bundle diff = new Bundle();
             if (oldItem.getId() != newItem.getId()) {
@@ -222,9 +221,8 @@ public class ObjectAdapterTest {
             mHeight = height;
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
             View view = new View(parent.getContext());
             view.setFocusable(true);
             view.setId(R.id.lb_action_button);

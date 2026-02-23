@@ -15,15 +15,14 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
+import androidx.build.SoftwareType
 import androidx.build.KotlinTarget
-import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
@@ -33,15 +32,23 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm() {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
     watchos()
     tvos()
-    // NOTE, if you add android target here, make sure to add the proguard file as well.
+    androidLibrary {
+        namespace = "androidx.datastore.preferences.core"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                    new File("src/jvmMain/resources/META-INF/proguard/androidx.datastore_datastore-preferences-core.pro")
+            )
+        }
+    }
+    wasmJs()
+    js()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -50,75 +57,54 @@ androidXMultiplatform {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api(libs.okio)
-                api(project(":datastore:datastore-core"))
-                api(project(":datastore:datastore-core-okio"))
-            }
+        commonMain.dependencies {
+            api(libs.atomicFu)
+            api(libs.okio)
+            api(project(":datastore:datastore-core"))
+            api(project(":datastore:datastore-core-okio"))
         }
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTestCommon)
-                implementation(libs.kotlinTestAnnotationsCommon)
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(project(":datastore:datastore-core"))
-                implementation(project(":kruth:kruth"))
-                implementation(project(":internal-testutils-datastore"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesTest)
+            implementation(project(":datastore:datastore-core"))
+            implementation(project(":kruth:kruth"))
+            implementation(project(":internal-testutils-datastore"))
         }
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(project(":datastore:datastore-preferences-proto"))
-            }
+        jvmAndAndroidMain.dependencies {
+            implementation(project(":datastore:datastore-preferences-proto"))
         }
-        jvmTest {
-            dependsOn(commonTest)
+
+        create("nonWebCommonTest").dependsOn(commonTest)
+
+        jvmAndAndroidTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(project(":internal-testutils-datastore"))
-                implementation(project(":kruth:kruth"))
             }
         }
-        nativeMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.kotlinSerializationCore)
-                implementation(libs.kotlinSerializationProtobuf)
-            }
+        nativeMain.dependencies {
+            implementation(libs.kotlinSerializationCore)
+            implementation(libs.kotlinSerializationProtobuf)
         }
 
-        nativeTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(project(":internal-testutils-datastore"))
-                implementation(project(":kruth:kruth"))
-            }
+        webMain.dependencies {
+            implementation(libs.kotlinSerializationJson)
+            implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
         }
 
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
-                }
-                target.compilations["test"].defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
-            }
+        nativeTest.dependsOn(nonWebCommonTest)
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
         }
     }
 }
 
 androidx {
     name = "Preferences DataStore Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Preferences DataStore without the Android Dependencies"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

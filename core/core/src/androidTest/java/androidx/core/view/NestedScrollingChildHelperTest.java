@@ -28,13 +28,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.widget.NestedScrollView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -190,14 +190,14 @@ public class NestedScrollingChildHelperTest {
         }
 
         @Override
-        public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
-                int type) {
+        public void onNestedPreScroll(@NonNull View target, int dx, int dy,
+                int @NonNull [] consumed, int type) {
 
         }
 
         @Override
         public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                int dxUnconsumed, int dyUnconsumed, int type, @Nullable int[] consumed) {
+                int dxUnconsumed, int dyUnconsumed, int type, int @Nullable [] consumed) {
         }
     }
 

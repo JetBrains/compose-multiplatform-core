@@ -46,6 +46,28 @@
         </activity>
 
         <activity
+            android:name=".AlertDialogActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.integration.macrobenchmark.target.ALERT_DIALOG_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ConfirmationDialogActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.integration.macrobenchmark.target.CONFIRMATION_DIALOG_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".SwipeToDismissActivity"
             android:theme="@style/AppTheme"
             android:exported="true">
@@ -100,46 +122,6 @@
             <intent-filter>
                 <action android:name=
                     "androidx.wear.compose.integration.macrobenchmark.target.POSITION_INDICATOR_ACTIVITY" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".AnimatedTextActivity"
-            android:exported="true"
-            android:theme="@style/AppTheme">
-            <intent-filter>
-                <action android:name="androidx.wear.compose.integration.macrobenchmark.target.ANIMATED_TEXT_ACTIVITY" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".ButtonActivity"
-            android:theme="@style/AppTheme"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.wear.compose.integration.macrobenchmark.target.BUTTON_ACTIVITY" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".IconButtonActivity"
-            android:theme="@style/AppTheme"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.wear.compose.integration.macrobenchmark.target.ICON_BUTTON_ACTIVITY" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".AnimatedIconButtonActivity"
-            android:theme="@style/AppTheme"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.wear.compose.integration.macrobenchmark.target.ANIMATED_ICON_BUTTON_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

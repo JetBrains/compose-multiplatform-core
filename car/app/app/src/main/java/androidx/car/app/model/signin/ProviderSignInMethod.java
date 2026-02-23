@@ -18,12 +18,14 @@ package androidx.car.app.model.signin;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.car.app.annotations.CarProtocol;
+import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ForegroundCarColorSpan;
-import androidx.car.app.annotations.KeepFields;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -38,10 +40,10 @@ import java.util.Objects;
  * Sign-In into Your Android App</a>).
  */
 @RequiresCarApi(2)
+@CarProtocol
 @KeepFields
 public final class ProviderSignInMethod implements SignInTemplate.SignInMethod {
-    @Nullable
-    private final Action mAction;
+    private final @Nullable Action mAction;
 
     /**
      * Creates a {@link ProviderSignInMethod} instance with the given provider {@link Action}.
@@ -73,14 +75,12 @@ public final class ProviderSignInMethod implements SignInTemplate.SignInMethod {
     /**
      * Returns the {@link Action} the user can use to initiate the sign-in with a given provider.
      */
-    @NonNull
-    public Action getAction() {
+    public @NonNull Action getAction() {
         return requireNonNull(mAction);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "[action:" + mAction + "]";
     }
 

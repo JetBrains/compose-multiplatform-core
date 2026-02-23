@@ -19,12 +19,12 @@
 package androidx.camera.camera2.pipe.core
 
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.LENS_FACING
 import android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.os.Trace
 import androidx.camera.camera2.pipe.CameraGraph
@@ -102,7 +102,26 @@ public object Debug {
         return parametersToSortedStringPairs(parameters).joinToString(
             prefix = "{",
             postfix = "}",
-            limit = limit
+            limit = limit,
+        ) {
+            "${it.first}=${it.second}"
+        }
+    }
+
+    /**
+     * Format a map of parameters as a line separated list.
+     *
+     * Example: `[<\n>abc.xyz=1,<\n>abc.zyx=something<\n>]`
+     */
+    public fun formatParameterMapToLineSeparatedList(
+        parameters: Map<*, Any?>,
+        limit: Int = -1,
+    ): String {
+        return parametersToSortedStringPairs(parameters).joinToString(
+            separator = ",\n",
+            prefix = "{\n",
+            postfix = "\n}",
+            limit = limit,
         ) {
             "${it.first}=${it.second}"
         }
@@ -124,24 +143,32 @@ public object Debug {
     /* Utility for cleaning up some verbose value types for logs */
     private fun valueToString(value: Any?): String =
         when (value) {
-            is MeteringRectangle ->
-                "[x=${value.x}, y=${value.y}, " +
-                    "w=${value.width}, h=${value.height}, weight=${value.meteringWeight}"
+            is Array<*> -> value.joinToString(prefix = "[", postfix = "]") { valueToString(it) }
             else -> value.toString()
         }
 
     public fun formatCameraGraphProperties(
         metadata: CameraMetadata,
         graphConfig: CameraGraph.Config,
-        cameraGraph: CameraGraph
+        cameraGraph: CameraGraph,
     ): String {
-        val sharedCameraIds = graphConfig.sharedCameraIds.joinToString()
+        val allCameraIds = graphConfig.concurrentCameraGraphs?.cameraIds
 
         val lensFacing =
             when (metadata[LENS_FACING]) {
                 CameraCharacteristics.LENS_FACING_FRONT -> "Front"
                 CameraCharacteristics.LENS_FACING_BACK -> "Back"
                 CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
+                else -> "Unknown"
+            }
+
+        val hardwareLevel =
+            when (metadata[INFO_SUPPORTED_HARDWARE_LEVEL]) {
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED -> "Limited"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL -> "Full"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY -> "Legacy"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3 -> "Level 3"
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL -> "External"
                 else -> "Unknown"
             }
 
@@ -167,10 +194,10 @@ public object Debug {
         return StringBuilder()
             .apply {
                 append("$cameraGraph (Camera ${graphConfig.camera.value})\n")
-                if (sharedCameraIds.isNotEmpty()) {
-                    append("  Shared:    $sharedCameraIds\n")
+                if (allCameraIds != null) {
+                    append("  Concurrent: $allCameraIds\n")
                 }
-                append("  Facing:    $lensFacing ($cameraType)\n")
+                append("  Facing:    $lensFacing ($cameraType, $hardwareLevel)\n")
                 append("  Mode:      $operatingMode\n")
                 append("Outputs:\n")
                 for (stream in cameraGraph.streams.streams) {

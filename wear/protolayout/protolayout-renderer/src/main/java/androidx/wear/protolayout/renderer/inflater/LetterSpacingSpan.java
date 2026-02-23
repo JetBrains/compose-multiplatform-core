@@ -19,7 +19,7 @@ package androidx.wear.protolayout.renderer.inflater;
 import android.text.TextPaint;
 import android.text.style.MetricAffectingSpan;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /** LetterSpacingSpan class used to apply custom spacing between letters. */
 public class LetterSpacingSpan extends MetricAffectingSpan {

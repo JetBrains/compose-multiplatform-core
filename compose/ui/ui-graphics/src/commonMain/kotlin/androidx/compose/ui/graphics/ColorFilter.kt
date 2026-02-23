@@ -19,8 +19,7 @@ package androidx.compose.ui.graphics
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 
-// TODO mark internal once https://youtrack.jetbrains.com/issue/KT-36695 is fixed
-/* internal */ expect class NativeColorFilter
+internal expect class NativeColorFilter
 
 /** Effect used to modify the color of each pixel drawn on a [Paint] that it is installed on */
 @Immutable
@@ -82,12 +81,12 @@ class BlendModeColorFilter
 internal constructor(
     val color: Color,
     val blendMode: BlendMode,
-    nativeColorFilter: NativeColorFilter
+    nativeColorFilter: NativeColorFilter,
 ) : ColorFilter(nativeColorFilter) {
 
     constructor(
         color: Color,
-        blendMode: BlendMode
+        blendMode: BlendMode,
     ) : this(color, blendMode, actualTintColorFilter(color, blendMode))
 
     override fun equals(other: Any?): Boolean {
@@ -179,7 +178,7 @@ internal constructor(val multiply: Color, val add: Color, nativeColorFilter: Nat
 
     constructor(
         multiply: Color,
-        add: Color
+        add: Color,
     ) : this(multiply, add, actualLightingColorFilter(multiply, add))
 
     override fun equals(other: Any?): Boolean {

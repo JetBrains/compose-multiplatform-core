@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.media
 import android.media.ImageReader
 import android.os.Build
 import android.view.Surface
+import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.ImageSourceConfig
 import androidx.camera.camera2.pipe.OutputId
@@ -27,22 +28,27 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.media.AndroidImageReader.Companion.IMAGEREADER_MAX_CAPACITY
 import androidx.camera.camera2.pipe.media.ImageReaderImageSource.Companion.IMAGE_SOURCE_CAPACITY
+import androidx.camera.camera2.pipe.media.OutputImage.Companion.toLogString
 import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
-internal class ImageReaderImageSources @Inject constructor(private val threads: Threads) :
-    ImageSources {
+internal class ImageReaderImageSources
+@Inject
+constructor(private val threads: Threads, cameraPipeConfig: CameraPipe.Config) : ImageSources {
+    private val platformApiCompat = cameraPipeConfig.platformApiCompat
+
     override fun createImageSource(
         cameraStream: CameraStream,
-        imageSourceConfig: ImageSourceConfig
+        imageSourceConfig: ImageSourceConfig,
     ): ImageSource {
         return create(
             cameraStream,
             imageSourceConfig.capacity,
             imageSourceConfig.usageFlags,
             imageSourceConfig.defaultDataSpace,
-            imageSourceConfig.defaultHardwareBufferFormat
+            imageSourceConfig.defaultHardwareBufferFormat,
+            imageSourceConfig.enableConcurrentOutputs,
         )
     }
 
@@ -51,7 +57,8 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
         capacity: Int,
         usageFlags: Long?,
         defaultDataSpace: Int?,
-        defaultHardwareBufferFormat: Int?
+        defaultHardwareBufferFormat: Int?,
+        enableConcurrentOutputs: Boolean,
     ): ImageSource {
         require(cameraStream.outputs.isNotEmpty()) { "$cameraStream must have outputs." }
         require(capacity > 0) { "Capacity ($capacity) must be > 0" }
@@ -59,6 +66,11 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
             "Capacity for creating new ImageReaderImageSources is restricted to " +
                 "$IMAGE_SOURCE_CAPACITY. Android has undocumented internal limits that can vary " +
                 "per device."
+        }
+        if (enableConcurrentOutputs) {
+            check(cameraStream.outputs.size > 1) {
+                "Cannot enable concurrent outputs for a single output camera stream."
+            }
         }
 
         val handlerProvider = { threads.camera2Handler }
@@ -86,19 +98,24 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
                     defaultHardwareBufferFormat,
                     cameraStream.id,
                     output.id,
-                    handler
+                    handler,
                 )
             return ImageReaderImageSource.create(imageReader)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (usageFlags != null) {
-                Log.warn {
-                    "Ignoring usageFlags ($usageFlags) " +
-                        "for $cameraStream. MultiResolutionImageReader does not support " +
-                        "setting usage flags."
+            val usage =
+                if (usageFlags != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    usageFlags
+                } else {
+                    Log.warn {
+                        "Ignoring usageFlags ($usageFlags) " +
+                            "for $cameraStream. MultiResolutionImageReader does not support " +
+                            "setting usage flags."
+                    }
+                    null
                 }
-            }
+
             if (defaultDataSpace != null) {
                 Log.warn {
                     "Ignoring DataSpace ($defaultDataSpace) " +
@@ -114,7 +131,14 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
                 }
             }
             val imageReader =
-                AndroidMultiResolutionImageReader.create(cameraStream, capacity, executorProvider())
+                AndroidMultiResolutionImageReader.create(
+                    cameraStream,
+                    capacity,
+                    executorProvider(),
+                    usage,
+                    enableConcurrentOutputs,
+                    platformApiCompat,
+                )
             return ImageReaderImageSource.create(imageReader)
         }
 
@@ -144,17 +168,22 @@ public class ImageReaderImageSource(
     }
 
     private val state = atomic(State.ACTIVE)
-    private val listener = atomic<ImageSourceListener?>(null)
     private val imageCount = atomic(0)
 
     override val surface: Surface = imageReader.surface
 
-    init {
-        imageReader.setOnImageListener(::onImage)
-    }
+    override var imageListener: ImageListener? by atomic(null)
+    override var expectedOutputsListener: ExpectedOutputsListener? by atomic(null)
 
-    override fun setListener(listener: ImageSourceListener) {
-        this.listener.value = listener
+    init {
+        imageReader.onImageListener =
+            ImageReaderWrapper.OnImageListener { streamId, outputId, image ->
+                onImage(streamId, outputId, image)
+            }
+        imageReader.onExpectedOutputsListener =
+            ImageReaderWrapper.OnExpectedOutputsListener { timestamp, outputIds ->
+                expectedOutputsListener?.onExpectedOutputs(timestamp, outputIds)
+            }
     }
 
     override fun <T : Any> unwrapAs(type: KClass<T>): T? = imageReader.unwrapAs(type)
@@ -174,7 +203,7 @@ public class ImageReaderImageSource(
         // Always increment the imageCount before acquireNextImage
         val currentImageCount = imageCount.incrementAndGet()
 
-        val outputListener = listener.value
+        val outputListener = imageListener
         if (outputListener == null) {
             // If there is nowhere to send the image, close it and decrement the imageCount.
             closeAndDecrementImageCount(image)
@@ -198,7 +227,7 @@ public class ImageReaderImageSource(
             streamId,
             outputId,
             image.timestamp,
-            TrackedOutputImage(image, streamId, outputId)
+            TrackedOutputImage(image, streamId, outputId),
         )
     }
 
@@ -234,7 +263,7 @@ public class ImageReaderImageSource(
     private inner class TrackedOutputImage(
         private val image: ImageWrapper,
         override val streamId: StreamId,
-        override val outputId: OutputId
+        override val outputId: OutputId,
     ) : ImageWrapper by image, OutputImage {
         private val closed = atomic(false)
 
@@ -251,11 +280,13 @@ public class ImageReaderImageSource(
             // Wrapper images that are no longer reachable should be closed to avoid memory leaks.
             close()
         }
+
+        override fun toString(): String = this.toLogString()
     }
 
     private enum class State {
         ACTIVE,
         CLOSING,
-        CLOSED
+        CLOSED,
     }
 }

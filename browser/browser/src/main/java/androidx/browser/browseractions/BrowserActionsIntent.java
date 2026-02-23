@@ -31,11 +31,12 @@ import android.text.TextUtils;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -155,13 +156,13 @@ public class BrowserActionsIntent {
     /**
      * An {@link Intent} used to start the Browser Actions Activity.
      */
-    @NonNull private final Intent mIntent;
+    private final @NonNull Intent mIntent;
 
     /**
      * Gets the Intent of {@link BrowserActionsIntent}.
      * @return the Intent of {@link BrowserActionsIntent}.
      */
-    @NonNull public Intent getIntent() {
+    public @NonNull Intent getIntent() {
         return mIntent;
     }
 
@@ -176,8 +177,7 @@ public class BrowserActionsIntent {
         void onDialogShown();
     }
 
-    @Nullable
-    private static BrowserActionsFallDialogListener sDialogListenter;
+    private static @Nullable BrowserActionsFallDialogListener sDialogListenter;
 
     /**
      * Builder class for opening a Browser Actions context menu.
@@ -189,7 +189,7 @@ public class BrowserActionsIntent {
         @BrowserActionsUrlType
         private int mType = URL_TYPE_NONE;
         private ArrayList<Bundle> mMenuItems = new ArrayList<>();
-        @Nullable private PendingIntent mOnItemSelectedPendingIntent = null;
+        private @Nullable PendingIntent mOnItemSelectedPendingIntent = null;
         private List<Uri> mImageUris = new ArrayList<>();
 
         /**
@@ -207,8 +207,7 @@ public class BrowserActionsIntent {
          * Sets the type of Browser Actions context menu.
          * @param type The type of url.
          */
-        @NonNull
-        public Builder setUrlType(@BrowserActionsUrlType int type) {
+        public @NonNull Builder setUrlType(@BrowserActionsUrlType int type) {
             mType = type;
             return this;
         }
@@ -219,8 +218,7 @@ public class BrowserActionsIntent {
          * otherwise throws an {@link IllegalStateException}.
          * @param items The list of {@link BrowserActionItem} for custom items.
          */
-        @NonNull
-        public Builder setCustomItems(@NonNull ArrayList<BrowserActionItem> items) {
+        public @NonNull Builder setCustomItems(@NonNull ArrayList<BrowserActionItem> items) {
             if (items.size() > MAX_CUSTOM_ITEMS) {
                 throw new IllegalStateException(
                         "Exceeded maximum toolbar item count of " + MAX_CUSTOM_ITEMS);
@@ -246,8 +244,7 @@ public class BrowserActionsIntent {
          * otherwise throws an {@link IllegalStateException}.
          * @param items The varargs of {@link BrowserActionItem} for custom items.
          */
-        @NonNull
-        public Builder setCustomItems(@NonNull BrowserActionItem... items) {
+        public @NonNull Builder setCustomItems(BrowserActionItem @NonNull ... items) {
             return setCustomItems(new ArrayList<BrowserActionItem>(Arrays.asList(items)));
         }
 
@@ -255,8 +252,8 @@ public class BrowserActionsIntent {
          * Set the PendingIntent to be launched when a a browser specified menu item is selected.
          * @param onItemSelectedPendingIntent The PendingIntent to be launched.
          */
-        @NonNull
-        public Builder setOnItemSelectedAction(@NonNull PendingIntent onItemSelectedPendingIntent) {
+        public @NonNull Builder setOnItemSelectedAction(
+                @NonNull PendingIntent onItemSelectedPendingIntent) {
             mOnItemSelectedPendingIntent = onItemSelectedPendingIntent;
             return this;
         }
@@ -266,8 +263,7 @@ public class BrowserActionsIntent {
          * @param item A custom item for Browser Actions menu.
          * @return The Bundle of custom item.
          */
-        @NonNull
-        private Bundle getBundleFromItem(@NonNull BrowserActionItem item) {
+        private @NonNull Bundle getBundleFromItem(@NonNull BrowserActionItem item) {
             Bundle bundle = new Bundle();
             bundle.putString(KEY_TITLE, item.getTitle());
             bundle.putParcelable(KEY_ACTION, item.getAction());
@@ -280,8 +276,7 @@ public class BrowserActionsIntent {
          * Combines all the options that have been set and returns a new {@link
          * BrowserActionsIntent} object.
          */
-        @NonNull
-        public BrowserActionsIntent build() {
+        public @NonNull BrowserActionsIntent build() {
             mIntent.setData(mUri);
             mIntent.putExtra(EXTRA_TYPE, mType);
             mIntent.putParcelableArrayListExtra(EXTRA_MENU_ITEMS, mMenuItems);
@@ -377,8 +372,8 @@ public class BrowserActionsIntent {
      */
     @RestrictTo(LIBRARY)
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static List<ResolveInfo> getBrowserActionsIntentHandlers(@NonNull Context context) {
+    public static @NonNull List<ResolveInfo> getBrowserActionsIntentHandlers(
+            @NonNull Context context) {
         Intent intent =
                 new Intent(BrowserActionsIntent.ACTION_BROWSER_ACTIONS_OPEN, Uri.parse(TEST_URL));
         PackageManager pm = context.getPackageManager();
@@ -420,9 +415,8 @@ public class BrowserActionsIntent {
      * @param bundles Data for custom items from {@link BrowserActionsIntent}.
      * @return List of {@link BrowserActionItem}
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    public static List<BrowserActionItem> parseBrowserActionItems(
+    public static @NonNull List<BrowserActionItem> parseBrowserActionItems(
             @NonNull ArrayList<Bundle> bundles) {
         List<BrowserActionItem> mActions = new ArrayList<>();
         for (int i = 0; i < bundles.size(); i++) {
@@ -458,8 +452,7 @@ public class BrowserActionsIntent {
      * @return The creator package name.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static String getUntrustedCreatorPackageName(@NonNull Intent intent) {
+    public static @Nullable String getUntrustedCreatorPackageName(@NonNull Intent intent) {
         PendingIntent pendingIntent = intent.getParcelableExtra(BrowserActionsIntent.EXTRA_APP_ID);
         if (pendingIntent != null) {
             return pendingIntent.getTargetPackage();
@@ -473,8 +466,7 @@ public class BrowserActionsIntent {
      *             method if you rely on the return value.
      */
     @Deprecated
-    @Nullable
-    public static String getCreatorPackageName(@NonNull Intent intent) {
+    public static @Nullable String getCreatorPackageName(@NonNull Intent intent) {
         return getUntrustedCreatorPackageName(intent);
     }
 }

@@ -30,9 +30,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.mediarouter.media.MediaRouter;
@@ -45,8 +44,12 @@ import com.example.androidx.mediarouting.RoutesManager;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutingActivity;
 import com.example.androidx.mediarouting.services.SampleDynamicGroupMediaRouteProviderService;
 import com.example.androidx.mediarouting.services.SampleMediaRouteProviderService;
+import com.example.androidx.mediarouting.services.WrapperMediaRouteProviderService;
 import com.example.androidx.mediarouting.ui.RoutesAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Allows the user to control dialog types, enabling or disabling Dynamic Groups, enabling or
@@ -59,11 +62,25 @@ public final class SettingsActivity extends AppCompatActivity {
     private MediaRouter mMediaRouter;
     private RoutesManager mRoutesManager;
     private RoutesAdapter mRoutesAdapter;
+    private Toast mMediaTransferRestrictedToSelfProvidersToast;
+
+    /** Returns whether the service corresponding to the provided {@link Class} is enabled. */
+    public static boolean isServiceEnabled(
+            @NonNull Context context, @NonNull Class<?> serviceClass) {
+        ComponentName serviceComponentName = new ComponentName(context, serviceClass);
+        return context.getPackageManager().getComponentEnabledSetting(serviceComponentName)
+                != PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        mMediaTransferRestrictedToSelfProvidersToast =
+                Toast.makeText(
+                        /* context= */ this,
+                        "Wrapper provider enabled. Output switcher for Cast won't work.",
+                        Toast.LENGTH_LONG);
 
         mPackageManager = getPackageManager();
         mMediaRouter = MediaRouter.getInstance(this);
@@ -107,6 +124,12 @@ public final class SettingsActivity extends AppCompatActivity {
                     startActivity(new Intent(this, RouteListingPreferenceActivity.class));
                 });
 
+        Button goToDeviceSuggestionsButton = findViewById(R.id.go_to_device_suggestions_button);
+        goToDeviceSuggestionsButton.setOnClickListener(
+                unusedView -> {
+                    startActivity(new Intent(this, DeviceSuggestionsActivity.class));
+                });
+
         RecyclerView routeList = findViewById(R.id.routes_recycler_view);
         routeList.setLayoutManager(new LinearLayoutManager(/* context= */ this));
         mRoutesAdapter = new RoutesAdapter(mRoutesManager.getRouteItems(), routeItemListener);
@@ -140,8 +163,9 @@ public final class SettingsActivity extends AppCompatActivity {
     private void setUpViews() {
         setUpDynamicGroupsEnabledSwitch();
         setUpTransferToLocalSwitch();
-        setUpSimpleProviderEnabledSwitch();
         setUpDynamicProviderEnabledSwitch();
+        setUpSimpleProviderEnabledSwitch();
+        setUpWrapperProviderEnabledSwitch();
         setUpDialogTypeDropDownList();
         setUpNewRouteButton();
         setupSystemRoutesButton();
@@ -173,44 +197,56 @@ public final class SettingsActivity extends AppCompatActivity {
                 });
     }
 
-    private void setUpSimpleProviderEnabledSwitch() {
-        Switch simpleProviderEnabledSwitch = findViewById(R.id.enable_simple_provider_switch);
-        ComponentName simpleProviderComponentName =
-                new ComponentName(/* context= */ this, SampleMediaRouteProviderService.class);
-        simpleProviderEnabledSwitch.setChecked(
-                mPackageManager.getComponentEnabledSetting(simpleProviderComponentName)
-                        != PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
-        simpleProviderEnabledSwitch.setOnCheckedChangeListener(
-                (compoundButton, enabled) -> {
-                    mPackageManager
-                            .setComponentEnabledSetting(
-                                    simpleProviderComponentName,
-                                    enabled
-                                            ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                                            : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                                    /* flags= */ PackageManager.DONT_KILL_APP);
-                });
-    }
-
     private void setUpDynamicProviderEnabledSwitch() {
         Switch dynamicProviderEnabledSwitch = findViewById(R.id.enable_dynamic_provider_switch);
-        ComponentName dynamicProviderComponentName =
-                new ComponentName(
-                        /* context= */ this, SampleDynamicGroupMediaRouteProviderService.class);
-        dynamicProviderEnabledSwitch.setChecked(
-                mPackageManager.getComponentEnabledSetting(dynamicProviderComponentName)
-                        != PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
-        dynamicProviderEnabledSwitch.setOnCheckedChangeListener(
+        setUpServiceEnabledSwitch(
+                dynamicProviderEnabledSwitch,
+                SampleDynamicGroupMediaRouteProviderService.class,
+                /* onEnabledRunnable= */ this::bindToDynamicProviderService,
+                /* onDisabledRunnable= */ () -> {}); // Will unbind automatically.
+    }
+
+    private void setUpSimpleProviderEnabledSwitch() {
+        Switch simpleProviderEnabledSwitch = findViewById(R.id.enable_simple_provider_switch);
+        setUpServiceEnabledSwitch(
+                simpleProviderEnabledSwitch,
+                SampleMediaRouteProviderService.class,
+                /* onEnabledRunnable= */ () -> {},
+                /* onDisabledRunnable= */ () -> {});
+    }
+
+    private void setUpWrapperProviderEnabledSwitch() {
+        Switch wrapperProviderEnabledSwitch = findViewById(R.id.enable_wrapper_provider_switch);
+        setUpServiceEnabledSwitch(
+                wrapperProviderEnabledSwitch,
+                WrapperMediaRouteProviderService.class,
+                /* onEnabledRunnable= */ () -> {
+                    updateMediaTransferRestrictedToSelfProviders(true);
+                    mMediaTransferRestrictedToSelfProvidersToast.show();
+                },
+                /* onDisabledRunnable= */ () ->
+                        updateMediaTransferRestrictedToSelfProviders(false));
+    }
+
+    private void setUpServiceEnabledSwitch(
+            Switch aSwitch,
+            Class<?> service,
+            Runnable onEnabledRunnable,
+            Runnable onDisabledRunnable) {
+        ComponentName serviceComponentName = new ComponentName(/* context= */ this, service);
+        aSwitch.setChecked(isServiceEnabled(/* context= */ this, service));
+        aSwitch.setOnCheckedChangeListener(
                 (compoundButton, enabled) -> {
-                    mPackageManager
-                            .setComponentEnabledSetting(
-                                    dynamicProviderComponentName,
-                                    enabled
-                                            ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                                            : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                                    /* flags= */ PackageManager.DONT_KILL_APP);
+                    mPackageManager.setComponentEnabledSetting(
+                            serviceComponentName,
+                            enabled
+                                    ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                                    : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                            /* flags= */ PackageManager.DONT_KILL_APP);
                     if (enabled) {
-                        bindToDynamicProviderService();
+                        onEnabledRunnable.run();
+                    } else {
+                        onDisabledRunnable.run();
                     }
                 });
     }
@@ -266,9 +302,19 @@ public final class SettingsActivity extends AppCompatActivity {
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
+    private void updateMediaTransferRestrictedToSelfProviders(boolean value) {
+        MediaRouter mediaRouter = MediaRouter.getInstance(/* context= */ this);
+        MediaRouterParams routerParams = mediaRouter.getRouterParams();
+        MediaRouterParams newRouterParams =
+                new MediaRouterParams.Builder(routerParams)
+                        .setMediaTransferRestrictedToSelfProviders(value)
+                        .build();
+        mediaRouter.setRouterParams(newRouterParams);
+    }
+
     private static class ProviderServiceConnection implements ServiceConnection {
 
-        @Nullable private SampleDynamicGroupMediaRouteProviderService mService;
+        private @Nullable SampleDynamicGroupMediaRouteProviderService mService;
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {

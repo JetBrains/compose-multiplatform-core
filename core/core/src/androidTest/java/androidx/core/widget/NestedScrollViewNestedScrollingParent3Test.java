@@ -31,8 +31,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.NestedScrollingChild3;
 import androidx.core.view.NestedScrollingParent3;
 import androidx.core.view.ViewCompat;
@@ -40,6 +38,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -297,8 +297,8 @@ public class NestedScrollViewNestedScrollingParent3Test {
         }
 
         @Override
-        public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
-                int type) {
+        public void onNestedPreScroll(@NonNull View target, int dx, int dy,
+                int @NonNull [] consumed, int type) {
 
         }
 
@@ -319,25 +319,25 @@ public class NestedScrollViewNestedScrollingParent3Test {
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
             return false;
         }
 
         @Override
-        public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-                @Nullable int[] offsetInWindow, int type) {
+        public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+                int @Nullable [] offsetInWindow, int type) {
             return false;
         }
 
         @Override
         public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                int dxUnconsumed, int dyUnconsumed, int type, @Nullable int[] consumed) {
+                int dxUnconsumed, int dyUnconsumed, int type, int @Nullable [] consumed) {
         }
 
         @Override
         public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type,
-                @NonNull int[] consumed) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type,
+                int @NonNull [] consumed) {
         }
     }
 

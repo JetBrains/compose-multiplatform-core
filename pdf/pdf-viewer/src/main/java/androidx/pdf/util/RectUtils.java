@@ -17,10 +17,12 @@
 package androidx.pdf.util;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.Dimensions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities related to {@link Rect}s.
@@ -28,22 +30,41 @@ import androidx.pdf.models.Dimensions;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class RectUtils {
 
-    /** Scales the given Rect by the given scaling factor. Modifies (and returns) the given rect. */
-    @NonNull
-    public static Rect scale(@NonNull Rect rect, float scale) {
+    /**
+     * Scales the given Rect by the given scaling factor. Modifies (and returns) the given rect.
+     */
+    public static @NonNull Rect scale(@NonNull Rect rect, float scale) {
+        return scale(rect, scale, scale);
+    }
+
+    /**
+     * Scales the given RectF by the given scaling factor. Modifies (and returns) the given rect.
+     */
+    public static @NonNull RectF scale(@NonNull RectF rect, float scale) {
         return scale(rect, scale, scale);
     }
 
     /**
      *
      */
-    @NonNull
-    public static Rect scale(@NonNull Rect rect, float scaleX, float scaleY) {
+    public static @NonNull Rect scale(@NonNull Rect rect, float scaleX, float scaleY) {
         rect.set(
                 floor(rect.left * scaleX),
                 floor(rect.top * scaleY),
                 ceil(rect.right * scaleX),
                 ceil(rect.bottom * scaleY));
+        return rect;
+    }
+
+    /**
+     *
+     */
+    public static @NonNull RectF scale(@NonNull RectF rect, float scaleX, float scaleY) {
+        rect.set(
+                rect.left * scaleX,
+                rect.top * scaleY,
+                rect.right * scaleX,
+                rect.bottom * scaleY);
         return rect;
     }
 
@@ -57,8 +78,7 @@ public final class RectUtils {
     /**
      *
      */
-    @NonNull
-    public static Rect fromDimensions(@NonNull Dimensions dimensions) {
+    public static @NonNull Rect fromDimensions(@NonNull Dimensions dimensions) {
         return new Rect(0, 0, dimensions.getWidth(), dimensions.getHeight());
     }
 
@@ -71,8 +91,7 @@ public final class RectUtils {
      *   <li>Otherwise, return an empty (0x0) {@link Rect}.
      * </ul>
      */
-    @NonNull
-    public static Rect getInnerIntersection(@NonNull Rect rect1, @NonNull Rect rect2) {
+    public static @NonNull Rect getInnerIntersection(@NonNull Rect rect1, @NonNull Rect rect2) {
         if (rect1.contains(rect2)) {
             return rect2;
         }

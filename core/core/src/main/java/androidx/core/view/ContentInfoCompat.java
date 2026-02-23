@@ -25,11 +25,12 @@ import android.util.Pair;
 import android.view.ContentInfo;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -98,8 +99,7 @@ public final class ContentInfoCompat {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @NonNull
-    static String sourceToString(@Source int source) {
+    static @NonNull String sourceToString(@Source int source) {
         switch (source) {
             case SOURCE_APP: return "SOURCE_APP";
             case SOURCE_CLIPBOARD: return "SOURCE_CLIPBOARD";
@@ -132,16 +132,14 @@ public final class ContentInfoCompat {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @NonNull
-    static String flagsToString(@Flags int flags) {
+    static @NonNull String flagsToString(@Flags int flags) {
         if ((flags & FLAG_CONVERT_TO_PLAIN_TEXT) != 0) {
             return "FLAG_CONVERT_TO_PLAIN_TEXT";
         }
         return String.valueOf(flags);
     }
 
-    @NonNull
-    private final Compat mCompat;
+    private final @NonNull Compat mCompat;
 
     ContentInfoCompat(@NonNull Compat compat) {
         mCompat = compat;
@@ -157,8 +155,8 @@ public final class ContentInfoCompat {
      * @return wrapped class
      */
     @RequiresApi(31)
-    @NonNull
-    public static ContentInfoCompat toContentInfoCompat(@NonNull ContentInfo platContentInfo) {
+    public static @NonNull ContentInfoCompat toContentInfoCompat(
+            @NonNull ContentInfo platContentInfo) {
         return new ContentInfoCompat(new Compat31Impl(platContentInfo));
     }
 
@@ -172,22 +170,19 @@ public final class ContentInfoCompat {
      * @see ContentInfoCompat#toContentInfoCompat
      */
     @RequiresApi(31)
-    @NonNull
-    public ContentInfo toContentInfo() {
+    public @NonNull ContentInfo toContentInfo() {
         return Objects.requireNonNull(mCompat.getWrapped());
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mCompat.toString();
     }
 
     /**
      * The data to be inserted.
      */
-    @NonNull
-    public ClipData getClip() {
+    public @NonNull ClipData getClip() {
         return mCompat.getClip();
     }
 
@@ -214,8 +209,7 @@ public final class ContentInfoCompat {
      * {@link android.view.inputmethod.InputContentInfo#getLinkUri linkUri} was passed by the
      * IME.
      */
-    @Nullable
-    public Uri getLinkUri() {
+    public @Nullable Uri getLinkUri() {
         return mCompat.getLinkUri();
     }
 
@@ -224,8 +218,7 @@ public final class ContentInfoCompat {
      * include the {@link android.view.inputmethod.InputConnection#commitContent opts} passed by
      * the IME.
      */
-    @Nullable
-    public Bundle getExtras() {
+    public @Nullable Bundle getExtras() {
         return mCompat.getExtras();
     }
 
@@ -245,9 +238,8 @@ public final class ContentInfoCompat {
      * second object will have the content that didn't match the predicate, or null if all of
      * the items matched.
      */
-    @NonNull
-    public Pair<ContentInfoCompat, ContentInfoCompat> partition(
-            @NonNull androidx.core.util.Predicate<ClipData.Item> itemPredicate) {
+    public @NonNull Pair<ContentInfoCompat, ContentInfoCompat> partition(
+            androidx.core.util.@NonNull Predicate<ClipData.Item> itemPredicate) {
         ClipData clip = mCompat.getClip();
         if (clip.getItemCount() == 1) {
             boolean matched = itemPredicate.test(clip.getItemAt(0));
@@ -264,9 +256,8 @@ public final class ContentInfoCompat {
                 new ContentInfoCompat.Builder(this).setClip(split.second).build());
     }
 
-    @NonNull
-    static Pair<ClipData, ClipData> partition(@NonNull ClipData clip,
-            @NonNull androidx.core.util.Predicate<ClipData.Item> itemPredicate) {
+    static @NonNull Pair<ClipData, ClipData> partition(@NonNull ClipData clip,
+            androidx.core.util.@NonNull Predicate<ClipData.Item> itemPredicate) {
         ArrayList<ClipData.Item> acceptedItems = null;
         ArrayList<ClipData.Item> remainingItems = null;
         for (int i = 0; i < clip.getItemCount(); i++) {
@@ -290,8 +281,7 @@ public final class ContentInfoCompat {
                 buildClipData(clip.getDescription(), remainingItems));
     }
 
-    @NonNull
-    static ClipData buildClipData(@NonNull ClipDescription description,
+    static @NonNull ClipData buildClipData(@NonNull ClipDescription description,
             @NonNull List<ClipData.Item> items) {
         ClipData clip = new ClipData(new ClipDescription(description), items.get(0));
         for (int i = 1; i < items.size(); i++) {
@@ -318,8 +308,7 @@ public final class ContentInfoCompat {
      * the items matched.
      */
     @RequiresApi(31)
-    @NonNull
-    public static Pair<ContentInfo, ContentInfo> partition(@NonNull ContentInfo payload,
+    public static @NonNull Pair<ContentInfo, ContentInfo> partition(@NonNull ContentInfo payload,
             @NonNull Predicate<ClipData.Item> itemPredicate) {
         return Api31Impl.partition(payload, itemPredicate);
     }
@@ -328,9 +317,8 @@ public final class ContentInfoCompat {
     private static final class Api31Impl {
         private Api31Impl() {}
 
-        @NonNull
-        public static Pair<ContentInfo, ContentInfo> partition(@NonNull ContentInfo payload,
-                @NonNull Predicate<ClipData.Item> itemPredicate) {
+        public static @NonNull Pair<ContentInfo, ContentInfo> partition(
+                @NonNull ContentInfo payload, @NonNull Predicate<ClipData.Item> itemPredicate) {
             ClipData clip = payload.getClip();
             if (clip.getItemCount() == 1) {
                 boolean matched = itemPredicate.test(clip.getItemAt(0));
@@ -349,31 +337,24 @@ public final class ContentInfoCompat {
     }
 
     private interface Compat {
-        @Nullable
-        ContentInfo getWrapped();
-        @NonNull
-        ClipData getClip();
+        @Nullable ContentInfo getWrapped();
+        @NonNull ClipData getClip();
         @Source
         int getSource();
         @Flags
         int getFlags();
-        @Nullable
-        Uri getLinkUri();
-        @Nullable
-        Bundle getExtras();
+        @Nullable Uri getLinkUri();
+        @Nullable Bundle getExtras();
     }
 
     private static final class CompatImpl implements Compat {
-        @NonNull
-        private final ClipData mClip;
+        private final @NonNull ClipData mClip;
         @Source
         private final int mSource;
         @Flags
         private final int mFlags;
-        @Nullable
-        private final Uri mLinkUri;
-        @Nullable
-        private final Bundle mExtras;
+        private final @Nullable Uri mLinkUri;
+        private final @Nullable Bundle mExtras;
 
         CompatImpl(BuilderCompatImpl b) {
             mClip = Preconditions.checkNotNull(b.mClip);
@@ -384,15 +365,13 @@ public final class ContentInfoCompat {
             mExtras = b.mExtras;
         }
 
-        @Nullable
         @Override
-        public ContentInfo getWrapped() {
+        public @Nullable ContentInfo getWrapped() {
             return null;
         }
 
-        @NonNull
         @Override
-        public ClipData getClip() {
+        public @NonNull ClipData getClip() {
             return mClip;
         }
 
@@ -408,21 +387,18 @@ public final class ContentInfoCompat {
             return mFlags;
         }
 
-        @Nullable
         @Override
-        public Uri getLinkUri() {
+        public @Nullable Uri getLinkUri() {
             return mLinkUri;
         }
 
-        @Nullable
         @Override
-        public Bundle getExtras() {
+        public @Nullable Bundle getExtras() {
             return mExtras;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "ContentInfoCompat{"
                     + "clip=" + mClip.getDescription()
                     + ", source=" + sourceToString(mSource)
@@ -435,22 +411,19 @@ public final class ContentInfoCompat {
 
     @RequiresApi(31)
     private static final class Compat31Impl implements Compat {
-        @NonNull
-        private final ContentInfo mWrapped;
+        private final @NonNull ContentInfo mWrapped;
 
         Compat31Impl(@NonNull ContentInfo wrapped) {
             mWrapped = Preconditions.checkNotNull(wrapped);
         }
 
-        @NonNull
         @Override
-        public ContentInfo getWrapped() {
+        public @NonNull ContentInfo getWrapped() {
             return mWrapped;
         }
 
-        @NonNull
         @Override
-        public ClipData getClip() {
+        public @NonNull ClipData getClip() {
             return mWrapped.getClip();
         }
 
@@ -466,21 +439,18 @@ public final class ContentInfoCompat {
             return mWrapped.getFlags();
         }
 
-        @Nullable
         @Override
-        public Uri getLinkUri() {
+        public @Nullable Uri getLinkUri() {
             return mWrapped.getLinkUri();
         }
 
-        @Nullable
         @Override
-        public Bundle getExtras() {
+        public @Nullable Bundle getExtras() {
             return mWrapped.getExtras();
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "ContentInfoCompat{" + mWrapped + "}";
         }
     }
@@ -489,8 +459,7 @@ public final class ContentInfoCompat {
      * Builder for {@link ContentInfoCompat}.
      */
     public static final class Builder {
-        @NonNull
-        private final BuilderCompat mBuilderCompat;
+        private final @NonNull BuilderCompat mBuilderCompat;
 
         /**
          * Creates a new builder initialized with the data from the given object (shallow copy).
@@ -523,8 +492,7 @@ public final class ContentInfoCompat {
          * @param clip The data to insert.
          * @return this builder
          */
-        @NonNull
-        public Builder setClip(@NonNull ClipData clip) {
+        public @NonNull Builder setClip(@NonNull ClipData clip) {
             mBuilderCompat.setClip(clip);
             return this;
         }
@@ -535,8 +503,7 @@ public final class ContentInfoCompat {
          * @param source The source of the operation. See {@code SOURCE_} constants.
          * @return this builder
          */
-        @NonNull
-        public Builder setSource(@Source int source) {
+        public @NonNull Builder setSource(@Source int source) {
             mBuilderCompat.setSource(source);
             return this;
         }
@@ -548,8 +515,7 @@ public final class ContentInfoCompat {
          *              behavior. See {@code FLAG_} constants.
          * @return this builder
          */
-        @NonNull
-        public Builder setFlags(@Flags int flags) {
+        public @NonNull Builder setFlags(@Flags int flags) {
             mBuilderCompat.setFlags(flags);
             return this;
         }
@@ -561,8 +527,7 @@ public final class ContentInfoCompat {
          * @param linkUri Optional http/https URI for the content.
          * @return this builder
          */
-        @NonNull
-        public Builder setLinkUri(@Nullable Uri linkUri) {
+        public @NonNull Builder setLinkUri(@Nullable Uri linkUri) {
             mBuilderCompat.setLinkUri(linkUri);
             return this;
         }
@@ -573,8 +538,7 @@ public final class ContentInfoCompat {
          * @param extras Optional bundle with additional metadata.
          * @return this builder
          */
-        @NonNull
-        public Builder setExtras(@Nullable Bundle extras) {
+        public @NonNull Builder setExtras(@Nullable Bundle extras) {
             mBuilderCompat.setExtras(extras);
             return this;
         }
@@ -582,8 +546,7 @@ public final class ContentInfoCompat {
         /**
          * @return A new {@link ContentInfoCompat} instance with the data from this builder.
          */
-        @NonNull
-        public ContentInfoCompat build() {
+        public @NonNull ContentInfoCompat build() {
             return mBuilderCompat.build();
         }
     }
@@ -594,21 +557,17 @@ public final class ContentInfoCompat {
         void setFlags(@Flags int flags);
         void setLinkUri(@Nullable Uri linkUri);
         void setExtras(@Nullable Bundle extras);
-        @NonNull
-        ContentInfoCompat build();
+        @NonNull ContentInfoCompat build();
     }
 
     private static final class BuilderCompatImpl implements BuilderCompat {
-        @NonNull
-        ClipData mClip;
+        @NonNull ClipData mClip;
         @Source
         int mSource;
         @Flags
         int mFlags;
-        @Nullable
-        Uri mLinkUri;
-        @Nullable
-        Bundle mExtras;
+        @Nullable Uri mLinkUri;
+        @Nullable Bundle mExtras;
 
         BuilderCompatImpl(@NonNull ClipData clip, int source) {
             mClip = clip;
@@ -649,16 +608,14 @@ public final class ContentInfoCompat {
         }
 
         @Override
-        @NonNull
-        public ContentInfoCompat build() {
+        public @NonNull ContentInfoCompat build() {
             return new ContentInfoCompat(new CompatImpl(this));
         }
     }
 
     @RequiresApi(31)
     private static final class BuilderCompat31Impl implements BuilderCompat {
-        @NonNull
-        private final ContentInfo.Builder mPlatformBuilder;
+        private final ContentInfo.@NonNull Builder mPlatformBuilder;
 
         BuilderCompat31Impl(@NonNull ClipData clip, int source) {
             mPlatformBuilder = new ContentInfo.Builder(clip, source);
@@ -693,9 +650,8 @@ public final class ContentInfoCompat {
             mPlatformBuilder.setExtras(extras);
         }
 
-        @NonNull
         @Override
-        public ContentInfoCompat build() {
+        public @NonNull ContentInfoCompat build() {
             return new ContentInfoCompat(new Compat31Impl(mPlatformBuilder.build()));
         }
     }

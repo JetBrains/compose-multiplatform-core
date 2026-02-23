@@ -35,7 +35,7 @@ import kotlinx.atomicfu.atomic
  */
 public class FakeCaptureSequenceProcessor(
     private val cameraId: CameraId = FakeCameraIds.default,
-    private val defaultTemplate: RequestTemplate = RequestTemplate(1)
+    private val defaultTemplate: RequestTemplate = RequestTemplate(1),
 ) : CaptureSequenceProcessor<Request, FakeCaptureSequence> {
     private val debugId = debugIds.incrementAndGet()
     private val lock = Any()
@@ -57,7 +57,7 @@ public class FakeCaptureSequenceProcessor(
     public fun nextEvent(): Event {
         synchronized(lock) {
             val eventIdx = nextEventIndex++
-            check(_events.size > 0) {
+            check(_events.isNotEmpty()) {
                 "Failed to get next event for $this, there have been no interactions."
             }
             check(eventIdx < _events.size) {
@@ -104,9 +104,10 @@ public class FakeCaptureSequenceProcessor(
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
+        sequenceListener: CaptureSequenceListener,
         listeners: List<Request.Listener>,
-        sequenceListener: CaptureSequenceListener
     ): FakeCaptureSequence? {
         throwTestExceptionIf(throwOnBuild)
 
@@ -119,8 +120,9 @@ public class FakeCaptureSequenceProcessor(
                 defaultTemplate,
                 defaultParameters,
                 requiredParameters,
+                graphParameters,
                 listeners,
-                sequenceListener
+                sequenceListener,
             )
         synchronized(lock) {
             if (rejectBuild || shutdown || captureSequence == null) {
@@ -203,19 +205,19 @@ public class FakeCaptureSequenceProcessor(
         }
     }
 
-    public open class Event
+    public sealed interface Event
 
-    public object Shutdown : Event()
+    public object Shutdown : Event
 
-    public object StopRepeating : Event()
+    public object StopRepeating : Event
 
-    public object AbortCaptures : Event()
+    public object AbortCaptures : Event
 
-    public data class BuildRejected(val captureSequence: FakeCaptureSequence?) : Event()
+    public data class BuildRejected(val captureSequence: FakeCaptureSequence?) : Event
 
-    public data class SubmitRejected(val captureSequence: FakeCaptureSequence) : Event()
+    public data class SubmitRejected(val captureSequence: FakeCaptureSequence) : Event
 
-    public data class Submit(val captureSequence: FakeCaptureSequence) : Event()
+    public data class Submit(val captureSequence: FakeCaptureSequence) : Event
 
     public companion object {
         private val debugIds = atomic(0)
@@ -228,12 +230,29 @@ public class FakeCaptureSequenceProcessor(
         public val Event.defaultParameters: Map<*, Any?>
             get() = checkNotNull(captureSequence).defaultParameters
 
-        // TODO: Decide if these should only work on successful submit or not.
+        public val Event.graphParameters: Map<*, Any?>
+            get() = checkNotNull(captureSequence).graphParameters
+
+        public val Event.listeners: List<Request.Listener>
+            get() = checkNotNull(captureSequence).listeners
+
         public val Event.isRepeating: Boolean
-            get() = (this as? Submit)?.captureSequence?.repeating ?: false
+            get() =
+                when (this) {
+                    is Submit -> captureSequence.repeating == true
+                    is SubmitRejected -> captureSequence.repeating == true
+                    is BuildRejected -> captureSequence?.repeating == true
+                    else -> false
+                }
 
         public val Event.isCapture: Boolean
-            get() = (this as? Submit)?.captureSequence?.repeating == false
+            get() =
+                when (this) {
+                    is Submit -> captureSequence.repeating == false
+                    is SubmitRejected -> captureSequence.repeating == false
+                    is BuildRejected -> captureSequence?.repeating == false
+                    else -> false
+                }
 
         public val Event.isRejected: Boolean
             get() =

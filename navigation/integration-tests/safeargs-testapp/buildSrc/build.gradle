@@ -37,7 +37,7 @@ task unzip(type: Copy, dependsOn: createArchive) {
 
 apply plugin: "java"
 dependencies {
-    compile project(":moar-buildSrc")
+    api(project(":moar-buildSrc"))
 }
 
 tasks["build"].dependsOn unzip

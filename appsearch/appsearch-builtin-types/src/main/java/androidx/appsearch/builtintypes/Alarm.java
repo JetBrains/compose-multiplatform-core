@@ -18,12 +18,15 @@ package androidx.appsearch.builtintypes;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.utils.DateTimeFormatValidator;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -88,12 +91,13 @@ public class Alarm extends Thing {
     @Document.LongProperty(name = "computingDevice")
     private final int mOriginatingDevice;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Alarm(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
             @Nullable String image, @Nullable String url,
             @NonNull List<PotentialAction> potentialActions,
-            boolean enabled, @Nullable int[] daysOfWeek, int hour, int minute,
+            boolean enabled, int @Nullable [] daysOfWeek, int hour, int minute,
             @Nullable String blackoutPeriodStartDate, @Nullable String blackoutPeriodEndDate,
             @Nullable String ringtone, boolean shouldVibrate,
             @Nullable AlarmInstance previousInstance, @Nullable AlarmInstance nextInstance,
@@ -128,8 +132,7 @@ public class Alarm extends Thing {
      *
      * <p>If null, or if the list is empty, then the {@link Alarm} does not repeat.
      */
-    @Nullable
-    public int[] getDaysOfWeek() {
+    public int @Nullable [] getDaysOfWeek() {
         return mDaysOfWeek;
     }
 
@@ -164,8 +167,7 @@ public class Alarm extends Thing {
      * <p>If neither blackoutPeriodStartDate and blackoutPeriodEndDate are set, then
      * the blackout period is not defined.
      */
-    @Nullable
-    public String getBlackoutPeriodStartDate() {
+    public @Nullable String getBlackoutPeriodStartDate() {
         return mBlackoutPeriodStartDate;
     }
 
@@ -180,8 +182,7 @@ public class Alarm extends Thing {
      * <p>If neither blackoutPeriodStartDate and blackoutPeriodEndDate are set, then
      * the blackout period is not defined.
      */
-    @Nullable
-    public String getBlackoutPeriodEndDate() {
+    public @Nullable String getBlackoutPeriodEndDate() {
         return mBlackoutPeriodEndDate;
     }
 
@@ -189,8 +190,7 @@ public class Alarm extends Thing {
      * Returns the ringtone as a content URI to be played, or
      * {@link android.provider.AlarmClock#VALUE_RINGTONE_SILENT} if no ringtone will be played.
      */
-    @Nullable
-    public String getRingtone() {
+    public @Nullable String getRingtone() {
         return mRingtone;
     }
 
@@ -207,8 +207,7 @@ public class Alarm extends Thing {
      *
      * <p>See {@link AlarmInstance}.
      */
-    @Nullable
-    public AlarmInstance getPreviousInstance() {
+    public @Nullable AlarmInstance getPreviousInstance() {
         return mPreviousInstance;
     }
 
@@ -220,8 +219,7 @@ public class Alarm extends Thing {
      *
      * <p>See {@link AlarmInstance}.
      */
-    @Nullable
-    public AlarmInstance getNextInstance() {
+    public @Nullable AlarmInstance getNextInstance() {
         return mNextInstance;
     }
 
@@ -287,8 +285,7 @@ public class Alarm extends Thing {
         }
 
         /** Sets whether or not the {@link Alarm} is active. */
-        @NonNull
-        public T setEnabled(boolean enabled) {
+        public @NonNull T setEnabled(boolean enabled) {
             mEnabled = enabled;
             return (T) this;
         }
@@ -303,10 +300,9 @@ public class Alarm extends Thing {
          *
          * <p>If not set, or if the list is empty, then the {@link Alarm} does not repeat.
          */
-        @NonNull
-        public T setDaysOfWeek(
-                @Nullable
-                @IntRange(from = Calendar.SUNDAY, to = Calendar.SATURDAY) int... daysOfWeek) {
+        public @NonNull T setDaysOfWeek(
+                @IntRange(from = Calendar.SUNDAY, to = Calendar.SATURDAY)
+                int @Nullable ... daysOfWeek) {
             if (daysOfWeek != null) {
                 for (int day : daysOfWeek) {
                     Preconditions.checkArgumentInRange(day, Calendar.SUNDAY, Calendar.SATURDAY,
@@ -322,8 +318,7 @@ public class Alarm extends Thing {
          *
          * <p>Hours are specified by integers from 0 to 23.
          */
-        @NonNull
-        public T setHour(@IntRange(from = 0, to = 23) int hour) {
+        public @NonNull T setHour(@IntRange(from = 0, to = 23) int hour) {
             mHour = Preconditions.checkArgumentInRange(hour, 0, 23, "hour");
             return (T) this;
         }
@@ -333,8 +328,7 @@ public class Alarm extends Thing {
          *
          * <p>Minutes are specified by integers from 0 to 59.
          */
-        @NonNull
-        public T setMinute(@IntRange(from = 0, to = 59) int minute) {
+        public @NonNull T setMinute(@IntRange(from = 0, to = 59) int minute) {
             mMinute = Preconditions.checkArgumentInRange(minute, 0, 59, "minute");
             return (T) this;
         }
@@ -350,8 +344,7 @@ public class Alarm extends Thing {
          * <p>If neither blackoutPeriodStartDate and blackoutPeriodEndDate are set, then
          * the blackout period is not defined.
          */
-        @NonNull
-        public T setBlackoutPeriodStartDate(
+        public @NonNull T setBlackoutPeriodStartDate(
                 @Nullable String blackoutPeriodStartDate) {
             if (blackoutPeriodStartDate != null) {
                 Preconditions.checkArgument(
@@ -373,8 +366,7 @@ public class Alarm extends Thing {
          * <p>If neither blackoutPeriodStartDate and blackoutPeriodEndDate are set, then
          * the blackout period is not defined.
          */
-        @NonNull
-        public T setBlackoutPeriodEndDate(@Nullable String blackoutPeriodEndDate) {
+        public @NonNull T setBlackoutPeriodEndDate(@Nullable String blackoutPeriodEndDate) {
             if (blackoutPeriodEndDate != null) {
                 Preconditions.checkArgument(
                         DateTimeFormatValidator.validateISO8601Date(blackoutPeriodEndDate),
@@ -388,15 +380,13 @@ public class Alarm extends Thing {
          * Sets the content URI for the ringtone to be played, or
          * {@link android.provider.AlarmClock#VALUE_RINGTONE_SILENT} if no ringtone will be played.
          */
-        @NonNull
-        public T setRingtone(@Nullable String ringtone) {
+        public @NonNull T setRingtone(@Nullable String ringtone) {
             mRingtone = ringtone;
             return (T) this;
         }
 
         /** Sets whether or not to activate the device vibrator when the {@link Alarm} fires. */
-        @NonNull
-        public T setShouldVibrate(boolean shouldVibrate) {
+        public @NonNull T setShouldVibrate(boolean shouldVibrate) {
             mShouldVibrate = shouldVibrate;
             return (T) this;
         }
@@ -409,8 +399,7 @@ public class Alarm extends Thing {
          *
          * <p>See {@link AlarmInstance}.
          */
-        @NonNull
-        public T setPreviousInstance(@Nullable AlarmInstance previousInstance) {
+        public @NonNull T setPreviousInstance(@Nullable AlarmInstance previousInstance) {
             mPreviousInstance = previousInstance;
             return (T) this;
         }
@@ -423,23 +412,20 @@ public class Alarm extends Thing {
          *
          * <p>See {@link AlarmInstance}.
          */
-        @NonNull
-        public T setNextInstance(@Nullable AlarmInstance nextInstance) {
+        public @NonNull T setNextInstance(@Nullable AlarmInstance nextInstance) {
             mNextInstance = nextInstance;
             return (T) this;
         }
 
         /** Sets the {@link OriginatingDevice} this alarm belongs to. */
-        @NonNull
-        public T setOriginatingDevice(@OriginatingDevice int originatingDevice) {
+        public @NonNull T setOriginatingDevice(@OriginatingDevice int originatingDevice) {
             mOriginatingDevice = originatingDevice;
             return (T) this;
         }
 
         /** Builds the {@link Alarm}. */
-        @NonNull
         @Override
-        public Alarm build() {
+        public @NonNull Alarm build() {
             return new Alarm(mNamespace, mId, mDocumentScore, mCreationTimestampMillis,
                     mDocumentTtlMillis, mName, mAlternateNames, mDescription, mImage, mUrl,
                     mPotentialActions,

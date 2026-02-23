@@ -25,13 +25,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import android.os.Build;
 import android.view.MotionEvent;
 
 import androidx.pdf.util.GestureTracker.Gesture;
 import androidx.pdf.util.GestureTracker.GestureHandler;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -46,10 +44,8 @@ import org.robolectric.annotation.Config;
 import java.util.AbstractList;
 import java.util.List;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class GestureTrackerTest {
 
     private static final int TAP_TIMEOUT = 200;

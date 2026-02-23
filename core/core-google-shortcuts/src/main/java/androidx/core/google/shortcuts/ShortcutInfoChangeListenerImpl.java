@@ -21,12 +21,8 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 import static androidx.core.google.shortcuts.utils.ShortcutUtils.CAPABILITY_PARAM_SEPARATOR;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.ShortcutInfoChangeListener;
@@ -43,6 +39,9 @@ import com.google.android.gms.appindex.Indexable;
 import com.google.android.gms.appindex.UserActions;
 import com.google.crypto.tink.KeysetHandle;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +54,7 @@ public class ShortcutInfoChangeListenerImpl extends ShortcutInfoChangeListener {
     private final Context mContext;
     private final AppIndex mFirebaseAppIndex;
     private final UserActions mFirebaseUserActions;
-    @Nullable private final KeysetHandle mKeysetHandle;
+    private final @Nullable KeysetHandle mKeysetHandle;
 
     /**
      * Create an instance of {@link ShortcutInfoChangeListenerImpl}.
@@ -63,8 +62,7 @@ public class ShortcutInfoChangeListenerImpl extends ShortcutInfoChangeListener {
      * @param context The application context.
      * @return {@link ShortcutInfoChangeListenerImpl}.
      */
-    @NonNull
-    public static ShortcutInfoChangeListenerImpl getInstance(@NonNull Context context) {
+    public static @NonNull ShortcutInfoChangeListenerImpl getInstance(@NonNull Context context) {
         return new ShortcutInfoChangeListenerImpl(context, AppIndex.getInstance(context),
                 UserActions.getInstance(context),
                 ShortcutUtils.getOrCreateShortcutKeysetHandle(context));
@@ -142,16 +140,14 @@ public class ShortcutInfoChangeListenerImpl extends ShortcutInfoChangeListener {
         mFirebaseAppIndex.removeAll();
     }
 
-    @NonNull
-    private Action buildAction(@NonNull String url) {
+    private @NonNull Action buildAction(@NonNull String url) {
         return new Action.Builder(Action.Builder.VIEW_ACTION)
                 // Empty label as placeholder.
                 .setObject("", url)
                 .build();
     }
 
-    @NonNull
-    private ShortcutBuilder buildShortcutIndexable(@NonNull ShortcutInfoCompat shortcut) {
+    private @NonNull ShortcutBuilder buildShortcutIndexable(@NonNull ShortcutInfoCompat shortcut) {
         String url = ShortcutUtils.getIndexableUrl(mContext, shortcut.getId());
         String shortcutUrl = ShortcutUtils.getIndexableShortcutUrl(mContext, shortcut.getIntent(),
                 mKeysetHandle);
@@ -167,21 +163,19 @@ public class ShortcutInfoChangeListenerImpl extends ShortcutInfoChangeListener {
         }
 
         // Add capability binding
-        if (Build.VERSION.SDK_INT >= 21) {
-            if (shortcut.getCategories() != null) {
-                List<CapabilityBuilder> capabilityList = new ArrayList<>();
-                for (String capability : shortcut.getCategories()) {
-                    if (!ShortcutUtils.isAppActionCapability(capability)) {
-                        continue;
-                    }
-
-                    capabilityList.add(Api21Impl.buildCapability(capability, shortcut.getExtras()));
+        if (shortcut.getCategories() != null) {
+            List<CapabilityBuilder> capabilityList = new ArrayList<>();
+            for (String capability : shortcut.getCategories()) {
+                if (!ShortcutUtils.isAppActionCapability(capability)) {
+                    continue;
                 }
 
-                if (!capabilityList.isEmpty()) {
-                    shortcutBuilder
-                            .setCapability(capabilityList.toArray(new CapabilityBuilder[0]));
-                }
+                capabilityList.add(Api21Impl.buildCapability(capability, shortcut.getExtras()));
+            }
+
+            if (!capabilityList.isEmpty()) {
+                shortcutBuilder
+                        .setCapability(capabilityList.toArray(new CapabilityBuilder[0]));
             }
         }
 
@@ -199,10 +193,8 @@ public class ShortcutInfoChangeListenerImpl extends ShortcutInfoChangeListener {
         return shortcutBuilder;
     }
 
-    @RequiresApi(21)
     private static class Api21Impl {
-        @NonNull
-        static CapabilityBuilder buildCapability(@NonNull String capability,
+        static @NonNull CapabilityBuilder buildCapability(@NonNull String capability,
                 @Nullable PersistableBundle shortcutInfoExtras) {
             CapabilityBuilder capabilityBuilder = new CapabilityBuilder()
                     .setName(capability);

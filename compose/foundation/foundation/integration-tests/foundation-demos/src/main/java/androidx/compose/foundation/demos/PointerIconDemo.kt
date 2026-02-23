@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.stylusHoverIcon
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -62,6 +63,7 @@ fun PointerIconPartialOverlapDemo() {
             Modifier.fillMaxSize()
                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                 .pointerHoverIcon(PointerIcon.Crosshair)
+                .stylusHoverIcon(PointerIcon.Crosshair)
     ) {
         Text(text = "expected crosshair")
         Box(
@@ -69,6 +71,7 @@ fun PointerIconPartialOverlapDemo() {
                 .fillMaxWidth(0.6f)
                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                 .pointerHoverIcon(PointerIcon.Hand, true)
+                .stylusHoverIcon(PointerIcon.Hand, true)
         ) {
             Text(text = "expected hand")
         }
@@ -83,12 +86,14 @@ fun PointerIconFullOverlapDemo() {
             Modifier.fillMaxSize()
                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                 .pointerHoverIcon(PointerIcon.Crosshair)
+                .stylusHoverIcon(PointerIcon.Crosshair)
     ) {
         Text(text = "expected crosshair")
         Box(
             Modifier.fillMaxSize()
                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                 .pointerHoverIcon(PointerIcon.Hand)
+                .stylusHoverIcon(PointerIcon.Hand)
         ) {
             Text(text = "expected hand")
         }
@@ -108,6 +113,7 @@ fun PointerIconNonOverlappingParentsDemo() {
                     .requiredSize(50.dp)
                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                     .pointerHoverIcon(PointerIcon.Hand)
+                    .stylusHoverIcon(PointerIcon.Hand)
             ) {
                 Text("hand")
             }
@@ -116,6 +122,7 @@ fun PointerIconNonOverlappingParentsDemo() {
                     .requiredSize(50.dp)
                     .border(BorderStroke(2.dp, SolidColor(Color.Blue)))
                     .pointerHoverIcon(PointerIcon.Crosshair)
+                    .stylusHoverIcon(PointerIcon.Crosshair)
             ) {
                 Text("crosshair")
             }
@@ -135,6 +142,7 @@ fun PointerIconOverlappingSiblingsDemo() {
                 .requiredSize(120.dp, 60.dp)
                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                 .pointerHoverIcon(PointerIcon.Hand)
+                .stylusHoverIcon(PointerIcon.Hand)
         ) {
             Text(text = "expected hand")
         }
@@ -143,6 +151,7 @@ fun PointerIconOverlappingSiblingsDemo() {
                 .requiredSize(120.dp, 20.dp)
                 .border(BorderStroke(2.dp, SolidColor(Color.Blue)))
                 .pointerHoverIcon(PointerIcon.Crosshair)
+                .stylusHoverIcon(PointerIcon.Crosshair)
         ) {
             Text(text = "expected crosshair")
         }
@@ -157,6 +166,7 @@ fun PointerIconMultiLayeredNestingDemo() {
             Modifier.requiredSize(200.dp)
                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                 .pointerHoverIcon(PointerIcon.Crosshair)
+                .stylusHoverIcon(PointerIcon.Crosshair)
     ) {
         Text(text = "expected crosshair")
         Box(
@@ -164,6 +174,7 @@ fun PointerIconMultiLayeredNestingDemo() {
                 .requiredSize(150.dp)
                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                 .pointerHoverIcon(PointerIcon.Text)
+                .stylusHoverIcon(PointerIcon.Text)
         ) {
             Text(text = "expected text")
             Box(
@@ -171,6 +182,7 @@ fun PointerIconMultiLayeredNestingDemo() {
                     .requiredSize(100.dp)
                     .border(BorderStroke(2.dp, SolidColor(Color.Blue)))
                     .pointerHoverIcon(PointerIcon.Hand)
+                    .stylusHoverIcon(PointerIcon.Hand)
             ) {
                 Text(text = "expected hand")
             }
@@ -189,6 +201,7 @@ fun PointerIconChildNotFullyOverlappedByParentDemo() {
                     .requiredSize(width = 200.dp, height = 150.dp)
                     .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                     .pointerHoverIcon(PointerIcon.Crosshair, overrideDescendants = false)
+                    .stylusHoverIcon(PointerIcon.Crosshair, overrideDescendants = false)
         ) {
             Text(text = "expected crosshair")
             Box(
@@ -196,6 +209,7 @@ fun PointerIconChildNotFullyOverlappedByParentDemo() {
                     .requiredSize(width = 150.dp, height = 125.dp)
                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                     .pointerHoverIcon(PointerIcon.Text, overrideDescendants = false)
+                    .stylusHoverIcon(PointerIcon.Text, overrideDescendants = false)
             ) {
                 Text(text = "expected text")
                 Box(
@@ -204,6 +218,7 @@ fun PointerIconChildNotFullyOverlappedByParentDemo() {
                         .offset(x = 100.dp)
                         .border(BorderStroke(2.dp, SolidColor(Color.Blue)))
                         .pointerHoverIcon(PointerIcon.Hand, overrideDescendants = false)
+                        .stylusHoverIcon(PointerIcon.Hand, overrideDescendants = false)
                 ) {
                     Text(text = "expected hand")
                 }

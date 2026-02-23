@@ -20,10 +20,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.CancellationSignal;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.sqlite.inspection.SqliteInspector.DatabaseConnection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class DatabaseLockRegistry {
     // A dedicated thread required as database transactions are tied to a thread. In order to
     // release a lock, we need to use the same thread as the one we used to establish the lock.
     // Thread names need to start with 'Studio:' as per some framework limitations.
-    @NonNull private final Executor mExecutor =
+    private final @NonNull Executor mExecutor =
             Executors.newSingleThreadExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {

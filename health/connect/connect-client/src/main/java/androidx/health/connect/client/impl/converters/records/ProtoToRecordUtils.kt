@@ -22,11 +22,13 @@ import androidx.health.connect.client.records.ExerciseLap
 import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSegment.Companion.EXERCISE_SEGMENT_TYPE_UNKNOWN
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SleepSessionRecord.Companion.STAGE_TYPE_STRING_TO_INT_MAP
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.units.TemperatureDelta
 import androidx.health.connect.client.units.meters
 import androidx.health.platform.client.proto.DataProto
 import androidx.health.platform.client.proto.DataProto.DataPointOrBuilder
@@ -76,7 +78,7 @@ internal fun DataPointOrBuilder.getEnum(key: String): String? {
 internal fun DataPointOrBuilder.mapEnum(
     key: String,
     stringToIntMap: Map<String, Int>,
-    default: Int
+    default: Int,
 ): Int {
     val value = getEnum(key) ?: return default
     return stringToIntMap.getOrDefault(value, default)
@@ -93,7 +95,7 @@ internal fun SeriesValueOrBuilder.getString(key: String): String? = valuesMap[ke
 internal fun SeriesValueOrBuilder.getEnum(key: String): String? = valuesMap[key]?.enumVal
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.metadata: Metadata
+val DataProto.DataPoint.metadata: Metadata
     get() =
         Metadata(
             id = if (hasUid()) uid else Metadata.EMPTY_ID,
@@ -102,15 +104,24 @@ internal val DataProto.DataPoint.metadata: Metadata
             clientRecordId = if (hasClientId()) clientId else null,
             clientRecordVersion = clientVersion,
             device = if (hasDevice()) device.toDevice() else null,
-            recordingMethod = recordingMethod
+            recordingMethod = recordingMethod,
         )
 
 internal fun DataProto.Device.toDevice(): Device {
     return Device(
         manufacturer = if (hasManufacturer()) manufacturer else null,
         model = if (hasModel()) model else null,
-        type = DEVICE_TYPE_STRING_TO_INT_MAP.getOrDefault(type, Device.TYPE_UNKNOWN)
+        type = DEVICE_TYPE_STRING_TO_INT_MAP.getOrDefault(type, Device.TYPE_UNKNOWN),
     )
+}
+
+internal fun DataProto.DataPoint.SubTypeDataList.toDeltasList(): List<SkinTemperatureRecord.Delta> {
+    return valuesList.map {
+        SkinTemperatureRecord.Delta(
+            time = Instant.ofEpochMilli(it.startTimeMillis),
+            delta = TemperatureDelta.celsius(it.valuesMap["temperatureDelta"]?.doubleVal ?: 0.0),
+        )
+    }
 }
 
 internal fun DataProto.DataPoint.SubTypeDataList.toStageList(): List<SleepSessionRecord.Stage> {
@@ -120,7 +131,7 @@ internal fun DataProto.DataPoint.SubTypeDataList.toStageList(): List<SleepSessio
             endTime = Instant.ofEpochMilli(it.endTimeMillis),
             stage =
                 STAGE_TYPE_STRING_TO_INT_MAP[it.valuesMap["stage"]?.enumVal]
-                    ?: SleepSessionRecord.STAGE_TYPE_UNKNOWN
+                    ?: SleepSessionRecord.STAGE_TYPE_UNKNOWN,
         )
     }
 }
@@ -131,7 +142,7 @@ internal fun DataProto.DataPoint.SubTypeDataList.toSegmentList(): List<ExerciseS
             startTime = Instant.ofEpochMilli(it.startTimeMillis),
             endTime = Instant.ofEpochMilli(it.endTimeMillis),
             segmentType = (it.valuesMap["type"]?.longVal ?: EXERCISE_SEGMENT_TYPE_UNKNOWN).toInt(),
-            repetitions = it.valuesMap["reps"]?.longVal?.toInt() ?: 0
+            repetitions = it.valuesMap["reps"]?.longVal?.toInt() ?: 0,
         )
     }
 }

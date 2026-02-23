@@ -25,22 +25,22 @@ internal val VIEWMODEL =
         checksum = 0xacdef33f,
         source =
             """
-                package androidx.lifecycle
-                public open class ViewModel
+            package androidx.lifecycle
+            public open class ViewModel
 
-                public class ViewModelStoreOwner
-                public class ViewModelProvider {
-                   public class Factory {
-                        public fun <T : ViewModel> create(): T {
-                            return MockStore<T>().vm
-                        }
+            public class ViewModelStoreOwner
+            public class ViewModelProvider {
+               public class Factory {
+                    public fun <T : ViewModel> create(): T {
+                        return MockStore<T>().vm
+                    }
 
-                        private class MockStore<T : ViewModel> {
-                            lateinit var vm: T
-                        }
-                   }
-                }
-                public class CreationExtras
+                    private class MockStore<T : ViewModel> {
+                        lateinit var vm: T
+                    }
+               }
+            }
+            public class CreationExtras
             """
                 .trimIndent(),
         """
@@ -137,7 +137,7 @@ internal val VIEWMODEL =
                 q7ZONKdHxkRWWh2ZBDsQfIPfsulJGGusvEwDhc1XjL0wEVhkdDIzjyXG8s8A
                 SnCzfDnDBaxkP0YY56x8jVwDEw1MNlBBlSmmGpjGzDUowSzmOE/gJphP4HwD
                 iZB0Wu4BAAA=
-                """
+                """,
     )
 
 internal val VIEWMODEL_COMPOSE =
@@ -167,7 +167,7 @@ internal val VIEWMODEL_COMPOSE =
                 key: String? = null,
                 noinline initializer: CreationExtras.() -> VM
             ): VM { return CreationExtras().run { initializer() } }
-        """
+            """
                 .trimIndent(),
         """
                 META-INF/main.kotlin_module:
@@ -211,5 +211,5 @@ internal val VIEWMODEL_COMPOSE =
                 qe8s7iBNo+7Z1FfwMcn/R6mBSlBXicJ1onNjFY4E3khgPoGbuJVAHG8msIAE
                 GZh4C4urUEw4TSRNpExIJi6auGRiyUTMxG0TgyaWTYRNDJi4bHJjl70MumiC
                 d+jN2I7e/Rt/dMvZYg8AAA==
-                """
+                """,
     )

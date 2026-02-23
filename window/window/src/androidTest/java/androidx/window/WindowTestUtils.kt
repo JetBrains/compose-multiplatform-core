@@ -28,16 +28,21 @@ open class WindowTestUtils {
                 )
                 .createWindowContext(
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    /* options= */ null
+                    /* options= */ null,
                 )
         }
 
-        fun assumeAtLeastVendorApiLevel(min: Int) {
+        fun assumeWindowExtensionVersionEquals(level: Int) {
+            val apiLevel = WindowSdkExtensions.getInstance().extensionVersion
+            assumeTrue(apiLevel == level)
+        }
+
+        fun assumeAtLeastWindowExtensionVersion(min: Int) {
             val apiLevel = WindowSdkExtensions.getInstance().extensionVersion
             assumeTrue(apiLevel >= min)
         }
 
-        fun assumeBeforeVendorApiLevel(max: Int) {
+        fun assumeBeforeWindowExtensionVersion(max: Int) {
             val apiLevel = WindowSdkExtensions.getInstance().extensionVersion
             assumeTrue(apiLevel < max)
             assumeTrue(apiLevel > 0)
@@ -75,7 +80,7 @@ open class WindowTestUtils {
         fun runActionsAcrossActivityLifecycle(
             scenarioRule: ActivityScenarioRule<TestActivity>,
             initialAction: ActivityScenario.ActivityAction<TestActivity>,
-            verifyAction: ActivityScenario.ActivityAction<TestActivity>
+            verifyAction: ActivityScenario.ActivityAction<TestActivity>,
         ) {
             val scenario = scenarioRule.scenario
             scenario.onActivity(initialAction)

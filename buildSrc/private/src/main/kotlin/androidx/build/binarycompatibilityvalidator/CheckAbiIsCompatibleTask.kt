@@ -20,23 +20,49 @@ import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
 import androidx.binarycompatibilityvalidator.KlibDumpParser
 import androidx.binarycompatibilityvalidator.ValidationException
 import androidx.build.Version
+import androidx.build.logging.TERMINAL_RED
+import androidx.build.logging.TERMINAL_RESET
 import androidx.build.metalava.shouldFreezeApis
 import androidx.build.metalava.summarizeDiff
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
+import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 
+class DependenciesForTarget(
+    @get:Input val targetName: String,
+    @get:PathSensitive(PathSensitivity.NONE) @get:InputFiles val files: FileCollection,
+)
+
 @CacheableTask
-@OptIn(ExperimentalLibraryAbiReader::class)
-abstract class CheckAbiIsCompatibleTask : DefaultTask() {
+abstract class CheckAbiIsCompatibleTask
+@Inject
+constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTask() {
+
+    // Input annotation is handled by getIgnoreFile
+    @get:Internal abstract val ignoreFile: RegularFileProperty
 
     /** Text file from which API signatures will be read. */
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -51,6 +77,15 @@ abstract class CheckAbiIsCompatibleTask : DefaultTask() {
 
     @get:Input abstract var projectVersion: Provider<String>
 
+    @PathSensitive(PathSensitivity.RELATIVE)
+    @InputFile
+    @Optional
+    fun getBaseline(): File? = ignoreFile.get().asFile.takeIf { it.exists() }
+
+    @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
+
+    @get:Nested abstract val dependencies: ListProperty<DependenciesForTarget>
+
     @TaskAction
     fun execute() {
         val (previousApiPath, previousApiDumpText) =
@@ -59,32 +94,93 @@ abstract class CheckAbiIsCompatibleTask : DefaultTask() {
             currentApiDump.get().asFile.let { it.path to it.readText() }
         val shouldFreeze =
             shouldFreezeApis(Version(referenceVersion.get()), Version(projectVersion.get()))
-        if (shouldFreeze && previousApiDumpText != currentApiDumpText) {
-            throw GradleException(frozenApiErrorMessage(referenceVersion.get()))
-        }
 
-        val previousDump = KlibDumpParser(previousApiDumpText, previousApiPath).parse()
-        val currentDump = KlibDumpParser(currentApiDumpText, currentApiPath).parse()
+        // Execute BCV code as a WorkAction to allow setting the classpath for the action.
+        // This is to work around the kotlin compiler needing to be a compileOnly dependency for
+        // buildSrc (https://kotl.in/gradle/internal-compiler-symbols, aosp/3368960).
+        val workQueue = workerExecutor.classLoaderIsolation { it.classpath.from(runtimeClasspath) }
+        workQueue.submit(CheckCompatibilityWorker::class.java) { params ->
+            params.previousApiDumpText.set(previousApiDumpText)
+            params.previousApiPath.set(previousApiPath)
+            params.currentApiDumpText.set(currentApiDumpText)
+            params.currentApiPath.set(currentApiPath)
+            params.baseline.set(ignoreFile)
+            params.shouldFreeze.set(shouldFreeze)
+            params.referenceVersion.set(referenceVersion)
+            params.dependencies.set(
+                dependencies.get().associate { it.targetName to it.files.files }
+            )
+        }
+    }
+}
+
+private interface CheckCompatibilityParameters : WorkParameters {
+    val previousApiDumpText: Property<String>
+    val previousApiPath: Property<String>
+    val currentApiDumpText: Property<String>
+    val currentApiPath: Property<String>
+    val baseline: RegularFileProperty
+    val referenceVersion: Property<String>
+    val shouldFreeze: Property<Boolean>
+    val dependencies: MapProperty<String, Set<File>>
+}
+
+private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityParameters> {
+    @OptIn(ExperimentalLibraryAbiReader::class)
+    override fun execute() {
+        val previousDump =
+            KlibDumpParser(parameters.previousApiDumpText.get(), parameters.previousApiPath.get())
+                .parse()
+        val currentDump =
+            KlibDumpParser(parameters.currentApiDumpText.get(), parameters.currentApiPath.get())
+                .parse()
 
         try {
-            BinaryCompatibilityChecker.checkAllBinariesAreCompatible(currentDump, previousDump)
+            BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                currentDump,
+                previousDump,
+                parameters.baseline.get().asFile.takeIf { it.exists() },
+                validate = true,
+                shouldFreeze = parameters.shouldFreeze.get(),
+                dependencies = parameters.dependencies.get(),
+            )
         } catch (e: ValidationException) {
+            if (parameters.shouldFreeze.get()) {
+                throw GradleException(
+                    frozenApiErrorMessage(
+                        parameters.referenceVersion.get(),
+                        previousAbiDump = File(parameters.previousApiPath.get()),
+                        currentAbiDump = File(parameters.currentApiPath.get()),
+                    )
+                )
+            }
             throw GradleException(compatErrorMessage(e), e)
         }
     }
 
     private fun compatErrorMessage(validationException: ValidationException) =
-        "Your change has binary compatibility issues. Please resolve them before updating." +
-            "\n${validationException.message}" +
-            "\nIf you believe these changes are actually compatible and that this is a tooling" +
-            "error, please file a bug. $NEW_ISSUE_URL"
+        """
+${TERMINAL_RED}Your change has binary compatibility issues. Please resolve them before updating.$TERMINAL_RESET
 
-    private fun frozenApiErrorMessage(referenceVersion: String) =
-        "The API surface was finalized in $referenceVersion. Revert the changes unless you have " +
-            "permission from Android API Council. " +
-            summarizeDiff(previousApiDump.get().asFile, currentApiDump.get().asFile)
+${validationException.message}
 
-    private companion object {
-        const val NEW_ISSUE_URL = "https://b.corp.google.com/issues/new?component=1102332"
-    }
+If you *intentionally* want to break compatibility, you can suppress it with
+./gradlew ignoreAbiChanges && ./gradlew updateAbi
+
+If you believe these changes are actually compatible and that this is a tooling error, please file a bug. $NEW_ISSUE_URL
+"""
+
+    private fun frozenApiErrorMessage(
+        referenceVersion: String,
+        previousAbiDump: File,
+        currentAbiDump: File,
+    ) =
+        """
+${TERMINAL_RED}The ABI surface was finalized in $referenceVersion. Revert the changes unless you have permission from Android API Council.$TERMINAL_RESET
+
+${summarizeDiff(previousAbiDump,currentAbiDump)}
+
+If you have obtained permission from Android API Council or Jetpack Working Group to bypass this policy, you can suppress this check with:
+./gradlew ignoreAbiChanges && ./gradlew updateAbi
+"""
 }

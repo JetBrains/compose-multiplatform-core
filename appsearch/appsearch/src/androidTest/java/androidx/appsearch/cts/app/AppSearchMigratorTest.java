@@ -18,10 +18,10 @@ package androidx.appsearch.cts.app;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 public class AppSearchMigratorTest {

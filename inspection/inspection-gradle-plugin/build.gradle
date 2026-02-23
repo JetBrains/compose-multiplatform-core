@@ -15,15 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.Publish
-import androidx.build.SdkResourceGenerator
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -34,10 +31,9 @@ plugins {
 apply from: "../../buildSrc/kotlin-dsl-dependency.gradle"
 
 dependencies {
-    implementation(findGradleKotlinDsl())
+    compileOnly(project.ext.findGradleKotlinDsl())
     implementation(gradleApi())
-    implementation(libs.androidGradlePluginz)
-    implementation(libs.kotlinStdlib)
+    implementation(libs.androidGradlePluginApi)
     implementation(libs.protobufGradlePlugin)
     implementation(libs.shadow)
     implementation(libs.apacheAnt)
@@ -50,7 +46,7 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        inspection {
+        create("inspection") {
             id = "androidx.inspection"
             implementationClass = "androidx.inspection.gradle.InspectionPlugin"
         }
@@ -59,8 +55,7 @@ gradlePlugin {
 
 androidx {
     name = "Inspection Gradle Plugin"
-    type = LibraryType.GRADLE_PLUGIN
-    publish = Publish.NONE
+    type = SoftwareType.INTERNAL_GRADLE_PLUGIN
     inceptionYear = "2019"
     description = "Android Inspection Gradle Plugin"
 }

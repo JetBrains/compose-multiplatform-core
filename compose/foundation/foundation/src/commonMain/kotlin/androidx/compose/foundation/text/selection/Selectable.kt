@@ -143,4 +143,12 @@ internal interface Selectable {
      * counts as the last visible line.
      */
     fun getLastVisibleOffset(): Int
+
+    /**
+     * Returns the text line height for the given offset.
+     *
+     * @param offset a character offset
+     * @return the line height for the given offset
+     */
+    fun getLineHeight(offset: Int): Float
 }

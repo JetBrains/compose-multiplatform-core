@@ -18,7 +18,6 @@ package androidx.appsearch.debugview.model;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResults;
@@ -32,6 +31,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningExecutorService;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -74,8 +75,7 @@ public class DocumentListModel extends ViewModel {
      *
      * <p>This should only be called once per fragment.
      */
-    @NonNull
-    public LiveData<SearchResults> getAllDocumentsSearchResults() {
+    public @NonNull LiveData<SearchResults> getAllDocumentsSearchResults() {
         Futures.addCallback(mDebugAppSearchManager.getAllDocumentsSearchResultsAsync(),
                 new FutureCallback<SearchResults>() {
                     @Override
@@ -104,8 +104,7 @@ public class DocumentListModel extends ViewModel {
      * @return a {@link LiveData} encapsulating the list of {@link GenericDocument} objects for
      * documents retrieved from all previous pages and this additional page.
      */
-    @NonNull
-    public LiveData<List<GenericDocument>> addAdditionalResultsPage(
+    public @NonNull LiveData<List<GenericDocument>> addAdditionalResultsPage(
             @NonNull SearchResults results) {
         Futures.addCallback(mDebugAppSearchManager.getNextPageAsync(results),
                 new FutureCallback<List<GenericDocument>>() {
@@ -144,8 +143,7 @@ public class DocumentListModel extends ViewModel {
      * <p>If the underlying list of the Documents LiveData is {@code null}, this returns an
      * empty list as a placeholder.
      */
-    @NonNull
-    public List<GenericDocument> getAllLoadedDocuments() {
+    public @NonNull List<GenericDocument> getAllLoadedDocuments() {
         if (mDocumentsLiveData.getValue() == null) {
             return Collections.emptyList();
         }
@@ -166,9 +164,8 @@ public class DocumentListModel extends ViewModel {
         }
 
         @SuppressWarnings("unchecked")
-        @NonNull
         @Override
-        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+        public <T extends ViewModel> @NonNull T create(@NonNull Class<T> modelClass) {
             if (modelClass == DocumentListModel.class) {
                 return (T) new DocumentListModel(mExecutorService, mDebugAppSearchManager);
             } else {

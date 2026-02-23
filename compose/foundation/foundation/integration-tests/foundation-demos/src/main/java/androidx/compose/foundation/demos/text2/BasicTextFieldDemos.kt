@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -81,6 +82,9 @@ fun BasicTextFieldDemos() {
 
         TagLine(tag = "BasicTextField Edit Controls")
         BasicTextFieldEditControls()
+
+        TagLine(tag = "BasicTextField Programmatic Edit")
+        BasicTextFieldProgrammaticEdit()
     }
 }
 
@@ -107,7 +111,7 @@ private fun CapitalizeValueCallbackDemo() {
     BasicTextField(
         value = text,
         onValueChange = { text = it.toUpperCase(Locale.current) },
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
     Text(text = "Backing state: \"$text\"", style = MaterialTheme.typography.caption)
 }
@@ -125,7 +129,7 @@ fun SingleLineBasicTextField() {
         state = state,
         modifier = demoTextFieldModifiers,
         textStyle = TextStyle(fontSize = fontSize8),
-        lineLimits = TextFieldLineLimits.SingleLine
+        lineLimits = TextFieldLineLimits.SingleLine,
     )
 }
 
@@ -136,7 +140,7 @@ fun MultiLineBasicTextField() {
         state = state,
         modifier = demoTextFieldModifiers,
         textStyle = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Center),
-        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3, maxHeightInLines = 3)
+        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3, maxHeightInLines = 3),
     )
 }
 
@@ -151,7 +155,7 @@ fun StateTogglingBasicTextField() {
             Modifier.clickable {
                 counter++
                 counter %= 2
-            }
+            },
     )
 
     BasicTextField(state, demoTextFieldModifiers, textStyle = LocalTextStyle.current)
@@ -179,7 +183,36 @@ fun BasicTextFieldEditControls() {
             demoTextFieldModifiers,
             textStyle = LocalTextStyle.current,
             enabled = enabled,
-            readOnly = readOnly
+            readOnly = readOnly,
         )
+    }
+}
+
+@Composable
+fun BasicTextFieldProgrammaticEdit() {
+    val state = remember { TextFieldState() }
+    Column {
+        Row {
+            Button(onClick = { state.edit { replace(selection.start, selection.end, "A") } }) {
+                Text("A")
+            }
+            Button(onClick = { state.edit { replace(selection.start, selection.end, "B") } }) {
+                Text("B")
+            }
+            Button(
+                onClick = {
+                    state.edit {
+                        if (selection.collapsed) {
+                            delete((selection.min - 1).coerceAtLeast(0), selection.min)
+                        } else {
+                            delete(selection.start, selection.end)
+                        }
+                    }
+                }
+            ) {
+                Text("Backspace")
+            }
+        }
+        BasicTextField(state = state, modifier = demoTextFieldModifiers)
     }
 }

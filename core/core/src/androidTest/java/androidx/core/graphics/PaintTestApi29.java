@@ -23,11 +23,11 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.BlendMode;
 import android.graphics.Paint;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

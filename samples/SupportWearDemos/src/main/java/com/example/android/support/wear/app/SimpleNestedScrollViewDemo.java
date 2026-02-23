@@ -21,9 +21,9 @@ import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
-
 import com.example.android.support.wear.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Main activity for the NestedScrollView demo.

@@ -2,7 +2,7 @@ package androidx.leanback.widget;
 
 import android.util.SparseArray;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link ObjectAdapter} implemented with a {@link android.util.SparseArray}.

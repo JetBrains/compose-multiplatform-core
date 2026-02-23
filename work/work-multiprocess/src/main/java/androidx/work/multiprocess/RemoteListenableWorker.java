@@ -19,7 +19,6 @@ package androidx.work.multiprocess;
 import android.content.ComponentName;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.work.Data;
 import androidx.work.ListenableWorker;
@@ -28,6 +27,7 @@ import androidx.work.WorkerParameters;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 
 /**
  * Is an implementation of a {@link ListenableWorker} that can bind to a remote process.
@@ -71,8 +71,7 @@ public abstract class RemoteListenableWorker extends ListenableWorker {
     }
 
     @Override
-    @NonNull
-    public final ListenableFuture<Result> startWork() {
+    public final @NonNull ListenableFuture<Result> startWork() {
         String message = "startWork() shouldn't never be called on RemoteListenableWorker";
         return getFailedFuture(message);
     }
@@ -94,8 +93,7 @@ public abstract class RemoteListenableWorker extends ListenableWorker {
      * @return A {@link ListenableFuture} with the {@code Result} of the computation.  If you
      * cancel this Future, WorkManager will treat this unit of work as a {@code Result#failure()}.
      */
-    @NonNull
-    public abstract ListenableFuture<Result> startRemoteWork();
+    public abstract @NonNull ListenableFuture<Result> startRemoteWork();
 
     private static ListenableFuture<Result> getFailedFuture(@NonNull String message) {
         return CallbackToFutureAdapter.getFuture((completer) -> {

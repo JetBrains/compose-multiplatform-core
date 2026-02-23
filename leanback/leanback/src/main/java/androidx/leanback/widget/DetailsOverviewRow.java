@@ -18,8 +18,8 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -185,8 +185,7 @@ public class DetailsOverviewRow extends Row {
     /**
      * Returns the main item for the details page.
      */
-    @NonNull
-    public final Object getItem() {
+    public final @NonNull Object getItem() {
         return mItem;
     }
 
@@ -232,8 +231,7 @@ public class DetailsOverviewRow extends Row {
      * @return The overview's image drawable, or null if no drawable has been
      *         assigned.
      */
-    @Nullable
-    public final Drawable getImageDrawable() {
+    public final @Nullable Drawable getImageDrawable() {
         return mImageDrawable;
     }
 
@@ -319,8 +317,7 @@ public class DetailsOverviewRow extends Row {
     /**
      * Returns the {@link ObjectAdapter} for actions.
      */
-    @NonNull
-    public final ObjectAdapter getActionsAdapter() {
+    public final @NonNull ObjectAdapter getActionsAdapter() {
         return mActionsAdapter;
     }
 
@@ -343,8 +340,7 @@ public class DetailsOverviewRow extends Row {
     /**
      * Returns the Action associated with the given keycode, or null if no associated action exists.
      */
-    @Nullable
-    public Action getActionForKeyCode(int keyCode) {
+    public @Nullable Action getActionForKeyCode(int keyCode) {
         ObjectAdapter adapter = getActionsAdapter();
         if (adapter != null) {
             for (int i = 0; i < adapter.size(); i++) {

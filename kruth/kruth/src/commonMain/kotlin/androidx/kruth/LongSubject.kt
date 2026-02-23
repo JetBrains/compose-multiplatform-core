@@ -20,10 +20,8 @@ import androidx.kruth.Fact.Companion.fact
 
 /** Propositions for [Long] subjects. */
 open class LongSubject
-internal constructor(
-    actual: Long?,
-    metadata: FailureMetadata = FailureMetadata(),
-) : ComparableSubject<Long>(actual, metadata) {
+internal constructor(actual: Long?, metadata: FailureMetadata = FailureMetadata()) :
+    ComparableSubject<Long>(actual, metadata) {
 
     /**
      * Prepares for a check that the subject is a number within the given tolerance of an expected
@@ -32,13 +30,12 @@ internal constructor(
      * @param tolerance an inclusive upper bound on the difference between the subject and object
      *   allowed by the check, which must be a non-negative value.
      */
-    fun isWithin(tolerance: Long): TolerantLongComparison {
+    open fun isWithin(tolerance: Long): TolerantLongComparison {
         return object : TolerantLongComparison() {
             override fun of(expected: Long) {
                 requireNonNull(actual) {
-                    "Actual value cannot be null, tolerance=$tolerance, expected=$expected"
+                    "actual value cannot be null, tolerance=$tolerance, expected=$expected"
                 }
-
                 checkTolerance(tolerance)
 
                 if (!equalWithinTolerance(actual, expected, tolerance)) {
@@ -59,13 +56,12 @@ internal constructor(
      * @param tolerance an exclusive lower bound on the difference between the subject and object
      *   allowed by the check, which must be a non-negative value.
      */
-    fun isNotWithin(tolerance: Long): TolerantLongComparison {
+    open fun isNotWithin(tolerance: Long): TolerantLongComparison {
         return object : TolerantLongComparison() {
             override fun of(expected: Long) {
                 requireNonNull(actual) {
-                    "Actual value cannot be null, tolerance=$tolerance, expected=$expected"
+                    "actual value cannot be null, tolerance=$tolerance, expected=$expected"
                 }
-
                 checkTolerance(tolerance)
 
                 if (equalWithinTolerance(actual, expected, tolerance)) {
@@ -108,6 +104,7 @@ internal constructor(
             "Not supported on TolerantLongComparison. " +
                 "If you meant to compare longs, use `of(Long)` instead."
         )
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun equals(other: Any?): Boolean {
             throw UnsupportedOperationException(
                 "If you meant to compare longs, use of(Long) instead."
@@ -116,6 +113,7 @@ internal constructor(
 
         /** @throws UnsupportedOperationException always */
         @Deprecated("Not supported on TolerantLongComparison")
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun hashCode(): Int {
             throw UnsupportedOperationException("Subject.hashCode() is not supported.")
         }

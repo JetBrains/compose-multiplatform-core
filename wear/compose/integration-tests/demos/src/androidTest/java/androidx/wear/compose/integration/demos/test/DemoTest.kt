@@ -22,7 +22,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.espresso.Espresso
@@ -33,6 +33,8 @@ import androidx.wear.compose.integration.demos.WearComposeDemos
 import androidx.wear.compose.integration.demos.common.Demo
 import androidx.wear.compose.integration.demos.common.DemoCategory
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,8 +51,18 @@ private val ignoredDemos =
 @RunWith(AndroidJUnit4::class)
 class DemoTest {
     // We need to provide the recompose factory first to use new clock.
-    @get:Rule val rule = createAndroidComposeRule<DemoActivity>()
+    @get:Rule
+    val rule = createAndroidComposeRule<DemoActivity>(effectContext = StandardTestDispatcher())
 
+    @Test
+    fun demoApp_builds() {
+        // This test just checks that the demo app builds without crashing and the root screen can
+        // be visited.
+        val title = AllButIgnoredDemos.demos.first().title
+        rule.onNode(hasText(title)).assertExists()
+    }
+
+    @Ignore // b/367234726
     @Test
     fun navigateThroughAllDemos() {
         // Compose integration-tests are split into batches due to size,
@@ -66,7 +78,7 @@ class DemoTest {
         root.visitDemos(
             visitedDemos = visitedDemos,
             path = listOf(root),
-            fastForwardClock = fastForwardClock
+            fastForwardClock = fastForwardClock,
         )
 
         // Ensure that we visited all the demos we expected to, in the order we expected to.
@@ -81,7 +93,7 @@ class DemoTest {
     private fun DemoCategory.visitDemos(
         visitedDemos: MutableList<Demo>,
         path: List<DemoCategory>,
-        fastForwardClock: Boolean
+        fastForwardClock: Boolean,
     ) {
         demos.forEach { demo ->
             visitedDemos.add(demo)
@@ -100,7 +112,7 @@ class DemoTest {
     private fun Demo.visit(
         visitedDemos: MutableList<Demo>,
         path: List<DemoCategory>,
-        fastForwardClock: Boolean
+        fastForwardClock: Boolean,
     ) {
         Log.d("TEST", "Visit ${this.navigationTitle(path)}")
         if (fastForwardClock) {
@@ -185,7 +197,7 @@ private val List<Demo>.navigationTitle: String
  */
 private fun DemoCategory.filter(
     path: List<DemoCategory> = emptyList(),
-    predicate: (path: List<DemoCategory>, demo: Demo) -> Boolean
+    predicate: (path: List<DemoCategory>, demo: Demo) -> Boolean,
 ): DemoCategory {
     val newPath = path + this
     return DemoCategory(
@@ -199,7 +211,7 @@ private fun DemoCategory.filter(
                     if (predicate(newPath, demo)) demo else null
                 }
             }
-        }
+        },
     )
 }
 

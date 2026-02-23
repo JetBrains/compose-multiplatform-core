@@ -18,6 +18,9 @@ package androidx.appsearch.app;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
+
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.Test;
@@ -37,12 +40,14 @@ public class SearchSpecInternalTest {
                 .setSnippetCount(5)
                 .setSnippetCountPerProperty(10)
                 .setMaxSnippetSize(15)
+                .setRetrieveEmbeddingMatchInfos(true)
                 .setResultCountPerPage(42)
                 .setOrder(SearchSpec.ORDER_ASCENDING)
                 .setRankingStrategy(SearchSpec.RANKING_STRATEGY_DOCUMENT_SCORE)
                 .setNumericSearchEnabled(true)
                 .setVerbatimSearchEnabled(true)
                 .setListFilterQueryLanguageEnabled(true)
+                .setScorablePropertyRankingEnabled(true)
                 .build();
 
         assertThat(searchSpec.getTermMatch()).isEqualTo(SearchSpec.TERM_MATCH_PREFIX);
@@ -55,13 +60,15 @@ public class SearchSpecInternalTest {
         assertThat(searchSpec.getSnippetCount()).isEqualTo(5);
         assertThat(searchSpec.getSnippetCountPerProperty()).isEqualTo(10);
         assertThat(searchSpec.getMaxSnippetSize()).isEqualTo(15);
+        assertThat(searchSpec.shouldRetrieveEmbeddingMatchInfos()).isTrue();
         assertThat(searchSpec.getResultCountPerPage()).isEqualTo(42);
         assertThat(searchSpec.getOrder()).isEqualTo(SearchSpec.ORDER_ASCENDING);
         assertThat(searchSpec.getRankingStrategy())
                 .isEqualTo(SearchSpec.RANKING_STRATEGY_DOCUMENT_SCORE);
         assertThat(searchSpec.getEnabledFeatures()).containsExactly(
                 Features.NUMERIC_SEARCH, Features.VERBATIM_SEARCH,
-                Features.LIST_FILTER_QUERY_LANGUAGE);
+                Features.LIST_FILTER_QUERY_LANGUAGE, Features.SCHEMA_SCORABLE_PROPERTY_CONFIG);
+        assertThat(searchSpec.isScorablePropertyRankingEnabled()).isTrue();
     }
 
     @Test
@@ -85,6 +92,7 @@ public class SearchSpecInternalTest {
                 .setListFilterQueryLanguageEnabled(true)
                 .setResultGrouping(SearchSpec.GROUPING_TYPE_PER_PACKAGE, 10)
                 .setSearchSourceLogTag("searchSourceLogTag")
+                .setScorablePropertyRankingEnabled(true)
                 .build();
 
         SearchSpec searchSpecCopy = new SearchSpec.Builder(searchSpec).build();
@@ -117,6 +125,7 @@ public class SearchSpecInternalTest {
                 searchSpec.getAdvancedRankingExpression());
         assertThat(searchSpecCopy.getSearchSourceLogTag()).isEqualTo(
                 searchSpec.getSearchSourceLogTag());
+        assertThat(searchSpecCopy.isScorablePropertyRankingEnabled()).isTrue();
     }
 
     @Test
@@ -170,6 +179,23 @@ public class SearchSpecInternalTest {
         assertThat(searchSpec.getEnabledFeatures()).containsExactly(
                 Features.NUMERIC_SEARCH, Features.VERBATIM_SEARCH,
                 Features.LIST_FILTER_QUERY_LANGUAGE, Features.LIST_FILTER_HAS_PROPERTY_FUNCTION);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+    public void testGetBundle_matchScoreExpression() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setNumericSearchEnabled(true)
+                .setVerbatimSearchEnabled(true)
+                .setListFilterQueryLanguageEnabled(true)
+                .setListFilterHasPropertyFunctionEnabled(true)
+                .setListFilterMatchScoreExpressionFunctionEnabled(true)
+                .build();
+
+        assertThat(searchSpec.getEnabledFeatures()).containsExactly(
+                Features.NUMERIC_SEARCH, Features.VERBATIM_SEARCH,
+                Features.LIST_FILTER_QUERY_LANGUAGE, Features.LIST_FILTER_HAS_PROPERTY_FUNCTION,
+                Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION);
     }
 
     @Test

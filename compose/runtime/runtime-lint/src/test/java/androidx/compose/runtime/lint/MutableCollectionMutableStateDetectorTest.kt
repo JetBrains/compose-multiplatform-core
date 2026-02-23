@@ -453,7 +453,7 @@ class MutableCollectionMutableStateDetectorTest : LintDetectorTest() {
         2ofv7fFz/ECjSWvep3zdWYQvg7sZ3MvgA3xIU3yUwcf4ZBHMxBo+pY82Ex0m
         PrN/URPdJjpNLjxgS46Z6Ddx3J6ftZ9pE6MmLpq4Yr+Om5gwMWMi+y/NlFaM
         0g4AAA==
-        """
+        """,
         )
 
     /**
@@ -872,7 +872,64 @@ class MutableCollectionMutableStateDetectorTest : LintDetectorTest() {
         p00gnT5IJ+7hgc/URy6Y5gVzzGMqxmHWoTfXf8xDCXnWIXzrjp/hOxoXSccg
         Es1FhHKo5PBJDhZsmsLJoYpVUrDxKdYWIdvosfHQ/bXbOGCj10afjUOuZNDG
         CRvD7jxr4yJN/gX455r+Zw0AAA==
+        """,
+        )
+
+    private val GuavaImmutableCollectionStub =
+        bytecode(
+            "libs/guava.jar",
+            java(
+                """
+package com.google.common.collect;
+
+import java.io.Serializable;
+import java.util.AbstractCollection;
+
+public abstract class ImmutableCollection<E> extends AbstractCollection<E> implements Serializable {
+
+}
         """
+            ),
+            0x28f48214,
+            """
+com/google/common/collect/ImmutableCollection.class:
+H4sIAAAAAAAA/31QwUrEMBB92e22WldXwYMHPXhTQXO3pbAsKwjFPXTxntZQ
+sqQJ1MSDf+VJ8OAH+FHiNB68LBKYN5OZN294X98fnwDmOEoxwjhBNMUEMcPp
+RrwI7p3SfF4/u140bmG1lo1T1jDEuTLKFQzji8vHBDsM143teGttqyWntLOG
+IBD4fdd5J2ot/zYkSBmOg4ayvJK9Elq9DjMM0cI+EcxKZeSD72rZr38bu5Vq
+jXC+p3yVL2/LwNfCtHxVb2hxVpT/nZ2vl1mRldtUM4a0sr5v5J0apE623Hwz
+EKNzJOQUHUO2MXrkFsU9qs5CDUyu3sHeQntKMQ6fA2mfcIQDzAIe/gDETvg4
+fAEAAA==
+""",
+        )
+
+    private val GuavaImmutableSetStub =
+        bytecode(
+            "libs/guava.jar",
+            java(
+                """
+package com.google.common.collect;
+
+import java.util.Set;
+
+public abstract class ImmutableSet<E> extends ImmutableCollection<E> implements Set<E> {
+    public static <E> ImmutableSet<E> of(E e1) { throw new IllegalStateException("Not implemented"); }
+}
+        """
+            ),
+            0x65a21f52,
+            """
+com/google/common/collect/ImmutableSet.class:
+H4sIAAAAAAAA/42SS0vDQBSFz/SVNrbWVusT8bGQVtDsbShIqVgodZEiuBHS
+dAxTkkwpE/FvuSoo6N4fJd6kSOtjkcXMvXM5853LzP34fHkDcIk9HSmkNWSK
+yCLHcOZI33CldD1uUOrLgILncUcZXd8PlT30eHteEDJgyJkiEKrFkK43bjXk
+GQ7G9qNteHbgGl3SubZnKVvxzpPDJ9GdPHSGcl+qQ+FPPO7zQPGRDg3FqIUS
+Q63eWyAsNRWB24zYZYaTBN1ZXGmoMJRiSKiEZ1CJIdOWI07OPRHwfugP+XQQ
+yRlS8oHBXDa9GY4J2Wz0ktk1GQqWcANbhVPiXZudi7+wVn3QSUw0Sdsi7P3/
+qCSUxSfNYb0fz/FtoFsynDr8SkQPUVlu4TzSZ46wSvPBsEbDEkWaEdqrdNqn
+yChmT2dgz5QwrNOei4s5FLCBGl2JpMdIx1X9FdpdtTDDyvsvvYbN2GCL1jzb
+xk4cd78A40f24qoCAAA=
+""",
         )
 
     @Test
@@ -915,7 +972,7 @@ class MutableCollectionMutableStateDetectorTest : LintDetectorTest() {
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -999,7 +1056,7 @@ src/test/test.kt:31: Warning: Creating a MutableState object with a mutable coll
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1046,7 +1103,7 @@ src/test/test.kt:31: Warning: Creating a MutableState object with a mutable coll
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1105,7 +1162,7 @@ src/test/test.kt:31: Warning: Creating a MutableState object with a mutable coll
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1217,7 +1274,7 @@ src/test/test.kt:43: Warning: Creating a MutableState object with a mutable coll
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1307,7 +1364,7 @@ src/test/test.kt:38: Warning: Creating a MutableState object with a mutable coll
                 ),
                 Stubs.SnapshotState,
                 Stubs.StateFactoryMarker,
-                KotlinMutableCollectionExtensions.kotlin
+                KotlinMutableCollectionExtensions.kotlin,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1401,7 +1458,7 @@ src/test/test.kt:25: Warning: Creating a MutableState object with a mutable coll
                 Stubs.SnapshotState,
                 Stubs.StateFactoryMarker,
                 Stubs.Composable,
-                KotlinMutableCollectionExtensions.bytecode
+                KotlinMutableCollectionExtensions.bytecode,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1500,7 +1557,7 @@ src/test/test.kt:25: Warning: Creating a MutableState object with a mutable coll
             """
                 ),
                 Stubs.SnapshotState,
-                Stubs.StateFactoryMarker
+                Stubs.StateFactoryMarker,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1541,7 +1598,7 @@ src/test/test.kt:25: Warning: Creating a MutableState object with a mutable coll
                 ),
                 Stubs.SnapshotState,
                 Stubs.StateFactoryMarker,
-                KotlinImmutableCollectionExtensions.kotlin
+                KotlinImmutableCollectionExtensions.kotlin,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -1583,7 +1640,61 @@ src/test/test.kt:25: Warning: Creating a MutableState object with a mutable coll
                 Stubs.SnapshotState,
                 Stubs.StateFactoryMarker,
                 Stubs.Composable,
-                KotlinImmutableCollectionExtensions.bytecode
+                KotlinImmutableCollectionExtensions.bytecode,
+            )
+            .skipTestModes(TestMode.TYPE_ALIAS)
+            .run()
+            .expectClean()
+    }
+
+    @Test
+    fun guavaImmutableCollections_noErrors() {
+        lint()
+            .files(
+                kotlin(
+                    """
+                package test
+
+                import androidx.compose.runtime.*
+                import com.google.common.collect.*
+
+                val set = ImmutableSet.of(1)
+                val collection: ImmutableCollection<Int> = ImmutableSet.of(1)
+
+                val collectionProperty = mutableStateOf(collection)
+                val setFunction = mutableStateOf(ImmutableSet.of(1))
+                val setProperty = mutableStateOf(set)
+
+                object ImmutableCollectionObject : ImmutableCollection<Int>() {
+                    override val size: Int
+                        get() = TODO("Not yet implemented")
+
+                    override fun iterator(): MutableIterator<Int> {
+                        TODO("Not yet implemented")
+                    }
+                }
+
+                class ImmutableCollectionSubclass() : ImmutableCollection<Int>() {
+                    override val size: Int
+                        get() = TODO("Not yet implemented")
+
+                    override fun iterator(): MutableIterator<Int> {
+                        TODO("Not yet implemented")
+                    }
+                }
+
+                val subclass = ImmutableCollectionSubclass()
+
+                val objectProperty = mutableStateOf(ImmutableCollectionObject)
+                val subclassConstructor = mutableStateOf(ImmutableCollectionSubclass())
+                val subclassProperty = mutableStateOf(subclass)
+            """
+                ),
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Composable,
+                GuavaImmutableCollectionStub,
+                GuavaImmutableSetStub,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()

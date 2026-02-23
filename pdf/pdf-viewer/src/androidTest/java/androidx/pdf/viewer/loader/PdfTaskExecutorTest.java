@@ -29,6 +29,7 @@ import androidx.pdf.service.PdfDocumentRemoteProto;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,10 +59,11 @@ public class PdfTaskExecutorTest {
 
     private CountDownLatch mStartTaskLatch;
     private CountDownLatch mFinishedTaskLatch;
+    private AutoCloseable mCloseable;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mCloseable = MockitoAnnotations.openMocks(this);
         when(mPdfLoader.getCallbacks()).thenReturn(mCallbacks);
         when(mPdfLoader.getLoadedPdfDocument(isA(String.class))).thenReturn(mPdfDocument);
         mExecutor = new PdfTaskExecutor();
@@ -69,6 +71,15 @@ public class PdfTaskExecutorTest {
 
         mStartTaskLatch = new CountDownLatch(1);
         mFinishedTaskResults = new ArrayList<>();
+    }
+
+    @After
+    public void cleanUp() {
+        try {
+            mCloseable.close();
+        } catch (Exception e) {
+            // No-op
+        }
     }
 
     @Test

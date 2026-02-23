@@ -16,8 +16,9 @@
 
 package androidx.camera.integration.view;
 
-import androidx.annotation.NonNull;
 import androidx.camera.view.PreviewView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides methods to handle presenting {@linkplain PreviewView.ScaleType PreviewView scale
@@ -39,8 +40,7 @@ class PreviewViewScaleTypePresenter {
      * Returns a list of literals that represent all {@linkplain PreviewView.ScaleType
      * PreviewView scale types}.
      */
-    @NonNull
-    static String[] getScaleTypesLiterals() {
+    static String @NonNull [] getScaleTypesLiterals() {
         return new String[]{LITERAL_FILL_START, LITERAL_FILL_CENTER, LITERAL_FILL_END,
                 LITERAL_FIT_START, LITERAL_FIT_CENTER, LITERAL_FIT_END};
     }
@@ -48,8 +48,7 @@ class PreviewViewScaleTypePresenter {
     /**
      * Returns the literal corresponding to a {@link PreviewView.ScaleType PreviewView scale type}.
      */
-    @NonNull
-    static String getLiteralForScaleType(@NonNull final PreviewView.ScaleType scaleType) {
+    static @NonNull String getLiteralForScaleType(final PreviewView.@NonNull ScaleType scaleType) {
         switch (scaleType) {
             case FILL_START:
                 return LITERAL_FILL_START;

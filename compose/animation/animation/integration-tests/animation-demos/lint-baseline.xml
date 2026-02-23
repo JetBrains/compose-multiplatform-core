@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.7.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.0-alpha02)" variant="all" version="8.7.0-alpha02">
-
-    <issue
-        id="NewApi"
-        message="This Kotlin extension function will be hidden by `java.util.SequencedCollection` starting in API 35"
-        errorLine1="            anchors.removeLastKt()"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/animation/demos/suspendfun/OffsetKeyframeSplinePlaygroundDemo.kt"/>
-    </issue>
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
         id="PrimitiveInCollection"
@@ -67,8 +58,8 @@
     <issue
         id="PrimitiveInCollection"
         message="field res with type List&lt;Integer>: replace with IntList"
-        errorLine1="val res ="
-        errorLine2="^">
+        errorLine1="val res = listOf(R.drawable.yt_profile, R.drawable.pepper, R.drawable.waffle)"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/animation/demos/lookahead/LookaheadWithLazyColumn.kt"/>
     </issue>
@@ -76,7 +67,7 @@
     <issue
         id="PrimitiveInCollection"
         message="return type List&lt;Integer> of getRes: replace with IntList"
-        errorLine1="val res ="
+        errorLine1="val res = listOf(R.drawable.yt_profile, R.drawable.pepper, R.drawable.waffle)"
         errorLine2="    ~~~">
         <location
             file="src/main/java/androidx/compose/animation/demos/lookahead/LookaheadWithLazyColumn.kt"/>

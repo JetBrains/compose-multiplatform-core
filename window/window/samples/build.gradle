@@ -15,22 +15,20 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":window:window"))
 
     compileOnly(project(":annotation:annotation-sampled"))
@@ -38,12 +36,12 @@ dependencies {
 }
 
 android {
-    namespace "androidx.window.samples"
+    namespace = "androidx.window.samples"
 }
 
 androidx {
     name = "WindowManager Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
     description = "Code samples for WindowManager Jetpack library."
 }

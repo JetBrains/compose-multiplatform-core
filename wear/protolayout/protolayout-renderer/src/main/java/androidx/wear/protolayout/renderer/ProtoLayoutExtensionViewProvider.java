@@ -17,10 +17,11 @@ package androidx.wear.protolayout.renderer;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * View provider for a View ExtensionLayoutElement. This should check that the given renderer
@@ -36,6 +37,5 @@ public interface ProtoLayoutExtensionViewProvider {
      *
      * <p>Note: The renderer extension must not set the default tag of the returned View object.
      */
-    @Nullable
-    View provideView(@NonNull byte[] extensionPayload, @NonNull String vendorId);
+    @Nullable View provideView(byte @NonNull [] extensionPayload, @NonNull String vendorId);
 }

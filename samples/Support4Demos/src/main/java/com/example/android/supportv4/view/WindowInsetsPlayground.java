@@ -21,7 +21,6 @@ import static android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.View;
@@ -30,7 +29,6 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -38,6 +36,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.android.supportv4.R;
 import com.example.android.supportv4.graphics.DrawableCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("deprecation")
 public class WindowInsetsPlayground extends Activity {
@@ -68,10 +68,8 @@ public class WindowInsetsPlayground extends Activity {
         updateTextForInsets(null);
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        if (Build.VERSION.SDK_INT >= 21) {
-            getWindow().setStatusBarColor(0x80000000);
-            getWindow().setNavigationBarColor(0x80000000);
-        }
+        getWindow().setStatusBarColor(0x80000000);
+        getWindow().setNavigationBarColor(0x80000000);
 
         Button newAct = findViewById(R.id.newAct);
         newAct.setOnClickListener(

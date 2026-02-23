@@ -21,12 +21,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.debugview.R;
 import androidx.core.util.Preconditions;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -61,9 +62,8 @@ public class DocumentListItemAdapter extends
         notifyDataSetChanged();
     }
 
-    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.adapter_document_list_item, parent, /*attachToRoot=*/false);
         return new ViewHolder(view);
@@ -110,13 +110,11 @@ public class DocumentListItemAdapter extends
             mIdLabel = view.findViewById(R.id.doc_item_id);
         }
 
-        @NonNull
-        public TextView getNamespaceLabel() {
+        public @NonNull TextView getNamespaceLabel() {
             return mNamespaceLabel;
         }
 
-        @NonNull
-        public TextView getIdLabel() {
+        public @NonNull TextView getIdLabel() {
             return mIdLabel;
         }
     }

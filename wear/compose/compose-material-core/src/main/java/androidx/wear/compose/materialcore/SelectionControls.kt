@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloat
@@ -79,7 +80,7 @@ import kotlin.math.sin
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun Checkbox(
+public fun Checkbox(
     checked: Boolean,
     modifier: Modifier = Modifier,
     boxColor: @Composable (enabled: Boolean, checked: Boolean) -> State<Color>,
@@ -87,11 +88,11 @@ fun Checkbox(
     enabled: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     interactionSource: MutableInteractionSource?,
-    progressAnimationSpec: TweenSpec<Float>,
+    progressAnimationSpec: FiniteAnimationSpec<Float>,
     drawBox: FunctionDrawBox,
     width: Dp,
     height: Dp,
-    ripple: Indication
+    ripple: Indication,
 ) {
     val targetState = if (checked) SelectionStage.Checked else SelectionStage.Unchecked
     val transition = updateTransition(targetState, label = "checkboxTransition")
@@ -99,7 +100,7 @@ fun Checkbox(
         animateProgress(
             transition = transition,
             label = "Checkbox",
-            animationSpec = progressAnimationSpec
+            animationSpec = progressAnimationSpec,
         )
     val isRtl = isLayoutDirectionRtl()
     val startXOffset = if (isRtl) 0.dp else width - height
@@ -122,7 +123,7 @@ fun Checkbox(
                     interactionSource,
                     ripple,
                     width,
-                    height
+                    height,
                 )
                 .drawWithCache {
                     onDrawWithContent {
@@ -132,7 +133,7 @@ fun Checkbox(
                             checked = checked,
                             tickColor = checkmarkColorState.value,
                             tickProgress = progress.value,
-                            startXOffset = startXOffset
+                            startXOffset = startXOffset,
                         )
                     }
                 }
@@ -167,7 +168,7 @@ fun Checkbox(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun Switch(
+public fun Switch(
     modifier: Modifier,
     checked: Boolean,
     enabled: Boolean,
@@ -183,7 +184,7 @@ fun Switch(
     progressAnimationSpec: TweenSpec<Float>,
     width: Dp,
     height: Dp,
-    ripple: Indication
+    ripple: Indication,
 ) {
     val targetState = if (checked) SelectionStage.Checked else SelectionStage.Unchecked
     val transition = updateTransition(targetState, label = "switchTransition")
@@ -209,7 +210,7 @@ fun Switch(
                     interactionSource,
                     ripple,
                     width,
-                    height
+                    height,
                 )
                 .drawWithCache {
                     onDrawWithContent {
@@ -217,7 +218,7 @@ fun Switch(
                             fillColor = trackBackgroundFillColor.value,
                             strokeColor = trackBackgroundStrokeColor.value,
                             trackWidthPx = trackWidth.toPx(),
-                            trackHeightPx = trackHeight.toPx()
+                            trackHeightPx = trackHeight.toPx(),
                         )
 
                         // Draw the thumb of the switch.
@@ -226,7 +227,7 @@ fun Switch(
                             thumbBackgroundColor.value,
                             thumbProgress.value,
                             iconColor.value,
-                            isRtl
+                            isRtl,
                         )
                     }
                 }
@@ -259,7 +260,7 @@ fun Switch(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun RadioButton(
+public fun RadioButton(
     modifier: Modifier,
     selected: Boolean,
     enabled: Boolean,
@@ -273,7 +274,60 @@ fun RadioButton(
     easing: CubicBezierEasing,
     width: Dp,
     height: Dp,
-    ripple: Indication
+    ripple: Indication,
+): Unit =
+    RadioButton(
+        modifier = modifier,
+        selected = selected,
+        enabled = enabled,
+        ringColor = ringColor,
+        dotColor = dotColor,
+        onClick = onClick,
+        interactionSource = interactionSource,
+        dotRadiusAnimationSpec = tween(dotRadiusProgressDuration(selected), 0, easing),
+        dotAlphaAnimationSpec = tween(dotAlphaProgressDuration, dotAlphaProgressDelay, easing),
+        width = width,
+        height = height,
+        ripple = ripple,
+    )
+
+/**
+ * [RadioButton] provides an animated radio button for use in material APIs.
+ *
+ * @param modifier Modifier to be applied to the radio button. This can be used to provide a content
+ *   description for accessibility.
+ * @param selected Boolean flag indicating whether this radio button is currently toggled on.
+ * @param enabled Boolean flag indicating the enabled state of the [RadioButton] (affects the
+ *   color).
+ * @param ringColor Composable lambda from which the ring color of the radio button will be
+ *   obtained.
+ * @param dotColor Composable lambda from which the dot color of the radio button will be obtained.
+ * @param onClick Callback to be invoked when RadioButton is clicked. If null, then this is passive
+ *   and relies entirely on a higher-level component to control the state.
+ * @param interactionSource When also providing [onClick], the [MutableInteractionSource]
+ *   representing the stream of [Interaction]s for the "toggleable" tap area - can be used to
+ *   customise the appearance / behavior of the RadioButton.
+ * @param dotRadiusAnimationSpec Animation spec of the dot radius progress animation.
+ * @param dotAlphaAnimationSpec Animation spec of the dot alpha progress animation.
+ * @param width Width of the radio button.
+ * @param height Height of the radio button.
+ * @param ripple Ripple used for the radio button.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+public fun RadioButton(
+    modifier: Modifier,
+    selected: Boolean,
+    enabled: Boolean,
+    ringColor: @Composable (enabled: Boolean, checked: Boolean) -> State<Color>,
+    dotColor: @Composable (enabled: Boolean, checked: Boolean) -> State<Color>,
+    onClick: (() -> Unit)?,
+    interactionSource: MutableInteractionSource?,
+    dotRadiusAnimationSpec: FiniteAnimationSpec<Float>,
+    dotAlphaAnimationSpec: FiniteAnimationSpec<Float>,
+    width: Dp,
+    height: Dp,
+    ripple: Indication,
 ) {
     val targetState = if (selected) SelectionStage.Checked else SelectionStage.Unchecked
     val transition = updateTransition(targetState)
@@ -286,7 +340,7 @@ fun RadioButton(
         animateProgress(
             transition = transition,
             label = "dot-radius",
-            animationSpec = tween(dotRadiusProgressDuration(selected), 0, easing)
+            animationSpec = dotRadiusAnimationSpec,
         )
     // Animation of the dot alpha only happens when toggling On to Off.
     val dotAlphaProgress =
@@ -294,7 +348,7 @@ fun RadioButton(
             animateProgress(
                 transition = transition,
                 label = "dot-alpha",
-                animationSpec = tween(dotAlphaProgressDuration, dotAlphaProgressDelay, easing)
+                animationSpec = dotAlphaAnimationSpec,
             )
         else null
 
@@ -312,7 +366,7 @@ fun RadioButton(
                     interactionSource,
                     ripple,
                     width,
-                    height
+                    height,
                 )
                 .drawWithCache {
                     // Aligning the radio to the end.
@@ -358,14 +412,14 @@ fun RadioButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun animateSelectionColor(
+public fun animateSelectionColor(
     enabled: Boolean,
     checked: Boolean,
     checkedColor: Color,
     uncheckedColor: Color,
     disabledCheckedColor: Color,
     disabledUncheckedColor: Color,
-    animationSpec: AnimationSpec<Color>
+    animationSpec: AnimationSpec<Color>,
 ): State<Color> =
     animateColorAsState(
         targetValue =
@@ -374,38 +428,38 @@ fun animateSelectionColor(
             } else {
                 if (checked) disabledCheckedColor else disabledUncheckedColor
             },
-        animationSpec = animationSpec
+        animationSpec = animationSpec,
     )
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-enum class SelectionStage {
+public enum class SelectionStage {
     Unchecked,
-    Checked
+    Checked,
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDrawBox {
-    operator fun invoke(drawScope: DrawScope, color: Color, progress: Float, isRtl: Boolean)
+public fun interface FunctionDrawBox {
+    public operator fun invoke(drawScope: DrawScope, color: Color, progress: Float, isRtl: Boolean)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDrawThumb {
-    operator fun invoke(
+public fun interface FunctionDrawThumb {
+    public operator fun invoke(
         drawScope: DrawScope,
         thumbColor: Color,
         progress: Float,
         thumbIconColor: Color,
-        isRtl: Boolean
+        isRtl: Boolean,
     )
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDotRadiusProgressDuration {
-    operator fun invoke(selected: Boolean): Int
+public fun interface FunctionDotRadiusProgressDuration {
+    public operator fun invoke(selected: Boolean): Int
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun DrawScope.animateTick(
+public fun DrawScope.animateTick(
     enabled: Boolean,
     checked: Boolean,
     tickColor: Color,
@@ -426,7 +480,7 @@ fun DrawScope.animateTick(
 private fun animateProgress(
     transition: Transition<SelectionStage>,
     label: String,
-    animationSpec: TweenSpec<Float>,
+    animationSpec: FiniteAnimationSpec<Float>,
 ) =
     transition.animateFloat(transitionSpec = { animationSpec }, label = label) {
         when (it) {
@@ -442,7 +496,7 @@ private fun Modifier.maybeToggleable(
     interactionSource: MutableInteractionSource?,
     indication: Indication,
     canvasWidth: Dp,
-    canvasHeight: Dp
+    canvasHeight: Dp,
 ): Modifier {
     val standardModifier =
         this.wrapContentSize(Alignment.CenterEnd).requiredSize(canvasWidth, canvasHeight)
@@ -456,7 +510,7 @@ private fun Modifier.maybeToggleable(
                 value = checked,
                 onValueChange = onCheckedChange,
                 indication = indication,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         )
     }
@@ -469,7 +523,7 @@ private fun Modifier.maybeSelectable(
     interactionSource: MutableInteractionSource?,
     indication: Indication,
     canvasWidth: Dp,
-    canvasHeight: Dp
+    canvasHeight: Dp,
 ): Modifier {
     val standardModifier =
         this.wrapContentSize(Alignment.Center).requiredSize(canvasWidth, canvasHeight)
@@ -532,7 +586,7 @@ private fun DrawScope.drawTick(
         path,
         tickColor,
         style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Butt),
-        blendMode = if (enabled) DefaultBlendMode else BlendMode.Hardlight
+        blendMode = if (enabled) DefaultBlendMode else BlendMode.Hardlight,
     )
 }
 
@@ -562,8 +616,8 @@ private fun DrawScope.drawTrack(
             style =
                 Stroke(
                     width = trackHeightPx - 2 * SWITCH_TRACK_BORDER.toPx(),
-                    cap = StrokeCap.Round
-                )
+                    cap = StrokeCap.Round,
+                ),
         )
     }
 }
@@ -572,7 +626,7 @@ private fun DrawScope.eraseTick(
     tickColor: Color,
     tickProgress: Float,
     startXOffset: Dp,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     val tickBaseLength = TICK_BASE_LENGTH.toPx()
     val tickStickLength = TICK_STICK_LENGTH.toPx()
@@ -602,7 +656,7 @@ private fun DrawScope.eraseTick(
         path,
         tickColor,
         style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Butt),
-        blendMode = if (enabled) DefaultBlendMode else BlendMode.Hardlight
+        blendMode = if (enabled) DefaultBlendMode else BlendMode.Hardlight,
     )
 }
 
@@ -623,13 +677,15 @@ private fun Offset.rotate(angleRadians: Float, center: Offset): Offset =
     (this - center).rotate(angleRadians) + center
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun directionVector(angleRadians: Float) = Offset(cos(angleRadians), sin(angleRadians))
+public fun directionVector(angleRadians: Float): Offset =
+    Offset(cos(angleRadians), sin(angleRadians))
 
 private fun Offset.rotate90() = Offset(-y, x)
 
 // This is duplicated from wear.compose.foundation/geometry.kt
 // Any changes should be replicated there.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun Float.toRadians() = this * PI.toFloat() / 180f
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Float.toRadians(): Float = this * PI.toFloat() / 180f
 
 private val TICK_BASE_LENGTH = 4.dp
 private val TICK_STICK_LENGTH = 8.dp

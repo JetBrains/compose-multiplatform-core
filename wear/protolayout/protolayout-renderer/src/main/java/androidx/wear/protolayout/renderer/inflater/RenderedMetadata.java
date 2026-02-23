@@ -24,45 +24,43 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import androidx.wear.protolayout.proto.FingerprintProto.TreeFingerprint;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Map;
 
 /** Additional metadata associated with a rendered layout. */
 public final class RenderedMetadata {
-    @NonNull private final TreeFingerprint mTreeFingerprint;
-    @NonNull private final LayoutInfo mLayoutInfo;
+    private final @NonNull TreeFingerprint mTreeFingerprint;
+    private final @NonNull LayoutInfo mLayoutInfo;
 
     RenderedMetadata(@NonNull TreeFingerprint treeFingerprint, @NonNull LayoutInfo layoutInfo) {
         this.mTreeFingerprint = treeFingerprint;
         this.mLayoutInfo = layoutInfo;
     }
 
-    @NonNull
-    public TreeFingerprint getTreeFingerprint() {
+    public @NonNull TreeFingerprint getTreeFingerprint() {
         return mTreeFingerprint;
     }
 
-    @NonNull
-    LayoutInfo getLayoutInfo() {
+    @NonNull LayoutInfo getLayoutInfo() {
         return mLayoutInfo;
     }
 
     /** This will hold information needed from an attached view while rendering in background. */
     static final class LayoutInfo {
         static final class Builder {
-            @NonNull
-            private final Map<String, ViewProperties> mPositionIdToViewProperties =
+            private final @NonNull Map<String, ViewProperties> mPositionIdToViewProperties =
                     new ArrayMap<>();
 
-            @NonNull
-            private final ArrayList<String> mSubtreePosIdPendingRemoval = new ArrayList<>();
+            private final @NonNull ArrayList<String> mSubtreePosIdPendingRemoval =
+                    new ArrayList<>();
 
-            @Nullable private final LayoutInfo mPreviousLayoutInfo;
+            private final @Nullable LayoutInfo mPreviousLayoutInfo;
 
             Builder(@Nullable LayoutInfo previousLayoutInfo) {
                 this.mPreviousLayoutInfo = previousLayoutInfo;
@@ -72,8 +70,7 @@ public final class RenderedMetadata {
                 mPositionIdToViewProperties.put(positionId, viewProperties);
             }
 
-            @Nullable
-            ViewProperties getViewPropertiesFor(@NonNull String posId) {
+            @Nullable ViewProperties getViewPropertiesFor(@NonNull String posId) {
                 return mPositionIdToViewProperties.get(posId);
             }
 
@@ -99,7 +96,7 @@ public final class RenderedMetadata {
             }
         }
 
-        @NonNull final Map<String, ViewProperties> mPositionIdToLayoutInfo;
+        final @NonNull Map<String, ViewProperties> mPositionIdToLayoutInfo;
 
         LayoutInfo(@NonNull Map<String, ViewProperties> positionIdToLayoutInfo) {
             this.mPositionIdToLayoutInfo = positionIdToLayoutInfo;
@@ -109,8 +106,7 @@ public final class RenderedMetadata {
             return mPositionIdToLayoutInfo.containsKey(positionId);
         }
 
-        @Nullable
-        ViewProperties getViewPropertiesFor(@NonNull String positionId) {
+        @Nullable ViewProperties getViewPropertiesFor(@NonNull String positionId) {
             return mPositionIdToLayoutInfo.get(positionId);
         }
     }
@@ -123,8 +119,7 @@ public final class RenderedMetadata {
          * Apply the additional fields from this class to the {@code layoutParams}. This might lead
          * to creating a new instance of a subclass of {@link LayoutParams}
          */
-        @NonNull
-        LayoutParams apply(@NonNull LayoutParams layoutParams);
+        @NonNull LayoutParams apply(@NonNull LayoutParams layoutParams);
     }
 
     /** Additional pending layout params for layout elements inside a {@link FrameLayout}. */
@@ -136,8 +131,7 @@ public final class RenderedMetadata {
         }
 
         @Override
-        @NonNull
-        public LayoutParams apply(@NonNull LayoutParams layoutParams) {
+        public @NonNull LayoutParams apply(@NonNull LayoutParams layoutParams) {
             FrameLayout.LayoutParams frameLayoutParams;
             // Note: These conversions reflect the procedure in FrameLayout#generateLayoutParams
             // which applies to a View when it's attached to a FrameLayout container.
@@ -155,15 +149,14 @@ public final class RenderedMetadata {
 
     /** Holds properties of any container that are needed for background rendering. */
     public static class ViewProperties {
-        @NonNull public static final ViewProperties EMPTY = new ViewProperties();
+        public static final @NonNull ViewProperties EMPTY = new ViewProperties();
 
         /**
          * Creates a {@link ViewProperties} from any {@link ViewGroup} container. Note that {@code
          * rawLayoutParams} doesn't need to be a container-specific variant. But the {@code
          * childLayoutParams} should be of a container specific instance (if provided).
          */
-        @NonNull
-        public static ViewProperties fromViewGroup(
+        public static @NonNull ViewProperties fromViewGroup(
                 @NonNull ViewGroup viewGroup,
                 @NonNull LayoutParams rawLayoutParams,
                 @NonNull PendingLayoutParams childLayoutParams) {
@@ -177,8 +170,7 @@ public final class RenderedMetadata {
             return EMPTY;
         }
 
-        @NonNull
-        LayoutParams applyPendingChildLayoutParams(@NonNull LayoutParams layoutParams) {
+        @NonNull LayoutParams applyPendingChildLayoutParams(@NonNull LayoutParams layoutParams) {
             // Do nothing.
             return layoutParams;
         }
@@ -190,7 +182,7 @@ public final class RenderedMetadata {
      */
     static final class LinearLayoutProperties extends ViewProperties {
         private final int mOrientation;
-        @NonNull private final LayoutParams mRawLayoutParams;
+        private final @NonNull LayoutParams mRawLayoutParams;
 
         LinearLayoutProperties(int orientation, @NonNull LayoutParams rawLayoutParams) {
             this.mOrientation = orientation;
@@ -205,8 +197,7 @@ public final class RenderedMetadata {
          * Returns the non-container specific {@link LayoutParams} for this object. Note that
          * down-casting this to {@link LinearLayout.LayoutParams} can fail.
          */
-        @NonNull
-        LayoutParams getRawLayoutParams() {
+        @NonNull LayoutParams getRawLayoutParams() {
             return mRawLayoutParams;
         }
     }
@@ -215,15 +206,14 @@ public final class RenderedMetadata {
      * Holds properties of a {@link FrameLayout} container that are needed for background rendering.
      */
     static final class FrameLayoutProperties extends ViewProperties {
-        @NonNull private final PendingLayoutParams mChildLayoutParams;
+        private final @NonNull PendingLayoutParams mChildLayoutParams;
 
         FrameLayoutProperties(@NonNull PendingLayoutParams childLayoutParams) {
             this.mChildLayoutParams = childLayoutParams;
         }
 
         @Override
-        @NonNull
-        LayoutParams applyPendingChildLayoutParams(@NonNull LayoutParams layoutParams) {
+        @NonNull LayoutParams applyPendingChildLayoutParams(@NonNull LayoutParams layoutParams) {
             return mChildLayoutParams.apply(layoutParams);
         }
     }

@@ -20,9 +20,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility functions for dealing with intents.
@@ -50,8 +51,7 @@ public class Intents {
     /**
      *
      */
-    @NonNull
-    public static String toLongString(@Nullable Intent intent) {
+    public static @NonNull String toLongString(@Nullable Intent intent) {
         StringBuilder builder = new StringBuilder();
         String separator = ", ";
         if (intent != null) {

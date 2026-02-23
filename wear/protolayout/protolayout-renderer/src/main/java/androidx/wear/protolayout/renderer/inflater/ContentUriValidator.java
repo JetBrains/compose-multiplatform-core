@@ -23,14 +23,15 @@ import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Process;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import org.jspecify.annotations.NonNull;
+
 class ContentUriValidator {
-    @NonNull final Context mAppContext;
-    @NonNull private final PackageManager mPackageManager;
-    @NonNull private final String mAllowedPackageName;
-    @NonNull private final UriPermissionValidator mUriPermissionValidator;
+    final @NonNull Context mAppContext;
+    private final @NonNull PackageManager mPackageManager;
+    private final @NonNull String mAllowedPackageName;
+    private final @NonNull UriPermissionValidator mUriPermissionValidator;
 
     public ContentUriValidator(@NonNull Context appContext, @NonNull String allowedPackageName) {
         this.mAppContext = appContext;

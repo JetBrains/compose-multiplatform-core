@@ -30,8 +30,6 @@ import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
@@ -40,6 +38,9 @@ import androidx.webkit.WebViewFeature;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,6 +78,7 @@ public class WebMessageCompatActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_web_message_compat);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.web_message_compat_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.POST_WEB_MESSAGE)) {

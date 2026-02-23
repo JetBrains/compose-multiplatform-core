@@ -21,9 +21,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.view.inputmethod.InputContentInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in InputContentInfo introduced after API level 13 in a backwards
@@ -32,17 +33,13 @@ import androidx.annotation.RequiresApi;
 public final class InputContentInfoCompat {
 
     private interface InputContentInfoCompatImpl {
-        @NonNull
-        Uri getContentUri();
+        @NonNull Uri getContentUri();
 
-        @NonNull
-        ClipDescription getDescription();
+        @NonNull ClipDescription getDescription();
 
-        @Nullable
-        Uri getLinkUri();
+        @Nullable Uri getLinkUri();
 
-        @Nullable
-        Object getInputContentInfo();
+        @Nullable Object getInputContentInfo();
 
         void requestPermission();
 
@@ -51,12 +48,9 @@ public final class InputContentInfoCompat {
 
     private static final class InputContentInfoCompatBaseImpl
             implements InputContentInfoCompatImpl {
-        @NonNull
-        private final Uri mContentUri;
-        @NonNull
-        private final ClipDescription mDescription;
-        @Nullable
-        private final Uri mLinkUri;
+        private final @NonNull Uri mContentUri;
+        private final @NonNull ClipDescription mDescription;
+        private final @Nullable Uri mLinkUri;
 
         InputContentInfoCompatBaseImpl(@NonNull Uri contentUri,
                 @NonNull ClipDescription description, @Nullable Uri linkUri) {
@@ -65,27 +59,23 @@ public final class InputContentInfoCompat {
             mLinkUri = linkUri;
         }
 
-        @NonNull
         @Override
-        public Uri getContentUri() {
+        public @NonNull Uri getContentUri() {
             return mContentUri;
         }
 
-        @NonNull
         @Override
-        public ClipDescription getDescription() {
+        public @NonNull ClipDescription getDescription() {
             return mDescription;
         }
 
-        @Nullable
         @Override
-        public Uri getLinkUri() {
+        public @Nullable Uri getLinkUri() {
             return mLinkUri;
         }
 
-        @Nullable
         @Override
-        public Object getInputContentInfo() {
+        public @Nullable Object getInputContentInfo() {
             return null;
         }
 
@@ -101,8 +91,7 @@ public final class InputContentInfoCompat {
     @RequiresApi(25)
     private static final class InputContentInfoCompatApi25Impl
             implements InputContentInfoCompatImpl {
-        @NonNull
-        final InputContentInfo mObject;
+        final @NonNull InputContentInfo mObject;
 
         InputContentInfoCompatApi25Impl(@NonNull Object inputContentInfo) {
             mObject = (InputContentInfo) inputContentInfo;
@@ -114,26 +103,22 @@ public final class InputContentInfoCompat {
         }
 
         @Override
-        @NonNull
-        public Uri getContentUri() {
+        public @NonNull Uri getContentUri() {
             return mObject.getContentUri();
         }
 
         @Override
-        @NonNull
-        public ClipDescription getDescription() {
+        public @NonNull ClipDescription getDescription() {
             return mObject.getDescription();
         }
 
         @Override
-        @Nullable
-        public Uri getLinkUri() {
+        public @Nullable Uri getLinkUri() {
             return mObject.getLinkUri();
         }
 
         @Override
-        @NonNull
-        public Object getInputContentInfo() {
+        public @NonNull Object getInputContentInfo() {
             return mObject;
         }
 
@@ -179,8 +164,7 @@ public final class InputContentInfoCompat {
     /**
      * @return content URI with which the content can be obtained.
      */
-    @NonNull
-    public Uri getContentUri() {
+    public @NonNull Uri getContentUri() {
         return mImpl.getContentUri();
     }
 
@@ -189,16 +173,14 @@ public final class InputContentInfoCompat {
      * such as MIME type(s). {@link ClipDescription#getLabel()} can be used for accessibility
      * purpose.
      */
-    @NonNull
-    public ClipDescription getDescription() {
+    public @NonNull ClipDescription getDescription() {
         return mImpl.getDescription();
     }
 
     /**
      * @return an optional {@code http} or {@code https} URI that is related to this content.
      */
-    @Nullable
-    public Uri getLinkUri() {
+    public @Nullable Uri getLinkUri() {
         return mImpl.getLinkUri();
     }
 
@@ -212,8 +194,7 @@ public final class InputContentInfoCompat {
      * @return an equivalent {@link InputContentInfoCompat} object, or {@code null} if not
      * supported.
      */
-    @Nullable
-    public static InputContentInfoCompat wrap(@Nullable Object inputContentInfo) {
+    public static @Nullable InputContentInfoCompat wrap(@Nullable Object inputContentInfo) {
         if (inputContentInfo == null) {
             return null;
         }
@@ -231,8 +212,7 @@ public final class InputContentInfoCompat {
      * @return an equivalent android.view.inputmethod.InputContentInfo object, or {@code null} if
      * not supported.
      */
-    @Nullable
-    public Object unwrap() {
+    public @Nullable Object unwrap() {
         return mImpl.getInputContentInfo();
     }
 

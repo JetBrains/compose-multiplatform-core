@@ -17,7 +17,6 @@
 package androidx.credentials.registry.provider
 
 import android.os.CancellationSignal
-import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 
@@ -26,11 +25,10 @@ import java.util.concurrent.Executor
  * fulfill [RegistryManager] requests. The implementation **must** have a constructor that takes in
  * a context.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RegistryManagerProvider {
 
     /**
-     * Invoked on a request to get a credential.
+     * Invoked on a request to register a credential.
      *
      * @param request the request containing the credential data to register
      * @param cancellationSignal an optional signal that allows for cancelling this call
@@ -42,9 +40,59 @@ public interface RegistryManagerProvider {
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
+    )
+
+    /**
+     * Invoked on a request to register creation options.
+     *
+     * @param request the request containing the creation options to register
+     * @param cancellationSignal an optional signal that allows for cancelling this call
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    public fun onRegisterCreationOptions(
+        request: RegisterCreationOptionsRequest,
+        cancellationSignal: CancellationSignal?,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<
+                RegisterCreationOptionsResponse,
+                RegisterCreationOptionsException,
+            >,
+    )
+
+    /**
+     * Invoked on a request to clear credential registries.
+     *
+     * @param request the request to specify clearing configurations
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    public fun onClearCredentialRegistry(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<
+                ClearCredentialRegistryResponse,
+                ClearCredentialRegistryException,
+            >,
+    )
+
+    /**
+     * Invoked on a request to clear creation options.
+     *
+     * @param request the request to specify clearing configurations
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    public fun onClearCreationOptions(
+        request: ClearCreationOptionsRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<ClearCreationOptionsResponse, ClearCreationOptionsException>,
     )
 
     /** Returns true if the provider is available on this device, or otherwise false. */
-    public fun isAvailableOnDevice(): Boolean
+    public fun isAvailable(): Boolean
 }

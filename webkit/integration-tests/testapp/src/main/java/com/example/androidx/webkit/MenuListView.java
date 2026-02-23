@@ -22,8 +22,8 @@ import android.util.AttributeSet;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link ListView} which serves as a menu of elements firing {@link Intent}s to other Activities.
@@ -57,8 +57,7 @@ public class MenuListView extends ListView {
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return mName;
         }
 
@@ -77,7 +76,7 @@ public class MenuListView extends ListView {
     /**
      * Sets the menu items for this {@link MenuListView}.
      */
-    public void setItems(@NonNull MenuItem[] items) {
+    public void setItems(MenuItem @NonNull [] items) {
         final Context context = getContext();
         ArrayAdapter<MenuItem> featureArrayAdapter =
                 new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, items);

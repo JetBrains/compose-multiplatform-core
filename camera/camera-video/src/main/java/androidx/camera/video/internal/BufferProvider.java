@@ -16,10 +16,11 @@
 
 package androidx.camera.video.internal;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Observable;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * BufferProvider provides buffers for writing data.
@@ -53,8 +54,7 @@ public interface BufferProvider<T> extends Observable<BufferProvider.State> {
      *
      * @return a {@link ListenableFuture} to represent the acquisition.
      */
-    @NonNull
-    ListenableFuture<T> acquireBuffer();
+    @NonNull ListenableFuture<T> acquireBuffer();
 
     /** The state of the BufferProvider. */
     enum State {

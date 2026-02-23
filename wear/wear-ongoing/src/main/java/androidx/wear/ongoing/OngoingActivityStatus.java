@@ -17,14 +17,15 @@ package androidx.wear.ongoing;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.CustomVersionedParcelable;
 import androidx.versionedparcelable.NonParcelField;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,13 +39,11 @@ import java.util.Map;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @VersionedParcelize(isCustom = true)
 class OngoingActivityStatus extends CustomVersionedParcelable {
-    @NonNull
     @ParcelField(value = 1)
-    List<CharSequence> mTemplates = new ArrayList<>();
+    @NonNull List<CharSequence> mTemplates = new ArrayList<>();
 
     @NonParcelField
-    @NonNull
-    Map<String, StatusPart> mParts = new HashMap<>();
+    @NonNull Map<String, StatusPart> mParts = new HashMap<>();
 
     // Used to serialize/deserialize mParts to avoid http://b/132619460
     @ParcelField(value = 2)

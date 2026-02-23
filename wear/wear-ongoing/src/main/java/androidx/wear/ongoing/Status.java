@@ -18,9 +18,10 @@ package androidx.wear.ongoing;
 import android.content.Context;
 import android.text.SpannableStringBuilder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,11 +50,9 @@ import java.util.Set;
  * {@link android.os.SystemClock#elapsedRealtime()}
  */
 public final class Status implements TimeDependentText {
-    @NonNull
-    final List<CharSequence> mTemplates;
+    final @NonNull List<CharSequence> mTemplates;
 
-    @NonNull
-    private final Map<String, StatusPart> mParts;
+    private final @NonNull Map<String, StatusPart> mParts;
 
     /**
      * Abstract class to represent An Ongoing activity status or part of it.
@@ -67,13 +66,11 @@ public final class Status implements TimeDependentText {
         Part() {
         }
 
-        @Nullable
-        StatusPart toVersionedParcelable() {
+        @Nullable StatusPart toVersionedParcelable() {
             return null;
         }
 
-        @Nullable
-        static Part fromVersionedParcelable(@Nullable StatusPart vp) {
+        static @Nullable Part fromVersionedParcelable(@Nullable StatusPart vp) {
             if (vp == null) {
                 return null;
             }
@@ -94,8 +91,7 @@ public final class Status implements TimeDependentText {
      * Available since wear-ongoing:1.0.0
      */
     public static final class TextPart extends Part {
-        @NonNull
-        private final TextStatusPart mPart;
+        private final @NonNull TextStatusPart mPart;
 
         TextPart(@NonNull TextStatusPart part) {
             mPart = part;
@@ -109,17 +105,15 @@ public final class Status implements TimeDependentText {
         }
 
         @Override
-        @NonNull
-        StatusPart toVersionedParcelable() {
+        @NonNull StatusPart toVersionedParcelable() {
             return mPart;
         }
 
         /**
          * See {@link TimeDependentText#getText(Context, long)}
          */
-        @NonNull
         @Override
-        public CharSequence getText(@NonNull Context context, long timeNowMillis) {
+        public @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis) {
             return mPart.getText(context, timeNowMillis);
         }
 
@@ -148,8 +142,7 @@ public final class Status implements TimeDependentText {
      * be created directly, create one of those instead.
      */
     public abstract static class TimerOrStopwatchPart extends Part {
-        @NonNull
-        private final TimerStatusPart mPart;
+        private final @NonNull TimerStatusPart mPart;
 
         TimerOrStopwatchPart(@NonNull TimerStatusPart part) {
             mPart = part;
@@ -206,8 +199,7 @@ public final class Status implements TimeDependentText {
         }
 
         @Override
-        @NonNull
-        StatusPart toVersionedParcelable() {
+        @NonNull StatusPart toVersionedParcelable() {
             return mPart;
         }
 
@@ -225,9 +217,8 @@ public final class Status implements TimeDependentText {
         /**
          * See {@link TimeDependentText#getText(Context, long)}
          */
-        @NonNull
         @Override
-        public CharSequence getText(@NonNull Context context, long timeNowMillis) {
+        public @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis) {
             return mPart.getText(context, timeNowMillis);
         }
 
@@ -373,8 +364,7 @@ public final class Status implements TimeDependentText {
      * @param part The only Part that composes this status.
      * @return A new {@link Status} with just one Part.
      */
-    @NonNull
-    public static Status forPart(@NonNull Part part) {
+    public static @NonNull Status forPart(@NonNull Part part) {
         // Create an OngoingActivityStatus using only this part and the default template.
         return new Status.Builder().addPart(DEFAULT_STATUS_PART_NAME, part).build();
     }
@@ -406,8 +396,7 @@ public final class Status implements TimeDependentText {
          * @param template the template to be added
          * @return this builder, to chain calls.
          */
-        @NonNull
-        public Builder addTemplate(@NonNull CharSequence template) {
+        public @NonNull Builder addTemplate(@NonNull CharSequence template) {
             mTemplates.add(template);
             return this;
         }
@@ -420,10 +409,9 @@ public final class Status implements TimeDependentText {
          * @param part The part that will be rendered in the specified position/s in the template.
          * @return this builder, to chain calls.
          */
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // We don't want a getter getParts()
-        public Builder addPart(@NonNull String name, @NonNull Part part) {
+        public @NonNull Builder addPart(@NonNull String name, @NonNull Part part) {
             mParts.put(name, part.toVersionedParcelable());
             mDefaultTemplate += (mDefaultTemplate.length() > 0 ? " " : "") + "#" + name + "#";
             return this;
@@ -434,8 +422,7 @@ public final class Status implements TimeDependentText {
          *
          * @return the built OngoingActivityStatus
          */
-        @NonNull
-        public Status build() {
+        public @NonNull Status build() {
             List<CharSequence> templates = mTemplates.isEmpty() ? Arrays.asList(mDefaultTemplate)
                     : mTemplates;
 
@@ -468,16 +455,14 @@ public final class Status implements TimeDependentText {
     /**
      * @return the list of templates that this status has.
      */
-    @NonNull
-    public List<CharSequence> getTemplates() {
+    public @NonNull List<CharSequence> getTemplates() {
         return mTemplates;
     }
 
     /**
      * @return the names of the parts provide to this status.
      */
-    @NonNull
-    public Set<String> getPartNames() {
+    public @NonNull Set<String> getPartNames() {
         return Collections.unmodifiableSet(mParts.keySet());
     }
 
@@ -487,8 +472,7 @@ public final class Status implements TimeDependentText {
      * @param name the name to lookup.
      * @return the part with the given name, can be null.
      */
-    @Nullable
-    public Part getPart(@NonNull String name) {
+    public @Nullable Part getPart(@NonNull String name) {
         return Part.fromVersionedParcelable(mParts.get(name));
     }
 
@@ -502,8 +486,7 @@ public final class Status implements TimeDependentText {
      * @return The template with the placeholders replaced, or null if the template references a
      * value that it's not present (or null).
      */
-    @Nullable
-    static CharSequence processTemplate(@NonNull CharSequence template,
+    static @Nullable CharSequence processTemplate(@NonNull CharSequence template,
             @NonNull Map<String, CharSequence> values) {
         SpannableStringBuilder ssb = new SpannableStringBuilder(template);
 
@@ -541,9 +524,8 @@ public final class Status implements TimeDependentText {
      * @param timeNowMillis the timestamp of the time we want to display, usually now, as
      * @return the rendered text, for best compatibility, display using a TextView.
      */
-    @NonNull
     @Override
-    public CharSequence getText(@NonNull Context context, long timeNowMillis) {
+    public @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis) {
         Map<String, CharSequence> texts = new HashMap<>();
         for (Map.Entry<String, StatusPart> me : mParts.entrySet()) {
             CharSequence text = me.getValue().getText(context, timeNowMillis);

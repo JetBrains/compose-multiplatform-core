@@ -15,6 +15,8 @@
  */
 package androidx.compose.ui.node
 
+import androidx.compose.ui.ComposeUiFlags.isTraversableDelegatesFixEnabled
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.areObjectsOfSameType
 import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAction
@@ -43,15 +45,16 @@ interface TraversableNode : DelegatableNode {
         enum class TraverseDescendantsAction {
             ContinueTraversal,
             SkipSubtreeAndContinueTraversal,
-            CancelTraversal
+            CancelTraversal,
         }
     }
 }
 
 // *********** Nearest Traversable Ancestor methods ***********
 /** Finds the nearest traversable ancestor with a matching [key]. */
+@OptIn(ExperimentalComposeUiApi::class)
 fun DelegatableNode.findNearestAncestor(key: Any?): TraversableNode? {
-    visitAncestors(Nodes.Traversable) {
+    visitAncestors(Nodes.Traversable, includeDelegates = isTraversableDelegatesFixEnabled) {
         if (key == it.traverseKey) {
             return it
         }
@@ -60,10 +63,12 @@ fun DelegatableNode.findNearestAncestor(key: Any?): TraversableNode? {
 }
 
 /** Finds the nearest ancestor of the same class and key. */
+@OptIn(ExperimentalComposeUiApi::class)
 fun <T> T.findNearestAncestor(): T? where T : TraversableNode {
-    visitAncestors(Nodes.Traversable) {
+    visitAncestors(Nodes.Traversable, includeDelegates = isTraversableDelegatesFixEnabled) {
         if (this.traverseKey == it.traverseKey && areObjectsOfSameType(this, it)) {
-            @Suppress("UNCHECKED_CAST") return it as T
+            @Suppress("UNCHECKED_CAST")
+            return it as T
         }
     }
     return null
@@ -169,7 +174,7 @@ fun <T> T.traverseChildren(block: (T) -> Boolean) where T : TraversableNode {
  */
 fun DelegatableNode.traverseDescendants(
     key: Any?,
-    block: (TraversableNode) -> TraverseDescendantsAction
+    block: (TraversableNode) -> TraverseDescendantsAction,
 ) {
     visitSubtreeIf(Nodes.Traversable) {
         val action =

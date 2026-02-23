@@ -45,11 +45,12 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.annotation.RequiresApi;
 import androidx.wear.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * CurvedTextView is a component allowing developers to easily write curved text following
@@ -91,18 +92,14 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
     private float mMaxSweepDegrees;
     private String mText = "";
     private float mTextSize = DEFAULT_TEXT_SIZE;
-    @Nullable
-    private Typeface mTypeface = null;
+    private @Nullable Typeface mTypeface = null;
     private boolean mClockwise = DEFAULT_CLOCKWISE;
     @ColorInt
     private int mTextColor = DEFAULT_TEXT_COLOR;
-    @Nullable
-    private TextUtils.TruncateAt mEllipsize = null;
+    private TextUtils.@Nullable TruncateAt mEllipsize = null;
     private float mLetterSpacing = 0f;
-    @Nullable
-    private String mFontFeatureSettings = null;
-    @Nullable
-    private String mFontVariationSettings = null;
+    private @Nullable String mFontFeatureSettings = null;
+    private @Nullable String mFontVariationSettings = null;
 
     // If true, it means we got the touch_down event and are receiving the touch events that follow.
     private boolean mHandlingTouch = false;
@@ -594,20 +591,16 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
      * Set of attribute that can be defined in a Text Appearance.
      */
     private static class TextAppearanceAttributes {
-        @Nullable
-        ColorStateList mTextColor = null;
+        @Nullable ColorStateList mTextColor = null;
         float mTextSize = DEFAULT_TEXT_SIZE;
-        @Nullable
-        String mFontFamily = null;
+        @Nullable String mFontFamily = null;
         boolean mFontFamilyExplicit = false;
         int mTypefaceIndex = -1;
         int mTextStyle = DEFAULT_TEXT_STYLE;
         int mFontWeight = -1;
         float mLetterSpacing = 0f;
-        @Nullable
-        String mFontFeatureSettings = null;
-        @Nullable
-        String mFontVariationSettings = null;
+        @Nullable String mFontFeatureSettings = null;
+        @Nullable String mFontVariationSettings = null;
 
         TextAppearanceAttributes() {
         }
@@ -786,8 +779,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
     }
 
     /** Returns the text to be rendered */
-    @Nullable
-    public String getText() {
+    public @Nullable String getText() {
         return mText;
     }
 
@@ -810,8 +802,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
     }
 
     /** Gets the current Typeface that is used to style the text. */
-    @Nullable
-    public Typeface getTypeface() {
+    public @Nullable Typeface getTypeface() {
         return mTypeface;
     }
 
@@ -851,8 +842,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
      * Returns where, if anywhere, words that are longer than the view is wide should be
      * ellipsized.
      */
-    @Nullable
-    public TextUtils.TruncateAt getEllipsize() {
+    public TextUtils.@Nullable TruncateAt getEllipsize() {
         return mEllipsize;
     }
 
@@ -860,7 +850,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
      * Causes words in the text that are longer than the view's width to be ellipsized. Use null
      * to turn off ellipsizing.
      */
-    public void setEllipsize(@Nullable TextUtils.TruncateAt value) {
+    public void setEllipsize(TextUtils.@Nullable TruncateAt value) {
         mEllipsize = value;
         doRedraw();
     }
@@ -892,8 +882,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
      *
      * @return The currently set font feature settings. Default is null.
      */
-    @Nullable
-    public String getFontFeatureSettings() {
+    public @Nullable String getFontFeatureSettings() {
         return mFontFeatureSettings;
     }
 
@@ -910,8 +899,7 @@ public class CurvedTextView extends View implements ArcLayout.Widget {
     }
 
     /** Returns TrueType or OpenType font variation settings. */
-    @Nullable
-    public String getFontVariationSettings() {
+    public @Nullable String getFontVariationSettings() {
         return mFontVariationSettings;
     }
 

@@ -23,6 +23,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
+import androidx.core.util.Pair;
+
+import java.util.List;
+
 /**
  * RV specific layout tests.
  */
@@ -173,14 +177,30 @@ class TouchUtils {
     /** Creates a {@link MotionEvent} with provided input and motion values. */
     static MotionEvent createMotionEvent(
             int inputDeviceId, int inputSource, int axis, int axisValue) {
+        return createMotionEvent(
+                inputDeviceId, inputSource, MotionEvent.ACTION_SCROLL,
+                List.of(Pair.create(axis, axisValue)));
+    }
+
+    /**
+     * Creates a {@link MotionEvent} with provided input and motion values.
+     *
+     * <p>Allows passing values for multiple axes. Each axis value is represented as a
+     * {@link Pair} of the axis and the respective axis value.
+     */
+    static MotionEvent createMotionEvent(
+            int inputDeviceId, int inputSource, int action,
+            List<Pair<Integer, Integer>> axisValues) {
         MotionEvent.PointerProperties props = new MotionEvent.PointerProperties();
         props.id = 0;
         MotionEvent.PointerProperties[] pointerProperties = {props};
         MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
-        coords.setAxisValue(axis, axisValue);
+        for (Pair<Integer, Integer> axisValue : axisValues) {
+            coords.setAxisValue(axisValue.first, axisValue.second);
+        }
         MotionEvent.PointerCoords[] pointerCoords = {coords};
         return MotionEvent.obtain(
-                0, System.currentTimeMillis(), MotionEvent.ACTION_SCROLL,
+                0, System.currentTimeMillis(), action,
                 1, pointerProperties, pointerCoords, 0, 0, 1, 1, inputDeviceId, 0, inputSource, 0);
     }
 

@@ -15,22 +15,22 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.Version
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.8.1")
+    implementation(project(":annotation:annotation"))
+    implementation(project(":core:core"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation(libs.kotlinStdlib)
 }
@@ -43,9 +43,10 @@ androidx {
 android {
     lintOptions {
         // We don't want errors to cause lint to fail
-        abortOnError false
+        abortOnError = false
     }
-    namespace "androidx.lint.integration.tests"
+    namespace = "androidx.lint.integration.tests"
+    compileSdk { version = release(36) }
 }
 
 

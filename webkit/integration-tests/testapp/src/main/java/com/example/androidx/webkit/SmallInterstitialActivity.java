@@ -20,10 +20,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate small ("Quiet") interstitials.
@@ -40,6 +41,7 @@ public class SmallInterstitialActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_small_interstitial);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.small_interstitial_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         WebView webview = findViewById(R.id.small_webview);

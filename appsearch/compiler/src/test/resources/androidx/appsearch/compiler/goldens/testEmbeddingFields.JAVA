@@ -2,6 +2,7 @@ package com.example.appsearch;
 
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactory;
+import androidx.appsearch.app.DocumentClassMappingContext;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -12,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.processing.Generated;
 
 @Generated("androidx.appsearch.compiler.AppSearchCompiler")
@@ -36,26 +36,32 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("defaultIndexNone")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("indexNone")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("vec")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("listVec")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("collectVec")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("arrVec")
             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
             .setIndexingType(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+            .setQuantizationType(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE)
             .build())
           .build();
   }
@@ -104,7 +110,7 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
 
   @Override
   public Gift fromGenericDocument(GenericDocument genericDoc,
-      Map<String, List<String>> documentClassMap) throws AppSearchException {
+      DocumentClassMappingContext documentClassMappingContext) throws AppSearchException {
     String namespaceConv = genericDoc.getNamespace();
     String idConv = genericDoc.getId();
     String[] nameCopy = genericDoc.getPropertyStringArray("name");

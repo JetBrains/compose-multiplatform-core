@@ -30,8 +30,6 @@ import static androidx.camera.video.Quality.LOWEST;
 import static androidx.camera.video.Quality.SD;
 import static androidx.camera.video.Quality.UHD;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
@@ -40,6 +38,9 @@ import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk;
 import androidx.camera.video.Quality;
 import androidx.camera.video.internal.compat.quirk.VideoQualityQuirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,12 +63,9 @@ public class QualityValidatedEncoderProfilesProvider implements EncoderProfilesP
         CAMCORDER_TO_VIDEO_QUALITY_MAP.put(QUALITY_LOW, LOWEST);
     }
 
-    @NonNull
-    private final EncoderProfilesProvider mProvider;
-    @NonNull
-    private final CameraInfoInternal mCameraInfo;
-    @NonNull
-    private final Quirks mQuirks;
+    private final @NonNull EncoderProfilesProvider mProvider;
+    private final @NonNull CameraInfoInternal mCameraInfo;
+    private final @NonNull Quirks mQuirks;
 
     public QualityValidatedEncoderProfilesProvider(@NonNull EncoderProfilesProvider provider,
             @NonNull CameraInfoInternal cameraInfo, @NonNull Quirks quirks) {
@@ -81,9 +79,8 @@ public class QualityValidatedEncoderProfilesProvider implements EncoderProfilesP
         return mProvider.hasProfile(quality) && isDeviceValidQuality(quality);
     }
 
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         if (!hasProfile(quality)) {
             return null;
         }

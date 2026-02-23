@@ -29,9 +29,10 @@ import android.view.autofill.AutofillValue;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.widget.TextViewCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A custom EditText that satisfies the IME key monitoring requirements of GuidedStepFragment.

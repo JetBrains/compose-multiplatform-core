@@ -21,20 +21,19 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.CameraDeviceWrapper
 import androidx.camera.camera2.pipe.compat.CaptureSessionFactory
 import androidx.camera.camera2.pipe.compat.CaptureSessionState
-import androidx.camera.camera2.pipe.compat.OutputConfigurationWrapper
 
 /** Fake [CaptureSessionFactory] for use in tests. This fake does NOT invoke callbacks. */
 internal class FakeCaptureSessionFactory(
     private val requiredStreams: Set<StreamId>,
-    private val deferrableStreams: Set<StreamId>
+    private val deferrableStreams: Set<StreamId>,
 ) : CaptureSessionFactory {
     private val allStreams = requiredStreams + deferrableStreams
 
     override fun create(
         cameraDevice: CameraDeviceWrapper,
         surfaces: Map<StreamId, Surface>,
-        captureSessionState: CaptureSessionState
-    ): Map<StreamId, OutputConfigurationWrapper> {
+        captureSessionState: CaptureSessionState,
+    ): CaptureSessionFactory.Result {
         check(allStreams.containsAll(surfaces.keys)) {
             "Unexpected streams passed to create! Keys should be one of $allStreams but actual" +
                 " keys were ${surfaces.keys}."
@@ -46,6 +45,8 @@ internal class FakeCaptureSessionFactory(
 
         val deferredStreams = allStreams - surfaces.keys
         check(deferrableStreams.containsAll(deferredStreams))
-        return deferredStreams.associateWith { FakeOutputConfigurationWrapper() }
+        val deferred = deferredStreams.associateWith { FakeOutputConfigurationWrapper() }
+        // TODO: Add parameters and fill in outputSurfaceMap
+        return CaptureSessionFactory.Result.Success(deferred, emptyMap())
     }
 }

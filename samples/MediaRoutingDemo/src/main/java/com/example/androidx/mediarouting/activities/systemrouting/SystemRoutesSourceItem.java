@@ -18,7 +18,7 @@ package com.example.androidx.mediarouting.activities.systemrouting;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -27,14 +27,13 @@ import java.util.Objects;
  */
 public final class SystemRoutesSourceItem implements SystemRoutesAdapterItem {
 
-    @NonNull private final String mName;
+    private final @NonNull String mName;
 
     public SystemRoutesSourceItem(@NonNull String name) {
         mName = name;
     }
 
-    @NonNull
-    public String getSourceName() {
+    public @NonNull String getSourceName() {
         return mName;
     }
 

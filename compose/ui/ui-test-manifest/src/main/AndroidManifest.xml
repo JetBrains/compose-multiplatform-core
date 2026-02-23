@@ -16,6 +16,7 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name="androidx.activity.ComponentActivity" android:exported="true" />
+        <activity android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:name="androidx.activity.ComponentActivity" android:exported="true" />
     </application>
 </manifest>

@@ -16,14 +16,14 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.Profile;
 import androidx.webkit.ProfileStore;
 
 import org.chromium.support_lib_boundary.ProfileBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.List;
@@ -49,8 +49,7 @@ public class ProfileStoreImpl implements ProfileStore {
      *
      * @return ProfileStore instance to use for managing profiles.
      */
-    @NonNull
-    public static ProfileStore getInstance() {
+    public static @NonNull ProfileStore getInstance() {
         if (sInstance == null) {
             sInstance = new ProfileStoreImpl(
                     WebViewGlueCommunicator.getFactory().getProfileStore());
@@ -59,8 +58,7 @@ public class ProfileStoreImpl implements ProfileStore {
     }
 
     @Override
-    @NonNull
-    public Profile getOrCreateProfile(@NonNull String name) {
+    public @NonNull Profile getOrCreateProfile(@NonNull String name) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return new ProfileImpl(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
@@ -71,8 +69,7 @@ public class ProfileStoreImpl implements ProfileStore {
     }
 
     @Override
-    @Nullable
-    public Profile getProfile(@NonNull String name) {
+    public @Nullable Profile getProfile(@NonNull String name) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             InvocationHandler profileBoundaryInterface = mProfileStoreImpl.getProfile(name);
@@ -88,8 +85,7 @@ public class ProfileStoreImpl implements ProfileStore {
     }
 
     @Override
-    @NonNull
-    public List<String> getAllProfileNames() {
+    public @NonNull List<String> getAllProfileNames() {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileStoreImpl.getAllProfileNames();

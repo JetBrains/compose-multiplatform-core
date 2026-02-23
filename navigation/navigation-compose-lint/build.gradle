@@ -15,14 +15,13 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,24 +31,26 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    compileOnly(libs.androidLintMinApi)
+    compileOnly(libs.androidLintApiStableAnalysis)
     compileOnly(libs.kotlinStdlib)
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
     bundleInside(project(":compose:lint:common"))
-    bundleInside(project(":navigation:navigation-lint-common"))
+    bundleInside(project(":navigation:lint:common"))
+
+    testRuntimeOnly(libs.kotlinReflect)
 
     testImplementation(project(":compose:lint:common-test"))
+    testImplementation(project(":navigation:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.kotlinReflect)
-    testImplementation(libs.kotlinStdlibJdk8)
-    testImplementation(libs.androidLint)
+    testImplementation(libs.androidLintApiStableAnalysis)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
 }
 
 androidx {
     name = "Navigation Compose Lint"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2021"
     description = "Lint checks for Navigation Compose"
 }

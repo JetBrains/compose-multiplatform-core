@@ -18,7 +18,9 @@ package androidx.wear.compose.integration.macrobenchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.CompilationMode
-import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingGfxInfoMetric
+import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
@@ -31,6 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalMetricApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class SwipeToRevealBenchmark(private val compilationMode: CompilationMode) {
@@ -50,14 +53,15 @@ class SwipeToRevealBenchmark(private val compilationMode: CompilationMode) {
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = listOf(FrameTimingMetric()),
+            metrics =
+                listOf(FrameTimingGfxInfoMetric(), MemoryUsageMetric(MemoryUsageMetric.Mode.Last)),
             compilationMode = compilationMode,
             iterations = 10,
             setupBlock = {
                 val intent = Intent()
                 intent.action = SWIPE_TO_REVEAL_ACTIVITY
                 startActivityAndWait(intent)
-            }
+            },
         ) {
             val swipeToReveal = device.findObject(By.desc(CONTENT_DESCRIPTION))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -76,11 +80,10 @@ class SwipeToRevealBenchmark(private val compilationMode: CompilationMode) {
     companion object {
         private const val PACKAGE_NAME = "androidx.wear.compose.integration.macrobenchmark.target"
         private const val SWIPE_TO_REVEAL_ACTIVITY = "${PACKAGE_NAME}.SWIPE_TO_REVEAL_ACTIVITY"
+        private const val SWIPE_SPEED = 500
 
         @Parameterized.Parameters(name = "compilation={0}")
         @JvmStatic
         fun parameters() = createCompilationParams()
     }
-
-    private val SWIPE_SPEED = 500
 }

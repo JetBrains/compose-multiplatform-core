@@ -31,6 +31,7 @@ import android.view.ViewGroupOverlay;
 import android.widget.ImageView;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.view.ViewCompat;
 
 class TransitionUtils {
 
@@ -99,8 +100,7 @@ class TransitionUtils {
             }
             parent = (ViewGroup) view.getParent();
             indexInParent = parent.indexOfChild(view);
-            ViewGroupOverlay result = sceneRoot.getOverlay();
-            result.add(view);
+            ViewCompat.addOverlayView(sceneRoot, view);
         }
         Bitmap bitmap = null;
         int bitmapWidth = Math.round(bounds.width());

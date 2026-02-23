@@ -23,19 +23,22 @@ import android.os.Build;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Handles requests to adjust or set the volume on a session. This is also used
- * to push volume updates back to the session after a request has been handled.
- * You can set a volume provider on a session by calling
- * {@link MediaSessionCompat#setPlaybackToRemote}.
+ * Handles requests to adjust or set the volume on a session. This is also used to push volume
+ * updates back to the session after a request has been handled. You can set a volume provider on a
+ * session by calling {@link MediaSessionCompat#setPlaybackToRemote}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public abstract class VolumeProviderCompat {
 
     /**
@@ -140,10 +143,8 @@ public abstract class VolumeProviderCompat {
      */
     public final void setCurrentVolume(int currentVolume) {
         mCurrentVolume = currentVolume;
-        if (Build.VERSION.SDK_INT >= 21) {
-            VolumeProvider volumeProviderFwk = (VolumeProvider) getVolumeProvider();
-            Api21Impl.setCurrentVolume(volumeProviderFwk, currentVolume);
-        }
+        VolumeProvider volumeProviderFwk = (VolumeProvider) getVolumeProvider();
+        Api21Impl.setCurrentVolume(volumeProviderFwk, currentVolume);
         if (mCallback != null) {
             mCallback.onVolumeChanged(this);
         }
@@ -156,8 +157,7 @@ public abstract class VolumeProviderCompat {
      * @return the volume control ID or {@code null} if it isn't set.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public final String getVolumeControlId() {
+    public final @Nullable String getVolumeControlId() {
         return mControlId;
     }
 
@@ -210,7 +210,7 @@ public abstract class VolumeProviderCompat {
                         VolumeProviderCompat.this.onAdjustVolume(direction);
                     }
                 };
-            } else if (Build.VERSION.SDK_INT >= 21) {
+            } else {
                 mVolumeProviderFwk = new VolumeProvider(mControlType, mMaxVolume, mCurrentVolume) {
                     @Override
                     public void onSetVolumeTo(int volume) {
@@ -234,7 +234,6 @@ public abstract class VolumeProviderCompat {
         public abstract void onVolumeChanged(VolumeProviderCompat volumeProvider);
     }
 
-    @RequiresApi(21)
     private static class Api21Impl {
         private Api21Impl() {}
 

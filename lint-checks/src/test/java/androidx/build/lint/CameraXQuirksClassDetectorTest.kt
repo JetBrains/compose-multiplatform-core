@@ -27,7 +27,7 @@ import org.junit.runners.JUnit4
 class CameraXQuirksClassDetectorTest :
     AbstractLintDetectorTest(
         useDetector = CameraXQuirksClassDetector(),
-        useIssues = listOf(CameraXQuirksClassDetector.ISSUE)
+        useIssues = listOf(CameraXQuirksClassDetector.ISSUE),
     ) {
 
     @Test
@@ -46,7 +46,7 @@ class CameraXQuirksClassDetectorTest :
             public class CameraXMissingQuirkSummaryJava implements Quirk {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         lint()

@@ -16,10 +16,10 @@
 
 package androidx.concurrent.futures;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
@@ -84,8 +84,7 @@ public final class CallbackToFutureAdapter {
      * <p>The provided callback is invoked immediately inline. Any exceptions thrown by it will
      * fail the returned {@code Future}.
      */
-    @NonNull
-    public static <T> ListenableFuture<T> getFuture(@NonNull Resolver<T> callback) {
+    public static <T> @NonNull ListenableFuture<T> getFuture(@NonNull Resolver<T> callback) {
         Completer<T> completer = new Completer<>();
         SafeFuture<T> safeFuture = new SafeFuture<>(completer);
         completer.future = safeFuture;
@@ -132,8 +131,7 @@ public final class CallbackToFutureAdapter {
          * complete
          * this future. In error cases, its toString() will be included in the message.
          */
-        @Nullable
-        Object attachCompleter(@NonNull Completer<T> completer) throws Exception;
+        @Nullable Object attachCompleter(@NonNull Completer<T> completer) throws Exception;
     }
 
     // TODO(b/119308748): Implement InternalFutureFailureAccess

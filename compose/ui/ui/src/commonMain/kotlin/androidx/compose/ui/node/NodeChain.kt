@@ -22,15 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.areObjectsOfSameType
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.internal.throwIllegalStateException
 import androidx.compose.ui.layout.ModifierInfo
 
-private val SentinelHead =
-    object : Modifier.Node() {
-            override fun toString() = "<Head>"
-        }
-        .apply { aggregateChildKindSet = 0.inv() }
-
 internal class NodeChain(val layoutNode: LayoutNode) {
+    private val sentinelHead =
+        object : Modifier.Node() {
+                override fun toString() = "<Head>"
+            }
+            .apply { aggregateChildKindSet = 0.inv() }
+
     internal val innerCoordinator = InnerNodeCoordinator(layoutNode)
     internal var outerCoordinator: NodeCoordinator = innerCoordinator
         private set
@@ -39,14 +40,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     internal var head: Modifier.Node = tail
         private set
 
-    private val isUpdating: Boolean
-        get() = head === SentinelHead
+    internal val isUpdating: Boolean
+        get() = sentinelHead.child != null
 
     private val aggregateChildKindSet: Int
         get() = head.aggregateChildKindSet
 
     private var current: MutableVector<Modifier.Element>? = null
     private var buffer: MutableVector<Modifier.Element>? = null
+    private val stack = MutableVector<Modifier>(16)
     private var cachedDiffer: Differ? = null
     private var logger: Logger? = null
 
@@ -65,23 +67,23 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      *   owner or one per chain.
      */
     private fun padChain(): Modifier.Node {
-        checkPrecondition(head !== SentinelHead) { "padChain called on already padded chain" }
+        checkPrecondition(head !== sentinelHead) { "padChain called on already padded chain" }
         val currentHead = head
-        currentHead.parent = SentinelHead
-        SentinelHead.child = currentHead
-        return SentinelHead
+        currentHead.parent = sentinelHead
+        sentinelHead.child = currentHead
+        return sentinelHead
     }
 
     private fun trimChain(paddedHead: Modifier.Node): Modifier.Node {
-        checkPrecondition(paddedHead === SentinelHead) {
+        checkPrecondition(paddedHead === sentinelHead) {
             "trimChain called on already trimmed chain"
         }
-        val result = SentinelHead.child ?: tail
+        val result = sentinelHead.child ?: tail
         result.parent = null
-        SentinelHead.child = null
-        SentinelHead.aggregateChildKindSet = 0.inv()
-        SentinelHead.updateCoordinator(null)
-        checkPrecondition(result !== SentinelHead) { "trimChain did not update the head" }
+        sentinelHead.child = null
+        sentinelHead.aggregateChildKindSet = 0.inv()
+        sentinelHead.updateCoordinator(null)
+        checkPrecondition(result !== sentinelHead) { "trimChain did not update the head" }
         return result
     }
 
@@ -117,7 +119,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         // vector in those cases.
         var before = current
         val beforeSize = before?.size ?: 0
-        val after = m.fillVector(buffer ?: mutableVectorOf())
+        val after = m.fillVector(buffer ?: mutableVectorOf(), stack)
         var i = 0
         if (after.size == beforeSize) {
             // assume if the sizes are the same, that we are in a common case of no structural
@@ -162,13 +164,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                 // there must have been a structural change
                 // we only need to diff what is left of the list, so we use `i` to determine how
                 // much of the list is left.
-                structuralUpdate(
-                    i,
-                    before,
-                    after,
-                    node,
-                    !layoutNode.applyingModifierOnAttach,
-                )
+                structuralUpdate(i, before, after, node, !layoutNode.applyingModifierOnAttach)
             }
         } else if (layoutNode.applyingModifierOnAttach && beforeSize == 0) {
             // common case where we are initializing the chain and the previous size is zero. In
@@ -200,13 +196,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         } else {
             coordinatorSyncNeeded = true
             before = before ?: MutableVector()
-            structuralUpdate(
-                0,
-                before,
-                after,
-                paddedHead,
-                !layoutNode.applyingModifierOnAttach,
-            )
+            structuralUpdate(0, before, after, paddedHead, !layoutNode.applyingModifierOnAttach)
         }
         current = after
         // clear the before vector to allow old modifiers to be Garbage Collected
@@ -266,7 +256,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     private fun syncAggregateChildKindSet() {
         var node: Modifier.Node? = tail.parent
         var aggregateChildKindSet = 0
-        while (node != null && node !== SentinelHead) {
+        while (node != null && node !== sentinelHead) {
             aggregateChildKindSet = aggregateChildKindSet or node.kindSet
             node.aggregateChildKindSet = aggregateChildKindSet
             node = node.parent
@@ -393,7 +383,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     private fun propagateCoordinator(start: Modifier.Node, coordinator: NodeCoordinator) {
         var node = start.parent
         while (node != null) {
-            if (node === SentinelHead) {
+            if (node === sentinelHead) {
                 coordinator.wrappedBy = layoutNode.parent?.innerCoordinator
                 outerCoordinator = coordinator
                 break
@@ -477,7 +467,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             index: Int,
             prev: Modifier.Element,
             next: Modifier.Element,
-            node: Modifier.Node
+            node: Modifier.Node,
         )
 
         fun nodeUpdated(
@@ -493,7 +483,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             newIndex: Int,
             prev: Modifier.Element,
             next: Modifier.Element,
-            node: Modifier.Node
+            node: Modifier.Node,
         )
 
         fun nodeInserted(
@@ -501,7 +491,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             newIndex: Int,
             element: Modifier.Element,
             child: Modifier.Node,
-            inserted: Modifier.Node
+            inserted: Modifier.Node,
         )
 
         fun nodeRemoved(oldIndex: Int, element: Modifier.Element, node: Modifier.Node)
@@ -563,47 +553,6 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             node.parent = null
         }
         return parent!!
-    }
-
-    private fun createAndInsertNodeAsParent(
-        element: Modifier.Element,
-        child: Modifier.Node,
-    ): Modifier.Node {
-        val node =
-            when (element) {
-                is ModifierNodeElement<*> ->
-                    element.create().also {
-                        it.kindSet = calculateNodeKindSetFromIncludingDelegates(it)
-                    }
-                else -> BackwardsCompatNode(element)
-            }
-        checkPrecondition(!node.isAttached) {
-            "createAndInsertNodeAsParent called on an attached node"
-        }
-        node.insertedNodeAwaitingAttachForInvalidation = true
-        return insertParent(node, child)
-    }
-
-    /**
-     * This inserts [node] as the parent of [child] in the current linked list. For example:
-     *
-     *      Head... -> child -> ...Tail
-     *
-     * gets transformed into a list of the following shape:
-     *
-     *      Head... -> node -> child -> ...Tail
-     *
-     * @return The inserted [node]
-     */
-    private fun insertParent(node: Modifier.Node, child: Modifier.Node): Modifier.Node {
-        val theParent = child.parent
-        if (theParent != null) {
-            theParent.child = node
-            node.parent = theParent
-        }
-        child.parent = node
-        node.child = child
-        return node
     }
 
     private fun createAndInsertNodeAsChild(
@@ -669,7 +618,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                     node.updatedNodeAwaitingAttachForInvalidation = true
                 }
             }
-            else -> error("Unknown Modifier.Node type")
+            else -> throwIllegalStateException("Unknown Modifier.Node type")
         }
     }
 
@@ -798,10 +747,10 @@ private fun <T : Modifier.Node> ModifierNodeElement<T>.updateUnsafe(node: Modifi
 }
 
 private fun Modifier.fillVector(
-    result: MutableVector<Modifier.Element>
+    result: MutableVector<Modifier.Element>,
+    stack: MutableVector<Modifier>,
 ): MutableVector<Modifier.Element> {
-    val capacity = result.size.coerceAtLeast(16)
-    val stack = MutableVector<Modifier>(capacity).also { it.add(this) }
+    stack.add(this)
     var predicate: ((Modifier.Element) -> Boolean)? = null
     while (stack.isNotEmpty()) {
         when (val next = stack.removeAt(stack.size - 1)) {

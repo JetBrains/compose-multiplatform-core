@@ -19,7 +19,6 @@ package androidx.appsearch.platformstorage.converter;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
@@ -29,6 +28,8 @@ import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportSystemUsageRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,7 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link PutDocumentsRequest} into a platform
      * {@link android.app.appsearch.PutDocumentsRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.PutDocumentsRequest toPlatformPutDocumentsRequest(
+    public static android.app.appsearch.@NonNull PutDocumentsRequest toPlatformPutDocumentsRequest(
             @NonNull PutDocumentsRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.PutDocumentsRequest.Builder platformBuilder =
@@ -81,9 +81,8 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link GetByDocumentIdRequest} into a platform
      * {@link android.app.appsearch.GetByDocumentIdRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.GetByDocumentIdRequest toPlatformGetByDocumentIdRequest(
-            @NonNull GetByDocumentIdRequest jetpackRequest) {
+    public static android.app.appsearch.@NonNull GetByDocumentIdRequest
+            toPlatformGetByDocumentIdRequest(@NonNull GetByDocumentIdRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.GetByDocumentIdRequest.Builder platformBuilder =
                 new android.app.appsearch.GetByDocumentIdRequest.Builder(
@@ -100,8 +99,7 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link RemoveByDocumentIdRequest} into a platform
      * {@link android.app.appsearch.RemoveByDocumentIdRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.RemoveByDocumentIdRequest
+    public static android.app.appsearch.@NonNull RemoveByDocumentIdRequest
             toPlatformRemoveByDocumentIdRequest(
             @NonNull RemoveByDocumentIdRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
@@ -115,8 +113,7 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link androidx.appsearch.app.ReportUsageRequest} into a platform
      * {@link android.app.appsearch.ReportUsageRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.ReportUsageRequest toPlatformReportUsageRequest(
+    public static android.app.appsearch.@NonNull ReportUsageRequest toPlatformReportUsageRequest(
             @NonNull ReportUsageRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         return new android.app.appsearch.ReportUsageRequest.Builder(
@@ -129,9 +126,8 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link androidx.appsearch.app.ReportSystemUsageRequest} into a platform
      * {@link android.app.appsearch.ReportSystemUsageRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.ReportSystemUsageRequest toPlatformReportSystemUsageRequest(
-            @NonNull ReportSystemUsageRequest jetpackRequest) {
+    public static android.app.appsearch.@NonNull ReportSystemUsageRequest
+            toPlatformReportSystemUsageRequest(@NonNull ReportSystemUsageRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         return new android.app.appsearch.ReportSystemUsageRequest.Builder(
                 jetpackRequest.getPackageName(),

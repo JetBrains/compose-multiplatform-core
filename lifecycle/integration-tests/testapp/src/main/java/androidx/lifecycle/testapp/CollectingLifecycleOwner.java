@@ -19,9 +19,9 @@ package androidx.lifecycle.testapp;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 
-import java.util.List;
-
 import kotlin.Pair;
+
+import java.util.List;
 
 /**
  * For activities that collect their events.

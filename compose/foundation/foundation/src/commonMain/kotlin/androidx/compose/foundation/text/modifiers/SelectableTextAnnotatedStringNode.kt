@@ -17,8 +17,8 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.internal.requirePreconditionNotNull
-import androidx.compose.foundation.text.AutoSize
 import androidx.compose.foundation.text.DefaultMinLines
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -59,11 +59,13 @@ internal class SelectableTextAnnotatedStringNode(
     onPlaceholderLayout: ((List<Rect?>) -> Unit)? = null,
     private var selectionController: SelectionController? = null,
     overrideColor: ColorProducer? = null,
-    autoSize: AutoSize? = null,
-    private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null
+    autoSize: TextAutoSize? = null,
+    private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null,
 ) : DelegatingNode(), LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode {
+    override val shouldAutoInvalidate: Boolean
+        get() = false
 
-    private val delegate =
+    private val textAnnotatedStringNode =
         delegate(
             TextAnnotatedStringNode(
                 text = text,
@@ -79,7 +81,7 @@ internal class SelectableTextAnnotatedStringNode(
                 selectionController = selectionController,
                 overrideColor = overrideColor,
                 autoSize = autoSize,
-                onShowTranslation = onShowTranslation
+                onShowTranslation = onShowTranslation,
             )
         )
 
@@ -93,32 +95,32 @@ internal class SelectableTextAnnotatedStringNode(
         selectionController?.updateGlobalPosition(coordinates)
     }
 
-    override fun ContentDrawScope.draw() = delegate.drawNonExtension(this)
+    override fun ContentDrawScope.draw() = textAnnotatedStringNode.drawNonExtension(this)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
-    ): MeasureResult = delegate.measureNonExtension(this, measurable, constraints)
+        constraints: Constraints,
+    ): MeasureResult = textAnnotatedStringNode.measureNonExtension(this, measurable, constraints)
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
-    ): Int = delegate.minIntrinsicWidthNonExtension(this, measurable, height)
+        height: Int,
+    ): Int = textAnnotatedStringNode.minIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
-    ): Int = delegate.minIntrinsicHeightNonExtension(this, measurable, width)
+        width: Int,
+    ): Int = textAnnotatedStringNode.minIntrinsicHeightNonExtension(this, measurable, width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
-    ): Int = delegate.maxIntrinsicWidthNonExtension(this, measurable, height)
+        height: Int,
+    ): Int = textAnnotatedStringNode.maxIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
-    ): Int = delegate.maxIntrinsicHeightNonExtension(this, measurable, width)
+        width: Int,
+    ): Int = textAnnotatedStringNode.maxIntrinsicHeightNonExtension(this, measurable, width)
 
     fun update(
         text: AnnotatedString,
@@ -133,13 +135,13 @@ internal class SelectableTextAnnotatedStringNode(
         onPlaceholderLayout: ((List<Rect?>) -> Unit)?,
         selectionController: SelectionController?,
         color: ColorProducer?,
-        autoSize: AutoSize?
+        autoSize: TextAutoSize?,
     ) {
-        delegate.doInvalidations(
-            drawChanged = delegate.updateDraw(color, style),
-            textChanged = delegate.updateText(text = text),
+        textAnnotatedStringNode.doInvalidations(
+            drawChanged = textAnnotatedStringNode.updateDraw(color, style),
+            textChanged = textAnnotatedStringNode.updateText(text = text),
             layoutChanged =
-                delegate.updateLayoutRelatedArgs(
+                textAnnotatedStringNode.updateLayoutRelatedArgs(
                     style = style,
                     placeholders = placeholders,
                     minLines = minLines,
@@ -147,14 +149,14 @@ internal class SelectableTextAnnotatedStringNode(
                     softWrap = softWrap,
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = overflow,
-                    autoSize = autoSize
+                    autoSize = autoSize,
                 ),
             callbacksChanged =
-                delegate.updateCallbacks(
+                textAnnotatedStringNode.updateCallbacks(
                     onTextLayout = onTextLayout,
                     onPlaceholderLayout = onPlaceholderLayout,
                     selectionController = selectionController,
-                    onShowTranslation = onShowTranslation
+                    onShowTranslation = onShowTranslation,
                 ),
         )
         this.selectionController = selectionController

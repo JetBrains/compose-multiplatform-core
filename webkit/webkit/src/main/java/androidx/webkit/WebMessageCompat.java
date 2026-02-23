@@ -17,10 +17,11 @@
 package androidx.webkit;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -42,9 +43,9 @@ public class WebMessageCompat {
      * Indicates the payload of WebMessageCompat is JavaScript ArrayBuffer.
      */
     public static final int TYPE_ARRAY_BUFFER = 1;
-    private final @Nullable WebMessagePortCompat[] mPorts;
+    private final WebMessagePortCompat @Nullable [] mPorts;
     private final @Nullable String mString;
-    private final @Nullable byte[] mArrayBuffer;
+    private final byte @Nullable [] mArrayBuffer;
     private final @Type int mType;
 
     /**
@@ -62,7 +63,7 @@ public class WebMessageCompat {
      * @param data  the string data of the message.
      * @param ports the ports that are sent with the message.
      */
-    public WebMessageCompat(@Nullable String data, @Nullable WebMessagePortCompat[] ports) {
+    public WebMessageCompat(@Nullable String data, WebMessagePortCompat @Nullable [] ports) {
         mString = data;
         mArrayBuffer = null;
         mPorts = ports;
@@ -76,7 +77,7 @@ public class WebMessageCompat {
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public WebMessageCompat(@NonNull byte[] arrayBuffer) {
+    public WebMessageCompat(byte @NonNull [] arrayBuffer) {
         this(arrayBuffer, null);
     }
 
@@ -88,8 +89,8 @@ public class WebMessageCompat {
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public WebMessageCompat(@NonNull byte[] arrayBuffer,
-            @Nullable WebMessagePortCompat[] ports) {
+    public WebMessageCompat(byte @NonNull [] arrayBuffer,
+            WebMessagePortCompat @Nullable [] ports) {
         Objects.requireNonNull(arrayBuffer);
         mArrayBuffer = arrayBuffer;
         mString = null;
@@ -120,7 +121,7 @@ public class WebMessageCompat {
      *
      * @return ArrayBuffer payload data.
      */
-    public @NonNull byte[] getArrayBuffer() {
+    public byte @NonNull [] getArrayBuffer() {
         checkType(TYPE_ARRAY_BUFFER);
         // Required for null check. ArrayBuffer is always non-null when mType == TYPE_ARRAY_BUFFER.
         Objects.requireNonNull(mArrayBuffer);
@@ -149,8 +150,7 @@ public class WebMessageCompat {
      * Returns the ports that are sent with the message, or {@code null} if no port
      * is sent.
      */
-    @Nullable
-    public WebMessagePortCompat[] getPorts() {
+    public WebMessagePortCompat @Nullable [] getPorts() {
         return mPorts;
     }
 

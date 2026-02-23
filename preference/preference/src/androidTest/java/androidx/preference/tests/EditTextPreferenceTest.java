@@ -28,7 +28,6 @@ import static org.junit.Assert.assertArrayEquals;
 import android.text.InputFilter;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.EditTextPreference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -39,6 +38,7 @@ import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

@@ -22,8 +22,6 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.data.Opener;
@@ -34,6 +32,9 @@ import androidx.pdf.models.SelectionBoundary;
 import androidx.pdf.service.PdfDocumentRemoteProto;
 import androidx.pdf.util.BitmapRecycler;
 import androidx.pdf.util.TileBoard.TileInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -68,8 +69,7 @@ public class PdfLoader {
     private int mNumPages;
 
     /** Creates a new {@link PdfLoader} and loads the document from the given data. */
-    @NonNull
-    public static PdfLoader create(@NonNull Context context, @NonNull DisplayData data,
+    public static @NonNull PdfLoader create(@NonNull Context context, @NonNull DisplayData data,
             @NonNull BitmapRecycler bitmaps,
             @NonNull PdfLoaderCallbacks callbacks) {
         return create(context, data, bitmaps, callbacks, false /* hideTextAnnotations */);
@@ -81,8 +81,7 @@ public class PdfLoader {
      * @param hideTextAnnotations whether to skip rendering text and highlight annotations in the
      *                            PDF
      */
-    @NonNull
-    public static PdfLoader create(
+    public static @NonNull PdfLoader create(
             @NonNull Context context,
             @NonNull DisplayData data,
             @NonNull BitmapRecycler bitmaps,
@@ -139,7 +138,26 @@ public class PdfLoader {
 
     /** Schedule task to load a PdfDocument. */
     public void reloadDocument() {
-        mExecutor.schedule(new LoadDocumentTask(mLoadedPassword));
+        if (isConnected()) {
+            mExecutor.schedule(new LoadDocumentTask(mLoadedPassword));
+        } else {
+            /*
+            *  For password protected files we kill the service if the app goes into
+            *  background before the document is loaded hence here we just register a
+            *  task which will be executed once the service is reconnected onStart
+            */
+            mConnection.setOnConnectInitializer(
+                    () -> mExecutor.schedule(new LoadDocumentTask(mLoadedPassword)));
+            mConnection.setConnectionFailureHandler(
+                    () -> mCallbacks.documentNotLoaded(PdfStatus.NONE));
+        }
+    }
+
+    /**
+     * Check if PdfLoader is connected to PdfDocumentService
+     */
+    public boolean isConnected() {
+        return mConnection.isConnected();
     }
 
     /**
@@ -193,7 +211,7 @@ public class PdfLoader {
 
     /**
      * Renders bitmaps for the given tiles - once it is ready, will call the
-     * {@link PdfLoaderCallbacks#setPageBitmap} callback.
+     * {@link PdfLoaderCallbacks#setTileBitmap} callback.
      */
     public void loadTileBitmaps(int pageNum, @NonNull Dimensions pageSize,
             @NonNull Iterable<TileInfo> tiles) {
@@ -261,8 +279,7 @@ public class PdfLoader {
     /**
      * Returns a {@link PdfDocumentRemote} which maybe ready or not (i.e. still initializing).
      */
-    @NonNull
-    protected PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
+    protected @NonNull PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
         return mConnection.getPdfDocument(forTask);
     }
 
@@ -274,16 +291,14 @@ public class PdfLoader {
      * Returns a valid {@link PdfDocumentRemote} or null if there isn't one (i.e. the service is not
      * currently bound, or it is but still initializing).
      */
-    @Nullable
-    protected PdfDocumentRemote getLoadedPdfDocument(@NonNull String forTask) {
+    protected @Nullable PdfDocumentRemote getLoadedPdfDocument(@NonNull String forTask) {
         return mConnection.isLoaded() ? mConnection.getPdfDocument(forTask) : null;
     }
 
     // Always returns a non-null callbacks - however the callbacks hold only a weak reference to the
     // PdfViewer, so it can be garbage collected if no longer in use, in which case the callbacks
     // all become no-ops.
-    @NonNull
-    public WeakPdfLoaderCallbacks getCallbacks() {
+    public @NonNull WeakPdfLoaderCallbacks getCallbacks() {
         return mCallbacks;
     }
 
@@ -380,9 +395,8 @@ public class PdfLoader {
         @Override
         protected void cleanup() { /* nothing to do. */ }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "LoadDocumentTask(" + mData + ")";
         }
     }

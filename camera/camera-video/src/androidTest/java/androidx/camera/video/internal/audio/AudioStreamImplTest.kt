@@ -19,8 +19,10 @@ package androidx.camera.video.internal.audio
 import android.Manifest
 import android.media.AudioFormat
 import android.media.MediaRecorder
+import android.os.Build
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.ioExecutor
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.AudioUtil
 import androidx.camera.testing.impl.RequiresDevice
 import androidx.camera.testing.impl.mocks.MockConsumer
@@ -36,6 +38,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -44,7 +47,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioStreamImplTest {
 
     companion object {
@@ -68,6 +70,12 @@ class AudioStreamImplTest {
 
     @Before
     fun setUp() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
+        )
+
         assumeTrue(AudioStreamImpl.isSettingsSupported(SAMPLE_RATE, CHANNEL_COUNT, AUDIO_FORMAT))
         assumeTrue(AudioUtil.canStartAudioRecord(AUDIO_SOURCE))
 
@@ -75,11 +83,12 @@ class AudioStreamImplTest {
             AudioStreamImpl(
                 AudioSettings.builder()
                     .setAudioSource(AUDIO_SOURCE)
-                    .setSampleRate(SAMPLE_RATE)
+                    .setCaptureSampleRate(SAMPLE_RATE)
+                    .setEncodeSampleRate(SAMPLE_RATE)
                     .setChannelCount(CHANNEL_COUNT)
                     .setAudioFormat(AUDIO_FORMAT)
                     .build(),
-                /*attributionContext=*/ null
+                /*attributionContext=*/ null,
             )
         audioStreamCallback = AudioStreamCallback()
         audioStream.setCallback(audioStreamCallback, ioExecutor())
@@ -202,7 +211,7 @@ class AudioStreamImplTest {
     }
 
     @RequiresDevice // b/264902324
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 28)
     @Test
     fun canReceiveOnSilenceStateChangedAfterStarted_belowApi29() {
         // Act.
@@ -239,12 +248,13 @@ class AudioStreamImplTest {
             onSilenceStateChanged: ((List<Boolean>) -> Unit)? = null,
         ) {
             val captor = onSilenceStateChanged?.let { ArgumentCaptor<Boolean>() }
+            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
             onSilencedCallback.verifyAcceptCall(
                 java.lang.Boolean::class.java,
                 inOder,
                 timeoutMs,
                 callTimes,
-                captor
+                captor,
             )
             onSilenceStateChanged?.invoke(captor!!.allValues)
         }

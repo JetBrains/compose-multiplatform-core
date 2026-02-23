@@ -50,6 +50,7 @@
 
         <activity
             android:name="androidx.core.view.ViewCompatActivity"
+            android:theme="@android:style/Theme.NoTitleBar"
             android:exported="true" />
 
         <activity
@@ -118,6 +119,16 @@
 
         <activity
             android:name="androidx.core.view.LightSystemBarsActivity"
+            android:exported="true"
+            android:theme="@style/LightSystemBarsTheme" />
+
+        <activity
+            android:name="androidx.core.view.LightStatusBarDarkNavigationBarActivity"
+            android:exported="true"
+            android:theme="@style/LightSystemBarsTheme" />
+
+        <activity
+            android:name="androidx.core.view.LightNavigationBarDarkStatusBarActivity"
             android:exported="true"
             android:theme="@style/LightSystemBarsTheme" />
 

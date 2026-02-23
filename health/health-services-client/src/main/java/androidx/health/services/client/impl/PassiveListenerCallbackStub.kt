@@ -36,7 +36,7 @@ import java.util.concurrent.Executor
 internal class PassiveListenerCallbackStub(
     private val packageName: String,
     private val executor: Executor,
-    private val callback: PassiveListenerCallback
+    private val callback: PassiveListenerCallback,
 ) : IPassiveListenerCallback.Stub() {
 
     public val listenerKey: ListenerKey = ListenerKey(packageName)
@@ -87,7 +87,7 @@ internal class PassiveListenerCallbackStub(
         public fun create(
             packageName: String,
             executor: Executor,
-            callback: PassiveListenerCallback
+            callback: PassiveListenerCallback,
         ): PassiveListenerCallbackStub {
             synchronized(listenerLock) {
                 val stub = PassiveListenerCallbackStub(packageName, executor, callback)
@@ -109,6 +109,8 @@ internal class PassiveListenerCallbackStub(
             public val INSTANCE: PassiveListenerCallbackCache = PassiveListenerCallbackCache()
         }
     }
+
+    override fun getInterfaceVersion(): Int = VERSION
 
     private companion object {
         const val TAG = "PassiveListenerCallbackStub"

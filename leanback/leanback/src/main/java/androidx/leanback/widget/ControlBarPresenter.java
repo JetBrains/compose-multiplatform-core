@@ -19,9 +19,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A presenter that assumes a LinearLayout container for a series
@@ -239,16 +240,15 @@ class ControlBarPresenter extends Presenter {
         vh.mControlsContainer.setBackgroundColor(color);
     }
 
-    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.@NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
         View v = LayoutInflater.from(parent.getContext())
             .inflate(getLayoutResourceId(), parent, false);
         return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Presenter.ViewHolder holder, @Nullable Object item) {
+    public void onBindViewHolder(Presenter.@NonNull ViewHolder holder, @Nullable Object item) {
         ViewHolder vh = (ViewHolder) holder;
         BoundData data = (BoundData) item;
         if (vh.mAdapter != data.adapter) {
@@ -263,7 +263,7 @@ class ControlBarPresenter extends Presenter {
     }
 
     @Override
-    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder holder) {
+    public void onUnbindViewHolder(Presenter.@NonNull ViewHolder holder) {
         ViewHolder vh = (ViewHolder) holder;
         if (vh.mAdapter != null) {
             vh.mAdapter.unregisterObserver(vh.mDataObserver);

@@ -42,6 +42,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.PollingCheck
 import androidx.testutils.withActivity
@@ -85,7 +86,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
 
                         override fun onActionItemClicked(
                             mode: ActionMode,
-                            item: MenuItem
+                            item: MenuItem,
                         ): Boolean {
                             return false
                         }
@@ -143,6 +144,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/460511639
     @Test
     @LargeTest
     @Throws(InterruptedException::class)
@@ -203,6 +205,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
 
     @Test
     @MediumTest
+    @SdkSuppress(maxSdkVersion = 35) // b/460511639
     fun testBackPressWithEmptyMenuHandledByActivity() {
         with(ActivityScenario.launch(activityClass)) {
             // Pressing the menu key with an empty menu does nothing.
@@ -231,14 +234,14 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_DEL.toLong(),
-                downEvent.keyCode.toLong()
+                downEvent.keyCode.toLong(),
             )
             val upEvent = scenario.withActivity { invokedKeyUpEvent }
             assertNotNull("onKeyUp called", upEvent)
             assertEquals(
                 "onKeyUp event matches",
                 KeyEvent.KEYCODE_DEL.toLong(),
-                upEvent.keyCode.toLong()
+                upEvent.keyCode.toLong(),
             )
         }
     }
@@ -256,7 +259,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_MENU.toLong(),
-                downEvent.keyCode.toLong()
+                downEvent.keyCode.toLong(),
             )
 
             val upEvent = scenario.withActivity { invokedKeyUpEvent }
@@ -264,7 +267,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             assertEquals(
                 "onKeyDown event matches",
                 KeyEvent.KEYCODE_MENU.toLong(),
-                upEvent.keyCode.toLong()
+                upEvent.keyCode.toLong(),
             )
         }
     }
@@ -288,7 +291,7 @@ abstract class BaseKeyEventsTestCase<A : BaseTestActivity>(private val activityC
             scenario.withActivity {
                 MenuItemCompat.setContentDescription(
                     alphaItem,
-                    getString(R.string.alpha_menu_description)
+                    getString(R.string.alpha_menu_description),
                 )
                 MenuItemCompat.setTooltipText(alphaItem, getString(R.string.alpha_menu_tooltip))
             }

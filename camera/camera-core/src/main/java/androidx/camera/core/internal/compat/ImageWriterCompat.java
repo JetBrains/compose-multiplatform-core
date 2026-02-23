@@ -19,11 +19,15 @@ package androidx.camera.core.internal.compat;
 import android.media.Image;
 import android.media.ImageWriter;
 import android.os.Build;
+import android.os.Handler;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.concurrent.Executor;
 
 /**
  * Helper for accessing features of {@link ImageWriter} in a backwards compatible fashion.
@@ -72,8 +76,7 @@ public final class ImageWriterCompat {
      *
      * @return a new ImageWriter instance.
      */
-    @NonNull
-    public static ImageWriter newInstance(@NonNull Surface surface,
+    public static @NonNull ImageWriter newInstance(@NonNull Surface surface,
             @IntRange(from = 1) int maxImages, int format) {
         if (Build.VERSION.SDK_INT >= 29) {
             return ImageWriterCompatApi29Impl.newInstance(surface, maxImages, format);
@@ -108,8 +111,7 @@ public final class ImageWriterCompat {
      *
      * @return a new ImageWriter instance.
      */
-    @NonNull
-    public static ImageWriter newInstance(@NonNull Surface surface,
+    public static @NonNull ImageWriter newInstance(@NonNull Surface surface,
             @IntRange(from = 1) int maxImages) {
         if (Build.VERSION.SDK_INT >= 23) {
             return ImageWriterCompatApi23Impl.newInstance(surface, maxImages);
@@ -128,8 +130,7 @@ public final class ImageWriterCompat {
      * @param imageWriter image writer instance.
      * @return image from image writer
      */
-    @NonNull
-    public static Image dequeueInputImage(@NonNull ImageWriter imageWriter) {
+    public static @NonNull Image dequeueInputImage(@NonNull ImageWriter imageWriter) {
         if (Build.VERSION.SDK_INT >= 23) {
             return ImageWriterCompatApi23Impl.dequeueInputImage(imageWriter);
         }
@@ -156,6 +157,25 @@ public final class ImageWriterCompat {
         throw new RuntimeException(
                 "Unable to call queueInputImage() on API " + Build.VERSION.SDK_INT
                         + ". Version 23 or higher required.");
+    }
+
+    /**
+     * Sets an {@link ImageWriter.OnImageReleasedListener} to be notified when an {@link Image} is
+     * released from the {@link ImageWriter}.
+     *
+     * <p>This method is a compatibility wrapper for
+     * {@link ImageWriter#setOnImageReleasedListener(ImageWriter.OnImageReleasedListener, Handler)}.
+     *
+     * @param imageWriter The {@link ImageWriter} to set the listener on.
+     * @param releasedListener The {@link ImageWriter.OnImageReleasedListener} to be notified when
+     *                        an image is released.
+     * @param executor The {@link Executor} on which the listener should be invoked.
+     */
+    public static void setOnImageReleasedListener(@NonNull ImageWriter imageWriter,
+            ImageWriter.@NonNull OnImageReleasedListener releasedListener, @NonNull
+            Executor executor) {
+        ImageWriterCompatApi23Impl.setOnImageReleasedListener(imageWriter, releasedListener,
+                executor);
     }
 
     /**

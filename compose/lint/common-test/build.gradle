@@ -15,13 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,7 +29,7 @@ plugins {
 
 dependencies {
     implementation(libs.kotlinStdlib)
-    api(libs.androidLint)
+    api(libs.androidLintStableAnalysis)
     api(libs.androidLintTests)
     api(libs.junit)
     api(libs.truth)
@@ -38,7 +37,7 @@ dependencies {
 
 androidx {
     name = "Compose Lint Test Utils"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2021"
     description = "Lint Test utils used for writing tests for Compose related lint checks"
 }

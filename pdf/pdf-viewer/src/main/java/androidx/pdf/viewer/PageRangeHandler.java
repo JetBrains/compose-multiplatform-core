@@ -16,11 +16,12 @@
 
 package androidx.pdf.viewer;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.Range;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PageRangeHandler {
@@ -39,8 +40,7 @@ public class PageRangeHandler {
         this.mVisiblePages = new Range();
     }
 
-    @Nullable
-    public Range getVisiblePages() {
+    public @Nullable Range getVisiblePages() {
         return mVisiblePages;
     }
 
@@ -80,8 +80,7 @@ public class PageRangeHandler {
     }
 
     /** Computes the range of visible pages in the given position. */
-    @NonNull
-    public Range computeVisibleRange(int scrollY, float zoom, int viewHeight,
+    public @NonNull Range computeVisibleRange(int scrollY, float zoom, int viewHeight,
             boolean includePartial) {
         Preconditions.checkArgument(zoom > 0, "Zoom factor must be positive!");
 
@@ -92,22 +91,19 @@ public class PageRangeHandler {
     }
 
     /** Returns the range of pages within the prefetch radius of the visible pages. */
-    @NonNull
-    public Range getNearPagesToVisibleRange() {
+    public @NonNull Range getNearPagesToVisibleRange() {
         Range allPages = new Range(0, mPaginationModel.getSize() - 1);
         return mVisiblePages.expand(PAGE_PREFETCH_RADIUS, allPages);
     }
 
     /** Returns the pages that are out of view and prefetch radius */
-    @NonNull
-    public Range[] getGonePageRanges(@NonNull Range nearPages) {
+    public Range @NonNull [] getGonePageRanges(@NonNull Range nearPages) {
         Range allPages = new Range(0, mPaginationModel.getSize() - 1);
         return allPages.minus(nearPages);
     }
 
     /** Returns the range of pages near the visible pages that are invisible to the view port */
-    @NonNull
-    public Range[] getInvisibleNearPageRanges(@NonNull Range nearPages) {
+    public Range @NonNull [] getInvisibleNearPageRanges(@NonNull Range nearPages) {
         return nearPages.minus(mVisiblePages);
     }
 }

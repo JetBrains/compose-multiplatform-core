@@ -35,7 +35,6 @@ internal class LayerMatrixCache<T>(
     private val getMatrix: (target: T, matrix: AndroidMatrix) -> Unit
 ) {
     private var androidMatrixCache: AndroidMatrix? = null
-    private var previousAndroidMatrix: AndroidMatrix? = null
     private var matrixCache: Matrix = Matrix()
     private var inverseMatrixCache: Matrix = Matrix()
 
@@ -74,16 +73,8 @@ internal class LayerMatrixCache<T>(
         }
 
         val cachedMatrix = androidMatrixCache ?: AndroidMatrix().also { androidMatrixCache = it }
-
         getMatrix(target, cachedMatrix)
-
-        val prevMatrix = previousAndroidMatrix
-        if (prevMatrix == null || cachedMatrix != prevMatrix) {
-            matrix.setFrom(cachedMatrix)
-            androidMatrixCache = prevMatrix
-            previousAndroidMatrix = cachedMatrix
-        }
-
+        matrix.setFrom(cachedMatrix)
         isDirty = false
         isIdentity = matrix.isIdentity()
         return matrix

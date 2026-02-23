@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.PackageIdentifier;
@@ -24,6 +23,8 @@ import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,9 +45,8 @@ public final class GetSchemaResponseToGmsConverter {
      * into a jetpack
      * {@link GetSchemaResponse}.
      */
-    @NonNull
-    public static GetSchemaResponse toJetpackGetSchemaResponse(
-            @NonNull com.google.android.gms.appsearch.GetSchemaResponse
+    public static @NonNull GetSchemaResponse toJetpackGetSchemaResponse(
+            com.google.android.gms.appsearch.@NonNull GetSchemaResponse
                     gmsResponse) {
         Preconditions.checkNotNull(gmsResponse);
         GetSchemaResponse.Builder jetpackBuilder;
@@ -144,8 +144,8 @@ public final class GetSchemaResponseToGmsConverter {
      * the given jetpack {@link GetSchemaResponse}.
      */
     private static void convertSchemasVisibleToPackages(
-            @NonNull com.google.android.gms.appsearch.GetSchemaResponse gmsResponse,
-            @NonNull GetSchemaResponse.Builder jetpackBuilder) {
+            com.google.android.gms.appsearch.@NonNull GetSchemaResponse gmsResponse,
+            GetSchemaResponse.@NonNull Builder jetpackBuilder) {
         Map<String, Set<com.google.android.gms.appsearch.PackageIdentifier>>
                 schemaTypesVisibleToPackages =
                 gmsResponse.getSchemaTypesVisibleToPackages();
@@ -171,9 +171,8 @@ public final class GetSchemaResponseToGmsConverter {
      * a jetpack
      * {@link SchemaVisibilityConfig}.
      */
-    @NonNull
-    private static SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
-            @NonNull com.google.android.gms.appsearch.SchemaVisibilityConfig platformConfig) {
+    private static @NonNull SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
+            com.google.android.gms.appsearch.@NonNull SchemaVisibilityConfig platformConfig) {
         Preconditions.checkNotNull(platformConfig);
         SchemaVisibilityConfig.Builder jetpackBuilder = new SchemaVisibilityConfig.Builder();
 

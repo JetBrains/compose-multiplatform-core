@@ -18,7 +18,7 @@ package androidx.test.uiautomator;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides auxiliary support for running test cases

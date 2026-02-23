@@ -16,7 +16,9 @@
 
 package androidx.biometric;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A list item with plain text shown on {@link PromptVerticalListContentView}.
@@ -33,8 +35,9 @@ public final class PromptContentItemPlainText implements PromptContentItem {
         mText = text;
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @NonNull
-    String getText() {
+    public String getText() {
         return mText;
     }
 }

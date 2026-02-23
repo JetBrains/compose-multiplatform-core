@@ -26,10 +26,11 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.util.Collections;
@@ -296,8 +297,8 @@ public final class VelocityTrackerCompat {
         sFallbackTrackers.remove(tracker);
     }
 
-    @Nullable
-    private static VelocityTrackerFallback getFallbackTrackerOrNull(VelocityTracker tracker) {
+    private static @Nullable VelocityTrackerFallback getFallbackTrackerOrNull(
+            VelocityTracker tracker) {
         return sFallbackTrackers.get(tracker);
     }
 

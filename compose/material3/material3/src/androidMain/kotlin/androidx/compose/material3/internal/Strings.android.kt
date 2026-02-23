@@ -22,15 +22,14 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.R
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.os.ConfigurationCompat
-import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalResources
 
 @Composable
 @ReadOnlyComposable
 internal actual fun getString(string: Strings): String {
     LocalConfiguration.current
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     return resources.getString(string.value)
 }
 
@@ -38,8 +37,7 @@ internal actual fun getString(string: Strings): String {
 @ReadOnlyComposable
 internal actual fun getString(string: Strings, vararg formatArgs: Any): String {
     val raw = getString(string)
-    val locale =
-        ConfigurationCompat.getLocales(LocalConfiguration.current).get(0) ?: Locale.getDefault()
+    val locale = LocalLocale.current.platformLocale
     return String.format(locale, raw, *formatArgs)
 }
 
@@ -176,6 +174,15 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val DateRangeInputInvalidRangeInput
             get() = Strings(MaterialR.string.m3c_date_range_input_invalid_range_input)
 
+        actual inline val FloatingToolbarCollapse
+            get() = Strings(MaterialR.string.m3c_floating_toolbar_collapse)
+
+        actual inline val FloatingToolbarExpand
+            get() = Strings(MaterialR.string.m3c_floating_toolbar_expand)
+
+        actual inline val FloatingToolbarMoreOptions
+            get() = Strings(MaterialR.string.m3c_floating_toolbar_more_options)
+
         actual inline val BottomSheetPaneTitle
             get() = Strings(MaterialR.string.m3c_bottom_sheet_pane_title)
 
@@ -230,6 +237,27 @@ internal actual value class Strings constructor(val value: Int) {
         actual inline val TimePickerMinuteTextField
             get() = Strings(MaterialR.string.m3c_time_picker_minute_text_field)
 
+        actual inline val TimePickerDialogTitle
+            get() = Strings(MaterialR.string.m3c_time_picker_dialog_title)
+
+        actual inline val TimeInputDialogTitle
+            get() = Strings(MaterialR.string.m3c_time_input_dialog_title)
+
+        actual inline val TimePickerToggleKeyboard
+            get() = Strings(MaterialR.string.m3c_time_picker_toggle_keyboard)
+
+        actual inline val TimePickerToggleTouch
+            get() = Strings(MaterialR.string.m3c_time_picker_toggle_touch)
+
+        actual inline val TimePickerMinuteError
+            get() = Strings(MaterialR.string.m3c_time_picker_minute_error)
+
+        actual inline val TimePickerHourError
+            get() = Strings(MaterialR.string.m3c_time_picker_hour_error)
+
+        actual inline val TimePicker24HourError
+            get() = Strings(MaterialR.string.m3c_time_picker_hour_error_24h)
+
         actual inline val TooltipPaneDescription
             get() = Strings(MaterialR.string.m3c_tooltip_pane_description)
 
@@ -247,5 +275,11 @@ internal actual value class Strings constructor(val value: Int) {
 
         actual inline val WideNavigationRailPaneTitle
             get() = Strings(MaterialR.string.m3c_wide_navigation_rail_pane_title)
+
+        actual inline val ButtonGroupMoreOptions
+            get() = Strings(MaterialR.string.m3c_button_group_more_options)
     }
 }
+
+internal actual fun formatString(string: String, vararg formatArgs: Any?): String =
+    string.format(*formatArgs)

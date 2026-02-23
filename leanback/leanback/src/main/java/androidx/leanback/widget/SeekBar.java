@@ -28,10 +28,11 @@ import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Replacement of SeekBar, has two bar heights and two thumb size when focused/not_focused.

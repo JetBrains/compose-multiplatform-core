@@ -15,26 +15,26 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.compose.material3.adaptive.navigationsuite"
+        compileSdk { version = release(35) }
+    }
     jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -42,73 +42,49 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
-                api(project(":compose:material3:material3"))
-                api(project(":compose:material3:adaptive:adaptive"))
-                implementation("androidx.compose.ui:ui-util:1.6.0")
-                implementation("androidx.window:window-core:1.3.0")
+                api("androidx.compose.material3:material3:1.4.0")
+                api("androidx.compose.material3.adaptive:adaptive:1.2.0")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
+        androidMain.dependencies {
+            api("androidx.annotation:annotation:1.8.1")
+            api("androidx.annotation:annotation-experimental:1.4.1")
         }
 
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                api("androidx.annotation:annotation-experimental:1.4.1")
-            }
+        androidDeviceTest.dependencies {
+            implementation(project(":compose:test-utils"))
+            implementation(project(":window:window-testing"))
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.truth)
         }
 
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:test-utils"))
-                implementation("androidx.window:window-testing:1.3.0")
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.truth)
-            }
-        }
-
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.testRunner)
-                implementation(libs.truth)
-            }
+        androidHostTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.testRunner)
+            implementation(libs.espressoCore)
+            implementation(libs.truth)
+            implementation(project(":compose:ui:ui"))
+            implementation(project(":window:window-core"))
         }
     }
 }
 
-android {
-    compileSdk 35
-    namespace "androidx.compose.material3.adaptive.navigationsuite"
-}
 
 androidx {
     name = "Material Adaptive Navigation Suite"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Navigation Suite Library"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:material3:material3-adaptive-navigation-suite:material3-adaptive-navigation-suite-samples"))
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

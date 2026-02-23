@@ -20,9 +20,10 @@ import static androidx.camera.core.CameraSelector.LENS_FACING_FRONT;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.video.Quality;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary

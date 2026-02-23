@@ -15,19 +15,15 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
     id("com.google.protobuf")
 
 }
@@ -42,30 +38,6 @@ dependencies {
     testImplementation(project(":internal-testutils-truth"))
     testImplementation(libs.kotlinCoroutinesTest)
 }
-
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
-}
-
-androidx {
-    name = "Proto DataStore"
-    publish = Publish.NONE
-    inceptionYear = "2020"
-    description = "Android Proto DataStore"
-    runApiTasks = new RunApiTasks.No("Unreleased library.")
-}
-
 android {
-    namespace "androidx.datastore.protodatastore"
+    namespace = "androidx.datastore.protodatastore"
 }

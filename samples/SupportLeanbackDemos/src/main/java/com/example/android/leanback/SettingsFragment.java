@@ -28,8 +28,6 @@ import androidx.preference.PreferenceScreen;
 
 import java.util.Arrays;
 
-
-
 public class SettingsFragment extends LeanbackSettingsFragmentCompat {
 
 

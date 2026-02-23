@@ -36,7 +36,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusRequester.Companion.Default
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -79,7 +78,9 @@ fun LazyListChildFocusDemos() {
         stickyHeader { Text("Direct Focus to previously Focused Child") }
         item {
             var previouslyFocusedItem: FocusRequester? by remember { mutableStateOf(null) }
-            LazyRow(Modifier.focusProperties { enter = { previouslyFocusedItem ?: Default } }) {
+            LazyRow(
+                Modifier.focusProperties { onEnter = { previouslyFocusedItem?.requestFocus() } }
+            ) {
                 items(10) { index ->
                     val focusRequester = remember(index) { FocusRequester() }
                     val pinnableContainer = LocalPinnableContainer.current
@@ -108,7 +109,7 @@ fun LazyListChildFocusDemos() {
 @Composable
 private fun FocusableBox(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit = {}
+    content: @Composable BoxScope.() -> Unit = {},
 ) {
     var borderColor by remember { mutableStateOf(Color.Black) }
     Box(
@@ -119,6 +120,6 @@ private fun FocusableBox(
                 .onFocusChanged { borderColor = if (it.isFocused) Color.Red else Color.Black }
                 .border(2.dp, borderColor)
                 .focusable(),
-        content = content
+        content = content,
     )
 }

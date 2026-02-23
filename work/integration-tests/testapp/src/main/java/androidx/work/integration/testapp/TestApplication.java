@@ -19,8 +19,9 @@ package androidx.work.integration.testapp;
 import android.app.Application;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.Configuration;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executors;
 
@@ -29,9 +30,8 @@ import java.util.concurrent.Executors;
  */
 public class TestApplication extends Application implements Configuration.Provider {
 
-    @NonNull
     @Override
-    public Configuration getWorkManagerConfiguration() {
+    public @NonNull Configuration getWorkManagerConfiguration() {
         return new Configuration.Builder()
                 .setDefaultProcessName(getPackageName())
                 .setTaskExecutor(Executors.newCachedThreadPool())

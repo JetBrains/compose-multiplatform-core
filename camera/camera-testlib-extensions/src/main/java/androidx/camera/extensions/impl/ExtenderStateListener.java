@@ -22,8 +22,8 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.SessionConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides interfaces that the OEM needs to implement to handle the state change.
@@ -62,8 +62,7 @@ public interface ExtenderStateListener {
      *
      * @return The request information to set the session wide camera parameters.
      */
-    @Nullable
-    CaptureStageImpl onPresetSession();
+    @Nullable CaptureStageImpl onPresetSession();
 
     /**
      * This will be invoked once after the {@link android.hardware.camera2.CameraCaptureSession}
@@ -74,8 +73,7 @@ public interface ExtenderStateListener {
      *
      * @return The request information to create a single capture request to camera device.
      */
-    @Nullable
-    CaptureStageImpl onEnableSession();
+    @Nullable CaptureStageImpl onEnableSession();
 
     /**
      * This will be invoked before the {@link android.hardware.camera2.CameraCaptureSession} is
@@ -85,8 +83,7 @@ public interface ExtenderStateListener {
      *
      * @return The request information to customize the session.
      */
-    @Nullable
-    CaptureStageImpl onDisableSession();
+    @Nullable CaptureStageImpl onDisableSession();
 
     /**
      * This will be invoked before the {@link android.hardware.camera2.CameraCaptureSession} is

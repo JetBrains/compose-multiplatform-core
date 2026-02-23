@@ -25,14 +25,15 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Logger;
 import androidx.work.impl.utils.futures.SettableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -66,8 +67,7 @@ public class ListenableWorkerImplClient {
      * @return a {@link ListenableFuture} of {@link IListenableWorkerImpl} after a
      * {@link ServiceConnection} is established.
      */
-    @NonNull
-    public ListenableFuture<IListenableWorkerImpl> getListenableWorkerImpl(
+    public @NonNull ListenableFuture<IListenableWorkerImpl> getListenableWorkerImpl(
             @NonNull ComponentName component) {
 
         synchronized (mLock) {
@@ -96,8 +96,7 @@ public class ListenableWorkerImplClient {
      * Executes a method on an instance of {@link IListenableWorkerImpl} using the instance of
      * {@link RemoteDispatcher}.
      */
-    @NonNull
-    public ListenableFuture<byte[]> execute(
+    public @NonNull ListenableFuture<byte[]> execute(
             @NonNull ComponentName componentName,
             @NonNull RemoteDispatcher<IListenableWorkerImpl> dispatcher) {
 
@@ -109,11 +108,10 @@ public class ListenableWorkerImplClient {
      * Executes a method on an instance of {@link IListenableWorkerImpl} using the instance of
      * {@link RemoteDispatcher}
      */
-    @NonNull
     @SuppressLint("LambdaLast")
-    public ListenableFuture<byte[]> execute(
+    public @NonNull ListenableFuture<byte[]> execute(
             @NonNull ListenableFuture<IListenableWorkerImpl> session,
-            @NonNull final RemoteDispatcher<IListenableWorkerImpl> dispatcher) {
+            final @NonNull RemoteDispatcher<IListenableWorkerImpl> dispatcher) {
         return RemoteExecuteKt.execute(mExecutor, session, dispatcher);
     }
 
@@ -132,9 +130,8 @@ public class ListenableWorkerImplClient {
     /**
      * @return the {@link ServiceConnection} instance.
      */
-    @Nullable
     @VisibleForTesting
-    public Connection getConnection() {
+    public @Nullable Connection getConnection() {
         return mConnection;
     }
 

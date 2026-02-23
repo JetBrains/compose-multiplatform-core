@@ -33,8 +33,8 @@ private const val FEATURE_ADDED_IN_PREVIOUS_U_EXT = 3
 private const val FEATURE_ADDED_IN_CURRENT_U_EXT = 4
 private const val FEATURE_ADDED_IN_V = 5
 
-private const val PREVIOUS_U_EXT = 12
-private const val CURRENT_U_EXT = 13
+private const val PREVIOUS_U_EXT = 11
+private const val CURRENT_U_EXT = 12
 private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
     mapOf(
         FEATURE_ADDED_IN_U to
@@ -49,7 +49,7 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
                 platformVersion =
                     HealthConnectPlatformVersion(
                         buildVersionCode = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-                        sdkExtensionVersion = PREVIOUS_U_EXT
+                        sdkExtensionVersion = PREVIOUS_U_EXT,
                     )
             ),
         FEATURE_ADDED_IN_CURRENT_U_EXT to
@@ -57,19 +57,21 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
                 platformVersion =
                     HealthConnectPlatformVersion(
                         buildVersionCode = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-                        sdkExtensionVersion = CURRENT_U_EXT
+                        sdkExtensionVersion = CURRENT_U_EXT,
                     )
             ),
         FEATURE_ADDED_IN_V to
             HealthConnectVersionInfo(
                 platformVersion = HealthConnectPlatformVersion(buildVersionCode = 35)
-            )
+            ),
     )
 
 // TODO(b/271840604): Added test case for Android V once this library compiles against SDK 35.
-@OptIn(ExperimentalFeatureAvailabilityApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@Config(
+    minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+    maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+)
 class HealthConnectFeaturesPlatformImplTest {
 
     @Test
@@ -79,7 +81,7 @@ class HealthConnectFeaturesPlatformImplTest {
         assertAvailable(
             FEATURE_ADDED_IN_PREVIOUS_U_EXT,
             FEATURE_ADDED_IN_CURRENT_U_EXT,
-            FEATURE_ADDED_IN_U
+            FEATURE_ADDED_IN_U,
         )
         assertUnavailable(FEATURE_ADDED_IN_V, FEATURE_NON_EXISTENT)
     }

@@ -16,8 +16,6 @@
 
 package androidx.appsearch.localstorage.usagereporting;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
@@ -26,6 +24,9 @@ import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.usagereporting.ActionConstants;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wrapper class for
@@ -50,8 +51,7 @@ public class ClickActionGenericDocument extends TakenActionGenericDocument {
     }
 
     /** Returns the string value of property {@code query}. */
-    @Nullable
-    public String getQuery() {
+    public @Nullable String getQuery() {
         return getPropertyString(PROPERTY_PATH_QUERY);
     }
 
@@ -121,8 +121,7 @@ public class ClickActionGenericDocument extends TakenActionGenericDocument {
          * {@link androidx.appsearch.app.SearchResult} on which the user clicked.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQuery(@NonNull String query) {
+        public @NonNull Builder setQuery(@NonNull String query) {
             Preconditions.checkNotNull(query);
             setPropertyString(PROPERTY_PATH_QUERY, query);
             return this;
@@ -133,8 +132,7 @@ public class ClickActionGenericDocument extends TakenActionGenericDocument {
          * {@link androidx.appsearch.app.SearchResult} document among the user-defined block.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankInBlock(int resultRankInBlock) {
+        public @NonNull Builder setResultRankInBlock(int resultRankInBlock) {
             Preconditions.checkArgumentNonnegative(resultRankInBlock);
             setPropertyLong(PROPERTY_PATH_RESULT_RANK_IN_BLOCK, resultRankInBlock);
             return this;
@@ -145,8 +143,7 @@ public class ClickActionGenericDocument extends TakenActionGenericDocument {
          * clicked {@link androidx.appsearch.app.SearchResult} document.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankGlobal(int resultRankGlobal) {
+        public @NonNull Builder setResultRankGlobal(int resultRankGlobal) {
             Preconditions.checkArgumentNonnegative(resultRankGlobal);
             setPropertyLong(PROPERTY_PATH_RESULT_RANK_GLOBAL, resultRankGlobal);
             return this;
@@ -158,16 +155,14 @@ public class ClickActionGenericDocument extends TakenActionGenericDocument {
          * after clicking it.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTimeStayOnResultMillis(long timeStayOnResultMillis) {
+        public @NonNull Builder setTimeStayOnResultMillis(long timeStayOnResultMillis) {
             setPropertyLong(PROPERTY_PATH_TIME_STAY_ON_RESULT_MILLIS, timeStayOnResultMillis);
             return this;
         }
 
         /** Builds a {@link ClickActionGenericDocument}. */
         @Override
-        @NonNull
-        public ClickActionGenericDocument build() {
+        public @NonNull ClickActionGenericDocument build() {
             return new ClickActionGenericDocument(super.build());
         }
     }

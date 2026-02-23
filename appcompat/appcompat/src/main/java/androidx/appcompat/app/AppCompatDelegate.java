@@ -47,8 +47,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleRes;
@@ -61,6 +59,9 @@ import androidx.core.app.AppLocalesStorageHelper;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.view.WindowCompat;
 import androidx.fragment.app.FragmentActivity;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -303,10 +304,10 @@ public abstract class AppCompatDelegate {
     /**
      * Create an {@link androidx.appcompat.app.AppCompatDelegate} to use with {@code activity}.
      *
+     * @param activity The activity linked to the returned instance.
      * @param callback An optional callback for AppCompat specific events
      */
-    @NonNull
-    public static AppCompatDelegate create(@NonNull Activity activity,
+    public static @NonNull AppCompatDelegate create(@NonNull Activity activity,
             @Nullable AppCompatCallback callback) {
         return new AppCompatDelegateImpl(activity, callback);
     }
@@ -314,10 +315,10 @@ public abstract class AppCompatDelegate {
     /**
      * Create an {@link androidx.appcompat.app.AppCompatDelegate} to use with {@code dialog}.
      *
+     * @param dialog The dialog to be linked to the returned instance instead of an activity.
      * @param callback An optional callback for AppCompat specific events
      */
-    @NonNull
-    public static AppCompatDelegate create(@NonNull Dialog dialog,
+    public static @NonNull AppCompatDelegate create(@NonNull Dialog dialog,
             @Nullable AppCompatCallback callback) {
         return new AppCompatDelegateImpl(dialog, callback);
     }
@@ -326,11 +327,12 @@ public abstract class AppCompatDelegate {
      * Create an {@link androidx.appcompat.app.AppCompatDelegate} to use with a {@code context}
      * and a {@code window}.
      *
+     * @param context The context of the associated window
+     * @param window The window to be linked to the returned instance instead of an activity.
      * @param callback An optional callback for AppCompat specific events
      */
-    @NonNull
-    public static AppCompatDelegate create(@NonNull Context context, @NonNull Window window,
-            @Nullable AppCompatCallback callback) {
+    public static @NonNull AppCompatDelegate create(@NonNull Context context,
+            @NonNull Window window, @Nullable AppCompatCallback callback) {
         return new AppCompatDelegateImpl(context, window, callback);
     }
 
@@ -338,11 +340,12 @@ public abstract class AppCompatDelegate {
      * Create an {@link androidx.appcompat.app.AppCompatDelegate} to use with a {@code context}
      * and hosted by an {@code Activity}.
      *
+     * @param context The context of the associated activity
+     * @param activity The activity to be linked to the returned instance
      * @param callback An optional callback for AppCompat specific events
      */
-    @NonNull
-    public static AppCompatDelegate create(@NonNull Context context, @NonNull Activity activity,
-            @Nullable AppCompatCallback callback) {
+    public static @NonNull AppCompatDelegate create(@NonNull Context context,
+            @NonNull Activity activity, @Nullable AppCompatCallback callback) {
         return new AppCompatDelegateImpl(context, activity, callback);
     }
 
@@ -356,8 +359,7 @@ public abstract class AppCompatDelegate {
      *
      * @return AppCompat's action bar, or null if it does not have one.
      */
-    @Nullable
-    public abstract ActionBar getSupportActionBar();
+    public abstract @Nullable ActionBar getSupportActionBar();
 
     /**
      * Set a {@link Toolbar} to act as the {@link ActionBar} for this delegate.
@@ -435,8 +437,7 @@ public abstract class AppCompatDelegate {
      * @return The view if found or null otherwise.
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    public abstract <T extends View> T findViewById(@IdRes int id);
+    public abstract <T extends View> @Nullable T findViewById(@IdRes int id);
 
     /**
      * Should be called instead of {@link Activity#setContentView(android.view.View)}}
@@ -470,9 +471,8 @@ public abstract class AppCompatDelegate {
     /**
      * Should be called from {@link Activity#attachBaseContext(Context)}.
      */
-    @NonNull
     @CallSuper
-    public Context attachBaseContext2(@NonNull Context context) {
+    public @NonNull Context attachBaseContext2(@NonNull Context context) {
         attachBaseContext(context);
         return context;
     }
@@ -497,8 +497,7 @@ public abstract class AppCompatDelegate {
      * Returns an {@link ActionBarDrawerToggle.Delegate} which can be returned from your Activity
      * if it implements {@link ActionBarDrawerToggle.DelegateProvider}.
      */
-    @Nullable
-    public abstract ActionBarDrawerToggle.Delegate getDrawerToggleDelegate();
+    public abstract ActionBarDrawerToggle.@Nullable Delegate getDrawerToggleDelegate();
 
     /**
      * Enable extended window features.  This should be called instead of
@@ -527,8 +526,8 @@ public abstract class AppCompatDelegate {
      * @param callback Callback that will manage lifecycle events for this context mode
      * @return The ContextMode that was started, or null if it was canceled
      */
-    @Nullable
-    public abstract ActionMode startSupportActionMode(@NonNull ActionMode.Callback callback);
+    public abstract @Nullable ActionMode startSupportActionMode(
+            ActionMode.@NonNull Callback callback);
 
     /**
      * Installs AppCompat's {@link android.view.LayoutInflater} Factory so that it can replace
@@ -637,8 +636,7 @@ public abstract class AppCompatDelegate {
     /**
      * Returns the context for the current delegate.
      */
-    @Nullable
-    public Context getContextForDelegate() {
+    public @Nullable Context getContextForDelegate() {
         return null;
     }
 
@@ -815,8 +813,7 @@ public abstract class AppCompatDelegate {
      * Activity.onCreate().</b></p>
      */
     @AnyThread
-    @NonNull
-    public static LocaleListCompat getApplicationLocales() {
+    public static @NonNull LocaleListCompat getApplicationLocales() {
         if (Build.VERSION.SDK_INT >= 33) {
             // If the API version is 33 or above we want to redirect the call to the framework API.
             Object localeManager = getLocaleManagerForApplication();
@@ -849,8 +846,7 @@ public abstract class AppCompatDelegate {
      *
      * @see #setApplicationLocales(LocaleListCompat)
      */
-    @Nullable
-    static LocaleListCompat getRequestedAppLocales() {
+    static @Nullable LocaleListCompat getRequestedAppLocales() {
         return sRequestedAppLocales;
     }
 
@@ -859,8 +855,7 @@ public abstract class AppCompatDelegate {
      *
      * @see #setApplicationLocales(LocaleListCompat)
      */
-    @Nullable
-    static LocaleListCompat getStoredAppLocales() {
+    static @Nullable LocaleListCompat getStoredAppLocales() {
         return sStoredAppLocales;
     }
 

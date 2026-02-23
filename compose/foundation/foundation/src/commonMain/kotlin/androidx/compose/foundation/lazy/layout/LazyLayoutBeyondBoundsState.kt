@@ -29,6 +29,8 @@ internal interface LazyLayoutBeyondBoundsState {
     val firstPlacedIndex: Int
 
     val lastPlacedIndex: Int
+
+    fun itemsPerViewport(): Int
 }
 
 @OptIn(ExperimentalFoundationApi::class)

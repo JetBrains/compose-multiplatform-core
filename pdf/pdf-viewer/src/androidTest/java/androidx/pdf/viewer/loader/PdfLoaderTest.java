@@ -29,7 +29,6 @@ import android.graphics.Rect;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.data.Opener;
 import androidx.pdf.data.PdfStatus;
@@ -59,6 +58,8 @@ import androidx.test.filters.MediumTest;
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 
+import org.jspecify.annotations.NonNull;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -105,10 +106,11 @@ public class PdfLoaderTest {
 
     /** {@link PdfTaskExecutor} waits 10 seconds if it doesn't have any tasks, so we use 12. */
     private static final int LATCH_TIMEOUT_MS = 12000;
+    private AutoCloseable mCloseable;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        mCloseable = MockitoAnnotations.openMocks(this);
         mContext = ApplicationProvider.getApplicationContext();
 
         when(mConnection.isLoaded()).thenReturn(true);
@@ -130,6 +132,15 @@ public class PdfLoaderTest {
 
         File file = new File(mContext.getCacheDir(), "test");
         mFileOutputStream = new FileOutputStream(file);
+    }
+
+    @After
+    public void cleanUp() {
+        try {
+            mCloseable.close();
+        } catch (Exception e) {
+            // No-op
+        }
     }
 
     @Test

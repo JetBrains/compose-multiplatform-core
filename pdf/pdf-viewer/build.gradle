@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
-    id("kotlin-android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinCoroutinesCore)
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.exifinterface:exifinterface:1.3.2")
     implementation("androidx.core:core:1.13.0")
+    implementation("androidx.customview:customview:1.2.0")
     implementation("androidx.annotation:annotation:1.7.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
@@ -38,7 +39,7 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
+    testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testExtJunitKtx)
@@ -50,20 +51,22 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.junit)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.mockitoKotlin4)
+    androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.testUiautomator)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 android {
-    namespace "androidx.pdf"
-
+    namespace = "androidx.pdf"
+    compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
-        minSdk 35 //TODO: Set to 31 after sdk extension 13 release
-        compileSdk 35
-        targetSdk 35 //TODO: Remove after sdk extension 13 release
+        minSdk { version = release(31) }
     }
 
     buildFeatures {
@@ -72,25 +75,22 @@ android {
 
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
+}
 
-    sourceSets {
-        test {
-            assets {
-                srcDirs += ["src/test/assets"]
-            }
-            resources {
-                srcDirs += ["src/test/res"]
-            }
-        }
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        (variant as HasUnitTest).unitTest.sources.resources.addStaticSourceDirectory("src/test/res")
     }
 }
 
 androidx {
     name = "androidx.pdf:pdf-viewer"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "add pdf viewing to their apps."
+    addGoldenImageAssets()
+    enableRobolectric()
 }

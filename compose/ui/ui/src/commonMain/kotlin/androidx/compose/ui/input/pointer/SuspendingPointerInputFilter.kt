@@ -20,12 +20,14 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
+import androidx.compose.ui.internal.PlatformOptimizedCancellationException
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.platform.synchronized
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -39,6 +41,7 @@ import kotlin.coroutines.RestrictsSuspension
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.js.JsName
 import kotlin.math.max
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
@@ -98,7 +101,7 @@ interface AwaitPointerEventScope : Density {
      */
     suspend fun <T> withTimeoutOrNull(
         timeMillis: Long,
-        block: suspend AwaitPointerEventScope.() -> T
+        block: suspend AwaitPointerEventScope.() -> T,
     ): T? = block()
 
     /**
@@ -107,7 +110,7 @@ interface AwaitPointerEventScope : Density {
      */
     suspend fun <T> withTimeout(
         timeMillis: Long,
-        block: suspend AwaitPointerEventScope.() -> T
+        block: suspend AwaitPointerEventScope.() -> T,
     ): T = block()
 }
 
@@ -149,6 +152,7 @@ interface PointerInputScope : Density {
      */
     @Suppress("GetterSetterNames")
     @get:Suppress("GetterSetterNames")
+    @JsName("varinterceptOutOfBoundsChildEvents")
     var interceptOutOfBoundsChildEvents: Boolean
         get() = false
         set(_) {}
@@ -189,8 +193,8 @@ fun Modifier.pointerInput(block: suspend PointerInputScope.() -> Unit): Modifier
     replaceWith =
         ReplaceWith(
             "pointerInput(key1 = key1, pointerInputEventHandler = block)",
-            "androidx.compose.ui.input.pointer.Modifier.pointerInput"
-        )
+            "androidx.compose.ui.input.pointer.Modifier.pointerInput",
+        ),
 )
 fun Modifier.pointerInput(key1: Any?, block: suspend PointerInputScope.() -> Unit): Modifier =
     this then SuspendPointerInputElement(key1 = key1, pointerInputEventHandler = block)
@@ -235,13 +239,13 @@ fun Modifier.pointerInput(key1: Any?, block: PointerInputEventHandler): Modifier
     replaceWith =
         ReplaceWith(
             "pointerInput(key1 = key1, key2 = key2, pointerInputEventHandler = block)",
-            "androidx.compose.ui.input.pointer.Modifier.pointerInput"
-        )
+            "androidx.compose.ui.input.pointer.Modifier.pointerInput",
+        ),
 )
 fun Modifier.pointerInput(
     key1: Any?,
     key2: Any?,
-    block: suspend PointerInputScope.() -> Unit
+    block: suspend PointerInputScope.() -> Unit,
 ): Modifier =
     this then SuspendPointerInputElement(key1 = key1, key2 = key2, pointerInputEventHandler = block)
 
@@ -285,12 +289,12 @@ fun Modifier.pointerInput(key1: Any?, key2: Any?, block: PointerInputEventHandle
     replaceWith =
         ReplaceWith(
             "pointerInput(keys = keys, pointerInputEventHandler = block)",
-            "androidx.compose.ui.input.pointer.Modifier.pointerInput"
-        )
+            "androidx.compose.ui.input.pointer.Modifier.pointerInput",
+        ),
 )
 fun Modifier.pointerInput(
     vararg keys: Any?,
-    block: suspend PointerInputScope.() -> Unit
+    block: suspend PointerInputScope.() -> Unit,
 ): Modifier = this then SuspendPointerInputElement(keys = keys, pointerInputEventHandler = block)
 
 /**
@@ -339,7 +343,7 @@ internal class SuspendPointerInputElement(
     val key1: Any? = null,
     val key2: Any? = null,
     val keys: Array<out Any?>? = null,
-    val pointerInputEventHandler: PointerInputEventHandler
+    val pointerInputEventHandler: PointerInputEventHandler,
 ) : ModifierNodeElement<SuspendingPointerInputModifierNodeImpl>() {
     override fun InspectorInfo.inspectableProperties() {
         name = "pointerInput"
@@ -391,8 +395,8 @@ private val EmptyPointerEvent = PointerEvent(emptyList())
     replaceWith =
         ReplaceWith(
             "SuspendingPointerInputModifierNode { pointerInputEventHandler }",
-            "androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode"
-        )
+            "androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode",
+        ),
 )
 @Suppress("DEPRECATION")
 fun SuspendingPointerInputModifierNode(
@@ -431,8 +435,8 @@ sealed interface SuspendingPointerInputModifierNode : PointerInputModifierNode {
             ReplaceWith(
                 "pointerInputEventHandler",
                 "androidx.compose.ui.input.pointer." +
-                    "SuspendingPointerInputModifierNode.pointerInputEventHandler"
-            )
+                    "SuspendingPointerInputModifierNode.pointerInputEventHandler",
+            ),
     )
     var pointerInputHandler: suspend PointerInputScope.() -> Unit
 
@@ -459,6 +463,9 @@ sealed interface SuspendingPointerInputModifierNode : PointerInputModifierNode {
     fun resetPointerInputHandler()
 }
 
+// Used for multi-sleep solution within [PointerEventHandlerCoroutine.withTimeout()].
+internal const val WITH_TIMEOUT_MICRO_DELAY_MILLIS = 8L
+
 /**
  * Implementation notes: This class does a lot of lifting. [PointerInputModifierNode] receives,
  * interprets, and, consumes [PointerInputChange]s while the state (and the coroutineScope used to
@@ -475,19 +482,19 @@ internal class SuspendingPointerInputModifierNodeImpl(
     private var key1: Any? = null,
     private var key2: Any? = null,
     private var keys: Array<out Any?>? = null,
-    pointerInputEventHandler: PointerInputEventHandler
+    pointerInputEventHandler: PointerInputEventHandler,
 ) : Modifier.Node(), SuspendingPointerInputModifierNode, PointerInputScope, Density {
     @Deprecated("Exists to maintain compatibility with previous API shape")
     constructor(
         key1: Any?,
         key2: Any?,
         keys: Array<out Any?>?,
-        pointerInputEvent: suspend PointerInputScope.() -> Unit
+        pointerInputEvent: suspend PointerInputScope.() -> Unit,
     ) : this(
         key1 = key1,
         key2 = key2,
         keys = keys,
-        pointerInputEventHandler = PointerInputEventHandler {} // Empty Lambda, not used.
+        pointerInputEventHandler = PointerInputEventHandler {}, // Empty Lambda, not used.
     ) {
         // If the _deprecatedPointerInputHandler is set, we will use that instead of the
         // pointerInputEventHandler (why empty lambda above doesn't matter).
@@ -537,10 +544,12 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
     /**
      * Actively registered input handlers from currently ongoing calls to [awaitPointerEventScope].
-     * Must use `synchronized(pointerHandlers)` to access.
+     * Must use `synchronized(pointerHandlersLock)` to access.
      */
     private val pointerHandlers =
         mutableVectorOf<SuspendingPointerInputModifierNodeImpl.PointerEventHandlerCoroutine<*>>()
+
+    private val pointerHandlersLock = makeSynchronizedObject(pointerHandlers)
 
     /**
      * Scratch list for dispatching to handlers for a particular phase. Used to hold a copy of the
@@ -611,7 +620,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
         key1: Any?,
         key2: Any?,
         keys: Array<out Any?>?,
-        pointerInputEventHandler: PointerInputEventHandler
+        pointerInputEventHandler: PointerInputEventHandler,
     ) {
         var needsReset = false
 
@@ -667,10 +676,10 @@ internal class SuspendingPointerInputModifierNodeImpl(
      */
     private inline fun forEachCurrentPointerHandler(
         pass: PointerEventPass,
-        block: (SuspendingPointerInputModifierNodeImpl.PointerEventHandlerCoroutine<*>) -> Unit
+        block: (SuspendingPointerInputModifierNodeImpl.PointerEventHandlerCoroutine<*>) -> Unit,
     ) {
         // Copy handlers to avoid mutating the collection during dispatch
-        synchronized(pointerHandlers) { dispatchingPointerHandlers.addAll(pointerHandlers) }
+        synchronized(pointerHandlersLock) { dispatchingPointerHandlers.addAll(pointerHandlers) }
         try {
             when (pass) {
                 PointerEventPass.Initial,
@@ -693,7 +702,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         boundsSize = bounds
         if (pass == PointerEventPass.Initial) {
@@ -742,7 +751,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
                     previousUptimeMillis = old.uptimeMillis,
                     previousPressed = old.pressed,
                     isInitiallyConsumed = old.pressed,
-                    type = old.type
+                    type = old.type,
                 )
             }
 
@@ -761,7 +770,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
         block: suspend AwaitPointerEventScope.() -> R
     ): R = suspendCancellableCoroutine { continuation ->
         val handlerCoroutine = PointerEventHandlerCoroutine(continuation)
-        synchronized(pointerHandlers) {
+        synchronized(pointerHandlersLock) {
             pointerHandlers += handlerCoroutine
 
             // NOTE: We resume the new continuation while holding this lock.
@@ -793,9 +802,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
      * handler DSL, and [Continuation] so that it can wrap [completion] and remove the
      * [ContinuationInterceptor] from the calling context and run un-dispatched.
      */
-    private inner class PointerEventHandlerCoroutine<R>(
-        private val completion: Continuation<R>,
-    ) :
+    private inner class PointerEventHandlerCoroutine<R>(private val completion: Continuation<R>) :
         AwaitPointerEventScope,
         Density by this@SuspendingPointerInputModifierNodeImpl,
         Continuation<R> {
@@ -835,7 +842,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
         // Implementation of Continuation; clean up and resume our wrapped continuation.
         override fun resumeWith(result: Result<R>) {
-            synchronized(pointerHandlers) { pointerHandlers -= this }
+            synchronized(pointerHandlersLock) { pointerHandlers -= this }
             completion.resumeWith(result)
         }
 
@@ -847,7 +854,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
         override suspend fun <T> withTimeoutOrNull(
             timeMillis: Long,
-            block: suspend AwaitPointerEventScope.() -> T
+            block: suspend AwaitPointerEventScope.() -> T,
         ): T? {
             return try {
                 withTimeout(timeMillis, block)
@@ -858,7 +865,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
         override suspend fun <T> withTimeout(
             timeMillis: Long,
-            block: suspend AwaitPointerEventScope.() -> T
+            block: suspend AwaitPointerEventScope.() -> T,
         ): T {
             if (timeMillis <= 0L) {
                 pointerAwaiter?.resumeWithException(
@@ -872,8 +879,8 @@ internal class SuspendingPointerInputModifierNodeImpl(
                     // input events, not treated fairly in FIFO order. The second
                     // micro-delay reposts it to the back of the queue, after any input events
                     // that were posted but not processed during the first delay.
-                    delay(timeMillis - 1)
-                    delay(1)
+                    delay(timeMillis - WITH_TIMEOUT_MICRO_DELAY_MILLIS)
+                    delay(WITH_TIMEOUT_MICRO_DELAY_MILLIS)
 
                     pointerAwaiter?.resumeWithException(
                         PointerEventTimeoutCancellationException(timeMillis)
@@ -899,11 +906,12 @@ expect class PointerEventTimeoutCancellationException(time: Long) : Cancellation
  * lookups to build the exception message and stack trace collection. Remove if these are changed in
  * kotlinx.coroutines.
  */
-internal expect class PointerInputResetException() : CancellationException
+internal class PointerInputResetException() :
+    PlatformOptimizedCancellationException("Pointer input was reset")
 
 /**
  * Also used in place of standard Job cancellation pathway; since we control this code path we
  * shouldn't need to worry about other code calling addSuppressed on this exception so a singleton
  * instance is used
  */
-internal expect object CancelTimeoutCancellationException : CancellationException
+internal object CancelTimeoutCancellationException : PlatformOptimizedCancellationException()

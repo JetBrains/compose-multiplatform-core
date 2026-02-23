@@ -22,12 +22,13 @@ import android.graphics.Rect;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.Range;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.PaginationUtils;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -70,6 +71,9 @@ public class PaginationModel implements Parcelable {
 
     /** The maximum number of pages this model can accommodate. */
     private int mMaxPages = -1;
+
+    /** The page centered in the view. */
+    private int mMidPage = -1;
 
     /** The Dimensions of each page in the list. */
     private Dimensions[] mPages;
@@ -250,8 +254,7 @@ public class PaginationModel implements Parcelable {
      * @param includePartial If true, will include pages that are partially visible.
      * @return the range of visible pages (may be an empty range).
      */
-    @NonNull
-    public Range getPagesInWindow(@NonNull Range intervalPx, boolean includePartial) {
+    public @NonNull Range getPagesInWindow(@NonNull Range intervalPx, boolean includePartial) {
         if (intervalPx.getFirst() > mPageBottoms.get(mSize - 1)) {
             return new Range(mSize + 1, mSize);
         }
@@ -264,12 +267,14 @@ public class PaginationModel implements Parcelable {
         int bottomResult = Collections.binarySearch(endList, intervalPx.getLast());
         int rangeEnd = Math.abs(bottomResult + 1) - 1; // Before insertion point.
 
+        int midPoint = (intervalPx.getFirst() + intervalPx.getLast()) / 2;
+        int midResult = Collections.binarySearch(mPageTops, midPoint);
+
+        mMidPage = Math.max(Math.abs(midResult + 1) - 1, 0); // Before insertion point.
+
         if (rangeEnd < rangeStart) {
             // No page is entirely visible.
-            int midPoint = (intervalPx.getFirst() + intervalPx.getLast()) / 2;
-            int midResult = Collections.binarySearch(mPageTops, midPoint);
-            int page = Math.max(Math.abs(midResult + 1) - 1, 0); // Before insertion point.
-            return new Range(page, page);
+            return new Range(mMidPage, mMidPage);
         }
 
         return new Range(rangeStart, rangeEnd);
@@ -306,8 +311,7 @@ public class PaginationModel implements Parcelable {
      * @param viewArea - the current viewport in content coordinates
      * @return - coordinates of the page within this model
      */
-    @NonNull
-    public Rect getPageLocation(int pageNum, @NonNull Rect viewArea) {
+    public @NonNull Rect getPageLocation(int pageNum, @NonNull Rect viewArea) {
         int left = 0;
         int right = getWidth();
         int top = mPageStops[pageNum];
@@ -342,14 +346,18 @@ public class PaginationModel implements Parcelable {
     }
 
     /** Returns the Dimensions of page {@code pageNum}. */
-    @NonNull
-    public Dimensions getPageSize(int pageNum) {
+    public @NonNull Dimensions getPageSize(int pageNum) {
         return mPages[pageNum];
     }
 
     /** Returns the number of pages known to this model. */
     public int getSize() {
         return mSize;
+    }
+
+    /** Returns the centered page */
+    public int getMidPage() {
+        return mMidPage;
     }
 
     /**
@@ -403,8 +411,7 @@ public class PaginationModel implements Parcelable {
      * Provides an iterator over a copy of the references in {@link #mObservers} so they can be
      * notified of updates without synchronizing on {@link #mObservers}.
      */
-    @NonNull
-    public Iterator<PaginationModelObserver> iterator() {
+    public @NonNull Iterator<PaginationModelObserver> iterator() {
         synchronized (mObservers) {
             return new ArrayList<>(mObservers).iterator();
         }

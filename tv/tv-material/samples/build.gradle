@@ -15,23 +15,21 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation(project(":tv:tv-material"))
@@ -40,16 +38,16 @@ dependencies {
 
 androidx {
     name = "Samples library for androidx.tv.material3 package"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.TV_MATERIAL
     inceptionYear = "2022"
     description = "Contains the sample code for the APIs in the androidx.tv.material3 library"
 }
 
 android {
-    compileSdk 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        minSdkVersion 28
+        minSdk { version = release(28) }
     }
-    namespace "androidx.tv.material3.samples"
+    namespace = "androidx.tv.material3.samples"
 }

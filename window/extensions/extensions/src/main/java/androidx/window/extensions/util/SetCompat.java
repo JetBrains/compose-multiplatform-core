@@ -19,9 +19,10 @@ package androidx.window.extensions.util;
 import android.os.Build;
 import android.util.ArraySet;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,8 +41,7 @@ public final class SetCompat {
      *
      * @param <T> the type of the {@link Set}.
      */
-    @NonNull
-    public static <T> Set<T> create() {
+    public static <T> @NonNull Set<T> create() {
         if (Build.VERSION.SDK_INT < 23) {
             return new HashSet<>();
         } else {
@@ -52,8 +52,7 @@ public final class SetCompat {
     @RequiresApi(23)
     private static class Api23Impl {
 
-        @NonNull
-        static <T> Set<T> create() {
+        static <T> @NonNull Set<T> create() {
             return new ArraySet<>();
         }
     }

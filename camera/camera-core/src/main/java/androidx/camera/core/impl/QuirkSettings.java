@@ -19,8 +19,8 @@ package androidx.camera.core.impl;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -72,8 +72,7 @@ public class QuirkSettings {
      * @return A QuirkSettings instance with default behavior, enabling all quirks if the device
      * natively exhibits the quirk.
      */
-    @NonNull
-    public static QuirkSettings withDefaultBehavior() {
+    public static @NonNull QuirkSettings withDefaultBehavior() {
         return new QuirkSettings.Builder().setEnabledWhenDeviceHasQuirk(true).build();
     }
 
@@ -82,8 +81,7 @@ public class QuirkSettings {
      *
      * @return A QuirkSettings instance with all quirks disabled.
      */
-    @NonNull
-    public static QuirkSettings withAllQuirksDisabled() {
+    public static @NonNull QuirkSettings withAllQuirksDisabled() {
         return new QuirkSettings.Builder().setEnabledWhenDeviceHasQuirk(false).build();
     }
 
@@ -93,8 +91,7 @@ public class QuirkSettings {
      * @param quirks The quirks to force-enable.
      * @return A new QuirkSettings instance with the specified quirks force-enabled.
      */
-    @NonNull
-    public static QuirkSettings withQuirksForceEnabled(
+    public static @NonNull QuirkSettings withQuirksForceEnabled(
             @NonNull Set<Class<? extends Quirk>> quirks) {
         return new QuirkSettings.Builder().forceEnableQuirks(quirks).build();
     }
@@ -105,8 +102,7 @@ public class QuirkSettings {
      * @param quirks The quirks to force-disable.
      * @return A new QuirkSettings instance with the specified quirks force-disabled.
      */
-    @NonNull
-    public static QuirkSettings withQuirksForceDisabled(
+    public static @NonNull QuirkSettings withQuirksForceDisabled(
             @NonNull Set<Class<? extends Quirk>> quirks) {
         return new QuirkSettings.Builder().forceDisableQuirks(quirks).build();
     }
@@ -125,8 +121,7 @@ public class QuirkSettings {
      *
      * @return An unmodifiable set containing the names of force-enabled quirks.
      */
-    @NonNull
-    public Set<Class<? extends Quirk>> getForceEnabledQuirks() {
+    public @NonNull Set<Class<? extends Quirk>> getForceEnabledQuirks() {
         return unmodifiableSet(mForceEnabledQuirks);
     }
 
@@ -135,8 +130,7 @@ public class QuirkSettings {
      *
      * @return An unmodifiable set containing the names of force-disabled quirks.
      */
-    @NonNull
-    public Set<Class<? extends Quirk>> getForceDisabledQuirks() {
+    public @NonNull Set<Class<? extends Quirk>> getForceDisabledQuirks() {
         return unmodifiableSet(mForceDisabledQuirks);
     }
 
@@ -180,9 +174,8 @@ public class QuirkSettings {
         return Objects.hash(mEnabledWhenDeviceHasQuirk, mForceEnabledQuirks, mForceDisabledQuirks);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "QuirkSettings{"
                 + "enabledWhenDeviceHasQuirk=" + mEnabledWhenDeviceHasQuirk
                 + ", forceEnabledQuirks=" + mForceEnabledQuirks
@@ -201,8 +194,7 @@ public class QuirkSettings {
         /**
          * Sets whether to enable quirks if the device natively exhibits the quirk.
          */
-        @NonNull
-        public Builder setEnabledWhenDeviceHasQuirk(boolean enabled) {
+        public @NonNull Builder setEnabledWhenDeviceHasQuirk(boolean enabled) {
             mEnabledWhenDeviceHasQuirk = enabled;
             return this;
         }
@@ -210,8 +202,7 @@ public class QuirkSettings {
         /**
          * Forces the specified quirks to be enabled, regardless of other settings.
          */
-        @NonNull
-        public Builder forceEnableQuirks(@NonNull Set<Class<? extends Quirk>> quirks) {
+        public @NonNull Builder forceEnableQuirks(@NonNull Set<Class<? extends Quirk>> quirks) {
             mForceEnabledQuirks = new HashSet<>(quirks);
             return this;
         }
@@ -219,8 +210,7 @@ public class QuirkSettings {
         /**
          * Forces the specified quirks to be disabled, regardless of other settings.
          */
-        @NonNull
-        public Builder forceDisableQuirks(@NonNull Set<Class<? extends Quirk>> quirks) {
+        public @NonNull Builder forceDisableQuirks(@NonNull Set<Class<? extends Quirk>> quirks) {
             mForceDisabledQuirks = new HashSet<>(quirks);
             return this;
         }
@@ -230,8 +220,7 @@ public class QuirkSettings {
          *
          * @return A new `QuirkSettings` instance.
          */
-        @NonNull
-        public QuirkSettings build() {
+        public @NonNull QuirkSettings build() {
             return new QuirkSettings(mEnabledWhenDeviceHasQuirk, mForceEnabledQuirks,
                     mForceDisabledQuirks);
         }

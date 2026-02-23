@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.customtabs.ICustomTabsCallback;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 
@@ -99,6 +99,11 @@ public class TestCustomTabsCallback extends CustomTabsCallback {
         @Override
         public void onUnminimized(@NonNull Bundle extras) throws RemoteException {
             TestCustomTabsCallback.this.onUnminimized(extras);
+        }
+
+        @Override
+        public int getInterfaceVersion() {
+            return super.VERSION;
         }
     };
 

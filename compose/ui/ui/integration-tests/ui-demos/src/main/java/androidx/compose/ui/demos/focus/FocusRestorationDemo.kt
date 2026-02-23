@@ -27,8 +27,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
-import androidx.compose.ui.focus.FocusRequester.Companion.Default
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -38,9 +36,9 @@ fun FocusRestorationDemo() {
     Column {
         Text(
             """
-                Use the DPad to move focus among these three rows
-                and notice how focus is restored to the previously
-                focused item.
+            Use the DPad to move focus among these three rows
+            and notice how focus is restored to the previously
+            focused item.
             """
                 .trimIndent()
         )
@@ -62,11 +60,8 @@ fun FocusRestorationDemo() {
         val focusRequester = remember { FocusRequester() }
         LazyRow(
             Modifier.focusRequester(focusRequester).focusProperties {
-                exit = {
-                    focusRequester.saveFocusedChild()
-                    Default
-                }
-                enter = { if (focusRequester.restoreFocusedChild()) Cancel else Default }
+                onExit = { focusRequester.saveFocusedChild() }
+                onEnter = { if (focusRequester.restoreFocusedChild()) cancelFocusChange() }
             }
         ) {
             item { Button("1") }

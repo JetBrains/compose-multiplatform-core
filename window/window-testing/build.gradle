@@ -15,27 +15,25 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace "androidx.window.testing"
+    namespace = "androidx.window.testing"
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
+    api(libs.jspecify)
     api(project(":window:window"))
     api(libs.junit)
     implementation("androidx.core:core:1.8.0")
@@ -48,7 +46,6 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.truth)
 
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.testCore)
@@ -60,8 +57,8 @@ dependencies {
 
 androidx {
     name = "WindowManager Testing Extensions"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "WindowManager Test Library"
-    legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

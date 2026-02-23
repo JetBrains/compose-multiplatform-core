@@ -20,12 +20,13 @@ import android.media.EncoderProfiles;
 import android.media.EncoderProfiles.AudioProfile;
 import android.media.EncoderProfiles.VideoProfile;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.ImmutableEncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,7 @@ import java.util.List;
 class EncoderProfilesProxyCompatApi33Impl {
 
     /** Creates an EncoderProfilesProxy instance from {@link EncoderProfiles}. */
-    @NonNull
-    public static EncoderProfilesProxy from(
+    public static @NonNull EncoderProfilesProxy from(
             @NonNull EncoderProfiles encoderProfiles) {
         return ImmutableEncoderProfilesProxy.create(
                 encoderProfiles.getDefaultDurationSeconds(),
@@ -46,8 +46,7 @@ class EncoderProfilesProxyCompatApi33Impl {
     }
 
     /** Creates VideoProfileProxy instances from a list of {@link VideoProfile}. */
-    @NonNull
-    private static List<VideoProfileProxy> fromVideoProfiles(
+    private static @NonNull List<VideoProfileProxy> fromVideoProfiles(
             @NonNull List<VideoProfile> profiles) {
         List<VideoProfileProxy> proxies = new ArrayList<>();
         for (VideoProfile profile : profiles) {
@@ -68,8 +67,7 @@ class EncoderProfilesProxyCompatApi33Impl {
     }
 
     /** Creates AudioProfileProxy instances from a list of {@link AudioProfile}. */
-    @NonNull
-    private static List<AudioProfileProxy> fromAudioProfiles(
+    private static @NonNull List<AudioProfileProxy> fromAudioProfiles(
             @NonNull List<AudioProfile> profiles) {
         List<AudioProfileProxy> proxies = new ArrayList<>();
         for (AudioProfile profile : profiles) {

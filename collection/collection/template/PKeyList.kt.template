@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE", "RedundantVisibilityModifier")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress(
+    "NOTHING_TO_INLINE",
+    "RedundantVisibilityModifier",
+    "FacadeClassJvmName",
+)
 @file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
@@ -23,6 +28,7 @@ import androidx.collection.internal.throwIllegalArgumentException
 import androidx.collection.internal.throwIndexOutOfBoundsException
 import androidx.collection.internal.throwNoSuchElementException
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -484,15 +490,17 @@ public sealed class PKeyList(initialCapacity: Int) {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        this@PKeyList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@PKeyList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
         }
         append(postfix)
     }
@@ -515,15 +523,17 @@ public sealed class PKeyList(initialCapacity: Int) {
         crossinline transform: (PKey) -> CharSequence
     ): String = buildString {
         append(prefix)
-        this@PKeyList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@PKeyList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
         }
         append(postfix)
     }
@@ -729,6 +739,7 @@ public class MutablePKeyList(
      * internal storage is reduced to the maximum of [size] and [minCapacity].
      * @see ensureCapacity
      */
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {
@@ -1012,3 +1023,37 @@ public fun mutablePKeyListOf(element1: PKey, element2: PKey, element3: PKey): Mu
  */
 public inline fun mutablePKeyListOf(vararg elements: PKey): MutablePKeyList =
     MutablePKeyList(elements.size).apply { plusAssign(elements) }
+
+/**
+ * Builds a new [PKeyList] by populating a [MutablePKeyList] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutablePKeyList] can be populated.
+ */
+public inline fun buildPKeyList(
+    builderAction: MutablePKeyList.() -> Unit,
+): PKeyList {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutablePKeyList().apply(builderAction)
+}
+
+/**
+ * Builds a new [PKeyList] by populating a [MutablePKeyList] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ * @param builderAction Lambda in which the [MutablePKeyList] can be populated.
+ */
+public inline fun buildPKeyList(
+    initialCapacity: Int,
+    builderAction: MutablePKeyList.() -> Unit,
+): PKeyList {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutablePKeyList(initialCapacity).apply(builderAction)
+}

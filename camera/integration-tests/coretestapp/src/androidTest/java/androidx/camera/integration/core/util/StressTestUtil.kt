@@ -19,7 +19,6 @@ package androidx.camera.integration.core.util
 import android.content.Context
 import android.content.Intent
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
@@ -34,6 +33,7 @@ import androidx.camera.integration.core.CameraXActivity.BIND_IMAGE_CAPTURE
 import androidx.camera.integration.core.CameraXActivity.BIND_PREVIEW
 import androidx.camera.integration.core.CameraXActivity.BIND_VIDEO_CAPTURE
 import androidx.camera.integration.core.CameraXActivity.INTENT_EXTRA_CAMERA_ID
+import androidx.camera.integration.core.CameraXActivity.INTENT_EXTRA_FORCE_ENABLE_STREAM_SHARING
 import androidx.camera.integration.core.CameraXActivity.INTENT_EXTRA_USE_CASE_COMBINATION
 import androidx.camera.integration.core.waitForViewfinderIdle
 import androidx.camera.testing.impl.CameraUtil
@@ -64,7 +64,8 @@ object StressTestUtil {
     @JvmStatic
     fun launchCameraXActivityAndWaitForPreviewReady(
         cameraId: String,
-        useCaseCombination: Int
+        useCaseCombination: Int,
+        forceEnableStreamSharing: Boolean = false,
     ): ActivityScenario<CameraXActivity> {
         if (useCaseCombination.and(BIND_PREVIEW) == 0) {
             throw IllegalArgumentException("Preview must be included!")
@@ -77,6 +78,7 @@ object StressTestUtil {
                 .apply {
                     putExtra(INTENT_EXTRA_CAMERA_ID, cameraId)
                     putExtra(INTENT_EXTRA_USE_CASE_COMBINATION, useCaseCombination)
+                    putExtra(INTENT_EXTRA_FORCE_ENABLE_STREAM_SHARING, forceEnableStreamSharing)
                     setClassName(CORE_TEST_APP_PACKAGE, CameraXActivity::class.java.name)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
@@ -102,7 +104,11 @@ object StressTestUtil {
 
     /** Checks and skips the test if the target camera can't support the use case combination. */
     @JvmStatic
-    fun assumeCameraSupportUseCaseCombination(camera: Camera, useCaseCombination: Int) {
+    fun assumeCameraSupportUseCaseCombination(
+        camera: Camera,
+        useCaseCombination: Int,
+        withStreamSharing: Boolean = true,
+    ) {
         val preview = Preview.Builder().build()
         val imageCapture =
             if (useCaseCombination.and(BIND_IMAGE_CAPTURE) != 0) {
@@ -125,7 +131,8 @@ object StressTestUtil {
 
         assumeTrue(
             camera.isUseCasesCombinationSupported(
-                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray()
+                withStreamSharing,
+                *listOfNotNull(preview, imageCapture, videoCapture, imageAnalysis).toTypedArray(),
             )
         )
     }
@@ -149,23 +156,11 @@ object StressTestUtil {
     @JvmStatic
     fun getAllCameraXConfigCameraIdCombinations() =
         mutableListOf<Array<Any?>>().apply {
-            val cameraxConfigs =
-                listOf(Camera2Config::class.simpleName, CameraPipeConfig::class.simpleName)
+            val cameraxConfigs = listOf(Camera2Config::class.simpleName)
 
             cameraxConfigs.forEach { configImplName ->
                 CameraUtil.getBackwardCompatibleCameraIdListOrThrow().forEach { cameraId ->
-                    add(
-                        arrayOf(
-                            configImplName,
-                            when (configImplName) {
-                                CameraPipeConfig::class.simpleName ->
-                                    CameraPipeConfig.defaultConfig()
-                                Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
-                                else -> Camera2Config.defaultConfig()
-                            },
-                            cameraId
-                        )
-                    )
+                    add(arrayOf(configImplName, Camera2Config.defaultConfig(), cameraId))
                 }
             }
         }

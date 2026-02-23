@@ -39,7 +39,7 @@ internal class SnapshotDoubleIndexHeap {
         private set
 
     // An array of values which are the snapshot ids
-    private var values = IntArray(INITIAL_CAPACITY)
+    private var values = snapshotIdArrayWithCapacity(INITIAL_CAPACITY)
 
     // An array of where the value's handle is in the handles array.
     private var index = IntArray(INITIAL_CAPACITY)
@@ -53,13 +53,13 @@ internal class SnapshotDoubleIndexHeap {
     // The first free handle.
     private var firstFreeHandle = 0
 
-    fun lowestOrDefault(default: Int = 0) = if (size > 0) values[0] else default
+    fun lowestOrDefault(default: SnapshotId = SnapshotIdZero) = if (size > 0) values[0] else default
 
     /**
      * Add a value to the heap by adding it to the end of the heap and then shifting it up until it
      * is either at the root or its parent is less or equal to it.
      */
-    fun add(value: Int): Int {
+    fun add(value: SnapshotId): Int {
         ensure(size + 1)
         val i = size++
         val handle = allocateHandle()
@@ -95,7 +95,7 @@ internal class SnapshotDoubleIndexHeap {
 
     /** Validate that the handle refers to the expected value. */
     @TestOnly
-    fun validateHandle(handle: Int, value: Int) {
+    fun validateHandle(handle: Int, value: SnapshotId) {
         val i = handles[handle]
         if (index[i] != handle) error("Index for handle $handle is corrupted")
         if (values[i] != value)
@@ -150,14 +150,15 @@ internal class SnapshotDoubleIndexHeap {
         val values = values
         val index = index
         val handles = handles
-        var t = values[a]
+        val t = values[a]
         values[a] = values[b]
         values[b] = t
-        t = index[a]
-        index[a] = index[b]
-        index[b] = t
-        handles[index[a]] = a
-        handles[index[b]] = b
+        val ia = index[a]
+        val ib = index[b]
+        index[a] = ib
+        index[b] = ia
+        handles[ib] = a
+        handles[ia] = b
     }
 
     /** Ensure that the heap can contain at least [atLeast] elements. */
@@ -165,7 +166,7 @@ internal class SnapshotDoubleIndexHeap {
         val capacity = values.size
         if (atLeast <= capacity) return
         val newCapacity = capacity * 2
-        val newValues = IntArray(newCapacity)
+        val newValues = snapshotIdArrayWithCapacity(newCapacity)
         val newIndex = IntArray(newCapacity)
         values.copyInto(newValues)
         index.copyInto(newIndex)

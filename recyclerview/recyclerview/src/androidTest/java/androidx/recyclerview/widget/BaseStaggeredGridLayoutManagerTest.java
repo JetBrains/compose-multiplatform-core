@@ -19,8 +19,7 @@ package androidx.recyclerview.widget;
 import static androidx.recyclerview.widget.LayoutState.LAYOUT_END;
 import static androidx.recyclerview.widget.LayoutState.LAYOUT_START;
 import static androidx.recyclerview.widget.LinearLayoutManager.VERTICAL;
-import static androidx.recyclerview.widget.StaggeredGridLayoutManager
-        .GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS;
+import static androidx.recyclerview.widget.StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS;
 import static androidx.recyclerview.widget.StaggeredGridLayoutManager.GAP_HANDLING_NONE;
 import static androidx.recyclerview.widget.StaggeredGridLayoutManager.HORIZONTAL;
 
@@ -40,11 +39,10 @@ import android.util.StateSet;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -114,7 +112,7 @@ abstract class BaseStaggeredGridLayoutManagerTest extends BaseRecyclerViewInstru
         mRecyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
             public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
-                    @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                    @NonNull RecyclerView parent, RecyclerView.@NonNull State state) {
                 try {
                     StaggeredGridLayoutManager.LayoutParams
                             lp = (StaggeredGridLayoutManager.LayoutParams) view.getLayoutParams();
@@ -651,10 +649,9 @@ abstract class BaseStaggeredGridLayoutManagerTest extends BaseRecyclerViewInstru
             return viewsBySpan;
         }
 
-        @Nullable
         @Override
-        public View onFocusSearchFailed(View focused, int direction, RecyclerView.Recycler recycler,
-                RecyclerView.State state) {
+        public @Nullable View onFocusSearchFailed(View focused, int direction,
+                RecyclerView.Recycler recycler, RecyclerView.State state) {
             View result = null;
             try {
                 result = super.onFocusSearchFailed(focused, direction, recycler, state);
@@ -853,9 +850,8 @@ abstract class BaseStaggeredGridLayoutManagerTest extends BaseRecyclerViewInstru
             mOrientation = orientation;
         }
 
-        @NonNull
         @Override
-        public TestViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+        public @NonNull TestViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
                 int viewType) {
             mRecyclerViewWidth = parent.getWidth();
             mRecyclerViewHeight = parent.getHeight();

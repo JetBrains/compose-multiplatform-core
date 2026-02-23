@@ -16,8 +16,6 @@
 
 package androidx.credentials.registry.provider.digitalcredentials
 
-import androidx.annotation.RestrictTo
-
 /**
  * A digital credential entry to be registered.
  *
@@ -33,13 +31,16 @@ import androidx.annotation.RestrictTo
  *
  *    All display metadata will be contained in the `entryDisplayData` property.
  *
- * @property id the unique identifier of this credential entry, which can be used to identify the
- *   exact credential that the user has chosen
- * @property entryDisplayData the display properties associated with the given entry
+ * @property id the provider unique identifier of this credential entry, which can be used to
+ *   identify the exact credential that the user has chosen
+ * @property entryDisplayPropertySet the display properties associated with the given entry
+ * @throws IllegalArgumentException if [id] length is greater than 64 characters
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class DigitalCredentialEntry
-constructor(
+public abstract class DigitalCredentialEntry(
     public val id: String,
-    public val entryDisplayData: Set<EntryDisplayData>,
-)
+    public val entryDisplayPropertySet: Set<EntryDisplayProperties>,
+) {
+    init {
+        require(id.length <= 64) { "`id` length must be less than 64" }
+    }
+}

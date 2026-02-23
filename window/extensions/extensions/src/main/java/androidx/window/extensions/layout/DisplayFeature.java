@@ -18,7 +18,7 @@ package androidx.window.extensions.layout;
 
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Description of a physical feature on the display.
@@ -31,6 +31,5 @@ public interface DisplayFeature {
      *
      * @return bounds of display feature.
      */
-    @NonNull
-    Rect getBounds();
+    @NonNull Rect getBounds();
 }

@@ -33,7 +33,7 @@ class CommonModuleIncompatibilityDetectorTest : LintDetectorTest() {
         mutableListOf(
             CommonModuleIncompatibilityDetector.IMPORT_ISSUE,
             CommonModuleIncompatibilityDetector.REFERENCE_ISSUE,
-            CommonModuleIncompatibilityDetector.EXTENDS_LAMBDA_ISSUE
+            CommonModuleIncompatibilityDetector.EXTENDS_LAMBDA_ISSUE,
         )
 
     @Test
@@ -49,7 +49,7 @@ class CommonModuleIncompatibilityDetectorTest : LintDetectorTest() {
                 import java.*
                 import android.os.Bundle
                 import android.*
-            """
+            """,
                 )
                 .within("src")
 
@@ -58,22 +58,22 @@ class CommonModuleIncompatibilityDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-src/commonMain/test/TestFile.kt:4: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
-                import java.util.ArrayList as MyList
-                       ~~~~~~~~~~~~~~~~~~~
-src/commonMain/test/TestFile.kt:5: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
-                import java.util.*
-                       ~~~~~~~~~
-src/commonMain/test/TestFile.kt:6: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
-                import java.*
-                       ~~~~
-src/commonMain/test/TestFile.kt:7: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
-                import android.os.Bundle
-                       ~~~~~~~~~~~~~~~~~
-src/commonMain/test/TestFile.kt:8: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
-                import android.*
-                       ~~~~~~~
-5 errors, 0 warnings
+                src/commonMain/test/TestFile.kt:4: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
+                                import java.util.ArrayList as MyList
+                                       ~~~~~~~~~~~~~~~~~~~
+                src/commonMain/test/TestFile.kt:5: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
+                                import java.util.*
+                                       ~~~~~~~~~
+                src/commonMain/test/TestFile.kt:6: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
+                                import java.*
+                                       ~~~~
+                src/commonMain/test/TestFile.kt:7: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
+                                import android.os.Bundle
+                                       ~~~~~~~~~~~~~~~~~
+                src/commonMain/test/TestFile.kt:8: Error: Platform-dependent import in a common module [PlatformImportInCommonModule]
+                                import android.*
+                                       ~~~~~~~
+                5 errors, 0 warnings
                 """
                     .trimIndent()
             )
@@ -99,7 +99,7 @@ src/commonMain/test/TestFile.kt:8: Error: Platform-dependent import in a common 
                     return true
                   }
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -108,19 +108,19 @@ src/commonMain/test/TestFile.kt:8: Error: Platform-dependent import in a common 
             .run()
             .expect(
                 """
-src/commonMain/test/TestFile.kt:5: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
-                    test.javaClass
-                         ~~~~~~~~~
-src/commonMain/test/TestFile.kt:6: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
-                    test::class.java
-                                ~~~~
-src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
-                    if (javaClass != other?.javaClass) return false
-                        ~~~~~~~~~
-src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
-                    if (javaClass != other?.javaClass) return false
-                                            ~~~~~~~~~
-4 errors, 0 warnings
+                src/commonMain/test/TestFile.kt:5: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
+                                    test.javaClass
+                                         ~~~~~~~~~
+                src/commonMain/test/TestFile.kt:6: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
+                                    test::class.java
+                                                ~~~~
+                src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
+                                    if (javaClass != other?.javaClass) return false
+                                        ~~~~~~~~~
+                src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module [PlatformReferenceInCommonModule]
+                                    if (javaClass != other?.javaClass) return false
+                                                            ~~~~~~~~~
+                4 errors, 0 warnings
                 """
                     .trimIndent()
             )
@@ -142,7 +142,7 @@ src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module
                 val a = object : () -> Unit {
                     override fun invoke() {}
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -151,16 +151,16 @@ src/commonMain/test/TestFile.kt:12: Error: Platform reference in a common module
             .run()
             .expect(
                 """
-src/commonMain/test/TestFile.kt:4: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
-                abstract class Test : () -> Unit
-                               ~~~~
-src/commonMain/test/TestFile.kt:5: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
-                interface TestI : () -> Unit
-                          ~~~~~
-src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
-                val a = object : () -> Unit {
-                        ^
-3 errors, 0 warnings
+                src/commonMain/test/TestFile.kt:4: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
+                                abstract class Test : () -> Unit
+                                               ~~~~
+                src/commonMain/test/TestFile.kt:5: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
+                                interface TestI : () -> Unit
+                                          ~~~~~
+                src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is not allowed in common code [ExtendedFunctionNInterface]
+                                val a = object : () -> Unit {
+                                        ^
+                3 errors, 0 warnings
                 """
                     .trimIndent()
             )
@@ -179,7 +179,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 import java.*
                 import android.os.Bundle
                 import android.*
-            """
+            """,
                 )
                 .within("src")
 
@@ -193,7 +193,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 import java.*
                 import android.os.Bundle
                 import android.*
-            """
+            """,
                 )
                 .within("src")
 
@@ -207,7 +207,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 import java.*
                 import android.os.Bundle
                 import android.*
-            """
+            """,
                 )
                 .within("src")
 
@@ -234,7 +234,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                     return true
                   }
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -256,7 +256,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                     return true
                   }
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -278,7 +278,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                     return true
                   }
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -301,7 +301,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 val a = object : () -> Unit {
                     override fun invoke() {}
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -319,7 +319,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 val a = object : () -> Unit {
                     override fun invoke() {}
                 }
-            """
+            """,
                 )
                 .within("src")
 
@@ -337,7 +337,7 @@ src/commonMain/test/TestFile.kt:9: Error: Extending Kotlin lambda interfaces is 
                 val a = object : () -> Unit {
                     override fun invoke() {}
                 }
-            """
+            """,
                 )
                 .within("src")
 

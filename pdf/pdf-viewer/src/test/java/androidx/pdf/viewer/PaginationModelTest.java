@@ -21,12 +21,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.content.Context;
 import android.graphics.Rect;
-import android.os.Build;
 
 import androidx.pdf.data.Range;
 import androidx.pdf.models.Dimensions;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,10 +33,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class PaginationModelTest {
 
     private static final Dimensions ONE_HUNDRED_BY_TWO_HUNDRED = new Dimensions(100, 200);
@@ -50,7 +46,6 @@ public class PaginationModelTest {
     @Before
     public void init() {
         mContext = ApplicationProvider.getApplicationContext();
-        PdfViewer.setScreenForTest(mContext);
         mPaginationModel = new PaginationModel(mContext);
     }
 

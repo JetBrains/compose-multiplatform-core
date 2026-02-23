@@ -34,8 +34,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
@@ -59,6 +57,9 @@ import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.SparseArrayObjectAdapter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fragment for displaying playback controls and related content.
@@ -910,9 +911,8 @@ public class PlaybackSupportFragment extends Fragment {
             };
 
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.lb_playback_fragment, container, false);
         mBackgroundView = mRootView.findViewById(R.id.playback_fragment_background);
         mRowsSupportFragment = (RowsSupportFragment) getChildFragmentManager().findFragmentById(

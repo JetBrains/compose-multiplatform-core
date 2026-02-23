@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
+// VERSION: v0_103
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 package androidx.wear.compose.material3.tokens
-
 internal object SliderTokens {
-    val ContainerColor = ColorSchemeKeyTokens.SurfaceContainer
     val ButtonIconColor = ColorSchemeKeyTokens.OnSurface
-    val SelectedBarColor = ColorSchemeKeyTokens.Primary
-    val UnselectedBarSeparatorColor = ColorSchemeKeyTokens.Primary
-    val VariantSelectedBarColor = ColorSchemeKeyTokens.PrimaryDim
-    val VariantUnselectedBarSeparatorColor = ColorSchemeKeyTokens.PrimaryDim
-    val UnselectedBarSeparatorOpacity = 0.5f
-    val UnselectedBarColor = ColorSchemeKeyTokens.Background
-    val SelectedBarSeparatorColor = ColorSchemeKeyTokens.PrimaryContainer
-
-    val DisabledContainerColor = ColorSchemeKeyTokens.OnSurface
-    val DisabledContainerOpacity = 0.12f
+    val ContainerColor = ColorSchemeKeyTokens.SurfaceContainer
+    val ContainerShape = ShapeKeyTokens.CornerLarge
     val DisabledButtonIconColor = ColorSchemeKeyTokens.OnSurface
     val DisabledButtonIconOpacity = 0.38f
+    val DisabledContainerColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledContainerOpacity = 0.12f
     val DisabledSelectedBarColor = ColorSchemeKeyTokens.OutlineVariant
-    val DisabledUnselectedBarColor = ColorSchemeKeyTokens.Background
     val DisabledSelectedBarSeparatorColor = ColorSchemeKeyTokens.SurfaceContainer
+    val DisabledUnselectedBarColor = ColorSchemeKeyTokens.Background
+    val DisabledUnselectedBarOpacity = 0.3f
     val DisabledUnselectedBarSeparatorColor = ColorSchemeKeyTokens.OutlineVariant
-
-    val ContainerShape = ShapeKeyTokens.CornerLarge
+    val DisabledUnselectedBarSeparatorOpacity = 0.5f
+    val SelectedBarColor = ColorSchemeKeyTokens.Primary
+    val SelectedBarSeparatorColor = ColorSchemeKeyTokens.PrimaryContainer
+    val UnselectedBarColor = ColorSchemeKeyTokens.Background
+    val UnselectedBarOpacity = 0.3f
+    val UnselectedBarSeparatorColor = ColorSchemeKeyTokens.Primary
+    val UnselectedBarSeparatorOpacity = 0.5f
+    val VariantSelectedBarColor = ColorSchemeKeyTokens.PrimaryDim
+    val VariantUnselectedBarSeparatorColor = ColorSchemeKeyTokens.PrimaryDim
 }

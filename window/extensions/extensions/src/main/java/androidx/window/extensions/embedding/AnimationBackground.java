@@ -19,8 +19,9 @@ package androidx.window.extensions.embedding;
 import android.graphics.Color;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -38,8 +39,8 @@ public abstract class AnimationBackground {
      * window background color.
      */
     @RequiresVendorApiLevel(level = 5)
-    @NonNull
-    public static final AnimationBackground ANIMATION_BACKGROUND_DEFAULT = new DefaultBackground();
+    public static final @NonNull AnimationBackground ANIMATION_BACKGROUND_DEFAULT =
+            new DefaultBackground();
 
     /**
      * Creates a {@link ColorBackground} that wraps the given color.
@@ -49,8 +50,7 @@ public abstract class AnimationBackground {
      * @throws IllegalArgumentException if the color is not opaque.
      */
     @RequiresVendorApiLevel(level = 5)
-    @NonNull
-    public static ColorBackground createColorBackground(@ColorInt int color) {
+    public static @NonNull ColorBackground createColorBackground(@ColorInt int color) {
         return new ColorBackground(color);
     }
 
@@ -108,9 +108,8 @@ public abstract class AnimationBackground {
             return Objects.hash(mColor);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return ColorBackground.class.getSimpleName() + " { color: " + mColor + " }";
         }
     }

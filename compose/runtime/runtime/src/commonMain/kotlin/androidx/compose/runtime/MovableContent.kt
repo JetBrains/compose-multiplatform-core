@@ -16,6 +16,8 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.annotation.RememberInComposition
+
 /**
  * Convert a lambda into one that moves the remembered state and nodes created in a previous call to
  * the new location it is called.
@@ -33,9 +35,10 @@ package androidx.compose.runtime
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
-    val movableContent = MovableContent<Unit>({ content() })
-    return { currentComposer.insertMovableContent(movableContent, Unit) }
+@RememberInComposition
+public fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
+    val movableContent = MovableContent<Nothing?>({ content() })
+    return { currentComposer.insertMovableContent(movableContent, null) }
 }
 
 /**
@@ -55,7 +58,8 @@ fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> Unit {
+@RememberInComposition
+public fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> Unit {
     val movableContent = MovableContent(content)
     return { currentComposer.insertMovableContent(movableContent, it) }
 }
@@ -77,7 +81,10 @@ fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> U
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <P1, P2> movableContentOf(content: @Composable (P1, P2) -> Unit): @Composable (P1, P2) -> Unit {
+@RememberInComposition
+public fun <P1, P2> movableContentOf(
+    content: @Composable (P1, P2) -> Unit
+): @Composable (P1, P2) -> Unit {
     val movableContent = MovableContent<Pair<P1, P2>> { content(it.first, it.second) }
     return { p1, p2 -> currentComposer.insertMovableContent(movableContent, p1 to p2) }
 }
@@ -99,14 +106,15 @@ fun <P1, P2> movableContentOf(content: @Composable (P1, P2) -> Unit): @Composabl
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <P1, P2, P3> movableContentOf(
+@RememberInComposition
+public fun <P1, P2, P3> movableContentOf(
     content: @Composable (P1, P2, P3) -> Unit
 ): @Composable (P1, P2, P3) -> Unit {
     val movableContent =
-        MovableContent<Pair<Pair<P1, P2>, P3>> {
-            content(it.first.first, it.first.second, it.second)
-        }
-    return { p1, p2, p3 -> currentComposer.insertMovableContent(movableContent, (p1 to p2) to p3) }
+        MovableContent<Triple<P1, P2, P3>> { content(it.first, it.second, it.third) }
+    return { p1, p2, p3 ->
+        currentComposer.insertMovableContent(movableContent, Triple(p1, p2, p3))
+    }
 }
 
 /**
@@ -126,15 +134,17 @@ fun <P1, P2, P3> movableContentOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <P1, P2, P3, P4> movableContentOf(
+@RememberInComposition
+public fun <P1, P2, P3, P4> movableContentOf(
     content: @Composable (P1, P2, P3, P4) -> Unit
 ): @Composable (P1, P2, P3, P4) -> Unit {
     val movableContent =
-        MovableContent<Pair<Pair<P1, P2>, Pair<P3, P4>>> {
-            content(it.first.first, it.first.second, it.second.first, it.second.second)
+        MovableContent<Array<Any?>> { (p1, p2, p3, p4) ->
+            @Suppress("UNCHECKED_CAST") // Types are guaranteed below.
+            content(p1 as P1, p2 as P2, p3 as P3, p4 as P4)
         }
     return { p1, p2, p3, p4 ->
-        currentComposer.insertMovableContent(movableContent, (p1 to p2) to (p3 to p4))
+        currentComposer.insertMovableContent(movableContent, arrayOf(p1, p2, p3, p4))
     }
 }
 
@@ -155,7 +165,10 @@ fun <P1, P2, P3, P4> movableContentOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <R> movableContentWithReceiverOf(content: @Composable R.() -> Unit): @Composable R.() -> Unit {
+@RememberInComposition
+public fun <R> movableContentWithReceiverOf(
+    content: @Composable R.() -> Unit
+): @Composable R.() -> Unit {
     val movableContent = MovableContent<R>({ it.content() })
     return { currentComposer.insertMovableContent(movableContent, this) }
 }
@@ -177,7 +190,8 @@ fun <R> movableContentWithReceiverOf(content: @Composable R.() -> Unit): @Compos
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <R, P> movableContentWithReceiverOf(
+@RememberInComposition
+public fun <R, P> movableContentWithReceiverOf(
     content: @Composable R.(P) -> Unit
 ): @Composable R.(P) -> Unit {
     val movableContent = MovableContent<Pair<R, P>>({ it.first.content(it.second) })
@@ -201,12 +215,12 @@ fun <R, P> movableContentWithReceiverOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <R, P1, P2> movableContentWithReceiverOf(
+@RememberInComposition
+public fun <R, P1, P2> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2) -> Unit
 ): @Composable R.(P1, P2) -> Unit {
-    val movableContent =
-        MovableContent<Pair<Pair<R, P1>, P2>> { it.first.first.content(it.first.second, it.second) }
-    return { p1, p2 -> currentComposer.insertMovableContent(movableContent, (this to p1) to p2) }
+    val movableContent = MovableContent<Triple<R, P1, P2>> { it.first.content(it.second, it.third) }
+    return { p1, p2 -> currentComposer.insertMovableContent(movableContent, Triple(this, p1, p2)) }
 }
 
 /**
@@ -226,17 +240,76 @@ fun <R, P1, P2> movableContentWithReceiverOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-fun <R, P1, P2, P3> movableContentWithReceiverOf(
+@RememberInComposition
+public fun <R, P1, P2, P3> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2, P3) -> Unit
 ): @Composable R.(P1, P2, P3) -> Unit {
     val movableContent =
-        MovableContent<Pair<Pair<R, P1>, Pair<P2, P3>>> {
-            it.first.first.content(it.first.second, it.second.first, it.second.second)
+        MovableContent<Array<Any?>> { (r, p1, p2, p3) ->
+            @Suppress("UNCHECKED_CAST") // Types are guaranteed below.
+            (r as R).content(p1 as P1, p2 as P2, p3 as P3)
         }
     return { p1, p2, p3 ->
-        currentComposer.insertMovableContent(movableContent, (this to p1) to (p2 to p3))
+        currentComposer.insertMovableContent(movableContent, arrayOf(this, p1, p2, p3))
     }
 }
 
 // An arbitrary key created randomly. This key is used for the group containing the movable content
 internal const val movableContentKey = 0x078cc281
+
+/**
+ * This class is used internally by [movableContentOf]. Please see [movableContentOf] which has
+ * documentation and example for how to use movable content. This class cannot be used directly.
+ *
+ * A Compose compiler plugin API. DO NOT call directly.
+ *
+ * An instance used to track the identity of the movable content. Using a holder object allows
+ * creating unique movable content instances from the same instance of a lambda. This avoids using
+ * the identity of a lambda instance as it can be merged into a singleton or merged by later
+ * rewritings and using its identity might lead to unpredictable results that might change from the
+ * debug and release builds.
+ *
+ * @see movableContentOf
+ */
+@InternalComposeApi
+public class MovableContent<P>(public val content: @Composable (parameter: P) -> Unit)
+
+/**
+ * A Compose compiler plugin API. DO NOT call directly.
+ *
+ * A reference to the movable content state prior to changes being applied.
+ */
+@InternalComposeApi
+public class MovableContentStateReference
+internal constructor(
+    internal val content: MovableContent<Any?>,
+    internal val parameter: Any?,
+    internal val composition: ControlledComposition,
+    internal val slotStorage: SlotStorage,
+    internal val anchor: Anchor,
+    internal var invalidations: List<Pair<RecomposeScopeImpl, Any?>>,
+    internal val locals: PersistentCompositionLocalMap,
+    internal val nestedReferences: List<MovableContentStateReference>?,
+) {
+    /** Transfer any invalidations that may have accumulated since this reference was created. */
+    internal fun transferPendingInvalidations() {
+        if (anchor.valid) {
+            invalidations =
+                invalidations + (composition as CompositionImpl).extractInvalidationsOf(anchor)
+        }
+    }
+}
+
+/**
+ * A Compose compiler plugin API. DO NOT call directly.
+ *
+ * A reference to the state of a [MovableContent] after changes have being applied. This is the
+ * state that was removed from the `from` composition during [ControlledComposition.applyChanges]
+ * and before it is inserted during [ControlledComposition.insertMovableContent].
+ */
+@InternalComposeApi
+public class MovableContentState internal constructor(internal val slotStorage: SlotStorage) {
+    internal fun dispose() {
+        slotStorage.dispose()
+    }
+}

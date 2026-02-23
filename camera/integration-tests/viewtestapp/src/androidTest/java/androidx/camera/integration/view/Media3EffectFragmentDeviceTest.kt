@@ -21,7 +21,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
 import androidx.camera.core.ImageCaptureException
@@ -30,7 +29,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecu
 import androidx.camera.integration.view.CameraControllerFragmentTest.Companion.TIMEOUT_SECONDS
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.TestImageUtil.getAverageDiff
@@ -59,26 +57,20 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class Media3EffectFragmentDeviceTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
     @get:Rule
     val useCameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             testCameraRule,
-            CameraUtil.PreTestCameraIdList(cameraConfig)
+            CameraUtil.PreTestCameraIdList(cameraConfig),
         )
 
     @get:Rule
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -160,7 +152,7 @@ class Media3EffectFragmentDeviceTest(
                     override fun onError(exception: ImageCaptureException) {
                         imageCallbackSemaphore.release()
                     }
-                }
+                },
             )
         }
         assertThat(imageCallbackSemaphore.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
@@ -184,7 +176,7 @@ class Media3EffectFragmentDeviceTest(
             Media3EffectsFragment::class.java,
             null,
             R.style.AppTheme,
-            null
+            null,
         )
     }
 
@@ -205,10 +197,6 @@ class Media3EffectFragmentDeviceTest(
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-            )
+        fun data() = listOf(arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()))
     }
 }

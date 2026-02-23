@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 dependencies {
-    api(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":core:haptics:haptics"))
 }
 android {
-    compileSdk 35
-    namespace "androidx.core.haptics.samples"
+    compileSdk { version = release(35) }
+    namespace = "androidx.core.haptics.samples"
 }
 androidx {
     name = "AndroidX Core Haptics Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2023"
     description = "Samples for the AndroidX Core Haptics Libraries"
 }

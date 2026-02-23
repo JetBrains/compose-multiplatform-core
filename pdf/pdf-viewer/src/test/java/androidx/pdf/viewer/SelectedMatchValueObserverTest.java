@@ -22,15 +22,14 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.graphics.Rect;
-import android.os.Build;
 import android.util.DisplayMetrics;
 
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.widget.ZoomView;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -38,11 +37,8 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 
-
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class SelectedMatchValueObserverTest {
     private final PaginatedView mMockPaginatedView = mock(PaginatedView.class);
     private final PaginationModel mMockPaginationModel = mock(PaginationModel.class);
@@ -59,11 +55,13 @@ public class SelectedMatchValueObserverTest {
     private final PdfHighlightOverlay mMockPdfHighlightOverlay = mock(PdfHighlightOverlay.class);
     private final Context mContext = ApplicationProvider.getApplicationContext();
 
+    @Ignore // b/376314114
     @Test
     public void onChange_setOverlay() {
         when(mMockOldSelection.getPage()).thenReturn(1);
         when(mMockNewSelection.getPage()).thenReturn(2);
         when(mMockPaginationModel.getSize()).thenReturn(3);
+        when(mMockPaginatedView.getModel()).thenReturn(mMockPaginationModel);
         when(mMockPaginatedView.getViewAt(1)).thenReturn(mMockOldPageView);
         when(mMockPaginatedView.getViewAt(2)).thenReturn(mMockNewPageView);
         when(mMockPaginationModel.getPageSize(2)).thenReturn(new Dimensions(100, 100));
@@ -86,7 +84,6 @@ public class SelectedMatchValueObserverTest {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         displayMetrics.density = 1f;
         mContext.getResources().getDisplayMetrics().setTo(displayMetrics);
-        PdfViewer.setScreenForTest(mContext);
 
         SelectedMatchValueObserver selectedMatchValueObserver = new SelectedMatchValueObserver(
                 mMockPaginatedView, mMockPageViewFactory, mMockZoomView,

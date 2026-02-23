@@ -21,8 +21,8 @@ import android.content.UriMatcher;
 import android.net.Uri;
 import android.provider.CalendarContract;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The contract between the wearable calendar provider and applications. This API provides a subset
@@ -59,16 +59,14 @@ public class WearableCalendarContract {
     }
 
     /** The content:// style URL for the top-level wearable calendar authority. */
-    @NonNull
-    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
+    public static final @NonNull Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
     /** @see android.provider.CalendarContract.Instances */
     public static final class Instances {
         private Instances() {
         }
 
-        @NonNull
-        public static final Uri CONTENT_URI =
+        public static final @NonNull Uri CONTENT_URI =
                 Uri.withAppendedPath(WearableCalendarContract.CONTENT_URI, "instances/when");
     }
 
@@ -77,8 +75,7 @@ public class WearableCalendarContract {
         private Attendees() {
         }
 
-        @NonNull
-        public static final Uri CONTENT_URI =
+        public static final @NonNull Uri CONTENT_URI =
                 Uri.withAppendedPath(WearableCalendarContract.CONTENT_URI, "attendees");
     }
 
@@ -87,8 +84,7 @@ public class WearableCalendarContract {
         private Reminders() {
         }
 
-        @NonNull
-        public static final Uri CONTENT_URI =
+        public static final @NonNull Uri CONTENT_URI =
                 Uri.withAppendedPath(WearableCalendarContract.CONTENT_URI, "reminders");
     }
 

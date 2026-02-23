@@ -23,8 +23,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link android.content.BroadcastReceiver} which forces a synchronous installation of the
@@ -161,7 +161,7 @@ public class ProfileInstallReceiver extends BroadcastReceiver {
      * debugging, you should see a logcat line containing: `SIGUSR1 forcing GC (no HPROF) and
      * profile save`
      */
-    static void saveProfile(@NonNull ProfileInstaller.DiagnosticsCallback callback) {
+    static void saveProfile(ProfileInstaller.@NonNull DiagnosticsCallback callback) {
         saveProfile(Process.myPid(), callback);
     }
 
@@ -177,7 +177,7 @@ public class ProfileInstallReceiver extends BroadcastReceiver {
      * debugging, you should see a logcat line containing: `SIGUSR1 forcing GC (no HPROF) and
      * profile save` in the app subprocess specified by `pid`.
      */
-    static void saveProfile(int pid, @NonNull ProfileInstaller.DiagnosticsCallback callback) {
+    static void saveProfile(int pid, ProfileInstaller.@NonNull DiagnosticsCallback callback) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Process.sendSignal(pid, /* SIGUSR1 */ 10);
             callback.onResultReceived(ProfileInstaller.RESULT_SAVE_PROFILE_SIGNALLED, null);

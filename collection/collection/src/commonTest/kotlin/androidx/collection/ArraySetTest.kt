@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 
 internal class ArraySetTest {
     private val set = ArraySet<String>()
@@ -64,6 +65,7 @@ internal class ArraySetTest {
                         } else {
                             set.clear()
                         }
+                        yield()
                     } catch (e: IndexOutOfBoundsException) {
                         if (!add) {
                             error = e

@@ -16,18 +16,16 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.runtime.Composable
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -36,8 +34,10 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -45,17 +45,20 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
     @get:Rule val testName = TestName()
 
     @Test
-    fun alert_shortTitle_bottomButton(@TestParameter screenSize: ScreenSize) =
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_shortTitle_bottomButton(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) =
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = false,
@@ -63,40 +66,17 @@ class AlertDialogScreenshotTest {
             showTwoButtons = false,
             scrollToBottom = false,
             screenSize = screenSize,
+            contentContainer = contentContainer,
             titleText = "Network error",
-            messageText = null
-        )
-
-    @Test
-    fun alert_shortTitle_confirmDismissButtons(@TestParameter screenSize: ScreenSize) =
-        rule.verifyAlertDialogScreenshot(
-            testName = testName,
-            screenshotRule = screenshotRule,
-            showIcon = false,
-            showContent = false,
-            showTwoButtons = true,
-            scrollToBottom = false,
-            screenSize = screenSize,
-            titleText = "Network error",
-            messageText = null
-        )
-
-    @Test
-    fun alert_title_bottomButton(@TestParameter screenSize: ScreenSize) =
-        rule.verifyAlertDialogScreenshot(
-            testName = testName,
-            screenshotRule = screenshotRule,
-            showIcon = false,
-            showContent = false,
-            showTwoButtons = false,
-            scrollToBottom = false,
-            screenSize = screenSize,
             messageText = null,
         )
 
     @Test
-    fun alert_title_confirmDismissButtons(@TestParameter screenSize: ScreenSize) =
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_shortTitle_confirmDismissButtons(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) =
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = false,
@@ -104,12 +84,51 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            contentContainer = contentContainer,
+            titleText = "Network error",
+            messageText = null,
         )
 
     @Test
-    fun alert_icon_title_bottomButton(@TestParameter screenSize: ScreenSize) {
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_title_bottomButton(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) =
+        rule.verifyAlertDialogContentScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            showIcon = false,
+            showContent = false,
+            showTwoButtons = false,
+            scrollToBottom = false,
+            screenSize = screenSize,
+            contentContainer = contentContainer,
+            messageText = null,
+        )
+
+    @Test
+    fun alertContent_title_confirmDismissButtons(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) =
+        rule.verifyAlertDialogContentScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            showIcon = false,
+            showContent = false,
+            showTwoButtons = true,
+            scrollToBottom = false,
+            screenSize = screenSize,
+            contentContainer = contentContainer,
+            messageText = null,
+        )
+
+    @Test
+    fun alertContent_icon_title_bottomButton(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
@@ -117,13 +136,17 @@ class AlertDialogScreenshotTest {
             showTwoButtons = false,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            contentContainer = contentContainer,
+            messageText = null,
         )
     }
 
     @Test
-    fun alert_icon_title_confirmDismissButtons(@TestParameter screenSize: ScreenSize) {
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_icon_title_confirmDismissButtons(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
@@ -131,71 +154,85 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            contentContainer = contentContainer,
+            messageText = null,
         )
     }
 
     @Test
-    fun alert_icon_title_messageText_bottomButton(@TestParameter screenSize: ScreenSize) {
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_icon_title_messageText_bottomButton(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
             showContent = false,
             showTwoButtons = false,
             scrollToBottom = false,
-            screenSize = screenSize
+            screenSize = screenSize,
+            contentContainer = contentContainer,
         )
     }
 
     @Test
-    fun alert_icon_title_messageText_content_confirmDismissButtons(
-        @TestParameter screenSize: ScreenSize
+    fun alertContent_icon_title_messageText_content_confirmDismissButtons(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
     ) {
-        rule.verifyAlertDialogScreenshot(
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
             showContent = true,
             showTwoButtons = false,
             scrollToBottom = false,
-            screenSize = screenSize
+            screenSize = screenSize,
+            contentContainer = contentContainer,
         )
     }
 
     @Test
-    fun alert_icon_title_messageText_content_bottomButton_bottom(
-        @TestParameter screenSize: ScreenSize
+    fun alertContent_icon_title_messageText_content_bottomButton_bottom(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
     ) {
-        rule.verifyAlertDialogScreenshot(
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
             showContent = true,
             showTwoButtons = false,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
+            contentContainer = contentContainer,
         )
     }
 
     @Test
-    fun alert_icon_title_messageText_content_confirmDismissButtons_bottom(
-        @TestParameter screenSize: ScreenSize
+    fun alertContent_icon_title_messageText_content_confirmDismissButtons_bottom(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
     ) {
-        rule.verifyAlertDialogScreenshot(
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = true,
             showContent = true,
             showTwoButtons = true,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
+            contentContainer = contentContainer,
         )
     }
 
     @Test
-    fun alert_title_longMessageText_bottomButton(@TestParameter screenSize: ScreenSize) {
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_title_longMessageText_bottomButton(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = false,
@@ -203,13 +240,17 @@ class AlertDialogScreenshotTest {
             showTwoButtons = false,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = longMessageText
+            contentContainer = contentContainer,
+            messageText = longMessageText,
         )
     }
 
     @Test
-    fun alert_title_longMessageText_confirmDismissButtons(@TestParameter screenSize: ScreenSize) {
-        rule.verifyAlertDialogScreenshot(
+    fun alertContent_title_longMessageText_confirmDismissButtons(
+        @TestParameter screenSize: ScreenSize,
+        @TestParameter contentContainer: ContentContainer,
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
             testName = testName,
             screenshotRule = screenshotRule,
             showIcon = false,
@@ -217,11 +258,12 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = longMessageText
+            contentContainer = contentContainer,
+            messageText = longMessageText,
         )
     }
 
-    private fun ComposeContentTestRule.verifyAlertDialogScreenshot(
+    private fun ComposeContentTestRule.verifyAlertDialogContentScreenshot(
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
         showIcon: Boolean,
@@ -229,89 +271,96 @@ class AlertDialogScreenshotTest {
         showTwoButtons: Boolean,
         scrollToBottom: Boolean,
         screenSize: ScreenSize,
-        messageText: String? = "Your battery is low. Turn on battery saver.",
-        titleText: String = "Mobile network is not currently available"
+        contentContainer: ContentContainer,
+        messageText: String? = MessageText,
+        titleText: String = TitleText,
     ) {
         setContentWithTheme {
-            ScreenConfiguration(screenSize.size) {
-                AlertDialogHelper(
+            ScreenConfiguration(screenSize.size, isRound = true) {
+                AlertDialogContentHelper(
+                    contentContainer = contentContainer,
                     modifier = Modifier.size(screenSize.size.dp).testTag(TEST_TAG),
                     title = { Text(titleText) },
                     icon =
                         if (showIcon) {
                             { Icon(Icons.Filled.Favorite, contentDescription = null) }
                         } else null,
-                    showTwoButtons = showTwoButtons,
+                    confirmButton =
+                        if (showTwoButtons) {
+                            { AlertDialogDefaults.ConfirmButton({}) }
+                        } else null,
+                    dismissButton =
+                        if (showTwoButtons) {
+                            { AlertDialogDefaults.DismissButton({}) }
+                        } else null,
+                    edgeButton =
+                        if (!showTwoButtons) {
+                            { AlertDialogDefaults.EdgeButton({}) }
+                        } else null,
                     text =
                         if (messageText != null) {
                             { Text(messageText) }
                         } else null,
-                    content =
+                    slcContent =
                         if (showContent) {
-                            {
-                                item {
-                                    FilledTonalButton(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        onClick = {},
-                                        label = { Text("Action 1") },
-                                    )
-                                }
-                                item { AlertDialogDefaults.GroupSeparator() }
-                                item {
-                                    FilledTonalButton(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        onClick = {},
-                                        label = { Text("Action 2") },
-                                    )
-                                }
-                            }
-                        } else null
+                            { dialogContent() }
+                        } else null,
+                    tlcContent =
+                        if (showContent) {
+                            { dialogContent() }
+                        } else null,
                 )
             }
         }
         if (scrollToBottom) {
             onNodeWithTag(TEST_TAG).performTouchInput { swipeUp() }
         }
-        onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
-    }
-}
 
-@Composable
-private fun AlertDialogHelper(
-    modifier: Modifier,
-    title: @Composable () -> Unit,
-    icon: @Composable (() -> Unit)?,
-    text: @Composable (() -> Unit)?,
-    showTwoButtons: Boolean,
-    content: (ScalingLazyListScope.() -> Unit)?
-) {
-    if (showTwoButtons) {
-        AlertDialog(
-            show = true,
-            onDismissRequest = {},
-            modifier = modifier,
-            title = title,
-            icon = icon,
-            text = text,
-            confirmButton = { AlertDialogDefaults.ConfirmButton({}) },
-            dismissButton = { AlertDialogDefaults.DismissButton({}) },
-            content = content
+        rule.verifyScreenshot(
+            testName,
+            screenshotRule,
+            testTagNode = onAllNodes(hasTestTag(TEST_TAG), true).onFirst(),
         )
-    } else {
-        AlertDialog(
-            show = true,
-            onDismissRequest = {},
-            modifier = modifier,
-            title = title,
-            icon = icon,
-            text = text,
-            bottomButton = { AlertDialogDefaults.BottomButton({}) },
-            content = content
-        )
+    }
+
+    private fun ScalingLazyListScope.dialogContent() {
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text("Action 1") },
+            )
+        }
+        item { AlertDialogDefaults.GroupSeparator() }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text("Action 2") },
+            )
+        }
+    }
+
+    private fun TransformingLazyColumnScope.dialogContent() {
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text("Action 1") },
+            )
+        }
+        item { AlertDialogDefaults.GroupSeparator() }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text("Action 2") },
+            )
+        }
     }
 }
 
 internal const val longMessageText =
     "Allow Map to access your location even when you're not using the app? Your location is used to automatically map places to activities."
+private const val MessageText = "Your battery is low. Turn on battery saver."
+private const val TitleText = "Mobile network is not currently available"

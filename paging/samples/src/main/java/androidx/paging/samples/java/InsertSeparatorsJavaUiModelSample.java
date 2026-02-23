@@ -18,14 +18,17 @@ package androidx.paging.samples.java;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Nullable;
 import androidx.paging.PagingData;
 import androidx.paging.PagingDataTransforms;
 
+import io.reactivex.Flowable;
+
+import kotlin.NotImplementedError;
+
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.Executor;
 
-import io.reactivex.Flowable;
-import kotlin.NotImplementedError;
 
 /**
  * NOTE - MANUALLY COPIED SAMPLE
@@ -67,7 +70,7 @@ class InsertSeparatorsJavaUiModelSample {
             // Now insert UiModel.Separators, which makes the PagingData of generic type UiModel
             return PagingDataTransforms.insertSeparators(
                     itemModelPagingData, bgExecutor,
-                    (@Nullable UiModel.ItemModel before, @Nullable UiModel.ItemModel after) -> {
+                    (UiModel.@Nullable ItemModel before, UiModel.@Nullable ItemModel after) -> {
                         if (after != null && (before == null
                                 || before.item.label.charAt(0) != after.item.label.charAt(0))) {
                             // separator - after is first item that starts with its first letter

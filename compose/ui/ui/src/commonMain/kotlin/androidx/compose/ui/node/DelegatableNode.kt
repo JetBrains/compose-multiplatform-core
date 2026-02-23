@@ -16,13 +16,23 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.MutableScatterSet
+import androidx.collection.ScatterSet
+import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.layout.BeyondBoundsLayout
+import androidx.compose.ui.layout.BeyondBoundsLayoutProviderModifierNode
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.modifier.ModifierLocalModifierNode
+import androidx.compose.ui.semantics.SemanticsInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -41,6 +51,32 @@ interface DelegatableNode {
      * actually part of the node tree. Otherwise, this will point to itself.
      */
     val node: Modifier.Node
+
+    /**
+     * Invoked when the density changes for this node. This affects Dp to pixel conversions, and can
+     * cause coordinates / other values to change.
+     *
+     * Changes to density will automatically invalidate layout / draw modifiers, as layout,
+     * measurement, and draw depend on density. This callback can be used to update any other node
+     * state that depends on density, outside of these phases. Density can be retrieved inside a
+     * node by using [androidx.compose.ui.node.requireDensity].
+     */
+    fun onDensityChange() {}
+
+    /**
+     * Invoked when the layout direction changes for this node. This can affect the layout and
+     * drawing of nodes.
+     *
+     * Changes to layout direction will automatically invalidate layout / draw modifiers, as layout,
+     * measurement, and draw depend on layout direction. This callback can be used to update any
+     * other node state that depends on layout direction, outside of these phases. Layout direction
+     * can be retrieved inside a node by using [androidx.compose.ui.node.requireLayoutDirection].
+     */
+    fun onLayoutDirectionChange() {}
+
+    fun interface RegistrationHandle {
+        fun unregister()
+    }
 }
 
 internal val DelegatableNode.isDelegationRoot: Boolean
@@ -52,15 +88,17 @@ internal val DelegatableNode.isDelegationRoot: Boolean
 // Some internal modifiers, such as Focus, PointerInput, etc. will all need to utilize this
 // a bit, but I think we want to avoid giving this power to public API just yet. We can
 // introduce this as valid cases arise
+@Suppress("BanInlineOptIn")
+@OptIn(ExperimentalComposeUiApi::class)
 internal inline fun DelegatableNode.visitAncestors(
     mask: Int,
     includeSelf: Boolean = false,
-    block: (Modifier.Node) -> Unit
+    block: (Modifier.Node) -> Unit,
 ) {
     // TODO(lmr): we might want to add some safety wheels to prevent this from being called
     //  while one of the chains is being diffed / updated. Although that might only be
     //  necessary for visiting subtree.
-    check(node.isAttached) { "visitAncestors called on an unattached node" }
+    checkPrecondition(node.isAttached) { "visitAncestors called on an unattached node" }
     var node: Modifier.Node? = if (includeSelf) node else node.parent
     var layout: LayoutNode? = requireLayoutNode()
     while (layout != null) {
@@ -116,9 +154,9 @@ private fun MutableVector<Modifier.Node>.addLayoutNodeChildren(
 internal inline fun DelegatableNode.visitChildren(
     mask: Int,
     zOrder: Boolean,
-    block: (Modifier.Node) -> Unit
+    block: (Modifier.Node) -> Unit,
 ) {
-    check(node.isAttached) { "visitChildren called on an unattached node" }
+    checkPrecondition(node.isAttached) { "visitChildren called on an unattached node" }
     val branches = mutableVectorOf<Modifier.Node>()
     val child = node.child
     if (child == null) branches.addLayoutNodeChildren(node, zOrder) else branches.add(child)
@@ -147,7 +185,7 @@ internal inline fun DelegatableNode.visitChildren(
 internal inline fun DelegatableNode.visitSubtreeIf(
     mask: Int,
     zOrder: Boolean,
-    block: (Modifier.Node) -> Boolean
+    block: (Modifier.Node) -> Boolean,
 ) {
     checkPrecondition(node.isAttached) { "visitSubtreeIf called on an unattached node" }
     val branches = mutableVectorOf<Modifier.Node>()
@@ -157,7 +195,7 @@ internal inline fun DelegatableNode.visitSubtreeIf(
         val branch = branches.removeAt(branches.size - 1)
         if (branch.aggregateChildKindSet and mask != 0) {
             var node: Modifier.Node? = branch
-            while (node != null) {
+            while (node != null && node.isAttached) {
                 if (node.kindSet and mask != 0) {
                     val diveDeeper = block(node)
                     if (!diveDeeper) continue@outer
@@ -171,13 +209,13 @@ internal inline fun DelegatableNode.visitSubtreeIf(
 
 internal inline fun DelegatableNode.visitLocalDescendants(
     mask: Int,
-    block: (Modifier.Node) -> Unit
+    block: (Modifier.Node) -> Unit,
 ) = visitLocalDescendants(mask = mask, includeSelf = false, block = block)
 
 internal inline fun DelegatableNode.visitLocalDescendants(
     mask: Int,
     includeSelf: Boolean = false,
-    block: (Modifier.Node) -> Unit
+    block: (Modifier.Node) -> Unit,
 ) {
     checkPrecondition(node.isAttached) { "visitLocalDescendants called on an unattached node" }
     val self = node
@@ -204,29 +242,41 @@ internal inline fun DelegatableNode.visitLocalAncestors(mask: Int, block: (Modif
 
 internal inline fun <reified T> DelegatableNode.visitSelfAndLocalDescendants(
     type: NodeKind<T>,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) = visitLocalDescendants(mask = type.mask, includeSelf = true) { it.dispatchForKind(type, block) }
 
 internal inline fun <reified T> DelegatableNode.visitLocalDescendants(
     type: NodeKind<T>,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) = visitLocalDescendants(type.mask) { it.dispatchForKind(type, block) }
 
 internal inline fun <reified T> DelegatableNode.visitLocalAncestors(
     type: NodeKind<T>,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) = visitLocalAncestors(type.mask) { it.dispatchForKind(type, block) }
 
+/**
+ * Visits ancestors Modifier.Nodes that implement the type in [type].
+ *
+ * @param type The [NodeKind] to visit.
+ * @param includeSelf If the current node should be included.
+ * @param includeDelegates If the delegates with the same [type] should be included. Normally, a
+ *   delegating node will re-route any callback to its delegates, so visiting only happens at the
+ *   surface level. If includeDelegates is true we will also visit delegates that have the same
+ *   [type].
+ * @param block The block to execute in each node.
+ */
 internal inline fun <reified T> DelegatableNode.visitAncestors(
     type: NodeKind<T>,
     includeSelf: Boolean = false,
-    block: (T) -> Unit
-) = visitAncestors(type.mask, includeSelf) { it.dispatchForKind(type, block) }
+    includeDelegates: Boolean = false,
+    block: (T) -> Unit,
+) = visitAncestors(type.mask, includeSelf) { it.dispatchForKind(type, includeDelegates, block) }
 
 internal inline fun <reified T> DelegatableNode.visitSelfAndAncestors(
     type: NodeKind<T>,
     untilType: NodeKind<*>,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) {
     val self = node
     visitAncestors(type.mask or untilType.mask, true) {
@@ -237,11 +287,26 @@ internal inline fun <reified T> DelegatableNode.visitSelfAndAncestors(
     }
 }
 
-internal inline fun <reified T> DelegatableNode.ancestors(type: NodeKind<T>): List<T>? {
+internal inline fun <reified T> DelegatableNode.ancestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): List<T>? {
     var result: MutableList<T>? = null
-    visitAncestors(type) {
+    visitAncestors(type, includeSelf) {
         if (result == null) result = mutableListOf()
         result?.add(it)
+    }
+    return result
+}
+
+internal inline fun <reified T> DelegatableNode.setOfAncestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): ScatterSet<T>? {
+    var result: MutableScatterSet<T>? = null
+    visitAncestors(type, includeSelf) {
+        if (result == null) result = mutableScatterSetOf()
+        result.add(it)
     }
     return result
 }
@@ -256,13 +321,13 @@ internal inline fun <reified T : Any> DelegatableNode.nearestAncestor(type: Node
 internal inline fun <reified T> DelegatableNode.visitChildren(
     type: NodeKind<T>,
     zOrder: Boolean = false,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) = visitChildren(type.mask, zOrder) { it.dispatchForKind(type, block) }
 
 internal inline fun <reified T> DelegatableNode.visitSelfAndChildren(
     type: NodeKind<T>,
     zOrder: Boolean = false,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) {
     node.dispatchForKind(type, block)
     visitChildren(type.mask, zOrder) { it.dispatchForKind(type, block) }
@@ -271,7 +336,7 @@ internal inline fun <reified T> DelegatableNode.visitSelfAndChildren(
 internal inline fun <reified T> DelegatableNode.visitSubtreeIf(
     type: NodeKind<T>,
     zOrder: Boolean = false,
-    block: (T) -> Boolean
+    block: (T) -> Boolean,
 ) =
     visitSubtreeIf(type.mask, zOrder) foo@{ node ->
         node.dispatchForKind(type) { if (!block(it)) return@foo false }
@@ -281,7 +346,7 @@ internal inline fun <reified T> DelegatableNode.visitSubtreeIf(
 internal inline fun <reified T> DelegatableNode.visitSubtree(
     type: NodeKind<T>,
     zOrder: Boolean = false,
-    block: (T) -> Unit
+    block: (T) -> Unit,
 ) =
     visitSubtreeIf(type.mask, zOrder) {
         it.dispatchForKind(type, block)
@@ -303,8 +368,17 @@ internal fun DelegatableNode.requireLayoutNode(): LayoutNode =
         }
         .layoutNode
 
+internal fun DelegatableNode.requireSemanticsInfo(): SemanticsInfo = requireLayoutNode()
+
 internal fun DelegatableNode.requireOwner(): Owner =
     checkPreconditionNotNull(requireLayoutNode().owner) { "This node does not have an owner." }
+
+/**
+ * Requests autofill for the LayoutNode that this [DelegatableNode] is attached to. If the node does
+ * not have any autofill semantic properties set, then the request still may be sent to the Autofill
+ * service, but no response is expected.
+ */
+fun DelegatableNode.requestAutofill() = requireLayoutNode().requestAutofill()
 
 /**
  * Returns the current [Density] of the LayoutNode that this [DelegatableNode] is attached to. If
@@ -344,12 +418,111 @@ fun DelegatableNode.requireLayoutCoordinates(): LayoutCoordinates {
  *
  * Calling this method can be a relatively expensive operation as it will cause the entire subtree
  * to relayout and redraw instead of just parts that are otherwise invalidated. Its use should be
- * limited to structural changes.
+ * limited to structural changes. This might be necessary in certain situations where you are
+ * updating some data which you know descendant nodes use, but you are not relaying on automatic
+ * snapshot observation through [androidx.compose.runtime.MutableState].
  */
 fun DelegatableNode.invalidateSubtree() {
     if (node.isAttached) {
         requireLayoutNode().invalidateSubtree()
     }
+}
+
+/**
+ * Invalidates measurements for the entire subtree of this node.
+ *
+ * Note that [invalidateMeasurement] is preferable in most cases, however it is only guaranteed to
+ * invalidate measurement for that specific node, and it is possible that layout nodes that are
+ * underneath it could be cached and thus their measure policies will not get re-executed. Use this
+ * API if you need to ensure that measure is called for all layout nodes below this one. This might
+ * be necessary in certain situations where you are updating some data which you know descendant
+ * nodes use, but you are not relaying on automatic snapshot observation through
+ * [androidx.compose.runtime.MutableState].
+ *
+ * Calling this method can be a relatively expensive operation as it will cause the entire subtree
+ * to relayout instead of just parts that are otherwise invalidated. [invalidateMeasurement] is
+ * preferable in most cases, and this should only be used when absolutely necessary.
+ */
+fun DelegatableNode.invalidateMeasurementForSubtree() {
+    if (node.isAttached) {
+        requireLayoutNode().invalidateMeasurementForSubtree()
+    }
+}
+
+/**
+ * Invalidates draw for the entire subtree of this node.
+ *
+ * Note that [invalidateDraw] is preferable in most cases, however it is only guaranteed to
+ * invalidate draw for that specific node, and it is possible that draw nodes that are underneath it
+ * could be cached and thus their draw methods will not get re-executed. Use this API if you need to
+ * ensure that draw is called for all draw nodes below this one. This might be necessary in certain
+ * situations where you are updating some data which you know descendant nodes use, but you are not
+ * relaying on automatic snapshot observation through [androidx.compose.runtime.MutableState].
+ *
+ * Calling this method can be a relatively expensive operation as it will cause the entire subtree
+ * to redraw instead of just parts that are otherwise invalidated. [invalidateDraw] is preferable in
+ * most cases, and this should only be used when absolutely necessary.
+ */
+fun DelegatableNode.invalidateDrawForSubtree() {
+    if (node.isAttached) {
+        requireLayoutNode().invalidateDrawForSubtree()
+    }
+}
+
+/**
+ * Call this function whenever a scroll chang happened in the LayoutNode that this [DelegatableNode]
+ * is attached to to let the underlying platform know that a scroll event happened in this
+ * [LayoutNode].
+ *
+ * On Android this will trigger a ViewTreeObserver onScrollChanged callback.
+ *
+ * @param delta The scroll delta that was consumed by this node.
+ */
+fun DelegatableNode.dispatchOnScrollChanged(delta: Offset) =
+    requireOwner().dispatchOnScrollChanged(delta)
+
+/** Call this function to find the nearest [BeyondBoundsLayout] to the current node. */
+@Suppress("DEPRECATION")
+fun DelegatableNode.findNearestBeyondBoundsLayoutAncestor(): BeyondBoundsLayout? {
+    visitAncestors(Nodes.BeyondBoundsLayout or Nodes.Locals) {
+        if (it.isKind(Nodes.BeyondBoundsLayout)) {
+            var beyondBoundsNode: BeyondBoundsLayoutProviderModifierNode? = null
+            if (it is BeyondBoundsLayoutProviderModifierNode) {
+                beyondBoundsNode = it
+            } else if (it is DelegatingNode) {
+                it.forEachImmediateDelegate {
+                    if (it is BeyondBoundsLayoutProviderModifierNode) {
+                        beyondBoundsNode = it
+                        return@forEachImmediateDelegate
+                    }
+                }
+            }
+
+            return beyondBoundsNode?.beyondBoundsLayout
+        }
+
+        if (it.isKind(Nodes.Locals)) {
+            var modifierLocalNode: ModifierLocalModifierNode? = null
+            if (it is ModifierLocalModifierNode) {
+                modifierLocalNode = it
+            } else if (it is DelegatingNode) {
+                it.forEachImmediateDelegate {
+                    if (it is ModifierLocalModifierNode) {
+                        modifierLocalNode = it
+                        return@forEachImmediateDelegate
+                    }
+                }
+            }
+            val localNode = modifierLocalNode
+            if (
+                localNode != null &&
+                    localNode.providedValues.contains(ModifierLocalBeyondBoundsLayout)
+            )
+                return localNode.providedValues.get(ModifierLocalBeyondBoundsLayout)
+        }
+    }
+
+    return null
 }
 
 // It is safe to do this for LayoutModifierNode because we enforce only a single delegate is
@@ -396,14 +569,32 @@ internal fun Modifier.Node.asLayoutModifierNode(): LayoutModifierNode? {
  */
 internal inline fun <reified T> Modifier.Node.dispatchForKind(
     kind: NodeKind<T>,
-    block: (T) -> Unit
+    block: (T) -> Unit,
+) = dispatchForKind(kind, false, block)
+
+/**
+ * This overload of [dispatchToDelegates] takes into consideration that the Node and it's delegates
+ * might be of the same type T. In this case, if [dispatchToDelegates] is true this will dispatch
+ * both to the node and its delegates. Otherwise it will behave as [dispatchForKind], where only the
+ * root node will receive the callback.
+ */
+internal inline fun <reified T> Modifier.Node.dispatchForKind(
+    kind: NodeKind<T>,
+    dispatchToDelegates: Boolean,
+    block: (T) -> Unit,
 ) {
     var stack: MutableVector<Modifier.Node>? = null
     var node: Modifier.Node? = this
     while (node != null) {
-        if (node is T) {
-            block(node)
-        } else if (node.isKind(kind) && node is DelegatingNode) {
+        val dispatchAgain =
+            if (node is T) {
+                block(node)
+                false
+            } else {
+                true
+            }
+
+        if ((dispatchAgain || dispatchToDelegates) && node.isKind(kind) && node is DelegatingNode) {
             // We jump through a few extra hoops here to avoid the vector allocation in the
             // case where there is only one delegate node that implements this particular kind.
             // It is very likely that a delegating node will have one or zero delegates of a

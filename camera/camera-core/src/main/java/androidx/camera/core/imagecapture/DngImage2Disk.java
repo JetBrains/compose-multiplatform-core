@@ -20,13 +20,13 @@ import static androidx.camera.core.ImageCapture.ERROR_FILE_IO;
 import static androidx.camera.core.imagecapture.FileUtil.createTempFile;
 import static androidx.camera.core.imagecapture.FileUtil.moveFileToTarget;
 
+import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.DngCreator;
 import android.media.ExifInterface;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ExperimentalGetImage;
@@ -37,14 +37,15 @@ import androidx.camera.core.processing.Operation;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class DngImage2Disk implements Operation<DngImage2Disk.In, ImageCapture.OutputFileResults> {
 
-    @NonNull
-    private DngCreator mDngCreator;
+    private @NonNull DngCreator mDngCreator;
 
     public DngImage2Disk(@NonNull CameraCharacteristics cameraCharacteristics,
             @NonNull CaptureResult captureResult) {
@@ -56,14 +57,14 @@ public class DngImage2Disk implements Operation<DngImage2Disk.In, ImageCapture.O
         mDngCreator = dngCreator;
     }
 
-    @NonNull
     @Override
-    public ImageCapture.OutputFileResults apply(@NonNull In in) throws ImageCaptureException {
+    public ImageCapture.@NonNull OutputFileResults apply(@NonNull In in)
+            throws ImageCaptureException {
         ImageCapture.OutputFileOptions options = in.getOutputFileOptions();
         File tempFile = createTempFile(options);
         writeImageToFile(tempFile, in.getImageProxy(), in.getRotationDegrees());
         Uri uri = moveFileToTarget(tempFile, options);
-        return new ImageCapture.OutputFileResults(uri);
+        return new ImageCapture.OutputFileResults(uri, ImageFormat.RAW_SENSOR);
     }
 
     /**
@@ -111,19 +112,16 @@ public class DngImage2Disk implements Operation<DngImage2Disk.In, ImageCapture.O
     @AutoValue
     abstract static class In {
 
-        @NonNull
-        abstract ImageProxy getImageProxy();
+        abstract @NonNull ImageProxy getImageProxy();
 
         abstract int getRotationDegrees();
 
-        @NonNull
-        abstract ImageCapture.OutputFileOptions getOutputFileOptions();
+        abstract ImageCapture.@NonNull OutputFileOptions getOutputFileOptions();
 
-        @NonNull
-        static DngImage2Disk.In of(
+        static DngImage2Disk.@NonNull In of(
                 @NonNull ImageProxy imageProxy,
                 int rotationDegrees,
-                @NonNull ImageCapture.OutputFileOptions outputFileOptions) {
+                ImageCapture.@NonNull OutputFileOptions outputFileOptions) {
             return new AutoValue_DngImage2Disk_In(imageProxy,
                     rotationDegrees, outputFileOptions);
         }

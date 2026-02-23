@@ -27,6 +27,7 @@ import com.google.android.icing.proto.PropertyConfigProto;
 import com.google.android.icing.proto.SchemaTypeConfigProto;
 import com.google.android.icing.proto.StringIndexingConfig;
 import com.google.android.icing.proto.TermMatchType;
+import com.google.common.collect.ImmutableSet;
 
 import org.junit.Test;
 
@@ -76,6 +77,15 @@ public class SchemaToProtoConverterTest {
                                         .setCardinality(
                                                 AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
                                         .build())
+                        .addProperty(
+                                new AppSearchSchema.EmbeddingPropertyConfig.Builder("embedding")
+                                        .setDescription("The embedding that represents this email.")
+                                        .setCardinality(
+                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                        .INDEXING_TYPE_SIMILARITY)
+                                        .build())
                         // We don't need to actually define the Person type for this test because
                         // the converter will process each schema individually.
                         .addProperty(
@@ -112,7 +122,9 @@ public class SchemaToProtoConverterTest {
                                         .setDescription("The time at which the email was sent.")
                                         .setDataType(PropertyConfigProto.DataType.Code.INT64)
                                         .setCardinality(
-                                                PropertyConfigProto.Cardinality.Code.OPTIONAL))
+                                                PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                                        .setScorableType(
+                                                PropertyConfigProto.ScorableType.Code.DISABLED))
                         .addProperties(
                                 PropertyConfigProto.newBuilder()
                                         .setPropertyName("importanceScore")
@@ -120,7 +132,9 @@ public class SchemaToProtoConverterTest {
                                                 "A value representing this document's importance.")
                                         .setDataType(PropertyConfigProto.DataType.Code.DOUBLE)
                                         .setCardinality(
-                                                PropertyConfigProto.Cardinality.Code.OPTIONAL))
+                                                PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                                        .setScorableType(
+                                                PropertyConfigProto.ScorableType.Code.DISABLED))
                         .addProperties(
                                 PropertyConfigProto.newBuilder()
                                         .setPropertyName("read")
@@ -128,7 +142,9 @@ public class SchemaToProtoConverterTest {
                                                 "Whether the email has been read by the recipient")
                                         .setDataType(PropertyConfigProto.DataType.Code.BOOLEAN)
                                         .setCardinality(
-                                                PropertyConfigProto.Cardinality.Code.OPTIONAL))
+                                                PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                                        .setScorableType(
+                                                PropertyConfigProto.ScorableType.Code.DISABLED))
                         .addProperties(
                                 PropertyConfigProto.newBuilder()
                                         .setPropertyName("attachment")
@@ -136,6 +152,19 @@ public class SchemaToProtoConverterTest {
                                         .setDataType(PropertyConfigProto.DataType.Code.BYTES)
                                         .setCardinality(
                                                 PropertyConfigProto.Cardinality.Code.REPEATED))
+                        .addProperties(PropertyConfigProto.newBuilder()
+                                .setPropertyName("embedding")
+                                .setDescription("The embedding that represents this email.")
+                                .setDataType(PropertyConfigProto.DataType.Code.VECTOR)
+                                .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                                .setEmbeddingIndexingConfig(
+                                        EmbeddingIndexingConfig.newBuilder()
+                                                .setEmbeddingIndexingType(EmbeddingIndexingConfig
+                                                        .EmbeddingIndexingType.Code.LINEAR_SEARCH)
+                                                .setQuantizationType(
+                                                        EmbeddingIndexingConfig
+                                                                .QuantizationType.Code.NONE)
+                                ))
                         .addProperties(
                                 PropertyConfigProto.newBuilder()
                                         .setPropertyName("sender")
@@ -149,7 +178,9 @@ public class SchemaToProtoConverterTest {
                                                         .setIndexNestedProperties(false)))
                         .build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema, /*version=*/ 12345))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/ 12345))
                 .isEqualTo(expectedEmailProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedEmailProto))
                 .isEqualTo(emailSchema);
@@ -187,9 +218,8 @@ public class SchemaToProtoConverterTest {
                                 StringIndexingConfig.newBuilder()
                                         .setTokenizerType(
                                                 StringIndexingConfig.TokenizerType.Code.PLAIN)
-                                        .setTermMatchType(TermMatchType.Code.PREFIX)
-                        )
-                ).addProperties(PropertyConfigProto.newBuilder()
+                                        .setTermMatchType(TermMatchType.Code.PREFIX)))
+                .addProperties(PropertyConfigProto.newBuilder()
                         .setPropertyName("body")
                         .setDescription("")
                         .setDataType(PropertyConfigProto.DataType.Code.STRING)
@@ -198,11 +228,12 @@ public class SchemaToProtoConverterTest {
                                 StringIndexingConfig.newBuilder()
                                         .setTokenizerType(
                                                 StringIndexingConfig.TokenizerType.Code.PLAIN)
-                                        .setTermMatchType(TermMatchType.Code.PREFIX)
-                        )
-                ).build();
+                                        .setTermMatchType(TermMatchType.Code.PREFIX)))
+                .build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema, /*version=*/12345))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/12345))
                 .isEqualTo(expectedEmailProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedEmailProto))
                 .isEqualTo(emailSchema);
@@ -243,10 +274,13 @@ public class SchemaToProtoConverterTest {
                         .setDescription("")
                         .setDataType(PropertyConfigProto.DataType.Code.INT64)
                         .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setScorableType(PropertyConfigProto.ScorableType.Code.DISABLED)
                 ).build();
 
         assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(
-                musicRecordingSchema, /*version=*/0))
+                musicRecordingSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/0))
                 .isEqualTo(expectedMusicRecordingProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedMusicRecordingProto))
                 .isEqualTo(musicRecordingSchema);
@@ -259,11 +293,14 @@ public class SchemaToProtoConverterTest {
                         .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
                         .setJoinableValueType(AppSearchSchema.StringPropertyConfig
                                 .JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                        .setDeletePropagationType(AppSearchSchema.StringPropertyConfig
+                                .DELETE_PROPAGATION_TYPE_PROPAGATE_FROM)
                         .build()
                 ).build();
 
         JoinableConfig joinableConfig = JoinableConfig.newBuilder()
                 .setValueType(JoinableConfig.ValueType.Code.QUALIFIED_ID)
+                .setDeletePropagationType(JoinableConfig.DeletePropagationType.Code.PROPAGATE_FROM)
                 .build();
 
         SchemaTypeConfigProto expectedAlbumProto = SchemaTypeConfigProto.newBuilder()
@@ -283,7 +320,9 @@ public class SchemaToProtoConverterTest {
                                 .setJoinableConfig(joinableConfig))
                 .build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(albumSchema, /*version=*/0))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(albumSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/0))
                 .isEqualTo(expectedAlbumProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedAlbumProto))
                 .isEqualTo(albumSchema);
@@ -304,7 +343,9 @@ public class SchemaToProtoConverterTest {
                 .addParentTypes("Message")
                 .build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(schema, /*version=*/12345))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(schema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/12345))
                 .isEqualTo(expectedSchemaProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedSchemaProto))
                 .isEqualTo(schema);
@@ -357,7 +398,9 @@ public class SchemaToProtoConverterTest {
                                 .setDocumentIndexingConfig(documentIndexingConfig))
                 .build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(personSchema, /*version=*/0))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(personSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/0))
                 .isEqualTo(expectedPersonProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedPersonProto))
                 .isEqualTo(personSchema);
@@ -395,6 +438,20 @@ public class SchemaToProtoConverterTest {
                                 .setIndexingType(
                                         AppSearchSchema.EmbeddingPropertyConfig
                                                 .INDEXING_TYPE_SIMILARITY)
+                                .setQuantizationType(
+                                        AppSearchSchema.EmbeddingPropertyConfig
+                                                .QUANTIZATION_TYPE_NONE)
+                                .build())
+                .addProperty(
+                        new AppSearchSchema.EmbeddingPropertyConfig.Builder("quantizedEmbedding")
+                                .setCardinality(
+                                        AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setIndexingType(
+                                        AppSearchSchema.EmbeddingPropertyConfig
+                                                .INDEXING_TYPE_SIMILARITY)
+                                .setQuantizationType(
+                                        AppSearchSchema.EmbeddingPropertyConfig
+                                                .QUANTIZATION_TYPE_8_BIT)
                                 .build())
                 .build();
 
@@ -439,10 +496,184 @@ public class SchemaToProtoConverterTest {
                                         .setEmbeddingIndexingType(
                                                 EmbeddingIndexingConfig.EmbeddingIndexingType.Code
                                                         .LINEAR_SEARCH)
+                                        .setQuantizationType(
+                                                EmbeddingIndexingConfig.QuantizationType.Code.NONE)
+                        )
+                ).addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("quantizedEmbedding")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.VECTOR)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setEmbeddingIndexingConfig(
+                                EmbeddingIndexingConfig.newBuilder()
+                                        .setEmbeddingIndexingType(
+                                                EmbeddingIndexingConfig.EmbeddingIndexingType.Code
+                                                        .LINEAR_SEARCH)
+                                        .setQuantizationType(
+                                                EmbeddingIndexingConfig
+                                                        .QuantizationType.Code.QUANTIZE_8_BIT)
                         )
                 ).build();
 
-        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema, /*version=*/12345))
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/12345))
+                .isEqualTo(expectedEmailProto);
+        assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedEmailProto))
+                .isEqualTo(emailSchema);
+    }
+
+    @Test
+    public void testGetProto_BlobHandleProperty() {
+        AppSearchSchema emailSchema = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("subject")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setIndexingType(
+                                AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(
+                                AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build()
+                ).addProperty(
+                        new AppSearchSchema.BlobHandlePropertyConfig.Builder("blob")
+                                .setCardinality(
+                                        AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setDescription("The blob property")
+                                .build())
+                .build();
+
+        SchemaTypeConfigProto expectedEmailProto = SchemaTypeConfigProto.newBuilder()
+                .setSchemaType("Email")
+                .setDescription("")
+                .setVersion(12345)
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("subject")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.STRING)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setStringIndexingConfig(
+                                StringIndexingConfig.newBuilder()
+                                        .setTokenizerType(
+                                                StringIndexingConfig.TokenizerType.Code.PLAIN)
+                                        .setTermMatchType(TermMatchType.Code.PREFIX)
+                        )
+                ).addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("blob")
+                        .setDataType(PropertyConfigProto.DataType.Code.BLOB_HANDLE)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setDescription("The blob property")
+                ).build();
+
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/12345))
+                .isEqualTo(expectedEmailProto);
+        assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedEmailProto))
+                .isEqualTo(emailSchema);
+    }
+
+    @Test
+    public void testGetProto_withScorablePropertyEnabled() {
+        AppSearchSchema emailSchema = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.LongPropertyConfig.Builder("viewTimes")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setScoringEnabled(true)
+                        .build())
+                .addProperty(new AppSearchSchema.DoublePropertyConfig.Builder("score")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setScoringEnabled(true)
+                        .build())
+                .addProperty(new AppSearchSchema.BooleanPropertyConfig.Builder("read")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setScoringEnabled(true)
+                        .build())
+                .build();
+
+        SchemaTypeConfigProto expectedProto = SchemaTypeConfigProto.newBuilder()
+                .setSchemaType("Email")
+                .setDescription("")
+                .setVersion(0)
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("viewTimes")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.INT64)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setScorableType(
+                                PropertyConfigProto.ScorableType.Code.ENABLED))
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("score")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.DOUBLE)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setScorableType(
+                                PropertyConfigProto.ScorableType.Code.ENABLED))
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("read")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.BOOLEAN)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setScorableType(
+                                PropertyConfigProto.ScorableType.Code.ENABLED))
+                .build();
+
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(
+                emailSchema,
+                /*accountPropertyPaths=*/null,
+                /*version=*/0))
+                .isEqualTo(expectedProto);
+        assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedProto))
+                .isEqualTo(emailSchema);
+    }
+
+
+    @Test
+    public void testGetProto_accountPropertyPaths() {
+        AppSearchSchema emailSchema = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("subject")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setIndexingType(
+                                AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(
+                                AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build()
+                ).addProperty(new AppSearchSchema.StringPropertyConfig.Builder("body")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setIndexingType(
+                                AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(
+                                AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build()
+                ).build();
+
+        SchemaTypeConfigProto expectedEmailProto = SchemaTypeConfigProto.newBuilder()
+                .setSchemaType("Email")
+                .setDescription("")
+                .setVersion(12345)
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("subject")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.STRING)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setStringIndexingConfig(
+                                StringIndexingConfig.newBuilder()
+                                        .setTokenizerType(
+                                                StringIndexingConfig.TokenizerType.Code.PLAIN)
+                                        .setTermMatchType(TermMatchType.Code.PREFIX)))
+                .addProperties(PropertyConfigProto.newBuilder()
+                        .setPropertyName("body")
+                        .setDescription("")
+                        .setDataType(PropertyConfigProto.DataType.Code.STRING)
+                        .setCardinality(PropertyConfigProto.Cardinality.Code.OPTIONAL)
+                        .setStringIndexingConfig(
+                                StringIndexingConfig.newBuilder()
+                                        .setTokenizerType(
+                                                StringIndexingConfig.TokenizerType.Code.PLAIN)
+                                        .setTermMatchType(TermMatchType.Code.PREFIX)))
+                .addAllAccountProperties(ImmutableSet.of("subject", "body"))
+                .build();
+
+        assertThat(SchemaToProtoConverter.toSchemaTypeConfigProto(emailSchema,
+                ImmutableSet.of("subject", "body"),
+                /*version=*/12345))
                 .isEqualTo(expectedEmailProto);
         assertThat(SchemaToProtoConverter.toAppSearchSchema(expectedEmailProto))
                 .isEqualTo(emailSchema);

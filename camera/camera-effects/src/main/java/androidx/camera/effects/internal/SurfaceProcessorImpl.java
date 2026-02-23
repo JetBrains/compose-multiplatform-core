@@ -30,8 +30,6 @@ import android.os.HandlerThread;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
 import androidx.camera.core.Logger;
@@ -46,6 +44,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Pair;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
@@ -77,20 +78,13 @@ public class SurfaceProcessorImpl implements SurfaceProcessor,
     private final float[] mTextureTransform = new float[16];
 
     // Surfaces and buffers.
-    @Nullable
-    private Size mInputSize = null;
-    @Nullable
-    private TextureFrameBuffer mBuffer = null;
-    @Nullable
-    private Surface mOverlaySurface;
-    @Nullable
-    private SurfaceTexture mOverlayTexture;
-    @Nullable
-    private Pair<SurfaceOutput, Surface> mOutputSurfacePair = null;
-    @Nullable
-    private SurfaceRequest.TransformationInfo mTransformationInfo = null;
-    @Nullable
-    private Function<Frame, Boolean> mOnDrawListener;
+    private @Nullable Size mInputSize = null;
+    private @Nullable TextureFrameBuffer mBuffer = null;
+    private @Nullable Surface mOverlaySurface;
+    private @Nullable SurfaceTexture mOverlayTexture;
+    private @Nullable Pair<SurfaceOutput, Surface> mOutputSurfacePair = null;
+    private SurfaceRequest.@Nullable TransformationInfo mTransformationInfo = null;
+    private @Nullable Function<Frame, Boolean> mOnDrawListener;
 
     private boolean mIsReleased = false;
 
@@ -241,8 +235,7 @@ public class SurfaceProcessorImpl implements SurfaceProcessor,
     /**
      * Gets the {@link Executor} used by OpenGL.
      */
-    @NonNull
-    public Executor getGlExecutor() {
+    public @NonNull Executor getGlExecutor() {
         return mGlExecutor;
     }
 
@@ -267,8 +260,7 @@ public class SurfaceProcessorImpl implements SurfaceProcessor,
      * value. If this is called after the processor is released, the future completes with an
      * exception.
      */
-    @NonNull
-    public ListenableFuture<Integer> drawFrameAsync(long timestampNs) {
+    public @NonNull ListenableFuture<Integer> drawFrameAsync(long timestampNs) {
         return CallbackToFutureAdapter.getFuture(completer -> {
             runOnGlThread(() -> {
                 if (mIsReleased) {
@@ -297,8 +289,7 @@ public class SurfaceProcessorImpl implements SurfaceProcessor,
     /**
      * Gets the GL handler.
      */
-    @NonNull
-    public Handler getGlHandler() {
+    public @NonNull Handler getGlHandler() {
         return mGlHandler;
     }
 
@@ -420,20 +411,17 @@ public class SurfaceProcessorImpl implements SurfaceProcessor,
     }
 
     @VisibleForTesting
-    @NonNull
-    GlRenderer getGlRendererForTesting() {
+    @NonNull GlRenderer getGlRendererForTesting() {
         return mGlRenderer;
     }
 
     @VisibleForTesting
-    @NonNull
-    TextureFrameBuffer getBuffer() {
+    @NonNull TextureFrameBuffer getBuffer() {
         return requireNonNull(mBuffer);
     }
 
     @VisibleForTesting
-    @NonNull
-    public Surface getOverlaySurface() {
+    public @NonNull Surface getOverlaySurface() {
         return requireNonNull(mOverlaySurface);
     }
 }

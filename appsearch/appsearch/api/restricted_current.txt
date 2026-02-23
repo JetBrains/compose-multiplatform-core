@@ -6,6 +6,11 @@ package androidx.appsearch.annotation {
     method public abstract Class<? extends java.lang.Object!>[] parent() default {};
   }
 
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi @java.lang.annotation.Documented @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD}) public static @interface Document.BlobHandleProperty {
+    method public abstract String name() default "";
+    method public abstract boolean required() default false;
+  }
+
   @java.lang.annotation.Documented @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD}) public static @interface Document.BooleanProperty {
     method public abstract String name() default "";
     method public abstract boolean required() default false;
@@ -38,6 +43,7 @@ package androidx.appsearch.annotation {
   @java.lang.annotation.Documented @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD}) public static @interface Document.EmbeddingProperty {
     method public abstract int indexingType() default androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE;
     method public abstract String name() default "";
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public abstract int quantizationType() default androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE;
     method public abstract boolean required() default false;
   }
 
@@ -86,18 +92,27 @@ package androidx.appsearch.annotation {
 package androidx.appsearch.app {
 
   public final class AppSearchBatchResult<KeyType, ValueType> {
-    method public java.util.Map<KeyType!,androidx.appsearch.app.AppSearchResult<ValueType!>!> getAll();
-    method public java.util.Map<KeyType!,androidx.appsearch.app.AppSearchResult<ValueType!>!> getFailures();
-    method public java.util.Map<KeyType!,ValueType!> getSuccesses();
+    method public java.util.Map<KeyType,androidx.appsearch.app.AppSearchResult<ValueType>!> getAll();
+    method public java.util.Map<KeyType,androidx.appsearch.app.AppSearchResult<ValueType>!> getFailures();
+    method public java.util.Map<KeyType,ValueType> getSuccesses();
     method public boolean isSuccess();
   }
 
   public static final class AppSearchBatchResult.Builder<KeyType, ValueType> {
     ctor public AppSearchBatchResult.Builder();
-    method public androidx.appsearch.app.AppSearchBatchResult<KeyType!,ValueType!> build();
-    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType!,ValueType!> setFailure(KeyType, int, String?);
-    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType!,ValueType!> setResult(KeyType, androidx.appsearch.app.AppSearchResult<ValueType!>);
-    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType!,ValueType!> setSuccess(KeyType, ValueType?);
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public AppSearchBatchResult.Builder(androidx.appsearch.app.AppSearchBatchResult<KeyType,ValueType>);
+    method public androidx.appsearch.app.AppSearchBatchResult<KeyType,ValueType> build();
+    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType,ValueType> setFailure(KeyType, int, String?);
+    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType,ValueType> setResult(KeyType, androidx.appsearch.app.AppSearchResult<ValueType>);
+    method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType,ValueType> setSuccess(KeyType, ValueType?);
+  }
+
+  public final class AppSearchBlobHandle {
+    method public static androidx.appsearch.app.AppSearchBlobHandle createWithSha256(byte[], String, String, String);
+    method public String getDatabaseName();
+    method public String getNamespace();
+    method public String getPackageName();
+    method public byte[] getSha256Digest();
   }
 
   @AnyThread public abstract class AppSearchDocumentClassMap {
@@ -111,10 +126,11 @@ package androidx.appsearch.app {
     method public int getResultCode();
     method public ValueType? getResultValue();
     method public boolean isSuccess();
-    method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType!> newFailedResult(int, String?);
-    method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType!> newSuccessfulResult(ValueType?);
-    field public static final int RESULT_ALREADY_EXISTS = 12; // 0xc
-    field public static final int RESULT_DENIED = 9; // 0x9
+    method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType> newFailedResult(int, String?);
+    method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType> newSuccessfulResult(ValueType?);
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_ABORTED = 13; // 0xd
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_ALREADY_EXISTS = 12; // 0xc
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_DENIED = 9; // 0x9
     field public static final int RESULT_INTERNAL_ERROR = 2; // 0x2
     field public static final int RESULT_INVALID_ARGUMENT = 3; // 0x3
     field public static final int RESULT_INVALID_SCHEMA = 7; // 0x7
@@ -122,35 +138,52 @@ package androidx.appsearch.app {
     field public static final int RESULT_NOT_FOUND = 6; // 0x6
     field public static final int RESULT_OK = 0; // 0x0
     field public static final int RESULT_OUT_OF_SPACE = 5; // 0x5
-    field public static final int RESULT_RATE_LIMITED = 10; // 0xa
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_RATE_LIMITED = 10; // 0xa
     field public static final int RESULT_SECURITY_ERROR = 8; // 0x8
-    field public static final int RESULT_TIMED_OUT = 11; // 0xb
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_UNAVAILABLE = 14; // 0xe
     field public static final int RESULT_UNKNOWN_ERROR = 1; // 0x1
   }
 
   public final class AppSearchSchema {
-    method public String getDescription();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static androidx.appsearch.app.AppSearchSchema fromDocumentClass(Class<? extends java.lang.Object!>) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public String getDescription();
     method public java.util.List<java.lang.String!> getParentTypes();
     method public java.util.List<androidx.appsearch.app.AppSearchSchema.PropertyConfig!> getProperties();
     method public String getSchemaType();
   }
 
+  @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public static final class AppSearchSchema.BlobHandlePropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
+  }
+
+  public static final class AppSearchSchema.BlobHandlePropertyConfig.Builder {
+    ctor public AppSearchSchema.BlobHandlePropertyConfig.Builder(String);
+    method public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig build();
+    method public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig.Builder setCardinality(int);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig.Builder setDescription(String);
+  }
+
   public static final class AppSearchSchema.BooleanPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean isScoringEnabled();
   }
 
   public static final class AppSearchSchema.BooleanPropertyConfig.Builder {
     ctor public AppSearchSchema.BooleanPropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SCORABLE_PROPERTY_CONFIG) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig.Builder setScoringEnabled(boolean);
   }
 
   public static final class AppSearchSchema.Builder {
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public AppSearchSchema.Builder(androidx.appsearch.app.AppSearchSchema);
     ctor public AppSearchSchema.Builder(String);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_ADD_PARENT_TYPE) public androidx.appsearch.app.AppSearchSchema.Builder addParentType(String);
     method public androidx.appsearch.app.AppSearchSchema.Builder addProperty(androidx.appsearch.app.AppSearchSchema.PropertyConfig);
     method public androidx.appsearch.app.AppSearchSchema build();
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.Builder setDescription(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.Builder clearParentTypes();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.Builder clearProperties();
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.Builder setDescription(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.Builder setSchemaType(String);
   }
 
   public static final class AppSearchSchema.BytesPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
@@ -160,11 +193,11 @@ package androidx.appsearch.app {
     ctor public AppSearchSchema.BytesPropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.BytesPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.BytesPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.BytesPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.BytesPropertyConfig.Builder setDescription(String);
   }
 
   public static final class AppSearchSchema.DocumentPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
-    method public java.util.List<java.lang.String!> getIndexableNestedProperties();
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES) public java.util.List<java.lang.String!> getIndexableNestedProperties();
     method public String getSchemaType();
     method public boolean shouldIndexNestedProperties();
   }
@@ -177,36 +210,43 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES) public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig.Builder addIndexableNestedPropertyPaths(java.util.Collection<androidx.appsearch.app.PropertyPath!>);
     method public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig.Builder setDescription(String);
     method public androidx.appsearch.app.AppSearchSchema.DocumentPropertyConfig.Builder setShouldIndexNestedProperties(boolean);
   }
 
   public static final class AppSearchSchema.DoublePropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean isScoringEnabled();
   }
 
   public static final class AppSearchSchema.DoublePropertyConfig.Builder {
     ctor public AppSearchSchema.DoublePropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SCORABLE_PROPERTY_CONFIG) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig.Builder setScoringEnabled(boolean);
   }
 
   @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public static final class AppSearchSchema.EmbeddingPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
     method public int getIndexingType();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public int getQuantizationType();
     field public static final int INDEXING_TYPE_NONE = 0; // 0x0
     field public static final int INDEXING_TYPE_SIMILARITY = 1; // 0x1
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int QUANTIZATION_TYPE_8_BIT = 1; // 0x1
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int QUANTIZATION_TYPE_NONE = 0; // 0x0
   }
 
   public static final class AppSearchSchema.EmbeddingPropertyConfig.Builder {
     ctor public AppSearchSchema.EmbeddingPropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.Builder setDescription(String);
     method public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.Builder setIndexingType(int);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_QUANTIZATION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig.Builder setQuantizationType(int);
   }
 
   public static final class AppSearchSchema.LongPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
     method public int getIndexingType();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean isScoringEnabled();
     field public static final int INDEXING_TYPE_NONE = 0; // 0x0
     field @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.NUMERIC_SEARCH) public static final int INDEXING_TYPE_RANGE = 1; // 0x1
   }
@@ -215,13 +255,14 @@ package androidx.appsearch.app {
     ctor public AppSearchSchema.LongPropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig.Builder setDescription(String);
     method public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig.Builder setIndexingType(int);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SCORABLE_PROPERTY_CONFIG) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.LongPropertyConfig.Builder setScoringEnabled(boolean);
   }
 
   public abstract static class AppSearchSchema.PropertyConfig {
     method public int getCardinality();
-    method public String getDescription();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public String getDescription();
     method public String getName();
     field public static final int CARDINALITY_OPTIONAL = 2; // 0x2
     field public static final int CARDINALITY_REPEATED = 1; // 0x1
@@ -229,9 +270,12 @@ package androidx.appsearch.app {
   }
 
   public static final class AppSearchSchema.StringPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public int getDeletePropagationType();
     method public int getIndexingType();
     method public int getJoinableValueType();
     method public int getTokenizerType();
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int DELETE_PROPAGATION_TYPE_NONE = 0; // 0x0
+    field @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM) @androidx.appsearch.app.ExperimentalAppSearchApi public static final int DELETE_PROPAGATION_TYPE_PROPAGATE_FROM = 1; // 0x1
     field public static final int INDEXING_TYPE_EXACT_TERMS = 1; // 0x1
     field public static final int INDEXING_TYPE_NONE = 0; // 0x0
     field public static final int INDEXING_TYPE_PREFIXES = 2; // 0x2
@@ -247,7 +291,8 @@ package androidx.appsearch.app {
     ctor public AppSearchSchema.StringPropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setDeletePropagationType(int);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setDescription(String);
     method public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setIndexingType(int);
     method public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setJoinableValueType(int);
     method public androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.Builder setTokenizerType(int);
@@ -255,27 +300,45 @@ package androidx.appsearch.app {
 
   public interface AppSearchSession extends java.io.Closeable {
     method public void close();
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.CommitBlobResponse!> commitBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(androidx.appsearch.app.GetByDocumentIdRequest);
     method public androidx.appsearch.app.Features getFeatures();
     method public com.google.common.util.concurrent.ListenableFuture<java.util.Set<java.lang.String!>!> getNamespacesAsync();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.StorageInfo!> getStorageInfoAsync();
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForWriteResponse!> openBlobForWriteAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> putAsync(androidx.appsearch.app.PutDocumentsRequest);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> removeAsync(androidx.appsearch.app.RemoveByDocumentIdRequest);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> removeAsync(String, androidx.appsearch.app.SearchSpec);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.RemoveBlobResponse!> removeBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> reportUsageAsync(androidx.appsearch.app.ReportUsageRequest);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> requestFlushAsync();
     method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
     method public com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.appsearch.app.SearchSuggestionResult!>!> searchSuggestionAsync(String, androidx.appsearch.app.SearchSuggestionSpec);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setBlobVisibilityAsync(androidx.appsearch.app.SetBlobVisibilityRequest);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.SetSchemaResponse!> setSchemaAsync(androidx.appsearch.app.SetSchemaRequest);
   }
 
+  public final class CommitBlobResponse {
+    ctor public CommitBlobResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!>);
+    method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!> getResult();
+    method public void writeToParcel(android.os.Parcel, int);
+    field public static final android.os.Parcelable.Creator<androidx.appsearch.app.CommitBlobResponse!> CREATOR;
+  }
+
   public interface DocumentClassFactory<T> {
-    method public T fromGenericDocument(androidx.appsearch.app.GenericDocument, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public T fromGenericDocument(androidx.appsearch.app.GenericDocument, androidx.appsearch.app.DocumentClassMappingContext) throws androidx.appsearch.exceptions.AppSearchException;
     method public java.util.List<java.lang.Class<? extends java.lang.Object!>!> getDependencyDocumentClasses() throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.AppSearchSchema getSchema() throws androidx.appsearch.exceptions.AppSearchException;
     method public String getSchemaName();
     method public androidx.appsearch.app.GenericDocument toGenericDocument(T) throws androidx.appsearch.exceptions.AppSearchException;
+  }
+
+  public class DocumentClassMappingContext {
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public DocumentClassMappingContext(java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!> getDocumentClassMap();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!> getParentTypeMap();
   }
 
   @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public final class EmbeddingVector {
@@ -284,11 +347,7 @@ package androidx.appsearch.app {
     method public float[] getValues();
   }
 
-  @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ENTERPRISE_GLOBAL_SEARCH_SESSION) public interface EnterpriseGlobalSearchSession {
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(String, String, androidx.appsearch.app.GetByDocumentIdRequest);
-    method public androidx.appsearch.app.Features getFeatures();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync(String, String);
-    method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
+  @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ENTERPRISE_GLOBAL_SEARCH_SESSION) public interface EnterpriseGlobalSearchSession extends androidx.appsearch.app.ReadOnlyGlobalSearchSession {
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalAppSearchApi {
@@ -302,26 +361,41 @@ package androidx.appsearch.app {
     field public static final String GLOBAL_SEARCH_SESSION_GET_BY_ID = "GLOBAL_SEARCH_SESSION_GET_BY_ID";
     field public static final String GLOBAL_SEARCH_SESSION_GET_SCHEMA = "GLOBAL_SEARCH_SESSION_GET_SCHEMA";
     field public static final String GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK = "GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String INDEXER_MOBILE_APPLICATIONS = "INDEXER_MOBILE_APPLICATIONS";
     field public static final String JOIN_SPEC_AND_QUALIFIED_ID = "JOIN_SPEC_AND_QUALIFIED_ID";
     field public static final String LIST_FILTER_HAS_PROPERTY_FUNCTION = "LIST_FILTER_HAS_PROPERTY_FUNCTION";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION = "LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION";
     field public static final String LIST_FILTER_QUERY_LANGUAGE = "LIST_FILTER_QUERY_LANGUAGE";
     field public static final String NUMERIC_SEARCH = "NUMERIC_SEARCH";
     field public static final String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
     field public static final String SCHEMA_ADD_PARENT_TYPE = "SCHEMA_ADD_PARENT_TYPE";
+    field public static final String SCHEMA_BLOB_HANDLE = "SCHEMA_BLOB_HANDLE";
     field public static final String SCHEMA_EMBEDDING_PROPERTY_CONFIG = "SCHEMA_EMBEDDING_PROPERTY_CONFIG";
-    field public static final String SCHEMA_SET_DESCRIPTION = "SCHEMA_SET_DESCRIPTION";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_EMBEDDING_QUANTIZATION = "SCHEMA_EMBEDDING_QUANTIZATION";
+    field public static final String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_JOINABLE_REPEATED_PROPERTIES = "SCHEMA_JOINABLE_REPEATED_PROPERTIES";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_SCORABLE_PROPERTY_CONFIG = "SCHEMA_SCORABLE_PROPERTY_CONFIG";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_SET_DESCRIPTION = "SCHEMA_SET_DESCRIPTION";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM = "SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
     field public static final String SEARCH_RESULT_MATCH_INFO_SUBMATCH = "SEARCH_RESULT_MATCH_INFO_SUBMATCH";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_RESULT_PARENT_TYPES = "SEARCH_RESULT_PARENT_TYPES";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS = "SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS";
     field public static final String SEARCH_SPEC_ADD_FILTER_PROPERTIES = "SEARCH_SPEC_ADD_FILTER_PROPERTIES";
     field public static final String SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS = "SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS";
     field public static final String SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION = "SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION";
     field public static final String SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA = "SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA";
     field public static final String SEARCH_SPEC_PROPERTY_WEIGHTS = "SEARCH_SPEC_PROPERTY_WEIGHTS";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE = "SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SEARCH_SPEC_RANKING_FUNCTION_MAX_MIN_OR_DEFAULT = "SEARCH_SPEC_RANKING_FUNCTION_MAX_MIN_OR_DEFAULT";
     field public static final String SEARCH_SPEC_SEARCH_STRING_PARAMETERS = "SEARCH_SPEC_SEARCH_STRING_PARAMETERS";
     field public static final String SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG = "SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG";
     field public static final String SEARCH_SUGGESTION = "SEARCH_SUGGESTION";
     field public static final String SET_SCHEMA_CIRCULAR_REFERENCES = "SET_SCHEMA_CIRCULAR_REFERENCES";
     field public static final String SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG = "SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM = "SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM";
     field public static final String SET_SCHEMA_REQUEST_SET_PUBLICLY_VISIBLE = "SET_SCHEMA_REQUEST_SET_PUBLICLY_VISIBLE";
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT = "SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT";
     field public static final String TOKENIZER_TYPE_RFC822 = "TOKENIZER_TYPE_RFC822";
     field public static final String VERBATIM_SEARCH = "VERBATIM_SEARCH";
   }
@@ -331,9 +405,10 @@ package androidx.appsearch.app {
     method public static androidx.appsearch.app.GenericDocument fromDocumentClass(Object) throws androidx.appsearch.exceptions.AppSearchException;
     method public long getCreationTimestampMillis();
     method public String getId();
-    method @Deprecated public static int getMaxIndexedProperties();
     method public String getNamespace();
     method public Object? getProperty(String);
+    method public androidx.appsearch.app.AppSearchBlobHandle? getPropertyBlobHandle(String);
+    method public androidx.appsearch.app.AppSearchBlobHandle![]? getPropertyBlobHandleArray(String);
     method public boolean getPropertyBoolean(String);
     method public boolean[]? getPropertyBooleanArray(String);
     method public byte[]? getPropertyBytes(String);
@@ -352,9 +427,8 @@ package androidx.appsearch.app {
     method public String getSchemaType();
     method public int getScore();
     method public long getTtlMillis();
-    method @Deprecated public androidx.appsearch.app.GenericDocument.Builder<androidx.appsearch.app.GenericDocument.Builder<? extends java.lang.Object!>!> toBuilder();
-    method public <T> T toDocumentClass(Class<T!>) throws androidx.appsearch.exceptions.AppSearchException;
-    method public <T> T toDocumentClass(Class<T!>, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?) throws androidx.appsearch.exceptions.AppSearchException;
+    method public <T> T toDocumentClass(Class<T>) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public <T> T toDocumentClass(Class<T>, androidx.appsearch.app.DocumentClassMappingContext) throws androidx.appsearch.exceptions.AppSearchException;
   }
 
   public static class GenericDocument.Builder<BuilderType extends androidx.appsearch.app.GenericDocument.Builder> {
@@ -365,11 +439,12 @@ package androidx.appsearch.app {
     method public BuilderType setCreationTimestampMillis(long);
     method public BuilderType setId(String);
     method public BuilderType setNamespace(String);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public BuilderType setPropertyBlobHandle(String, androidx.appsearch.app.AppSearchBlobHandle!...);
     method public BuilderType setPropertyBoolean(String, boolean...);
     method public BuilderType setPropertyBytes(String, byte[]!...);
     method public BuilderType setPropertyDocument(String, androidx.appsearch.app.GenericDocument!...);
     method public BuilderType setPropertyDouble(String, double...);
-    method public BuilderType setPropertyEmbedding(String, androidx.appsearch.app.EmbeddingVector!...);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public BuilderType setPropertyEmbedding(String, androidx.appsearch.app.EmbeddingVector!...);
     method public BuilderType setPropertyLong(String, long...);
     method public BuilderType setPropertyString(String, java.lang.String!...);
     method public BuilderType setSchemaType(String);
@@ -401,30 +476,37 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>!> getSchemaTypesVisibleToConfigs();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.PackageIdentifier!>!> getSchemaTypesVisibleToPackages();
     method public java.util.Set<androidx.appsearch.app.AppSearchSchema!> getSchemas();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.PropertyPath!>!> getSchemasWipeoutAccountPropertyPaths();
     method @IntRange(from=0) public int getVersion();
   }
 
   public static final class GetSchemaResponse.Builder {
     ctor public GetSchemaResponse.Builder();
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public GetSchemaResponse.Builder(androidx.appsearch.app.GetSchemaResponse);
     method public androidx.appsearch.app.GetSchemaResponse.Builder addSchema(androidx.appsearch.app.AppSearchSchema);
     method public androidx.appsearch.app.GetSchemaResponse.Builder addSchemaTypeNotDisplayedBySystem(String);
     method public androidx.appsearch.app.GetSchemaResponse build();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearPubliclyVisibleSchema(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearRequiredPermissionsForSchemaTypeVisibility(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeNotDisplayedBySystem(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeVisibleToConfigs(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeVisibleToPackages(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeWipeoutAccountPropertyPaths(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemas();
     method public androidx.appsearch.app.GetSchemaResponse.Builder setPubliclyVisibleSchema(String, androidx.appsearch.app.PackageIdentifier);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setRequiredPermissionsForSchemaTypeVisibility(String, java.util.Set<java.util.Set<java.lang.Integer!>!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeVisibleToConfigs(String, java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeVisibleToPackages(String, java.util.Set<androidx.appsearch.app.PackageIdentifier!>);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeWipeoutAccountPropertyPaths(String, java.util.Set<androidx.appsearch.app.PropertyPath!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setVersion(@IntRange(from=0) int);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setVisibilitySettingSupported(boolean);
   }
 
-  public interface GlobalSearchSession extends java.io.Closeable {
+  public interface GlobalSearchSession extends androidx.appsearch.app.ReadOnlyGlobalSearchSession java.io.Closeable {
     method public void close();
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_BY_ID) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(String, String, androidx.appsearch.app.GetByDocumentIdRequest);
-    method public androidx.appsearch.app.Features getFeatures();
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_SCHEMA) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync(String, String);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK) public void registerObserverCallback(String, androidx.appsearch.observer.ObserverSpec, java.util.concurrent.Executor, androidx.appsearch.observer.ObserverCallback) throws androidx.appsearch.exceptions.AppSearchException;
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> reportSystemUsageAsync(androidx.appsearch.app.ReportSystemUsageRequest);
-    method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK) public void unregisterObserverCallback(String, androidx.appsearch.observer.ObserverCallback) throws androidx.appsearch.exceptions.AppSearchException;
   }
 
@@ -443,9 +525,11 @@ package androidx.appsearch.app {
   }
 
   public static final class JoinSpec.Builder {
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public JoinSpec.Builder(androidx.appsearch.app.JoinSpec);
     ctor public JoinSpec.Builder(String);
     method public androidx.appsearch.app.JoinSpec build();
     method public androidx.appsearch.app.JoinSpec.Builder setAggregationScoringStrategy(int);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.JoinSpec.Builder setChildPropertyExpression(String);
     method public androidx.appsearch.app.JoinSpec.Builder setMaxJoinedResultCount(int);
     method public androidx.appsearch.app.JoinSpec.Builder setNestedSearch(String, androidx.appsearch.app.SearchSpec);
   }
@@ -460,6 +544,22 @@ package androidx.appsearch.app {
     method @WorkerThread public abstract androidx.appsearch.app.GenericDocument onDowngrade(int, int, androidx.appsearch.app.GenericDocument);
     method @WorkerThread public abstract androidx.appsearch.app.GenericDocument onUpgrade(int, int, androidx.appsearch.app.GenericDocument);
     method public abstract boolean shouldMigrate(int, int);
+  }
+
+  public final class OpenBlobForReadResponse implements java.io.Closeable {
+    ctor public OpenBlobForReadResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!>);
+    method public void close();
+    method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!> getResult();
+    method public void writeToParcel(android.os.Parcel, int);
+    field public static final android.os.Parcelable.Creator<androidx.appsearch.app.OpenBlobForReadResponse!> CREATOR;
+  }
+
+  public final class OpenBlobForWriteResponse implements java.io.Closeable {
+    ctor public OpenBlobForWriteResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!>);
+    method public void close();
+    method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!> getResult();
+    method public void writeToParcel(android.os.Parcel, int);
+    field public static final android.os.Parcelable.Creator<androidx.appsearch.app.OpenBlobForWriteResponse!> CREATOR;
   }
 
   public class PackageIdentifier {
@@ -495,9 +595,23 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.PutDocumentsRequest.Builder addDocuments(java.util.Collection<? extends java.lang.Object!>) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.PutDocumentsRequest.Builder addGenericDocuments(androidx.appsearch.app.GenericDocument!...);
     method public androidx.appsearch.app.PutDocumentsRequest.Builder addGenericDocuments(java.util.Collection<? extends androidx.appsearch.app.GenericDocument!>);
-    method public androidx.appsearch.app.PutDocumentsRequest.Builder addTakenActions(androidx.appsearch.usagereporting.TakenAction!...) throws androidx.appsearch.exceptions.AppSearchException;
-    method public androidx.appsearch.app.PutDocumentsRequest.Builder addTakenActions(java.util.Collection<? extends androidx.appsearch.usagereporting.TakenAction!>) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.PutDocumentsRequest.Builder addTakenActions(androidx.appsearch.usagereporting.TakenAction!...) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.PutDocumentsRequest.Builder addTakenActions(java.util.Collection<? extends androidx.appsearch.usagereporting.TakenAction!>) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.PutDocumentsRequest build();
+  }
+
+  public interface ReadOnlyGlobalSearchSession {
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_BY_ID) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(String, String, androidx.appsearch.app.GetByDocumentIdRequest);
+    method public androidx.appsearch.app.Features getFeatures();
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_SCHEMA) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync(String, String);
+    method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
+  }
+
+  public final class RemoveBlobResponse {
+    ctor public RemoveBlobResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!>);
+    method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!> getResult();
+    method public void writeToParcel(android.os.Parcel, int);
+    field public static final android.os.Parcelable.Creator<androidx.appsearch.app.RemoveBlobResponse!> CREATOR;
   }
 
   public final class RemoveByDocumentIdRequest {
@@ -556,13 +670,14 @@ package androidx.appsearch.app {
 
   public final class SearchResult {
     method public String getDatabaseName();
-    method public <T> T getDocument(Class<T!>) throws androidx.appsearch.exceptions.AppSearchException;
-    method public <T> T getDocument(Class<T!>, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?) throws androidx.appsearch.exceptions.AppSearchException;
+    method public <T> T getDocument(Class<T>) throws androidx.appsearch.exceptions.AppSearchException;
+    method public <T> T getDocument(Class<T>, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.GenericDocument getGenericDocument();
     method public java.util.List<java.lang.Double!> getInformationalRankingSignals();
     method public java.util.List<androidx.appsearch.app.SearchResult!> getJoinedResults();
     method public java.util.List<androidx.appsearch.app.SearchResult.MatchInfo!> getMatchInfos();
     method public String getPackageName();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!> getParentTypeMap();
     method public double getRankingSignal();
   }
 
@@ -574,10 +689,19 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.SearchResult build();
     method public androidx.appsearch.app.SearchResult.Builder setDocument(Object) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SearchResult.Builder setGenericDocument(androidx.appsearch.app.GenericDocument);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.Builder setParentTypeMap(java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>);
     method public androidx.appsearch.app.SearchResult.Builder setRankingSignal(double);
   }
 
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class SearchResult.EmbeddingMatchInfo {
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public SearchResult.EmbeddingMatchInfo(double, int, int);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public int getEmbeddingSearchMetricType();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public int getQueryEmbeddingVectorIndex();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public double getSemanticScore();
+  }
+
   public static final class SearchResult.MatchInfo {
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.EmbeddingMatchInfo? getEmbeddingMatch();
     method public CharSequence getExactMatch();
     method public androidx.appsearch.app.SearchResult.MatchRange getExactMatchRange();
     method public String getFullText();
@@ -587,11 +711,13 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.SearchResult.MatchRange getSnippetRange();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH) public CharSequence getSubmatch();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH) public androidx.appsearch.app.SearchResult.MatchRange getSubmatchRange();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.TextMatchInfo? getTextMatch();
   }
 
   public static final class SearchResult.MatchInfo.Builder {
     ctor public SearchResult.MatchInfo.Builder(String);
     method public androidx.appsearch.app.SearchResult.MatchInfo build();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.MatchInfo.Builder setEmbeddingMatch(androidx.appsearch.app.SearchResult.EmbeddingMatchInfo?);
     method public androidx.appsearch.app.SearchResult.MatchInfo.Builder setExactMatchRange(androidx.appsearch.app.SearchResult.MatchRange);
     method public androidx.appsearch.app.SearchResult.MatchInfo.Builder setSnippetRange(androidx.appsearch.app.SearchResult.MatchRange);
     method public androidx.appsearch.app.SearchResult.MatchInfo.Builder setSubmatchRange(androidx.appsearch.app.SearchResult.MatchRange);
@@ -603,6 +729,17 @@ package androidx.appsearch.app {
     method public int getStart();
   }
 
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class SearchResult.TextMatchInfo {
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public SearchResult.TextMatchInfo(androidx.appsearch.app.SearchResult.MatchRange, androidx.appsearch.app.SearchResult.MatchRange, androidx.appsearch.app.SearchResult.MatchRange);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public CharSequence getExactMatch();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.MatchRange getExactMatchRange();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public String getFullText();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public CharSequence getSnippet();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.MatchRange getSnippetRange();
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH) @androidx.appsearch.app.ExperimentalAppSearchApi public CharSequence getSubmatch();
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchResult.MatchRange getSubmatchRange();
+  }
+
   public interface SearchResults extends java.io.Closeable {
     method public void close();
     method public com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.appsearch.app.SearchResult!>!> getNextPageAsync();
@@ -612,6 +749,7 @@ package androidx.appsearch.app {
     method public String getAdvancedRankingExpression();
     method public int getDefaultEmbeddingSearchMetricType();
     method public java.util.List<androidx.appsearch.app.EmbeddingVector!> getEmbeddingParameters();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.List<java.lang.String!> getFilterDocumentIds();
     method public java.util.List<java.lang.String!> getFilterNamespaces();
     method public java.util.List<java.lang.String!> getFilterPackageNames();
     method public java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!> getFilterProperties();
@@ -634,10 +772,14 @@ package androidx.appsearch.app {
     method public int getSnippetCountPerProperty();
     method public int getTermMatch();
     method public boolean isListFilterHasPropertyFunctionEnabled();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean isListFilterMatchScoreExpressionFunctionEnabled();
     method public boolean isListFilterQueryLanguageEnabled();
     method public boolean isNumericSearchEnabled();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean isScorablePropertyRankingEnabled();
     method public boolean isVerbatimSearchEnabled();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public boolean shouldRetrieveEmbeddingMatchInfos();
     field public static final int EMBEDDING_SEARCH_METRIC_TYPE_COSINE = 1; // 0x1
+    field public static final int EMBEDDING_SEARCH_METRIC_TYPE_DEFAULT = 0; // 0x0
     field public static final int EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT = 2; // 0x2
     field public static final int EMBEDDING_SEARCH_METRIC_TYPE_EUCLIDEAN = 3; // 0x3
     field public static final int GROUPING_TYPE_PER_NAMESPACE = 2; // 0x2
@@ -645,7 +787,6 @@ package androidx.appsearch.app {
     field @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA) public static final int GROUPING_TYPE_PER_SCHEMA = 4; // 0x4
     field public static final int ORDER_ASCENDING = 1; // 0x1
     field public static final int ORDER_DESCENDING = 0; // 0x0
-    field @Deprecated public static final String PROJECTION_SCHEMA_TYPE_WILDCARD = "*";
     field public static final int RANKING_STRATEGY_ADVANCED_RANKING_EXPRESSION = 9; // 0x9
     field public static final int RANKING_STRATEGY_CREATION_TIMESTAMP = 2; // 0x2
     field public static final int RANKING_STRATEGY_DOCUMENT_SCORE = 1; // 0x1
@@ -663,10 +804,13 @@ package androidx.appsearch.app {
 
   public static final class SearchSpec.Builder {
     ctor public SearchSpec.Builder();
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public SearchSpec.Builder(androidx.appsearch.app.SearchSpec);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public androidx.appsearch.app.SearchSpec.Builder addEmbeddingParameters(androidx.appsearch.app.EmbeddingVector!...);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public androidx.appsearch.app.SearchSpec.Builder addEmbeddingParameters(java.util.Collection<androidx.appsearch.app.EmbeddingVector!>);
     method public androidx.appsearch.app.SearchSpec.Builder addFilterDocumentClasses(Class<? extends java.lang.Object!>!...) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SearchSpec.Builder addFilterDocumentClasses(java.util.Collection<? extends java.lang.Class<? extends java.lang.Object!>!>) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder addFilterDocumentIds(java.lang.String!...);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder addFilterDocumentIds(java.util.Collection<java.lang.String!>);
     method public androidx.appsearch.app.SearchSpec.Builder addFilterNamespaces(java.lang.String!...);
     method public androidx.appsearch.app.SearchSpec.Builder addFilterNamespaces(java.util.Collection<java.lang.String!>);
     method public androidx.appsearch.app.SearchSpec.Builder addFilterPackageNames(java.lang.String!...);
@@ -686,9 +830,23 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS) public androidx.appsearch.app.SearchSpec.Builder addSearchStringParameters(java.lang.String!...);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS) public androidx.appsearch.app.SearchSpec.Builder addSearchStringParameters(java.util.List<java.lang.String!>);
     method public androidx.appsearch.app.SearchSpec build();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearEmbeddingParameters();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearFilterDocumentIds();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearFilterNamespaces();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearFilterPackageNames();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearFilterProperties();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearFilterSchemas();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearInformationalRankingExpressions();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearJoinSpec();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearProjections();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearPropertyWeights();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearResultGrouping();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearSearchSourceLogTag();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder clearSearchStringParameters();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG) public androidx.appsearch.app.SearchSpec.Builder setDefaultEmbeddingSearchMetricType(int);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) public androidx.appsearch.app.SearchSpec.Builder setJoinSpec(androidx.appsearch.app.JoinSpec);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.LIST_FILTER_HAS_PROPERTY_FUNCTION) public androidx.appsearch.app.SearchSpec.Builder setListFilterHasPropertyFunctionEnabled(boolean);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder setListFilterMatchScoreExpressionFunctionEnabled(boolean);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.LIST_FILTER_QUERY_LANGUAGE) public androidx.appsearch.app.SearchSpec.Builder setListFilterQueryLanguageEnabled(boolean);
     method public androidx.appsearch.app.SearchSpec.Builder setMaxSnippetSize(@IntRange(from=0, to=0x2710) int);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.NUMERIC_SEARCH) public androidx.appsearch.app.SearchSpec.Builder setNumericSearchEnabled(boolean);
@@ -701,6 +859,8 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION) public androidx.appsearch.app.SearchSpec.Builder setRankingStrategy(String);
     method public androidx.appsearch.app.SearchSpec.Builder setResultCountPerPage(@IntRange(from=0, to=0x2710) int);
     method public androidx.appsearch.app.SearchSpec.Builder setResultGrouping(int, int);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_EMBEDDING_MATCH_INFO) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder setRetrieveEmbeddingMatchInfos(boolean);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SCORABLE_PROPERTY_CONFIG) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SearchSpec.Builder setScorablePropertyRankingEnabled(boolean);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG) public androidx.appsearch.app.SearchSpec.Builder setSearchSourceLogTag(String);
     method public androidx.appsearch.app.SearchSpec.Builder setSnippetCount(@IntRange(from=0, to=0x2710) int);
     method public androidx.appsearch.app.SearchSpec.Builder setSnippetCountPerProperty(@IntRange(from=0, to=0x2710) int);
@@ -751,6 +911,19 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.SearchSuggestionSpec.Builder setRankingStrategy(int);
   }
 
+  public class SetBlobVisibilityRequest {
+    method public java.util.Set<java.lang.String!> getNamespacesNotDisplayedBySystem();
+    method public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>!> getNamespacesVisibleToConfigs();
+  }
+
+  public static final class SetBlobVisibilityRequest.Builder {
+    ctor public SetBlobVisibilityRequest.Builder();
+    method public androidx.appsearch.app.SetBlobVisibilityRequest.Builder addNamespaceVisibleToConfig(String, androidx.appsearch.app.SchemaVisibilityConfig);
+    method public androidx.appsearch.app.SetBlobVisibilityRequest build();
+    method public androidx.appsearch.app.SetBlobVisibilityRequest.Builder clearNamespaceVisibleToConfigs(String);
+    method public androidx.appsearch.app.SetBlobVisibilityRequest.Builder setNamespaceDisplayedBySystem(String, boolean);
+  }
+
   public final class SetSchemaRequest {
     method public java.util.Map<java.lang.String!,androidx.appsearch.app.Migrator!> getMigrators();
     method public java.util.Map<java.lang.String!,androidx.appsearch.app.PackageIdentifier!> getPubliclyVisibleSchemas();
@@ -759,8 +932,10 @@ package androidx.appsearch.app {
     method public java.util.Set<java.lang.String!> getSchemasNotDisplayedBySystem();
     method public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>!> getSchemasVisibleToConfigs();
     method public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.PackageIdentifier!>!> getSchemasVisibleToPackages();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.Set<java.lang.String!>!> getSchemasWipeoutAccountPropertyPaths();
     method @IntRange(from=1) public int getVersion();
     method public boolean isForceOverride();
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int PRIVATE_COMPUTE_CORE_UID_ACCESS = 12; // 0xc
     field @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public static final int READ_ASSISTANT_APP_SEARCH_DATA = 6; // 0x6
     field @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public static final int READ_CALENDAR = 2; // 0x2
     field @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public static final int READ_CONTACTS = 3; // 0x3
@@ -771,6 +946,7 @@ package androidx.appsearch.app {
 
   public static final class SetSchemaRequest.Builder {
     ctor public SetSchemaRequest.Builder();
+    ctor @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public SetSchemaRequest.Builder(androidx.appsearch.app.SetSchemaRequest);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG) public androidx.appsearch.app.SetSchemaRequest.Builder addDocumentClassVisibleToConfig(Class<? extends java.lang.Object!>, androidx.appsearch.app.SchemaVisibilityConfig) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SetSchemaRequest.Builder addDocumentClasses(Class<? extends java.lang.Object!>!...) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SetSchemaRequest.Builder addDocumentClasses(java.util.Collection<? extends java.lang.Class<? extends java.lang.Object!>!>) throws androidx.appsearch.exceptions.AppSearchException;
@@ -781,11 +957,14 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.SetSchemaRequest.Builder addSchemas(java.util.Collection<androidx.appsearch.app.AppSearchSchema!>);
     method public androidx.appsearch.app.SetSchemaRequest build();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG) public androidx.appsearch.app.SetSchemaRequest.Builder clearDocumentClassVisibleToConfigs(Class<? extends java.lang.Object!>) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SetSchemaRequest.Builder clearMigrators();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public androidx.appsearch.app.SetSchemaRequest.Builder clearRequiredPermissionsForDocumentClassVisibility(Class<? extends java.lang.Object!>) throws androidx.appsearch.exceptions.AppSearchException;
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public androidx.appsearch.app.SetSchemaRequest.Builder clearRequiredPermissionsForSchemaTypeVisibility(String);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG) public androidx.appsearch.app.SetSchemaRequest.Builder clearSchemaTypeVisibleToConfigs(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SetSchemaRequest.Builder clearSchemas();
     method public androidx.appsearch.app.SetSchemaRequest.Builder setDocumentClassDisplayedBySystem(Class<? extends java.lang.Object!>, boolean) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SetSchemaRequest.Builder setDocumentClassVisibilityForPackage(Class<? extends java.lang.Object!>, boolean, androidx.appsearch.app.PackageIdentifier) throws androidx.appsearch.exceptions.AppSearchException;
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SetSchemaRequest.Builder setDocumentClassWipeoutAccountPropertyPaths(Class<? extends java.lang.Object!>, java.util.Set<androidx.appsearch.app.PropertyPath!>, boolean) throws androidx.appsearch.exceptions.AppSearchException;
     method public androidx.appsearch.app.SetSchemaRequest.Builder setForceOverride(boolean);
     method public androidx.appsearch.app.SetSchemaRequest.Builder setMigrator(String, androidx.appsearch.app.Migrator);
     method public androidx.appsearch.app.SetSchemaRequest.Builder setMigrators(java.util.Map<java.lang.String!,androidx.appsearch.app.Migrator!>);
@@ -793,6 +972,7 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_SET_PUBLICLY_VISIBLE) public androidx.appsearch.app.SetSchemaRequest.Builder setPubliclyVisibleSchema(String, androidx.appsearch.app.PackageIdentifier?);
     method public androidx.appsearch.app.SetSchemaRequest.Builder setSchemaTypeDisplayedBySystem(String, boolean);
     method public androidx.appsearch.app.SetSchemaRequest.Builder setSchemaTypeVisibilityForPackage(String, boolean, androidx.appsearch.app.PackageIdentifier);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.SetSchemaRequest.Builder setSchemaTypeWipeoutAccountPropertyPaths(String, java.util.Set<androidx.appsearch.app.PropertyPath!>, boolean);
     method public androidx.appsearch.app.SetSchemaRequest.Builder setVersion(@IntRange(from=1) int);
   }
 
@@ -827,6 +1007,8 @@ package androidx.appsearch.app {
   public final class StorageInfo {
     method public int getAliveDocumentsCount();
     method public int getAliveNamespacesCount();
+    method public int getBlobsCount();
+    method public long getBlobsSizeBytes();
     method public long getSizeBytes();
   }
 
@@ -835,6 +1017,8 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.StorageInfo build();
     method public androidx.appsearch.app.StorageInfo.Builder setAliveDocumentsCount(int);
     method public androidx.appsearch.app.StorageInfo.Builder setAliveNamespacesCount(int);
+    method public androidx.appsearch.app.StorageInfo.Builder setBlobsCount(int);
+    method public androidx.appsearch.app.StorageInfo.Builder setBlobsSizeBytes(long);
     method public androidx.appsearch.app.StorageInfo.Builder setSizeBytes(long);
   }
 
@@ -845,7 +1029,16 @@ package androidx.appsearch.app {
 
 }
 
-package androidx.appsearch.ast {
+package @SuppressCompatibility androidx.appsearch.ast {
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public interface FunctionNode extends androidx.appsearch.ast.Node {
+    method public String getFunctionName();
+    field public static final String FUNCTION_NAME_GET_SEARCH_STRING_PARAMETER = "getSearchStringParameter";
+    field public static final String FUNCTION_NAME_HAS_PROPERTY = "hasProperty";
+    field public static final String FUNCTION_NAME_PROPERTY_DEFINED = "propertyDefined";
+    field public static final String FUNCTION_NAME_SEARCH = "search";
+    field public static final String FUNCTION_NAME_SEMANTIC_SEARCH = "semanticSearch";
+  }
 
   @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class NegationNode implements androidx.appsearch.ast.Node {
     ctor public NegationNode(androidx.appsearch.ast.Node);
@@ -870,6 +1063,104 @@ package androidx.appsearch.ast {
 
 }
 
+package @SuppressCompatibility androidx.appsearch.ast.operators {
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class AndNode implements androidx.appsearch.ast.Node {
+    ctor public AndNode(androidx.appsearch.ast.Node, androidx.appsearch.ast.Node, androidx.appsearch.ast.Node!...);
+    ctor public AndNode(java.util.List<androidx.appsearch.ast.Node!>);
+    method public void addChild(androidx.appsearch.ast.Node);
+    method public int getIndexOfChild(androidx.appsearch.ast.Node);
+    method public boolean removeChild(androidx.appsearch.ast.Node);
+    method public void setChild(int, androidx.appsearch.ast.Node);
+    method public void setChildren(java.util.List<androidx.appsearch.ast.Node!>);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class ComparatorNode implements androidx.appsearch.ast.Node {
+    ctor public ComparatorNode(int, androidx.appsearch.app.PropertyPath, long);
+    method public int getComparator();
+    method public androidx.appsearch.app.PropertyPath getPropertyPath();
+    method public long getValue();
+    method public void setComparator(int);
+    method public void setPropertyPath(androidx.appsearch.app.PropertyPath);
+    method public void setValue(long);
+    field public static final int EQUALS = 0; // 0x0
+    field public static final int GREATER_EQUALS = 4; // 0x4
+    field public static final int GREATER_THAN = 3; // 0x3
+    field public static final int LESS_EQUALS = 2; // 0x2
+    field public static final int LESS_THAN = 1; // 0x1
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class OrNode implements androidx.appsearch.ast.Node {
+    ctor public OrNode(androidx.appsearch.ast.Node, androidx.appsearch.ast.Node, androidx.appsearch.ast.Node!...);
+    ctor public OrNode(java.util.List<androidx.appsearch.ast.Node!>);
+    method public void addChild(androidx.appsearch.ast.Node);
+    method public int getIndexOfChild(androidx.appsearch.ast.Node);
+    method public boolean removeChild(androidx.appsearch.ast.Node);
+    method public void setChild(int, androidx.appsearch.ast.Node);
+    method public void setChildren(java.util.List<androidx.appsearch.ast.Node!>);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class PropertyRestrictNode implements androidx.appsearch.ast.Node {
+    ctor public PropertyRestrictNode(androidx.appsearch.app.PropertyPath, androidx.appsearch.ast.Node);
+    method public androidx.appsearch.ast.Node getChild();
+    method public androidx.appsearch.app.PropertyPath getPropertyPath();
+    method public void setChild(androidx.appsearch.ast.Node);
+    method public void setPropertyPath(androidx.appsearch.app.PropertyPath);
+  }
+
+}
+
+package @SuppressCompatibility androidx.appsearch.ast.query {
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class GetSearchStringParameterNode implements androidx.appsearch.ast.FunctionNode {
+    ctor public GetSearchStringParameterNode(int);
+    method public String getFunctionName();
+    method public int getSearchStringIndex();
+    method public void setSearchStringIndex(int);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class HasPropertyNode implements androidx.appsearch.ast.FunctionNode {
+    ctor public HasPropertyNode(androidx.appsearch.app.PropertyPath);
+    method public String getFunctionName();
+    method public androidx.appsearch.app.PropertyPath getPropertyPath();
+    method public void setPropertyPath(androidx.appsearch.app.PropertyPath);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class PropertyDefinedNode implements androidx.appsearch.ast.FunctionNode {
+    ctor public PropertyDefinedNode(androidx.appsearch.app.PropertyPath);
+    method public String getFunctionName();
+    method public androidx.appsearch.app.PropertyPath getPropertyPath();
+    method public void setPropertyPath(androidx.appsearch.app.PropertyPath);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class SearchNode implements androidx.appsearch.ast.FunctionNode {
+    ctor public SearchNode(androidx.appsearch.ast.Node);
+    ctor public SearchNode(androidx.appsearch.ast.Node, java.util.List<androidx.appsearch.app.PropertyPath!>);
+    method public void addPropertyPath(androidx.appsearch.app.PropertyPath);
+    method public androidx.appsearch.ast.Node getChild();
+    method public String getFunctionName();
+    method public java.util.List<androidx.appsearch.app.PropertyPath!> getPropertyPaths();
+    method public void setChild(androidx.appsearch.ast.Node);
+    method public void setPropertyPaths(java.util.List<androidx.appsearch.app.PropertyPath!>);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class SemanticSearchNode implements androidx.appsearch.ast.FunctionNode {
+    ctor public SemanticSearchNode(int);
+    ctor public SemanticSearchNode(int, float);
+    ctor public SemanticSearchNode(int, float, float);
+    ctor public SemanticSearchNode(int, float, float, int);
+    method public int getDistanceMetric();
+    method public String getFunctionName();
+    method public float getLowerBound();
+    method public float getUpperBound();
+    method public int getVectorIndex();
+    method public void setBounds(float, float);
+    method public void setDistanceMetric(int);
+    method public void setVectorIndex(int);
+  }
+
+}
+
 package androidx.appsearch.exceptions {
 
   public class AppSearchException extends java.lang.Exception {
@@ -877,7 +1168,7 @@ package androidx.appsearch.exceptions {
     ctor public AppSearchException(int, String?);
     ctor public AppSearchException(int, String?, Throwable?);
     method public int getResultCode();
-    method public <T> androidx.appsearch.app.AppSearchResult<T!> toAppSearchResult();
+    method public <T> androidx.appsearch.app.AppSearchResult<T> toAppSearchResult();
   }
 
 }
@@ -920,9 +1211,17 @@ package androidx.appsearch.observer {
 
 }
 
-package androidx.appsearch.usagereporting {
+package @SuppressCompatibility androidx.appsearch.usagereporting {
 
-  @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:ClickAction") public class ClickAction extends androidx.appsearch.usagereporting.TakenAction {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public class ActionAccumulator {
+    method @VisibleForTesting public void cancelTimer();
+    method public static com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.usagereporting.ActionAccumulator!> createAsync(android.content.Context, androidx.appsearch.app.AppSearchSession, java.util.concurrent.Executor);
+    method @VisibleForTesting public java.io.File getCacheFile();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> reportActionAsync(androidx.appsearch.usagereporting.TakenAction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> saveDocumentsToAppSearchAsync() throws androidx.appsearch.exceptions.AppSearchException;
+  }
+
+  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:ClickAction") @androidx.appsearch.app.ExperimentalAppSearchApi public class ClickAction extends androidx.appsearch.usagereporting.TakenAction {
     method public String? getQuery();
     method public String? getReferencedQualifiedId();
     method public int getResultRankGlobal();
@@ -930,7 +1229,7 @@ package androidx.appsearch.usagereporting {
     method public long getTimeStayOnResultMillis();
   }
 
-  @androidx.appsearch.annotation.Document.BuilderProducer public static final class ClickAction.Builder {
+  @SuppressCompatibility @androidx.appsearch.annotation.Document.BuilderProducer @androidx.appsearch.app.ExperimentalAppSearchApi public static final class ClickAction.Builder {
     ctor public ClickAction.Builder(androidx.appsearch.usagereporting.ClickAction);
     ctor public ClickAction.Builder(String, String, long);
     method public androidx.appsearch.usagereporting.ClickAction build();
@@ -942,12 +1241,48 @@ package androidx.appsearch.usagereporting {
     method public androidx.appsearch.usagereporting.ClickAction.Builder setTimeStayOnResultMillis(long);
   }
 
-  @androidx.appsearch.annotation.Document(name="builtin:SearchAction") public class SearchAction extends androidx.appsearch.usagereporting.TakenAction {
+  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:DismissAction") @androidx.appsearch.app.ExperimentalAppSearchApi public class DismissAction extends androidx.appsearch.usagereporting.TakenAction {
+    method public String? getQuery();
+    method public String? getReferencedQualifiedId();
+    method public int getResultRankGlobal();
+    method public int getResultRankInBlock();
+  }
+
+  @SuppressCompatibility @androidx.appsearch.annotation.Document.BuilderProducer @androidx.appsearch.app.ExperimentalAppSearchApi public static final class DismissAction.Builder {
+    ctor public DismissAction.Builder(androidx.appsearch.usagereporting.DismissAction);
+    ctor public DismissAction.Builder(String, String, long);
+    method public androidx.appsearch.usagereporting.DismissAction build();
+    method public androidx.appsearch.usagereporting.DismissAction.Builder setDocumentTtlMillis(long);
+    method public androidx.appsearch.usagereporting.DismissAction.Builder setQuery(String?);
+    method public androidx.appsearch.usagereporting.DismissAction.Builder setReferencedQualifiedId(String?);
+    method public androidx.appsearch.usagereporting.DismissAction.Builder setResultRankGlobal(int);
+    method public androidx.appsearch.usagereporting.DismissAction.Builder setResultRankInBlock(int);
+  }
+
+  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:ImpressionAction") @androidx.appsearch.app.ExperimentalAppSearchApi public class ImpressionAction extends androidx.appsearch.usagereporting.TakenAction {
+    method public String? getQuery();
+    method public String? getReferencedQualifiedId();
+    method public int getResultRankGlobal();
+    method public int getResultRankInBlock();
+  }
+
+  @SuppressCompatibility @androidx.appsearch.annotation.Document.BuilderProducer @androidx.appsearch.app.ExperimentalAppSearchApi public static final class ImpressionAction.Builder {
+    ctor public ImpressionAction.Builder(androidx.appsearch.usagereporting.ImpressionAction);
+    ctor public ImpressionAction.Builder(String, String, long);
+    method public androidx.appsearch.usagereporting.ImpressionAction build();
+    method public androidx.appsearch.usagereporting.ImpressionAction.Builder setDocumentTtlMillis(long);
+    method public androidx.appsearch.usagereporting.ImpressionAction.Builder setQuery(String?);
+    method public androidx.appsearch.usagereporting.ImpressionAction.Builder setReferencedQualifiedId(String?);
+    method public androidx.appsearch.usagereporting.ImpressionAction.Builder setResultRankGlobal(int);
+    method public androidx.appsearch.usagereporting.ImpressionAction.Builder setResultRankInBlock(int);
+  }
+
+  @SuppressCompatibility @androidx.appsearch.annotation.Document(name="builtin:SearchAction") @androidx.appsearch.app.ExperimentalAppSearchApi public class SearchAction extends androidx.appsearch.usagereporting.TakenAction {
     method public int getFetchedResultCount();
     method public String? getQuery();
   }
 
-  @androidx.appsearch.annotation.Document.BuilderProducer public static final class SearchAction.Builder {
+  @SuppressCompatibility @androidx.appsearch.annotation.Document.BuilderProducer @androidx.appsearch.app.ExperimentalAppSearchApi public static final class SearchAction.Builder {
     ctor public SearchAction.Builder(androidx.appsearch.usagereporting.SearchAction);
     ctor public SearchAction.Builder(String, String, long);
     method public androidx.appsearch.usagereporting.SearchAction build();
@@ -956,7 +1291,7 @@ package androidx.appsearch.usagereporting {
     method public androidx.appsearch.usagereporting.SearchAction.Builder setQuery(String?);
   }
 
-  @androidx.appsearch.annotation.Document(name="builtin:TakenAction") public abstract class TakenAction {
+  @SuppressCompatibility @androidx.appsearch.annotation.Document(name="builtin:TakenAction") @androidx.appsearch.app.ExperimentalAppSearchApi public abstract class TakenAction {
     method public long getActionTimestampMillis();
     method public long getDocumentTtlMillis();
     method public String getId();

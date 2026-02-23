@@ -25,8 +25,6 @@ import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -39,11 +37,15 @@ import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.OnClickListener;
 import androidx.car.app.model.Template;
+import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Creates a screen that demonstrates usage of the full screen {@link GridTemplate}. */
 public final class GridTemplateDemoScreen extends Screen implements DefaultLifecycleObserver {
@@ -51,10 +53,8 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
     private static final int LOADING_TIME_MILLIS = 2000;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
-    @Nullable
-    private IconCompat mImage;
-    @Nullable
-    private IconCompat mIcon;
+    private @Nullable IconCompat mImage;
+    private @Nullable IconCompat mIcon;
     private boolean mIsFourthItemLoading;
     private boolean mThirdItemToggleState;
     private boolean mFourthItemToggleState;
@@ -154,9 +154,15 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
     }
 
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
+        return buildGridTemplate();
+    }
+
+    /**
+     * Helper method to build the GridTemplate.
+     */
+    private GridTemplate buildGridTemplate() {
         int itemLimit = 6;
         // Adjust the item limit according to the car constrains.
         if (getCarContext().getCarAppApiLevel() > CarAppApiLevels.LEVEL_1) {
@@ -171,21 +177,22 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
             gridItemListBuilder.addItem(createGridItem(i));
         }
 
-        Action settings = new Action.Builder()
-                .setTitle(getCarContext().getString(
-                        R.string.settings_action_title))
+        Action mapXAction = new Action.Builder()
+                .setTitle("Map+X this!")
+                .setIcon(new CarIcon.Builder(
+                        IconCompat.createWithResource(
+                                getCarContext(),
+                                R.drawable.ic_emoji_food_beverage_white_48dp))
+                        .build())
                 .setOnClickListener(
-                        () -> CarToast.makeText(
-                                        getCarContext(),
-                                        getCarContext().getString(R.string.settings_toast_msg),
-                                        LENGTH_SHORT)
-                                .show())
+                        () -> getScreenManager().push(new MapGridDemoScreen(getCarContext())))
                 .build();
+
         return new GridTemplate.Builder()
                 .setHeader(new Header.Builder()
                         .setStartHeaderAction(BACK)
                         .setTitle(getCarContext().getString(R.string.grid_template_demo_title))
-                        .addEndHeaderAction(settings)
+                        .addEndHeaderAction(mapXAction)
                         .build())
                 .setSingleList(gridItemListBuilder.build())
                 .build();
@@ -322,5 +329,24 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
                 .setImage(carIcon, imageType)
                 .setTitle(title)
                 .build();
+    }
+
+    /**
+     * A new screen that displays the MapWithContentTemplate
+     * containing the exact same GridTemplate.
+     */
+    private class MapGridDemoScreen extends Screen {
+        protected MapGridDemoScreen(@NonNull CarContext carContext) {
+            super(carContext);
+        }
+
+        @Override
+        public @NonNull Template onGetTemplate() {
+            GridTemplate innerTemplate = GridTemplateDemoScreen.this.buildGridTemplate();
+
+            return new MapWithContentTemplate.Builder()
+                    .setContentTemplate(innerTemplate)
+                    .build();
+        }
     }
 }

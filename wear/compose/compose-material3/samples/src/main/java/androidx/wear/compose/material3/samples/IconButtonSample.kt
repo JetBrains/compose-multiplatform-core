@@ -18,21 +18,20 @@ package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalIconButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
+import androidx.wear.compose.material3.IconButtonColors
 import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.wear.compose.material3.IconButtonShapes
 import androidx.wear.compose.material3.OutlinedIconButton
 
 @Composable
@@ -56,7 +55,7 @@ fun FilledIconButtonSample() {
 fun FilledVariantIconButtonSample() {
     FilledIconButton(
         onClick = { /* Do something */ },
-        colors = IconButtonDefaults.filledVariantIconButtonColors()
+        colors = IconButtonDefaults.filledVariantIconButtonColors(),
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -84,7 +83,7 @@ fun IconButtonWithOnLongClickSample(onLongClick: () -> Unit) {
     IconButton(
         onClick = { /* Do something for onClick*/ },
         onLongClick = onLongClick,
-        onLongClickLabel = "Long click"
+        onLongClickLabel = "Long click",
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -92,12 +91,13 @@ fun IconButtonWithOnLongClickSample(onLongClick: () -> Unit) {
 
 @Composable
 @Sampled
-fun IconButtonWithCornerAnimationSample() {
-    val interactionSource = remember { MutableInteractionSource() }
+fun IconButtonWithCornerAnimationSample(
+    colors: IconButtonColors = IconButtonDefaults.filledIconButtonColors()
+) {
     FilledIconButton(
         onClick = { /* Do something */ },
-        shape = IconButtonDefaults.animatedShape(interactionSource),
-        interactionSource = interactionSource
+        shapes = IconButtonDefaults.animatedShapes(),
+        colors = colors,
     ) {
         Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
     }
@@ -108,20 +108,15 @@ fun IconButtonWithCornerAnimationSample() {
 fun IconButtonWithImageSample(
     painter: Painter,
     enabled: Boolean,
-    interactionSource: MutableInteractionSource? = null,
-    shape: Shape = IconButtonDefaults.shape
+    shapes: IconButtonShapes = IconButtonDefaults.shapes(),
 ) {
-    IconButton(
-        onClick = { /* Do something */ },
-        interactionSource = interactionSource,
-        shape = shape,
-    ) {
+    IconButton(onClick = { /* Do something */ }, shapes = shapes, enabled = enabled) {
         Image(
             painter = painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =
-                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.disabledImageOpacity)
+                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.DisabledImageOpacity),
         )
     }
 }

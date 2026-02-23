@@ -16,9 +16,10 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.app;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is a factory class for implementations needed based on the environment.
@@ -30,8 +31,7 @@ public class AppSearchEnvironmentFactory {
     private static volatile AppSearchEnvironment sAppSearchEnvironment;
 
     /** Returns the singleton instance of {@link AppSearchEnvironment}. */
-    @NonNull
-    public static AppSearchEnvironment getEnvironmentInstance() {
+    public static @NonNull AppSearchEnvironment getEnvironmentInstance() {
         AppSearchEnvironment localRef = sAppSearchEnvironment;
         if (localRef == null) {
             synchronized (AppSearchEnvironmentFactory.class) {

@@ -72,7 +72,7 @@ public object LifecycleOwnerUtils {
             "Expected state $state never happened to $owner. " +
                 "Current state: ${owner.lifecycle.currentState}",
             isCountZero,
-            CoreMatchers.`is`(true)
+            CoreMatchers.`is`(true),
         )
 
         // wait for another loop to ensure all observers are called
@@ -104,9 +104,8 @@ public object LifecycleOwnerUtils {
      * instance is resumed.
      */
     @Throws(Throwable::class)
-    public fun <T> waitForRecreation(activity: T, actionOnUiThread: Runnable?): T where
-    T : Activity,
-    T : LifecycleOwner {
+    public fun <T> waitForRecreation(activity: T, actionOnUiThread: Runnable?): T
+        where T : Activity, T : LifecycleOwner {
         val monitor = ActivityMonitor(activity::class.qualifiedName, null, false)
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.addMonitor(monitor)

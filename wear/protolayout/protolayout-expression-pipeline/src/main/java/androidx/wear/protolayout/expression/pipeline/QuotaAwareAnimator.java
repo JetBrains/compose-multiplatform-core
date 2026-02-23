@@ -29,12 +29,13 @@ import android.animation.ValueAnimator;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.core.os.HandlerCompat;
 import androidx.wear.protolayout.expression.pipeline.AnimationsHelper.RepeatDelays;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,17 +45,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * on wrapped {@link Animator} will be replaced.
  */
 class QuotaAwareAnimator implements DynamicTypeAnimator {
-    @NonNull protected final ValueAnimator mAnimator;
-    @NonNull protected final QuotaManager mQuotaManager;
-    @NonNull protected final QuotaReleasingAnimatorListener mListener;
-    @NonNull protected final Handler mUiHandler;
+    protected final @NonNull ValueAnimator mAnimator;
+    protected final @NonNull QuotaManager mQuotaManager;
+    protected final @NonNull QuotaReleasingAnimatorListener mListener;
+    protected final @NonNull Handler mUiHandler;
     private final long mStartDelay;
     protected Runnable mAcquireQuotaAndAnimateRunnable = this::acquireQuotaAndAnimate;
-    @NonNull protected final TypeEvaluator<?> mEvaluator;
-    @Nullable protected Object mLastAnimatedValue;
+    protected final @NonNull TypeEvaluator<?> mEvaluator;
+    protected @Nullable Object mLastAnimatedValue;
 
-    @Nullable private Object mStartValue = null; // To cache the start value
-    @Nullable private Object mEndValue = null; // To cache the end value
+    private @Nullable Object mStartValue = null; // To cache the start value
+    private @Nullable Object mEndValue = null; // To cache the end value
+    private boolean mIsTerminal = false;
 
     interface UpdateCallback {
         void onUpdate(@NonNull Object animatedValue);
@@ -101,9 +103,8 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
         mEvaluator = evaluator;
     }
 
-    @NonNull
     @Override
-    public TypeEvaluator<?> getTypeEvaluator() {
+    public @NonNull TypeEvaluator<?> getTypeEvaluator() {
         return mEvaluator;
     }
 
@@ -115,6 +116,9 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
     void addUpdateCallback(@NonNull UpdateCallback updateCallback) {
         mAnimator.addUpdateListener(
                 animation -> {
+                    if (animation.isPaused()) {
+                        return;
+                    }
                     mLastAnimatedValue = animation.getAnimatedValue();
                     updateCallback.onUpdate(mLastAnimatedValue);
                 });
@@ -126,7 +130,7 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
      * @param values A set of values that the animation will animate between over time.
      */
     @Override
-    public void setFloatValues(@NonNull float... values) {
+    public void setFloatValues(float @NonNull ... values) {
         setFloatValues(mAnimator, mEvaluator, values);
         mStartValue = values[0];
         mEndValue = values[values.length - 1];
@@ -152,7 +156,7 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
      * @param values A set of values that the animation will animate between over time.
      */
     @Override
-    public void setIntValues(@NonNull int... values) {
+    public void setIntValues(int @NonNull ... values) {
         setIntValues(mAnimator, mEvaluator, values);
         mStartValue = values[0];
         mEndValue = values[values.length - 1];
@@ -164,8 +168,7 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
      * @return The start value of the animation or null if value wasn't set.
      */
     @Override
-    @Nullable
-    public Object getStartValue() {
+    public @Nullable Object getStartValue() {
         return mStartValue;
     }
 
@@ -175,8 +178,7 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
      * @return The end value of the animation.
      */
     @Override
-    @Nullable
-    public Object getEndValue() {
+    public @Nullable Object getEndValue() {
         return mEndValue;
     }
 
@@ -299,9 +301,8 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
         mAnimator.setCurrentPlayTime(adjustedTime);
     }
 
-    @Nullable
     @Override
-    public Object getCurrentValue() {
+    public @Nullable Object getCurrentValue() {
         return mLastAnimatedValue;
     }
 
@@ -313,6 +314,15 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
     @Override
     public long getStartDelayMs() {
         return mStartDelay;
+    }
+
+    void setTerminal() {
+        mIsTerminal = true;
+    }
+
+    @Override
+    public boolean isTerminal() {
+        return mIsTerminal;
     }
 
     /** Returns whether the animator in this class has an infinite duration. */
@@ -340,17 +350,17 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
      * animation.
      */
     protected static final class QuotaReleasingAnimatorListener extends AnimatorListenerAdapter {
-        @NonNull private final QuotaManager mQuotaManager;
+        private final @NonNull QuotaManager mQuotaManager;
 
         // We need to keep track of whether the animation has started because pipeline has initiated
         // and it has received quota, or it is skipped by calling {@link android.animation
         // .Animator#end()} because no quota is available.
-        @NonNull final AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
+        final @NonNull AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
 
         private final int mRepeatMode;
         private final long mForwardRepeatDelay;
         private final long mReverseRepeatDelay;
-        @NonNull private final Handler mHandler;
+        private final @NonNull Handler mHandler;
         @NonNull Runnable mResumeRepeatRunnable;
         private boolean mIsReverse;
 
@@ -412,11 +422,12 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
             } else {
                 mIsReverse = false;
             }
-
             if ((mAlwaysPauseWhenRepeatForward || mForwardRepeatDelay > 0) && !mIsReverse) {
+                ((ValueAnimator)animation).setCurrentFraction(0F);
                 animation.pause();
                 mHandler.postDelayed(mResumeRepeatRunnable, mForwardRepeatDelay);
             } else if (mReverseRepeatDelay > 0 && mIsReverse) {
+                ((ValueAnimator)animation).setCurrentFraction(1F);
                 animation.pause();
                 mHandler.postDelayed(mResumeRepeatRunnable, mReverseRepeatDelay);
             }

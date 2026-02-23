@@ -21,12 +21,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.debugview.R;
 import androidx.core.util.Preconditions;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -58,9 +59,8 @@ public class SchemaTypeListItemAdapter extends
         notifyDataSetChanged();
     }
 
-    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.adapter_schema_type_list_item, parent, /*attachToRoot=*/false);
         return new ViewHolder(view);
@@ -92,8 +92,7 @@ public class SchemaTypeListItemAdapter extends
             mSchemaTypeLabel = view.findViewById(R.id.schema_type_item_title);
         }
 
-        @NonNull
-        public TextView getSchemaTypeLabel() {
+        public @NonNull TextView getSchemaTypeLabel() {
             return mSchemaTypeLabel;
         }
     }

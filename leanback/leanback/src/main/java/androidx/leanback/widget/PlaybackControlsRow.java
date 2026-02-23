@@ -425,7 +425,12 @@ public class PlaybackControlsRow extends Row {
 
         /**
          * Constructor
-         * @param context Context used for loading resources.
+         * @param id               The id of the Action.
+         * @param context          Context used for loading resources.
+         * @param solidIconIndex   Which lbPlaybackControlsActionIcons will be used as the solid
+         *                         thumb icon
+         * @param outlineIconIndex Which lbPlaybackControlsActionIcons will be used as the outline
+         *                         thumb icon
          */
         public ThumbsAction(int id, Context context, int solidIconIndex, int outlineIconIndex) {
             super(id);

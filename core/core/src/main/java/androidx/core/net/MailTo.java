@@ -18,9 +18,10 @@ package androidx.core.net;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -102,8 +103,7 @@ public final class MailTo {
      * @return MailTo object
      * @exception ParseException if the scheme is not a mailto URI
      */
-    @NonNull
-    public static MailTo parse(@NonNull String uri) throws ParseException {
+    public static @NonNull MailTo parse(@NonNull String uri) throws ParseException {
         Preconditions.checkNotNull(uri);
 
         if (!isMailTo(uri)) {
@@ -173,8 +173,7 @@ public final class MailTo {
      * @return MailTo object
      * @exception ParseException if the scheme is not a mailto URI
      */
-    @NonNull
-    public static MailTo parse(@NonNull Uri uri) throws ParseException {
+    public static @NonNull MailTo parse(@NonNull Uri uri) throws ParseException {
         return parse(uri.toString());
     }
 
@@ -184,8 +183,7 @@ public final class MailTo {
      * If no To line was specified, then null is return
      * @return comma delimited email addresses or null
      */
-    @Nullable
-    public String getTo() {
+    public @Nullable String getTo() {
         return mHeaders.get(TO);
     }
 
@@ -195,8 +193,7 @@ public final class MailTo {
      * If no CC line was specified, then null is return
      * @return comma delimited email addresses or null
      */
-    @Nullable
-    public String getCc() {
+    public @Nullable String getCc() {
         return mHeaders.get(CC);
     }
 
@@ -206,8 +203,7 @@ public final class MailTo {
      * If no BCC line was specified, then null is return
      * @return comma delimited email addresses or null
      */
-    @Nullable
-    public String getBcc() {
+    public @Nullable String getBcc() {
         return mHeaders.get(BCC);
     }
 
@@ -216,8 +212,7 @@ public final class MailTo {
      * If no subject line was specified, then null is return
      * @return subject or null
      */
-    @Nullable
-    public String getSubject() {
+    public @Nullable String getSubject() {
         return mHeaders.get(SUBJECT);
     }
 
@@ -226,8 +221,7 @@ public final class MailTo {
      * If no body line was specified, then null is return
      * @return body or null
      */
-    @Nullable
-    public String getBody() {
+    public @Nullable String getBody() {
         return mHeaders.get(BODY);
     }
 
@@ -235,14 +229,12 @@ public final class MailTo {
      * Retrieve all the parsed email headers from the mailto URI
      * @return map containing all parsed values
      */
-    @Nullable
-    public Map<String, String> getHeaders() {
+    public @Nullable Map<String, String> getHeaders() {
         return mHeaders;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder(MAILTO_SCHEME);
         sb.append('?');
         for (Map.Entry<String, String> header : mHeaders.entrySet()) {

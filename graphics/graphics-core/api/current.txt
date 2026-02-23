@@ -3,20 +3,21 @@ package androidx.graphics {
 
   @RequiresApi(android.os.Build.VERSION_CODES.Q) public final class CanvasBufferedRenderer implements java.lang.AutoCloseable {
     method public void close();
-    method public int getBufferFormat();
-    method public int getMaxBuffers();
-    method public long getUsageFlags();
-    method public boolean isClosed();
+    method @InaccessibleFromKotlin public int getBufferFormat();
+    method @InaccessibleFromKotlin public int getMaxBuffers();
+    method @InaccessibleFromKotlin public long getUsageFlags();
+    method @InaccessibleFromKotlin public boolean isClosed();
     method public androidx.graphics.CanvasBufferedRenderer.RenderRequest obtainRenderRequest();
     method public void releaseBuffer(android.hardware.HardwareBuffer hardwareBuffer);
     method public void releaseBuffer(android.hardware.HardwareBuffer hardwareBuffer, optional androidx.hardware.SyncFenceCompat? fence);
+    method @BytecodeOnly public static void releaseBuffer$default(androidx.graphics.CanvasBufferedRenderer!, android.hardware.HardwareBuffer!, androidx.hardware.SyncFenceCompat!, int, Object!);
     method public void setContentRoot(android.graphics.RenderNode renderNode);
     method public void setLightSourceAlpha(float ambientShadowAlpha, float spotShadowAlpha);
     method public void setLightSourceGeometry(float lightX, float lightY, float lightZ, float lightRadius);
-    property public final int bufferFormat;
-    property public final boolean isClosed;
-    property public final int maxBuffers;
-    property public final long usageFlags;
+    property public int bufferFormat;
+    property public boolean isClosed;
+    property public int maxBuffers;
+    property public long usageFlags;
   }
 
   public static final class CanvasBufferedRenderer.Builder {
@@ -29,6 +30,7 @@ package androidx.graphics {
 
   public final class CanvasBufferedRenderer.RenderRequest {
     method public suspend Object? draw(optional boolean waitForFence, kotlin.coroutines.Continuation<? super androidx.graphics.CanvasBufferedRenderer.RenderResult>);
+    method @BytecodeOnly public static Object! draw$default(androidx.graphics.CanvasBufferedRenderer.RenderRequest!, boolean, kotlin.coroutines.Continuation!, int, Object!);
     method public void drawAsync(java.util.concurrent.Executor executor, androidx.core.util.Consumer<androidx.graphics.CanvasBufferedRenderer.RenderResult> callback);
     method public androidx.graphics.CanvasBufferedRenderer.RenderRequest preserveContents(boolean preserve);
     method public androidx.graphics.CanvasBufferedRenderer.RenderRequest setBufferTransform(int bufferTransform);
@@ -37,18 +39,20 @@ package androidx.graphics {
 
   public static final class CanvasBufferedRenderer.RenderResult {
     ctor public CanvasBufferedRenderer.RenderResult(android.hardware.HardwareBuffer buffer, androidx.hardware.SyncFenceCompat? mFence, int mStatus);
-    method public androidx.hardware.SyncFenceCompat? getFence();
-    method public android.hardware.HardwareBuffer getHardwareBuffer();
-    method public int getStatus();
-    property public final androidx.hardware.SyncFenceCompat? fence;
-    property public final android.hardware.HardwareBuffer hardwareBuffer;
-    property public final int status;
+    method @InaccessibleFromKotlin public androidx.hardware.SyncFenceCompat? getFence();
+    method @InaccessibleFromKotlin public android.hardware.HardwareBuffer getHardwareBuffer();
+    method @InaccessibleFromKotlin public int getStatus();
+    property public androidx.hardware.SyncFenceCompat? fence;
+    property public android.hardware.HardwareBuffer hardwareBuffer;
+    property public int status;
     field public static final androidx.graphics.CanvasBufferedRenderer.RenderResult.Companion Companion;
     field public static final int ERROR_UNKNOWN = 1; // 0x1
     field public static final int SUCCESS = 0; // 0x0
   }
 
   public static final class CanvasBufferedRenderer.RenderResult.Companion {
+    property public static int ERROR_UNKNOWN;
+    property public static int SUCCESS;
   }
 
 }
@@ -56,30 +60,32 @@ package androidx.graphics {
 package androidx.graphics.lowlatency {
 
   public final class BufferInfo {
-    method public int getFrameBufferId();
-    method public int getHeight();
-    method public int getWidth();
-    property public final int frameBufferId;
-    property public final int height;
-    property public final int width;
+    method @InaccessibleFromKotlin public int getFrameBufferId();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public int getWidth();
+    property public int frameBufferId;
+    property public int height;
+    property public int width;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.Q) public final class CanvasFrontBufferedRenderer<T> {
+    ctor @BytecodeOnly public CanvasFrontBufferedRenderer(android.view.SurfaceView!, androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.Callback!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public CanvasFrontBufferedRenderer(android.view.SurfaceView surfaceView, androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.Callback<T> callback);
     ctor public CanvasFrontBufferedRenderer(android.view.SurfaceView surfaceView, androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.Callback<T> callback, optional int bufferFormat);
     method public void cancel();
     method public void clear();
     method public void commit();
-    method public int getBufferFormat();
-    method public android.graphics.ColorSpace getColorSpace();
+    method @InaccessibleFromKotlin public int getBufferFormat();
+    method @InaccessibleFromKotlin public android.graphics.ColorSpace getColorSpace();
     method public boolean isValid();
     method public void release(boolean cancelPending);
     method public void release(boolean cancelPending, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onReleaseComplete);
+    method @BytecodeOnly public static void release$default(androidx.graphics.lowlatency.CanvasFrontBufferedRenderer!, boolean, kotlin.jvm.functions.Function0!, int, Object!);
     method public void renderFrontBufferedLayer(T param);
     method public void renderMultiBufferedLayer(java.util.Collection<? extends T> params);
-    method public void setColorSpace(android.graphics.ColorSpace);
-    property public final int bufferFormat;
-    property public final android.graphics.ColorSpace colorSpace;
+    method @InaccessibleFromKotlin public void setColorSpace(android.graphics.ColorSpace);
+    property public int bufferFormat;
+    property public android.graphics.ColorSpace colorSpace;
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public static interface CanvasFrontBufferedRenderer.Callback<T> {
@@ -92,12 +98,13 @@ package androidx.graphics.lowlatency {
   public final class FrontBufferSyncStrategy implements androidx.graphics.opengl.SyncStrategy {
     ctor public FrontBufferSyncStrategy(long usageFlags);
     method public androidx.hardware.SyncFenceCompat? createSyncFence(androidx.graphics.opengl.egl.EGLSpec eglSpec);
-    method public boolean isVisible();
-    method public void setVisible(boolean);
-    property public final boolean isVisible;
+    method @InaccessibleFromKotlin public boolean isVisible();
+    method @InaccessibleFromKotlin public void setVisible(boolean);
+    property public boolean isVisible;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.Q) public final class GLFrontBufferedRenderer<T> {
+    ctor @BytecodeOnly public GLFrontBufferedRenderer(android.view.SurfaceView!, androidx.graphics.lowlatency.GLFrontBufferedRenderer.Callback!, androidx.graphics.opengl.GLRenderer!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public GLFrontBufferedRenderer(android.view.SurfaceView surfaceView, androidx.graphics.lowlatency.GLFrontBufferedRenderer.Callback<T> callback);
     ctor public GLFrontBufferedRenderer(android.view.SurfaceView surfaceView, androidx.graphics.lowlatency.GLFrontBufferedRenderer.Callback<T> callback, optional androidx.graphics.opengl.GLRenderer? glRenderer);
     ctor public GLFrontBufferedRenderer(android.view.SurfaceView surfaceView, androidx.graphics.lowlatency.GLFrontBufferedRenderer.Callback<T> callback, optional androidx.graphics.opengl.GLRenderer? glRenderer, optional int bufferFormat);
@@ -105,13 +112,14 @@ package androidx.graphics.lowlatency {
     method public void clear();
     method public void commit();
     method public void execute(Runnable runnable);
-    method public int getBufferFormat();
+    method @InaccessibleFromKotlin public int getBufferFormat();
     method public boolean isValid();
     method public void release(boolean cancelPending);
     method public void release(boolean cancelPending, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onReleaseComplete);
+    method @BytecodeOnly public static void release$default(androidx.graphics.lowlatency.GLFrontBufferedRenderer!, boolean, kotlin.jvm.functions.Function0!, int, Object!);
     method public void renderFrontBufferedLayer(T param);
     method public void renderMultiBufferedLayer(java.util.Collection<? extends T> params);
-    property public final int bufferFormat;
+    property public int bufferFormat;
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public static interface GLFrontBufferedRenderer.Callback<T> {
@@ -125,6 +133,7 @@ package androidx.graphics.lowlatency {
     ctor public LowLatencyCanvasView(android.content.Context context);
     ctor public LowLatencyCanvasView(android.content.Context context, optional android.util.AttributeSet? attrs);
     ctor public LowLatencyCanvasView(android.content.Context context, optional android.util.AttributeSet? attrs, optional int defStyle);
+    ctor @BytecodeOnly public LowLatencyCanvasView(android.content.Context!, android.util.AttributeSet!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void cancel();
     method public void clear();
     method public void commit();
@@ -146,15 +155,16 @@ package androidx.graphics.opengl {
   @RequiresApi(android.os.Build.VERSION_CODES.O) public final class FrameBuffer implements java.lang.AutoCloseable {
     ctor public FrameBuffer(androidx.graphics.opengl.egl.EGLSpec egl, android.hardware.HardwareBuffer hardwareBuffer);
     method public void close();
-    method public android.hardware.HardwareBuffer getHardwareBuffer();
-    method public boolean isClosed();
+    method @InaccessibleFromKotlin public android.hardware.HardwareBuffer getHardwareBuffer();
+    method @InaccessibleFromKotlin public boolean isClosed();
     method public void makeCurrent();
-    property public final android.hardware.HardwareBuffer hardwareBuffer;
-    property public final boolean isClosed;
+    property public android.hardware.HardwareBuffer hardwareBuffer;
+    property public boolean isClosed;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.O) public final class FrameBufferRenderer implements androidx.graphics.opengl.GLRenderer.RenderCallback {
     ctor public FrameBufferRenderer(androidx.graphics.opengl.FrameBufferRenderer.RenderCallback frameBufferRendererCallbacks, optional androidx.graphics.opengl.SyncStrategy syncStrategy);
+    ctor @BytecodeOnly public FrameBufferRenderer(androidx.graphics.opengl.FrameBufferRenderer.RenderCallback!, androidx.graphics.opengl.SyncStrategy!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void clear();
     method public void onDrawFrame(androidx.graphics.opengl.egl.EGLManager eglManager);
   }
@@ -167,20 +177,21 @@ package androidx.graphics.opengl {
 
   @RequiresApi(android.os.Build.VERSION_CODES.Q) public final class GLFrameBufferRenderer {
     method public void execute(Runnable runnable);
-    method public int getBufferFormat();
-    method public androidx.graphics.opengl.GLRenderer getGLRenderer();
-    method public int getMaxBuffers();
-    method public androidx.graphics.opengl.SyncStrategy getSyncStrategy();
-    method public long getUsageFlags();
+    method @InaccessibleFromKotlin public int getBufferFormat();
+    method @InaccessibleFromKotlin public androidx.graphics.opengl.GLRenderer getGLRenderer();
+    method @InaccessibleFromKotlin public int getMaxBuffers();
+    method @InaccessibleFromKotlin public androidx.graphics.opengl.SyncStrategy getSyncStrategy();
+    method @InaccessibleFromKotlin public long getUsageFlags();
     method public boolean isValid();
     method public void release(boolean cancelPending);
     method public void release(boolean cancelPending, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onReleaseCallback);
+    method @BytecodeOnly public static void release$default(androidx.graphics.opengl.GLFrameBufferRenderer!, boolean, kotlin.jvm.functions.Function0!, int, Object!);
     method public void render();
-    property public final int bufferFormat;
-    property public final androidx.graphics.opengl.GLRenderer glRenderer;
-    property public final int maxBuffers;
-    property public final androidx.graphics.opengl.SyncStrategy syncStrategy;
-    property public final long usageFlags;
+    property public int bufferFormat;
+    property public androidx.graphics.opengl.GLRenderer glRenderer;
+    property public int maxBuffers;
+    property public androidx.graphics.opengl.SyncStrategy syncStrategy;
+    property public long usageFlags;
   }
 
   public static final class GLFrameBufferRenderer.Builder {
@@ -201,6 +212,7 @@ package androidx.graphics.opengl {
 
   public final class GLRenderer {
     ctor public GLRenderer();
+    ctor @BytecodeOnly public GLRenderer(kotlin.jvm.functions.Function0!, kotlin.jvm.functions.Function1!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public GLRenderer(optional kotlin.jvm.functions.Function0<? extends androidx.graphics.opengl.egl.EGLSpec> eglSpecFactory, optional kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.egl.EGLManager,? extends android.opengl.EGLConfig> eglConfigFactory);
     method public androidx.graphics.opengl.GLRenderer.RenderTarget attach(android.view.Surface surface, int width, int height, androidx.graphics.opengl.GLRenderer.RenderCallback renderer);
     method public androidx.graphics.opengl.GLRenderer.RenderTarget attach(android.view.SurfaceView surfaceView, androidx.graphics.opengl.GLRenderer.RenderCallback renderer);
@@ -208,17 +220,22 @@ package androidx.graphics.opengl {
     method public androidx.graphics.opengl.GLRenderer.RenderTarget createRenderTarget(int width, int height, androidx.graphics.opengl.GLRenderer.RenderCallback renderer);
     method public void detach(androidx.graphics.opengl.GLRenderer.RenderTarget target, boolean cancelPending);
     method public void detach(androidx.graphics.opengl.GLRenderer.RenderTarget target, boolean cancelPending, optional @WorkerThread kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onDetachComplete);
+    method @BytecodeOnly public static void detach$default(androidx.graphics.opengl.GLRenderer!, androidx.graphics.opengl.GLRenderer.RenderTarget!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
     method public void execute(Runnable runnable);
     method public boolean isRunning();
     method public void registerEGLContextCallback(androidx.graphics.opengl.GLRenderer.EGLContextCallback callback);
     method public void requestRender(androidx.graphics.opengl.GLRenderer.RenderTarget target);
     method public void requestRender(androidx.graphics.opengl.GLRenderer.RenderTarget target, optional kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onRenderComplete);
+    method @BytecodeOnly public static void requestRender$default(androidx.graphics.opengl.GLRenderer!, androidx.graphics.opengl.GLRenderer.RenderTarget!, kotlin.jvm.functions.Function1!, int, Object!);
     method public void resize(androidx.graphics.opengl.GLRenderer.RenderTarget target, int width, int height);
     method public void resize(androidx.graphics.opengl.GLRenderer.RenderTarget target, int width, int height, optional kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onResizeComplete);
+    method @BytecodeOnly public static void resize$default(androidx.graphics.opengl.GLRenderer!, androidx.graphics.opengl.GLRenderer.RenderTarget!, int, int, kotlin.jvm.functions.Function1!, int, Object!);
     method public void start();
     method public void start(optional String name);
+    method @BytecodeOnly public static void start$default(androidx.graphics.opengl.GLRenderer!, String!, int, Object!);
     method public void stop(boolean cancelPending);
     method public void stop(boolean cancelPending, optional kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer,kotlin.Unit>? onStop);
+    method @BytecodeOnly public static void stop$default(androidx.graphics.opengl.GLRenderer!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
     method public void unregisterEGLContextCallback(androidx.graphics.opengl.GLRenderer.EGLContextCallback callback);
     field public static final androidx.graphics.opengl.GLRenderer.Companion Companion;
   }
@@ -239,11 +256,14 @@ package androidx.graphics.opengl {
   public static final class GLRenderer.RenderTarget {
     method public void detach(boolean cancelPending);
     method public void detach(boolean cancelPending, optional kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onDetachComplete);
+    method @BytecodeOnly public static void detach$default(androidx.graphics.opengl.GLRenderer.RenderTarget!, boolean, kotlin.jvm.functions.Function1!, int, Object!);
     method public boolean isAttached();
     method public void requestRender();
     method public void requestRender(optional @WorkerThread kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onRenderComplete);
+    method @BytecodeOnly public static void requestRender$default(androidx.graphics.opengl.GLRenderer.RenderTarget!, kotlin.jvm.functions.Function1!, int, Object!);
     method public void resize(int width, int height);
     method public void resize(int width, int height, optional @WorkerThread kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.GLRenderer.RenderTarget,kotlin.Unit>? onResizeComplete);
+    method @BytecodeOnly public static void resize$default(androidx.graphics.opengl.GLRenderer.RenderTarget!, int, int, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   public interface SyncStrategy {
@@ -253,6 +273,7 @@ package androidx.graphics.opengl {
   }
 
   public static final class SyncStrategy.Companion {
+    property public androidx.graphics.opengl.SyncStrategy ALWAYS;
   }
 
 }
@@ -275,50 +296,59 @@ package androidx.graphics.opengl.egl {
     method public androidx.graphics.opengl.egl.EGLConfigAttributes build();
     method public void include(androidx.graphics.opengl.egl.EGLConfigAttributes attributes);
     method public androidx.graphics.opengl.egl.EGLConfigAttributes.Builder setAttribute(int attribute, int value);
-    method @kotlin.jvm.JvmSynthetic public infix void to(int, int that);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public infix void to(int, int that);
   }
 
   public static final class EGLConfigAttributes.Companion {
+    property public static int EGL_COLOR_COMPONENT_TYPE_EXT;
+    property public static int EGL_COLOR_COMPONENT_TYPE_FIXED_EXT;
+    property public static int EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT;
+    property public androidx.graphics.opengl.egl.EGLConfigAttributes RGBA_1010102;
+    property public androidx.graphics.opengl.egl.EGLConfigAttributes RGBA_8888;
+    property public androidx.graphics.opengl.egl.EGLConfigAttributes RGBA_F16;
   }
 
   public final class EGLConfigAttributesKt {
-    method @kotlin.jvm.JvmSynthetic public static inline androidx.graphics.opengl.egl.EGLConfigAttributes EGLConfigAttributes(kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit> block);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public static inline androidx.graphics.opengl.egl.EGLConfigAttributes EGLConfigAttributes(kotlin.jvm.functions.Function1<androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit> block);
   }
 
   public final class EGLException extends java.lang.RuntimeException {
     ctor public EGLException(int error, optional String msg);
-    method public int getError();
-    method public String getMsg();
-    property public final int error;
+    ctor @BytecodeOnly public EGLException(int, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public int getError();
+    method @InaccessibleFromKotlin public String getMsg();
+    property public int error;
     property public String message;
-    property public final String msg;
+    property public String msg;
   }
 
   public final class EGLManager {
     ctor public EGLManager();
     ctor public EGLManager(optional androidx.graphics.opengl.egl.EGLSpec eglSpec);
+    ctor @BytecodeOnly public EGLManager(androidx.graphics.opengl.egl.EGLSpec!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public android.opengl.EGLContext createContext(android.opengl.EGLConfig config);
-    method public android.opengl.EGLSurface getCurrentDrawSurface();
-    method public android.opengl.EGLSurface getCurrentReadSurface();
-    method public android.opengl.EGLSurface getDefaultSurface();
-    method public android.opengl.EGLConfig? getEGLConfig();
-    method public android.opengl.EGLContext? getEGLContext();
-    method public androidx.graphics.opengl.egl.EGLSpec getEGLSpec();
-    method public androidx.graphics.opengl.egl.EGLVersion getEGLVersion();
+    method @InaccessibleFromKotlin public android.opengl.EGLSurface getCurrentDrawSurface();
+    method @InaccessibleFromKotlin public android.opengl.EGLSurface getCurrentReadSurface();
+    method @InaccessibleFromKotlin public android.opengl.EGLSurface getDefaultSurface();
+    method @InaccessibleFromKotlin public android.opengl.EGLConfig? getEGLConfig();
+    method @InaccessibleFromKotlin public android.opengl.EGLContext? getEGLContext();
+    method @InaccessibleFromKotlin public androidx.graphics.opengl.egl.EGLSpec getEGLSpec();
+    method @InaccessibleFromKotlin public androidx.graphics.opengl.egl.EGLVersion getEGLVersion();
     method public void initialize();
     method public boolean isExtensionSupported(String extensionName);
     method public android.opengl.EGLConfig? loadConfig(androidx.graphics.opengl.egl.EGLConfigAttributes configAttributes);
     method public boolean makeCurrent(android.opengl.EGLSurface drawSurface);
     method public boolean makeCurrent(android.opengl.EGLSurface drawSurface, optional android.opengl.EGLSurface readSurface);
+    method @BytecodeOnly public static boolean makeCurrent$default(androidx.graphics.opengl.egl.EGLManager!, android.opengl.EGLSurface!, android.opengl.EGLSurface!, int, Object!);
     method public void release();
     method public void swapAndFlushBuffers();
-    property public final android.opengl.EGLSurface currentDrawSurface;
-    property public final android.opengl.EGLSurface currentReadSurface;
-    property public final android.opengl.EGLSurface defaultSurface;
-    property public final android.opengl.EGLConfig? eglConfig;
-    property public final android.opengl.EGLContext? eglContext;
-    property public final androidx.graphics.opengl.egl.EGLSpec eglSpec;
-    property public final androidx.graphics.opengl.egl.EGLVersion eglVersion;
+    property public android.opengl.EGLSurface currentDrawSurface;
+    property public android.opengl.EGLSurface currentReadSurface;
+    property public android.opengl.EGLSurface defaultSurface;
+    property public android.opengl.EGLConfig? eglConfig;
+    property public android.opengl.EGLContext? eglContext;
+    property public androidx.graphics.opengl.egl.EGLSpec eglSpec;
+    property public androidx.graphics.opengl.egl.EGLVersion eglVersion;
     field public static final androidx.graphics.opengl.egl.EGLManager.Companion Companion;
   }
 
@@ -354,17 +384,19 @@ package androidx.graphics.opengl.egl {
 
   public static final class EGLSpec.Companion {
     method public String getStatusString(int error);
+    property public androidx.graphics.opengl.egl.EGLSpec V14;
   }
 
   public final class EGLVersion {
     ctor public EGLVersion(int major, int minor);
     method public int component1();
     method public int component2();
-    method public androidx.graphics.opengl.egl.EGLVersion copy(int major, int minor);
-    method public int getMajor();
-    method public int getMinor();
-    property public final int major;
-    property public final int minor;
+    method public androidx.graphics.opengl.egl.EGLVersion copy(optional int major, optional int minor);
+    method @BytecodeOnly public static androidx.graphics.opengl.egl.EGLVersion! copy$default(androidx.graphics.opengl.egl.EGLVersion!, int, int, int, Object!);
+    method @InaccessibleFromKotlin public int getMajor();
+    method @InaccessibleFromKotlin public int getMinor();
+    property public int major;
+    property public int minor;
     field public static final androidx.graphics.opengl.egl.EGLVersion.Companion Companion;
     field public static final androidx.graphics.opengl.egl.EGLVersion Unknown;
     field public static final androidx.graphics.opengl.egl.EGLVersion V14;
@@ -372,6 +404,9 @@ package androidx.graphics.opengl.egl {
   }
 
   public static final class EGLVersion.Companion {
+    property public androidx.graphics.opengl.egl.EGLVersion Unknown;
+    property public androidx.graphics.opengl.egl.EGLVersion V14;
+    property public androidx.graphics.opengl.egl.EGLVersion V15;
   }
 
 }
@@ -403,6 +438,16 @@ package androidx.graphics.surface {
   }
 
   public static final class SurfaceControlCompat.Companion {
+    property public static int BUFFER_TRANSFORM_IDENTITY;
+    property public static int BUFFER_TRANSFORM_MIRROR_HORIZONTAL;
+    property public static int BUFFER_TRANSFORM_MIRROR_VERTICAL;
+    property public static int BUFFER_TRANSFORM_ROTATE_180;
+    property public static int BUFFER_TRANSFORM_ROTATE_270;
+    property public static int BUFFER_TRANSFORM_ROTATE_90;
+    property public static int CHANGE_FRAME_RATE_ALWAYS;
+    property public static int CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS;
+    property public static int FRAME_RATE_COMPATIBILITY_DEFAULT;
+    property public static int FRAME_RATE_COMPATIBILITY_FIXED_SOURCE;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.Q) public static final class SurfaceControlCompat.Transaction implements java.lang.AutoCloseable {
@@ -418,6 +463,7 @@ package androidx.graphics.surface {
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setBuffer(androidx.graphics.surface.SurfaceControlCompat surfaceControl, android.hardware.HardwareBuffer? buffer);
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setBuffer(androidx.graphics.surface.SurfaceControlCompat surfaceControl, android.hardware.HardwareBuffer? buffer, optional androidx.hardware.SyncFenceCompat? fence);
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setBuffer(androidx.graphics.surface.SurfaceControlCompat surfaceControl, android.hardware.HardwareBuffer? buffer, optional androidx.hardware.SyncFenceCompat? fence, optional kotlin.jvm.functions.Function1<? super androidx.hardware.SyncFenceCompat,kotlin.Unit>? releaseCallback);
+    method @BytecodeOnly public static androidx.graphics.surface.SurfaceControlCompat.Transaction! setBuffer$default(androidx.graphics.surface.SurfaceControlCompat.Transaction!, androidx.graphics.surface.SurfaceControlCompat!, android.hardware.HardwareBuffer!, androidx.hardware.SyncFenceCompat!, kotlin.jvm.functions.Function1!, int, Object!);
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setBufferTransform(androidx.graphics.surface.SurfaceControlCompat surfaceControl, int transformation);
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setCrop(androidx.graphics.surface.SurfaceControlCompat surfaceControl, android.graphics.Rect? crop);
     method public androidx.graphics.surface.SurfaceControlCompat.Transaction setDamageRegion(androidx.graphics.surface.SurfaceControlCompat surfaceControl, android.graphics.Region? region);
@@ -467,6 +513,29 @@ package androidx.hardware {
   }
 
   public static final class DataSpace.Companion {
+    property public static int DATASPACE_ADOBE_RGB;
+    property public static int DATASPACE_BT2020;
+    property public static int DATASPACE_BT2020_HLG;
+    property public static int DATASPACE_BT2020_PQ;
+    property public static int DATASPACE_BT601_525;
+    property public static int DATASPACE_BT601_625;
+    property public static int DATASPACE_BT709;
+    property public static int DATASPACE_DCI_P3;
+    property public static int DATASPACE_DEPTH;
+    property public static int DATASPACE_DISPLAY_P3;
+    property public static int DATASPACE_DYNAMIC_DEPTH;
+    property public static int DATASPACE_HEIF;
+    property public static int DATASPACE_JFIF;
+    property public static int DATASPACE_JPEG_R;
+    property public static int DATASPACE_SCRGB;
+    property public static int DATASPACE_SCRGB_LINEAR;
+    property public static int DATASPACE_SRGB;
+    property public static int DATASPACE_SRGB_LINEAR;
+    property public static int DATASPACE_UNKNOWN;
+    property public static int RANGE_EXTENDED;
+    property public static int RANGE_FULL;
+    property public static int RANGE_LIMITED;
+    property public static int RANGE_UNSPECIFIED;
   }
 
   public final class SyncFenceCompat implements java.lang.AutoCloseable {
@@ -483,6 +552,8 @@ package androidx.hardware {
 
   public static final class SyncFenceCompat.Companion {
     method public androidx.hardware.SyncFenceCompat createNativeSyncFence();
+    property public static long SIGNAL_TIME_INVALID;
+    property public static long SIGNAL_TIME_PENDING;
   }
 
 }
@@ -542,22 +613,54 @@ package androidx.opengl {
     method public boolean eglGetSyncAttribKHR(android.opengl.EGLDisplay eglDisplay, androidx.opengl.EGLSyncKHR sync, int attribute, int[] value, int offset);
     method public void glEGLImageTargetTexture2DOES(int target, androidx.opengl.EGLImageKHR image);
     method public java.util.Set<java.lang.String> parseExtensions(String queryString);
+    property public static String EGL_ANDROID_CLIENT_BUFFER;
+    property public static String EGL_ANDROID_IMAGE_NATIVE_BUFFER;
+    property public static String EGL_ANDROID_NATIVE_FENCE_SYNC;
+    property public static int EGL_CONDITION_SATISFIED_KHR;
+    property public static String EGL_EXT_BUFFER_AGE;
+    property public static String EGL_EXT_GL_COLORSPACE_BT2020_PQ;
+    property public static String EGL_EXT_GL_COLORSPACE_DISPLAY_P3_PASSTHROUGH;
+    property public static String EGL_EXT_GL_COLORSPACE_SCRGB;
+    property public static String EGL_EXT_PIXEL_FORMAT_FLOAT;
+    property public static int EGL_FALSE;
+    property public static long EGL_FOREVER_KHR;
+    property public static String EGL_IMG_CONTEXT_PRIORITY;
+    property public static String EGL_KHR_FENCE_SYNC;
+    property public static String EGL_KHR_GL_COLORSPACE;
+    property public static String EGL_KHR_IMAGE;
+    property public static String EGL_KHR_IMAGE_BASE;
+    property public static String EGL_KHR_NO_CONFIG_CONTEXT;
+    property public static String EGL_KHR_PARTIAL_UPDATE;
+    property public static String EGL_KHR_SURFACELESS_CONTEXT;
+    property public static String EGL_KHR_SWAP_BUFFERS_WITH_DAMAGE;
+    property public static String EGL_KHR_WAIT_SYNC;
+    property public static int EGL_SIGNALED_KHR;
+    property public static int EGL_SYNC_CONDITION_KHR;
+    property public static int EGL_SYNC_FENCE_KHR;
+    property public static int EGL_SYNC_FLUSH_COMMANDS_BIT_KHR;
+    property public static int EGL_SYNC_NATIVE_FENCE_ANDROID;
+    property public static int EGL_SYNC_PRIOR_COMMANDS_COMPLETE_KHR;
+    property public static int EGL_SYNC_STATUS_KHR;
+    property public static int EGL_SYNC_TYPE_KHR;
+    property public static int EGL_TIMEOUT_EXPIRED_KHR;
+    property public static int EGL_TRUE;
+    property public static int EGL_UNSIGNALED_KHR;
   }
 
   public interface EGLHandle {
-    method public long getNativeHandle();
+    method @InaccessibleFromKotlin public long getNativeHandle();
     property public abstract long nativeHandle;
   }
 
   public final class EGLImageKHR implements androidx.opengl.EGLHandle {
     ctor public EGLImageKHR(long nativeHandle);
-    method public long getNativeHandle();
+    method @InaccessibleFromKotlin public long getNativeHandle();
     property public long nativeHandle;
   }
 
   public final class EGLSyncKHR implements androidx.opengl.EGLHandle {
     ctor public EGLSyncKHR(long nativeHandle);
-    method public long getNativeHandle();
+    method @InaccessibleFromKotlin public long getNativeHandle();
     property public long nativeHandle;
   }
 

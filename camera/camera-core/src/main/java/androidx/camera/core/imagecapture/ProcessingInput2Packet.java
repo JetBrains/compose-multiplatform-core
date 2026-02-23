@@ -31,8 +31,6 @@ import android.graphics.RectF;
 import android.hardware.camera2.CaptureRequest;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -41,6 +39,9 @@ import androidx.camera.core.internal.CameraCaptureResultImageInfo;
 import androidx.camera.core.internal.compat.quirk.ImageCaptureRotationOptionQuirk;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -52,9 +53,8 @@ import java.io.IOException;
 final class ProcessingInput2Packet implements
         Operation<ProcessingNode.InputPacket, Packet<ImageProxy>> {
 
-    @NonNull
     @Override
-    public Packet<ImageProxy> apply(@NonNull ProcessingNode.InputPacket inputPacket)
+    public @NonNull Packet<ImageProxy> apply(ProcessingNode.@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
         ImageProxy image = inputPacket.getImageProxy();
         ProcessingRequest request = inputPacket.getProcessingRequest();
@@ -128,8 +128,7 @@ final class ProcessingInput2Packet implements
     /**
      * Updates sensorToSurface transformation.
      */
-    @NonNull
-    private static Matrix getUpdatedTransform(@NonNull Matrix sensorToSurface,
+    private static @NonNull Matrix getUpdatedTransform(@NonNull Matrix sensorToSurface,
             @NonNull Matrix halTransform) {
         Matrix sensorToBuffer = new Matrix(sensorToSurface);
         sensorToBuffer.postConcat(halTransform);
@@ -139,8 +138,8 @@ final class ProcessingInput2Packet implements
     /**
      * Transforms crop rect with the HAL transformation.
      */
-    @NonNull
-    private static Rect getUpdatedCropRect(@NonNull Rect cropRect, @NonNull Matrix halTransform) {
+    private static @NonNull Rect getUpdatedCropRect(@NonNull Rect cropRect,
+            @NonNull Matrix halTransform) {
         RectF rectF = new RectF(cropRect);
         halTransform.mapRect(rectF);
         rectF.sort();

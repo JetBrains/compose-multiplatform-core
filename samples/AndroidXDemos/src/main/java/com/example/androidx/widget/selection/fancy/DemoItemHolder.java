@@ -26,11 +26,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 final class DemoItemHolder extends DemoHolder {
 
@@ -73,9 +74,8 @@ final class DemoItemHolder extends DemoHolder {
                 return DemoItemHolder.this.inSelectRegion(e);
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return DemoItemHolder.this.toString();
             }
         };

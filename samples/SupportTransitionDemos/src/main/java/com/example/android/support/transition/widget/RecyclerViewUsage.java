@@ -21,7 +21,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.AutoTransition;
@@ -29,6 +28,8 @@ import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
 
 import com.example.android.support.transition.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This demonstrates usage of Transitions applied to RecyclerView items.
@@ -57,9 +58,9 @@ public class RecyclerViewUsage extends TransitionUsageBase {
 
         private int mExpandedPosition = RecyclerView.NO_POSITION;
 
-        @NonNull
         @Override
-        public TransitionHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public @NonNull TransitionHolder onCreateViewHolder(@NonNull ViewGroup parent,
+                int viewType) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             return new TransitionHolder(
                     (ViewGroup) inflater.inflate(R.layout.recycler_view_item, parent, false));

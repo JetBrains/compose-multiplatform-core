@@ -23,8 +23,9 @@ import android.util.Log;
 import android.util.Property;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -160,8 +161,7 @@ public final class ObjectAnimator extends ValueAnimator {
      * object (if there was just one) or a comma-separated list of all of the
      * names (if there are more than one).</p>
      */
-    @NonNull
-    public String getPropertyName() {
+    public @NonNull String getPropertyName() {
         String propertyName = null;
         if (mPropertyName != null) {
             propertyName = mPropertyName;
@@ -181,8 +181,7 @@ public final class ObjectAnimator extends ValueAnimator {
     }
 
     @Override
-    @NonNull
-    public String getNameForTrace() {
+    public @NonNull String getNameForTrace() {
         return mAnimTraceName == null ? "animator:" + getPropertyName() : mAnimTraceName;
     }
 
@@ -234,9 +233,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofInt(@NonNull Object target, @NonNull String propertyName,
-            @NonNull int... values) {
+    public static @NonNull ObjectAnimator ofInt(@NonNull Object target,
+            @NonNull String propertyName, int @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, propertyName);
         anim.setIntValues(values);
         return anim;
@@ -259,9 +257,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static ObjectAnimator ofInt(@NonNull Object target, @NonNull String xPropertyName,
-            @NonNull String yPropertyName, @NonNull Path path) {
+    public static @NonNull ObjectAnimator ofInt(@NonNull Object target,
+            @NonNull String xPropertyName, @NonNull String yPropertyName, @NonNull Path path) {
         PathKeyframes keyframes = KeyframeSet.ofPath(path);
         PropertyValuesHolder x = PropertyValuesHolder.ofKeyframes(xPropertyName,
                 keyframes.createXIntKeyframes());
@@ -283,9 +280,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static <T> ObjectAnimator ofInt(@NonNull T target,
-            @NonNull Property<T, Integer> property, @NonNull int... values) {
+    public static <T> @NonNull ObjectAnimator ofInt(@NonNull T target,
+            @NonNull Property<T, Integer> property, int @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, property);
         anim.setIntValues(values);
         return anim;
@@ -304,8 +300,7 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static <T> ObjectAnimator ofInt(@NonNull T target,
+    public static <T> @NonNull ObjectAnimator ofInt(@NonNull T target,
             @Nullable Property<T, Integer> xProperty, @Nullable Property<T, Integer> yProperty,
             @NonNull Path path) {
         PathKeyframes keyframes = KeyframeSet.ofPath(path);
@@ -332,11 +327,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofMultiInt(
+    public static @NonNull ObjectAnimator ofMultiInt(
             @NonNull Object target,
             @NonNull String propertyName,
-            @SuppressLint("ArrayReturn") /* Platform API */ @NonNull int[][] values
+            @SuppressLint("ArrayReturn") /* Platform API */ int @NonNull [][] values
     ) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiInt(propertyName, values);
         return ofPropertyValuesHolder(target, pvh);
@@ -357,9 +351,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static ObjectAnimator ofMultiInt(@NonNull Object target, @NonNull String propertyName,
-            @NonNull Path path) {
+    public static @NonNull ObjectAnimator ofMultiInt(@NonNull Object target,
+            @NonNull String propertyName, @NonNull Path path) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiInt(propertyName, path);
         return ofPropertyValuesHolder(target, pvh);
     }
@@ -384,10 +377,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @SafeVarargs
-    @NonNull
-    public static <T> ObjectAnimator ofMultiInt(@NonNull Object target,
+    public static <T> @NonNull ObjectAnimator ofMultiInt(@NonNull Object target,
             @NonNull String propertyName, @NonNull TypeConverter<T, int[]> converter,
-            @NonNull TypeEvaluator<T> evaluator, @NonNull T... values) {
+            @NonNull TypeEvaluator<T> evaluator, T @NonNull ... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiInt(propertyName, converter,
                 evaluator, values);
         return ObjectAnimator.ofPropertyValuesHolder(target, pvh);
@@ -408,9 +400,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofArgb(@NonNull Object target, @NonNull String propertyName,
-            @NonNull int... values) {
+    public static @NonNull ObjectAnimator ofArgb(@NonNull Object target,
+            @NonNull String propertyName, int @NonNull ... values) {
         ObjectAnimator animator = ofInt(target, propertyName, values);
         animator.setEvaluator(ArgbEvaluator.getInstance());
         return animator;
@@ -429,9 +420,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static <T> ObjectAnimator ofArgb(@NonNull T target,
-            @NonNull Property<T, Integer> property, @NonNull int... values) {
+    public static <T> @NonNull ObjectAnimator ofArgb(@NonNull T target,
+            @NonNull Property<T, Integer> property, int @NonNull ... values) {
         ObjectAnimator animator = ofInt(target, property, values);
         animator.setEvaluator(ArgbEvaluator.getInstance());
         return animator;
@@ -452,9 +442,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofFloat(@NonNull Object target, @NonNull String propertyName,
-            @NonNull float... values) {
+    public static @NonNull ObjectAnimator ofFloat(@NonNull Object target,
+            @NonNull String propertyName, float @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, propertyName);
         anim.setFloatValues(values);
         return anim;
@@ -477,9 +466,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static ObjectAnimator ofFloat(@NonNull Object target, @Nullable String xPropertyName,
-            @Nullable String yPropertyName, @NonNull Path path) {
+    public static @NonNull ObjectAnimator ofFloat(@NonNull Object target,
+            @Nullable String xPropertyName, @Nullable String yPropertyName, @NonNull Path path) {
         PathKeyframes keyframes = KeyframeSet.ofPath(path);
         PropertyValuesHolder x = PropertyValuesHolder.ofKeyframes(xPropertyName,
                 keyframes.createXFloatKeyframes());
@@ -501,9 +489,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static <T> ObjectAnimator ofFloat(@NonNull T target,
-            @NonNull Property<T, Float> property, @NonNull float... values) {
+    public static <T> @NonNull ObjectAnimator ofFloat(@NonNull T target,
+            @NonNull Property<T, Float> property, float @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, property);
         anim.setFloatValues(values);
         return anim;
@@ -522,8 +509,7 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static <T> ObjectAnimator ofFloat(@NonNull T target,
+    public static <T> @NonNull ObjectAnimator ofFloat(@NonNull T target,
             @Nullable Property<T, Float> xProperty, @Nullable Property<T, Float> yProperty,
             @NonNull Path path) {
         PathKeyframes keyframes = KeyframeSet.ofPath(path);
@@ -550,11 +536,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofMultiFloat(
+    public static @NonNull ObjectAnimator ofMultiFloat(
             @NonNull Object target,
             @NonNull String propertyName,
-            @SuppressLint("ArrayReturn") /* Platform API */ @NonNull float[][] values
+            @SuppressLint("ArrayReturn") /* Platform API */ float @NonNull [][] values
     ) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiFloat(propertyName, values);
         return ofPropertyValuesHolder(target, pvh);
@@ -575,9 +560,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static ObjectAnimator ofMultiFloat(@NonNull Object target, @NonNull String propertyName,
-            @NonNull Path path) {
+    public static @NonNull ObjectAnimator ofMultiFloat(@NonNull Object target,
+            @NonNull String propertyName, @NonNull Path path) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiFloat(propertyName, path);
         return ofPropertyValuesHolder(target, pvh);
     }
@@ -602,10 +586,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @SafeVarargs
-    @NonNull
-    public static <T> ObjectAnimator ofMultiFloat(@NonNull Object target,
+    public static <T> @NonNull ObjectAnimator ofMultiFloat(@NonNull Object target,
             @NonNull String propertyName, @NonNull TypeConverter<T, float[]> converter,
-            @NonNull TypeEvaluator<T> evaluator, @NonNull T... values) {
+            @NonNull TypeEvaluator<T> evaluator, T @NonNull ... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofMultiFloat(propertyName, converter,
                 evaluator, values);
         return ObjectAnimator.ofPropertyValuesHolder(target, pvh);
@@ -634,9 +617,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofObject(@NonNull Object target, @NonNull String propertyName,
-            @NonNull TypeEvaluator evaluator, @NonNull Object... values) {
+    public static @NonNull ObjectAnimator ofObject(@NonNull Object target,
+            @NonNull String propertyName, @NonNull TypeEvaluator evaluator,
+            Object @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, propertyName);
         anim.setObjectValues(values);
         anim.setEvaluator(evaluator);
@@ -661,9 +644,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static ObjectAnimator ofObject(@NonNull Object target, @NonNull String propertyName,
-            @Nullable TypeConverter<PointF, ?> converter, @NonNull Path path) {
+    public static @NonNull ObjectAnimator ofObject(@NonNull Object target,
+            @NonNull String propertyName, @Nullable TypeConverter<PointF, ?> converter,
+            @NonNull Path path) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofObject(propertyName, converter, path);
         return ofPropertyValuesHolder(target, pvh);
     }
@@ -689,11 +672,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
     @SafeVarargs
-    public static <T, V> ObjectAnimator ofObject(@NonNull T target,
+    public static <T, V> @NonNull ObjectAnimator ofObject(@NonNull T target,
             @NonNull Property<T, V> property, @NonNull TypeEvaluator<V> evaluator,
-            @NonNull V... values) {
+            V @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator(target, property);
         anim.setObjectValues(values);
         anim.setEvaluator(evaluator);
@@ -725,11 +707,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values A set of values that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
     @SafeVarargs
-    public static <T, V, P> ObjectAnimator ofObject(@NonNull T target,
+    public static <T, V, P> @NonNull ObjectAnimator ofObject(@NonNull T target,
             @NonNull Property<T, P> property, @NonNull TypeConverter<V, P> converter,
-            @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
+            @NonNull TypeEvaluator<V> evaluator, V @NonNull ... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofObject(property, converter, evaluator,
                 values);
         return ofPropertyValuesHolder(target, pvh);
@@ -754,8 +735,7 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param path The <code>Path</code> to animate values along.
      * @return An ObjectAnimator object that is set up to animate along <code>path</code>.
      */
-    @NonNull
-    public static <T, V> ObjectAnimator ofObject(@NonNull T target,
+    public static <T, V> @NonNull ObjectAnimator ofObject(@NonNull T target,
             @NonNull Property<T, V> property, @Nullable TypeConverter<PointF, V> converter,
             @NonNull Path path) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofObject(property, converter, path);
@@ -779,9 +759,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ObjectAnimator ofPropertyValuesHolder(@NonNull Object target,
-            @NonNull PropertyValuesHolder... values) {
+    public static @NonNull ObjectAnimator ofPropertyValuesHolder(@NonNull Object target,
+            PropertyValuesHolder @NonNull ... values) {
         ObjectAnimator anim = new ObjectAnimator();
         anim.setTarget(target);
         anim.setValues(values);
@@ -789,7 +768,7 @@ public final class ObjectAnimator extends ValueAnimator {
     }
 
     @Override
-    public void setIntValues(@NonNull int... values) {
+    public void setIntValues(int @NonNull ... values) {
         if (mValues == null || mValues.length == 0) {
             // No values yet - this animator is being constructed piecemeal. Init the values with
             // whatever the current propertyName is
@@ -804,7 +783,7 @@ public final class ObjectAnimator extends ValueAnimator {
     }
 
     @Override
-    public void setFloatValues(@NonNull float... values) {
+    public void setFloatValues(float @NonNull ... values) {
         if (mValues == null || mValues.length == 0) {
             // No values yet - this animator is being constructed piecemeal. Init the values with
             // whatever the current propertyName is
@@ -819,7 +798,7 @@ public final class ObjectAnimator extends ValueAnimator {
     }
 
     @Override
-    public void setObjectValues(@NonNull Object... values) {
+    public void setObjectValues(Object @NonNull ... values) {
         if (mValues == null || mValues.length == 0) {
             // No values yet - this animator is being constructed piecemeal. Init the values with
             // whatever the current propertyName is
@@ -936,8 +915,7 @@ public final class ObjectAnimator extends ValueAnimator {
      * <code>ObjectAnimator.ofInt(target, propertyName, 0, 10).setDuration(500).start()</code>.
      */
     @Override
-    @NonNull
-    public ObjectAnimator setDuration(long duration) {
+    public @NonNull ObjectAnimator setDuration(long duration) {
         super.setDuration(duration);
         return this;
     }
@@ -948,8 +926,7 @@ public final class ObjectAnimator extends ValueAnimator {
      *
      * @return The object being animated
      */
-    @Nullable
-    public Object getTarget() {
+    public @Nullable Object getTarget() {
         return mTarget == null ? null : mTarget.get();
     }
 
@@ -1028,16 +1005,14 @@ public final class ObjectAnimator extends ValueAnimator {
     }
 
     @SuppressLint("NoClone") /* Platform API */
-    @NonNull
     @Override
-    public ObjectAnimator clone() {
+    public @NonNull ObjectAnimator clone() {
         final ObjectAnimator anim = (ObjectAnimator) super.clone();
         return anim;
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         String returnVal = "ObjectAnimator@" + Integer.toHexString(hashCode()) + ", target "
                 + getTarget();
         if (mValues != null) {

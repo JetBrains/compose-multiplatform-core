@@ -36,9 +36,7 @@ import android.graphics.Rect;
 import android.location.Location;
 import android.os.RemoteException;
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.model.Alert;
 import androidx.car.app.model.CarText;
 import androidx.car.app.model.Template;
@@ -48,6 +46,8 @@ import androidx.car.app.testing.TestCarContext;
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,8 +64,9 @@ import org.robolectric.shadows.ShadowApplication;
 
 /** Tests for {@link AppManager}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(instrumentedPackages = { "androidx.activity" })
+@Config(instrumentedPackages = { "androidx.activity" }, sdk = {Config.TARGET_SDK})
 @DoNotInstrument
+@CarProtocol
 public final class AppManagerTest {
     @Rule
     public final MockitoRule mockito = MockitoJUnit.rule();
@@ -76,8 +77,6 @@ public final class AppManagerTest {
     private IAppHost.Stub mMockAppHost;
     @Mock
     private IOnDoneCallback mMockOnDoneCallback;
-    @Mock
-    private OnBackPressedCallback mMockOnBackPressedCallback;
     @Mock
     private SurfaceCallback mSurfaceCallback;
 
@@ -140,6 +139,11 @@ public final class AppManagerTest {
                             throws RemoteException {
                         return mMockAppHost.openMicrophone(openMicrophoneRequest);
                     }
+
+                    @Override
+                    public int getInterfaceVersion() {
+                        return super.VERSION;
+                    }
                 };
         when(mMockCarHost.getHost(any())).thenReturn(appHost.asBinder());
 
@@ -155,9 +159,8 @@ public final class AppManagerTest {
         mTestCarContext
                 .getCarService(ScreenManager.class)
                 .push(new Screen(mTestCarContext) {
-                    @NonNull
                     @Override
-                    public Template onGetTemplate() {
+                    public @NonNull Template onGetTemplate() {
                         return new TestTemplate();
                     }
                 });
@@ -172,9 +175,8 @@ public final class AppManagerTest {
         mTestCarContext
                 .getCarService(ScreenManager.class)
                 .push(new Screen(mTestCarContext) {
-                    @NonNull
                     @Override
-                    public Template onGetTemplate() {
+                    public @NonNull Template onGetTemplate() {
                         return new TestTemplate() {
                         };
                     }
@@ -192,9 +194,8 @@ public final class AppManagerTest {
         mTestCarContext
                 .getCarService(ScreenManager.class)
                 .push(new Screen(mTestCarContext) {
-                    @NonNull
                     @Override
-                    public Template onGetTemplate() {
+                    public @NonNull Template onGetTemplate() {
                         return new NonBundleableTemplate("foo") {
                         };
                     }
@@ -208,24 +209,24 @@ public final class AppManagerTest {
     @Test
     public void onBackPressed_lifecycleCreated_sendsToApp() throws RemoteException {
         mTestCarContext.getLifecycleOwner().mRegistry.setCurrentState(Lifecycle.State.CREATED);
-        when(mMockOnBackPressedCallback.isEnabled()).thenReturn(true);
-        mTestCarContext.getOnBackPressedDispatcher().addCallback(mMockOnBackPressedCallback);
+        TestOnBackPressedCallback onBackPressedCallback = new TestOnBackPressedCallback();
+        mTestCarContext.getOnBackPressedDispatcher().addCallback(onBackPressedCallback);
 
         mAppManager.getIInterface().onBackPressed(mMockOnDoneCallback);
 
         verify(mMockOnDoneCallback).onSuccess(any());
-        verify(mMockOnBackPressedCallback).handleOnBackPressed();
+        assertThat(onBackPressedCallback.getPressedCount()).isEqualTo(1);
     }
 
     @Test
     public void onBackPressed_lifecycleNotCreated_doesNotSendToApp() throws RemoteException {
-        when(mMockOnBackPressedCallback.isEnabled()).thenReturn(true);
-        mTestCarContext.getOnBackPressedDispatcher().addCallback(mMockOnBackPressedCallback);
+        TestOnBackPressedCallback onBackPressedCallback = new TestOnBackPressedCallback();
+        mTestCarContext.getOnBackPressedDispatcher().addCallback(onBackPressedCallback);
 
         mAppManager.getIInterface().onBackPressed(mMockOnDoneCallback);
 
         verify(mMockOnDoneCallback).onFailure(any());
-        verify(mMockOnBackPressedCallback, never()).handleOnBackPressed();
+        assertThat(onBackPressedCallback.getPressedCount()).isEqualTo(0);
     }
 
     @Test
@@ -567,6 +568,7 @@ public final class AppManagerTest {
         }
     }
 
+    @CarProtocol
     private static class TestTemplate implements Template {
     }
 }

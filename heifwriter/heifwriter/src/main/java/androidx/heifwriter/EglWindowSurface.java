@@ -25,7 +25,7 @@ import android.opengl.EGLSurface;
 import android.util.Log;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 

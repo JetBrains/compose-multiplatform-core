@@ -15,14 +15,13 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -46,7 +45,7 @@ dependencies {
 
 androidx {
     name = "Compose Animation Lint Checks"
-    type = LibraryType.LINT
+    type = SoftwareType.STANDALONE_PUBLISHED_LINT
     inceptionYear = "2021"
     description = "Compose Animation Lint Checks"
 }

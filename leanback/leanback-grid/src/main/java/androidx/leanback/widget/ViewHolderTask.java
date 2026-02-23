@@ -15,8 +15,9 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for schedule task on a ViewHolder.
@@ -25,5 +26,5 @@ public interface ViewHolderTask {
     /**
      * Runs the task.
      */
-    void run(@NonNull RecyclerView.ViewHolder viewHolder);
+    void run(RecyclerView.@NonNull ViewHolder viewHolder);
 }

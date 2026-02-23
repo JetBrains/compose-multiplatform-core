@@ -22,10 +22,11 @@ import static androidx.wear.protolayout.expression.pipeline.AnimationsHelper.get
 import android.animation.TypeEvaluator;
 import android.animation.ValueAnimator;
 
-import androidx.annotation.NonNull;
 import androidx.core.os.HandlerCompat;
 import androidx.wear.protolayout.expression.pipeline.AnimationsHelper.RepeatDelays;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class handles the animation with custom reverse duration. To have different duration for
@@ -40,8 +41,8 @@ import androidx.wear.protolayout.expression.proto.AnimationParameterProto.Animat
  */
 class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
 
-    @NonNull private final QuotaReleasingAnimatorListener mAuxListener;
-    @NonNull private final ValueAnimator mAuxAnimator;
+    private final @NonNull QuotaReleasingAnimatorListener mAuxListener;
+    private final @NonNull ValueAnimator mAuxAnimator;
     private boolean mSuppressForwardUpdate = false;
     private boolean mSuppressReverseUpdate = false;
     private final boolean mEndsWithForward;
@@ -95,7 +96,7 @@ class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
     }
 
     @Override
-    public void setFloatValues(@NonNull float... values) {
+    public void setFloatValues(float @NonNull ... values) {
         super.setFloatValues(values);
 
         // Create a copy of the values array before reversing it
@@ -112,7 +113,7 @@ class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
     }
 
     @Override
-    public void setIntValues(@NonNull int... values) {
+    public void setIntValues(int @NonNull ... values) {
         super.setIntValues(values);
 
         // Create a copy of the values array before reversing it

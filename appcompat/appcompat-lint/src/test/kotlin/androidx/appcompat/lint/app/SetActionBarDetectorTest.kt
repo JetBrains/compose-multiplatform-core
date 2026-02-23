@@ -41,7 +41,7 @@ class SetActionBarDetectorTest {
                    setActionBar(Toolbar(this))
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -72,7 +72,7 @@ class SetActionBarDetectorTest {
                    setActionBar(Toolbar(this))
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -86,10 +86,10 @@ class SetActionBarDetectorTest {
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:9: Warning: Use AppCompatActivity.setSupportActionBar [UseSupportActionBar]
-       setActionBar(Toolbar(this))
-       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:9: Warning: Use AppCompatActivity.setSupportActionBar [UseSupportActionBar]
+                       setActionBar(Toolbar(this))
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )
@@ -114,7 +114,7 @@ src/com/example/CustomActivity.kt:9: Warning: Use AppCompatActivity.setSupportAc
                    setActionBar(Toolbar(this))
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -128,10 +128,10 @@ src/com/example/CustomActivity.kt:9: Warning: Use AppCompatActivity.setSupportAc
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:11: Warning: Use AppCompatActivity.setSupportActionBar [UseSupportActionBar]
-       setActionBar(Toolbar(this))
-       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:11: Warning: Use AppCompatActivity.setSupportActionBar [UseSupportActionBar]
+                       setActionBar(Toolbar(this))
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )

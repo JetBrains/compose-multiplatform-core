@@ -16,6 +16,7 @@
 
 package androidx.credentials.provider
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -27,7 +28,7 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.CryptoObject
-import androidx.core.os.BuildCompat
+import androidx.credentials.provider.utils.CryptoObjectUtils
 
 /**
  * Biometric prompt data that can be optionally used to provide information needed for the system to
@@ -44,16 +45,23 @@ import androidx.core.os.BuildCompat
  * determines whether a biometric auth or a device credential mechanism will / can be shown. The
  * value for this property is found in [Authenticators].
  *
+ * Finally, note that the CryptoObject does not presently support presentationSession and
+ * operationHandle constructors, and intends to support the CryptoObject built from the stable
+ * biometric jetpack library described
+ * [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0).
+ *
  * @property allowedAuthenticators specifies the type(s) of authenticators that may be invoked by
  *   the [BiometricPrompt] to authenticate the user, defaults to [BIOMETRIC_WEAK] if not set
  * @property cryptoObject a crypto object to be unlocked after successful authentication; When set,
  *   the value of [allowedAuthenticators] must be [BIOMETRIC_STRONG] or else an
- *   [IllegalArgumentException] is thrown
+ *   [IllegalArgumentException] is thrown, note that the CryptoObject does not presently support
+ *   presentationSession and operationHandle constructors, and intends to support the CryptoObject
+ *   built from the stable biometric jetpack library described
+ *   [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0)
  * @throws IllegalArgumentException if [cryptoObject] is not null, and the [allowedAuthenticators]
  *   is not set to [BIOMETRIC_STRONG]
  * @see Authenticators
  */
-@RequiresApi(35)
 class BiometricPromptData
 internal constructor(
     val cryptoObject: BiometricPrompt.CryptoObject? = null,
@@ -76,11 +84,19 @@ internal constructor(
      * determines whether a biometric auth or a device credential mechanism will / can be shown. The
      * value for this property is found in [Authenticators].
      *
+     * Finally, note that the [CryptoObject] does not presently support presentationSession and
+     * operationHandle constructors, and intends to support the CryptoObject built from the stable
+     * biometric jetpack library described
+     * [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0).
+     *
      * @param allowedAuthenticators specifies the type(s) of authenticators that may be invoked by
      *   the [BiometricPrompt] to authenticate the user, defaults to [BIOMETRIC_WEAK] if not set
      * @param cryptoObject a crypto object to be unlocked after successful authentication; When set,
      *   the value of [allowedAuthenticators] must be [BIOMETRIC_STRONG] or else an
-     *   [IllegalArgumentException] is thrown
+     *   [IllegalArgumentException] is thrown, note that the CryptoObject does not presently support
+     *   presentationSession and operationHandle constructors, and intends to support the
+     *   CryptoObject built from the stable biometric jetpack library described
+     *   [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0)
      * @throws IllegalArgumentException if [cryptoObject] is not null, and the
      *   [allowedAuthenticators] is not set to [BIOMETRIC_STRONG]
      * @see Authenticators
@@ -88,7 +104,7 @@ internal constructor(
     @JvmOverloads
     constructor(
         cryptoObject: BiometricPrompt.CryptoObject? = null,
-        allowedAuthenticators: @AuthenticatorTypes Int = BIOMETRIC_WEAK
+        allowedAuthenticators: @AuthenticatorTypes Int = BIOMETRIC_WEAK,
     ) : this(cryptoObject, allowedAuthenticators, isCreatedFromBundle = false)
 
     init {
@@ -129,7 +145,7 @@ internal constructor(
                 if (!bundle.containsKey(BUNDLE_HINT_ALLOWED_AUTHENTICATORS)) {
                     throw IllegalArgumentException("Bundle lacks allowed authenticator key.")
                 }
-                if (BuildCompat.isAtLeastV()) {
+                if (Build.VERSION.SDK_INT >= 35) {
                     Api35Impl.fromBundle(bundle)
                 } else {
                     ApiMinImpl.fromBundle(bundle)
@@ -144,7 +160,7 @@ internal constructor(
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun toBundle(biometricPromptData: BiometricPromptData): Bundle {
-            return if (BuildCompat.isAtLeastV()) {
+            return if (Build.VERSION.SDK_INT >= 35) {
                 Api35Impl.toBundle(biometricPromptData)
             } else {
                 ApiMinImpl.toBundle(biometricPromptData)
@@ -168,7 +184,7 @@ internal constructor(
                 BIOMETRIC_WEAK,
                 DEVICE_CREDENTIAL,
                 BIOMETRIC_STRONG or DEVICE_CREDENTIAL,
-                BIOMETRIC_WEAK or DEVICE_CREDENTIAL
+                BIOMETRIC_WEAK or DEVICE_CREDENTIAL,
             )
     }
 
@@ -180,12 +196,15 @@ internal constructor(
         /**
          * Sets whether this [BiometricPromptData] should have a crypto object associated with this
          * authentication. If opting to pass in a value, the [allowedAuthenticators] must be
-         * [BIOMETRIC_STRONG].
+         * [BIOMETRIC_STRONG]. The CryptoObject does not presently support presentationSession and
+         * operationHandle constructors and intends to support the CryptoObject built from the
+         * stable biometric jetpack library described
+         * [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0).
          *
          * @param cryptoObject the [CryptoObject] to be associated with this biometric
          *   authentication flow
          */
-        fun setCryptoObject(cryptoObject: CryptoObject): Builder {
+        fun setCryptoObject(cryptoObject: CryptoObject?): Builder {
             this.cryptoObject = cryptoObject
             return this
         }
@@ -224,17 +243,31 @@ internal constructor(
     }
 
     private object ApiMinImpl {
+
+        /**
+         * Encapsulates the allowedAuthenticators from this [biometricPromptData] into a parcelable
+         * bundle.
+         *
+         * @param biometricPromptData the [BiometricPromptData] to convert into a bundle
+         * @return a bundle containing the representative bits of the [biometricPromptData]
+         */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun toBundle(biometricPromptData: BiometricPromptData): Bundle {
             val bundle = Bundle()
             bundle.putInt(
                 BUNDLE_HINT_ALLOWED_AUTHENTICATORS,
-                biometricPromptData.allowedAuthenticators
+                biometricPromptData.allowedAuthenticators,
             )
             return bundle
         }
 
+        /**
+         * Returns an instance of [BiometricPromptData] derived from a [Bundle] object.
+         *
+         * @param bundle the bundle with which to recover an instance of [BiometricPromptData] from
+         * @return an instance of [BiometricPromptData] recovered from the [bundle]
+         */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun fromBundle(bundle: Bundle): BiometricPromptData {
@@ -247,35 +280,55 @@ internal constructor(
         }
     }
 
+    @RequiresApi(35)
     private object Api35Impl {
 
+        /**
+         * Encapsulates the operationHandle and the allowed authenticator from this
+         * [biometricPromptData] into a parcelable bundle.
+         *
+         * @param biometricPromptData the [BiometricPromptData] to convert into a bundle
+         * @return a bundle containing the representative bits of the [biometricPromptData]
+         */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun toBundle(biometricPromptData: BiometricPromptData): Bundle {
             val bundle = Bundle()
             bundle.putInt(
                 BUNDLE_HINT_ALLOWED_AUTHENTICATORS,
-                biometricPromptData.allowedAuthenticators
+                biometricPromptData.allowedAuthenticators,
             )
             biometricPromptData.cryptoObject?.let {
-                bundle.putLong(BUNDLE_HINT_CRYPTO_OP_ID, it.operationHandle)
+                bundle.putLong(
+                    BUNDLE_HINT_CRYPTO_OP_ID,
+                    CryptoObjectUtils.getOperationHandle(
+                        cryptoObject = biometricPromptData.cryptoObject
+                    ),
+                )
             }
 
             return bundle
         }
 
+        /**
+         * Returns an instance of [BiometricPromptData] derived from a [Bundle] object.
+         *
+         * At present, the library owners do not support re-forming the [CryptoObject] from the
+         * bundle, as the library presently supports the stable AndroidX biometric library described
+         * [here](https://developer.android.com/jetpack/androidx/releases/biometric#1.1.0).
+         *
+         * @param bundle the bundle with which to recover an instance of [BiometricPromptData] from
+         * @return an instance of [BiometricPromptData] recovered from the [bundle]
+         */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun fromBundle(bundle: Bundle): BiometricPromptData {
-            var cryptoObject: CryptoObject? = null
-            if (bundle.containsKey(BUNDLE_HINT_CRYPTO_OP_ID)) {
-                val opId = bundle.getLong(BUNDLE_HINT_CRYPTO_OP_ID)
-                cryptoObject = CryptoObject(opId)
-            }
+            // TODO(b/368395001) : Once the AndroidX biometric library updates the stable
+            // release, re-form the cryptoObject.
             val biometricPromptData =
                 BiometricPromptData(
                     allowedAuthenticators = bundle.getInt(BUNDLE_HINT_ALLOWED_AUTHENTICATORS),
-                    cryptoObject = cryptoObject,
+                    cryptoObject = null,
                     isCreatedFromBundle = true,
                 )
             return biometricPromptData

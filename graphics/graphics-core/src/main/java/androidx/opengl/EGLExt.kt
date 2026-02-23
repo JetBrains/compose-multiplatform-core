@@ -28,7 +28,6 @@ import androidx.hardware.SyncFenceV19
 import androidx.opengl.EGLExt.Companion.eglCreateSyncKHR
 
 /** Utility class that provides some helper methods for interacting EGL Extension APIs */
-@Suppress("AcronymName")
 class EGLExt private constructor() {
 
     companion object {
@@ -191,7 +190,7 @@ class EGLExt private constructor() {
 
         /** Specifies the types of attributes that can be queried in [eglGetSyncAttribKHR] */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @Suppress("AcronymName")
+        @Retention(AnnotationRetention.SOURCE)
         @IntDef(value = [EGL_SYNC_TYPE_KHR, EGL_SYNC_STATUS_KHR, EGL_SYNC_CONDITION_KHR])
         annotation class EGLSyncAttribute
 
@@ -246,8 +245,8 @@ class EGLExt private constructor() {
 
         /** Specifies the type of fence to create in [eglCreateSyncKHR] */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @Suppress("AcronymName")
         @IntDef(value = [EGL_SYNC_FENCE_KHR, EGL_SYNC_NATIVE_FENCE_ANDROID])
+        @Retention(AnnotationRetention.SOURCE)
         annotation class EGLFenceType
 
         /**
@@ -290,7 +289,7 @@ class EGLExt private constructor() {
         /** Specifies various return values for the [eglClientWaitSyncKHR] method */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Target(AnnotationTarget.TYPE)
-        @Suppress("AcronymName")
+        @Retention(AnnotationRetention.SOURCE)
         @IntDef(value = [EGL_CONDITION_SATISFIED_KHR, EGL_TIMEOUT_EXPIRED_KHR, EGL_FALSE])
         annotation class EGLClientWaitResult
 
@@ -343,7 +342,7 @@ class EGLExt private constructor() {
         @RequiresApi(Build.VERSION_CODES.O)
         fun eglCreateImageFromHardwareBuffer(
             eglDisplay: EGLDisplay,
-            hardwareBuffer: HardwareBuffer
+            hardwareBuffer: HardwareBuffer,
         ): EGLImageKHR? {
             val handle =
                 EGLBindings.nCreateImageFromHardwareBuffer(eglDisplay.nativeHandle, hardwareBuffer)
@@ -368,7 +367,6 @@ class EGLExt private constructor() {
          * @return True if the destruction of the EGLImageKHR object was successful, false otherwise
          */
         @JvmStatic
-        @Suppress("AcronymName")
         fun eglDestroyImageKHR(eglDisplay: EGLDisplay, image: EGLImageKHR): Boolean =
             EGLBindings.nDestroyImageKHR(eglDisplay.nativeHandle, image.nativeHandle)
 
@@ -406,11 +404,10 @@ class EGLExt private constructor() {
          *   supported
          */
         @JvmStatic
-        @Suppress("AcronymName")
         fun eglCreateSyncKHR(
             eglDisplay: EGLDisplay,
             @EGLFenceType type: Int,
-            attributes: EGLConfigAttributes?
+            attributes: EGLConfigAttributes?,
         ): EGLSyncKHR? {
             val handle =
                 EGLBindings.nCreateSyncKHR(eglDisplay.nativeHandle, type, attributes?.attrs)
@@ -441,20 +438,19 @@ class EGLExt private constructor() {
          *   returned.
          */
         @JvmStatic
-        @Suppress("AcronymName")
         fun eglGetSyncAttribKHR(
             eglDisplay: EGLDisplay,
             sync: EGLSyncKHR,
             @EGLSyncAttribute attribute: Int,
             value: IntArray,
-            offset: Int
+            offset: Int,
         ): Boolean =
             EGLBindings.nGetSyncAttribKHR(
                 eglDisplay.nativeHandle,
                 sync.nativeHandle,
                 attribute,
                 value,
-                offset
+                offset,
             )
 
         /**
@@ -498,18 +494,17 @@ class EGLExt private constructor() {
          *   [EGL_FALSE] if an error occurs.
          */
         @JvmStatic
-        @Suppress("AcronymName")
         fun eglClientWaitSyncKHR(
             eglDisplay: EGLDisplay,
             sync: EGLSyncKHR,
             flags: Int,
-            timeoutNanos: Long
+            timeoutNanos: Long,
         ): @EGLClientWaitResult Int =
             EGLBindings.nClientWaitSyncKHR(
                 eglDisplay.nativeHandle,
                 sync.nativeHandle,
                 flags,
-                timeoutNanos
+                timeoutNanos,
             )
 
         /**
@@ -532,7 +527,7 @@ class EGLExt private constructor() {
         @Suppress("AcronymName")
         internal fun eglDupNativeFenceFDANDROID(
             display: EGLDisplay,
-            sync: EGLSyncKHR
+            sync: EGLSyncKHR,
         ): SyncFenceCompat {
             val fd = EGLBindings.nDupNativeFenceFDANDROID(display.nativeHandle, sync.nativeHandle)
             return if (fd >= 0) {
@@ -557,7 +552,6 @@ class EGLExt private constructor() {
          *   this sync in eglCreateSyncKHR.
          */
         @JvmStatic
-        @Suppress("AcronymName")
         fun eglDestroySyncKHR(eglDisplay: EGLDisplay, eglSync: EGLSyncKHR): Boolean =
             EGLBindings.nDestroySyncKHR(eglDisplay.nativeHandle, eglSync.nativeHandle)
 
@@ -583,7 +577,7 @@ internal class EGLBindings {
         @JniVisible
         external fun nCreateImageFromHardwareBuffer(
             eglDisplayPtr: Long,
-            hardwareBuffer: HardwareBuffer
+            hardwareBuffer: HardwareBuffer,
         ): Long
 
         // Note this API is explicitly a GL API and not an EGL API which is the reason
@@ -605,7 +599,7 @@ internal class EGLBindings {
             syncPtr: Long,
             attrib: Int,
             result: IntArray,
-            offset: Int
+            offset: Int,
         ): Boolean
 
         @JvmStatic
@@ -614,7 +608,7 @@ internal class EGLBindings {
             eglDisplayPtr: Long,
             syncPtr: Long,
             flags: Int,
-            timeout: Long
+            timeout: Long,
         ): Int
 
         @JvmStatic

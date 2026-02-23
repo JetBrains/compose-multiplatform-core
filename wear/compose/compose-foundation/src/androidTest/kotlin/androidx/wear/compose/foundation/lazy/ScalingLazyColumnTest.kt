@@ -16,11 +16,15 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
@@ -32,6 +36,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
@@ -44,8 +49,10 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.test.performTouchInput
@@ -57,11 +64,14 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.wear.compose.foundation.TEST_TAG
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,7 +84,7 @@ public class ScalingLazyColumnTest {
     private val scalingLazyColumnTag = "scalingLazyColumnTag"
     private val firstItemTag = "firstItemTag"
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private var itemSizePx: Int = 50
     private var itemSizeDp: Dp = Dp.Infinity
@@ -196,8 +206,8 @@ public class ScalingLazyColumnTest {
                         ScalingLazyColumnDefaults.scalingParams(
                             edgeScale = 0f,
                             minTransitionArea = 0.5f,
-                            maxTransitionArea = 0.5f
-                        )
+                            maxTransitionArea = 0.5f,
+                        ),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -244,8 +254,8 @@ public class ScalingLazyColumnTest {
                         ScalingLazyColumnDefaults.scalingParams(
                             edgeScale = 0f,
                             minTransitionArea = 0.5f,
-                            maxTransitionArea = 0.5f
-                        )
+                            maxTransitionArea = 0.5f,
+                        ),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -286,7 +296,7 @@ public class ScalingLazyColumnTest {
                     modifier =
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = null
+                    autoCentering = null,
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -317,7 +327,7 @@ public class ScalingLazyColumnTest {
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
                     autoCentering = null,
-                    userScrollEnabled = false
+                    userScrollEnabled = false,
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -351,7 +361,7 @@ public class ScalingLazyColumnTest {
                     modifier =
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = AutoCenteringParams(itemIndex = 0)
+                    autoCentering = AutoCenteringParams(itemIndex = 0),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -385,7 +395,7 @@ public class ScalingLazyColumnTest {
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
                     autoCentering = AutoCenteringParams(itemIndex = 0),
-                    flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state)
+                    flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -434,15 +444,13 @@ public class ScalingLazyColumnTest {
                     flingBehavior =
                         ScalingLazyColumnDefaults.snapFlingBehavior(
                             state = state,
-                            snapOffset = snapOffset
-                        )
+                            snapOffset = snapOffset,
+                        ),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
             }
         }
-        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
-        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
         state.layoutInfo.assertVisibleItems(count = 3, startIndex = 0)
 
@@ -462,6 +470,50 @@ public class ScalingLazyColumnTest {
         assertThat(state.centerItemScrollOffset).isEqualTo(snapOffsetPx)
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun rotarySnapBehavior_respectsSnapOffset() {
+        lateinit var state: ScalingLazyListState
+        val containerHeight = 200.dp
+        val itemHeight = 50.dp
+        val itemHeightPx = with(rule.density) { itemHeight.toPx() }
+        val snapOffset = 20.dp
+        val snapOffsetPx = with(rule.density) { snapOffset.roundToPx() }
+        val initialIndex = 10
+
+        rule.setContent {
+            state = rememberScalingLazyListState(initialCenterItemIndex = initialIndex)
+            ScalingLazyColumn(
+                state = state,
+                modifier = Modifier.size(containerHeight).testTag(TEST_TAG),
+                rotaryScrollableBehavior =
+                    RotaryScrollableDefaults.snapBehavior(
+                        scrollableState = state,
+                        snapOffset = snapOffset,
+                    ),
+                // We set the fling behavior to match, ensuring consistent physics
+                flingBehavior =
+                    ScalingLazyColumnDefaults.snapFlingBehavior(
+                        state = state,
+                        snapOffset = snapOffset,
+                    ),
+            ) {
+                items(100) { Box(Modifier.fillMaxWidth().height(itemHeight)) }
+            }
+        }
+
+        // Rotate enough to trigger a snap to the next item
+        rule.onNode(hasScrollAction()).performRotaryScrollInput {
+            rotateToScrollVertically(itemHeightPx * 1.5f)
+        }
+        rule.waitForIdle()
+
+        // Verify we snapped to the next item
+        assertThat(state.centerItemIndex).isEqualTo(initialIndex + 1)
+        // Verify the final offset matches the requested snapOffset
+        assertThat(state.centerItemScrollOffset).isEqualTo(snapOffsetPx)
+    }
+
     @Test
     fun visibleItemsAreCorrectAfterScrollingReverseLayout() {
         lateinit var state: ScalingLazyListState
@@ -473,7 +525,7 @@ public class ScalingLazyColumnTest {
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
                     reverseLayout = true,
-                    autoCentering = null
+                    autoCentering = null,
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -485,7 +537,7 @@ public class ScalingLazyColumnTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeDown(
                 startY = top,
-                endY = top + (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat())
+                endY = top + (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat()),
             )
         }
         rule.waitForIdle()
@@ -506,7 +558,7 @@ public class ScalingLazyColumnTest {
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
-                    autoCentering = AutoCenteringParams(itemIndex = 0)
+                    autoCentering = AutoCenteringParams(itemIndex = 0),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp).testTag("Item:" + it)) }
                 }
@@ -539,7 +591,7 @@ public class ScalingLazyColumnTest {
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 4f + defaultItemSpacingDp * 3f),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
-                    reverseLayout = true
+                    reverseLayout = true,
                 ) {
                     items(15) { Box(Modifier.requiredSize(itemSizeDp).testTag("Item:" + it)) }
                 }
@@ -553,7 +605,7 @@ public class ScalingLazyColumnTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeDown(
                 startY = top,
-                endY = top + (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat())
+                endY = top + (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat()),
             )
         }
         rule.waitForIdle()
@@ -565,7 +617,7 @@ public class ScalingLazyColumnTest {
     @Composable
     fun ObservingFun(
         state: ScalingLazyListState,
-        currentInfo: StableRef<ScalingLazyListLayoutInfo?>
+        currentInfo: StableRef<ScalingLazyListLayoutInfo?>,
     ) {
         currentInfo.value = state.layoutInfo
     }
@@ -581,7 +633,7 @@ public class ScalingLazyColumnTest {
                     modifier =
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = null
+                    autoCentering = null,
                 ) {
                     items(6) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -610,7 +662,7 @@ public class ScalingLazyColumnTest {
         startIndex: Int = 0,
         unscaledSize: Int = itemSizePx,
         spacing: Int = defaultItemSpacingPx,
-        anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter
+        anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
     ) {
         assertThat(visibleItemsInfo.size).isEqualTo(count)
         var currentIndex = startIndex
@@ -635,7 +687,7 @@ public class ScalingLazyColumnTest {
                 state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
+                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
             ) {
                 items(listOf(0)) {
                     Spacer(
@@ -657,7 +709,7 @@ public class ScalingLazyColumnTest {
             ScalingLazyColumn(
                 state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
-                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
+                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
             ) {
                 items(listOf(0)) {
                     Spacer(
@@ -680,7 +732,7 @@ public class ScalingLazyColumnTest {
                 state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
+                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
             ) {
                 items(listOf(0)) { Spacer(Modifier.fillParentMaxSize().testTag(firstItemTag)) }
             }
@@ -699,7 +751,7 @@ public class ScalingLazyColumnTest {
                 state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
+                scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
             ) {
                 items(listOf(0)) {
                     Spacer(
@@ -722,7 +774,7 @@ public class ScalingLazyColumnTest {
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
                 state = rememberScalingLazyListState(8).also { state = it },
-                modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp)
+                modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
             ) {
                 items(listOf(0)) {
                     Spacer(
@@ -746,7 +798,7 @@ public class ScalingLazyColumnTest {
             ScalingLazyColumn(
                 state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
-                contentPadding = PaddingValues(horizontal = 0.dp)
+                contentPadding = PaddingValues(horizontal = 0.dp),
             ) {
                 items(listOf(0)) { Spacer(Modifier.fillParentMaxSize(0.5f).testTag(firstItemTag)) }
             }
@@ -843,7 +895,7 @@ public class ScalingLazyColumnTest {
                     modifier =
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = AutoCenteringParams()
+                    autoCentering = AutoCenteringParams(),
                 ) {
                     items(25) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -888,7 +940,7 @@ public class ScalingLazyColumnTest {
                 modifier =
                     Modifier.testTag(TEST_TAG)
                         .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                autoCentering = AutoCenteringParams()
+                autoCentering = AutoCenteringParams(),
             ) {
                 items(25) { Box(Modifier.requiredSize(itemSizeDp)) }
             }
@@ -920,7 +972,7 @@ public class ScalingLazyColumnTest {
                     modifier =
                         Modifier.testTag(TEST_TAG)
                             .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = AutoCenteringParams(itemIndex = 0)
+                    autoCentering = AutoCenteringParams(itemIndex = 0),
                 ) {
                     items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
                 }
@@ -941,9 +993,7 @@ public class ScalingLazyColumnTest {
     fun scalingLazyColumnCanBeNestedOnHorizontalScrollingComponent() {
         rule.setContent {
             val horizontalScrollState = rememberScrollState()
-            Box(
-                modifier = Modifier.horizontalScroll(horizontalScrollState),
-            ) {
+            Box(modifier = Modifier.horizontalScroll(horizontalScrollState)) {
                 ScalingLazyColumn { item { Box(Modifier.size(10.dp)) } }
             }
         }
@@ -956,9 +1006,7 @@ public class ScalingLazyColumnTest {
         rule.setContent {
             ScalingLazyColumn(
                 modifier =
-                    Modifier.testTag("scalingLazyColumn").onFocusChanged {
-                        focusSet = it.isFocused
-                    },
+                    Modifier.testTag("scalingLazyColumn").onFocusChanged { focusSet = it.isFocused }
             ) {
                 items(100) { BasicText("item $it") }
             }
@@ -987,18 +1035,16 @@ public class ScalingLazyColumnTest {
         assert(!focusSet)
     }
 
-    @Ignore("b/347700248 re-enable test after focusable semantics start working again")
     @Test
     fun scalingLazyColumnIsFocusedByDefault_withSemantics() {
         rule.setContent {
-            ScalingLazyColumn(
-                modifier = Modifier.testTag("scalingLazyColumn"),
-            ) {
+            ScalingLazyColumn(modifier = Modifier.testTag("scalingLazyColumn")) {
                 items(100) { BasicText("item $it") }
             }
         }
 
-        rule.onNodeWithTag("scalingLazyColumn").assertIsFocused()
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag("scalingLazyColumn").onChild().assertIsFocused()
     }
 
     @Test
@@ -1011,11 +1057,10 @@ public class ScalingLazyColumnTest {
         testScalingLazyColumnRotary(false, 1)
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun testScalingLazyColumnRotary(
         userScrollEnabled: Boolean,
         scrollTarget: Int,
-        scrollItems: Int = 2
+        scrollItems: Int = 2,
     ) {
         lateinit var state: ScalingLazyListState
 
@@ -1024,7 +1069,7 @@ public class ScalingLazyColumnTest {
             ScalingLazyColumn(
                 state = state,
                 modifier = Modifier.testTag(scalingLazyColumnTag),
-                userScrollEnabled = userScrollEnabled
+                userScrollEnabled = userScrollEnabled,
             ) {
                 items(100) {
                     BasicText(text = "item $it", modifier = Modifier.requiredSize(itemSizeDp))
@@ -1038,6 +1083,62 @@ public class ScalingLazyColumnTest {
         rule.waitForIdle()
 
         assertThat(state.centerItemIndex).isEqualTo(scrollTarget)
+    }
+
+    @Test
+    fun testCheckLastScrollDirection() {
+
+        lateinit var state: ScalingLazyListState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            state = rememberScalingLazyListState()
+            scope = rememberCoroutineScope()
+            ScalingLazyColumn(
+                state = state,
+                modifier = Modifier.height(itemSizeDp * 3f).testTag(scalingLazyColumnTag),
+            ) {
+                items(100) { Spacer(Modifier.height(itemSizeDp)) }
+            }
+        }
+
+        // Assert both isLastScrollForward and isLastScrollBackward are false before any scroll
+        assertThat(state.lastScrolledBackward).isEqualTo(false)
+        assertThat(state.lastScrolledBackward).isEqualTo(false)
+
+        rule.runOnIdle { scope.launch { state.animateScrollBy(100f, tween(1000)) } }
+        // Assert isLastScrollForward is true during forward-scroll and isLastScrollBackward is
+        // false
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isTrue()
+            assertThat(state.lastScrolledBackward).isFalse()
+        }
+
+        rule.mainClock.advanceTimeBy(500)
+
+        // Assert isLastScrollForward is true after forward-scroll and isLastScrollBackward is false
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isTrue()
+            assertThat(state.lastScrolledBackward).isFalse()
+        }
+
+        rule.runOnIdle { scope.launch { state.animateScrollBy(-100f, tween(1000)) } }
+
+        rule.mainClock.advanceTimeBy(500)
+
+        // Assert isLastScrollForward is false during backward-scroll and isLastScrollBackward is
+        // true
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isFalse()
+            assertThat(state.lastScrolledBackward).isTrue()
+        }
+
+        // Assert isLastScrollForward is false after backward-scroll and isLastScrollBackward is
+        // true
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isFalse()
+            assertThat(state.lastScrolledBackward).isTrue()
+        }
     }
 }
 

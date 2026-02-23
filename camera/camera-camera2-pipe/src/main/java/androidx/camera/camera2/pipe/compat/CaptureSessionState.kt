@@ -21,12 +21,18 @@ import android.hardware.camera2.CameraExtensionSession
 import android.os.Build
 import android.view.Surface
 import androidx.annotation.GuardedBy
+import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.GraphState
+import androidx.camera.camera2.pipe.OutputId
+import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.core.Timestamps
@@ -34,6 +40,7 @@ import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import java.util.Collections.synchronizedMap
+import java.util.concurrent.CountDownLatch
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -65,14 +72,21 @@ internal class CaptureSessionState(
     private val cameraSurfaceManager: CameraSurfaceManager,
     private val timeSource: TimeSource,
     private val cameraGraphFlags: CameraGraph.Flags,
-    private val scope: CoroutineScope
+    private val concurrentSessionSequencer: ConcurrentSessionSequencer?,
+    private val streamGraph: StreamGraph,
+    private val strictMode: StrictMode,
+    private val threads: Threads,
+    private val scope: CoroutineScope,
 ) : CameraCaptureSessionWrapper.StateCallback {
     private val debugId = captureSessionDebugIds.incrementAndGet()
     private val lock = Any()
     private val finalized = atomic<Boolean>(false)
 
-    private val activeSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
+    private val activeStreamSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
+    private val activeOutputSurfaceMap = synchronizedMap(HashMap<OutputId, Surface>())
+
     private var sessionCreatingTimestamp: TimestampNs? = null
+    private val sessionSequencer = concurrentSessionSequencer?.let { SessionSequencer(it) }
 
     @GuardedBy("lock") private var _cameraDevice: CameraDeviceWrapper? = null
     var cameraDevice: CameraDeviceWrapper?
@@ -103,10 +117,13 @@ internal class CaptureSessionState(
         CREATING,
         CREATED,
         CLOSING,
-        CLOSED
+        CLOSED,
     }
 
+    private val sessionDisconnected = CountDownLatch(1)
+
     @GuardedBy("lock") private var hasAttemptedCaptureSession = false
+    private val captureSessionAttemptCompleted = CountDownLatch(1)
 
     @GuardedBy("lock") private var _surfaceMap: Map<StreamId, Surface>? = null
 
@@ -155,14 +172,21 @@ internal class CaptureSessionState(
     override fun onClosed(session: CameraCaptureSessionWrapper) {
         Log.debug { "$this Closed" }
         Debug.traceStart { "$this#onClosed" }
-        disconnect()
+        shutdown()
+        captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
     override fun onConfigureFailed(session: CameraCaptureSessionWrapper) {
         Log.warn { "$this Configuration Failed" }
         Debug.traceStart { "$this#onConfigureFailed" }
-        disconnect()
+        graphListener.onGraphError(
+            GraphState.GraphStateError(CameraError.ERROR_GRAPH_CONFIG, willAttemptRetry = false)
+        )
+        shutdown()
+        captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
@@ -170,6 +194,8 @@ internal class CaptureSessionState(
         Log.debug { "$this Configured" }
         Debug.traceStart { "$this#configure" }
         configure(session)
+        captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
@@ -181,12 +207,26 @@ internal class CaptureSessionState(
         Log.debug { "$this CaptureQueueEmpty" }
     }
 
+    override fun onSessionDisconnected() {
+        Log.debug { "$this session disconnecting" }
+        Debug.traceStart { "$this#onSessionDisconnected" }
+        disconnect()
+        // Important: CaptureSessionState can be disconnected on a separate path, and we may lose
+        // the race if another disconnect call was invoked in parallel. When that happens, we get
+        // an early return, but the winning disconnect call may still be in the process of
+        // disconnecting - notably doing stopRepeating() and abortCaptures(). We wait here such
+        // that we don't prematurely create a new capture session, which would close the capture
+        // session that is still being disconnected. See b/383434693 for details.
+        Debug.trace("$this#onSessionDisconnected Await") { sessionDisconnected.await() }
+        Debug.traceStop()
+    }
+
     override fun onSessionFinalized() {
         // Only invoke finalizeSession once regardless of the number of times it is invoked.
         if (finalized.compareAndSet(expect = false, update = true)) {
-            Log.debug { "$this Finalizing Session" }
+            Log.debug { "$this session finalizing" }
             Debug.traceStart { "$this#onSessionFinalized" }
-            disconnect()
+            shutdown()
             finalizeSession(0L)
             Debug.traceStop()
         }
@@ -201,18 +241,28 @@ internal class CaptureSessionState(
         // 2. Pass the GraphRequestProcessor to the graphProcessor after the session is fully
         //    created and the onConfigured callback has been invoked.
         synchronized(lock) {
-            if (state == State.CLOSING || state == State.CLOSED) {
-                return
-            }
-
             if (cameraCaptureSession == null && session != null) {
-                captureSession =
-                    ConfiguredCameraCaptureSession(
+                val captureSequenceProcessor =
+                    captureSequenceProcessorFactory.create(
                         session,
-                        GraphRequestProcessor.from(
-                            captureSequenceProcessorFactory.create(session, activeSurfaceMap)
-                        )
+                        activeStreamSurfaceMap,
+                        activeOutputSurfaceMap,
                     )
+                if (captureSequenceProcessor is Camera2CaptureSequenceProcessor) {
+                    captureSession =
+                        ConfiguredCameraCaptureSession(
+                            session,
+                            GraphRequestProcessor.from(captureSequenceProcessor),
+                            captureSequenceProcessor,
+                        )
+                } else {
+                    captureSession =
+                        ConfiguredCameraCaptureSession(
+                            session,
+                            GraphRequestProcessor.from(captureSequenceProcessor),
+                            null,
+                        )
+                }
                 cameraCaptureSession = captureSession
             } else {
                 captureSession = cameraCaptureSession
@@ -246,31 +296,63 @@ internal class CaptureSessionState(
 
     /**
      * This is used to disconnect the cached [CameraCaptureSessionWrapper] and put this object into
-     * a closed state. This will not cancel repeating requests or abort captures.
+     * a closing state. This may stop the repeating request, abort captures, as well as release
+     * resources and perform any further actions to facilitate/enable the creation of the next
+     * capture session.
      */
     fun disconnect() {
-        shutdown(abortAndStopRepeating = cameraGraphFlags.abortCapturesOnStop)
-    }
-
-    /**
-     * This is used to disconnect the cached [CameraCaptureSessionWrapper] and put this object into
-     * a closed state. This may stop the repeating request and abort captures.
-     */
-    private fun shutdown(abortAndStopRepeating: Boolean) {
         var configuredCaptureSession: ConfiguredCameraCaptureSession? = null
+        var shouldAwaitCaptureSessionCallback = false
 
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
-                return@synchronized
+                return
             }
             state = State.CLOSING
 
-            configuredCaptureSession = cameraCaptureSession
-            cameraCaptureSession = null
+            if (cameraCaptureSession != null) {
+                configuredCaptureSession = cameraCaptureSession
+                cameraCaptureSession = null
+            } else if (
+                cameraGraphFlags.closeCaptureSessionOnDisconnect && hasAttemptedCaptureSession
+            ) {
+                // This is a very rare edge case: Some devices require the capture session to be
+                // explicitly closed before shutting down. Otherwise, CameraDevice.close() may block
+                // indefinitely. If we've instructed the framework to create a capture session, and
+                // we do need to close it, wait for the capture session to be configured so that
+                // we can close it.
+                shouldAwaitCaptureSessionCallback = true
+            }
         }
 
-        val graphProcessor = configuredCaptureSession?.processor
-        if (graphProcessor != null) {
+        // Release the session sequencer, which would unblock the sibling camera graphs under
+        // concurrent camera scenarios. Doing it here allows us to release it just once during
+        // disconnect and shutdown, though it isn't strictly required.
+        sessionSequencer?.release()
+
+        if (shouldAwaitCaptureSessionCallback) {
+            Log.debug { "Waiting for CameraCaptureSession configuration" }
+            // Important: Wait for session configuration with a timeout. From b/146773463, it was
+            // observed that both onConfigured() and onClosed() may not be called at all by the
+            // camera framework. If we really cannot get a configured session after a timeout, just
+            // proceed with the rest of the shutdown.
+            threads.runBlockingCheckedOrNull(CAPTURE_SESSION_TIMEOUT_MS) {
+                captureSessionAttemptCompleted.await()
+            } ?: Log.error { "Waiting for CameraCaptureSession configuration timed out" }
+
+            synchronized(lock) {
+                configuredCaptureSession = cameraCaptureSession
+                cameraCaptureSession = null
+            }
+        }
+
+        Debug.traceStart { "$graphListener#onGraphStopping" }
+        graphListener.onGraphStopping()
+        Debug.traceStop()
+
+        val captureSession = configuredCaptureSession
+        if (captureSession != null) {
+            val graphProcessor = captureSession.processor
             // WARNING:
             // This normally does NOT call close on the captureSession to avoid potentially slow
             // reconfiguration during mode switch and shutdown. This avoids unintentional restarts
@@ -282,19 +364,28 @@ internal class CaptureSessionState(
             //
             // WARNING - DO NOT CALL session.close().
             Log.debug { "$this Shutdown" }
-
             Debug.traceStart { "$this#shutdown" }
-            Debug.traceStart { "$graphListener#onGraphStopped" }
-            graphListener.onGraphStopped(graphProcessor)
-            Debug.traceStop()
-            if (abortAndStopRepeating) {
-                Debug.traceStart { "$this#stopRepeating" }
-                graphProcessor.stopRepeating()
-                Debug.traceStop()
-                Debug.traceStart { "$this#abortCaptures" }
-                graphProcessor.abortCaptures()
-                Debug.traceStop()
+
+            // On newer API levels, aborting capture allows us to switch to a new capture session
+            // sooner [1]. However, it has been shown during field metrics, that faulty HAL
+            // implementations may block abortCaptures() indefinitely [2]. Hence here we wrap the
+            // framework calls with a timeout.
+            //
+            // [1] b/287020251
+            // [2] b/379855962
+            if (cameraGraphFlags.abortCapturesOnStop) {
+                threads.runBlockingCheckedOrNull(ABORT_CAPTURES_TIMEOUT_MS) {
+                    Debug.trace("$this stopRepeating") { graphProcessor.stopRepeating() }
+                    Debug.trace("$this abortCaptures") { graphProcessor.abortCaptures() }
+                } ?: Log.error { "Failed to abort captures in ${ABORT_CAPTURES_TIMEOUT_MS}ms" }
             }
+
+            // Explicitly release ImageWriter resources for the edge case when two capture sessions
+            // share the same input surface.
+            // b/369203626
+            Debug.traceStart { "$this#disconnect" }
+            captureSession.captureSequenceProcessor?.disconnect()
+            Debug.traceStop()
 
             // There are rare, extraordinary circumstances where we might need to close the capture
             // session. It is possible the app might explicitly wait for the captures to be
@@ -303,16 +394,29 @@ internal class CaptureSessionState(
             // on certain devices, we need to close the capture session, or else the camera device
             // close call might stall indefinitely [2].
             //
+            // Additional considerations: It seems that on certain devices,
+            // CameraCaptureSession.close() can block for an extended period of time [3]. Hence,
+            // here we wrap the close call with a timeout to prevent us from getting blocked.
+            //
             // [1] b/277310425
             // [2] b/277675483
+            // [3] b/307594946 - [ANR] at Camera2CameraController.disconnectSessionAndCamera
             if (cameraGraphFlags.closeCaptureSessionOnDisconnect) {
-                val captureSession = configuredCaptureSession?.session
-                checkNotNull(captureSession)
-                Debug.trace("$this CameraCaptureSessionWrapper#close") {
-                    Log.debug { "Closing capture session for $this" }
-                    captureSession.close()
+                threads.runBlockingCheckedOrNull(CLOSE_SESSION_TIMEOUT_MS) {
+                    Debug.trace("$this CameraCaptureSessionWrapper#close") {
+                        Log.debug { "Closing capture session for $this" }
+                        captureSession.session.close()
+                    }
                 }
+                    ?: Log.error {
+                        "Failed to close the capture session in ${CLOSE_SESSION_TIMEOUT_MS}ms"
+                    }
             }
+
+            Debug.traceStart { "$graphListener#onGraphStopped" }
+            graphListener.onGraphStopped(graphProcessor)
+            Debug.traceStop()
+
             Debug.traceStop()
         } else {
             // We still need to indicate the stop signal because the graph state would transition to
@@ -321,6 +425,18 @@ internal class CaptureSessionState(
             graphListener.onGraphStopped(null)
             Debug.traceStop()
         }
+
+        /** Do not remove - see [onSessionDisconnected] for details. */
+        sessionDisconnected.countDown()
+    }
+
+    /**
+     * This is used to disconnect, shutdown the cached [CameraCaptureSessionWrapper] and put this
+     * object into a closed state. This would finalize pending resources if any, such as surface
+     * usage tracking.
+     */
+    fun shutdown() {
+        disconnect()
 
         var shouldFinalizeSession = false
         var finalizeSessionDelayMs = 0L
@@ -352,7 +468,7 @@ internal class CaptureSessionState(
         }
     }
 
-    private fun finalizeSession(delayMs: Long = 0L) {
+    internal fun finalizeSession(delayMs: Long = 0L) {
         if (delayMs != 0L) {
             scope.launch {
                 Log.debug { "Finalizing $this in $delayMs ms" }
@@ -400,7 +516,14 @@ internal class CaptureSessionState(
             var tryResubmit = false
             synchronized(lock) {
                 if (state == State.CREATED) {
-                    activeSurfaceMap.putAll(pendingSurfaces)
+                    activeStreamSurfaceMap.putAll(pendingSurfaces)
+                    for ((streamId, surface) in pendingSurfaces) {
+                        val cameraStream = checkNotNull(streamGraph[streamId])
+                        check(cameraStream.outputs.size == 1) {
+                            "Cannot finalize a multi-output stream!"
+                        }
+                        activeOutputSurfaceMap[cameraStream.outputs.single().id] = surface
+                    }
                     Log.info {
                         val finalizationTime = Timestamps.now(timeSource) - finalizedStartTime
                         "Finalized ${pendingOutputs.map { it.key }} for $this in " +
@@ -417,7 +540,7 @@ internal class CaptureSessionState(
         }
     }
 
-    private fun tryCreateCaptureSession() {
+    private suspend fun tryCreateCaptureSession() {
         val surfaces: Map<StreamId, Surface>?
         val device: CameraDeviceWrapper?
         synchronized(lock) {
@@ -436,16 +559,27 @@ internal class CaptureSessionState(
             sessionCreatingTimestamp = Timestamps.now(timeSource)
         }
 
+        // Acquire session lock if session sequencer is present. This is needed to work around
+        // b/422329694 where under concurrent camera configurations, one is less likely to run into
+        // camera platform issues if one creates capture sessions serially (one after another).
+        sessionSequencer?.let {
+            Log.debug { "Awaiting session lock" }
+            it.awaitSessionLock()
+        }
+
         // Create the capture session and return a Map of StreamId -> OutputConfiguration for any
         // outputs that were not initially available. These will be configured later.
         Log.info {
             "Creating CameraCaptureSession from ${device?.cameraId} using $this with $surfaces"
         }
-
-        val deferred =
+        val result =
             Debug.trace("CameraDevice-${device?.cameraId?.value}#createCaptureSession") {
                 captureSessionFactory.create(device!!, surfaces!!, this)
             }
+        if (result !is CaptureSessionFactory.Result.Success) {
+            Log.error { "Failed to create capture session for $this!" }
+            return
+        }
 
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
@@ -455,7 +589,10 @@ internal class CaptureSessionState(
             check(state == State.CREATING) { "Unexpected state: $state" }
             state = State.CREATED
 
-            activeSurfaceMap.putAll(surfaces!!)
+            activeStreamSurfaceMap.putAll(surfaces!!)
+            activeOutputSurfaceMap.putAll(result.outputSurfaceMap)
+
+            val deferred = result.deferred
             if (deferred.isNotEmpty()) {
                 Log.info {
                     "Created $this with ${surfaces.keys.toList()}. " +
@@ -483,7 +620,7 @@ internal class CaptureSessionState(
     @GuardedBy("lock")
     private fun updateTrackedSurfaces(
         oldSurfaceMap: Map<StreamId, Surface>,
-        newSurfaceMap: Map<StreamId, Surface>
+        newSurfaceMap: Map<StreamId, Surface>,
     ) {
         val oldSurfaces = oldSurfaceMap.values.toSet()
         val newSurfaces = newSurfaceMap.values.toSet()
@@ -507,6 +644,13 @@ internal class CaptureSessionState(
 
     private data class ConfiguredCameraCaptureSession(
         val session: CameraCaptureSessionWrapper,
-        val processor: GraphRequestProcessor
+        val processor: GraphRequestProcessor,
+        val captureSequenceProcessor: Camera2CaptureSequenceProcessor?,
     )
+
+    private companion object {
+        const val CAPTURE_SESSION_TIMEOUT_MS = 3_000L
+        const val ABORT_CAPTURES_TIMEOUT_MS = 2_000L
+        const val CLOSE_SESSION_TIMEOUT_MS = 3_000L
+    }
 }

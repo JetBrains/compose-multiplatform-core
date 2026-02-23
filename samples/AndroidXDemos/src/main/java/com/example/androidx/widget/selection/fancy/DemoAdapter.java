@@ -22,14 +22,15 @@ import android.content.Context;
 import android.net.Uri;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Predicate;
 import androidx.recyclerview.selection.ItemKeyProvider;
 import androidx.recyclerview.selection.SelectionTracker;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.Cheeses;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,7 +156,7 @@ final class DemoAdapter extends RecyclerView.Adapter<DemoHolder> {
             return false;
         }
 
-        @Nullable Uri removed = mCheeses.remove(position);
+        Uri removed = mCheeses.remove(position);
         notifyItemRemoved(position);
         return removed != null;
     }

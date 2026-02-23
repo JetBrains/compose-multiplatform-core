@@ -15,30 +15,27 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     api("androidx.core:core-ktx:1.12.0")
     api(project(":fragment:fragment-ktx"))
-    api("androidx.compose.runtime:runtime:1.5.4")
-    api("androidx.compose.ui:ui:1.5.4")
-    implementation("androidx.compose.runtime:runtime-saveable:1.5.4")
+    api("androidx.compose.runtime:runtime:1.6.0")
+    api("androidx.compose.ui:ui:1.6.0")
+    implementation("androidx.compose.runtime:runtime-saveable:1.6.0")
 
     androidTestImplementation("androidx.activity:activity:1.8.2")
     androidTestImplementation("androidx.activity:activity-compose:1.8.2")
@@ -53,7 +50,7 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":compose:ui:ui-text"))
     androidTestImplementation(project(":compose:ui:ui-unit"))
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.hamcrestCore)
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.junit)
@@ -64,18 +61,15 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.fragment.compose"
-    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
-    experimentalProperties["android.lint.useK2Uast"] = false
+    compileSdk { version = release(35) }
+    namespace = "androidx.fragment.compose"
 }
 
 androidx {
     name = "Fragment Compose"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Integrate Fragments with Compose to provide helper APIs for using Fragments in" +
             "Compose or Compose inside of Fragments"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":fragment:fragment-compose:fragment-compose-samples"))
 }

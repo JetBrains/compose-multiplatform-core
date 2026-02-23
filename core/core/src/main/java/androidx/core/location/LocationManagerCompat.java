@@ -18,8 +18,6 @@ package androidx.core.location;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.provider.Settings.Secure.LOCATION_MODE;
-import static android.provider.Settings.Secure.LOCATION_MODE_OFF;
 
 import static androidx.core.location.LocationCompat.getElapsedRealtimeMillis;
 
@@ -27,7 +25,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.location.GnssMeasurementsEvent;
 import android.location.GnssStatus;
 import android.location.GpsStatus;
@@ -42,13 +39,8 @@ import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.provider.Settings;
-import android.provider.Settings.Secure;
-import android.text.TextUtils;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.collection.SimpleArrayMap;
@@ -56,6 +48,9 @@ import androidx.core.os.ExecutorCompat;
 import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -88,46 +83,11 @@ public final class LocationManagerCompat {
     /**
      * Returns the current enabled/disabled state of location.
      *
-     * <p>NOTE: Calling this method on API levels prior to 20 <i>may</i> require the
-     * {@link android.Manifest.permission#ACCESS_FINE_LOCATION ACCESS_FINE_LOCATION} or
-     * {@link android.Manifest.permission#ACCESS_COARSE_LOCATION ACCESS_COARSE_LOCATION}
-     * permission if run on non-standard Android devices. The vast majority of devices should not
-     * require either permission to be present for this method.
-     *
      * @return {@code true} if location is enabled or {@code false} if location is disabled
      */
-    @SuppressWarnings("JavaReflectionMemberAccess")
     public static boolean isLocationEnabled(@NonNull LocationManager locationManager) {
         if (VERSION.SDK_INT >= 28) {
             return Api28Impl.isLocationEnabled(locationManager);
-        }
-
-        if (VERSION.SDK_INT <= 19) {
-            // KitKat and below have pointless location permission requirements when using
-            // isProviderEnabled(). Instead, we attempt to reflect a context so that we can query
-            // the underlying setting. If this fails, we fallback to isProviderEnabled() which may
-            // require the caller to hold location permissions.
-            try {
-                if (sContextField == null) {
-                    sContextField = LocationManager.class.getDeclaredField("mContext");
-                    sContextField.setAccessible(true);
-                }
-                Context context = (Context) sContextField.get(locationManager);
-
-                if (context != null) {
-                    if (VERSION.SDK_INT == 19) {
-                        return Secure.getInt(context.getContentResolver(), LOCATION_MODE,
-                                LOCATION_MODE_OFF) != LOCATION_MODE_OFF;
-                    } else {
-                        return !TextUtils.isEmpty(
-                                Settings.Secure.getString(context.getContentResolver(),
-                                        Settings.Secure.LOCATION_PROVIDERS_ALLOWED));
-                    }
-                }
-            } catch (ClassCastException | SecurityException | NoSuchFieldException
-                    | IllegalAccessException e) {
-                // oh well, fallback to isProviderEnabled()
-            }
         }
 
         return locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
@@ -186,8 +146,8 @@ public final class LocationManagerCompat {
     @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
     public static void getCurrentLocation(@NonNull LocationManager locationManager,
             @NonNull String provider,
-            @Nullable androidx.core.os.CancellationSignal cancellationSignal,
-            @NonNull Executor executor, @NonNull final Consumer<Location> consumer) {
+            androidx.core.os.@Nullable CancellationSignal cancellationSignal,
+            @NonNull Executor executor, final @NonNull Consumer<Location> consumer) {
         getCurrentLocation(locationManager, provider, cancellationSignal != null
                         ? (CancellationSignal) cancellationSignal.getCancellationSignalObject() :
                         null,
@@ -215,7 +175,7 @@ public final class LocationManagerCompat {
     @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
     public static void getCurrentLocation(@NonNull LocationManager locationManager,
             @NonNull String provider, @Nullable CancellationSignal cancellationSignal,
-            @NonNull Executor executor, @NonNull final Consumer<Location> consumer) {
+            @NonNull Executor executor, final @NonNull Consumer<Location> consumer) {
         if (VERSION.SDK_INT >= 30) {
             Api30Impl.getCurrentLocation(locationManager, provider, cancellationSignal, executor,
                     consumer);
@@ -380,8 +340,8 @@ public final class LocationManagerCompat {
      *
      * <p>No device-specific serial number or ID is returned from this API.
      */
-    @Nullable
-    public static String getGnssHardwareModelName(@NonNull LocationManager locationManager) {
+    public static @Nullable String getGnssHardwareModelName(
+            @NonNull LocationManager locationManager) {
         if (VERSION.SDK_INT >= 28) {
             return Api28Impl.getGnssHardwareModelName(locationManager);
         } else {
@@ -423,7 +383,7 @@ public final class LocationManagerCompat {
     @RequiresApi(VERSION_CODES.N)
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public static boolean registerGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-            @NonNull GnssMeasurementsEvent.Callback callback, @NonNull Handler handler) {
+            GnssMeasurementsEvent.@NonNull Callback callback, @NonNull Handler handler) {
         if (VERSION.SDK_INT > VERSION_CODES.R) {
             return Api24Impl.registerGnssMeasurementsCallback(locationManager, callback, handler);
         } else if (VERSION.SDK_INT == VERSION_CODES.R) {
@@ -457,7 +417,7 @@ public final class LocationManagerCompat {
     @RequiresApi(VERSION_CODES.N)
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public static boolean registerGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-            @NonNull Executor executor, @NonNull GnssMeasurementsEvent.Callback callback) {
+            @NonNull Executor executor, GnssMeasurementsEvent.@NonNull Callback callback) {
         if (VERSION.SDK_INT > VERSION_CODES.R) {
             return Api31Impl.registerGnssMeasurementsCallback(locationManager, executor, callback);
         } else if (VERSION.SDK_INT == VERSION_CODES.R) {
@@ -485,7 +445,7 @@ public final class LocationManagerCompat {
      */
     @RequiresApi(VERSION_CODES.N)
     public static void unregisterGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-            @NonNull GnssMeasurementsEvent.Callback callback) {
+            GnssMeasurementsEvent.@NonNull Callback callback) {
         if (VERSION.SDK_INT >= VERSION_CODES.R) {
             Api24Impl.unregisterGnssMeasurementsCallback(locationManager, callback);
         } else {
@@ -507,7 +467,7 @@ public final class LocationManagerCompat {
     @RequiresApi(VERSION_CODES.R)
     private static boolean registerGnssMeasurementsCallbackOnR(
             @NonNull LocationManager locationManager, @NonNull Executor executor,
-            @NonNull GnssMeasurementsEvent.Callback callback) {
+            GnssMeasurementsEvent.@NonNull Callback callback) {
         if (VERSION.SDK_INT == VERSION_CODES.R) {
             try {
                 if (sGnssRequestBuilderClass == null) {
@@ -551,7 +511,7 @@ public final class LocationManagerCompat {
      */
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public static boolean registerGnssStatusCallback(@NonNull LocationManager locationManager,
-            @NonNull GnssStatusCompat.Callback callback, @NonNull Handler handler) {
+            GnssStatusCompat.@NonNull Callback callback, @NonNull Handler handler) {
         if (VERSION.SDK_INT >= VERSION_CODES.R) {
             return registerGnssStatusCallback(locationManager, ExecutorCompat.create(handler),
                 callback);
@@ -581,7 +541,7 @@ public final class LocationManagerCompat {
      */
     @RequiresPermission(ACCESS_FINE_LOCATION)
     public static boolean registerGnssStatusCallback(@NonNull LocationManager locationManager,
-            @NonNull Executor executor, @NonNull GnssStatusCompat.Callback callback) {
+            @NonNull Executor executor, GnssStatusCompat.@NonNull Callback callback) {
         if (VERSION.SDK_INT >= VERSION_CODES.R) {
             return registerGnssStatusCallback(locationManager, null, executor, callback);
         } else {
@@ -670,7 +630,7 @@ public final class LocationManagerCompat {
      * and {@link LocationManager#unregisterGnssStatusCallback(GnssStatus.Callback)}.
      */
     public static void unregisterGnssStatusCallback(@NonNull LocationManager locationManager,
-            @NonNull GnssStatusCompat.Callback callback) {
+            GnssStatusCompat.@NonNull Callback callback) {
         if (VERSION.SDK_INT >= 24) {
             synchronized (GnssListenersHolder.sGnssStatusListeners) {
                 Object transport = GnssListenersHolder.sGnssStatusListeners.remove(callback);
@@ -721,7 +681,7 @@ public final class LocationManagerCompat {
 
     private static class LocationListenerTransport implements LocationListener {
 
-        @Nullable volatile LocationListenerKey mKey;
+        volatile @Nullable LocationListenerKey mKey;
         final Executor mExecutor;
 
         LocationListenerTransport(@Nullable LocationListenerKey key, Executor executor) {
@@ -832,9 +792,9 @@ public final class LocationManagerCompat {
     private static class GnssMeasurementsTransport extends GnssMeasurementsEvent.Callback {
 
         final GnssMeasurementsEvent.Callback mCallback;
-        @Nullable volatile Executor mExecutor;
+        volatile @Nullable Executor mExecutor;
 
-        GnssMeasurementsTransport(@NonNull GnssMeasurementsEvent.Callback callback,
+        GnssMeasurementsTransport(GnssMeasurementsEvent.@NonNull Callback callback,
                 @NonNull Executor executor) {
             mCallback = callback;
             mExecutor = executor;
@@ -911,7 +871,7 @@ public final class LocationManagerCompat {
 
         final GnssStatusCompat.Callback mCallback;
 
-        @Nullable volatile Executor mExecutor;
+        volatile @Nullable Executor mExecutor;
 
         PreRGnssStatusTransport(GnssStatusCompat.Callback callback) {
             Preconditions.checkArgument(callback != null, "invalid null callback");
@@ -994,7 +954,7 @@ public final class LocationManagerCompat {
         private final LocationManager mLocationManager;
         final GnssStatusCompat.Callback mCallback;
 
-        @Nullable volatile Executor mExecutor;
+        volatile @Nullable Executor mExecutor;
 
         GpsStatusTransport(LocationManager locationManager,
                 GnssStatusCompat.Callback callback) {
@@ -1078,8 +1038,7 @@ public final class LocationManagerCompat {
         @GuardedBy("this")
         private boolean mTriggered;
 
-        @Nullable
-        Runnable mTimeoutRunnable;
+        @Nullable Runnable mTimeoutRunnable;
 
         CancellableLocationListener(LocationManager locationManager,
                 Executor executor, Consumer<Location> consumer) {
@@ -1134,7 +1093,7 @@ public final class LocationManagerCompat {
 
         @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
         @Override
-        public void onLocationChanged(@Nullable final Location location) {
+        public void onLocationChanged(final @Nullable Location location) {
             synchronized (this) {
                 if (mTriggered) {
                     return;
@@ -1207,7 +1166,7 @@ public final class LocationManagerCompat {
 
         @RequiresPermission(ACCESS_FINE_LOCATION)
         static boolean registerGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-                @NonNull Executor executor, @NonNull GnssMeasurementsEvent.Callback callback) {
+                @NonNull Executor executor, GnssMeasurementsEvent.@NonNull Callback callback) {
             return locationManager.registerGnssMeasurementsCallback(executor, callback);
         }
     }
@@ -1398,18 +1357,18 @@ public final class LocationManagerCompat {
 
         @RequiresPermission(ACCESS_FINE_LOCATION)
         static boolean registerGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-                @NonNull GnssMeasurementsEvent.Callback callback) {
+                GnssMeasurementsEvent.@NonNull Callback callback) {
             return locationManager.registerGnssMeasurementsCallback(callback);
         }
 
         @RequiresPermission(ACCESS_FINE_LOCATION)
         static boolean registerGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-                @NonNull GnssMeasurementsEvent.Callback callback, @NonNull Handler handler) {
+                GnssMeasurementsEvent.@NonNull Callback callback, @NonNull Handler handler) {
             return locationManager.registerGnssMeasurementsCallback(callback, handler);
         }
 
         static void unregisterGnssMeasurementsCallback(@NonNull LocationManager locationManager,
-                @NonNull GnssMeasurementsEvent.Callback callback) {
+                GnssMeasurementsEvent.@NonNull Callback callback) {
             locationManager.unregisterGnssMeasurementsCallback(callback);
         }
 

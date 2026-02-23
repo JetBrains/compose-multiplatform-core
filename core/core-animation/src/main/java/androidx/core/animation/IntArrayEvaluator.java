@@ -16,8 +16,8 @@
 
 package androidx.core.animation;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This evaluator can be used to perform type interpolation between <code>int[]</code> values.
@@ -47,7 +47,7 @@ public class IntArrayEvaluator implements TypeEvaluator<int[]> {
      *
      * @param reuseArray The array to modify and return from <code>evaluate</code>.
      */
-    public IntArrayEvaluator(@Nullable int[] reuseArray) {
+    public IntArrayEvaluator(int @Nullable [] reuseArray) {
         mArray = reuseArray;
     }
 
@@ -63,8 +63,8 @@ public class IntArrayEvaluator implements TypeEvaluator<int[]> {
      *         the same index in startValue and endValue.
      */
     @Override
-    @NonNull
-    public int[] evaluate(float fraction, @NonNull int[] startValue, @NonNull int[] endValue) {
+    public int @NonNull [] evaluate(float fraction, int @NonNull [] startValue,
+            int @NonNull [] endValue) {
         int[] array = mArray;
         if (array == null) {
             array = new int[startValue.length];

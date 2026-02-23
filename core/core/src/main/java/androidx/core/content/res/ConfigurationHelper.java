@@ -19,7 +19,7 @@ package androidx.core.content.res;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class which allows access to properties of {@link Configuration} in

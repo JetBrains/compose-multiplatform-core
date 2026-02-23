@@ -27,9 +27,10 @@ import android.text.TextUtils;
 import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -580,7 +581,7 @@ public final class ContentRecommendation
      * @return An array of predefined type tags (see the <code>CONTENT_TYPE_*</code> constants) that
      *         describe the recommended content.
      */
-    public @Nullable String[] getContentTypes() {
+    public String @Nullable [] getContentTypes() {
         if (mContentTypes != null) {
             return Arrays.copyOf(mContentTypes, mContentTypes.length);
         }
@@ -607,7 +608,7 @@ public final class ContentRecommendation
      *
      * @return An array of genre tags that describe the recommended content.
      */
-    public @Nullable String[] getGenres() {
+    public String @Nullable [] getGenres() {
         if (mContentGenres != null) {
             return Arrays.copyOf(mContentGenres, mContentGenres.length);
         }
@@ -986,7 +987,7 @@ public final class ContentRecommendation
          * @param types Array of predefined type tags (see the <code>CONTENT_TYPE_*</code>
          *            constants) that describe the recommended content.
          */
-        public @NonNull Builder setContentTypes(@NonNull String[] types) {
+        public @NonNull Builder setContentTypes(String @NonNull [] types) {
             mBuilderContentTypes = checkNotNull(types);
             return this;
         }
@@ -999,7 +1000,7 @@ public final class ContentRecommendation
          *
          * @param genres Array of genre string tags that describe the recommended content.
          */
-        public @NonNull Builder setGenres(@Nullable String[] genres) {
+        public @NonNull Builder setGenres(String @Nullable [] genres) {
             mBuilderContentGenres = genres;
             return this;
         }
@@ -1014,7 +1015,7 @@ public final class ContentRecommendation
          * @param priceValue A string containing a representation of the content price in the
          *            current locale and currency.
          */
-        public @NonNull Builder setPricingInformation(@NonNull @ContentPricing String priceType,
+        public @NonNull Builder setPricingInformation(@ContentPricing @NonNull String priceType,
                 @Nullable String priceValue) {
             mBuilderPriceType = checkNotNull(priceType);
             mBuilderPriceValue = priceValue;
@@ -1041,7 +1042,7 @@ public final class ContentRecommendation
          *            tag must be one of the predefined maturity rating tags (see the <code>
          *            CONTENT_MATURITY_*</code> constants).
          */
-        public @NonNull Builder setMaturityRating(@NonNull @ContentMaturity String maturityRating) {
+        public @NonNull Builder setMaturityRating(@ContentMaturity @NonNull String maturityRating) {
             mBuilderMaturityRating = checkNotNull(maturityRating);
             return this;
         }
@@ -1105,15 +1106,18 @@ public final class ContentRecommendation
             PendingIntent contentPending;
             if (mContentIntentData.mType == INTENT_TYPE_ACTIVITY) {
                 contentPending = PendingIntent.getActivity(context, mContentIntentData.mRequestCode,
-                        mContentIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT,
+                        mContentIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE,
                         mContentIntentData.mOptions);
             } else if (mContentIntentData.mType == INTENT_TYPE_SERVICE) {
                 contentPending = PendingIntent.getService(context, mContentIntentData.mRequestCode,
-                        mContentIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        mContentIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             } else { // Default:INTENT_TYPE_BROADCAST{
                 contentPending = PendingIntent.getBroadcast(context,
                         mContentIntentData.mRequestCode,
-                        mContentIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        mContentIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             }
             builder.setContentIntent(contentPending);
         }
@@ -1122,15 +1126,18 @@ public final class ContentRecommendation
             PendingIntent dismissPending;
             if (mDismissIntentData.mType == INTENT_TYPE_ACTIVITY) {
                 dismissPending = PendingIntent.getActivity(context, mDismissIntentData.mRequestCode,
-                        mDismissIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT,
+                        mDismissIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE,
                         mDismissIntentData.mOptions);
             } else if (mDismissIntentData.mType == INTENT_TYPE_SERVICE) {
                 dismissPending = PendingIntent.getService(context, mDismissIntentData.mRequestCode,
-                        mDismissIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        mDismissIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             } else { // Default:INTENT_TYPE_BROADCAST{
                 dismissPending = PendingIntent.getBroadcast(context,
                         mDismissIntentData.mRequestCode,
-                        mDismissIntentData.mIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        mDismissIntentData.mIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             }
             builder.setDeleteIntent(dismissPending);
         }

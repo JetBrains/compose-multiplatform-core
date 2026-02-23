@@ -16,13 +16,14 @@
 
 package androidx.pdf.viewer;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.util.HighlightOverlay;
 import androidx.pdf.util.HighlightPaint;
 import androidx.pdf.util.RectDrawSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link HighlightOverlay} overlay that highlights all of the matches described in the given

@@ -31,6 +31,7 @@ import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.PackageIdentifier;
+import androidx.appsearch.localstorage.AppSearchConfig;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.LocalStorageIcingOptionsConfig;
@@ -58,6 +59,8 @@ public class VisibilityStoreMigrationHelperFromV0Test {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
     private File mFile;
+    private AppSearchConfig mConfig = new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+            new LocalStorageIcingOptionsConfig());
 
     @Before
     public void setUp() throws Exception {
@@ -66,6 +69,7 @@ public class VisibilityStoreMigrationHelperFromV0Test {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testVisibilityMigration_from0() throws Exception {
         // Values for a "foo" client
         String packageNameFoo = "packageFoo";
@@ -115,41 +119,49 @@ public class VisibilityStoreMigrationHelperFromV0Test {
                         new AppSearchSchema.Builder("schema1").build(),
                         new AppSearchSchema.Builder("schema2").build()),
                 /*prefixedVisibilityBundles=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ false,
                 /*schemaVersion=*/ 0,
-                /*setSchemaStatsBuilder=*/ null);
+                /*setSchemaStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null);
         assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
 
         // Put deprecated visibility documents in version 0 to AppSearchImpl
         appSearchImplInV0.putDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 deprecatedVisibilityDocument,
                 /*sendChangeNotifications=*/ false,
-                /*logger=*/null);
+                /*logger=*/null,
+                /*callStatsBuilder=*/ null);
 
         // Persist to disk and re-open the AppSearchImpl
         appSearchImplInV0.close();
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
 
         GenericDocument actualDocument1 =
                 appSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.VISIBILITY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                         VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                         /*id=*/ prefix + "Schema1",
-                        /*typePropertyPaths=*/ Collections.emptyMap());
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null);
         GenericDocument actualDocument2 =
                 appSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.VISIBILITY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                         VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                         /*id=*/ prefix + "Schema2",
-                        /*typePropertyPaths=*/ Collections.emptyMap());
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null);
 
         GenericDocument expectedDocument1 = VisibilityToDocumentConverter.createVisibilityDocument(
                 new InternalVisibilityConfig.Builder(prefix + "Schema1")
@@ -204,18 +216,23 @@ public class VisibilityStoreMigrationHelperFromV0Test {
                 .build();
         // Set deprecated visibility schema version 0 into AppSearchImpl.
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         InternalSetSchemaResponse internalSetSchemaResponse = appSearchImpl.setSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 ImmutableList.of(visibilityDocumentSchemaV0, visibilityToPackagesSchemaV0),
                 /*prefixedVisibilityBundles=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true, // force push the old version into disk
                 /*version=*/ 0,
-                /*setSchemaStatsBuilder=*/ null);
+                /*setSchemaStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null);
         assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
         return appSearchImpl;
     }

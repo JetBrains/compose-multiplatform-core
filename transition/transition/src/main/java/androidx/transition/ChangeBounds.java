@@ -31,9 +31,10 @@ import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -158,9 +159,8 @@ public class ChangeBounds extends Transition {
         return true;
     }
 
-    @NonNull
     @Override
-    public String[] getTransitionProperties() {
+    public String @NonNull [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -223,8 +223,7 @@ public class ChangeBounds extends Transition {
     }
 
     @Override
-    @Nullable
-    public Animator createAnimator(@NonNull final ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(final @NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (startValues == null || endValues == null) {
             return null;

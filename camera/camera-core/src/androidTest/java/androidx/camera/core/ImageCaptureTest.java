@@ -32,7 +32,6 @@ import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -42,20 +41,23 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.internal.StreamSpecsCalculator;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.camera.core.internal.compat.workaround.CaptureFailedRetryEnabler;
 import androidx.camera.testing.fakes.FakeCamera;
+import androidx.camera.testing.fakes.FakeCameraCaptureResult;
 import androidx.camera.testing.fakes.FakeCameraControl;
+import androidx.camera.testing.imagecapture.CaptureResult;
 import androidx.camera.testing.impl.CoreAppTestUtil;
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +76,6 @@ import java.util.concurrent.TimeUnit;
  */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public class ImageCaptureTest {
 
     private CameraUseCaseAdapter mCameraUseCaseAdapter;
@@ -92,10 +93,12 @@ public class ImageCaptureTest {
                 StreamSpec.builder(new Size(640, 480)).build());
 
         UseCaseConfigFactory useCaseConfigFactory = new FakeUseCaseConfigFactory();
+        StreamSpecsCalculator streamSpecsCalculator = new StreamSpecsCalculatorImpl(
+                useCaseConfigFactory, fakeCameraDeviceSurfaceManager);
         mCameraUseCaseAdapter = new CameraUseCaseAdapter(
                 fakeCamera,
                 new FakeCameraCoordinator(),
-                fakeCameraDeviceSurfaceManager,
+                streamSpecsCalculator,
                 useCaseConfigFactory);
     }
 
@@ -126,7 +129,7 @@ public class ImageCaptureTest {
 
         fakeCameraControl.setOnNewCaptureRequestListener(captureConfigs -> {
             // Notify the cancel after the capture request has been successfully submitted
-            fakeCameraControl.notifyAllRequestsOnCaptureCancelled();
+            fakeCameraControl.completeAllCaptureRequests(CaptureResult.cancelledResult());
         });
 
         mInstrumentation.runOnMainSync(
@@ -156,7 +159,7 @@ public class ImageCaptureTest {
                 getCameraControlImplementation(mCameraUseCaseAdapter.getCameraControl());
         fakeCameraControl.setOnNewCaptureRequestListener(captureConfigs -> {
             // Notify the failure after the capture request has been successfully submitted
-            fakeCameraControl.notifyAllRequestsOnCaptureFailed();
+            fakeCameraControl.completeAllCaptureRequests(CaptureResult.failedResult());
         });
 
         mInstrumentation.runOnMainSync(
@@ -304,7 +307,7 @@ public class ImageCaptureTest {
         // Simulates the case that the capture request failed after running in 300 ms.
         fakeCameraControl.setOnNewCaptureRequestListener(captureConfigs -> {
             CameraXExecutors.mainThreadExecutor().schedule(() -> {
-                fakeCameraControl.notifyAllRequestsOnCaptureFailed();
+                fakeCameraControl.completeAllCaptureRequests(CaptureResult.failedResult());
             }, 300, TimeUnit.MILLISECONDS);
         });
 
@@ -357,8 +360,7 @@ public class ImageCaptureTest {
         return (FakeCameraControl) impl;
     }
 
-    @NonNull
-    private List<CaptureConfig> captureImage(@NonNull ImageCapture imageCapture,
+    private @NonNull List<CaptureConfig> captureImage(@NonNull ImageCapture imageCapture,
             @NonNull Class<?> callbackClass) {
         // Arrange.
         mInstrumentation.runOnMainSync(() -> {
@@ -482,7 +484,7 @@ public class ImageCaptureTest {
         CaptureFailedRetryEnabler retryEnabler = new CaptureFailedRetryEnabler();
         // Because of retry in some devices, we may need to notify capture failures multiple times.
         addExtraFailureNotificationsForRetry(fakeCameraControl, retryEnabler.getRetryCount());
-        fakeCameraControl.notifyAllRequestsOnCaptureFailed();
+        fakeCameraControl.completeAllCaptureRequests(CaptureResult.failedResult());
 
         // Assert.
         verify(callback, timeout(1000).times(1)).onError(any());
@@ -494,7 +496,7 @@ public class ImageCaptureTest {
         if (retryCount > 0) {
             cameraControl.setOnNewCaptureRequestListener(captureConfigs -> {
                 addExtraFailureNotificationsForRetry(cameraControl, retryCount - 1);
-                cameraControl.notifyAllRequestsOnCaptureFailed();
+                cameraControl.completeAllCaptureRequests(CaptureResult.failedResult());
             });
         }
     }
@@ -520,7 +522,6 @@ public class ImageCaptureTest {
         assertThat(resolutionInfo.getCropRect()).isEqualTo(new Rect(0, 60, 640, 420));
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void streamSpecZslNotDisabled_zslConfigAdded() {
         ImageCapture imageCapture = new ImageCapture.Builder().setCaptureMode(
@@ -540,7 +541,6 @@ public class ImageCaptureTest {
         assertThat(fakeCameraControl.isZslConfigAdded()).isTrue();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void streamSpecZslDisabled_zslConfigNotAdded() {
         FakeCamera fakeCamera = new FakeCamera("fakeCameraId");
@@ -554,11 +554,12 @@ public class ImageCaptureTest {
                         .build());
 
         UseCaseConfigFactory useCaseConfigFactory = new FakeUseCaseConfigFactory();
+        StreamSpecsCalculator streamSpecsCalculator = new StreamSpecsCalculatorImpl(
+                useCaseConfigFactory, fakeCameraDeviceSurfaceManager);
         mCameraUseCaseAdapter = new CameraUseCaseAdapter(
                 fakeCamera,
                 new FakeCameraCoordinator(),
-                fakeCameraDeviceSurfaceManager,
-                useCaseConfigFactory);
+                streamSpecsCalculator, useCaseConfigFactory);
 
         ImageCapture imageCapture = new ImageCapture.Builder().setCaptureMode(
                 ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG).build();

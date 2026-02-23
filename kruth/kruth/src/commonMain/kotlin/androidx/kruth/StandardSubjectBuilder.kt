@@ -39,7 +39,7 @@ expect open class StandardSubjectBuilder internal constructor(metadata: FailureM
      * this method is called multiple times, the messages will appear in the order that they were
      * specified.
      */
-    fun withMessage(messageToPrepend: String): StandardSubjectBuilder
+    fun withMessage(messageToPrepend: String?): StandardSubjectBuilder
 
     fun <T> that(actual: T?): Subject<T>
 
@@ -98,9 +98,7 @@ expect open class StandardSubjectBuilder internal constructor(metadata: FailureM
      * [that][SimpleSubjectBuilder.that] method creates instances of that class. Created subjects
      * use the previously set failure strategy and any previously set failure message.
      */
-    fun <T, S : Subject<T>> about(
-        subjectFactory: Subject.Factory<S, T>,
-    ): SimpleSubjectBuilder<S, T>
+    fun <T, S : Subject<T>> about(subjectFactory: Subject.Factory<S, T>): SimpleSubjectBuilder<S, T>
 
     /**
      * Reports a failure.
@@ -120,7 +118,7 @@ internal fun commonForCustomFailureStrategy(
 }
 
 internal fun StandardSubjectBuilder.commonWithMessage(
-    messageToPrepend: String
+    messageToPrepend: String?
 ): StandardSubjectBuilder =
     StandardSubjectBuilder(metadata = metadata.withMessage(message = messageToPrepend))
 
@@ -202,7 +200,7 @@ internal fun <K, V> StandardSubjectBuilder.commonThat(actual: Map<K, V>?): MapSu
     MapSubject(actual = actual, metadata = metadata)
 
 internal fun <T, S : Subject<T>> StandardSubjectBuilder.commonAbout(
-    subjectFactory: Subject.Factory<S, T>,
+    subjectFactory: Subject.Factory<S, T>
 ): SimpleSubjectBuilder<S, T> =
     SimpleSubjectBuilder(metadata = metadata, subjectFactory = subjectFactory)
 

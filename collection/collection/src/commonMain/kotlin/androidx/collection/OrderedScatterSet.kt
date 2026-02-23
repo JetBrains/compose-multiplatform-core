@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
     "KotlinRedundantDiagnosticSuppress",
@@ -21,7 +22,8 @@
     "PropertyName",
     "ConstPropertyName",
     "PrivatePropertyName",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
 
 package androidx.collection
@@ -91,7 +93,7 @@ public fun <E> mutableOrderedScatterSetOf(element1: E, element2: E): MutableOrde
 public fun <E> mutableOrderedScatterSetOf(
     element1: E,
     element2: E,
-    element3: E
+    element3: E,
 ): MutableOrderedScatterSet<E> =
     MutableOrderedScatterSet<E>(3).apply {
         plusAssign(element1)
@@ -102,6 +104,32 @@ public fun <E> mutableOrderedScatterSetOf(
 /** Returns a new [MutableOrderedScatterSet] with the specified contents. */
 public fun <E> mutableOrderedScatterSetOf(vararg elements: E): MutableOrderedScatterSet<E> =
     MutableOrderedScatterSet<E>(elements.size).apply { plusAssign(elements) }
+
+/** Returns a new read-only [OrderedScatterSet] with the specified contents. */
+public fun <E> Collection<E>.toOrderedScatterSet(): OrderedScatterSet<E> =
+    if (isEmpty()) emptyOrderedScatterSet() else toMutableOrderedScatterSet()
+
+/**
+ * Returns a new [MutableOrderedScatterSet] with the specified contents.
+ *
+ * The [MutableOrderedScatterSet] is created with an initial capacity sufficient to hold the content
+ * in the specified [Collection].
+ */
+public fun <E> Collection<E>.toMutableOrderedScatterSet(): MutableOrderedScatterSet<E> =
+    MutableOrderedScatterSet<E>(size).also { it.addAll(this) }
+
+/** Returns a new read-only [OrderedScatterSet] with the specified contents. */
+public fun <E> OrderedScatterSet<E>.toOrderedScatterSet(): OrderedScatterSet<E> =
+    if (isEmpty()) emptyOrderedScatterSet() else toMutableOrderedScatterSet()
+
+/**
+ * Returns a new [MutableOrderedScatterSet] with the specified contents.
+ *
+ * The [MutableOrderedScatterSet] is created with an initial capacity sufficient to hold the content
+ * in the specified [OrderedScatterSet].
+ */
+public fun <E> OrderedScatterSet<E>.toMutableOrderedScatterSet(): MutableOrderedScatterSet<E> =
+    MutableOrderedScatterSet<E>(size).also { it.addAll(this) }
 
 /**
  * [OrderedScatterSet] is a container with a [Set]-like interface based on a flat hash table
@@ -258,7 +286,7 @@ public sealed class OrderedScatterSet<E> {
         var candidate = tail
         while (candidate != NodeInvalidLink) {
             val previousNode = nodes[candidate].previousNode
-            @Suppress("UNCHECKED_CAST") block(candidate)
+            block(candidate)
             candidate = previousNode
         }
     }
@@ -419,24 +447,26 @@ public sealed class OrderedScatterSet<E> {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        transform: ((E) -> CharSequence)? = null
+        transform: ((E) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@OrderedScatterSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@OrderedScatterSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(element)
+                } else {
+                    append(transform(element))
+                }
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(element)
-            } else {
-                append(transform(element))
-            }
-            index++
         }
         append(postfix)
     }
@@ -547,32 +577,7 @@ public sealed class OrderedScatterSet<E> {
      * possible, the semantics of [Set] may require the allocation of temporary objects for access
      * and iteration.
      */
-    public fun asSet(): Set<E> = SetWrapper()
-
-    internal open inner class SetWrapper : Set<E> {
-        override val size: Int
-            get() = this@OrderedScatterSet._size
-
-        override fun containsAll(elements: Collection<E>): Boolean {
-            elements.forEach { element ->
-                if (!this@OrderedScatterSet.contains(element)) {
-                    return false
-                }
-            }
-            return true
-        }
-
-        @Suppress("KotlinOperator")
-        override fun contains(element: E): Boolean {
-            return this@OrderedScatterSet.contains(element)
-        }
-
-        override fun isEmpty(): Boolean = this@OrderedScatterSet.isEmpty()
-
-        override fun iterator(): Iterator<E> {
-            return iterator { this@OrderedScatterSet.forEach { element -> yield(element) } }
-        }
-    }
+    public fun asSet(): Set<E> = OrderedSetWrapper(this)
 }
 
 /**
@@ -1226,12 +1231,54 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
         val elements = elements
         val nodes = nodes
 
-        val indexMapping = IntArray(capacity)
+        // In this function, we are swapping values in place in the keys/values/nodes arrays.
+        // This requires us to track where the values came from original in the array and
+        // where they moved. You can think of this as an allocation-free double-linked list.
+        //
+        // We need this mapping to fix the links encoded in the nodes array. The nodes array
+        // is itself an allocation-free double-linked list which uses indices to indicate where
+        // to find the next/previous node. Since this method will move the values inside the
+        // data structure, we need to patch the nodes array when we're done. We could skip the
+        // mapping array but that would require scanning the entire nodes array every time we move
+        // a value inside the data structure which would be more expensive. Instead we traverse
+        // the nodes array only once in [fixup].
+        //
+        // Each index mapping is a (src, dst) pair. The source index indicates which
+        // index the current value came, and the destination index indicates where the
+        // value previously held was moved. For instance we want to swap the values
+        // at index 4 and 21:
+        //
+        // indexMapping[4] = (21, 21)
+        // The value at index 4 came from index 21 (src) and the value previously at index 4
+        // is now at index 21.
+        //
+        // indexMapping[21] = (4, 4)
+        // The value at index 21 came from index 4 (src) and the value previously at index 21
+        // is now at index 4.
+        //
+        // Now let's imagine we want to swap the values at index 4 and 22 (following the previous
+        // swap):
+        //
+        // indexMapping[4] = (22, 21)
+        // The value at index 4 came from index 22 (src) and the value previously at index 4
+        // is now at index 21.
+        //
+        // indexMapping[21] = (4, 22)
+        // The value at index 21 came from index 4 (src) and the value previously at index 21
+        // is now at index 22.
+        //
+        // indexMapping[22] = (21, 4)
+        // The value at index 22 came from index 21 (src) and the value previously at index 22
+        // is now at index 4.
+        //
+        // If a src or dst mapping is set to be invalid ([InvalidMappingLink]), the mapping does
+        // not exist. We initialize the array to (0x7fff_ffff, 0x7fff_ffff).
+        val indexMapping = LongArray(capacity)
+        indexMapping.fill(InvalidMapping, 0, capacity)
 
         // Converts Sentinel and Deleted to Empty, and Full to Deleted
         convertMetadataForCleanup(metadata, capacity)
 
-        var swapIndex = -1
         var index = 0
 
         // Drop deleted items and re-hashes surviving entries
@@ -1239,7 +1286,6 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
             var m = readRawMetadata(metadata, index)
             // Formerly Deleted entry, we can use it as a swap spot
             if (m == Empty) {
-                swapIndex = index
                 index++
                 continue
             }
@@ -1255,7 +1301,7 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
             val hash1 = h1(hash)
             val targetIndex = findFirstAvailableSlot(hash1)
 
-            // Test if the current index (i) and the new index (targetIndex) fall
+            // Test if the current index (index) and the new index (targetIndex) fall
             // within the same group based on the hash. If the group doesn't change,
             // we don't move the entry
             val probeOffset = hash1 and capacity
@@ -1266,7 +1312,10 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
                 val hash2 = h2(hash)
                 writeRawMetadata(metadata, index, hash2.toLong())
 
-                indexMapping[index] = index
+                // Don't erase an existing mapping created from a previous swap
+                if (indexMapping[index] == InvalidMapping) {
+                    indexMapping[index] = createMapping(index, index)
+                }
 
                 // Copies the metadata into the clone area
                 metadata[metadata.size - 1] = metadata[0]
@@ -1288,29 +1337,39 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
                 nodes[targetIndex] = nodes[index]
                 nodes[index] = EmptyNode
 
-                indexMapping[index] = targetIndex
-
-                swapIndex = index
+                val mapping = indexMapping[index]
+                val src = mapping.src
+                if (src != InvalidMappingLink) {
+                    indexMapping[src] = createDstMapping(indexMapping[src], targetIndex)
+                    indexMapping[index] = eraseSrcMapping(indexMapping[index])
+                } else {
+                    indexMapping[index] = createMapping(InvalidMappingLink, targetIndex)
+                }
+                indexMapping[targetIndex] = createMapping(index, InvalidMappingLink)
             } else /* m == Deleted */ {
-                // The target isn't empty so we use an empty slot denoted by
-                // swapIndex to perform the swap
+                // The target isn't empty
                 val hash2 = h2(hash)
                 writeRawMetadata(metadata, targetIndex, hash2.toLong())
 
-                if (swapIndex == -1) {
-                    swapIndex = findEmptySlot(metadata, index + 1, capacity)
+                val oldElement = elements[targetIndex]
+                elements[targetIndex] = elements[index]
+                elements[index] = oldElement
+
+                val oldNode = nodes[targetIndex]
+                nodes[targetIndex] = nodes[index]
+                nodes[index] = oldNode
+
+                val mapping = indexMapping[index]
+                var src = mapping.src
+                if (src != InvalidMappingLink) {
+                    indexMapping[src] = createDstMapping(indexMapping[src], targetIndex)
+                    indexMapping[index] = createSrcMapping(indexMapping[index], targetIndex)
+                } else {
+                    indexMapping[index] = createMapping(targetIndex, targetIndex)
+                    src = index
                 }
 
-                elements[swapIndex] = elements[targetIndex]
-                elements[targetIndex] = elements[index]
-                elements[index] = elements[swapIndex]
-
-                nodes[swapIndex] = nodes[targetIndex]
-                nodes[targetIndex] = nodes[index]
-                nodes[index] = nodes[swapIndex]
-
-                indexMapping[index] = targetIndex
-                indexMapping[targetIndex] = index
+                indexMapping[targetIndex] = createMapping(src, index)
 
                 // Since we exchanged two slots we must repeat the process with
                 // element we just moved in the current location
@@ -1361,6 +1420,18 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
         fixupNodes(indexMapping)
     }
 
+    private fun fixupNodes(mapping: LongArray) {
+        val nodes = nodes
+        for (i in nodes.indices) {
+            val node = nodes[i]
+            val previous = node.previousNode
+            val next = node.nextNode
+            nodes[i] = createLinks(node, previous, next, mapping)
+        }
+        if (head != NodeInvalidLink) head = mapping[head].dst
+        if (tail != NodeInvalidLink) tail = mapping[tail].dst
+    }
+
     private fun fixupNodes(mapping: IntArray) {
         val nodes = nodes
         for (i in nodes.indices) {
@@ -1386,46 +1457,84 @@ public class MutableOrderedScatterSet<E>(initialCapacity: Int = DefaultScatterCa
      * this method tries to be as efficient as possible, the semantics of [MutableSet] may require
      * the allocation of temporary objects for access and iteration.
      */
-    public fun asMutableSet(): MutableSet<E> = MutableSetWrapper()
+    public fun asMutableSet(): MutableSet<E> = MutableOrderedSetWrapper(this)
+}
 
-    private inner class MutableSetWrapper : SetWrapper(), MutableSet<E> {
-        override fun add(element: E): Boolean = this@MutableOrderedScatterSet.add(element)
+private open class OrderedSetWrapper<E>(private val parent: OrderedScatterSet<E>) : Set<E> {
+    override val size: Int
+        get() = parent._size
 
-        override fun addAll(elements: Collection<E>): Boolean =
-            this@MutableOrderedScatterSet.addAll(elements)
-
-        override fun clear() {
-            this@MutableOrderedScatterSet.clear()
+    override fun containsAll(elements: Collection<E>): Boolean {
+        elements.forEach { element ->
+            if (!parent.contains(element)) {
+                return false
+            }
         }
+        return true
+    }
 
-        override fun iterator(): MutableIterator<E> =
-            object : MutableIterator<E> {
-                var current = -1
-                val iterator = iterator {
-                    this@MutableOrderedScatterSet.forEachIndex { index ->
-                        current = index
-                        @Suppress("UNCHECKED_CAST") yield(elements[index] as E)
-                    }
-                }
+    @Suppress("KotlinOperator")
+    override fun contains(element: E): Boolean {
+        return parent.contains(element)
+    }
 
-                override fun hasNext(): Boolean = iterator.hasNext()
+    override fun isEmpty(): Boolean = parent.isEmpty()
 
-                override fun next(): E = iterator.next()
+    override fun iterator(): Iterator<E> {
+        return iterator { parent.forEach { element -> yield(element) } }
+    }
 
-                override fun remove() {
-                    if (current != -1) {
-                        this@MutableOrderedScatterSet.removeElementAt(current)
-                        current = -1
-                    }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as OrderedSetWrapper<*>
+
+        return parent == other.parent
+    }
+
+    override fun hashCode(): Int {
+        return parent.hashCode()
+    }
+
+    override fun toString(): String = parent.toString()
+}
+
+private class MutableOrderedSetWrapper<E>(private val parent: MutableOrderedScatterSet<E>) :
+    OrderedSetWrapper<E>(parent), MutableSet<E> {
+    override fun add(element: E): Boolean = parent.add(element)
+
+    override fun addAll(elements: Collection<E>): Boolean = parent.addAll(elements)
+
+    override fun clear() {
+        parent.clear()
+    }
+
+    override fun iterator(): MutableIterator<E> =
+        object : MutableIterator<E> {
+            var current = -1
+            val iterator = iterator {
+                parent.forEachIndex { index ->
+                    current = index
+                    @Suppress("UNCHECKED_CAST") yield(parent.elements[index] as E)
                 }
             }
 
-        override fun remove(element: E): Boolean = this@MutableOrderedScatterSet.remove(element)
+            override fun hasNext(): Boolean = iterator.hasNext()
 
-        override fun retainAll(elements: Collection<E>): Boolean =
-            this@MutableOrderedScatterSet.retainAll(elements)
+            override fun next(): E = iterator.next()
 
-        override fun removeAll(elements: Collection<E>): Boolean =
-            this@MutableOrderedScatterSet.removeAll(elements)
-    }
+            override fun remove() {
+                if (current != -1) {
+                    parent.removeElementAt(current)
+                    current = -1
+                }
+            }
+        }
+
+    override fun remove(element: E): Boolean = parent.remove(element)
+
+    override fun retainAll(elements: Collection<E>): Boolean = parent.retainAll(elements)
+
+    override fun removeAll(elements: Collection<E>): Boolean = parent.removeAll(elements)
 }

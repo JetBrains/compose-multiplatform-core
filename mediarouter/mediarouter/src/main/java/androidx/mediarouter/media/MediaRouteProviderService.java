@@ -18,6 +18,7 @@ package androidx.mediarouter.media;
 
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_IDS;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_LIBRARY_GROUP;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_UNSELECT_REASON;
@@ -39,7 +40,7 @@ import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_MSG_U
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_VERSION_1;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_VERSION_4;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_DYNAMIC_ROUTE_DESCRIPTORS;
-import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUPABLE_SECION_TITLE;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUPABLE_SECTION_TITLE;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_GROUP_ROUTE_DESCRIPTOR;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.DATA_KEY_TRANSFERABLE_SECTION_TITLE;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_DATA_ERROR;
@@ -56,9 +57,12 @@ import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_VERS
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.isValidRemoteMessenger;
 import static androidx.mediarouter.media.MediaRouter.UNSELECT_REASON_UNKNOWN;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.DeadObjectException;
@@ -85,6 +89,7 @@ import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.OnDynamicRoutesChangedListener;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
+import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -93,6 +98,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -130,6 +136,7 @@ public abstract class MediaRouteProviderService extends Service {
     final PrivateHandler mPrivateHandler;
     private final MediaRouteProvider.Callback mProviderCallback;
 
+    PackageManager mPackageManager;
     MediaRouteProvider mProvider;
     final MediaRouteProviderServiceImpl mImpl;
 
@@ -152,10 +159,22 @@ public abstract class MediaRouteProviderService extends Service {
         boolean onRegisterClient(Messenger messenger, int requestId, int version,
                 String packageName);
         boolean onUnregisterClient(Messenger messenger, int requestId);
-        boolean onCreateRouteController(Messenger messenger, int requestId,
-                int controllerId, String routeId, String routeGroupId);
-        boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId);
+
+        boolean onCreateRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String routeId,
+                @Nullable String routeGroupId,
+                RouteControllerOptions routeControllerOptions);
+
+        boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions);
+
         boolean onAddMemberRoute(Messenger messenger, int requestId, int controllerId,
                 String memberId);
         boolean onRemoveMemberRoute(Messenger messenger, int requestId, int controllerId,
@@ -185,12 +204,16 @@ public abstract class MediaRouteProviderService extends Service {
     /**
      * Creates a media route provider service.
      */
+    @SuppressLint("NewApi") // b/462789273 NewApi check fails to detect BuildCompat.isAtLeastB_1 use
     public MediaRouteProviderService() {
         mReceiveHandler = new ReceiveHandler(this);
         mReceiveMessenger = new Messenger(mReceiveHandler);
         mPrivateHandler = new PrivateHandler();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1) {
+            mImpl = new MediaRouteProviderServiceImplApi36_1(this);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             mImpl = new MediaRouteProviderServiceImplApi30(this);
         } else {
             mImpl = new MediaRouteProviderServiceImplBase(this);
@@ -241,6 +264,7 @@ public abstract class MediaRouteProviderService extends Service {
     @Override
     protected void attachBaseContext(@NonNull Context context) {
         super.attachBaseContext(context);
+        mPackageManager = context.getPackageManager();
         mImpl.attachBaseContext(context);
     }
 
@@ -406,7 +430,7 @@ public abstract class MediaRouteProviderService extends Service {
         private final WeakReference<MediaRouteProviderService> mServiceRef;
 
         public ReceiveHandler(MediaRouteProviderService service) {
-            mServiceRef = new WeakReference<MediaRouteProviderService>(service);
+            mServiceRef = new WeakReference<>(service);
         }
 
         @Override
@@ -446,6 +470,8 @@ public abstract class MediaRouteProviderService extends Service {
         private boolean processMessage(int what, Messenger messenger,
                 int requestId, int arg, Object obj, Bundle data, String packageName) {
             MediaRouteProviderService service = mServiceRef.get();
+            Bundle routeControllerOptionsBundle;
+            RouteControllerOptions routeControllerOptions;
             if (service != null) {
                 switch (what) {
                     case CLIENT_MSG_REGISTER:
@@ -455,25 +481,43 @@ public abstract class MediaRouteProviderService extends Service {
                     case CLIENT_MSG_UNREGISTER:
                         return service.mImpl.onUnregisterClient(messenger, requestId);
 
-                    case CLIENT_MSG_CREATE_ROUTE_CONTROLLER: {
+                    case CLIENT_MSG_CREATE_ROUTE_CONTROLLER:
                         String routeId = data.getString(CLIENT_DATA_ROUTE_ID);
-                        String routeGroupId =
-                                data.getString(CLIENT_DATA_ROUTE_LIBRARY_GROUP);
+                        String routeGroupId = data.getString(CLIENT_DATA_ROUTE_LIBRARY_GROUP);
+                        routeControllerOptionsBundle =
+                                data.getParcelable(CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS);
+                        routeControllerOptions =
+                                (routeControllerOptionsBundle != null)
+                                        ? new RouteControllerOptions(routeControllerOptionsBundle)
+                                        : RouteControllerOptions.EMPTY;
                         if (routeId != null) {
                             return service.mImpl.onCreateRouteController(
-                                    messenger, requestId, arg, routeId, routeGroupId);
+                                    messenger,
+                                    requestId,
+                                    arg,
+                                    routeId,
+                                    routeGroupId,
+                                    routeControllerOptions);
                         }
                         break;
-                    }
 
-                    case CLIENT_MSG_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER: {
+                    case CLIENT_MSG_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER:
                         String initialMemberId = data.getString(CLIENT_DATA_MEMBER_ROUTE_ID);
+                        routeControllerOptionsBundle =
+                                data.getParcelable(CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS);
+                        routeControllerOptions =
+                                (routeControllerOptionsBundle != null)
+                                        ? new RouteControllerOptions(routeControllerOptionsBundle)
+                                        : RouteControllerOptions.EMPTY;
                         if (initialMemberId != null) {
                             return service.mImpl.onCreateDynamicGroupRouteController(
-                                    messenger, requestId, arg, initialMemberId);
+                                    messenger,
+                                    requestId,
+                                    arg,
+                                    initialMemberId,
+                                    routeControllerOptions);
                         }
                         break;
-                    }
 
                     case CLIENT_MSG_ADD_MEMBER_ROUTE: {
                         String memberId = data.getString(CLIENT_DATA_MEMBER_ROUTE_ID);
@@ -567,12 +611,7 @@ public abstract class MediaRouteProviderService extends Service {
                 new HashMap<>();
         private final Object mClientInfoListenersLock = new Object();
         private final MediaRouterActiveScanThrottlingHelper mActiveScanThrottlingHelper =
-                new MediaRouterActiveScanThrottlingHelper(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateCompositeDiscoveryRequest();
-                    }
-                });
+                new MediaRouterActiveScanThrottlingHelper(this::updateCompositeDiscoveryRequest);
 
         MediaRouteProviderServiceImplBase(MediaRouteProviderService service) {
             mService = service;
@@ -616,6 +655,8 @@ public abstract class MediaRouteProviderService extends Service {
                         if (requestId != 0) {
                             MediaRouteProviderDescriptor descriptor =
                                     mService.getMediaRouteProvider().getDescriptor();
+                            descriptor = filterRoutesByRequiredPermissions(descriptor,
+                                    client.mPackageName);
                             sendMessage(messenger, SERVICE_MSG_REGISTERED,
                                     requestId, SERVICE_VERSION_CURRENT,
                                     createDescriptorBundleForClientVersion(descriptor,
@@ -656,15 +697,35 @@ public abstract class MediaRouteProviderService extends Service {
         }
 
         @Override
-        public boolean onCreateRouteController(Messenger messenger, int requestId,
-                int controllerId, String routeId, String routeGroupId) {
+        public boolean onCreateRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String routeId,
+                @Nullable String routeGroupId,
+                RouteControllerOptions routeControllerOptions) {
             ClientRecord client = getClient(messenger);
             if (client != null) {
-                if (client.createRouteController(routeId, routeGroupId, controllerId)) {
+                // Because RouteControllerOptions is received from a separate process and can't be
+                // fully trusted. The clientPackageName must be replaced with the client's actual
+                // package name to ensure accuracy.
+                routeControllerOptions =
+                        new RouteControllerOptions.Builder(routeControllerOptions)
+                                .setClientPackageName(client.mPackageName)
+                                .build();
+
+                if (client.createRouteController(
+                        routeId, routeGroupId, routeControllerOptions, controllerId)) {
                     if (DEBUG) {
-                        Log.d(TAG, client + ": Route controller created, controllerId="
-                                + controllerId + ", routeId=" + routeId
-                                + ", routeGroupId=" + routeGroupId);
+                        Log.d(
+                                TAG,
+                                client
+                                        + ": Route controller created, controllerId="
+                                        + controllerId
+                                        + ", routeId="
+                                        + routeId
+                                        + ", routeGroupId="
+                                        + routeGroupId);
                     }
                     sendGenericSuccess(messenger, requestId);
                     return true;
@@ -674,12 +735,25 @@ public abstract class MediaRouteProviderService extends Service {
         }
 
         @Override
-        public boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId) {
+        public boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions) {
             ClientRecord client = getClient(messenger);
             if (client != null) {
-                Bundle bundle = client.createDynamicGroupRouteController(
-                        initialMemberRouteId, controllerId);
+                // Because RouteControllerOptions is received from a separate process and can't be
+                // fully trusted. The clientPackageName must be replaced with the client's actual
+                // package name to ensure accuracy.
+                routeControllerOptions =
+                        new RouteControllerOptions.Builder(routeControllerOptions)
+                                .setClientPackageName(client.mPackageName)
+                                .build();
+
+                Bundle bundle =
+                        client.createDynamicGroupRouteController(
+                                initialMemberRouteId, routeControllerOptions, controllerId);
                 if (bundle != null) {
                     if (DEBUG) {
                         Log.d(TAG, client + ": Route controller created, controllerId="
@@ -957,11 +1031,17 @@ public abstract class MediaRouteProviderService extends Service {
         boolean updateCompositeDiscoveryRequest() {
             MediaRouteSelector.Builder selectorBuilder = null;
             mActiveScanThrottlingHelper.reset();
+            boolean shouldScanWithScreenOff = false;
 
             if (mBaseDiscoveryRequest != null) {
                 mActiveScanThrottlingHelper.requestActiveScan(
                         mBaseDiscoveryRequest.isActiveScan(),
                         mBaseDiscoveryRequestTimestamp);
+                shouldScanWithScreenOff =
+                        mBaseDiscoveryRequest.shouldScanWithScreenOff()
+                                && mActiveScanThrottlingHelper.isActiveScanTimedOut(
+                                        mBaseDiscoveryRequest.isActiveScan(),
+                                        mBaseDiscoveryRequestTimestamp);
                 selectorBuilder = new MediaRouteSelector.Builder(
                         mBaseDiscoveryRequest.getSelector());
             }
@@ -985,8 +1065,11 @@ public abstract class MediaRouteProviderService extends Service {
             boolean activeScan =
                     mActiveScanThrottlingHelper
                             .finalizeActiveScanAndScheduleSuppressActiveScanRunnable();
-            MediaRouteDiscoveryRequest composite = (selectorBuilder == null) ? null
-                    : new MediaRouteDiscoveryRequest(selectorBuilder.build(), activeScan);
+            MediaRouteDiscoveryRequest composite =
+                    (selectorBuilder == null)
+                            ? null
+                            : new MediaRouteDiscoveryRequest(
+                                    selectorBuilder.build(), activeScan, shouldScanWithScreenOff);
             if (!ObjectsCompat.equals(mCompositeDiscoveryRequest, composite)) {
                 mCompositeDiscoveryRequest = composite;
                 MediaRouteProvider mediaRouteProvider = mService.getMediaRouteProvider();
@@ -1024,15 +1107,7 @@ public abstract class MediaRouteProviderService extends Service {
             final SparseArray<RouteController> mControllers = new SparseArray<>();
 
             final OnDynamicRoutesChangedListener mDynamicRoutesChangedListener =
-                    new OnDynamicRoutesChangedListener() {
-                        @Override
-                        public void onRoutesChanged(
-                                @NonNull DynamicGroupRouteController controller,
-                                @NonNull MediaRouteDescriptor groupRoute,
-                                @NonNull Collection<DynamicRouteDescriptor> routes) {
-                            sendDynamicRouteDescriptors(controller, groupRoute, routes);
-                        }
-                    };
+                    this::sendDynamicRouteDescriptors;
 
             ClientRecord(Messenger messenger, int version, String packageName) {
                 mMessenger = messenger;
@@ -1066,13 +1141,19 @@ public abstract class MediaRouteProviderService extends Service {
                 return mMessenger.getBinder() == other.getBinder();
             }
 
-            public boolean createRouteController(String routeId, String routeGroupId,
+            public boolean createRouteController(
+                    String routeId,
+                    @Nullable String routeGroupId,
+                    RouteControllerOptions routeControllerOptions,
                     int controllerId) {
                 if (mControllers.indexOfKey(controllerId) < 0) {
-                    RouteController controller = routeGroupId == null
-                            ? mService.getMediaRouteProvider().onCreateRouteController(routeId)
-                            : mService.getMediaRouteProvider()
-                                    .onCreateRouteController(routeId, routeGroupId);
+                    RouteController controller =
+                            routeGroupId == null
+                                    ? mService.getMediaRouteProvider()
+                                            .onCreateRouteController(
+                                                    routeId, routeControllerOptions)
+                                    : mService.getMediaRouteProvider()
+                                            .onCreateRouteController(routeId, routeGroupId);
                     if (controller != null) {
                         mControllers.put(controllerId, controller);
                         return true;
@@ -1082,19 +1163,21 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
+                    String initialMemberRouteId,
+                    RouteControllerOptions routeControllerOptions,
+                    int controllerId) {
                 if (mControllers.indexOfKey(controllerId) < 0) {
                     MediaRouteProvider.DynamicGroupRouteController controller =
                             mService.getMediaRouteProvider()
                                     .onCreateDynamicGroupRouteController(
-                                            initialMemberRouteId, /* controlHints= */ null);
+                                            initialMemberRouteId, routeControllerOptions);
                     if (controller != null) {
                         controller.setOnDynamicRoutesChangedListener(
                                 ContextCompat.getMainExecutor(mService.getApplicationContext()),
                                 mDynamicRoutesChangedListener);
                         mControllers.put(controllerId, controller);
                         Bundle bundle = new Bundle();
-                        bundle.putString(DATA_KEY_GROUPABLE_SECION_TITLE,
+                        bundle.putString(DATA_KEY_GROUPABLE_SECTION_TITLE,
                                 controller.getGroupableSelectionTitle());
                         bundle.putString(DATA_KEY_TRANSFERABLE_SECTION_TITLE,
                                 controller.getTransferableSectionTitle());
@@ -1133,6 +1216,10 @@ public abstract class MediaRouteProviderService extends Service {
              * Creates a bundle of the given provider descriptor for this client.
              */
             public Bundle createDescriptorBundle(MediaRouteProviderDescriptor descriptor) {
+                if (descriptor == null) {
+                    return null;
+                }
+                descriptor = filterRoutesByRequiredPermissions(descriptor, mPackageName);
                 return createDescriptorBundleForClientVersion(descriptor, mVersion);
             }
 
@@ -1160,7 +1247,7 @@ public abstract class MediaRouteProviderService extends Service {
                 }
                 int controllerId = mControllers.keyAt(index);
 
-                ArrayList<Bundle> dynamicRouteBundles = new ArrayList<Bundle>();
+                ArrayList<Bundle> dynamicRouteBundles = new ArrayList<>();
                 for (DynamicRouteDescriptor descriptor: descriptors) {
                     dynamicRouteBundles.add(descriptor.toBundle());
                 }
@@ -1231,9 +1318,7 @@ public abstract class MediaRouteProviderService extends Service {
                             mClientInfoListeners.entrySet()) {
                         Consumer<List<ClientInfo>> listener = entry.getKey();
                         Executor executor = entry.getValue();
-                        executor.execute(() -> {
-                            listener.accept(clientInfos);
-                        });
+                        executor.execute(() -> listener.accept(clientInfos));
                     }
                 }
             }
@@ -1245,6 +1330,13 @@ public abstract class MediaRouteProviderService extends Service {
                     MediaRouteProviderDescriptor descriptor) {
                 sendDescriptorChanged(descriptor);
             }
+        }
+
+        public MediaRouteProviderDescriptor filterRoutesByRequiredPermissions(
+                MediaRouteProviderDescriptor descriptor, String packageName) {
+            // Required permissions filtering is only supported in BAKLAVA_1 and up (see the
+            // MediaRouteProviderServiceImplApi36_1 override of this method).
+            return descriptor;
         }
     }
 
@@ -1321,17 +1413,15 @@ public abstract class MediaRouteProviderService extends Service {
 
             @Override
             public void dispose() {
-                int count = mControllers.size();
-                for (int i = 0; i < count; i++) {
-                    int controllerId = mControllers.keyAt(i);
-                    mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
-                }
                 mRouteIdToControllerMap.clear();
                 super.dispose();
             }
 
             @Override
-            public boolean createRouteController(String routeId, String routeGroupId,
+            public boolean createRouteController(
+                    String routeId,
+                    String routeGroupId,
+                    RouteControllerOptions routeControllerOptions,
                     int controllerId) {
                 RouteController controller = mRouteIdToControllerMap.get(routeId);
                 if (controller != null) {
@@ -1339,14 +1429,9 @@ public abstract class MediaRouteProviderService extends Service {
                     return true;
                 }
 
-                boolean result = super.createRouteController(routeId, routeGroupId,
-                        controllerId);
-                // Don't add route controllers of member routes.
-                if (routeGroupId == null && result && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, routeId);
-                }
+                boolean result =
+                        super.createRouteController(
+                                routeId, routeGroupId, routeControllerOptions, controllerId);
                 if (result) {
                     mRouteIdToControllerMap.put(routeId, mControllers.get(controllerId));
                 }
@@ -1354,21 +1439,7 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             @Override
-            public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
-                Bundle result =
-                        super.createDynamicGroupRouteController(initialMemberRouteId, controllerId);
-                if (result != null && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, initialMemberRouteId);
-                }
-                return result;
-            }
-
-            @Override
             public boolean releaseRouteController(int controllerId) {
-                mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
                 RouteController controller = mControllers.get(controllerId);
                 if (controller != null) {
                     for (Map.Entry<String, RouteController> entry :
@@ -1386,18 +1457,6 @@ public abstract class MediaRouteProviderService extends Service {
                     }
                 }
                 return super.releaseRouteController(controllerId);
-            }
-
-            @Override
-            void sendDynamicRouteDescriptors(
-                    DynamicGroupRouteController controller,
-                    MediaRouteDescriptor groupRoute,
-                    Collection<DynamicRouteDescriptor> descriptors) {
-                super.sendDynamicRouteDescriptors(controller, groupRoute, descriptors);
-                if (mMR2ProviderServiceAdapter != null) {
-                    mMR2ProviderServiceAdapter.setDynamicRouteDescriptor(controller,
-                            groupRoute, descriptors);
-                }
             }
 
             @Override
@@ -1484,6 +1543,94 @@ public abstract class MediaRouteProviderService extends Service {
                 if (index < 0) return -1;
                 return mControllers.keyAt(index);
             }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    static class MediaRouteProviderServiceImplApi36_1 extends MediaRouteProviderServiceImplApi30 {
+        PackageManager mPackageManager;
+
+        MediaRouteProviderServiceImplApi36_1(MediaRouteProviderService instance) {
+            super(instance);
+        }
+
+        @Override
+        public MediaRouteProviderDescriptor filterRoutesByRequiredPermissions(
+                MediaRouteProviderDescriptor descriptor, String packageName) {
+            if (descriptor == null) {
+                return null;
+            }
+            MediaRouteProviderDescriptor.Builder builder =
+                    new MediaRouteProviderDescriptor.Builder(descriptor);
+            builder.setRoutes(Collections.emptyList());
+
+            for (MediaRouteDescriptor route : descriptor.getRoutes()) {
+                if (hasRequiredPermissions(packageName, route)) {
+                    builder.addRoute(route);
+                } else if (DEBUG) {
+                    Log.d(TAG, "'" + route.getName() + "' not visible to " + packageName
+                            + " due to missing permissions " + route.getRequiredPermissions());
+                }
+            }
+            return builder.build();
+        }
+
+        /**
+         * Returns whether the given package has the required permissions to see a certain route.
+         */
+        boolean hasRequiredPermissions(String packageName, MediaRouteDescriptor route) {
+            List<Set<String>> requiredPermissions = route.getRequiredPermissions();
+            if (requiredPermissions.isEmpty()) {
+                return true;
+            }
+            if (mPackageManager == null) {
+                mPackageManager = mService.getPackageManager();
+            }
+            for (Set<String> permissionSet : requiredPermissions) {
+                boolean hasAllInSet = true;
+                for (String permission : permissionSet) {
+                    if (!hasPermission(packageName, permission)) {
+                        hasAllInSet = false;
+                        break;
+                    }
+                }
+                if (hasAllInSet) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Returns whether a given package has a permission.
+         */
+        boolean hasPermission(String packageName, String permission) {
+            if (mPackageManager.checkPermission(permission, packageName)
+                    == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            }
+
+            // TODO(b/413118912) - replace the permission string below with the framework constant
+            //  when it's available (currently planned in SDK 37).
+            if ("android.permission.ACCESS_LOCAL_NETWORK".equals(permission)) {
+                try {
+                    // The local network protection feature should only apply to apps
+                    // with target SDK after 36 (Baklava).
+                    ApplicationInfo appInfo = mPackageManager.getApplicationInfo(
+                            packageName, /* flags= */ 0);
+                    if (appInfo.targetSdkVersion <= Build.VERSION_CODES.BAKLAVA) {
+                        if (DEBUG) {
+                            Log.d(TAG, packageName + " has targetSDK="
+                                    + appInfo.targetSdkVersion + " so ignoring missing "
+                                    + permission);
+                        }
+                        return true;
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    // ignored
+                }
+            }
+            return false;
         }
     }
 }

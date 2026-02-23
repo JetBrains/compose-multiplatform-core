@@ -24,7 +24,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.leanback.widget.Action;
@@ -43,6 +42,8 @@ import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.SparseArrayObjectAdapter;
+
+import org.jspecify.annotations.NonNull;
 
 public class DetailsSupportFragment extends androidx.leanback.app.DetailsSupportFragment {
     private static final String TAG = "leanback.DetailsSupportFragment";

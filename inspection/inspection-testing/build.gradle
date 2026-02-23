@@ -15,26 +15,22 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.Publish
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(project(":inspection:inspection"))
-    implementation(libs.kotlinStdlib)
+    api(androidx.projectOrArtifact(":inspection:inspection"))
     implementation(libs.kotlinCoroutinesAndroid)
 
     androidTestImplementation(libs.testRunner)
@@ -45,7 +41,7 @@ dependencies {
 
 androidx {
     name = "Inspection Testing"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Experimental AndroidX Inspection Project"
 }
@@ -53,7 +49,7 @@ androidx {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk { version = release(26) }
     }
-    namespace "androidx.inspection.testing"
+    namespace = "androidx.inspection.testing"
 }

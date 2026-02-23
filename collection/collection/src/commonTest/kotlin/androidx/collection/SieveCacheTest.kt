@@ -16,8 +16,11 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -650,6 +653,7 @@ class SieveCacheTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val cache = createStandardCache()
         cache["Hello"] = "World"
@@ -872,13 +876,28 @@ class SieveCacheTest {
     }
 
     @Test
-    fun hashCollisions() {
+    fun sequentialHashCollisions() {
         val cache = SieveCache<BadHashKey, Int>(24, 24)
 
-        for (i in 0..128) {
+        for (x in 0..256) {
+            val i = x % 128
             val key = BadHashKey(i.toString())
             cache.put(key, i)
-            assertEquals(min(i + 1, 24), cache.size)
+            assertEquals(min(x + 1, 24), cache.count)
+            for (j in i downTo max(0, i - 24)) {
+                assertTrue(cache.contains(BadHashKey(i.toString())))
+            }
+        }
+    }
+
+    @Test
+    fun randomizedHashCollisions() {
+        val cache = SieveCache<BadHashKey, Int>(24, 24)
+
+        for (x in 0..1024) {
+            val i = abs(Random(6789).nextInt()) % 128
+            val key = BadHashKey(i.toString())
+            cache.put(key, i)
             for (j in i downTo max(0, i - 24)) {
                 assertTrue(cache.contains(BadHashKey(i.toString())))
             }
@@ -910,39 +929,39 @@ class SieveCacheTest {
 
     private fun createStandardCache(
         removedEntries: MutableList<String> = mutableListOf(),
-        evictedEntries: MutableList<String> = mutableListOf()
+        evictedEntries: MutableList<String> = mutableListOf(),
     ): SieveCache<String, String> {
         return SieveCache(
             4,
             onEntryRemoved = { _, old, _, evicted ->
                 (if (evicted) evictedEntries else removedEntries).add(old)
-            }
+            },
         )
     }
 
     private fun createCacheWithCustomSize(
         removedEntries: MutableList<String> = mutableListOf(),
-        evictedEntries: MutableList<String> = mutableListOf()
+        evictedEntries: MutableList<String> = mutableListOf(),
     ): SieveCache<String, String> {
         return SieveCache(
             4096,
             sizeOf = { _, v -> v.length },
             onEntryRemoved = { _, old, _, evicted ->
                 (if (evicted) evictedEntries else removedEntries).add(old)
-            }
+            },
         )
     }
 
     private fun createZeroSizeCache(
         removedEntries: MutableList<String> = mutableListOf(),
-        evictedEntries: MutableList<String> = mutableListOf()
+        evictedEntries: MutableList<String> = mutableListOf(),
     ): SieveCache<String, String> {
         return SieveCache(
             4,
             sizeOf = { _, _ -> 0 },
             onEntryRemoved = { _, old, _, evicted ->
                 (if (evicted) evictedEntries else removedEntries).add(old)
-            }
+            },
         )
     }
 }

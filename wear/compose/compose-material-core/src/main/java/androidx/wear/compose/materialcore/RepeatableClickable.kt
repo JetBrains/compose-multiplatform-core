@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
  *   each call until the touch is released
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun Modifier.repeatableClickable(
+public fun Modifier.repeatableClickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,
@@ -75,7 +75,7 @@ fun Modifier.repeatableClickable(
     initialDelay: Long = 500L,
     incrementalDelay: Long = 60L,
     onClick: () -> Unit,
-    onRepeatableClick: () -> Unit = onClick
+    onRepeatableClick: () -> Unit = onClick,
 ): Modifier = composed {
     val currentOnRepeatableClick by rememberUpdatedState(onRepeatableClick)
     val currentOnClick by rememberUpdatedState(onClick)

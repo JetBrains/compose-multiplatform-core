@@ -16,7 +16,7 @@
 
 package androidx.core.util;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Container to ease passing around a tuple of two objects. This object provides a sensible
@@ -66,9 +66,8 @@ public class Pair<F, S> {
         return (first == null ? 0 : first.hashCode()) ^ (second == null ? 0 : second.hashCode());
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "Pair{" + first + " " + second + "}";
     }
 
@@ -78,9 +77,8 @@ public class Pair<F, S> {
      * @param b the second object in the pair
      * @return a Pair that is templatized with the types of a and b
      */
-    @NonNull
     @SuppressWarnings("UnknownNullness") // Generic nullness should come from type annotations.
-    public static <A, B> Pair<A, B> create(A a, B b) {
+    public static <A, B> @NonNull Pair<A, B> create(A a, B b) {
         return new Pair<>(a, b);
     }
 }

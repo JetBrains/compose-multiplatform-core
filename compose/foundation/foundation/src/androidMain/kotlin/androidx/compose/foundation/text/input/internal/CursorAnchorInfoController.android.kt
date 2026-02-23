@@ -28,7 +28,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.setFrom
-import androidx.compose.ui.layout.transformToScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -96,7 +95,7 @@ internal class CursorAnchorInfoController(
             includeInsertionMarker = includeInsertionMarker,
             includeCharacterBounds = includeCharacterBounds,
             includeEditorBounds = includeEditorBounds,
-            includeLineBounds = includeLineBounds
+            includeLineBounds = includeLineBounds,
         )
     }
 
@@ -123,7 +122,7 @@ internal class CursorAnchorInfoController(
         includeInsertionMarker: Boolean,
         includeCharacterBounds: Boolean,
         includeEditorBounds: Boolean,
-        includeLineBounds: Boolean
+        includeLineBounds: Boolean,
     ) {
         this.includeInsertionMarker = includeInsertionMarker
         this.includeCharacterBounds = includeCharacterBounds
@@ -198,7 +197,7 @@ internal class CursorAnchorInfoController(
             includeInsertionMarker,
             includeCharacterBounds,
             includeEditorBounds,
-            includeLineBounds
+            includeLineBounds,
         )
     }
 }

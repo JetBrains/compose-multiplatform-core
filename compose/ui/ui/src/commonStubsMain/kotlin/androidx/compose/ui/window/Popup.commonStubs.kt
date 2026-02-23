@@ -29,7 +29,22 @@ actual constructor(
     actual val dismissOnBackPress: Boolean,
     actual val dismissOnClickOutside: Boolean,
     actual val clippingEnabled: Boolean,
-)
+    actual val usePlatformDefaultWidth: Boolean,
+) {
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    actual constructor(
+        focusable: Boolean,
+        dismissOnBackPress: Boolean,
+        dismissOnClickOutside: Boolean,
+        clippingEnabled: Boolean,
+    ) : this(
+        focusable = focusable,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        clippingEnabled = clippingEnabled,
+        usePlatformDefaultWidth = false,
+    )
+}
 
 @Composable
 actual fun Popup(
@@ -37,7 +52,7 @@ actual fun Popup(
     offset: IntOffset,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()
 
 @Composable
@@ -45,5 +60,5 @@ actual fun Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()

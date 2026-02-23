@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy
 
+import androidx.compose.foundation.gestures.snapping.singleAxisViewportSize
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,7 +24,7 @@ import androidx.compose.runtime.remember
 @Composable
 internal fun rememberLazyListBeyondBoundsState(
     state: LazyListState,
-    beyondBoundsItemCount: Int
+    beyondBoundsItemCount: Int,
 ): LazyLayoutBeyondBoundsState {
     return remember(state, beyondBoundsItemCount) {
         LazyListBeyondBoundsState(state, beyondBoundsItemCount)
@@ -46,6 +47,14 @@ internal class LazyListBeyondBoundsState(val state: LazyListState, val beyondBou
         get() =
             minOf(
                 itemCount - 1,
-                state.layoutInfo.visibleItemsInfo.last().index + beyondBoundsItemCount
+                state.layoutInfo.visibleItemsInfo.last().index + beyondBoundsItemCount,
             )
+
+    override fun itemsPerViewport(): Int {
+        if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
+        val viewportSize = state.layoutInfo.singleAxisViewportSize
+        val averageItemSize = state.layoutInfo.visibleItemsAverageSize()
+        if (averageItemSize == 0) return 1
+        return (viewportSize / averageItemSize).coerceAtLeast(1)
+    }
 }

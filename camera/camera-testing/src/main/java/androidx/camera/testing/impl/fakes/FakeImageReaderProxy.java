@@ -20,14 +20,15 @@ import android.graphics.ImageFormat;
 import android.media.ImageReader;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +47,9 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
     private int mImageFormat = ImageFormat.JPEG;
     private final int mMaxImages;
 
-    @Nullable
-    private Surface mSurface;
+    private @Nullable Surface mSurface;
 
-    @Nullable
-    private Executor mExecutor;
+    private @Nullable Executor mExecutor;
 
     private boolean mIsClosed = false;
 
@@ -66,12 +65,10 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
     private final List<ImageProxy> mOutboundImageProxy = new ArrayList<>();
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @Nullable
-    ImageReaderProxy.OnImageAvailableListener mListener;
+    ImageReaderProxy.@Nullable OnImageAvailableListener mListener;
 
     // For returning a nonNull surface in case of null check failure.
-    @Nullable
-    ImageReader mImageReader;
+    @Nullable ImageReader mImageReader;
 
     /**
      * Create a new {@link FakeImageReaderProxy} instance.
@@ -93,8 +90,7 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
      * @param maxImages The maximum number of images that can be acquired at once
      */
     @SuppressWarnings("unused")
-    @NonNull
-    public static FakeImageReaderProxy newInstance(int width, int height, int format,
+    public static @NonNull FakeImageReaderProxy newInstance(int width, int height, int format,
             int maxImages, long usage) {
         FakeImageReaderProxy fakeImageReaderProxy = new FakeImageReaderProxy(maxImages);
         fakeImageReaderProxy.mWidth = width;
@@ -103,9 +99,8 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
         return fakeImageReaderProxy;
     }
 
-    @Nullable
     @Override
-    public ImageProxy acquireLatestImage() {
+    public @Nullable ImageProxy acquireLatestImage() {
         ImageProxy imageProxy = null;
 
         try {
@@ -126,9 +121,8 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
         return imageProxy;
     }
 
-    @Nullable
     @Override
-    public ImageProxy acquireNextImage() {
+    public @Nullable ImageProxy acquireNextImage() {
         ImageProxy imageProxy;
 
         try {
@@ -182,9 +176,8 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
         return mMaxImages;
     }
 
-    @Nullable
     @Override
-    public Surface getSurface() {
+    public @Nullable Surface getSurface() {
         if (mSurface == null) {
             mImageReader = ImageReader.newInstance(mWidth, mHeight, mImageFormat, mMaxImages);
             mSurface = mImageReader.getSurface();
@@ -227,8 +220,7 @@ public class FakeImageReaderProxy implements ImageReaderProxy {
      * @return the {@link ImageProxy} that was triggered.
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    @NonNull
-    public FakeImageProxy triggerImageAvailable(@NonNull TagBundle tagBundle,
+    public @NonNull FakeImageProxy triggerImageAvailable(@NonNull TagBundle tagBundle,
             long timestamp) throws InterruptedException {
         FakeImageProxy fakeImageProxy = generateFakeImageProxy(tagBundle, timestamp);
 

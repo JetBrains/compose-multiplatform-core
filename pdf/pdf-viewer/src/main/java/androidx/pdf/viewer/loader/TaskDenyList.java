@@ -16,10 +16,11 @@
 
 package androidx.pdf.viewer.loader;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.viewer.loader.PdfPageLoader.GetPageLinksTask;
 import androidx.pdf.viewer.loader.PdfPageLoader.GetPageTextTask;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility to disable tasks that are causing crashes.

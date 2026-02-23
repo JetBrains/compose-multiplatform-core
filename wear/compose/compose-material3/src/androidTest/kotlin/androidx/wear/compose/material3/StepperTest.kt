@@ -17,13 +17,17 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertContentDescriptionContains
@@ -33,7 +37,7 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onChildAt
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -41,17 +45,19 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.wear.compose.materialcore.RangeIcons
 import com.google.common.truth.Truth
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalWearMaterial3Api::class)
 class StepperTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -62,7 +68,7 @@ class StepperTest {
                 steps = 5,
                 increaseIcon = {},
                 decreaseIcon = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {}
         }
 
@@ -76,7 +82,7 @@ class StepperTest {
             steps = 4,
             initialValue = 4f,
             newValue = 20f,
-            expectedFinalValue = 10f
+            expectedFinalValue = 10f,
         )
 
     @Test
@@ -86,7 +92,7 @@ class StepperTest {
             steps = 4,
             initialValue = 4f,
             newValue = -20f,
-            expectedFinalValue = 0f
+            expectedFinalValue = 0f,
         )
 
     @Test(expected = IllegalArgumentException::class)
@@ -97,7 +103,7 @@ class StepperTest {
                 onValueChange = {},
                 increaseIcon = {},
                 decreaseIcon = {},
-                steps = -1
+                steps = -1,
             ) {}
         }
     }
@@ -110,7 +116,7 @@ class StepperTest {
             initialValue = 0f,
             // Allowed values are only 0, 0.2, 0.4, 0.6, 0.8, 1
             newValue = 0.6f,
-            expectedFinalValue = 0.6f
+            expectedFinalValue = 0.6f,
         )
 
     @Test
@@ -121,7 +127,7 @@ class StepperTest {
             initialValue = 0f,
             // Allowed values are only 0, 0.2, 0.4, 0.6, 0.8, 1
             newValue = 0.65f,
-            expectedFinalValue = 0.6f
+            expectedFinalValue = 0.6f,
         )
 
     @Test
@@ -132,61 +138,158 @@ class StepperTest {
             initialValue = 0f,
             // Allowed values are only 0, 0.2, 0.4, 0.6, 0.8, 1
             newValue = 0.55f,
-            expectedFinalValue = 0.6f
+            expectedFinalValue = 0.6f,
         )
 
     @Test
-    fun decreases_value_by_clicking_bottom() {
+    fun decreases_value_by_clicking_decrease() {
         val state = mutableStateOf(2f)
         val range = 1f..4f
 
-        rule.initDefaultStepper(state, range, 2)
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = range,
+                onValueChange = { state.value = it },
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = {
+                    Icon(
+                        modifier = Modifier.testTag(ICON_TAG),
+                        imageVector = DecreaseIcon,
+                        contentDescription = DECREASE,
+                    )
+                },
+            ) {}
+        }
 
-        // The clickable area for a decrease button takes bottom 35% of the screen
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width / 2f, height - 15f)) }
-
+        rule.onNodeWithTag(ICON_TAG, true).performTouchInput { click() }
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(1f) }
     }
 
     @Test
-    fun increases_value_by_clicking_top() {
+    fun increases_value_by_clicking_increase() {
         val state = mutableStateOf(2f)
         val range = 1f..4f
 
-        rule.initDefaultStepper(state, range, 2)
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = range,
+                onValueChange = { state.value = it },
+                increaseIcon = {
+                    Icon(
+                        modifier = Modifier.testTag(ICON_TAG),
+                        imageVector = IncreaseIcon,
+                        contentDescription = INCREASE,
+                    )
+                },
+                decreaseIcon = { DecreaseIcon() },
+            ) {}
+        }
 
-        // The clickable area for an increase button takes top 35% of the screen
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width / 2f, 15f)) }
-
+        rule.onNodeWithTag(ICON_TAG, true).performTouchInput { click() }
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(3f) }
     }
 
     @Test
-    fun reaches_min_clicking_bottom() {
+    fun reaches_min_clicking_decrease() {
         // Start one step above the minimum.
         val state = mutableStateOf(2f)
         val range = 1f..4f
 
-        rule.initDefaultStepper(state, range, 2)
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = range,
+                onValueChange = { state.value = it },
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = {
+                    Icon(
+                        modifier = Modifier.testTag(ICON_TAG),
+                        imageVector = DecreaseIcon,
+                        contentDescription = DECREASE,
+                    )
+                },
+            ) {}
+        }
 
-        // The clickable area for a decrease button takes bottom 35% of the screen
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width / 2f, height - 15f)) }
-
+        rule.onNodeWithTag(ICON_TAG, true).performTouchInput { click() }
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(1f) }
     }
 
     @Test
-    fun reaches_max_clicking_top() {
+    fun reaches_max_clicking_increase() {
         // Start one step below the maximum.
         val state = mutableStateOf(3f)
         val range = 1f..4f
 
-        rule.initDefaultStepper(state, range, 2)
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = range,
+                onValueChange = { state.value = it },
+                increaseIcon = {
+                    Icon(
+                        modifier = Modifier.testTag(ICON_TAG),
+                        imageVector = IncreaseIcon,
+                        contentDescription = INCREASE,
+                    )
+                },
+                decreaseIcon = { DecreaseIcon() },
+            ) {}
+        }
 
-        // The clickable area for an increase button takes top 35% of the screen
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width / 2f, 15f)) }
+        rule.onNodeWithTag(ICON_TAG, true).performTouchInput { click() }
 
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(4f) }
+    }
+
+    @Test
+    fun disabled_stepper_decrease_disabled() {
+        val state = mutableStateOf(2f)
+
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = 1f..4f,
+                onValueChange = { state.value = it },
+                increaseIcon = { Icon(IncreaseIcon, INCREASE) },
+                decreaseIcon = { Icon(DecreaseIcon, DECREASE) },
+                enabled = false,
+            ) {}
+        }
+
+        rule.onNodeWithContentDescription(DECREASE).onParent().assertHasNoClickAction()
+    }
+
+    @Test
+    fun disabled_stepper_increase_disabled() {
+        val state = mutableStateOf(2f)
+
+        rule.setContentWithTheme {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = state.value,
+                steps = 2,
+                valueRange = 1f..4f,
+                onValueChange = { state.value = it },
+                increaseIcon = { Icon(IncreaseIcon, INCREASE) },
+                decreaseIcon = { Icon(DecreaseIcon, DECREASE) },
+                enabled = false,
+            ) {}
+        }
+
+        rule.onNodeWithContentDescription(INCREASE).onParent().assertHasNoClickAction()
     }
 
     @Test
@@ -210,69 +313,69 @@ class StepperTest {
     }
 
     @Test
-    fun colors_decrease_icon_with_disabled_alpha() =
+    fun colors_decrease_icon_with_disabled_color() =
         verifyDisabledColors(increase = false, value = 1f)
 
     @Test
-    fun colors_increase_icon_with_disabled_alpha() =
+    fun colors_increase_icon_with_disabled_color() =
         verifyDisabledColors(increase = true, value = 4f)
 
     @Test
     fun sets_custom_decrease_icon() {
-        val iconTag = "iconTag_test"
-
         rule.setContentWithTheme {
             Stepper(
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG).fillMaxSize(),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
+                increaseIcon = { IncreaseIcon() },
                 decreaseIcon = {
                     Icon(
-                        modifier = Modifier.testTag(iconTag),
+                        modifier = Modifier.testTag(ICON_TAG).size(StepperDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
                 },
             ) {}
         }
-        val unclippedBoundsInRoot = rule.onRoot().getUnclippedBoundsInRoot()
 
         rule.waitForIdle()
-        rule
-            .onNodeWithTag(iconTag, true)
-            .assertExists()
-            .assertTopPositionInRootIsEqualTo(
-                unclippedBoundsInRoot.height - BorderVerticalMargin - DefaultIconHeight
-            )
+        rule.onNodeWithTag(ICON_TAG, true).assertExists()
     }
 
     @Test
     fun sets_custom_increase_icon() {
-        val iconTag = "iconTag_test"
+        var screenHeight = 0.dp
 
         rule.setContentWithTheme {
+            screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
             Stepper(
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG).fillMaxSize(),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
                 increaseIcon = {
                     Icon(
-                        modifier = Modifier.testTag(iconTag),
+                        modifier = Modifier.testTag(ICON_TAG).size(StepperDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
                 },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+                decreaseIcon = { DecreaseIcon() },
             ) {}
         }
+
+        // The top position of the increase icon equals the top margin plus the icon padding in
+        // the button.
         rule.waitForIdle()
         rule
-            .onNodeWithTag(iconTag, true)
+            .onNodeWithTag(ICON_TAG, true)
             .assertExists()
-            .assertTopPositionInRootIsEqualTo(BorderVerticalMargin)
+            .assertTopPositionInRootIsEqualTo(
+                calculateVerticalMargin(screenHeight) +
+                    (ButtonHeight - StepperDefaults.IconSize) / 2f
+            )
     }
 
     @Test
@@ -284,16 +387,15 @@ class StepperTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 onValueChange = {},
+                decreaseIcon = {},
+                increaseIcon = {},
             ) {
                 Text("Testing", modifier = Modifier.testTag(contentTag).fillMaxHeight())
             }
         }
 
         val rootHeight = rule.onRoot().getUnclippedBoundsInRoot().height
-
         rule.waitForIdle()
         rule
             .onNodeWithTag(contentTag, true)
@@ -301,7 +403,7 @@ class StepperTest {
             .assertTopPositionInRootIsEqualTo(
                 // Position of the content is a weight(35%) of (top button minus 2 spacers 8dp each)
                 // plus 1 spacer
-                (rootHeight - VerticalMargin * 2) * ButtonWeight + VerticalMargin
+                (rootHeight - VerticalSpacing * 2) * ButtonWeight + VerticalSpacing
             )
     }
 
@@ -314,8 +416,8 @@ class StepperTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
-                increaseIcon = { Icon(StepperDefaults.Increase, testContentDescription) },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+                increaseIcon = { Icon(IncreaseIcon, testContentDescription) },
+                decreaseIcon = { DecreaseIcon() },
                 onValueChange = {},
             ) {}
         }
@@ -338,8 +440,8 @@ class StepperTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, testContentDescription) },
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { Icon(DecreaseIcon, testContentDescription) },
                 onValueChange = {},
             ) {}
         }
@@ -368,8 +470,8 @@ class StepperTest {
                 steps = steps,
                 valueRange = valueRange,
                 onValueChange = {},
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+                decreaseIcon = {},
+                increaseIcon = {},
             ) {}
         }
         rule.waitForIdle()
@@ -392,10 +494,10 @@ class StepperTest {
                 steps = steps,
                 valueRange = valueRange,
                 onValueChange = {},
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier =
-                    Modifier.testTag(TEST_TAG).rangeSemantics(value, true, {}, valueRange, steps)
+                    Modifier.testTag(TEST_TAG).rangeSemantics(value, true, {}, valueRange, steps),
             ) {}
         }
         rule.waitForIdle()
@@ -417,7 +519,11 @@ class StepperTest {
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
                 steps = 2,
-                iconColor = MaterialTheme.colorScheme.primary,
+                colors =
+                    StepperDefaults.colors(
+                        buttonIconColor = MaterialTheme.colorScheme.primary,
+                        disabledButtonIconColor = expectedIconColor,
+                    ),
                 increaseIcon = {
                     if (increase) {
                         actualIconColor = LocalContentColor.current
@@ -428,22 +534,19 @@ class StepperTest {
                         actualIconColor = LocalContentColor.current
                     }
                 },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {}
         }
 
         assertEquals(expectedIconColor, actualIconColor)
     }
 
-    private val BorderVerticalMargin = 22.dp
-    private val VerticalMargin = 8.dp
-    private val ButtonWeight = .35f
-    private val DefaultIconHeight = 24.dp
+    private fun calculateVerticalMargin(height: Dp) = height * 5.2f / 100
 }
 
-@OptIn(ExperimentalWearMaterial3Api::class)
 class IntegerStepperTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule
+    val rule = createComposeRule(effectContext = kotlinx.coroutines.test.StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -452,9 +555,9 @@ class IntegerStepperTest {
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..5,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                modifier = Modifier.testTag(TEST_TAG)
+                decreaseIcon = {},
+                increaseIcon = {},
+                modifier = Modifier.testTag(TEST_TAG),
             ) {}
         }
 
@@ -467,7 +570,7 @@ class IntegerStepperTest {
             progression = 0..10,
             initialValue = 4,
             newValue = 20,
-            expectedFinalValue = 10
+            expectedFinalValue = 10,
         )
 
     @Test
@@ -476,7 +579,7 @@ class IntegerStepperTest {
             progression = 0..10,
             initialValue = 4,
             newValue = -20,
-            expectedFinalValue = 0
+            expectedFinalValue = 0,
         )
 
     @Test
@@ -485,7 +588,7 @@ class IntegerStepperTest {
             progression = IntProgression.fromClosedRange(0, 12, 3),
             initialValue = 0,
             newValue = 3,
-            expectedFinalValue = 3
+            expectedFinalValue = 3,
         )
 
     @Test
@@ -494,7 +597,7 @@ class IntegerStepperTest {
             progression = IntProgression.fromClosedRange(0, 12, 3),
             initialValue = 0,
             newValue = 4,
-            expectedFinalValue = 3
+            expectedFinalValue = 3,
         )
 
     @Test
@@ -503,7 +606,7 @@ class IntegerStepperTest {
             progression = IntProgression.fromClosedRange(0, 12, 3),
             initialValue = 0,
             newValue = 5,
-            expectedFinalValue = 6
+            expectedFinalValue = 6,
         )
 
     @Test(expected = java.lang.AssertionError::class)
@@ -516,9 +619,9 @@ class IntegerStepperTest {
                 value = value,
                 onValueChange = {},
                 valueProgression = valueProgression,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                modifier = Modifier.testTag(TEST_TAG)
+                decreaseIcon = {},
+                increaseIcon = {},
+                modifier = Modifier.testTag(TEST_TAG),
             ) {}
         }
         rule.waitForIdle()
@@ -530,7 +633,7 @@ class IntegerStepperTest {
                 ProgressBarRangeInfo(
                     value.toFloat(),
                     valueProgression.first.toFloat()..valueProgression.last.toFloat(),
-                    valueProgression.stepsNumber()
+                    valueProgression.stepsNumber(),
                 )
             )
     }
@@ -545,8 +648,8 @@ class IntegerStepperTest {
                 value = value,
                 onValueChange = {},
                 valueProgression = valueProgression,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
                         .rangeSemantics(
@@ -554,8 +657,8 @@ class IntegerStepperTest {
                             true,
                             {},
                             valueProgression.first.toFloat()..valueProgression.last.toFloat(),
-                            valueProgression.stepsNumber()
-                        )
+                            valueProgression.stepsNumber(),
+                        ),
             ) {}
         }
         rule.waitForIdle()
@@ -567,7 +670,7 @@ class IntegerStepperTest {
                 ProgressBarRangeInfo(
                     value.toFloat(),
                     valueProgression.first.toFloat()..valueProgression.last.toFloat(),
-                    valueProgression.stepsNumber()
+                    valueProgression.stepsNumber(),
                 )
             )
     }
@@ -578,7 +681,7 @@ private fun ComposeContentTestRule.setNewValueAndCheck(
     steps: Int,
     initialValue: Float,
     newValue: Float,
-    expectedFinalValue: Float
+    expectedFinalValue: Float,
 ) {
     val state = mutableStateOf(initialValue)
 
@@ -594,11 +697,10 @@ private fun ComposeContentTestRule.setNewValueAndCheck(
     assertEquals(newValue, state.value)
 }
 
-@OptIn(ExperimentalWearMaterial3Api::class)
 private fun ComposeContentTestRule.initDefaultStepper(
     state: MutableState<Float>,
     valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int
+    steps: Int,
 ) {
     val onValueChange: (Float) -> Unit = { state.value = it }
 
@@ -608,11 +710,11 @@ private fun ComposeContentTestRule.initDefaultStepper(
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps,
-            increaseIcon = { Icon(StepperDefaults.Increase, INCREASE) },
-            decreaseIcon = { Icon(StepperDefaults.Decrease, DECREASE) },
+            increaseIcon = { IncreaseIcon() },
+            decreaseIcon = { DecreaseIcon() },
             modifier =
                 Modifier.testTag(TEST_TAG)
-                    .rangeSemantics(state.value, true, onValueChange, valueRange, steps)
+                    .rangeSemantics(state.value, true, onValueChange, valueRange, steps),
         ) {}
     }
 }
@@ -621,7 +723,7 @@ private fun ComposeContentTestRule.setNewValueAndCheck(
     progression: IntProgression,
     initialValue: Int,
     newValue: Int,
-    expectedFinalValue: Int
+    expectedFinalValue: Int,
 ) {
     val state = mutableStateOf(initialValue)
 
@@ -633,7 +735,7 @@ private fun ComposeContentTestRule.setNewValueAndCheck(
             ProgressBarRangeInfo(
                 expectedFinalValue.toFloat(),
                 progression.first.toFloat()..progression.last.toFloat(),
-                progression.stepsNumber()
+                progression.stepsNumber(),
             )
         )
 
@@ -643,7 +745,6 @@ private fun ComposeContentTestRule.setNewValueAndCheck(
     assertEquals(newValue, state.value)
 }
 
-@OptIn(ExperimentalWearMaterial3Api::class)
 private fun ComposeContentTestRule.initDefaultStepper(
     state: MutableState<Int>,
     valueProgression: IntProgression,
@@ -657,8 +758,8 @@ private fun ComposeContentTestRule.initDefaultStepper(
             value = state.value,
             onValueChange = onValueChange,
             valueProgression = valueProgression,
-            increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-            decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
+            increaseIcon = { IncreaseIcon() },
+            decreaseIcon = { DecreaseIcon() },
             modifier =
                 Modifier.testTag(TEST_TAG)
                     .rangeSemantics(
@@ -666,11 +767,19 @@ private fun ComposeContentTestRule.initDefaultStepper(
                         true,
                         { onValueChange(it.roundToInt()) },
                         valueRange,
-                        steps
-                    )
+                        steps,
+                    ),
         ) {}
     }
 }
 
-private val INCREASE = "increase"
-private val DECREASE = "decrease"
+private const val INCREASE = "Increase"
+private const val DECREASE = "Decrease"
+private const val ICON_TAG = "iconTag_test"
+
+private val DecreaseIcon = RangeIcons.Minus
+private val IncreaseIcon = Icons.Filled.Add
+
+@Composable fun DecreaseIcon() = Icon(RangeIcons.Minus, INCREASE)
+
+@Composable fun IncreaseIcon() = Icon(Icons.Filled.Add, DECREASE)

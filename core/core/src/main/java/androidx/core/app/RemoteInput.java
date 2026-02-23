@@ -24,10 +24,11 @@ import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -109,16 +110,14 @@ public final class RemoteInput {
      * Get the key that the result of this input will be set in from the Bundle returned by
      * {@link #getResultsFromIntent} when the {@link android.app.PendingIntent} is sent.
      */
-    @NonNull
-    public String getResultKey() {
+    public @NonNull String getResultKey() {
         return mResultKey;
     }
 
     /**
      * Get the label to display to users when collecting this input.
      */
-    @Nullable
-    public CharSequence getLabel() {
+    public @Nullable CharSequence getLabel() {
         return mLabel;
     }
 
@@ -126,14 +125,12 @@ public final class RemoteInput {
      * Get possible input choices. This can be {@code null} if there are no choices to present.
      */
     @SuppressWarnings("NullableCollection") // Look, it's not the best API.
-    @Nullable
-    public CharSequence[] getChoices() {
+    public CharSequence @Nullable [] getChoices() {
         return mChoices;
     }
 
     @SuppressWarnings("NullableCollection") // That's just how it was defined.
-    @Nullable
-    public Set<String> getAllowedDataTypes() {
+    public @Nullable Set<String> getAllowedDataTypes() {
         return mAllowedDataTypes;
     }
 
@@ -170,8 +167,7 @@ public final class RemoteInput {
     /**
      * Get additional metadata carried around with this remote input.
      */
-    @NonNull
-    public Bundle getExtras() {
+    public @NonNull Bundle getExtras() {
         return mExtras;
     }
 
@@ -206,8 +202,7 @@ public final class RemoteInput {
          * @param label The label to show to users when they input a response
          * @return this object for method chaining
          */
-        @NonNull
-        public Builder setLabel(@Nullable CharSequence label) {
+        public @NonNull Builder setLabel(@Nullable CharSequence label) {
             mLabel = label;
             return this;
         }
@@ -224,8 +219,7 @@ public final class RemoteInput {
          *        you disabled free form input using {@link #setAllowFreeFormInput}
          * @return this object for method chaining
          */
-        @NonNull
-        public Builder setChoices(@Nullable CharSequence[] choices) {
+        public @NonNull Builder setChoices(CharSequence @Nullable [] choices) {
             mChoices = choices;
             return this;
         }
@@ -240,8 +234,7 @@ public final class RemoteInput {
          * @param doAllow Whether the mime type should be allowed or not
          * @return this object for method chaining
          */
-        @NonNull
-        public Builder setAllowDataType(@NonNull String mimeType, boolean doAllow) {
+        public @NonNull Builder setAllowDataType(@NonNull String mimeType, boolean doAllow) {
             if (doAllow) {
                 mAllowedDataTypes.add(mimeType);
             } else {
@@ -260,8 +253,7 @@ public final class RemoteInput {
          *         {@link IllegalArgumentException} is thrown
          * @return this object for method chaining
          */
-        @NonNull
-        public Builder setAllowFreeFormInput(boolean allowFreeFormTextInput) {
+        public @NonNull Builder setAllowFreeFormInput(boolean allowFreeFormTextInput) {
             mAllowFreeFormTextInput = allowFreeFormTextInput;
             return this;
         }
@@ -272,8 +264,7 @@ public final class RemoteInput {
          *
          * It cannot be used if {@link #setAllowFreeFormInput} has been set to false.
          */
-        @NonNull
-        public Builder setEditChoicesBeforeSending(
+        public @NonNull Builder setEditChoicesBeforeSending(
                 @EditChoicesBeforeSending int editChoicesBeforeSending) {
             mEditChoicesBeforeSending = editChoicesBeforeSending;
             return this;
@@ -286,8 +277,7 @@ public final class RemoteInput {
          *
          * @see RemoteInput#getExtras
          */
-        @NonNull
-        public Builder addExtras(@NonNull Bundle extras) {
+        public @NonNull Builder addExtras(@NonNull Bundle extras) {
             if (extras != null) {
                 mExtras.putAll(extras);
             }
@@ -299,8 +289,7 @@ public final class RemoteInput {
          *
          * <p>The returned Bundle is shared with this Builder.
          */
-        @NonNull
-        public Bundle getExtras() {
+        public @NonNull Bundle getExtras() {
             return mExtras;
         }
 
@@ -308,8 +297,7 @@ public final class RemoteInput {
          * Combine all of the options that have been set and return a new {@link
          * androidx.core.app.RemoteInput} object.
          */
-        @NonNull
-        public RemoteInput build() {
+        public @NonNull RemoteInput build() {
             return new RemoteInput(
                     mResultKey,
                     mLabel,
@@ -338,8 +326,7 @@ public final class RemoteInput {
      * @param remoteInputResultKey The result key for the RemoteInput you want results for.
      */
     @SuppressWarnings("NullableCollection") // This is what the platform API does.
-    @Nullable
-    public static Map<String, Uri> getDataResultsFromIntent(
+    public static @Nullable Map<String, Uri> getDataResultsFromIntent(
             @NonNull Intent intent, @NonNull String remoteInputResultKey) {
         if (Build.VERSION.SDK_INT >= 26) {
             return Api26Impl.getDataResultsFromIntent(intent, remoteInputResultKey);
@@ -378,17 +365,8 @@ public final class RemoteInput {
      */
     // This is on purpose.
     @SuppressWarnings({"NullableCollection", "deprecation"})
-    @Nullable
-    public static Bundle getResultsFromIntent(@NonNull Intent intent) {
-        if (Build.VERSION.SDK_INT >= 20) {
-            return Api20Impl.getResultsFromIntent(intent);
-        } else {
-            Intent clipDataIntent = getClipDataIntentFromIntent(intent);
-            if (clipDataIntent == null) {
-                return null;
-            }
-            return clipDataIntent.getExtras().getParcelable(RemoteInput.EXTRA_RESULTS_DATA);
-        }
+    public static @Nullable Bundle getResultsFromIntent(@NonNull Intent intent) {
+        return android.app.RemoteInput.getResultsFromIntent(intent);
     }
 
     /**
@@ -403,11 +381,11 @@ public final class RemoteInput {
      *                {@code remoteInputs} with values being the result per key.
      */
     @SuppressWarnings("deprecation")
-    public static void addResultsToIntent(@NonNull RemoteInput[] remoteInputs,
+    public static void addResultsToIntent(RemoteInput @NonNull [] remoteInputs,
             @NonNull Intent intent, @NonNull Bundle results) {
         if (Build.VERSION.SDK_INT >= 26) {
-            Api20Impl.addResultsToIntent(fromCompat(remoteInputs), intent, results);
-        } else if (Build.VERSION.SDK_INT >= 20) {
+            android.app.RemoteInput.addResultsToIntent(fromCompat(remoteInputs), intent, results);
+        } else {
             // Implementations of RemoteInput#addResultsToIntent prior to SDK 26 don't actually add
             // results, they wipe out old results and insert the new one. Work around that by
             // preserving old results.
@@ -429,7 +407,8 @@ public final class RemoteInput {
                                 intent, input.getResultKey());
                 RemoteInput[] arr = new RemoteInput[1];
                 arr[0] = input;
-                Api20Impl.addResultsToIntent(fromCompat(arr), intent, existingTextResults);
+                android.app.RemoteInput.addResultsToIntent(
+                        fromCompat(arr), intent, existingTextResults);
                 if (existingDataResults != null) {
                     RemoteInput.addDataResultToIntent(input, intent, existingDataResults);
                 }
@@ -437,24 +416,6 @@ public final class RemoteInput {
 
             // Now restore the results source.
             setResultsSource(intent, resultsSource);
-        } else {
-            Intent clipDataIntent = getClipDataIntentFromIntent(intent);
-            if (clipDataIntent == null) {
-                clipDataIntent = new Intent();  // First time we've added a result.
-            }
-            Bundle resultsBundle = clipDataIntent.getBundleExtra(RemoteInput.EXTRA_RESULTS_DATA);
-            if (resultsBundle == null) {
-                resultsBundle = new Bundle();
-            }
-            for (RemoteInput remoteInput : remoteInputs) {
-                Object result = results.get(remoteInput.getResultKey());
-                if (result instanceof CharSequence) {
-                    resultsBundle.putCharSequence(
-                            remoteInput.getResultKey(), (CharSequence) result);
-                }
-            }
-            clipDataIntent.putExtra(RemoteInput.EXTRA_RESULTS_DATA, resultsBundle);
-            intent.setClipData(ClipData.newIntent(RemoteInput.RESULTS_CLIP_LABEL, clipDataIntent));
         }
     }
 
@@ -547,7 +508,6 @@ public final class RemoteInput {
         return EXTRA_DATA_TYPE_RESULTS_DATA + mimeType;
     }
 
-    @RequiresApi(20)
     static android.app.RemoteInput[] fromCompat(RemoteInput[] srcArray) {
         if (srcArray == null) {
             return null;
@@ -559,12 +519,10 @@ public final class RemoteInput {
         return result;
     }
 
-    @RequiresApi(20)
     static android.app.RemoteInput fromCompat(RemoteInput src) {
         return Api20Impl.fromCompat(src);
     }
 
-    @RequiresApi(20)
     static RemoteInput fromPlatform(android.app.RemoteInput src) {
         return Api20Impl.fromPlatform(src);
     }
@@ -610,19 +568,9 @@ public final class RemoteInput {
         }
     }
 
-    @RequiresApi(20)
     static class Api20Impl {
         private Api20Impl() {
             // This class is not instantiable.
-        }
-
-        static Bundle getResultsFromIntent(Intent intent) {
-            return android.app.RemoteInput.getResultsFromIntent(intent);
-        }
-
-        static void addResultsToIntent(Object remoteInputs, Intent intent, Bundle results) {
-            android.app.RemoteInput.addResultsToIntent((android.app.RemoteInput[]) remoteInputs,
-                    intent, results);
         }
 
         static RemoteInput fromPlatform(Object srcObj) {

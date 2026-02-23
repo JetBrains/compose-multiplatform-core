@@ -16,13 +16,17 @@
 
 package androidx.camera.core;
 
+import static androidx.camera.core.FlashState.FlashState;
+import static androidx.camera.core.FlashState.UNKNOWN;
+
 import android.graphics.Matrix;
 import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
+
+import org.jspecify.annotations.NonNull;
 
 /** Metadata for an image. */
 public interface ImageInfo {
@@ -31,8 +35,7 @@ public interface ImageInfo {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    TagBundle getTagBundle();
+    @NonNull TagBundle getTagBundle();
 
     /**
      * Returns the timestamp of the metadata.
@@ -112,9 +115,16 @@ public interface ImageInfo {
      *
      * @return the transform matrix.
      */
-    @NonNull
-    default Matrix getSensorToBufferTransformMatrix() {
+    default @NonNull Matrix getSensorToBufferTransformMatrix() {
         return new Matrix();
+    }
+
+    /**
+     * Returns the {@link androidx.camera.core.FlashState} value corresponding to the image capture.
+     */
+    @FlashState
+    default int getFlashState() {
+        return UNKNOWN;
     }
 
     /**
@@ -122,5 +132,5 @@ public interface ImageInfo {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    void populateExifData(@NonNull ExifData.Builder exifBuilder);
+    void populateExifData(ExifData.@NonNull Builder exifBuilder);
 }

@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -52,12 +57,7 @@ public fun floatFloatMapOf(key1: Float, value1: Float): FloatFloatMap =
  * Returns a new [FloatFloatMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun floatFloatMapOf(
-    key1: Float,
-    value1: Float,
-    key2: Float,
-    value2: Float,
-): FloatFloatMap =
+public fun floatFloatMapOf(key1: Float, value1: Float, key2: Float, value2: Float): FloatFloatMap =
     MutableFloatFloatMap().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -210,6 +210,40 @@ public fun mutableFloatFloatMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [FloatFloatMap] by populating a [MutableFloatFloatMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableFloatFloatMap] can be populated.
+ */
+public inline fun buildFloatFloatMap(
+    builderAction: MutableFloatFloatMap.() -> Unit
+): FloatFloatMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatFloatMap().apply(builderAction)
+}
+
+/**
+ * Builds a new [FloatFloatMap] by populating a [MutableFloatFloatMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableFloatFloatMap] can be populated.
+ */
+public inline fun buildFloatFloatMap(
+    initialCapacity: Int,
+    builderAction: MutableFloatFloatMap.() -> Unit,
+): FloatFloatMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatFloatMap(initialCapacity).apply(builderAction)
+}
 
 /**
  * [FloatFloatMap] is a container with a [Map]-like interface for [Float] primitive keys and [Float]
@@ -390,13 +424,13 @@ public sealed class FloatFloatMap {
         return count
     }
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
-    public operator fun contains(key: Float): Boolean = findKeyIndex(key) >= 0
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
+    public inline operator fun contains(key: Float): Boolean = containsKey(key)
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
     public fun containsKey(key: Float): Boolean = findKeyIndex(key) >= 0
 
-    /** Returns true if the specified [value] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [value] is present in this map, false otherwise. */
     public fun containsValue(value: Float): Boolean {
         forEachValue { v -> if (value == v) return true }
         return false
@@ -419,19 +453,21 @@ public sealed class FloatFloatMap {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@FloatFloatMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@FloatFloatMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -451,20 +487,22 @@ public sealed class FloatFloatMap {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Float, value: Float) -> CharSequence
+        crossinline transform: (key: Float, value: Float) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@FloatFloatMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@FloatFloatMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -501,7 +539,8 @@ public sealed class FloatFloatMap {
         }
 
         forEach { key, value ->
-            if (value != other[key]) {
+            val index = other.findKeyIndex(key)
+            if (index < 0 || value != other.values[index]) {
                 return false
             }
         }

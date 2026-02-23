@@ -17,13 +17,11 @@
 package androidx.ink.authoring.internal
 
 import android.graphics.Matrix
-import androidx.ink.strokes.Stroke
 
 /**
- * Includes the stroke (either [LegacyStroke] or [Stroke] during the migration to the latter) along
- * with a transform indicating where the stroke is on screen.
+ * Includes the [CompletedShapeT] along with a transform indicating where the stroke is on screen.
  */
-internal class FinishedStroke(
-    val stroke: Stroke,
+internal class FinishedStroke<CompletedShapeT : Any>(
+    val stroke: CompletedShapeT,
     val strokeToViewTransform: Matrix,
 )

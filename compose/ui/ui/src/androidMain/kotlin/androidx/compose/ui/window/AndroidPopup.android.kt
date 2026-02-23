@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -85,6 +86,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.util.UUID
+import kotlin.math.max
 import kotlinx.coroutines.isActive
 import org.jetbrains.annotations.TestOnly
 
@@ -117,8 +119,25 @@ constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
     val excludeFromSystemGesture: Boolean = true,
-    val usePlatformDefaultWidth: Boolean = false,
+    actual val usePlatformDefaultWidth: Boolean = false,
 ) {
+    actual constructor(
+        focusable: Boolean,
+        dismissOnBackPress: Boolean,
+        dismissOnClickOutside: Boolean,
+        clippingEnabled: Boolean,
+        usePlatformDefaultWidth: Boolean,
+    ) : this(
+        focusable = focusable,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        securePolicy = SecureFlagPolicy.Inherit,
+        excludeFromSystemGesture = true,
+        clippingEnabled = clippingEnabled,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
     actual constructor(
         focusable: Boolean,
         dismissOnBackPress: Boolean,
@@ -264,7 +283,7 @@ actual fun Popup(
     offset: IntOffset,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val popupPositioner =
         remember(alignment, offset) { AlignmentOffsetPositionProvider(alignment, offset) }
@@ -273,7 +292,7 @@ actual fun Popup(
         popupPositionProvider = popupPositioner,
         onDismissRequest = onDismissRequest,
         properties = properties,
-        content = content
+        content = content,
     )
 }
 
@@ -282,7 +301,7 @@ actual fun Popup(
  *
  * The popup is positioned using a custom [popupPositionProvider].
  *
- * @sample androidx.compose.ui.samples.PopupSample
+ * @sample androidx.compose.ui.samples.PopupWithPositionProviderSample
  * @param popupPositionProvider Provides the screen position of the popup.
  * @param onDismissRequest Executes when the user clicks outside of the popup.
  * @param properties [PopupProperties] for further customization of this popup's behavior.
@@ -293,7 +312,7 @@ actual fun Popup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: (() -> Unit)?,
     properties: PopupProperties,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
@@ -302,6 +321,8 @@ actual fun Popup(
     val parentComposition = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     val popupId = rememberSaveable { UUID.randomUUID() }
+    // Determine if this Popup is nested within another Popup's content.
+    val isCurrentlyInPopupLayout = LocalIsInPopupLayout.current
     val popupLayout = remember {
         PopupLayout(
                 onDismissRequest = onDismissRequest,
@@ -310,21 +331,24 @@ actual fun Popup(
                 composeView = view,
                 density = density,
                 initialPositionProvider = popupPositionProvider,
-                popupId = popupId
+                isNested = isCurrentlyInPopupLayout,
+                popupId = popupId,
             )
             .apply {
                 setContent(parentComposition) {
-                    SimpleStack(
-                        Modifier.semantics { this.popup() }
-                            // Get the size of the content
-                            .onSizeChanged {
-                                popupContentSize = it
-                                updatePosition()
-                            }
-                            // Hide the popup while we can't position it correctly
-                            .alpha(if (canCalculatePosition) 1f else 0f),
-                        currentContent
-                    )
+                    CompositionLocalProvider(LocalIsInPopupLayout provides true) {
+                        SimpleStack(
+                            Modifier.semantics { this.popup() }
+                                // Get the size of the content
+                                .onSizeChanged {
+                                    popupContentSize = it
+                                    updatePosition()
+                                }
+                                // Hide the popup while we can't position it correctly
+                                .alpha(if (canCalculatePosition) 1f else 0f),
+                            currentContent,
+                        )
+                    }
                 }
             }
     }
@@ -335,7 +359,7 @@ actual fun Popup(
             onDismissRequest = onDismissRequest,
             properties = properties,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
         onDispose {
             popupLayout.disposeComposition()
@@ -349,7 +373,7 @@ actual fun Popup(
             onDismissRequest = onDismissRequest,
             properties = properties,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
     }
 
@@ -385,7 +409,7 @@ actual fun Popup(
                 // sufficient, and the coordinates are also re-calculated on every frame.
                 val parentCoordinates = childCoordinates.parentLayoutCoordinates!!
                 popupLayout.updateParentLayoutCoordinates(parentCoordinates)
-            }
+            },
     ) { _, _ ->
         popupLayout.parentLayoutDirection = layoutDirection
         layout(0, 0) {}
@@ -423,6 +447,18 @@ internal fun PopupTestTag(tag: String, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalPopupTestTag provides tag, content = content)
 }
 
+/**
+ * CompositionLocal used to track the immediate parent [PopupLayout]. This is essential for
+ * determining if a [Popup] is nested within another [Popup], which in turn affects the coordinate
+ * system used for positioning with the [WindowManager].
+ *
+ * We use a dedicated CompositionLocal instead of overriding [LocalView] to avoid issues with
+ * components like Material Ripple, which expect [LocalView] to provide a standard [View] or
+ * [ViewGroup] capable of accepting [View] children, something [PopupLayout] (as an
+ * [AbstractComposeView]) does not support.
+ */
+internal val LocalIsInPopupLayout = compositionLocalOf { false }
+
 // TODO(soboleva): Look at module dependencies so that we can get code reuse between
 // Popup's SimpleStack and Box.
 @Suppress("NOTHING_TO_INLINE")
@@ -436,14 +472,15 @@ private inline fun SimpleStack(modifier: Modifier, noinline content: @Composable
                 layout(p.width, p.height) { p.placeRelative(0, 0) }
             }
             else -> {
-                val placeables = measurables.fastMap { it.measure(constraints) }
                 var width = 0
                 var height = 0
-                for (i in 0..placeables.lastIndex) {
-                    val p = placeables[i]
-                    width = maxOf(width, p.width)
-                    height = maxOf(height, p.height)
-                }
+                val placeables =
+                    measurables.fastMap {
+                        it.measure(constraints).apply {
+                            width = max(width, this.width)
+                            height = max(height, this.height)
+                        }
+                    }
                 layout(width, height) {
                     for (i in 0..placeables.lastIndex) {
                         val p = placeables[i]
@@ -469,12 +506,13 @@ internal class PopupLayout(
     density: Density,
     initialPositionProvider: PopupPositionProvider,
     popupId: UUID,
+    private val isNested: Boolean,
     private val popupLayoutHelper: PopupLayoutHelper =
         if (Build.VERSION.SDK_INT >= 29) {
             PopupLayoutHelperImpl29()
         } else {
             PopupLayoutHelperImpl()
-        }
+        },
 ) : AbstractComposeView(composeView.context), ViewRootForInspector {
     private val windowManager =
         composeView.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -501,6 +539,9 @@ internal class PopupLayout(
 
     // The window visible frame used for the last popup position calculation.
     private val previousWindowVisibleFrame = Rect()
+
+    private val parentLocationOnScreen = IntArray(2)
+    private val parentLocationInWindow = IntArray(2)
 
     override val subCompositionView: AbstractComposeView
         get() = this
@@ -593,8 +634,11 @@ internal class PopupLayout(
             // platform default. Therefore, we create a new measure spec for width, which
             // corresponds to the full screen width. We do the same for height, even if
             // ViewRootImpl gives it to us from the first measure.
-            val displayWidthMeasureSpec = makeMeasureSpec(displayWidth, MeasureSpec.AT_MOST)
-            val displayHeightMeasureSpec = makeMeasureSpec(displayHeight, MeasureSpec.AT_MOST)
+            val visibleDisplayBounds = getVisibleDisplayBounds()
+            val displayWidthMeasureSpec =
+                makeMeasureSpec(visibleDisplayBounds.width, MeasureSpec.AT_MOST)
+            val displayHeightMeasureSpec =
+                makeMeasureSpec(visibleDisplayBounds.height, MeasureSpec.AT_MOST)
             super.internalOnMeasure(displayWidthMeasureSpec, displayHeightMeasureSpec)
         }
     }
@@ -610,18 +654,6 @@ internal class PopupLayout(
             popupLayoutHelper.updateViewLayout(windowManager, this, params)
         }
     }
-
-    private val displayWidth: Int
-        get() {
-            val density = context.resources.displayMetrics.density
-            return (context.resources.configuration.screenWidthDp * density).fastRoundToInt()
-        }
-
-    private val displayHeight: Int
-        get() {
-            val density = context.resources.displayMetrics.density
-            return (context.resources.configuration.screenHeightDp * density).fastRoundToInt()
-        }
 
     /** Taken from PopupWindow */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -715,6 +747,9 @@ internal class PopupLayout(
      * callbacks.
      */
     fun pollForLocationOnScreenChange() {
+        // When this view is not attached to a window, we don't need to do anything.
+        if (!isAttachedToWindow) return
+
         val (oldX, oldY) = locationOnScreen
         composeView.getLocationOnScreen(locationOnScreen)
         if (oldX != locationOnScreen[0] || oldY != locationOnScreen[1]) {
@@ -732,7 +767,20 @@ internal class PopupLayout(
         val coordinates = parentLayoutCoordinates?.takeIf { it.isAttached } ?: return
         val layoutSize = coordinates.size
 
-        val position = coordinates.positionInWindow()
+        // If the popup is nested, we need to use absolute screen coordinates because the
+        // WindowManager expects absolute coordinates for nested sub-panels.
+        // If the popup is not nested (attached to an Activity or Dialog), the WindowManager
+        // expects coordinates relative to that window. Using absolute coordinates here
+        // and later subtracting the window offset works for full-screen windows, but fails
+        // for floating windows because the PopupPositionProvider receives an absolute
+        // anchor and a relative window size, leading to coordinate space mismatch.
+        // So we use positionInWindow for non-nested cases.
+        val position =
+            if (isNested) {
+                coordinates.positionOnScreen()
+            } else {
+                coordinates.positionInWindow()
+            }
         val layoutPosition = IntOffset(position.x.fastRoundToInt(), position.y.fastRoundToInt())
 
         val newParentBounds = IntRect(layoutPosition, layoutSize)
@@ -748,12 +796,13 @@ internal class PopupLayout(
         val popupContentSize = popupContentSize ?: return
 
         val windowSize =
-            previousWindowVisibleFrame.let {
-                popupLayoutHelper.getWindowVisibleDisplayFrame(composeView, it)
-                val bounds = it.toIntBounds()
-                IntSize(width = bounds.width, height = bounds.height)
-            }
+            getVisibleDisplayBounds().let { IntSize(width = it.width, height = it.height) }
 
+        // The PopupPositionProvider returns the desired position of the popup.
+        // If isNested is true, parentBounds are absolute, so the result is absolute.
+        // If isNested is false, parentBounds are relative to the window, so the result is relative.
+        // In both cases, this result is exactly what we want to pass to WindowManager.params
+        // (because WindowManager expects absolute for nested, and relative for non-nested).
         var popupPosition = IntOffset.Zero
         snapshotStateObserver.observeReads(this, onCommitAffectingPopupPosition) {
             popupPosition =
@@ -761,7 +810,7 @@ internal class PopupLayout(
                     parentBounds,
                     windowSize,
                     parentLayoutDirection,
-                    popupContentSize
+                    popupContentSize,
                 )
         }
 
@@ -849,6 +898,12 @@ internal class PopupLayout(
         }
     }
 
+    private fun getVisibleDisplayBounds(): IntRect =
+        previousWindowVisibleFrame.let {
+            popupLayoutHelper.getWindowVisibleDisplayFrame(composeView, it)
+            it.toIntBounds()
+        }
+
     private companion object {
         private val onCommitAffectingPopupPosition = { popupLayout: PopupLayout ->
             if (popupLayout.isAttachedToWindow) {
@@ -872,7 +927,7 @@ private object Api33Impl {
                 .findOnBackInvokedDispatcher()
                 ?.registerOnBackInvokedCallback(
                     OnBackInvokedDispatcher.PRIORITY_OVERLAY,
-                    backCallback
+                    backCallback,
                 )
         }
     }
@@ -898,7 +953,7 @@ internal interface PopupLayoutHelper {
     fun updateViewLayout(
         windowManager: WindowManager,
         popupView: View,
-        params: ViewGroup.LayoutParams
+        params: ViewGroup.LayoutParams,
     )
 }
 
@@ -914,7 +969,7 @@ private open class PopupLayoutHelperImpl : PopupLayoutHelper {
     override fun updateViewLayout(
         windowManager: WindowManager,
         popupView: View,
-        params: ViewGroup.LayoutParams
+        params: ViewGroup.LayoutParams,
     ) {
         windowManager.updateViewLayout(popupView, params)
     }
@@ -935,9 +990,7 @@ internal fun View.isFlagSecureEnabled(): Boolean {
     return false
 }
 
-private fun PopupProperties.flagsWithSecureFlagInherited(
-    isParentFlagSecureEnabled: Boolean,
-): Int =
+private fun PopupProperties.flagsWithSecureFlagInherited(isParentFlagSecureEnabled: Boolean): Int =
     when {
         this.inheritSecurePolicy && isParentFlagSecureEnabled ->
             this.flags or WindowManager.LayoutParams.FLAG_SECURE

@@ -72,7 +72,7 @@ private fun dropUnlessStateIsAtLeast(
  */
 @CheckResult
 @Composable
-fun dropUnlessStarted(
+public fun dropUnlessStarted(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.STARTED, lifecycleOwner, block)
@@ -94,7 +94,7 @@ fun dropUnlessStarted(
  */
 @CheckResult
 @Composable
-fun dropUnlessResumed(
+public fun dropUnlessResumed(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.RESUMED, lifecycleOwner, block)

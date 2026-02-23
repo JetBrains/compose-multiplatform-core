@@ -18,8 +18,8 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Listener for apps to implement handling for insertion of content. Content may be both text and
@@ -121,6 +121,6 @@ public interface OnReceiveContentListener {
      * succeed even if this method returns null. For example, an app may end up not inserting
      * an item if it exceeds the app's size limit for that type of content.
      */
-    @Nullable
-    ContentInfoCompat onReceiveContent(@NonNull View view, @NonNull ContentInfoCompat payload);
+    @Nullable ContentInfoCompat onReceiveContent(@NonNull View view,
+            @NonNull ContentInfoCompat payload);
 }

@@ -24,8 +24,9 @@ import android.content.pm.SigningInfo;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -41,8 +42,7 @@ class PackageIdentityUtils {
     private static final String TAG = "PackageIdentity";
     private PackageIdentityUtils() {}
 
-    @Nullable
-    static List<byte[]> getFingerprintsForPackage(String name, PackageManager pm) {
+    static @Nullable List<byte[]> getFingerprintsForPackage(String name, PackageManager pm) {
         try {
             return getImpl().getFingerprintsForPackage(name, pm);
         } catch (PackageManager.NameNotFoundException e) {
@@ -69,8 +69,7 @@ class PackageIdentityUtils {
     }
 
     interface SignaturesCompat {
-        @Nullable
-        List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
+        @Nullable List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
                 throws PackageManager.NameNotFoundException;
         boolean packageMatchesToken(String name, PackageManager pm, TokenContents token)
                 throws IOException, PackageManager.NameNotFoundException;
@@ -80,8 +79,7 @@ class PackageIdentityUtils {
     @SuppressWarnings("deprecation")
     static class Api28Implementation implements SignaturesCompat {
         @Override
-        @Nullable
-        public List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
+        public @Nullable List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
                 throws PackageManager.NameNotFoundException {
             PackageInfo packageInfo = pm.getPackageInfo(name,
                     PackageManager.GET_SIGNING_CERTIFICATES);
@@ -126,8 +124,7 @@ class PackageIdentityUtils {
         @SuppressWarnings("deprecation")  // For GET_SIGNATURES and PackageInfo#signatures.
         @SuppressLint("PackageManagerGetSignatures")  // We deal with multiple signatures.
         @Override
-        @Nullable
-        public List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
+        public @Nullable List<byte[]> getFingerprintsForPackage(String name, PackageManager pm)
                 throws PackageManager.NameNotFoundException {
             PackageInfo packageInfo = pm.getPackageInfo(name, PackageManager.GET_SIGNATURES);
 
@@ -158,7 +155,7 @@ class PackageIdentityUtils {
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    static @Nullable byte[] getCertificateSHA256Fingerprint(Signature signature) {
+    static byte @Nullable [] getCertificateSHA256Fingerprint(Signature signature) {
         try {
             return MessageDigest.getInstance("SHA256").digest(signature.toByteArray());
         } catch (NoSuchAlgorithmException e) {

@@ -36,13 +36,13 @@ import android.view.ViewParent;
 import android.view.ViewTreeObserver.OnDrawListener;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.TintTypedArray;
 import androidx.core.util.Pair;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -371,8 +371,8 @@ public class TestUtils {
      * @param runner the runnable to run on the main thread, or {@code null} to
      *               simply force invalidation and a draw pass
      */
-    public static void runOnMainAndDrawSync(@NonNull final ActivityTestRule activityTestRule,
-            @NonNull final View view, @Nullable final Runnable runner) {
+    public static void runOnMainAndDrawSync(final @NonNull ActivityTestRule activityTestRule,
+            final @NonNull View view, final @Nullable Runnable runner) {
         final CountDownLatch latch = new CountDownLatch(1);
 
         try {
@@ -419,10 +419,7 @@ public class TestUtils {
     /**
      * Executes the given shell command and returns true if any line matches the find predicate, or
      * false otherwise.
-     * <p>
-     * Requires API 21+ due to UiAutomation.executeShellCommand() dependency.
      */
-    @RequiresApi(21)
     public static boolean executeShellCommandAndFind(@NonNull String cmd,
             @NonNull Predicate<String> find) throws IOException {
         InputStream stdout = new ParcelFileDescriptor.AutoCloseInputStream(

@@ -1,29 +1,31 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id('com.android.library')
+    id("com.android.library")
 }
-android {
-    namespace 'androidx.webkit.instrumentation'
 
+android {
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
+    namespace = "androidx.webkit.instrumentation"
     flavorDimensions = ["targetSdk"]
 
     productFlavors {
         targetSdk32 {
-            dimension "targetSdk"
+            dimension = "targetSdk"
 
         }
         targetSdkLatest {
-            dimension "targetSdk"
+            dimension = "targetSdk"
             // uses default config
         }
     }
@@ -36,9 +38,12 @@ androidComponents {
 }
 
 dependencies {
+    api(libs.jspecify)
     androidTestImplementation(project(":webkit:webkit"))
+    androidTestImplementation(project(":webkit:integration-tests:common"))
 
     androidTestImplementation(libs.okhttpMockwebserver)
+    androidTestImplementation(libs.okhttpTls)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -49,10 +54,10 @@ dependencies {
     androidTestImplementation(libs.dexmakerMockito)
 
     // Hamcrest matchers:
-    androidTestImplementation(libs.bundles.espressoContrib, excludes.espresso)
+    androidTestImplementation(libs.bundles.espressoContrib)
 }
 
 androidx {
-    type = type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = type = SoftwareType.INTERNAL_TEST_LIBRARY
     additionalDeviceTestApkKeys.add("chrome")
 }

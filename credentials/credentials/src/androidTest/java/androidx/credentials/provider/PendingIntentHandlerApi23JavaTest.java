@@ -38,7 +38,6 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.credentials.CreateCredentialRequest;
 import androidx.credentials.CreateCredentialResponse;
 import androidx.credentials.CreateCustomCredentialResponse;
@@ -64,6 +63,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -74,7 +74,7 @@ import java.util.Set;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23, maxSdkVersion = 33)
+@SdkSuppress(maxSdkVersion = 33)
 @SuppressWarnings("deprecation")
 public class PendingIntentHandlerApi23JavaTest {
 

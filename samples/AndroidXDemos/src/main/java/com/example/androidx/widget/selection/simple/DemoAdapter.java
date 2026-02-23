@@ -25,12 +25,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.selection.SelectionTracker;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.Cheeses;
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 final class DemoAdapter extends RecyclerView.Adapter<DemoHolder> {
 

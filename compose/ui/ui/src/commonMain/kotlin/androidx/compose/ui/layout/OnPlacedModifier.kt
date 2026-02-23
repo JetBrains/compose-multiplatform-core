@@ -33,7 +33,7 @@ import androidx.compose.ui.platform.InspectorInfo
 @Stable
 fun Modifier.onPlaced(onPlaced: (LayoutCoordinates) -> Unit) = this then OnPlacedElement(onPlaced)
 
-private data class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
+private class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
     ModifierNodeElement<OnPlacedNode>() {
     override fun create() = OnPlacedNode(callback = onPlaced)
 
@@ -45,9 +45,22 @@ private data class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
         name = "onPlaced"
         properties["onPlaced"] = onPlaced
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is OnPlacedElement) return false
+
+        if (onPlaced !== other.onPlaced) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onPlaced.hashCode()
+    }
 }
 
-private class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
+internal class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
     LayoutAwareModifierNode, Modifier.Node() {
 
     override fun onPlaced(coordinates: LayoutCoordinates) {

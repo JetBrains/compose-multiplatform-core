@@ -15,8 +15,8 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This is the query interface to supply optional features(aka facets) on an object without the need
@@ -70,6 +70,5 @@ public interface FacetProvider {
      *                   {@link ItemAlignmentFacet}.
      * @return Facet implementation for the facetClass or null if feature not implemented.
      */
-    @Nullable
-    Object getFacet(@NonNull Class<?> facetClass);
+    @Nullable Object getFacet(@NonNull Class<?> facetClass);
 }

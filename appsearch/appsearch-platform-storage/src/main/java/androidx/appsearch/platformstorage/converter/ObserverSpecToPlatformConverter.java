@@ -18,13 +18,14 @@ package androidx.appsearch.platformstorage.converter;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.observer.DocumentChangeInfo;
 import androidx.appsearch.observer.ObserverSpec;
 import androidx.appsearch.observer.SchemaChangeInfo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Platform and Jetpack versions of {@link ObserverSpec}.
@@ -39,8 +40,7 @@ public final class ObserverSpecToPlatformConverter {
      * Translates a jetpack {@link ObserverSpec} into a platform
      * {@link android.app.appsearch.observer.ObserverSpec}.
      */
-    @NonNull
-    public static android.app.appsearch.observer.ObserverSpec toPlatformObserverSpec(
+    public static android.app.appsearch.observer.@NonNull ObserverSpec toPlatformObserverSpec(
             @NonNull ObserverSpec jetpackSpec) {
         Preconditions.checkNotNull(jetpackSpec);
         return new android.app.appsearch.observer.ObserverSpec.Builder()
@@ -52,9 +52,8 @@ public final class ObserverSpecToPlatformConverter {
      * Translates a platform {@link androidx.appsearch.observer.SchemaChangeInfo} into a jetpack
      * {@link SchemaChangeInfo}.
      */
-    @NonNull
-    public static SchemaChangeInfo toJetpackSchemaChangeInfo(
-            @NonNull android.app.appsearch.observer.SchemaChangeInfo platformInfo) {
+    public static @NonNull SchemaChangeInfo toJetpackSchemaChangeInfo(
+            android.app.appsearch.observer.@NonNull SchemaChangeInfo platformInfo) {
         Preconditions.checkNotNull(platformInfo);
         return new SchemaChangeInfo(
                 platformInfo.getPackageName(),
@@ -66,9 +65,8 @@ public final class ObserverSpecToPlatformConverter {
      * Translates a platform {@link androidx.appsearch.observer.DocumentChangeInfo} into a jetpack
      * {@link DocumentChangeInfo}.
      */
-    @NonNull
-    public static DocumentChangeInfo toJetpackDocumentChangeInfo(
-            @NonNull android.app.appsearch.observer.DocumentChangeInfo platformInfo) {
+    public static @NonNull DocumentChangeInfo toJetpackDocumentChangeInfo(
+            android.app.appsearch.observer.@NonNull DocumentChangeInfo platformInfo) {
         Preconditions.checkNotNull(platformInfo);
         return new DocumentChangeInfo(
                 platformInfo.getPackageName(),

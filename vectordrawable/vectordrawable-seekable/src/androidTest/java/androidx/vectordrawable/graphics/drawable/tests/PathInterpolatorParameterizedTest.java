@@ -24,7 +24,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
-import androidx.annotation.NonNull;
 import androidx.core.animation.AnimatorTestRule;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
@@ -32,6 +31,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.vectordrawable.seekable.test.R;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

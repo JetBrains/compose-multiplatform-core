@@ -33,7 +33,6 @@ import android.content.Context;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.work.Configuration;
 import androidx.work.Constraints;
@@ -56,7 +55,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.TimeUnit;
-
 
 @RunWith(AndroidJUnit4.class)
 public class GreedySchedulerTest extends WorkManagerTest {
@@ -134,7 +132,6 @@ public class GreedySchedulerTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 23)
     public void testGreedyScheduler_ignoresIdleWorkConstraint() {
         Constraints constraints = new Constraints.Builder()
                 .setRequiresDeviceIdle(true)

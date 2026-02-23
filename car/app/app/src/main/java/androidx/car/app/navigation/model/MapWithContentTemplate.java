@@ -20,15 +20,17 @@ import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONS
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.annotations.CarProtocol;
+import android.annotation.SuppressLint;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.constraints.ContentTemplateConstraints;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -48,12 +50,9 @@ import java.util.Objects;
 @KeepFields
 @RequiresCarApi(7)
 public final class MapWithContentTemplate implements Template {
-    @Nullable
-    private final MapController mMapController;
-    @NonNull
-    private final Template mContentTemplate;
-    @Nullable
-    private final ActionStrip mActionStrip;
+    private final @Nullable MapController mMapController;
+    private final @NonNull Template mContentTemplate;
+    private final @Nullable ActionStrip mActionStrip;
 
     /**
      * Creates a new {@code MapWithContentTemplate}. Please use the {@link Builder} to construct
@@ -77,8 +76,7 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setMapController
      */
-    @Nullable
-    public MapController getMapController() {
+    public @Nullable MapController getMapController() {
         return mMapController;
     }
 
@@ -87,8 +85,7 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setContentTemplate(Template)
      */
-    @NonNull
-    public Template getContentTemplate() {
+    public @NonNull Template getContentTemplate() {
         return mContentTemplate;
     }
 
@@ -97,8 +94,7 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setActionStrip(ActionStrip)
      */
-    @Nullable
-    public ActionStrip getActionStrip() {
+    public @Nullable ActionStrip getActionStrip() {
         return mActionStrip;
     }
 
@@ -125,12 +121,9 @@ public final class MapWithContentTemplate implements Template {
     /** A builder of {@link MapWithContentTemplate}. */
     public static final class Builder {
 
-        @Nullable
-        MapController mMapController;
-        @NonNull
-        Template mContentTemplate;
-        @Nullable
-        ActionStrip mActionStrip;
+        @Nullable MapController mMapController;
+        @NonNull Template mContentTemplate;
+        @Nullable ActionStrip mActionStrip;
 
         public Builder() {
             mContentTemplate = new Template() {};
@@ -158,8 +151,7 @@ public final class MapWithContentTemplate implements Template {
          * @throws IllegalArgumentException if {@code actionStrip} does not meet the requirements
          * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
-        @NonNull
-        public Builder setActionStrip(@NonNull ActionStrip actionStrip) {
+        public @NonNull Builder setActionStrip(@NonNull ActionStrip actionStrip) {
             ACTIONS_CONSTRAINTS_NAVIGATION
                     .validateOrThrow(requireNonNull(actionStrip).getActions());
             mActionStrip = actionStrip;
@@ -177,11 +169,16 @@ public final class MapWithContentTemplate implements Template {
          *     <li>{@code MessageTemplate}
          * </ul>
          *
+         * <p>From Car API 8 onward, the following template type is supported as content in
+         * addition to all previously supported template types:
+         * <ul>
+         *     <li>{@code SectionedItemTemplate}
+         * </ul>
+         *
          *  @throws NullPointerException     if {@code template} is null
          *  @throws IllegalArgumentException if {@code template} does not meet the requirements
          */
-        @NonNull
-        public Builder setContentTemplate(@NonNull Template template) {
+        public @NonNull Builder setContentTemplate(@NonNull Template template) {
             mContentTemplate = requireNonNull(template);
             return this;
         }
@@ -189,8 +186,7 @@ public final class MapWithContentTemplate implements Template {
         /**
          * Sets the {@link MapController} for this template.
          */
-        @NonNull
-        public Builder setMapController(@NonNull MapController mapController) {
+        public @NonNull Builder setMapController(@NonNull MapController mapController) {
             mMapController = requireNonNull(mapController);
             return this;
         }
@@ -204,10 +200,11 @@ public final class MapWithContentTemplate implements Template {
          * See {@link Builder#setContentTemplate(Template)} for the list of supported content
          * templates.
          */
-        @NonNull
-        public MapWithContentTemplate build() {
-            ContentTemplateConstraints.MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS
-                    .validateOrThrow(mContentTemplate);
+        @SuppressLint("UnsafeOptInUsageError")
+        public @NonNull MapWithContentTemplate build() {
+            ContentTemplateConstraints.MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS_API_8
+                .validateOrThrow(mContentTemplate);
+
             return new MapWithContentTemplate(this);
         }
     }

@@ -38,6 +38,8 @@ internal class LazyGridMeasureResult(
     val consumedScroll: Float,
     /** MeasureResult defining the layout. */
     private val measureResult: MeasureResult,
+    /** The amount of scroll-back that happened due to reaching the end of the list. */
+    val scrollBackAmount: Float,
     /** True when extra remeasure is required. */
     val remeasureNeeded: Boolean,
     /** Scope for animations. */
@@ -48,6 +50,8 @@ internal class LazyGridMeasureResult(
     val slotsPerLine: Int,
     /** Finds items on a line and their measurement constraints. Used for prefetching. */
     val prefetchInfoRetriever: (line: Int) -> List<Pair<Int, Constraints>>,
+    /** Finds the line for a given item. */
+    val lineIndexProvider: (itemIndex: Int) -> Int,
     // properties representing the info needed for LazyListLayoutInfo:
     /** see [LazyGridLayoutInfo.visibleItemsInfo] */
     override val visibleItemsInfo: List<LazyGridMeasuredItem>,
@@ -64,7 +68,7 @@ internal class LazyGridMeasureResult(
     /** see [LazyGridLayoutInfo.afterContentPadding] */
     override val afterContentPadding: Int,
     /** see [LazyGridLayoutInfo.mainAxisItemSpacing] */
-    override val mainAxisItemSpacing: Int
+    override val mainAxisItemSpacing: Int,
 ) : LazyGridLayoutInfo, MeasureResult by measureResult {
 
     val canScrollBackward
@@ -90,7 +94,10 @@ internal class LazyGridMeasureResult(
      *   If If new layout info is returned, only the placement phase is needed to apply new offsets.
      *   If null is returned, it means we have to rerun the full measure phase to apply the [delta].
      */
-    fun copyWithScrollDeltaWithoutRemeasure(delta: Int): LazyGridMeasureResult? {
+    fun copyWithScrollDeltaWithoutRemeasure(
+        delta: Int,
+        updateAnimations: Boolean,
+    ): LazyGridMeasureResult? {
         if (
             remeasureNeeded ||
                 visibleItemsInfo.isEmpty() ||
@@ -125,7 +132,7 @@ internal class LazyGridMeasureResult(
                 minOf(deltaToFirstItemChange, deltaToLastItemChange) > delta
             }
         return if (canApply) {
-            visibleItemsInfo.fastForEach { it.applyScrollDelta(delta) }
+            visibleItemsInfo.fastForEach { it.applyScrollDelta(delta, updateAnimations) }
             LazyGridMeasureResult(
                 firstVisibleLine = firstVisibleLine,
                 firstVisibleLineScrollOffset = firstVisibleLineScrollOffset - delta,
@@ -133,12 +140,14 @@ internal class LazyGridMeasureResult(
                     canScrollForward ||
                         delta > 0, // we scrolled backward, so now we can scroll forward
                 consumedScroll = delta.toFloat(),
+                scrollBackAmount = scrollBackAmount,
                 measureResult = measureResult,
                 remeasureNeeded = remeasureNeeded,
                 coroutineScope = coroutineScope,
                 density = density,
                 slotsPerLine = slotsPerLine,
                 prefetchInfoRetriever = prefetchInfoRetriever,
+                lineIndexProvider = lineIndexProvider,
                 visibleItemsInfo = visibleItemsInfo,
                 viewportStartOffset = viewportStartOffset,
                 viewportEndOffset = viewportEndOffset,
@@ -146,7 +155,7 @@ internal class LazyGridMeasureResult(
                 reverseLayout = reverseLayout,
                 orientation = orientation,
                 afterContentPadding = afterContentPadding,
-                mainAxisItemSpacing = mainAxisItemSpacing
+                mainAxisItemSpacing = mainAxisItemSpacing,
             )
         } else {
             null

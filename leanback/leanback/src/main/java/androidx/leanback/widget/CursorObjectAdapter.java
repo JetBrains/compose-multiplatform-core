@@ -16,8 +16,9 @@ package androidx.leanback.widget;
 import android.database.Cursor;
 import android.util.LruCache;
 
-import androidx.annotation.Nullable;
 import androidx.leanback.database.CursorMapper;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link ObjectAdapter} implemented with a {@link Cursor}.

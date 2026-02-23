@@ -31,18 +31,18 @@ import androidx.compose.foundation.EdgeEffectCompat.onReleaseWithOppositeDelta
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalAccessorScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.NativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.draw
@@ -51,12 +51,12 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.InspectorValueInfo
+import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
@@ -64,26 +64,106 @@ import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
+/**
+ * Creates and remembers an instance of the platform [OverscrollFactory], with the provided
+ * [glowColor] and [glowDrawPadding] values - these values will be used on platform versions where
+ * glow overscroll is used.
+ *
+ * The OverscrollFactory returned from this function should be provided near the top of your
+ * application to [LocalOverscrollFactory], in order to apply this across all components in your
+ * application.
+ *
+ * @param glowColor color for the glow effect if the platform effect is a glow effect, otherwise
+ *   ignored.
+ * @param glowDrawPadding the amount of padding to apply from the overscroll bounds to the effect
+ *   before drawing it if the platform effect is a glow effect, otherwise ignored.
+ */
 @Composable
-internal actual fun rememberOverscrollEffect(): OverscrollEffect {
+fun rememberPlatformOverscrollFactory(
+    glowColor: Color = DefaultGlowColor,
+    glowDrawPadding: PaddingValues = DefaultGlowPaddingValues,
+): OverscrollFactory {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    return AndroidEdgeEffectOverscrollFactory(context, density, glowColor, glowDrawPadding)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Suppress("DEPRECATION")
+internal actual fun CompositionLocalAccessorScope.defaultOverscrollFactory(): OverscrollFactory? {
+    val context = LocalContext.currentValue
+    val density = LocalDensity.currentValue
+    val config = LocalOverscrollConfiguration.currentValue
+    return if (config == null) {
+        null
+    } else {
+        AndroidEdgeEffectOverscrollFactory(context, density, config.glowColor, config.drawPadding)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Suppress("DEPRECATION")
+@Composable
+internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? {
     val context = LocalContext.current
     val density = LocalDensity.current
     val config = LocalOverscrollConfiguration.current
-    return if (config != null) {
-        remember(context, density, config) {
-            AndroidEdgeEffectOverscrollEffect(context, density, config)
-        }
+    return if (config == null) {
+        null
     } else {
-        NoOpOverscrollEffect
+        remember(context, density, config) {
+            AndroidEdgeEffectOverscrollEffect(
+                context,
+                density,
+                config.glowColor,
+                config.drawPadding,
+            )
+        }
+    }
+}
+
+private class AndroidEdgeEffectOverscrollFactory(
+    private val context: Context,
+    private val density: Density,
+    private val glowColor: Color = DefaultGlowColor,
+    private val glowDrawPadding: PaddingValues = DefaultGlowPaddingValues,
+) : OverscrollFactory {
+    override fun createOverscrollEffect(): OverscrollEffect {
+        return AndroidEdgeEffectOverscrollEffect(context, density, glowColor, glowDrawPadding)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as AndroidEdgeEffectOverscrollFactory
+
+        if (context != other.context) return false
+        if (density != other.density) return false
+        if (glowColor != other.glowColor) return false
+        if (glowDrawPadding != other.glowDrawPadding) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = context.hashCode()
+        result = 31 * result + density.hashCode()
+        result = 31 * result + glowColor.hashCode()
+        result = 31 * result + glowDrawPadding.hashCode()
+        return result
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
-private class DrawStretchOverscrollModifier(
+private class StretchOverscrollNode(
+    pointerInputNode: DelegatableNode,
     private val overscrollEffect: AndroidEdgeEffectOverscrollEffect,
     private val edgeEffectWrapper: EdgeEffectWrapper,
-    inspectorInfo: InspectorInfo.() -> Unit
-) : DrawModifier, InspectorValueInfo(inspectorInfo) {
+) : DelegatingNode(), DrawModifierNode {
+    init {
+        delegate(pointerInputNode)
+    }
 
     /**
      * There is an unwanted behavior in the stretch overscroll effect we have to workaround: when
@@ -124,14 +204,21 @@ private class DrawStretchOverscrollModifier(
     @Suppress("KotlinConstantConditions")
     override fun ContentDrawScope.draw() {
         overscrollEffect.updateSize(size)
+        val canvas = drawContext.canvas.nativeCanvas
+        overscrollEffect.redrawSignal.value // <-- value read to redraw if needed
         if (size.isEmpty()) {
             // Draw any out of bounds content
             drawContent()
             return
         }
-        overscrollEffect.redrawSignal.value // <-- value read to redraw if needed
+        // Render node / stretch effect is not supported in software rendering, so end the effect
+        // and draw the content normally - this is what happens in EdgeEffect.
+        if (!canvas.isHardwareAccelerated) {
+            edgeEffectWrapper.finishAll()
+            drawContent()
+            return
+        }
         val maxElevation = MaxSupportedElevation.toPx()
-        val canvas = drawContext.canvas.nativeCanvas
         var needsInvalidate = false
         with(edgeEffectWrapper) {
             val shouldDrawVerticalStretch = shouldDrawVerticalStretch()
@@ -148,7 +235,7 @@ private class DrawStretchOverscrollModifier(
                         0,
                         0,
                         canvas.width + (maxElevation.roundToInt() * 2),
-                        canvas.height
+                        canvas.height,
                     )
                 // Drawing horizontal stretch, so expand the height to prevent clipping
                 shouldDrawHorizontalStretch ->
@@ -156,7 +243,7 @@ private class DrawStretchOverscrollModifier(
                         0,
                         0,
                         canvas.width,
-                        canvas.height + (maxElevation.roundToInt() * 2)
+                        canvas.height + (maxElevation.roundToInt() * 2),
                     )
                 // Not drawing any stretch, so early return - we can draw into the existing canvas
                 else -> {
@@ -292,26 +379,26 @@ private class DrawStretchOverscrollModifier(
                 isRightNegationStretched()
         }
 
-    private fun drawLeftStretch(left: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun drawLeftStretch(left: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
         return drawWithRotation(rotationDegrees = 270f, edgeEffect = left, canvas = canvas)
     }
 
-    private fun drawTopStretch(top: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun drawTopStretch(top: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
         return drawWithRotation(rotationDegrees = 0f, edgeEffect = top, canvas = canvas)
     }
 
-    private fun drawRightStretch(right: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun drawRightStretch(right: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
         return drawWithRotation(rotationDegrees = 90f, edgeEffect = right, canvas = canvas)
     }
 
-    private fun drawBottomStretch(bottom: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun drawBottomStretch(bottom: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
         return drawWithRotation(rotationDegrees = 180f, edgeEffect = bottom, canvas = canvas)
     }
 
     private fun drawWithRotation(
         rotationDegrees: Float,
         edgeEffect: EdgeEffect,
-        canvas: NativeCanvas
+        canvas: android.graphics.Canvas,
     ): Boolean {
         if (rotationDegrees == 0f) {
             val needsInvalidate = edgeEffect.draw(canvas)
@@ -325,12 +412,15 @@ private class DrawStretchOverscrollModifier(
     }
 }
 
-private class DrawGlowOverscrollModifier(
+private class GlowOverscrollNode(
+    pointerInputNode: DelegatableNode,
     private val overscrollEffect: AndroidEdgeEffectOverscrollEffect,
     private val edgeEffectWrapper: EdgeEffectWrapper,
-    private val overscrollConfig: OverscrollConfiguration,
-    inspectorInfo: InspectorInfo.() -> Unit
-) : DrawModifier, InspectorValueInfo(inspectorInfo) {
+    private val glowDrawPadding: PaddingValues,
+) : DelegatingNode(), DrawModifierNode {
+    init {
+        delegate(pointerInputNode)
+    }
 
     @Suppress("KotlinConstantConditions")
     override fun ContentDrawScope.draw() {
@@ -365,50 +455,53 @@ private class DrawGlowOverscrollModifier(
         }
     }
 
-    private fun DrawScope.drawLeftGlow(left: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun DrawScope.drawLeftGlow(left: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
         val offset =
-            Offset(
-                -size.height,
-                overscrollConfig.drawPadding.calculateLeftPadding(layoutDirection).toPx()
-            )
+            Offset(-size.height, glowDrawPadding.calculateLeftPadding(layoutDirection).toPx())
         return drawWithRotationAndOffset(
             rotationDegrees = 270f,
             offset = offset,
             edgeEffect = left,
-            canvas = canvas
+            canvas = canvas,
         )
     }
 
-    private fun DrawScope.drawTopGlow(top: EdgeEffect, canvas: NativeCanvas): Boolean {
-        val offset = Offset(0f, overscrollConfig.drawPadding.calculateTopPadding().toPx())
+    private fun DrawScope.drawTopGlow(top: EdgeEffect, canvas: android.graphics.Canvas): Boolean {
+        val offset = Offset(0f, glowDrawPadding.calculateTopPadding().toPx())
         return drawWithRotationAndOffset(
             rotationDegrees = 0f,
             offset = offset,
             edgeEffect = top,
-            canvas = canvas
+            canvas = canvas,
         )
     }
 
-    private fun DrawScope.drawRightGlow(right: EdgeEffect, canvas: NativeCanvas): Boolean {
+    private fun DrawScope.drawRightGlow(
+        right: EdgeEffect,
+        canvas: android.graphics.Canvas,
+    ): Boolean {
         val width = size.width.roundToInt()
-        val rightPadding = overscrollConfig.drawPadding.calculateRightPadding(layoutDirection)
+        val rightPadding = glowDrawPadding.calculateRightPadding(layoutDirection)
         val offset = Offset(0f, -width.toFloat() + rightPadding.toPx())
         return drawWithRotationAndOffset(
             rotationDegrees = 90f,
             offset = offset,
             edgeEffect = right,
-            canvas = canvas
+            canvas = canvas,
         )
     }
 
-    private fun DrawScope.drawBottomGlow(bottom: EdgeEffect, canvas: NativeCanvas): Boolean {
-        val bottomPadding = overscrollConfig.drawPadding.calculateBottomPadding().toPx()
+    private fun DrawScope.drawBottomGlow(
+        bottom: EdgeEffect,
+        canvas: android.graphics.Canvas,
+    ): Boolean {
+        val bottomPadding = glowDrawPadding.calculateBottomPadding().toPx()
         val offset = Offset(-size.width, -size.height + bottomPadding)
         return drawWithRotationAndOffset(
             rotationDegrees = 180f,
             offset = offset,
             edgeEffect = bottom,
-            canvas = canvas
+            canvas = canvas,
         )
     }
 
@@ -416,7 +509,7 @@ private class DrawGlowOverscrollModifier(
         rotationDegrees: Float,
         offset: Offset,
         edgeEffect: EdgeEffect,
-        canvas: NativeCanvas
+        canvas: android.graphics.Canvas,
     ): Boolean {
         val restore = canvas.save()
         canvas.rotate(rotationDegrees)
@@ -430,12 +523,12 @@ private class DrawGlowOverscrollModifier(
 internal class AndroidEdgeEffectOverscrollEffect(
     context: Context,
     private val density: Density,
-    overscrollConfig: OverscrollConfiguration
+    glowColor: Color,
+    glowDrawPadding: PaddingValues,
 ) : OverscrollEffect {
     private var pointerPosition: Offset = Offset.Unspecified
 
-    private val edgeEffectWrapper =
-        EdgeEffectWrapper(context, glowColor = overscrollConfig.glowColor.toArgb())
+    private val edgeEffectWrapper = EdgeEffectWrapper(context, glowColor = glowColor.toArgb())
 
     internal val redrawSignal = mutableStateOf(Unit, neverEqualPolicy())
 
@@ -446,7 +539,7 @@ internal class AndroidEdgeEffectOverscrollEffect(
     override fun applyToScroll(
         delta: Offset,
         source: NestedScrollSource,
-        performScroll: (Offset) -> Offset
+        performScroll: (Offset) -> Offset,
     ): Offset {
         // Early return
         if (containerSize.isEmpty()) {
@@ -593,7 +686,7 @@ internal class AndroidEdgeEffectOverscrollEffect(
 
     override suspend fun applyToFling(
         velocity: Velocity,
-        performFling: suspend (Velocity) -> Velocity
+        performFling: suspend (Velocity) -> Velocity,
     ) {
         // Early return
         if (containerSize.isEmpty()) {
@@ -690,55 +783,49 @@ internal class AndroidEdgeEffectOverscrollEffect(
         return Offset(x, y)
     }
 
-    override val effectModifier: Modifier =
-        Modifier.pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    pointerId = down.id
-                    pointerPosition = down.position
-                    do {
-                        val pressedChanges = awaitPointerEvent().changes.fastFilter { it.pressed }
-                        // If the same ID we are already tracking is down, use that. Otherwise, use
-                        // the next down, to move the overscroll to the next pointer.
-                        val change =
-                            pressedChanges.fastFirstOrNull { it.id == pointerId }
-                                ?: pressedChanges.firstOrNull()
-                        if (change != null) {
-                            // Update the id if we are now tracking a new down
-                            pointerId = change.id
-                            pointerPosition = change.position
-                        }
-                    } while (pressedChanges.isNotEmpty())
-                    pointerId = PointerId(-1L)
-                    // Explicitly not resetting the pointer position until the next down, so we
-                    // don't change any existing effects
+    private val pointerInputNode = SuspendingPointerInputModifierNode {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            pointerId = down.id
+            pointerPosition = down.position
+            do {
+                val pressedChanges = awaitPointerEvent().changes.fastFilter { it.pressed }
+                // If the same ID we are already tracking is down, use that. Otherwise, use
+                // the next down, to move the overscroll to the next pointer.
+                val change =
+                    pressedChanges.fastFirstOrNull { it.id == pointerId }
+                        ?: pressedChanges.firstOrNull()
+                if (change != null) {
+                    // Update the id if we are now tracking a new down
+                    pointerId = change.id
+                    pointerPosition = change.position
                 }
-            }
-            .then(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    DrawStretchOverscrollModifier(
-                        this@AndroidEdgeEffectOverscrollEffect,
-                        edgeEffectWrapper,
-                        debugInspectorInfo {
-                            name = "overscroll"
-                            value = this@AndroidEdgeEffectOverscrollEffect
-                        }
-                    )
-                } else {
-                    DrawGlowOverscrollModifier(
-                        this@AndroidEdgeEffectOverscrollEffect,
-                        edgeEffectWrapper,
-                        overscrollConfig,
-                        debugInspectorInfo {
-                            name = "overscroll"
-                            value = this@AndroidEdgeEffectOverscrollEffect
-                        }
-                    )
-                }
+            } while (pressedChanges.isNotEmpty())
+            pointerId = PointerId(-1L)
+            // Explicitly not resetting the pointer position until the next down, so we
+            // don't change any existing effects
+        }
+    }
+
+    override val node =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            StretchOverscrollNode(
+                pointerInputNode,
+                this@AndroidEdgeEffectOverscrollEffect,
+                edgeEffectWrapper,
             )
+        } else {
+            GlowOverscrollNode(
+                pointerInputNode,
+                this@AndroidEdgeEffectOverscrollEffect,
+                edgeEffectWrapper,
+                glowDrawPadding,
+            )
+        }
 
     internal fun invalidateOverscroll() {
         if (invalidationEnabled) {
+            // TODO: b/367437728 replace with invalidateDraw()
             redrawSignal.value = Unit
         }
     }
@@ -847,7 +934,7 @@ internal class AndroidEdgeEffectOverscrollEffect(
 /** Handles lazy creation of [EdgeEffect]s used to render overscroll. */
 private class EdgeEffectWrapper(
     private val context: Context,
-    @ColorInt private val glowColor: Int
+    @ColorInt private val glowColor: Int,
 ) {
     private var size: IntSize = IntSize.Zero
     private var topEffect: EdgeEffect? = null
@@ -867,6 +954,18 @@ private class EdgeEffectWrapper(
         bottomEffect?.let(action)
         leftEffect?.let(action)
         rightEffect?.let(action)
+    }
+
+    /** Immediately finishes / resets all effects (and corresponding negations) */
+    fun finishAll() {
+        topEffect?.finish()
+        bottomEffect?.finish()
+        leftEffect?.finish()
+        rightEffect?.finish()
+        topEffectNegation?.finish()
+        bottomEffectNegation?.finish()
+        leftEffectNegation?.finish()
+        rightEffectNegation?.finish()
     }
 
     fun isTopStretched(): Boolean = topEffect.isStretched
@@ -972,3 +1071,7 @@ private fun destretchMultiplier(source: NestedScrollSource): Float =
  * happen at first and then when the stretch disappears, the content starts scrolling quickly.
  */
 private const val FlingDestretchFactor = 4f
+
+/** From [EdgeEffect] defaults */
+private val DefaultGlowColor = Color(0xff666666)
+private val DefaultGlowPaddingValues = PaddingValues()

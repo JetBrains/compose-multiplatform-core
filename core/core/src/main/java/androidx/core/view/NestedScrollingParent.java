@@ -22,8 +22,9 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This interface should be implemented by {@link android.view.ViewGroup ViewGroup} subclasses
@@ -138,7 +139,7 @@ public interface NestedScrollingParent {
      * @param dy Vertical scroll distance in pixels
      * @param consumed Output. The horizontal and vertical scroll distance consumed by this parent
      */
-    void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed);
+    void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull [] consumed);
 
     /**
      * Request a fling from a nested scroll.

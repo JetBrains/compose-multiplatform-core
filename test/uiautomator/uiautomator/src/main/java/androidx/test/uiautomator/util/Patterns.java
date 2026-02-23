@@ -16,8 +16,9 @@
 
 package androidx.test.uiautomator.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.regex.Pattern;
 
@@ -31,8 +32,7 @@ public final class Patterns {
      * Returns a {@link Pattern} that matches when content starts with given string
      * (case-sensitive).
      */
-    @NonNull
-    public static Pattern startsWith(@NonNull String text) {
+    public static @NonNull Pattern startsWith(@NonNull String text) {
         return Pattern.compile(String.format("^%s.*$", Pattern.quote(text)), Pattern.DOTALL);
     }
 
@@ -40,16 +40,14 @@ public final class Patterns {
      * Returns a {@link Pattern} that matches when content ends with given string
      * (case-sensitive).
      */
-    @NonNull
-    public static Pattern endsWith(@NonNull String text) {
+    public static @NonNull Pattern endsWith(@NonNull String text) {
         return Pattern.compile(String.format("^.*%s$", Pattern.quote(text)), Pattern.DOTALL);
     }
 
     /**
      * Returns a {@link Pattern} that matches when content contains given string (case-sensitive).
      */
-    @NonNull
-    public static Pattern contains(@NonNull String text) {
+    public static @NonNull Pattern contains(@NonNull String text) {
         return Pattern.compile(String.format("^.*%s.*$", Pattern.quote(text)), Pattern.DOTALL);
     }
 }

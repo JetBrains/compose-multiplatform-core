@@ -35,10 +35,11 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProcessingUtil;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,15 +82,13 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
     }
 
     @Override
-    @Nullable
-    public Range<Long> getEstimatedCaptureLatencyRange(
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(
             @NonNull String cameraId, @Nullable Size size, int imageFormat) {
         return mLongDurationCapture ? new Range<>(2000L, 3000L) : new Range<>(500L, 800L);
     }
 
     @Override
-    @NonNull
-    public Map<Integer, List<Size>> getSupportedPreviewOutputResolutions(
+    public @NonNull Map<Integer, List<Size>> getSupportedPreviewOutputResolutions(
             @NonNull String cameraId) {
         HashMap<Integer, List<Size>> map = new HashMap<>();
         map.put(ImageFormat.PRIVATE, getOutputSizes(ImageFormat.PRIVATE));
@@ -104,8 +103,7 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
     }
 
     @Override
-    @NonNull
-    public Map<Integer, List<Size>> getSupportedCaptureOutputResolutions(
+    public @NonNull Map<Integer, List<Size>> getSupportedCaptureOutputResolutions(
             @NonNull String cameraId) {
         HashMap<Integer, List<Size>> map = new HashMap<>();
         map.put(ImageFormat.JPEG, getOutputSizes(ImageFormat.JPEG));
@@ -113,8 +111,7 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
     }
 
     @Override
-    @NonNull
-    public Map<Integer, List<Size>> getSupportedPostviewResolutions(
+    public @NonNull Map<Integer, List<Size>> getSupportedPostviewResolutions(
             @NonNull Size captureSize) {
         HashMap<Integer, List<Size>> map = new HashMap<>();
         // Here it intentionally contains JPEG or YUV instead of both so that we can test
@@ -144,22 +141,19 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
     }
 
     @Override
-    @Nullable
-    public List<Size> getSupportedYuvAnalysisResolutions(
+    public @Nullable List<Size> getSupportedYuvAnalysisResolutions(
             @NonNull String cameraId) {
         return Collections.emptyList();
     }
 
     private LongCaptureSessionProcessor mNightSessionProcessor = new LongCaptureSessionProcessor();
     @Override
-    @NonNull
-    public SessionProcessorImpl createSessionProcessor() {
+    public @NonNull SessionProcessorImpl createSessionProcessor() {
         return mNightSessionProcessor;
     }
 
     @Override
-    @NonNull
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         List<CaptureRequest.Key> keys = new ArrayList<>(Arrays.asList(
                 CaptureRequest.CONTROL_AF_MODE,
                 CaptureRequest.CONTROL_AF_TRIGGER,
@@ -175,8 +169,7 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
     }
 
     @Override
-    @NonNull
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         if (!mInvokeOnCaptureComplete) {
             return Collections.emptyList();
         }
@@ -222,9 +215,8 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
         private RequestProcessorImpl mRequestProcessor;
         private AtomicInteger mNextCaptureSequenceId = new AtomicInteger(1);
 
-        @NonNull
         @Override
-        public Camera2SessionConfigImpl initSession(@NonNull String cameraId,
+        public @NonNull Camera2SessionConfigImpl initSession(@NonNull String cameraId,
                 @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
                 @NonNull Context context, @NonNull OutputSurfaceConfigurationImpl surfaceConfigs) {
             return initSessionInternal(
@@ -233,9 +225,8 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
                     surfaceConfigs.getPostviewOutputSurface());
         }
 
-        @NonNull
         @Override
-        public Camera2SessionConfigImpl initSession(@NonNull String cameraId,
+        public @NonNull Camera2SessionConfigImpl initSession(@NonNull String cameraId,
                 @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
                 @NonNull Context context, @NonNull OutputSurfaceImpl previewSurfaceConfig,
                 @NonNull OutputSurfaceImpl imageCaptureSurfaceConfig,
@@ -340,32 +331,32 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
 
             RequestProcessorImpl.Callback callback = new RequestProcessorImpl.Callback() {
                 @Override
-                public void onCaptureStarted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureStarted(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber,
                         long timestamp) {
                     captureCallback.onCaptureStarted(seqId, timestamp);
                 }
 
                 @Override
-                public void onCaptureProgressed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureProgressed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureResult partialResult) {
 
                 }
 
                 @Override
-                public void onCaptureCompleted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureCompleted(RequestProcessorImpl.@NonNull Request request,
                         @NonNull TotalCaptureResult totalCaptureResult) {
                     captureCallback.onCaptureProcessStarted(seqId);
                 }
 
                 @Override
-                public void onCaptureFailed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureFailed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureFailure captureFailure) {
                     captureCallback.onCaptureFailed(seqId);
                 }
 
                 @Override
-                public void onCaptureBufferLost(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureBufferLost(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber, int outputStreamId) {
                     captureCallback.onCaptureFailed(seqId);
                 }
@@ -434,32 +425,32 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
 
             RequestProcessorImpl.Callback callback = new RequestProcessorImpl.Callback() {
                 @Override
-                public void onCaptureStarted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureStarted(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber,
                         long timestamp) {
                     captureCallback.onCaptureStarted(seqId, timestamp);
                 }
 
                 @Override
-                public void onCaptureProgressed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureProgressed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureResult partialResult) {
 
                 }
 
                 @Override
-                public void onCaptureCompleted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureCompleted(RequestProcessorImpl.@NonNull Request request,
                         @NonNull TotalCaptureResult totalCaptureResult) {
                     captureCallback.onCaptureProcessStarted(seqId);
                 }
 
                 @Override
-                public void onCaptureFailed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureFailed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureFailure captureFailure) {
                     captureCallback.onCaptureFailed(seqId);
                 }
 
                 @Override
-                public void onCaptureBufferLost(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureBufferLost(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber, int outputStreamId) {
                     captureCallback.onCaptureFailed(seqId);
                 }
@@ -548,7 +539,7 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
                 private boolean mOnCaptureStartedInvokded = false;
 
                 @Override
-                public void onCaptureStarted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureStarted(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber, long timestamp) {
                     if (!mOnCaptureStartedInvokded) {
                         mOnCaptureStartedInvokded = true;
@@ -557,13 +548,13 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
                 }
 
                 @Override
-                public void onCaptureProgressed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureProgressed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureResult partialResult) {
 
                 }
 
                 @Override
-                public void onCaptureCompleted(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureCompleted(RequestProcessorImpl.@NonNull Request request,
                         @NonNull TotalCaptureResult totalCaptureResult) {
                     if (mInvokeOnCaptureComplete) {
                         captureCallback.onCaptureCompleted(
@@ -575,13 +566,13 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
                 }
 
                 @Override
-                public void onCaptureFailed(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureFailed(RequestProcessorImpl.@NonNull Request request,
                         @NonNull CaptureFailure captureFailure) {
                     captureCallback.onCaptureFailed(seqId);
                 }
 
                 @Override
-                public void onCaptureBufferLost(@NonNull RequestProcessorImpl.Request request,
+                public void onCaptureBufferLost(RequestProcessorImpl.@NonNull Request request,
                         long frameNumber, int outputStreamId) {
                     captureCallback.onCaptureFailed(seqId);
                 }
@@ -606,11 +597,16 @@ public class ConfigurableAdvancedExtenderImpl implements AdvancedExtenderImpl {
 
         }
 
-        @Nullable
         @Override
-        public Pair<Long, Long> getRealtimeCaptureLatency() {
+        public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
             return mLongDurationCapture ? new Pair<>(500L, 2000L) : new Pair<>(500L, 0L);
         }
+    }
+
+    @Override
+    public @NonNull List<Pair<CameraCharacteristics.Key, Object>>
+    getAvailableCharacteristicsKeyValues() {
+        return Collections.emptyList();
     }
 }
 

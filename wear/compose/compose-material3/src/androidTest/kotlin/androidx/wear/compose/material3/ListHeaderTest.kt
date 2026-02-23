@@ -23,7 +23,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -31,6 +31,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
 import androidx.wear.compose.material3.tokens.ListSubHeaderTokens
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +40,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ListHeaderTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -62,7 +63,7 @@ class ListHeaderTest {
     @Test
     fun listSubheader_has_semantic_heading_property() {
         rule.setContentWithTheme {
-            ListSubheader(modifier = Modifier.testTag(TEST_TAG)) { Text("Subheader") }
+            ListSubHeader(modifier = Modifier.testTag(TEST_TAG)) { Text("Subheader") }
         }
 
         rule.assertNodeIsHeading(TEST_TAG)
@@ -103,7 +104,7 @@ class ListHeaderTest {
 
         rule
             .setContentWithThemeForSizeAssertions {
-                ListSubheader(modifier = Modifier.testTag(TEST_TAG)) {
+                ListSubHeader(modifier = Modifier.testTag(TEST_TAG)) {
                     Text(
                         "Header with multiple lines of text to exceed" +
                             " the minimum height, should adjust"
@@ -119,8 +120,8 @@ class ListHeaderTest {
         var expectedTextStyle = TextStyle.Default
 
         rule.setContentWithTheme {
-            expectedTextStyle = MaterialTheme.typography.titleMedium
-            ListSubheader { actualTextStyle = LocalTextStyle.current }
+            expectedTextStyle = MaterialTheme.typography.titleSmall
+            ListSubHeader { actualTextStyle = LocalTextStyle.current }
         }
 
         Assert.assertEquals(expectedTextStyle, actualTextStyle)

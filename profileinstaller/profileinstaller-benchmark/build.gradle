@@ -15,18 +15,16 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
     id("androidx.benchmark")
 }
 
@@ -40,17 +38,16 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation project(':internal-testutils-runtime')
-    androidTestImplementation(libs.kotlinStdlib)
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 androidx {
     name = "Profileinstaller Benchmarks"
-    publish = Publish.NONE
+    type = SoftwareType.BENCHMARK
     inceptionYear = "2021"
     description = "Profileinstaller Benchmarks"
 }
 
 android {
-    namespace "androidx.profileinstaller.benchmark"
+    namespace = "androidx.profileinstaller.benchmark"
 }

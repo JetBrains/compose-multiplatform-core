@@ -22,7 +22,7 @@ import com.android.tools.lint.detector.api.CURRENT_API
 
 /** [IssueRegistry] containing Compose ui-text specific lint issues. */
 class UiTextIssueRegistry : IssueRegistry() {
-    override val api = 14
+    override val api = 16
     override val minApi = CURRENT_API
     override val issues
         get() = listOf(LocaleInvalidLanguageTagDetector.InvalidLanguageTagDelimiter)
@@ -31,6 +31,6 @@ class UiTextIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.ui.text",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=779818"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=779818",
         )
 }

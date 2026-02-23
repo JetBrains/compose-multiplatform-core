@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 private enum class ParentOverride {
     None,
     Override,
-    NoOverride
+    NoOverride,
 }
 
 @Preview
@@ -57,9 +57,11 @@ fun TextPointerIconDemo() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            """The texts below demonstrate how different pointer hover icons work on
-                | different texts and text fields with different permutations of
-                | overrideDescendants."""
+            """
+            |The texts below demonstrate how different pointer hover icons work on
+            | different texts and text fields with different permutations of
+            | overrideDescendants.
+            """
                 .trimMargin()
                 .replace("\n", "")
         )
@@ -80,7 +82,7 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
             else ->
                 Modifier.pointerHoverIcon(
                     icon = PointerIcon.Hand,
-                    overrideDescendants = parentOverride == ParentOverride.Override
+                    overrideDescendants = parentOverride == ParentOverride.Override,
                 )
         }
 
@@ -89,7 +91,7 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
             Modifier.then(rectanglePointerIconModifier)
                 .border(1.dp, Color.LightGray)
                 .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         val annotatedString = buildAnnotatedString {
             when (parentOverride) {

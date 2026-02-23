@@ -16,12 +16,13 @@
 
 package androidx.camera.video.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk;
 import androidx.camera.video.Quality;
 import androidx.camera.video.internal.workaround.QualityValidatedEncoderProfilesProvider;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The quirk interface which denotes the quality does not work for video recording on the device.

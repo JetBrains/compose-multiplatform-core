@@ -27,7 +27,7 @@ import java.io.IOException
  * Deletes one or more [Record] by their identifiers. Deletion of multiple [Record] is executed in
  * single transaction - if one fails, none is deleted.
  *
- * @param T Which type of [Record] to delete, such as `Steps`.
+ * @param T Which type of [Record] to delete, such as `StepsRecord`.
  * @param recordIdsList List of [androidx.health.connect.client.records.metadata.Metadata.id] of
  *   [Record] to delete
  * @param clientRecordIdsList List of client record IDs of [Record] to delete
@@ -58,7 +58,7 @@ suspend inline fun <reified T : Record> HealthConnectClient.deleteRecords(
  * [Record] belonging to the calling application). Deletion of multiple [Record] is executed in a
  * transaction - if one fails, none is deleted.
  *
- * @param T Which type of [Record] to delete, such as `Steps`.
+ * @param T Which type of [Record] to delete, such as `StepsRecord`.
  * @param timeRangeFilter The [TimeRangeFilter] to delete from
  * @throws RemoteException For any IPC transportation failures.
  * @throws SecurityException For requests with unpermitted access.
@@ -70,18 +70,15 @@ suspend inline fun <reified T : Record> HealthConnectClient.deleteRecords(
  * Example usage to delete written steps data in a time range:
  */
 suspend inline fun <reified T : Record> HealthConnectClient.deleteRecords(
-    timeRangeFilter: TimeRangeFilter,
+    timeRangeFilter: TimeRangeFilter
 ) {
-    deleteRecords(
-        recordType = T::class,
-        timeRangeFilter = timeRangeFilter,
-    )
+    deleteRecords(recordType = T::class, timeRangeFilter = timeRangeFilter)
 }
 
 /**
  * Reads one [Record] point of type [T] and with the specified [recordId].
  *
- * @param T Which type of [Record] to read, such as `Steps`.
+ * @param T Which type of [Record] to read, such as `StepsRecord`.
  * @param recordId [androidx.health.connect.client.records.metadata.Metadata.id] of [Record] to read
  * @return The [Record] data point.
  * @throws RemoteException For any IPC transportation failures. Update with invalid identifiers will
@@ -93,8 +90,4 @@ suspend inline fun <reified T : Record> HealthConnectClient.deleteRecords(
  */
 suspend inline fun <reified T : Record> HealthConnectClient.readRecord(
     recordId: String
-): ReadRecordResponse<T> =
-    readRecord(
-        recordType = T::class,
-        recordId = recordId,
-    )
+): ReadRecordResponse<T> = readRecord(recordType = T::class, recordId = recordId)

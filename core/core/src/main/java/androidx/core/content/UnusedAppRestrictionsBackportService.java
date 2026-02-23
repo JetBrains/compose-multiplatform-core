@@ -22,10 +22,11 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.unusedapprestrictions.IUnusedAppRestrictionsBackportCallback;
 import androidx.core.app.unusedapprestrictions.IUnusedAppRestrictionsBackportService;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wrapper class for {@link IUnusedAppRestrictionsBackportService}.
@@ -62,11 +63,15 @@ public abstract class UnusedAppRestrictionsBackportService extends Service {
             UnusedAppRestrictionsBackportService.this.isPermissionRevocationEnabled(
                     backportCallback);
         }
+
+        @Override
+        public int getInterfaceVersion() {
+            return super.VERSION;
+        }
     };
 
-    @Nullable
     @Override
-    public IBinder onBind(@Nullable Intent intent) {
+    public @Nullable IBinder onBind(@Nullable Intent intent) {
         return mBinder;
     }
 

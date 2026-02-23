@@ -31,12 +31,27 @@ public class UnlimitedLimitConfig implements LimitConfig {
     }
 
     @Override
-    public int getMaxDocumentCount() {
+    public int getPerPackageDocumentCountLimit() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public int getDocumentCountLimitStartThreshold() {
         return Integer.MAX_VALUE;
     }
 
     @Override
     public int getMaxSuggestionCount() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public int getMaxOpenBlobCount() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public int getMaxByteLimitForBatchPut() {
         return Integer.MAX_VALUE;
     }
 }

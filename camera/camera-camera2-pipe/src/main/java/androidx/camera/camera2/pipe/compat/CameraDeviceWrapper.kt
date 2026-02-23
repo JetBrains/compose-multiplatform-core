@@ -16,9 +16,7 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.hardware.camera2.CameraCaptureSession.StateCallback
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraExtensionSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.hardware.camera2.params.InputConfiguration
@@ -29,6 +27,7 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.UnsafeWrapper
@@ -54,35 +53,32 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     fun createCaptureRequest(template: RequestTemplate): CaptureRequest.Builder?
 
     /** @see CameraDevice.createReprocessCaptureRequest */
-    @RequiresApi(23)
     fun createReprocessCaptureRequest(inputResult: TotalCaptureResult): CaptureRequest.Builder?
 
     /** @see CameraDevice.createCaptureSession */
     fun createCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createReprocessableCaptureSession */
-    @RequiresApi(23)
     fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createConstrainedHighSpeedCaptureSession */
-    @RequiresApi(23)
     fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createCaptureSessionByOutputConfigurations */
     @RequiresApi(24)
     fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createReprocessableCaptureSessionByConfigurations */
@@ -90,7 +86,7 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createCaptureSession */
@@ -98,6 +94,9 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
 
     /** @see CameraDevice.createExtensionSession */
     @RequiresApi(31) fun createExtensionSession(config: ExtensionSessionConfigData): Boolean
+
+    /** Invoked when the [CameraDevice] is being closed */
+    fun onDeviceClosing()
 
     /** Invoked when the [CameraDevice] has been closed */
     fun onDeviceClosed()
@@ -109,7 +108,15 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
 internal fun CameraDevice?.closeWithTrace() {
     this?.let {
         Log.info { "Closing Camera ${it.id}" }
-        Debug.instrument("CXCP#CameraDevice-${it.id}#close") { it.close() }
+        Debug.instrument("CXCP#CameraDevice-${it.id}#close") {
+            try {
+                it.close()
+            } catch (e: NullPointerException) {
+                // Certain vendors add buggy modifications to CameraDevice.close() such that it can
+                // throw NPEs during the call. See b/443330486.
+                Log.warn(e) { "NPE encountered during CameraDevice.close()" }
+            }
+        }
     }
 }
 
@@ -118,18 +125,19 @@ internal class AndroidCameraDevice(
     private val cameraDevice: CameraDevice,
     override val cameraId: CameraId,
     private val cameraErrorListener: CameraErrorListener,
-    private val interopSessionStateCallback: StateCallback? = null,
-    private val interopExtensionSessionStateCallback: CameraExtensionSession.StateCallback? = null,
-    private val threads: Threads
+    private val interopCaptureSessionListener: CameraInterop.CaptureSessionListener? = null,
+    private val threads: Threads,
 ) : CameraDeviceWrapper {
-    private val _lastStateCallback = atomic<OnSessionFinalized?>(null)
+    private val closed = atomic(false)
+    private val _lastStateCallback = atomic<SessionStateCallback?>(null)
 
     override fun createCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean {
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
@@ -142,10 +150,10 @@ internal class AndroidCameraDevice(
                         stateCallback,
                         previousStateCallback,
                         cameraErrorListener,
-                        interopSessionStateCallback,
-                        threads.camera2Handler
+                        interopCaptureSessionListener,
+                        threads.camera2Handler,
                     ),
-                    threads.camera2Handler
+                    threads.camera2Handler,
                 )
             }
         if (result == null) {
@@ -155,21 +163,23 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
 
     @RequiresApi(31)
     override fun createExtensionSession(config: ExtensionSessionConfigData): Boolean {
-        checkNotNull(config.extensionStateCallback) {
+        val stateCallback = config.extensionStateCallback
+        checkNotNull(stateCallback) {
             "extensionStateCallback must be set to create Extension session"
         }
         checkNotNull(config.extensionMode) {
             "extensionMode must be set to create Extension session"
         }
-        val stateCallback = config.extensionStateCallback
-        val previousStateCallback = _lastStateCallback.getAndSet(stateCallback)
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createExtensionSession") {
                 val sessionConfig =
@@ -182,8 +192,8 @@ internal class AndroidCameraDevice(
                             stateCallback,
                             previousStateCallback,
                             cameraErrorListener,
-                            interopExtensionSessionStateCallback,
-                            config.executor
+                            interopCaptureSessionListener,
+                            config.executor,
                         ),
                     )
 
@@ -206,25 +216,25 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create extension session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
 
-    @RequiresApi(23)
+    @Suppress("deprecation")
     override fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean {
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createReprocessableCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
                 // configurations when running on older versions of the OS.
-                Api23Compat.createReprocessableCaptureSession(
-                    cameraDevice,
+                cameraDevice.createReprocessableCaptureSession(
                     input,
                     outputs,
                     AndroidCaptureSessionStateCallback(
@@ -232,10 +242,10 @@ internal class AndroidCameraDevice(
                         stateCallback,
                         previousStateCallback,
                         cameraErrorListener,
-                        interopSessionStateCallback,
-                        threads.camera2Handler
+                        interopCaptureSessionListener,
+                        threads.camera2Handler,
                     ),
-                    threads.camera2Handler
+                    threads.camera2Handler,
                 )
             }
         if (result == null) {
@@ -245,35 +255,35 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create reprocess session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
 
-    @RequiresApi(23)
+    @Suppress("deprecation")
     override fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean {
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createConstrainedHighSpeedCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
                 // configurations
                 // when running on older versions of the OS.
-                Api23Compat.createConstrainedHighSpeedCaptureSession(
-                    cameraDevice,
+                cameraDevice.createConstrainedHighSpeedCaptureSession(
                     outputs,
                     AndroidCaptureSessionStateCallback(
                         this,
                         stateCallback,
                         previousStateCallback,
                         cameraErrorListener,
-                        interopSessionStateCallback,
-                        threads.camera2Handler
+                        interopCaptureSessionListener,
+                        threads.camera2Handler,
                     ),
-                    threads.camera2Handler
+                    threads.camera2Handler,
                 )
             }
         if (result == null) {
@@ -283,7 +293,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -291,10 +301,11 @@ internal class AndroidCameraDevice(
     @RequiresApi(24)
     override fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean {
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSessionByOutputConfigurations") {
                 // This function was deprecated in Android Q, but is required for some
@@ -308,10 +319,10 @@ internal class AndroidCameraDevice(
                         stateCallback,
                         previousStateCallback,
                         cameraErrorListener,
-                        interopSessionStateCallback,
-                        threads.camera2Handler
+                        interopCaptureSessionListener,
+                        threads.camera2Handler,
                     ),
-                    threads.camera2Handler
+                    threads.camera2Handler,
                 )
             }
         if (result == null) {
@@ -321,7 +332,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -330,31 +341,28 @@ internal class AndroidCameraDevice(
     override fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean {
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createReprocessableCaptureSessionByConfigurations") {
                 // This function was deprecated in Android Q, but is required for some
                 // configurations when running on older versions of the OS.
                 Api24Compat.createReprocessableCaptureSessionByConfigurations(
                     cameraDevice,
-                    Api23Compat.newInputConfiguration(
-                        inputConfig.width,
-                        inputConfig.height,
-                        inputConfig.format
-                    ),
+                    InputConfiguration(inputConfig.width, inputConfig.height, inputConfig.format),
                     outputs.map { it.unwrapAs(OutputConfiguration::class) },
                     AndroidCaptureSessionStateCallback(
                         this,
                         stateCallback,
                         previousStateCallback,
                         cameraErrorListener,
-                        interopSessionStateCallback,
-                        threads.camera2Handler
+                        interopCaptureSessionListener,
+                        threads.camera2Handler,
                     ),
-                    threads.camera2Handler
+                    threads.camera2Handler,
                 )
             }
         if (result == null) {
@@ -364,16 +372,16 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create reprocess session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
 
     @RequiresApi(28)
     override fun createCaptureSession(config: SessionConfigData): Boolean {
-        val stateCallback = config.stateCallback
-        val previousStateCallback = _lastStateCallback.value
-        check(_lastStateCallback.compareAndSet(previousStateCallback, stateCallback))
+        val (success, previousStateCallback) = checkAndSetStateCallback(config.stateCallback)
+        if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSession") {
                 val sessionConfig =
@@ -383,12 +391,12 @@ internal class AndroidCameraDevice(
                         config.executor,
                         AndroidCaptureSessionStateCallback(
                             this,
-                            stateCallback,
+                            config.stateCallback,
                             previousStateCallback,
                             cameraErrorListener,
-                            interopSessionStateCallback,
-                            threads.camera2Handler
-                        )
+                            interopCaptureSessionListener,
+                            threads.camera2Handler,
+                        ),
                     )
 
                 if (config.inputConfiguration != null) {
@@ -397,18 +405,36 @@ internal class AndroidCameraDevice(
                             sessionConfig,
                             Api31Compat.newInputConfiguration(
                                 config.inputConfiguration,
-                                cameraId.value
-                            )
+                                cameraId.value,
+                            ),
                         )
                     } else {
                         Api28Compat.setInputConfiguration(
                             sessionConfig,
-                            Api23Compat.newInputConfiguration(
+                            InputConfiguration(
                                 config.inputConfiguration.single().width,
                                 config.inputConfiguration.single().height,
-                                config.inputConfiguration.single().format
-                            )
+                                config.inputConfiguration.single().format,
+                            ),
                         )
+                    }
+                }
+
+                // set color space if using supported API levels and color space is provided
+                val sessionColorSpace = config.sessionColorSpace
+                if (Build.VERSION.SDK_INT >= 34 && sessionColorSpace != null) {
+                    val colorSpaceNamed = sessionColorSpace.toColorSpaceNamed()
+                    if (colorSpaceNamed != null) {
+                        Api34Compat.setColorSpace(sessionConfig, colorSpaceNamed)
+                    } else {
+                        // case that sessionColorSpace is UNKNOWN
+                        Log.warn {
+                            "Provided session color space ${sessionColorSpace.colorSpaceName} is not supported"
+                        }
+                    }
+                } else if (sessionColorSpace != null) {
+                    Log.warn {
+                        "Failed to set session color space to ${sessionColorSpace.colorSpaceName}, at least API level 34 is required"
                     }
                 }
 
@@ -442,7 +468,7 @@ internal class AndroidCameraDevice(
             Log.warn {
                 "Failed to create capture session from $cameraDevice. Finalizing previous session"
             }
-            previousStateCallback?.onSessionFinalized()
+            previousStateCallback?.onSessionFinalizedWithTrace()
         }
         return result != null
     }
@@ -452,12 +478,11 @@ internal class AndroidCameraDevice(
             cameraDevice.createCaptureRequest(template.value)
         }
 
-    @RequiresApi(23)
     override fun createReprocessCaptureRequest(
         inputResult: TotalCaptureResult
     ): CaptureRequest.Builder? =
         instrumentAndCatch("createReprocessCaptureRequest") {
-            Api23Compat.createReprocessCaptureRequest(cameraDevice, inputResult)
+            cameraDevice.createReprocessCaptureRequest(inputResult)
         }
 
     @RequiresApi(30)
@@ -475,9 +500,17 @@ internal class AndroidCameraDevice(
         }
     }
 
+    override fun onDeviceClosing() {
+        if (closed.compareAndSet(expect = false, update = true)) {
+            val lastStateCallback = _lastStateCallback.value
+            lastStateCallback?.onSessionDisconnectedWithTrace()
+        }
+    }
+
     override fun onDeviceClosed() {
+        check(closed.value)
         val lastStateCallback = _lastStateCallback.getAndSet(null)
-        lastStateCallback?.onSessionFinalized()
+        lastStateCallback?.onSessionFinalizedWithTrace()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -495,15 +528,32 @@ internal class AndroidCameraDevice(
         Debug.instrument("CXCP#$fnName-${cameraId.value}") {
             catchAndReportCameraExceptions(cameraId, cameraErrorListener, block)
         }
+
+    private fun checkAndSetStateCallback(
+        stateCallback: SessionStateCallback
+    ): Pair<Boolean, SessionStateCallback?> {
+        if (closed.value) {
+            stateCallback.onSessionFinalizedWithTrace()
+            return Pair(false, null)
+        }
+        return Pair(true, _lastStateCallback.getAndSet(stateCallback))
+    }
+
+    private fun SessionStateCallback.onSessionDisconnectedWithTrace() {
+        Debug.trace("${this@AndroidCameraDevice}#onSessionDisconnected") { onSessionDisconnected() }
+    }
+
+    private fun SessionStateCallback.onSessionFinalizedWithTrace() {
+        Debug.trace("${this@AndroidCameraDevice}#onSessionFinalized") { onSessionFinalized() }
+    }
 }
 
 /**
  * VirtualAndroidCameraDevice creates a simple wrapper around a [AndroidCameraDevice], augmenting it
  * by enabling it to reject further capture session/request calls when it is "disconnected'.
  */
-internal class VirtualAndroidCameraDevice(
-    internal val androidCameraDevice: AndroidCameraDevice,
-) : CameraDeviceWrapper {
+internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: AndroidCameraDevice) :
+    CameraDeviceWrapper {
     private val lock = Any()
 
     @GuardedBy("lock") private var disconnected = false
@@ -513,7 +563,7 @@ internal class VirtualAndroidCameraDevice(
 
     override fun createCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ) =
         synchronized(lock) {
             if (disconnected) {
@@ -525,11 +575,10 @@ internal class VirtualAndroidCameraDevice(
             }
         }
 
-    @RequiresApi(23)
     override fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ) =
         synchronized(lock) {
             if (disconnected) {
@@ -541,10 +590,9 @@ internal class VirtualAndroidCameraDevice(
             }
         }
 
-    @RequiresApi(23)
     override fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ) =
         synchronized(lock) {
             if (disconnected) {
@@ -561,7 +609,7 @@ internal class VirtualAndroidCameraDevice(
     @RequiresApi(24)
     override fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ) =
         synchronized(lock) {
             if (disconnected) {
@@ -573,7 +621,7 @@ internal class VirtualAndroidCameraDevice(
             } else {
                 androidCameraDevice.createCaptureSessionByOutputConfigurations(
                     outputConfigurations,
-                    stateCallback
+                    stateCallback,
                 )
             }
         }
@@ -582,7 +630,7 @@ internal class VirtualAndroidCameraDevice(
     override fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
-        stateCallback: CameraCaptureSessionWrapper.StateCallback
+        stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ) =
         synchronized(lock) {
             if (disconnected) {
@@ -596,7 +644,7 @@ internal class VirtualAndroidCameraDevice(
                 androidCameraDevice.createReprocessableCaptureSessionByConfigurations(
                     inputConfig,
                     outputs,
-                    stateCallback
+                    stateCallback,
                 )
             }
         }
@@ -635,7 +683,6 @@ internal class VirtualAndroidCameraDevice(
             }
         }
 
-    @RequiresApi(23)
     override fun createReprocessCaptureRequest(inputResult: TotalCaptureResult) =
         synchronized(lock) {
             if (disconnected) {
@@ -645,6 +692,8 @@ internal class VirtualAndroidCameraDevice(
                 androidCameraDevice.createReprocessCaptureRequest(inputResult)
             }
         }
+
+    override fun onDeviceClosing() = androidCameraDevice.onDeviceClosing()
 
     override fun onDeviceClosed() = androidCameraDevice.onDeviceClosed()
 

@@ -20,7 +20,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import androidx.annotation.Nullable;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
@@ -32,6 +31,7 @@ import androidx.test.filters.SmallTest;
 import androidx.work.impl.utils.taskexecutor.InstantWorkTaskExecutor;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

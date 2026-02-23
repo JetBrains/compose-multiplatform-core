@@ -16,11 +16,9 @@
 
 package androidx.core.os;
 
-import android.os.Build;
 import android.os.Environment;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 
@@ -55,26 +53,10 @@ public final class EnvironmentCompat {
      *         {@link Environment#MEDIA_UNMOUNTABLE}.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static String getStorageState(@NonNull File path) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getExternalStorageState(path);
-        } else {
-            return Environment.getStorageState(path);
-        }
+    public static @NonNull String getStorageState(@NonNull File path) {
+        return Environment.getExternalStorageState(path);
     }
 
     private EnvironmentCompat() {
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static String getExternalStorageState(File path) {
-            return Environment.getExternalStorageState(path);
-        }
     }
 }

@@ -71,7 +71,6 @@ GOOGLE_JAVA_FORMAT = (
 # Miscellaneous constants
 SHA_FILE_NAME = 'synced_jetpack_sha.txt'
 
-
 class ExportToFramework:
     def __init__(self, jetpack_appsearch_root, framework_appsearch_root):
         self._jetpack_appsearch_root = jetpack_appsearch_root
@@ -84,6 +83,17 @@ class ExportToFramework:
                 abs_path = os.path.join(walk_path, walk_filename)
                 print('Prune: remove "%s"' % abs_path)
                 os.remove(abs_path)
+
+    def _TransformExportedToCts(self, contents):
+        """
+        Blanket transforms for files that are being exported to the CTS test repo (platform/cts).
+        File specific transforms will still be applied in _TransformAndCopyFileToPath
+        """
+        contents = (contents
+            .replace('com.google.android.icing.proto.',
+                     'com.android.server.appsearch.icing.proto.')
+        )
+        return contents
 
     def _TransformAndCopyFile(
             self, source_path, default_dest_path, transform_func=None, ignore_skips=False):
@@ -104,16 +114,17 @@ class ExportToFramework:
         copy_to_path = re.search(r'@exportToFramework:copyToPath\(([^)]+)\)', contents)
         if copy_to_path:
             dest_path = os.path.join(self._framework_appsearch_root, copy_to_path.group(1))
+            # Check if the file is being exported to the CTS test repo.
+            if "cts/tests/appsearch/" in dest_path:
+                contents = self._TransformExportedToCts(contents)
         else:
             dest_path = default_dest_path
 
-        self._TransformAndCopyFileToPath(source_path, dest_path, transform_func)
+        self._TransformAndCopyFileToPath(source_path, dest_path, contents, transform_func)
 
-    def _TransformAndCopyFileToPath(self, source_path, dest_path, transform_func=None):
+    def _TransformAndCopyFileToPath(self, source_path, dest_path, contents, transform_func=None):
         """Transforms the file located at 'source_path' and writes it into 'dest_path'."""
         print('Copy: "%s" -> "%s"' % (source_path, dest_path), file=sys.stderr)
-        with open(source_path, 'r') as fh:
-            contents = fh.read()
         if transform_func:
             contents = transform_func(contents)
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
@@ -179,9 +190,6 @@ class ExportToFramework:
             .replace(
                     'androidx.core.util.ObjectsCompat',
                     'java.util.Objects')
-            .replace(
-                'import androidx.core.os.ParcelCompat',
-                'import android.os.Parcel')
             # Preconditions.checkNotNull is replaced with Objects.requireNonNull. We add both
             # imports and let google-java-format sort out which one is unused.
             .replace(
@@ -195,13 +203,12 @@ class ExportToFramework:
             .replace('<!--@exportToFramework:hide-->', '@hide')
             .replace('@exportToFramework:hide', '@hide')
             .replace('// @exportToFramework:skipFile()', '')
+            .replace('@ExperimentalAppSearchApi', '')
+            .replace('@OptIn(markerClass = ExperimentalAppSearchApi.class)', '')
         )
         contents = re.sub(r'\/\/ @exportToFramework:copyToPath\([^)]+\)', '', contents)
         contents = re.sub(r'@RequiresFeature\([^)]*\)', '', contents, flags=re.DOTALL)
-
-        contents = re.sub(
-                r'ParcelCompat\.readParcelable\(.*?([a-zA-Z.()]+),.*?([a-zA-Z.()]+),.*?([a-zA-Z.()]+)\)',
-                r'\1.readParcelable(\2)', contents, flags=re.DOTALL)
+        contents = re.sub(r'@RequiresOptIn\([^)]+\)', '', contents)
 
         # Jetpack methods have the Async suffix, but framework doesn't. Strip the Async suffix
         # to allow the same documentation to compile for both.
@@ -213,14 +220,17 @@ class ExportToFramework:
     def _TransformTestCode(self, contents):
         contents = (contents
             .replace(
-                    'androidx.appsearch.flags.CheckFlagsRule',
+                    'androidx.appsearch.testutil.flags.CheckFlagsRule',
                     'android.platform.test.flag.junit.CheckFlagsRule')
             .replace(
-                    'androidx.appsearch.flags.DeviceFlagsValueProvider',
+                    'androidx.appsearch.testutil.flags.DeviceFlagsValueProvider',
                     'android.platform.test.flag.junit.DeviceFlagsValueProvider')
             .replace(
-                    'androidx.appsearch.flags.RequiresFlagsEnabled',
+                    'androidx.appsearch.testutil.flags.RequiresFlagsEnabled',
                     'android.platform.test.annotations.RequiresFlagsEnabled')
+            .replace(
+                    'androidx.appsearch.testutil.flags.RequiresFlagsDisabled',
+                    'android.platform.test.annotations.RequiresFlagsDisabled')
             .replace('androidx.appsearch.testutil.', 'android.app.appsearch.testutil.')
             .replace(
                     'package androidx.appsearch.testutil;',
@@ -232,7 +242,7 @@ class ExportToFramework:
         )
         for shim in [
                 'AppSearchSession', 'GlobalSearchSession', 'EnterpriseGlobalSearchSession',
-                'SearchResults']:
+                'ReadOnlyGlobalSearchSession', 'SearchResults']:
             contents = re.sub(r"([^a-zA-Z])(%s)([^a-zA-Z0-9])" % shim, r'\1\2Shim\3', contents)
         return self._TransformCommonCode(contents)
 
@@ -311,7 +321,8 @@ class ExportToFramework:
                 test_util_source_dir, test_util_dest_dir, transform_func=self._TransformTestCode)
         for iface_file in (
                 'AppSearchSession.java', 'GlobalSearchSession.java',
-                'EnterpriseGlobalSearchSession.java', 'SearchResults.java'):
+                'EnterpriseGlobalSearchSession.java', 'ReadOnlyGlobalSearchSession.java',
+                'SearchResults.java'):
             dest_file_name = os.path.splitext(iface_file)[0] + 'Shim.java'
             self._TransformAndCopyFile(
                     os.path.join(api_source_dir, 'app/' + iface_file),
@@ -398,10 +409,12 @@ class ExportToFramework:
 
     def FormatCommitMessage(self, old_sha, new_sha):
         print('\nCommand to diff old version to new version:')
-        print('  git log --pretty=format:"* %h %s" {}..{} -- appsearch/'.format(old_sha, new_sha))
+        print('  git log --no-merges --pretty=format:"* %h %s" {}..{} -- appsearch/'.format(
+                old_sha, new_sha))
         pretty_log = subprocess.check_output([
             'git',
             'log',
+            '--no-merges',
             '--pretty=format:* %h %s',
             '{}..{}'.format(old_sha, new_sha),
             '--',
@@ -419,8 +432,9 @@ class ExportToFramework:
         print()
         for line in bug_output.splitlines():
             print(line.strip())
-        print('Test: Presubmit\n')
-        print('--------------------------------------------------\n')
+        print('Test: Presubmit')
+        print('UpstreamCL: EXEMPT sync')
+        print('\n--------------------------------------------------\n')
 
 
 if __name__ == '__main__':

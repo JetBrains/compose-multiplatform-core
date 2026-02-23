@@ -16,7 +16,7 @@
 
 package androidx.security.app.authenticator;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This {@code Exception} is thrown when the XML configuration file is not in the proper format

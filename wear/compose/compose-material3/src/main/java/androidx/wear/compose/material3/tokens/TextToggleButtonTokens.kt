@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-// VERSION: v0_65
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
+
+import androidx.compose.ui.unit.dp
+
 internal object TextToggleButtonTokens {
     val CheckedContainerColor = ColorSchemeKeyTokens.Primary
     val CheckedContentColor = ColorSchemeKeyTokens.OnPrimary
+    val ContainerDefaultSize = 52.0.dp
+    val ContainerExtraLargeSize = 72.0.dp
+    val ContainerLargeSize = 60.0.dp
     val ContainerShape = ShapeKeyTokens.CornerFull
-    val ContentFont = TypographyKeyTokens.LabelMedium
+    val ContentDefaultFont = TypographyKeyTokens.LabelMedium
+    val ContentExtraLargeFont = TypographyKeyTokens.LabelLarge
+    val ContentLargeFont = TypographyKeyTokens.LabelMedium
     val DisabledCheckedContainerColor = ColorSchemeKeyTokens.OnSurface
     val DisabledCheckedContainerOpacity = 0.12f
     val DisabledCheckedContentColor = ColorSchemeKeyTokens.OnSurface

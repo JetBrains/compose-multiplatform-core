@@ -29,12 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ParentDataModifier
@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
+import kotlin.math.min
 
 internal typealias LinkRange = AnnotatedString.Range<LinkAnnotation>
 
@@ -82,8 +83,8 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
                         AnnotatedString.Range(
                             (it.item as LinkAnnotation).styles?.style ?: SpanStyle(),
                             it.start,
-                            it.end
-                        )
+                            it.end,
+                        ),
                     )
                 } else {
                     arrayListOf(it)
@@ -103,43 +104,63 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
 
     /**
      * Causes the modified element to be measured with fixed constraints equal to the bounds of the
-     * text range [[start], [end]) and placed over that range of text.
+     * text range and placed over that range of text.
      */
-    private fun Modifier.textRange(start: Int, end: Int): Modifier =
-        this.then(
+    private fun Modifier.textRange(link: LinkRange): Modifier {
+        return this.then(
             TextRangeLayoutModifier {
                 val layoutResult =
                     textLayoutResult
                         ?: return@TextRangeLayoutModifier layout(0, 0) { IntOffset.Zero }
-                val bounds = layoutResult.getPathForRange(start, end).getBounds().roundToIntRect()
+                val updatedRange =
+                    calculateVisibleLinkRange(link, layoutResult)
+                        ?: return@TextRangeLayoutModifier layout(0, 0) { IntOffset.Zero }
+                val bounds =
+                    layoutResult
+                        .getPathForRange(updatedRange.start, updatedRange.end)
+                        .getBounds()
+                        .roundToIntRect()
                 layout(bounds.width, bounds.height) { bounds.topLeft }
             }
         )
+    }
 
-    private fun shapeForRange(range: LinkRange): Shape? =
-        pathForRangeInRangeCoordinates(range)?.let {
+    /**
+     * Clips the Box representing the link to the path of the text range corresponding to that link
+     */
+    private fun Modifier.clipLink(link: LinkRange): Modifier =
+        this.graphicsLayer {
+            shapeForRange(link)?.let { linkShape ->
+                shape = linkShape
+                clip = true
+            }
+        }
+
+    private fun shapeForRange(link: LinkRange): Shape? =
+        pathForRangeInRangeCoordinates(link)?.let {
             object : Shape {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density
+                    density: Density,
                 ): Outline {
                     return Outline.Generic(it)
                 }
             }
         }
 
-    private fun pathForRangeInRangeCoordinates(range: LinkRange): Path? {
+    private fun pathForRangeInRangeCoordinates(link: LinkRange): Path? {
         return if (!shouldMeasureLinks()) null
         else {
             textLayoutResult?.let {
+                val range = calculateVisibleLinkRange(link, it) ?: return null
                 val path = it.getPathForRange(range.start, range.end)
 
                 val firstCharBoundingBox = it.getBoundingBox(range.start)
                 val lastCharBoundingBox = it.getBoundingBox(range.end - 1)
 
                 val rangeStartLine = it.getLineForOffset(range.start)
-                val rangeEndLine = it.getLineForOffset(range.end)
+                val rangeEndLine = it.getLineForOffset(range.end - 1)
 
                 val xOffset =
                     if (rangeStartLine == rangeEndLine) {
@@ -163,6 +184,29 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
     }
 
     /**
+     * Conditionally updates [link]'s end based on [textLayoutResult] so the resulted link range is
+     * within the visible bounds of text. Returns null if the link is fully outside visible text
+     * bounds.
+     *
+     * Avoid calling this in the composition scope, instead call in layout or draw scope of the
+     * modifier.
+     */
+    private fun calculateVisibleLinkRange(
+        link: LinkRange,
+        textLayoutResult: TextLayoutResult,
+    ): LinkRange? {
+        // The paragraph with a link might not be added to the paragraphs list if it exceeds
+        // the maxline. The Box will be measured (0, 0) in that case and some other modifier like
+        // clip won't apply
+        val lastOffset = textLayoutResult.getLineEnd(textLayoutResult.lineCount - 1)
+        return if (link.start < lastOffset) {
+            // The link might be clipped if we reach the maxLines so we adjust its end to be the
+            // last visible offset.
+            link.copy(end = min(link.end, lastOffset))
+        } else null
+    }
+
+    /**
      * This composable responsible for creating layout nodes for each link annotation. Since
      * [TextLinkScope] object created *only* when there are links present in the text, we don't need
      * to do any additional guarding inside this composable function.
@@ -173,63 +217,64 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
 
         val links = text.getLinkAnnotations(0, text.length)
         links.fastForEach { range ->
-            val shape = shapeForRange(range)
-            val clipModifier = shape?.let { Modifier.clip(it) } ?: Modifier
-            val interactionSource = remember { MutableInteractionSource() }
+            if (range.start != range.end) {
+                val interactionSource = remember { MutableInteractionSource() }
 
-            Box(
-                clipModifier
-                    .semantics {
-                        // adding this to identify links in tests, see performFirstLinkClick
-                        this[LinkTestMarker] = Unit
+                Box(
+                    Modifier.clipLink(range)
+                        .semantics {
+                            // adding this to identify links in tests, see performFirstLinkClick
+                            this[LinkTestMarker] = Unit
+                        }
+                        .textRange(range)
+                        .hoverable(interactionSource)
+                        .pointerHoverIcon(PointerIcon.Hand)
+                        .combinedClickable(
+                            indication = null,
+                            interactionSource = interactionSource,
+                            onClick = { handleLink(range.item, uriHandler) },
+                        )
+                )
+
+                if (!range.item.styles.isNullOrEmpty()) {
+                    // the interaction source is not hoisted, we create and remember it in the
+                    // code above. Therefore there's no need to pass it as a key to the remember and
+                    // a
+                    // launch effect.
+                    val linkStateObserver = remember {
+                        LinkStateInteractionSourceObserver(interactionSource)
                     }
-                    .textRange(range.start, range.end)
-                    .hoverable(interactionSource)
-                    .pointerHoverIcon(PointerIcon.Hand)
-                    .combinedClickable(
-                        indication = null,
-                        interactionSource = interactionSource,
-                        onClick = { handleLink(range.item, uriHandler) }
-                    )
-            )
+                    LaunchedEffect(Unit) { linkStateObserver.collectInteractionsForLinks() }
 
-            if (!range.item.styles.isNullOrEmpty()) {
-                // the interaction source is not hoisted, we create and remember it in the
-                // code above. Therefore there's no need to pass it as a key to the remember and a
-                // launch effect.
-                val linkStateObserver = remember {
-                    LinkStateInteractionSourceObserver(interactionSource)
-                }
-                LaunchedEffect(Unit) { linkStateObserver.collectInteractionsForLinks() }
-
-                StyleAnnotation(
-                    linkStateObserver.isHovered,
-                    linkStateObserver.isFocused,
-                    linkStateObserver.isPressed,
-                    range.item.styles?.style,
-                    range.item.styles?.focusedStyle,
-                    range.item.styles?.hoveredStyle,
-                    range.item.styles?.pressedStyle,
-                ) {
-                    // we calculate the latest style based on the link state and apply it to the
-                    // initialText's style. This allows us to merge the style with the original
-                    // instead of fully replacing it
-                    val mergedStyle =
-                        range.item.styles
-                            ?.style
-                            .mergeOrUse(
-                                if (linkStateObserver.isFocused) range.item.styles?.focusedStyle
-                                else null
-                            )
-                            .mergeOrUse(
-                                if (linkStateObserver.isHovered) range.item.styles?.hoveredStyle
-                                else null
-                            )
-                            .mergeOrUse(
-                                if (linkStateObserver.isPressed) range.item.styles?.pressedStyle
-                                else null
-                            )
-                    replaceStyle(range, mergedStyle)
+                    StyleAnnotation(
+                        linkStateObserver.isHovered,
+                        linkStateObserver.isFocused,
+                        linkStateObserver.isPressed,
+                        range.item.styles?.style,
+                        range.item.styles?.focusedStyle,
+                        range.item.styles?.hoveredStyle,
+                        range.item.styles?.pressedStyle,
+                    ) {
+                        // we calculate the latest style based on the link state and apply it to the
+                        // initialText's style. This allows us to merge the style with the original
+                        // instead of fully replacing it
+                        val mergedStyle =
+                            range.item.styles
+                                ?.style
+                                .mergeOrUse(
+                                    if (linkStateObserver.isFocused) range.item.styles?.focusedStyle
+                                    else null
+                                )
+                                .mergeOrUse(
+                                    if (linkStateObserver.isHovered) range.item.styles?.hoveredStyle
+                                    else null
+                                )
+                                .mergeOrUse(
+                                    if (linkStateObserver.isPressed) range.item.styles?.pressedStyle
+                                    else null
+                                )
+                        replaceStyle(range, mergedStyle)
+                    }
                 }
             }
         }

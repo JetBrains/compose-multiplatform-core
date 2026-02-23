@@ -69,7 +69,7 @@ internal data class SelectionHandleInfo(
 internal enum class SelectionHandleAnchor {
     Left,
     Middle,
-    Right
+    Right,
 }
 
 @Composable
@@ -79,6 +79,7 @@ internal expect fun SelectionHandle(
     direction: ResolvedTextDirection,
     handlesCrossed: Boolean,
     minTouchTargetSize: DpSize = DpSize.Unspecified,
+    lineHeight: Float,
     modifier: Modifier,
 )
 
@@ -120,7 +121,7 @@ internal class HandlePositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val position = positionProvider.provide().takeOrElse { prevPosition }
         prevPosition = position
@@ -134,7 +135,7 @@ internal class HandlePositionProvider(
 internal fun isLeftSelectionHandle(
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,
-    handlesCrossed: Boolean
+    handlesCrossed: Boolean,
 ): Boolean {
     return if (isStartHandle) {
         isHandleLtrDirection(direction, handlesCrossed)
@@ -155,7 +156,7 @@ internal fun isLeftSelectionHandle(
 /*@VisibleForTesting*/
 internal fun isHandleLtrDirection(
     direction: ResolvedTextDirection,
-    areHandlesCrossed: Boolean
+    areHandlesCrossed: Boolean,
 ): Boolean {
     return direction == ResolvedTextDirection.Ltr && !areHandlesCrossed ||
         direction == ResolvedTextDirection.Rtl && areHandlesCrossed

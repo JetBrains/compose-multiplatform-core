@@ -31,13 +31,14 @@ import android.widget.TextView;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,8 +123,7 @@ public class Picker extends FrameLayout {
      *
      * @return The list of separators populated between the picker column fields.
      */
-    @NonNull
-    public final List<CharSequence> getSeparators() {
+    public final @NonNull List<CharSequence> getSeparators() {
         return mSeparators;
     }
 
@@ -232,8 +232,7 @@ public class Picker extends FrameLayout {
      * @param colIndex Index of PickerColumn.
      * @return PickerColumn at colIndex or null if {@link #setColumns(List)} is not called yet.
      */
-    @Nullable
-    public PickerColumn getColumnAt(int colIndex) {
+    public @Nullable PickerColumn getColumnAt(int colIndex) {
         if (mColumns == null) {
             return null;
         }

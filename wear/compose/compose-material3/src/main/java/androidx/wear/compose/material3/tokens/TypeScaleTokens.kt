@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-// VERSION: v0_71
+// VERSION: v0_111
 // GENERATED CODE - DO NOT MODIFY BY HAND
-
 package androidx.wear.compose.material3.tokens
 
 import androidx.compose.ui.unit.sp
@@ -24,20 +23,23 @@ import androidx.compose.ui.unit.sp
 internal object TypeScaleTokens {
     val ArcLargeFont = TypefaceTokens.Brand
     val ArcLargeLineHeight = 22.0.sp
-    val ArcLargeSize = 20.sp
-    val ArcLargeTracking = 0.4.sp
-    val ArcLargeWeight = 600.0f
+    val ArcLargeSize = 18.sp
+    val ArcLargeTrackingBottom = 1.6.sp
+    val ArcLargeTrackingTop = 0.4.sp
+    val ArcLargeWeight = 599.0f
     val ArcLargeWidth = 100.0f
     val ArcMediumFont = TypefaceTokens.Brand
     val ArcMediumLineHeight = 18.0.sp
     val ArcMediumSize = 15.sp
-    val ArcMediumTracking = 0.6.sp
-    val ArcMediumWeight = 600.0f
+    val ArcMediumTrackingBottom = 1.4.sp
+    val ArcMediumTrackingTop = 0.6.sp
+    val ArcMediumWeight = 599.0f
     val ArcMediumWidth = 100.0f
     val ArcSmallFont = TypefaceTokens.Brand
     val ArcSmallLineHeight = 16.0.sp
     val ArcSmallSize = 14.sp
-    val ArcSmallTracking = 0.6.sp
+    val ArcSmallTrackingBottom = 1.4.sp
+    val ArcSmallTrackingTop = 0.6.sp
     val ArcSmallWeight = 560.0f
     val ArcSmallWidth = 100.0f
     val BodyExtraSmallFont = TypefaceTokens.Brand
@@ -69,13 +71,13 @@ internal object TypeScaleTokens {
     val BodySmallWeightProminent = 700.0f
     val BodySmallWidth = 110.0f
     val DisplayLargeFont = TypefaceTokens.Brand
-    val DisplayLargeLineHeight = 46.0.sp
+    val DisplayLargeLineHeight = 44.0.sp
     val DisplayLargeSize = 40.sp
     val DisplayLargeTracking = 0.2.sp
     val DisplayLargeWeight = 500.0f
     val DisplayLargeWidth = 110.0f
     val DisplayMediumFont = TypefaceTokens.Brand
-    val DisplayMediumLineHeight = 36.0.sp
+    val DisplayMediumLineHeight = 34.0.sp
     val DisplayMediumSize = 30.sp
     val DisplayMediumTracking = 0.2.sp
     val DisplayMediumWeight = 520.0f
@@ -93,7 +95,7 @@ internal object TypeScaleTokens {
     val LabelLargeWeight = 500.0f
     val LabelLargeWidth = 110.0f
     val LabelMediumFont = TypefaceTokens.Brand
-    val LabelMediumLineHeight = 16.0.sp
+    val LabelMediumLineHeight = 18.0.sp
     val LabelMediumSize = 15.sp
     val LabelMediumTracking = 0.4.sp
     val LabelMediumWeight = 500.0f
@@ -121,7 +123,7 @@ internal object TypeScaleTokens {
     val NumeralLargeFont = TypefaceTokens.Brand
     val NumeralLargeLineHeight = 50.0.sp
     val NumeralLargeSize = 50.sp
-    val NumeralLargeTracking = 1.0.sp
+    val NumeralLargeTracking = 0.0.sp
     val NumeralLargeWeight = 580.0f
     val NumeralLargeWeightProminent = 780.0f
     val NumeralLargeWidth = 110.0f
@@ -135,13 +137,13 @@ internal object TypeScaleTokens {
     val NumeralSmallFont = TypefaceTokens.Brand
     val NumeralSmallLineHeight = 30.0.sp
     val NumeralSmallSize = 30.sp
-    val NumeralSmallTracking = 1.0.sp
+    val NumeralSmallTracking = 0.0.sp
     val NumeralSmallWeight = 550.0f
     val NumeralSmallWeightProminent = 750.0f
     val NumeralSmallWidth = 100.0f
     val TitleLargeFont = TypefaceTokens.Brand
-    val TitleLargeLineHeight = 22.0.sp
-    val TitleLargeSize = 20.sp
+    val TitleLargeLineHeight = 20.0.sp
+    val TitleLargeSize = 18.sp
     val TitleLargeTracking = 0.2.sp
     val TitleLargeWeight = 500.0f
     val TitleLargeWidth = 110.0f
@@ -149,12 +151,12 @@ internal object TypeScaleTokens {
     val TitleMediumLineHeight = 18.0.sp
     val TitleMediumSize = 16.sp
     val TitleMediumTracking = 0.4.sp
-    val TitleMediumWeight = 500.0f
+    val TitleMediumWeight = 550.0f
     val TitleMediumWidth = 110.0f
     val TitleSmallFont = TypefaceTokens.Brand
     val TitleSmallLineHeight = 16.0.sp
     val TitleSmallSize = 14.sp
     val TitleSmallTracking = 0.4.sp
-    val TitleSmallWeight = 500.0f
+    val TitleSmallWeight = 550.0f
     val TitleSmallWidth = 110.0f
 }

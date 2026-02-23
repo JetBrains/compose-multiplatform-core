@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.EMPTY_OBJECTS
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -238,6 +244,40 @@ public fun <K> mutableObjectPValueMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [ObjectPValueMap] by populating a [MutableObjectPValueMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableObjectPValueMap] can be populated.
+ */
+public inline fun <K> buildObjectPValueMap(
+    builderAction: MutableObjectPValueMap<K>.() -> Unit,
+): ObjectPValueMap<K> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableObjectPValueMap<K>().apply(builderAction)
+}
+
+/**
+ * Builds a new [ObjectPValueMap] by populating a [MutableObjectPValueMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableObjectPValueMap] can be populated.
+ */
+public inline fun <K> buildObjectPValueMap(
+    initialCapacity: Int,
+    builderAction: MutableObjectPValueMap<K>.() -> Unit,
+): ObjectPValueMap<K> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableObjectPValueMap<K>(initialCapacity).apply(builderAction)
+}
 
 /**
  * [ObjectPValueMap] is a container with a [Map]-like interface for keys with
@@ -470,19 +510,19 @@ public sealed class ObjectPValueMap<K> {
     }
 
     /**
-     * Returns true if the specified [key] is present in this hash map, false
+     * Returns true if the specified [key] is present in this map, false
      * otherwise.
      */
-    public operator fun contains(key: K): Boolean = findKeyIndex(key) >= 0
+    public inline operator fun contains(key: K): Boolean = containsKey(key)
 
     /**
-     * Returns true if the specified [key] is present in this hash map, false
+     * Returns true if the specified [key] is present in this map, false
      * otherwise.
      */
     public fun containsKey(key: K): Boolean = findKeyIndex(key) >= 0
 
     /**
-     * Returns true if the specified [value] is present in this hash map, false
+     * Returns true if the specified [value] is present in this map, false
      * otherwise.
      */
     public fun containsValue(value: PValue): Boolean {
@@ -509,19 +549,21 @@ public sealed class ObjectPValueMap<K> {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectPValueMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectPValueMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -544,17 +586,19 @@ public sealed class ObjectPValueMap<K> {
         crossinline transform: (key: K, value: PValue) -> CharSequence
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectPValueMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectPValueMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -596,7 +640,8 @@ public sealed class ObjectPValueMap<K> {
         val o = other as ObjectPValueMap<Any?>
 
         forEach { key, value ->
-            if (value != o[key]) {
+            val index = o.findKeyIndex(key)
+            if (index < 0 || value != o.values[index]) {
                 return false
             }
         }

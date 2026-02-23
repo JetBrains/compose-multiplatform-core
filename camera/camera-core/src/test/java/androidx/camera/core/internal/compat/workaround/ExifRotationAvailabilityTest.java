@@ -21,12 +21,12 @@ import static com.google.common.truth.Truth.assertThat;
 import android.graphics.ImageFormat;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.testing.impl.fakes.FakeImageInfo;
 import androidx.camera.testing.impl.fakes.FakeImageProxy;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -43,7 +43,7 @@ import java.util.List;
  */
 @RunWith(ParameterizedRobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class ExifRotationAvailabilityTest {
     @ParameterizedRobolectricTestRunner.Parameters
     public static Collection<Object[]> data() {
@@ -64,10 +64,9 @@ public class ExifRotationAvailabilityTest {
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public ExifRotationAvailabilityTest(@NonNull final Config config) {
+    public ExifRotationAvailabilityTest(final @NonNull Config config) {
         mConfig = config;
     }
 
@@ -113,12 +112,9 @@ public class ExifRotationAvailabilityTest {
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mModel;
-        @NonNull
-        final ImageProxy mImage;
+        final @Nullable String mBrand;
+        final @Nullable String mModel;
+        final @NonNull ImageProxy mImage;
         final boolean mShouldUseExifOrientation;
         final boolean mIsRotationOptionSupported;
 

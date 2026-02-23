@@ -26,17 +26,17 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.google.shortcuts.utils.ShortcutUtils;
 
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.Mac;
 
+import org.jspecify.annotations.Nullable;
+
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
-
 
 /**
  * Activity used to receives shortcut intents sent from Google, extracts its shortcut url, and

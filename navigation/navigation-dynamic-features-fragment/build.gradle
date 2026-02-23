@@ -15,60 +15,52 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
     alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
+    api("androidx.fragment:fragment:1.6.2")
     api(project(":navigation:navigation-dynamic-features-runtime"))
+    api(project(":navigation:navigation-common"))
     api(project(":navigation:navigation-fragment"))
-    api(libs.kotlinStdlib)
+    api(project(":navigation:navigation-runtime"))
+    api(libs.playFeatureDelivery)
+
     implementation(libs.kotlinSerializationCore)
+    implementation("androidx.activity:activity:1.7.2")
+    implementation("androidx.core:core-ktx:1.2.0")
+    implementation("androidx.lifecycle:lifecycle-common:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-core:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
 
-    testImplementation(libs.testCore)
-    testImplementation(libs.testExtJunit)
-    testImplementation(libs.testRunner)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
-
+    androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.fragment", module: "fragment"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {
-    namespace "androidx.navigation.dynamicfeatures.fragment"
+    namespace = "androidx.navigation.dynamicfeatures.fragment"
 }
 
 androidx {
     name = "Dynamic Feature Navigation Fragment"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "Android Dynamic Feature Navigation Fragment"
-    legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

@@ -18,12 +18,13 @@ package androidx.camera.view.internal.compat.quirk;
 
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provider of device specific quirks for the view module, which are used for device specific
@@ -39,8 +40,7 @@ public class DeviceQuirks {
     private static final String TAG = "DeviceQuirks";
 
     /** @noinspection NotNullFieldNotInitialized*/
-    @NonNull
-    private static volatile Quirks sQuirks;
+    private static volatile @NonNull Quirks sQuirks;
 
     static {
         // Direct executor will initialize quirks immediately, guaranteeing it's never null.
@@ -60,8 +60,7 @@ public class DeviceQuirks {
      * @return A device {@link Quirk} instance of the provided type, or {@code null} if it isn't
      * found.
      */
-    @Nullable
-    public static <T extends Quirk> T get(@NonNull final Class<T> quirkClass) {
+    public static <T extends Quirk> @Nullable T get(final @NonNull Class<T> quirkClass) {
         return sQuirks.get(quirkClass);
     }
 }

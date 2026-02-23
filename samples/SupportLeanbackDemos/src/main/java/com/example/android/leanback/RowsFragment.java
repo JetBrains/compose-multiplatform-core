@@ -17,7 +17,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.leanback.paging.PagingDataAdapter;
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -33,6 +32,8 @@ import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.TitleHelper;
 import androidx.recyclerview.widget.DiffUtil;
+
+import org.jspecify.annotations.NonNull;
 
 public class RowsFragment extends androidx.leanback.app.RowsFragment {
 

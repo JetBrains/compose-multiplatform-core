@@ -18,16 +18,15 @@ package androidx.appsearch.compiler.annotationwrapper;
 
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.compiler.IntrospectionHelper;
+import androidx.room.compiler.codegen.XClassName;
+import androidx.room.compiler.processing.XAnnotation;
+import androidx.room.compiler.processing.XType;
 
-import com.squareup.javapoet.ClassName;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
-
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.type.TypeMirror;
 
 /**
  * An annotation for a metadata property e.g. {@code @Document.Id}.
@@ -55,27 +54,24 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
             /* genericDocSetterName= */"setScore");
 
     /**
-     * Attempts to parse an {@link AnnotationMirror} into a {@link MetadataPropertyAnnotation},
+     * Attempts to parse an {@link XAnnotation} into a {@link MetadataPropertyAnnotation},
      * or null.
      */
-    @Nullable
-    public static MetadataPropertyAnnotation tryParse(@NonNull AnnotationMirror annotation) {
-        String qualifiedClassName = annotation.getAnnotationType().toString();
+    public static @Nullable MetadataPropertyAnnotation tryParse(
+            @NonNull XAnnotation annotation) {
+        String qualifiedClassName = annotation.getQualifiedName();
         return Arrays.stream(values())
-                .filter(val -> val.getClassName().canonicalName().equals(qualifiedClassName))
+                .filter(val -> val.getClassName().getCanonicalName().equals(qualifiedClassName))
                 .findFirst()
                 .orElse(null);
     }
 
-    @NonNull
     @SuppressWarnings("ImmutableEnumChecker") // ClassName is an immutable third-party type
-    private final ClassName mClassName;
+    private final @NonNull XClassName mClassName;
 
-    @NonNull
-    private final String mGenericDocGetterName;
+    private final @NonNull String mGenericDocGetterName;
 
-    @NonNull
-    private final String mGenericDocSetterName;
+    private final @NonNull String mGenericDocSetterName;
 
     MetadataPropertyAnnotation(
             @NonNull String simpleClassName,
@@ -87,45 +83,40 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
     }
 
     @Override
-    @NonNull
-    public ClassName getClassName() {
+    public @NonNull XClassName getClassName() {
         return mClassName;
     }
 
-
     @Override
-    @NonNull
-    public PropertyAnnotation.Kind getPropertyKind() {
+    public PropertyAnnotation.@NonNull Kind getPropertyKind() {
         return Kind.METADATA_PROPERTY;
     }
 
-    @NonNull
     @Override
-    public TypeMirror getUnderlyingTypeWithinGenericDoc(@NonNull IntrospectionHelper helper) {
+    public @NonNull XType getUnderlyingTypeWithinGenericDoc(
+            @NonNull IntrospectionHelper helper) {
         switch (this) {
             case ID: // fall-through
             case NAMESPACE:
-                return helper.mStringType;
+                return helper.getStringType();
             case CREATION_TIMESTAMP_MILLIS: // fall-through
             case TTL_MILLIS:
-                return helper.mLongPrimitiveType;
+                return helper.longPrimitiveType;
             case SCORE:
-                return helper.mIntPrimitiveType;
+                return helper.intPrimitiveType;
             default:
                 throw new IllegalStateException("Unhandled metadata property annotation: " + this);
         }
     }
 
-    @NonNull
     @Override
-    public String getGenericDocGetterName() {
+    public @NonNull String getGenericDocGetterName() {
         return mGenericDocGetterName;
     }
 
 
-    @NonNull
     @Override
-    public String getGenericDocSetterName() {
+    public @NonNull String getGenericDocSetterName() {
         return mGenericDocSetterName;
     }
 }

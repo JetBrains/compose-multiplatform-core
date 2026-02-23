@@ -36,7 +36,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.random.Random
@@ -52,7 +51,6 @@ import org.junit.runners.MethodSorters
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
 
-    @UiThreadTest
     @Test
     fun create() = runBlockingTestWithFrameClock {
         measureCompose {
@@ -62,11 +60,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun removeManyGroups() = runBlockingTestWithFrameClock {
         var includeGroups by mutableStateOf(true)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     if (includeGroups) {
@@ -79,11 +76,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun removeAlternatingGroups() = runBlockingTestWithFrameClock {
         var insertAlternatingGroups by mutableStateOf(true)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     repeat(100) { index ->
@@ -98,11 +94,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun removeManyReplaceGroups() = runBlockingTestWithFrameClock {
         var insertAlternatingGroups by mutableStateOf(true)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     repeat(100) { index ->
@@ -117,11 +112,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun insertManyGroups() = runBlockingTestWithFrameClock {
         var includeGroups by mutableStateOf(false)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     if (includeGroups) {
@@ -134,11 +128,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun insertAlternatingGroups() = runBlockingTestWithFrameClock {
         var insertAlternatingGroups by mutableStateOf(false)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     repeat(100) { index ->
@@ -153,11 +146,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun insertManyReplaceGroups() = runBlockingTestWithFrameClock {
         var insertAlternatingGroups by mutableStateOf(false)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     repeat(100) { index ->
@@ -172,11 +164,10 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun updateManyNestedGroups() = runBlockingTestWithFrameClock {
         var seed by mutableIntStateOf(1337)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 val random = remember(seed) { Random(seed) }
                 MatryoshkaLayout(
@@ -197,18 +188,17 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
                             minLines = random.nextInt(),
                             maxLines = random.nextInt(),
                         )
-                    }
+                    },
                 )
             }
             update { seed++ }
         }
     }
 
-    @UiThreadTest
     @Test
     fun updateDisjointGroups() = runBlockingTestWithFrameClock {
         var seed by mutableIntStateOf(1337)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 MinimalBox {
                     repeat(10) { container ->
@@ -229,7 +219,7 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
                                     } else {
                                         NonRenderingText("foo")
                                     }
-                                }
+                                },
                             )
                         }
                     }
@@ -239,12 +229,11 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun updateDeepCompositionLocalHierarchy() = runBlockingTestWithFrameClock {
         val PixelColorLocal = compositionLocalOf { Color.Unspecified }
         var seed by mutableIntStateOf(1337)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 val random = remember(seed) { Random(seed) }
                 Pixel(PixelColorLocal.current)
@@ -282,12 +271,11 @@ class SlotTableIntegrationBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun reverseGroups() = runBlockingTestWithFrameClock {
         val originalItems = (1..100).toList()
         var keys by mutableStateOf(originalItems)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(modifier = Modifier.size(width = 20.dp, height = 300.dp)) {
                     keys.forEach { key(it) { Pixel(color = Color.Blue) } }
@@ -311,7 +299,7 @@ private fun NonRenderingText(
     textSize: Dp = Dp.Unspecified,
     ellipsize: Boolean = false,
     minLines: Int = 1,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     use(text)
     use(textColor.value.toInt())
@@ -337,7 +325,7 @@ private fun MatryoshkaLayout(depth: Int, content: @Composable (depth: Int) -> Un
                 content(depth)
                 MatryoshkaLayout(depth - 1, content)
             },
-            measurePolicy = MinimalBoxMeasurePolicy
+            measurePolicy = MinimalBoxMeasurePolicy,
         )
     }
 }
@@ -348,7 +336,7 @@ private val MinimalBoxMeasurePolicy = MeasurePolicy { measurables, constraints -
         placeables.fold(initial = IntOffset(0, 0)) { (maxWidth, maxHeight), placeable ->
             IntOffset(
                 maxOf(maxWidth, placeable.measuredWidth),
-                maxOf(maxHeight, placeable.measuredHeight)
+                maxOf(maxHeight, placeable.measuredHeight),
             )
         }
 

@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
+import androidx.build.SoftwareType
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 dependencies {
-    implementation project(":benchmark:benchmark-junit4")
-    implementation project(":compose:runtime:runtime")
-    implementation project(":compose:ui:ui-test-junit4")
-    implementation(libs.kotlinStdlib)
+    implementation(project(":benchmark:benchmark-junit4"))
+    implementation(project(":compose:runtime:runtime"))
+    implementation(project(":compose:ui:ui-test-junit4"))
     implementation(libs.kotlinReflect)
     implementation(libs.testRules)
     implementation(libs.junit)
 
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
-    androidTestImplementation project(":compose:ui:ui")
-    androidTestImplementation(libs.kotlinTestCommon)
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
+    androidTestImplementation(project(":compose:ui:ui"))
+    androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.ui.text.benchmark"
+    compileSdk { version = release(35) }
+    namespace = "androidx.compose.ui.text.benchmark"
+}
+
+androidx {
+    type = SoftwareType.BENCHMARK
 }

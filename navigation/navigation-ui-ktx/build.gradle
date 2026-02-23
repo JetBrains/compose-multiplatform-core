@@ -15,34 +15,29 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(project(":navigation:navigation-ui"))
-    api(project(":navigation:navigation-runtime-ktx")) {
-        because 'Mirror navigation-ui dependency graph for -ktx artifacts'
-    }
 }
 
 androidx {
     name = "Navigation UI Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Android Navigation-UI-Ktx"
 }
 
 android {
-    namespace "androidx.navigation.ui.ktx"
+    namespace = "androidx.navigation.ui.ktx"
 }

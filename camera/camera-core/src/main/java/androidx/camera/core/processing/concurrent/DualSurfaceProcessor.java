@@ -23,8 +23,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.CameraXThreads;
@@ -45,6 +43,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import kotlin.jvm.functions.Function3;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -76,10 +77,8 @@ public class DualSurfaceProcessor implements SurfaceProcessorInternal,
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     final Map<SurfaceOutput, Surface> mOutputSurfaces = new LinkedHashMap<>();
 
-    @Nullable
-    private SurfaceTexture mPrimarySurfaceTexture;
-    @Nullable
-    private SurfaceTexture mSecondarySurfaceTexture;
+    private @Nullable SurfaceTexture mPrimarySurfaceTexture;
+    private @Nullable SurfaceTexture mSecondarySurfaceTexture;
 
     DualSurfaceProcessor(@NonNull DynamicRange dynamicRange,
             @NonNull CompositionSettings primaryCompositionSettings,
@@ -273,8 +272,7 @@ public class DualSurfaceProcessor implements SurfaceProcessorInternal,
         /**
          * Creates a new {@link DefaultSurfaceProcessor} with no-op shader.
          */
-        @NonNull
-        public static SurfaceProcessorInternal newInstance(
+        public static @NonNull SurfaceProcessorInternal newInstance(
                 @NonNull DynamicRange dynamicRange,
                 @NonNull CompositionSettings primaryCompositionSettings,
                 @NonNull CompositionSettings secondaryCompositionSettings) {

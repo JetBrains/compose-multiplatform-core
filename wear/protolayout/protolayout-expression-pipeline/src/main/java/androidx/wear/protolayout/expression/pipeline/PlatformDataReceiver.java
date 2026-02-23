@@ -16,9 +16,10 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.wear.protolayout.expression.PlatformDataValues;
 import androidx.wear.protolayout.expression.PlatformDataKey;
+import androidx.wear.protolayout.expression.PlatformDataValues;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 

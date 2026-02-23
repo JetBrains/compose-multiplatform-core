@@ -22,9 +22,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -73,8 +74,7 @@ public final class ExternalLinks {
      * {@code Link: www.example.com/page1.html} or
      * {@code Link: webpage at www.example.com}
      */
-    @NonNull
-    public static String getDescription(@NonNull String url, @NonNull Context context) {
+    public static @NonNull String getDescription(@NonNull String url, @NonNull Context context) {
         return getDescription(Uri.parse(url), context);
     }
 

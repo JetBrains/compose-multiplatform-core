@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// VERSION: v0_73
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens

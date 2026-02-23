@@ -22,7 +22,6 @@ import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Logger;
 import androidx.camera.core.UseCase;
@@ -31,6 +30,8 @@ import androidx.camera.core.ViewPort;
 import androidx.camera.view.PreviewView;
 import androidx.camera.view.TransformExperimental;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class represents the transform from one {@link OutputTransform} to another.
@@ -112,7 +113,7 @@ public final class CoordinateTransform {
      * @param points The array [x0, y0, x1, y1, ...] of points to transform.
      * @see Matrix#mapPoints(float[])
      */
-    public void mapPoints(@NonNull float[] points) {
+    public void mapPoints(float @NonNull [] points) {
         mMatrix.mapPoints(points);
     }
 

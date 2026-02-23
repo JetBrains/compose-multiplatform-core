@@ -22,11 +22,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-import java.lang.reflect.Field;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 class ImageViewUtils {
 
@@ -34,9 +33,6 @@ class ImageViewUtils {
      * False when linking of the hidden animateTransform method has previously failed.
      */
     private static boolean sTryHiddenAnimateTransform = true;
-
-    private static Field sDrawMatrixField;
-    private static boolean sDrawMatrixFieldFetched;
 
     /**
      * Sets the matrix to animate the content of the image view.
@@ -54,35 +50,11 @@ class ImageViewUtils {
                 drawable.setBounds(0, 0, vwidth, vheight);
                 view.invalidate();
             }
-        } else if (Build.VERSION.SDK_INT >= 21) {
-            hiddenAnimateTransform(view, matrix);
         } else {
-            Drawable drawable = view.getDrawable();
-            if (drawable != null) {
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(),
-                        drawable.getIntrinsicHeight());
-                Matrix drawMatrix = null;
-                fetchDrawMatrixField();
-                if (sDrawMatrixField != null) {
-                    try {
-                        drawMatrix = (Matrix) sDrawMatrixField.get(view);
-                        if (drawMatrix == null) {
-                            drawMatrix = new Matrix();
-                            sDrawMatrixField.set(view, drawMatrix);
-                        }
-                    } catch (IllegalAccessException ignore) {
-                        // Do nothing
-                    }
-                }
-                if (drawMatrix != null) {
-                    drawMatrix.set(matrix);
-                }
-                view.invalidate();
-            }
+            hiddenAnimateTransform(view, matrix);
         }
     }
 
-    @RequiresApi(21)
     @SuppressLint("NewApi") // Lint doesn't know about the hidden method.
     private static void hiddenAnimateTransform(@NonNull ImageView view, @Nullable Matrix matrix) {
         if (sTryHiddenAnimateTransform) {
@@ -93,19 +65,6 @@ class ImageViewUtils {
             } catch (NoSuchMethodError e) {
                 sTryHiddenAnimateTransform = false;
             }
-        }
-    }
-
-    @SuppressLint("SoonBlockedPrivateApi") // only called for API <21
-    private static void fetchDrawMatrixField() {
-        if (!sDrawMatrixFieldFetched) {
-            try {
-                sDrawMatrixField = ImageView.class.getDeclaredField("mDrawMatrix");
-                sDrawMatrixField.setAccessible(true);
-            } catch (NoSuchFieldException ignore) {
-                // Do nothing
-            }
-            sDrawMatrixFieldFetched = true;
         }
     }
 

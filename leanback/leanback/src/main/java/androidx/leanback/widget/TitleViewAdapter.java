@@ -16,7 +16,7 @@ package androidx.leanback.widget;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class allows a customized widget class to implement {@link TitleViewAdapter.Provider}
@@ -106,7 +106,7 @@ public abstract class TitleViewAdapter {
      *
      * @param colors Colors used to draw search affordance.
      */
-    public void setSearchAffordanceColors(@NonNull SearchOrbView.Colors colors) {
+    public void setSearchAffordanceColors(SearchOrbView.@NonNull Colors colors) {
     }
 
     /**
@@ -115,6 +115,7 @@ public abstract class TitleViewAdapter {
      *
      * @return Colors used to draw search affordance.
      */
+    @SuppressWarnings("GetterSetterNullability")
     public SearchOrbView.Colors getSearchAffordanceColors() {
         return null;
     }

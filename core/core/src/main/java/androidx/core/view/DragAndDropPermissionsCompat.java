@@ -23,10 +23,11 @@ import android.os.Build;
 import android.view.DragAndDropPermissions;
 import android.view.DragEvent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link DragAndDropPermissions} a backwards
@@ -46,8 +47,7 @@ public final class DragAndDropPermissionsCompat {
     }
 
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public static DragAndDropPermissionsCompat request(@NonNull Activity activity,
+    public static @Nullable DragAndDropPermissionsCompat request(@NonNull Activity activity,
             @NonNull DragEvent dragEvent) {
         if (Build.VERSION.SDK_INT >= 24) {
             DragAndDropPermissions dragAndDropPermissions =

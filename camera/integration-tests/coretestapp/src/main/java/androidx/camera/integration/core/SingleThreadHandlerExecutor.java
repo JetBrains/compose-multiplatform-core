@@ -19,7 +19,7 @@ package androidx.camera.integration.core;
 import android.os.Handler;
 import android.os.HandlerThread;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -37,8 +37,7 @@ final class SingleThreadHandlerExecutor implements Executor {
         mHandler = new Handler(mHandlerThread.getLooper());
     }
 
-    @NonNull
-    Handler getHandler() {
+    @NonNull Handler getHandler() {
         return mHandler;
     }
 

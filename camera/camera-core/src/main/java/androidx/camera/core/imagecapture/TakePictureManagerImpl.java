@@ -28,8 +28,6 @@ import static java.util.Objects.requireNonNull;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ForwardingImageProxy.OnImageCloseListener;
 import androidx.camera.core.ImageCapture;
@@ -41,6 +39,9 @@ import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.core.util.Pair;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -74,8 +75,7 @@ public class TakePictureManagerImpl implements TakePictureManager, OnImageCloseL
 
     // The current request being processed by the camera. Only one request can be processed by
     // the camera at the same time. Null if the camera is idle.
-    @Nullable
-    private RequestWithCallback mCapturingRequest;
+    private @Nullable RequestWithCallback mCapturingRequest;
     // The current requests that have not received a result or an error.
     private final List<RequestWithCallback> mIncompleteRequests;
 
@@ -290,23 +290,20 @@ public class TakePictureManagerImpl implements TakePictureManager, OnImageCloseL
     }
 
     @VisibleForTesting
-    @Nullable
     @Override
-    public RequestWithCallback getCapturingRequest() {
+    public @Nullable RequestWithCallback getCapturingRequest() {
         return mCapturingRequest;
     }
 
-    @NonNull
     @VisibleForTesting
     @Override
-    public List<RequestWithCallback> getIncompleteRequests() {
+    public @NonNull List<RequestWithCallback> getIncompleteRequests() {
         return mIncompleteRequests;
     }
 
     @VisibleForTesting
-    @NonNull
     @Override
-    public ImagePipeline getImagePipeline() {
+    public @NonNull ImagePipeline getImagePipeline() {
         return mImagePipeline;
     }
 

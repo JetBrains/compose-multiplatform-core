@@ -15,18 +15,16 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -34,7 +32,6 @@ dependencies {
     api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.0.0") {
         because "Mirror loader dependency graph for -ktx artifacts"
     }
-    api(libs.kotlinStdlib)
 
     androidTestImplementation(libs.truth)
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
@@ -42,19 +39,19 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
 }
 
 androidx {
     name = "Loader Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Kotlin extensions for 'loader' artifact"
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.loader.ktx"
+    compileSdk { version = release(35) }
+    namespace = "androidx.loader.ktx"
 }

@@ -15,15 +15,14 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,20 +32,25 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
+    compileOnly(libs.kotlinCompiler)
     compileOnly(libs.kotlinStdlib)
-    compileOnly(libs.androidLintApi)
-    bundleInside(project(":navigation:navigation-lint-common"))
+    compileOnly(libs.androidLintApiStableAnalysis)
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
 
-    testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.androidLint)
+    bundleInside(project(":navigation:lint:common"))
+
+    testImplementation(libs.androidLintStableAnalysis)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(project(":navigation:lint:common-test"))
+
 }
 
 androidx {
     name = "Navigation Common Lint"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2022"
     description = "Lint checks for Navigation Common"
 }

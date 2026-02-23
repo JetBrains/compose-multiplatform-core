@@ -21,10 +21,11 @@ import static androidx.camera.core.DynamicRange.ENCODING_HDR_UNSPECIFIED;
 import static androidx.camera.core.DynamicRange.ENCODING_SDR;
 import static androidx.camera.core.DynamicRange.ENCODING_UNSPECIFIED;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.impl.UseCaseConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +44,8 @@ public class DynamicRangeUtils {
      *
      * <p>If there is no dynamic range that satisfies all requirements, a null will be returned.
      */
-    @Nullable
-    public static DynamicRange resolveDynamicRange(@NonNull Set<UseCaseConfig<?>> useCaseConfigs) {
+    public static @Nullable DynamicRange resolveDynamicRange(
+            @NonNull Set<UseCaseConfig<?>> useCaseConfigs) {
         List<DynamicRange> dynamicRanges = new ArrayList<>();
         for (UseCaseConfig<?> useCaseConfig : useCaseConfigs) {
             dynamicRanges.add(useCaseConfig.getDynamicRange());
@@ -58,8 +59,8 @@ public class DynamicRangeUtils {
      *
      * <p>Returns the intersection if found, or null if no intersection.
      */
-    @Nullable
-    private static DynamicRange intersectDynamicRange(@NonNull List<DynamicRange> dynamicRanges) {
+    private static @Nullable DynamicRange intersectDynamicRange(
+            @NonNull List<DynamicRange> dynamicRanges) {
         if (dynamicRanges.isEmpty()) {
             return null;
         }
@@ -82,8 +83,7 @@ public class DynamicRangeUtils {
         return new DynamicRange(resultEncoding, resultBitDepth);
     }
 
-    @Nullable
-    private static Integer intersectDynamicRangeEncoding(@NonNull Integer encoding1,
+    private static @Nullable Integer intersectDynamicRangeEncoding(@NonNull Integer encoding1,
             @NonNull Integer encoding2) {
         // Handle unspecified.
         if (encoding1.equals(ENCODING_UNSPECIFIED)) {
@@ -104,8 +104,7 @@ public class DynamicRangeUtils {
         return encoding1.equals(encoding2) ? encoding1 : null;
     }
 
-    @Nullable
-    private static Integer intersectDynamicRangeBitDepth(@NonNull Integer bitDepth1,
+    private static @Nullable Integer intersectDynamicRangeBitDepth(@NonNull Integer bitDepth1,
             @NonNull Integer bitDepth2) {
         // Handle unspecified.
         if (bitDepth1.equals(BIT_DEPTH_UNSPECIFIED)) {

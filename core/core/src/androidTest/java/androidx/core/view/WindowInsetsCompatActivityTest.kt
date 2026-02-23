@@ -21,7 +21,6 @@ import android.os.Build
 import android.view.View
 import android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
 import android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-import androidx.annotation.RequiresApi
 import androidx.core.graphics.Insets
 import androidx.core.test.R
 import androidx.core.view.WindowInsetsCompat.Type
@@ -45,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assume.assumeFalse
@@ -81,7 +81,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_viewInsets() {
@@ -128,7 +127,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_rootInsets() {
@@ -170,7 +168,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 29)
+    @SdkSuppress(maxSdkVersion = 29)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun ime_insets_cleared_on_back() {
@@ -209,7 +207,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
             "OnApplyWindowListener should have been called $expectedListenerPasses times but was " +
                 "called ${expectedListenerPasses - latch.count} times",
             latch.await(2, TimeUnit.SECONDS),
-            `is`(true)
+            `is`(true),
         )
 
         // Check that the IME insets is equal to 0
@@ -217,7 +215,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertEquals(0, insets.getInsets(Type.ime()).bottom)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     public fun systemBars_viewInsets() {
@@ -247,7 +244,22 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
             }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
+    @SdkSuppress(minSdkVersion = 20)
+    @Test
+    public fun systemBars_hidden() {
+        scenario.onActivity { activity ->
+            WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                .hide(Type.systemBars())
+        }
+        val container: View = scenario.withActivity { findViewById(R.id.container) }
+
+        // System bar insets should be empty and invisible because we just hide them
+        val insets = container.requestAndAwaitInsets()
+        assertEquals(Insets.NONE, insets.getInsets(Type.systemBars()))
+        assertFalse(insets.isVisible(Type.systemBars()))
+    }
+
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
     @Test
     public fun systemBars_rootInsets() {
@@ -277,7 +289,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
 
     @Test
     @Ignore("IME tests are inherently flaky, but still useful for local testing.")
-    @SdkSuppress(minSdkVersion = 21)
     public fun rootInsets_no_ime() {
         scenario.onActivity { activity ->
             WindowCompat.setDecorFitsSystemWindows(activity.window, false)
@@ -293,7 +304,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertNotEquals(
             "The root window insets for NavigationBars not be empty",
             Insets.NONE,
-            navigationBar
+            navigationBar,
         )
 
         val statusBar = ViewCompat.getRootWindowInsets(container)?.getInsets(Type.statusBars())!!
@@ -304,12 +315,12 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertNotEquals(
             "The dispatched insets for NavigationBars insets should not be empty",
             Insets.NONE,
-            insets.getInsets(Type.navigationBars())
+            insets.getInsets(Type.navigationBars()),
         )
         assertNotEquals(
             "The dispatched insets for StatusBar insets should not be empty",
             Insets.NONE,
-            insets.getInsets(Type.statusBars())
+            insets.getInsets(Type.statusBars()),
         )
     }
 
@@ -317,7 +328,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         // TODO: remove this if b/159103848 is resolved
         assumeFalse(
             "Unable to test: Cuttlefish devices default to the virtual keyboard being disabled.",
-            Build.MODEL.contains("Cuttlefish", ignoreCase = true)
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
         )
     }
 
@@ -345,7 +356,6 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun root_insets_not_null() {
         val container: View = scenario.withActivity { findViewById(R.id.container) }
         val rootWindowInsets = ViewCompat.getRootWindowInsets(container)
@@ -357,10 +367,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         @JvmStatic
         @Parameterized.Parameters
         public fun data(): List<Array<Int>> =
-            listOf(
-                arrayOf(SOFT_INPUT_ADJUST_PAN),
-                arrayOf(SOFT_INPUT_ADJUST_RESIZE),
-            )
+            listOf(arrayOf(SOFT_INPUT_ADJUST_PAN), arrayOf(SOFT_INPUT_ADJUST_RESIZE))
     }
 }
 
@@ -388,7 +395,6 @@ private fun View.doAndAwaitNextInsets(action: (View) -> Unit): WindowInsetsCompa
     return received.get()
 }
 
-@RequiresApi(20)
 private fun View.requestAndAwaitInsets(): WindowInsetsCompat {
     val latch = CountDownLatch(1)
     val received = AtomicReference<WindowInsetsCompat>()

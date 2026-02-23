@@ -15,51 +15,42 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.lifecycle.ktx"
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api(project(":lifecycle:lifecycle-runtime"))
-                api("androidx.annotation:annotation:1.8.1")
-            }
+        commonMain.dependencies {
+            api(project(":lifecycle:lifecycle-runtime"))
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-                api(libs.kotlinCoroutinesAndroid)
-            }
+        androidMain.dependencies {
+            api(libs.kotlinCoroutinesAndroid)
         }
     }
 }
 
 androidx {
     name = "Lifecycle Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Kotlin extensions for 'lifecycle' artifact"
 }
 
-android {
-    namespace "androidx.lifecycle.ktx"
-}

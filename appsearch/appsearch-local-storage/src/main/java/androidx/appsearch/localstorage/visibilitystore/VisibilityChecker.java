@@ -15,8 +15,9 @@
  */
 package androidx.appsearch.localstorage.visibilitystore;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface for classes that validate document visibility data.
@@ -45,4 +46,11 @@ public interface VisibilityChecker {
      * @param callerPackageName Package name of the caller.
      */
     boolean doesCallerHaveSystemAccess(@NonNull String callerPackageName);
+
+    /**
+     * Checks whether the given UID is a Private Compute Core UID.
+     *
+     * @param uid The UID to check.
+     */
+    boolean isPrivateComputeCoreUid(int uid);
 }

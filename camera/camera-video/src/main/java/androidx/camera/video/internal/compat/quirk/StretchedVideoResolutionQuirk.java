@@ -23,8 +23,9 @@ import static android.media.CamcorderProfile.QUALITY_720P;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>QuirkSummary
@@ -48,8 +49,7 @@ public class StretchedVideoResolutionQuirk implements Quirk {
     /**
      * Returns an alternative resolution available on the device.
      */
-    @Nullable
-    public Size getAlternativeResolution(int quality) {
+    public @Nullable Size getAlternativeResolution(int quality) {
         switch (quality) {
             case QUALITY_480P:
                 return new Size(640, 480);

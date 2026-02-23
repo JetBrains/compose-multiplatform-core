@@ -36,14 +36,15 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.R;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.TextViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -96,8 +97,7 @@ class AppCompatTextViewAutoSizeHelper {
     private boolean mHasPresetAutoSizeValues = false;
     private TextPaint mTempTextPaint;
 
-    @NonNull
-    private final TextView mTextView;
+    private final @NonNull TextView mTextView;
     private final Context mContext;
 
     private final Impl mImpl;
@@ -110,16 +110,6 @@ class AppCompatTextViewAutoSizeHelper {
         }
 
         void computeAndSetTextDirection(StaticLayout.Builder layoutBuilder, TextView textView) {
-        }
-    }
-
-    @RequiresApi(23)
-    private static class Impl23 extends Impl {
-        Impl23() {}
-
-        @Override
-        void computeAndSetTextDirection(StaticLayout.Builder layoutBuilder,
-                TextView textView) {
             final TextDirectionHeuristic textDirectionHeuristic =
                     invokeAndReturnWithDefault(textView, "getTextDirectionHeuristic",
                             TextDirectionHeuristics.FIRSTSTRONG_LTR);
@@ -128,7 +118,7 @@ class AppCompatTextViewAutoSizeHelper {
     }
 
     @RequiresApi(29)
-    private static class Impl29 extends Impl23 {
+    private static class Impl29 extends Impl {
         Impl29() {}
 
         @Override
@@ -148,8 +138,6 @@ class AppCompatTextViewAutoSizeHelper {
         mContext = mTextView.getContext();
         if (Build.VERSION.SDK_INT >= 29) {
             mImpl = new Impl29();
-        } else if (Build.VERSION.SDK_INT >= 23) {
-            mImpl = new Impl23();
         } else {
             mImpl = new Impl();
         }
@@ -357,7 +345,7 @@ class AppCompatTextViewAutoSizeHelper {
      *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    void setAutoSizeTextTypeUniformWithPresetSizes(@NonNull int[] presetSizes, int unit)
+    void setAutoSizeTextTypeUniformWithPresetSizes(int @NonNull [] presetSizes, int unit)
             throws IllegalArgumentException {
         if (supportsAutoSizeText()) {
             final int presetSizesLength = presetSizes.length;
@@ -711,29 +699,14 @@ class AppCompatTextViewAutoSizeHelper {
     }
 
     @VisibleForTesting
-    @NonNull
-    StaticLayout createLayout(
+    @NonNull StaticLayout createLayout(
             @NonNull CharSequence text,
-            @NonNull Layout.Alignment alignment,
+            Layout.@NonNull Alignment alignment,
             int availableWidth,
             int maxLines
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return Api23Impl.createStaticLayoutForMeasuring(
-                    text, alignment, availableWidth, maxLines, mTextView, mTempTextPaint, mImpl);
-        } else {
-            final float lineSpacingMultiplier = mTextView.getLineSpacingMultiplier();
-            final float lineSpacingAdd = mTextView.getLineSpacingExtra();
-            final boolean includePad = mTextView.getIncludeFontPadding();
-
-            // The layout could not be constructed using the builder so fall back to the
-            // most broad constructor.
-            return new StaticLayout(text, mTempTextPaint, availableWidth,
-                    alignment,
-                    lineSpacingMultiplier,
-                    lineSpacingAdd,
-                    includePad);
-        }
+        return Api23Impl.createStaticLayoutForMeasuring(
+                text, alignment, availableWidth, maxLines, mTextView, mTempTextPaint, mImpl);
     }
 
     private boolean suggestedSizeFitsInSpace(int suggestedSizeInPx, RectF availableSpace) {
@@ -773,7 +746,7 @@ class AppCompatTextViewAutoSizeHelper {
     // This is marked package-protected so that it doesn't require a synthetic accessor
     // when being used from the Impl inner classes
     static <T> T invokeAndReturnWithDefault(@NonNull Object object,
-            @NonNull final String methodName, @NonNull final T defaultValue) {
+            final @NonNull String methodName, final @NonNull T defaultValue) {
         T result = null;
         boolean exceptionThrown = false;
 
@@ -793,8 +766,7 @@ class AppCompatTextViewAutoSizeHelper {
         return result;
     }
 
-    @Nullable
-    private static Method getTextViewMethod(@NonNull final String methodName) {
+    private static @Nullable Method getTextViewMethod(final @NonNull String methodName) {
         try {
             Method method = sTextViewMethodByNameCache.get(methodName);
             if (method == null) {
@@ -832,16 +804,14 @@ class AppCompatTextViewAutoSizeHelper {
         return !(mTextView instanceof AppCompatEditText);
     }
 
-    @RequiresApi(23)
     private static final class Api23Impl {
         private Api23Impl() {
             // This class is not instantiable.
         }
 
-        @NonNull
-        static StaticLayout createStaticLayoutForMeasuring(
+        static @NonNull StaticLayout createStaticLayoutForMeasuring(
                 @NonNull CharSequence text,
-                @NonNull Layout.Alignment alignment,
+                Layout.@NonNull Alignment alignment,
                 int availableWidth,
                 int maxLines,
                 @NonNull TextView textView,
@@ -861,8 +831,7 @@ class AppCompatTextViewAutoSizeHelper {
                     .setMaxLines(maxLines == -1 ? Integer.MAX_VALUE : maxLines);
 
             try {
-                // Can use the StaticLayout.Builder (along with TextView params added in or after
-                // API 23) to construct the layout.
+                // Can use the StaticLayout.Builder to construct the layout.
                 impl.computeAndSetTextDirection(layoutBuilder, textView);
             } catch (ClassCastException e) {
                 // On some devices this exception happens, details: b/127137059.

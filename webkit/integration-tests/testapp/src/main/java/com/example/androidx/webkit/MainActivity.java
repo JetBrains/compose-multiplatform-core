@@ -22,8 +22,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} for exercising various WebView functionality. This Activity is a {@link
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         final Context activityContext = this;
@@ -79,9 +81,6 @@ public class MainActivity extends AppCompatActivity {
                         getResources().getString(R.string.process_global_config_activity_title),
                         new Intent(activityContext, ProcessGlobalConfigActivity.class)),
                 new MenuListView.MenuItem(
-                        getResources().getString(R.string.requested_with_activity_title),
-                        new Intent(activityContext, RequestedWithHeaderActivity.class)),
-                new MenuListView.MenuItem(
                         getResources().getString(R.string.cookie_manager_activity_title),
                         new Intent(activityContext, CookieManagerActivity.class)),
                 new MenuListView.MenuItem(
@@ -99,7 +98,23 @@ public class MainActivity extends AppCompatActivity {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.restricted_content_activity_title),
                         new Intent(activityContext, RestrictedContentActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.async_startup_activity_title),
+                        new Intent(activityContext, AsyncStartUpActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.default_trafficstats_tagging_activity),
+                        new Intent(activityContext, DefaultTrafficStatsTaggingActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.web_storage_activity_title),
+                        new Intent(activityContext, WebStorageCompatActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.payment_request_activity_title),
+                        new Intent(activityContext, PaymentRequestActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.custom_header_activity_title),
+                        new Intent(activityContext, CustomHeaderActivity.class)),
         };
         listView.setItems(menuItems);
     }
+
 }

@@ -16,16 +16,17 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 /** Quota manager with fixed quota cap. This class is not thread safe. */
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class FixedQuotaManagerImpl implements QuotaManager {
     private final int mQuotaCap;
-    @NonNull private final String mQuotaName;
+    private final @NonNull String mQuotaName;
 
     private int mQuotaCounter = 0;
 

@@ -18,32 +18,29 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        minSdkVersion 26
+        minSdk { version = release(26) }
     }
-    namespace "androidx.constraintlayout.compose.integration.macrobenchmark.target"
+    namespace = "androidx.constraintlayout.compose.integration.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
     }
 }
 
 dependencies {
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
 
-    implementation(libs.kotlinStdlib)
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.cardview:cardview:1.0.0")
     // old version of common-java8 conflicts with newer version, because both have

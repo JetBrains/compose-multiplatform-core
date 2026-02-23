@@ -38,6 +38,7 @@ public class ImageObjectTest {
                 .addKeyword("wow")
                 .setSha256("6ed48")
                 .setThumbnailSha256("8df68")
+                .setBytes(new byte[]{1, 2, 3})
                 .build();
 
         assertThat(imageObject.getNamespace()).isEqualTo("namespace");
@@ -53,6 +54,7 @@ public class ImageObjectTest {
                 .containsExactly(new Keyword("pretty"), new Keyword("wow"));
         assertThat(imageObject.getSha256()).isEqualTo("6ed48");
         assertThat(imageObject.getThumbnailSha256()).isEqualTo("8df68");
+        assertThat(imageObject.getBytes()).isEqualTo(new byte[]{1, 2, 3});
     }
 
     @Test
@@ -70,6 +72,7 @@ public class ImageObjectTest {
                 .addKeyword("wow")
                 .setSha256("6ed48")
                 .setThumbnailSha256("8df68")
+                .setBytes(new byte[]{1, 2, 3})
                 .build();
         ImageObject imageObject2 = new ImageObject.Builder(imageObject1).build();
 
@@ -86,5 +89,6 @@ public class ImageObjectTest {
                 .containsExactly(new Keyword("pretty"), new Keyword("wow"));
         assertThat(imageObject2.getSha256()).isEqualTo("6ed48");
         assertThat(imageObject2.getThumbnailSha256()).isEqualTo("8df68");
+        assertThat(imageObject2.getBytes()).isEqualTo(new byte[]{1, 2, 3});
     }
 }

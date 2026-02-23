@@ -25,9 +25,10 @@ import android.hardware.camera2.CaptureRequest;
 import android.util.Range;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,14 +103,12 @@ public final class CaptureConfig {
     private final boolean mUseRepeatingSurface;
 
     /** The tag collection for associating capture result with capture request. */
-    @NonNull
-    private final TagBundle mTagBundle;
+    private final @NonNull TagBundle mTagBundle;
 
     /**
      * The camera capture result for reprocessing capture request.
      */
-    @Nullable
-    private final CameraCaptureResult mCameraCaptureResult;
+    private final @Nullable CameraCaptureResult mCameraCaptureResult;
 
     /**
      * Private constructor for a CaptureConfig.
@@ -146,8 +145,7 @@ public final class CaptureConfig {
     }
 
     /** Returns an instance of a capture configuration with minimal configurations. */
-    @NonNull
-    public static CaptureConfig defaultEmptyCaptureConfig() {
+    public static @NonNull CaptureConfig defaultEmptyCaptureConfig() {
         return new CaptureConfig.Builder().build();
     }
 
@@ -156,19 +154,16 @@ public final class CaptureConfig {
      *
      * @return {@link CameraCaptureResult}.
      */
-    @Nullable
-    public CameraCaptureResult getCameraCaptureResult() {
+    public @Nullable CameraCaptureResult getCameraCaptureResult() {
         return mCameraCaptureResult;
     }
 
     /** Get all the surfaces that the request will write data to. */
-    @NonNull
-    public List<DeferrableSurface> getSurfaces() {
+    public @NonNull List<DeferrableSurface> getSurfaces() {
         return Collections.unmodifiableList(mSurfaces);
     }
 
-    @NonNull
-    public Config getImplementationOptions() {
+    public @NonNull Config getImplementationOptions() {
         return mImplementationOptions;
     }
 
@@ -196,8 +191,7 @@ public final class CaptureConfig {
         return (int) id;
     }
 
-    @NonNull
-    public Range<Integer> getExpectedFrameRateRange() {
+    public @NonNull Range<Integer> getExpectedFrameRateRange() {
         return Objects.requireNonNull(
                 mImplementationOptions.retrieveOption(OPTION_RESOLVED_FRAME_RATE,
                         StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED));
@@ -225,13 +219,11 @@ public final class CaptureConfig {
     }
 
     /** Obtains all registered {@link CameraCaptureCallback} callbacks. */
-    @NonNull
-    public List<CameraCaptureCallback> getCameraCaptureCallbacks() {
+    public @NonNull List<CameraCaptureCallback> getCameraCaptureCallbacks() {
         return mCameraCaptureCallbacks;
     }
 
-    @NonNull
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mTagBundle;
     }
 
@@ -246,7 +238,7 @@ public final class CaptureConfig {
          * @param config  the set of options to apply
          * @param builder the builder on which to apply the options
          */
-        void unpack(@NonNull UseCaseConfig<?> config, @NonNull CaptureConfig.Builder builder);
+        void unpack(@NonNull UseCaseConfig<?> config, CaptureConfig.@NonNull Builder builder);
     }
 
     /**
@@ -260,8 +252,7 @@ public final class CaptureConfig {
         private List<CameraCaptureCallback> mCameraCaptureCallbacks = new ArrayList<>();
         private boolean mUseRepeatingSurface = false;
         private MutableTagBundle mMutableTagBundle = MutableTagBundle.create();
-        @Nullable
-        private CameraCaptureResult mCameraCaptureResult;
+        private @Nullable CameraCaptureResult mCameraCaptureResult;
 
         public Builder() {
         }
@@ -281,8 +272,7 @@ public final class CaptureConfig {
          *
          * <p>Populates the builder with all the properties defined in the base configuration.
          */
-        @NonNull
-        public static Builder createFrom(@NonNull UseCaseConfig<?> config) {
+        public static @NonNull Builder createFrom(@NonNull UseCaseConfig<?> config) {
             OptionUnpacker unpacker = config.getCaptureOptionUnpacker(null);
             if (unpacker == null) {
                 throw new IllegalStateException(
@@ -298,8 +288,7 @@ public final class CaptureConfig {
         }
 
         /** Create a {@link Builder} from a {@link CaptureConfig} */
-        @NonNull
-        public static Builder from(@NonNull CaptureConfig base) {
+        public static @NonNull Builder from(@NonNull CaptureConfig base) {
             return new Builder(base);
         }
 
@@ -316,8 +305,7 @@ public final class CaptureConfig {
             return mTemplateType;
         }
 
-        @Nullable
-        public Range<Integer> getExpectedFrameRateRange() {
+        public @Nullable Range<Integer> getExpectedFrameRateRange() {
             return mImplementationOptions.retrieveOption(OPTION_RESOLVED_FRAME_RATE,
                     StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED);
         }
@@ -412,8 +400,7 @@ public final class CaptureConfig {
         }
 
         /** Gets the surfaces attached to the request. */
-        @NonNull
-        public Set<DeferrableSurface> getSurfaces() {
+        public @NonNull Set<DeferrableSurface> getSurfaces() {
             return mSurfaces;
         }
 
@@ -443,13 +430,12 @@ public final class CaptureConfig {
         }
 
         /** Add a single implementation option to the request. */
-        public <T> void addImplementationOption(@NonNull Config.Option<T> option,
+        public <T> void addImplementationOption(Config.@NonNull Option<T> option,
                 @NonNull T value) {
             mImplementationOptions.insertOption(option, value);
         }
 
-        @NonNull
-        public Config getImplementationOptions() {
+        public @NonNull Config getImplementationOptions() {
             return mImplementationOptions;
         }
 
@@ -462,8 +448,7 @@ public final class CaptureConfig {
         }
 
         /** Gets a tag's value by a key. */
-        @Nullable
-        public Object getTag(@NonNull String key) {
+        public @Nullable Object getTag(@NonNull String key) {
             return mMutableTagBundle.getTag(key);
         }
 
@@ -497,8 +482,7 @@ public final class CaptureConfig {
          * Builds an instance of a CaptureConfig that has all the combined parameters of the
          * CaptureConfig that have been added to the Builder.
          */
-        @NonNull
-        public CaptureConfig build() {
+        public @NonNull CaptureConfig build() {
             return new CaptureConfig(
                     new ArrayList<>(mSurfaces),
                     OptionsBundle.from(mImplementationOptions),

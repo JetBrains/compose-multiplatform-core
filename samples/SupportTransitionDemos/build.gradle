@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 plugins {
@@ -11,6 +10,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":transition:transition"))
     implementation(project(":appcompat:appcompat"))
     implementation(project(":recyclerview:recyclerview"))
@@ -21,7 +21,7 @@ android {
     aaptOptions {
         additionalParameters "--no-version-transitions"
     }
-    compileSdk 35
-    namespace "com.example.android.support.transition"
+    compileSdk { version = release(36) }
+    namespace = "com.example.android.support.transition"
 }
 

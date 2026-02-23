@@ -53,7 +53,7 @@ internal fun <T : IInterface> execute(
 
 internal suspend fun <T : IInterface> execute(
     iInterface: T,
-    dispatcher: RemoteDispatcher<T>
+    dispatcher: RemoteDispatcher<T>,
 ): ByteArray {
     var deathRecipient: DeathRecipient? = null
     val binder = iInterface.asBinder()
@@ -72,7 +72,9 @@ internal suspend fun <T : IInterface> execute(
 
                     override fun onFailure(error: String?) =
                         continuation.resumeWithException(RuntimeException(error))
-                }
+
+                    override fun getInterfaceVersion(): Int = VERSION
+                },
             )
         }
     } catch (throwable: Throwable) {

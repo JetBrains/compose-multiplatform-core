@@ -23,9 +23,10 @@ import android.app.PendingIntent;
 import android.net.Uri;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A wrapper class holding custom item of Browser Actions menu.
@@ -37,11 +38,11 @@ import androidx.annotation.RestrictTo;
 @Deprecated
 public class BrowserActionItem {
     private final String mTitle;
-    @Nullable private final PendingIntent mAction;
+    private final @Nullable PendingIntent mAction;
     @DrawableRes
     private int mIconId;
-    @Nullable private Uri mIconUri;
-    @Nullable private Runnable mRunnableAction;
+    private @Nullable Uri mIconUri;
+    private @Nullable Runnable mRunnableAction;
 
     /**
      * Constructor for BrowserActionItem with icon, string and action provided.
@@ -103,16 +104,14 @@ public class BrowserActionItem {
     /**
      * @return The title of a custom item.
      */
-    @NonNull
-    public String getTitle() {
+    public @NonNull String getTitle() {
         return mTitle;
     }
 
     /**
      * @return The action of a custom item.
      */
-    @NonNull
-    public PendingIntent getAction() {
+    public @NonNull PendingIntent getAction() {
         if (mAction == null) {
             // This is a bit ugly but the published API has getAction being @NonNull and we don't
             // want to make a breaking change to the whole API because we're just applying
@@ -127,8 +126,7 @@ public class BrowserActionItem {
      * @return The uri used to get the icon of a custom item.
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public Uri getIconUri() {
+    public @Nullable Uri getIconUri() {
         return mIconUri;
     }
 
@@ -136,8 +134,7 @@ public class BrowserActionItem {
      * @return The {@link Runnable} action of a predefined fallback menu item.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    Runnable getRunnableAction() {
+    @Nullable Runnable getRunnableAction() {
         return mRunnableAction;
     }
 }

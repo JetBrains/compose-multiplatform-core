@@ -19,34 +19,32 @@ import androidx.annotation.MainThread
 import androidx.lifecycle.Lifecycle
 import androidx.savedstate.internal.SavedStateRegistryImpl
 
-actual class SavedStateRegistry
-internal actual constructor(
-    private val impl: SavedStateRegistryImpl,
-) {
+public actual class SavedStateRegistry
+internal actual constructor(private val impl: SavedStateRegistryImpl) {
 
     @get:MainThread
-    actual val isRestored: Boolean
+    public actual val isRestored: Boolean
         get() = impl.isRestored
 
     @MainThread
-    actual fun consumeRestoredStateForKey(key: String): SavedState? =
+    public actual fun consumeRestoredStateForKey(key: String): SavedState? =
         impl.consumeRestoredStateForKey(key)
 
     @MainThread
-    actual fun registerSavedStateProvider(key: String, provider: SavedStateProvider) {
+    public actual fun registerSavedStateProvider(key: String, provider: SavedStateProvider) {
         impl.registerSavedStateProvider(key, provider)
     }
 
-    actual fun getSavedStateProvider(key: String): SavedStateProvider? =
+    public actual fun getSavedStateProvider(key: String): SavedStateProvider? =
         impl.getSavedStateProvider(key)
 
     @MainThread
-    actual fun unregisterSavedStateProvider(key: String) {
+    public actual fun unregisterSavedStateProvider(key: String) {
         impl.unregisterSavedStateProvider(key)
     }
 
-    actual fun interface SavedStateProvider {
-        actual fun saveState(): SavedState
+    public actual fun interface SavedStateProvider {
+        public actual fun saveState(): SavedState
     }
 
     /**
@@ -55,14 +53,14 @@ internal actual constructor(
      *
      * Subclasses must have a default constructor
      */
-    interface AutoRecreated {
+    public interface AutoRecreated {
         /**
          * This method will be called during dispatching of
          * [androidx.lifecycle.Lifecycle.Event.ON_CREATE] of owning component which was restarted
          *
          * @param owner a component that was restarted
          */
-        fun onRecreated(owner: SavedStateRegistryOwner)
+        public fun onRecreated(owner: SavedStateRegistryOwner)
     }
 
     private var recreatorProvider: Recreator.SavedStateProvider? = null
@@ -79,7 +77,7 @@ internal actual constructor(
      *   dispatched
      */
     @MainThread
-    fun runOnNextRecreation(clazz: Class<out AutoRecreated>) {
+    public fun runOnNextRecreation(clazz: Class<out AutoRecreated>) {
         check(impl.isAllowingSavingState) {
             "Can not perform this action after onSaveInstanceState"
         }
@@ -90,7 +88,7 @@ internal actual constructor(
             throw IllegalArgumentException(
                 "Class ${clazz.simpleName} must have " +
                     "default constructor in order to be automatically recreated",
-                e
+                e,
             )
         }
         recreatorProvider?.add(clazz.name)

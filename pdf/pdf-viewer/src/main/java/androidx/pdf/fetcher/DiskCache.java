@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.util.Map;
@@ -68,8 +69,7 @@ public class DiskCache {
     }
 
     /** Returns the cached MimeType of this Uri. */
-    @Nullable
-    public String getCachedMimeType(@NonNull Uri uri) {
+    public @Nullable String getCachedMimeType(@NonNull Uri uri) {
         // TODO: this can often be null, since entries are not persisted to disk.
         return mEntries.get(uri);
     }
@@ -89,8 +89,7 @@ public class DiskCache {
      * <p>This dir is not guaranteed to exist. Users of this directory need to ensure that they
      * clean up their data overtime.
      */
-    @NonNull
-    public static File getLongTermCacheDir(@NonNull Context context) {
+    public static @NonNull File getLongTermCacheDir(@NonNull Context context) {
         return new File(context.getCacheDir(), LONG_TERM_CACHE_DIR);
     }
 

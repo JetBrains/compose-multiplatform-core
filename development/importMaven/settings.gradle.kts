@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 pluginManagement {
     repositories {
         mavenCentral()
@@ -22,7 +21,7 @@ pluginManagement {
         google()
         val allowJetbrains = "androidx.allowJetbrainsDev"
         if (settings.extra.has(allowJetbrains) && settings.extra.get(allowJetbrains) == "true") {
-            maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/")
+            maven(url = "https://packages.jetbrains.team/maven/p/kt/dev")
         }
     }
 }
@@ -34,7 +33,7 @@ dependencyResolutionManagement {
         gradlePluginPortal()
         val allowJetbrains = "androidx.allowJetbrainsDev"
         if (settings.extra.has(allowJetbrains) && settings.extra.get(allowJetbrains) == "true") {
-            maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/")
+            maven(url = "https://packages.jetbrains.team/maven/p/kt/dev")
         }
     }
     versionCatalogs {
@@ -43,3 +42,5 @@ dependencyResolutionManagement {
         }
     }
 }
+
+includeBuild("build-logic")

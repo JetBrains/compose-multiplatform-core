@@ -19,8 +19,9 @@ package androidx.work.multiprocess.parcelable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  */
@@ -33,8 +34,7 @@ public final class ParcelConverters {
     /**
      * Marshalls a {@link Parcelable}.
      */
-    @NonNull
-    public static byte[] marshall(@NonNull Parcelable parcelable) {
+    public static byte @NonNull [] marshall(@NonNull Parcelable parcelable) {
         Parcel parcel = Parcel.obtain();
         try {
             parcelable.writeToParcel(parcel, 0 /* flags */);
@@ -47,10 +47,9 @@ public final class ParcelConverters {
     /**
      * Unmarshalls a {@code byte[]} to the {@link T} given a {@link android.os.Parcelable.Creator}.
      */
-    @NonNull
-    public static <T> T unmarshall(
-            @NonNull byte[] array,
-            @NonNull Parcelable.Creator<T> creator) {
+    public static <T> @NonNull T unmarshall(
+            byte @NonNull [] array,
+            Parcelable.@NonNull Creator<T> creator) {
 
         Parcel parcel = Parcel.obtain();
         try {

@@ -27,14 +27,14 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.Signature;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Typeface;
+import android.graphics.fonts.Font;
 import android.net.Uri;
 import android.os.Build;
 import android.os.CancellationSignal;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.LruCache;
@@ -43,6 +43,9 @@ import androidx.core.graphics.TypefaceCompat;
 import androidx.core.provider.FontsContractCompat.FontFamilyResult;
 import androidx.core.provider.FontsContractCompat.FontInfo;
 import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,8 +57,7 @@ import java.util.Objects;
 class FontProvider {
     private FontProvider() {}
 
-    @NonNull
-    static FontFamilyResult getFontFamilyResult(@NonNull Context context,
+    static @NonNull FontFamilyResult getFontFamilyResult(@NonNull Context context,
             @NonNull List<FontRequest> requests, @Nullable CancellationSignal cancellationSignal)
             throws PackageManager.NameNotFoundException {
         if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
@@ -65,6 +67,25 @@ class FontProvider {
             ArrayList<FontInfo[]> queryResults = new ArrayList<>();
             for (int i = 0; i < requests.size(); i++) {
                 FontRequest request = requests.get(i);
+
+                if (Build.VERSION.SDK_INT >= 31) {
+                    final String systemFont = request.getSystemFont();
+                    final Typeface typeface = TypefaceCompat.getSystemFontFamily(systemFont);
+                    if (typeface != null) {
+                        Font font = TypefaceCompat.guessPrimaryFont(typeface);
+                        if (font != null) {
+                            // We cannot store the Font instance directly into FontInfo objects.
+                            // Instead, we will re-resolve the font at the time of Typeface
+                            // creation. The performance overhead should be minimal because of the
+                            // system's layout cache.
+                            queryResults.add(new FontInfo[]{
+                                    new FontInfo(systemFont, request.getVariationSettings())
+                            });
+                            continue;
+                        }
+                    }
+                }
+
                 ProviderInfo providerInfo = getProvider(
                         context.getPackageManager(), request, context.getResources());
                 if (providerInfo == null) {
@@ -132,8 +153,7 @@ class FontProvider {
      * Do not access directly, visible for testing only.
      */
     @VisibleForTesting
-    @Nullable
-    static ProviderInfo getProvider(
+    static @Nullable ProviderInfo getProvider(
             @NonNull PackageManager packageManager,
             @NonNull FontRequest request,
             @Nullable Resources resources
@@ -191,8 +211,7 @@ class FontProvider {
      * Do not access directly, visible for testing only.
      */
     @VisibleForTesting
-    @NonNull
-    static FontInfo[] query(
+    static FontInfo @NonNull [] query(
             Context context,
             FontRequest request,
             String authority,
@@ -264,7 +283,16 @@ class FontProvider {
                                 : 400;
                         boolean italic = italicColumnIndex != -1 && cursor.getInt(italicColumnIndex)
                                 == 1;
-                        result.add(FontInfo.create(fileUri, ttcIndex, weight, italic, resultCode));
+
+                        // Font variation settings can originate from either a font provider or an
+                        // XML definition. While merging or prioritizing these sources would be
+                        // ideal, settings from font providers have historically been ignored and
+                        // are currently unused by any provider.
+                        // Therefore, XML-defined settings are used exclusively for now.
+                        String fontVariationSettings = request.getVariationSettings();
+
+                        result.add(new FontInfo(fileUri, ttcIndex, weight, italic,
+                                fontVariationSettings, resultCode));
                     }
                 }
             } finally {

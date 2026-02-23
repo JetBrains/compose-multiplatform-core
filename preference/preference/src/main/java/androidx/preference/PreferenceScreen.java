@@ -22,10 +22,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A top-level container that represents a settings screen. This is the root component of your

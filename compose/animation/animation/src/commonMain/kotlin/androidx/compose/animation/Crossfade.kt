@@ -43,6 +43,7 @@ import androidx.compose.ui.util.fastForEach
  * @param modifier Modifier to be applied to the animation container.
  * @param animationSpec the [AnimationSpec] to configure the animation.
  * @param label An optional label to differentiate from other animations in Android Studio.
+ * @param content A mapping from a given state to the content corresponding to that state.
  */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -51,7 +52,7 @@ public fun <T> Crossfade(
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     label: String = "Crossfade",
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     val transition = updateTransition(targetState, label)
     transition.Crossfade(modifier, animationSpec, content = content)
@@ -64,7 +65,7 @@ public fun <T> Crossfade(
     targetState: T,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     val transition = updateTransition(targetState)
     transition.Crossfade(modifier, animationSpec, content = content)
@@ -89,6 +90,8 @@ public fun <T> Crossfade(
  *
  * @param modifier Modifier to be applied to the animation container.
  * @param animationSpec the [AnimationSpec] to configure the animation.
+ * @param contentKey A mapping from a given state to an object of [Any].
+ * @param content A mapping from a given state to the content corresponding to that state.
  */
 @ExperimentalAnimationApi
 @Composable
@@ -96,7 +99,7 @@ public fun <T> Transition<T>.Crossfade(
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     contentKey: (targetState: T) -> Any? = { it },
-    content: @Composable (targetState: T) -> Unit
+    content: @Composable (targetState: T) -> Unit,
 ) {
     val currentlyVisible = remember { mutableStateListOf<T>().apply { add(currentState) } }
     val contentMap = remember { mutableScatterMapOf<T, @Composable () -> Unit>() }

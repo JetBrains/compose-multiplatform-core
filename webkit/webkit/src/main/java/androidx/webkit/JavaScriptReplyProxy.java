@@ -16,10 +16,11 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class represents the JavaScript object injected by {@link
@@ -59,7 +60,7 @@ public abstract class JavaScriptReplyProxy {
      */
     @RequiresFeature(name = WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public abstract void postMessage(@NonNull byte[] arrayBuffer);
+    public abstract void postMessage(byte @NonNull [] arrayBuffer);
 
     /**
      * This class cannot be created by applications.

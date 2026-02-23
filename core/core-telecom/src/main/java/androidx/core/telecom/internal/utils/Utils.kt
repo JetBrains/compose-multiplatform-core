@@ -16,6 +16,8 @@
 
 package androidx.core.telecom.internal.utils
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
@@ -24,6 +26,7 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallsManager
 
@@ -31,22 +34,31 @@ internal class Utils {
     companion object {
         private val TAG = Utils.Companion::class.java.simpleName
 
+        /**
+         * Local constant to mirror the platform's
+         * PhoneAccount.CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK.
+         *
+         * This is a temporary measure because the platform API will not be public until the 26Q2
+         * release. Using a local constant allows us to implement the opt-out feature in this
+         * mainline module without creating a dependency on the yet-to-be-released public API.
+         *
+         * Once the platform API is public, this local constant should be removed and replaced with
+         * the official PhoneAccount.CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK.
+         *
+         * For more details, see b/447631226.
+         */
+        // TODO - b/468165661: Replace local constant with API on availability
+        internal const val PLATFORM_CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK = 0x200000
+
         private val defaultBuildAdapter =
             object : BuildVersionAdapter {
-                /**
-                 * Helper method that determines if the device has a build that contains the Telecom
-                 * V2 VoIP APIs. These include [TelecomManager#addCall],
-                 * android.telecom.CallControl, android.telecom.CallEventCallback but are not
-                 * limited to only those classes.
-                 */
-                override fun hasPlatformV2Apis(): Boolean {
-                    Log.i(TAG, "hasPlatformV2Apis: " + "versionSdkInt=[${VERSION.SDK_INT}]")
-                    return VERSION.SDK_INT >= 34 || VERSION.CODENAME == "UpsideDownCake"
-                }
-
                 override fun hasInvalidBuildVersion(): Boolean {
                     Log.i(TAG, "hasInvalidBuildVersion: " + "versionSdkInt=[${VERSION.SDK_INT}]")
                     return VERSION.SDK_INT < VERSION_CODES.O
+                }
+
+                override fun getCurrentSdk(): Int {
+                    return VERSION.SDK_INT
                 }
             }
         private var mBuildVersion: BuildVersionAdapter = defaultBuildAdapter
@@ -59,12 +71,21 @@ internal class Utils {
             mBuildVersion = defaultBuildAdapter
         }
 
-        fun hasPlatformV2Apis(): Boolean {
-            return mBuildVersion.hasPlatformV2Apis()
+        /**
+         * Determines if the library should use the legacy ConnectionService path based on the
+         * configuration set during [CallsManager.registerAppWithTelecom].
+         */
+        @RequiresApi(VERSION_CODES.O)
+        fun shouldUseBackwardsCompatImplementation(): Boolean {
+            return getCurrentSdk() <= CallsManager.mBackwardsCompatUpperBound
         }
 
         fun hasInvalidBuildVersion(): Boolean {
             return mBuildVersion.hasInvalidBuildVersion()
+        }
+
+        fun getCurrentSdk(): Int {
+            return mBuildVersion.getCurrentSdk()
         }
 
         fun verifyBuildVersion() {
@@ -77,19 +98,50 @@ internal class Utils {
             }
         }
 
+        fun isBuildAtLeastP(): Boolean {
+            return VERSION.SDK_INT >= VERSION_CODES.P
+        }
+
+        /**
+         * Checks if the application has the necessary Bluetooth permissions.
+         *
+         * For API level 31 and above, this checks for BLUETOOTH_CONNECT permission. For API levels
+         * 28-30, it checks for BLUETOOTH and BLUETOOTH_ADMIN permissions.
+         *
+         * @param context The application context.
+         * @return `true` if the required permissions are granted, `false` otherwise.
+         */
+        fun hasBluetoothPermissions(context: Context): Boolean {
+            return if (VERSION.SDK_INT >= VERSION_CODES.S) {
+                // API level 31+
+                ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.BLUETOOTH_CONNECT,
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                // API levels 28-30
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH) ==
+                    PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        android.Manifest.permission.BLUETOOTH_ADMIN,
+                    ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+
         @RequiresApi(VERSION_CODES.O)
         fun remapJetpackCapsToPlatformCaps(
-            @CallsManager.Companion.Capability clientBitmapSelection: Int
+            @CallsManager.Companion.Capability clientBitmapSelection: Int,
+            useTransactionalApis: Boolean,
         ): Int {
             // start to build the PhoneAccount that will be registered via the platform API
             var platformCapabilities: Int = PhoneAccount.CAPABILITY_SELF_MANAGED
-            // append additional capabilities if the device is on a U build or above
-            if (hasPlatformV2Apis()) {
+            // Add transactional capabilities ONLY if not using the backwards compat path.
+            if (useTransactionalApis) {
                 platformCapabilities =
                     PhoneAccount.CAPABILITY_SUPPORTS_TRANSACTIONAL_OPERATIONS or
                         platformCapabilities
             }
-
             if (hasJetpackVideoCallingCapability(clientBitmapSelection)) {
                 platformCapabilities =
                     PhoneAccount.CAPABILITY_VIDEO_CALLING or
@@ -100,6 +152,11 @@ internal class Utils {
             if (hasJetpackSteamingCapability(clientBitmapSelection)) {
                 platformCapabilities =
                     PhoneAccount.CAPABILITY_SUPPORTS_CALL_STREAMING or platformCapabilities
+            }
+
+            if (hasJetpackOptOutCapability(clientBitmapSelection)) {
+                platformCapabilities =
+                    PLATFORM_CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK or platformCapabilities
             }
 
             return platformCapabilities
@@ -119,34 +176,24 @@ internal class Utils {
             return hasCapability(CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING, bitMap)
         }
 
-        fun getBundleWithPhoneAccountHandle(
-            callAttributes: CallAttributesCompat,
-            handle: PhoneAccountHandle
-        ): Bundle {
-            return if (VERSION.SDK_INT >= VERSION_CODES.M) {
-                Api23PlusImpl.createExtras(callAttributes, handle)
-            } else {
-                Bundle()
-            }
+        @RequiresApi(VERSION_CODES.O)
+        private fun hasJetpackOptOutCapability(bitMap: Int): Boolean {
+            return hasCapability(CallsManager.CAPABILITY_OPT_OUT_OF_PREMIUM_NETWORK, bitMap)
         }
 
-        @RequiresApi(VERSION_CODES.M)
-        private object Api23PlusImpl {
-            @JvmStatic
-            fun createExtras(
-                callAttributes: CallAttributesCompat,
-                handle: PhoneAccountHandle
-            ): Bundle {
-                val extras = Bundle()
-                extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
-                if (!callAttributes.isOutgoingCall()) {
-                    extras.putParcelable(
-                        TelecomManager.EXTRA_INCOMING_CALL_ADDRESS,
-                        callAttributes.address
-                    )
-                }
-                return extras
+        fun getBundleWithPhoneAccountHandle(
+            callAttributes: CallAttributesCompat,
+            handle: PhoneAccountHandle,
+        ): Bundle {
+            val extras = Bundle()
+            extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
+            if (!callAttributes.isOutgoingCall()) {
+                extras.putParcelable(
+                    TelecomManager.EXTRA_INCOMING_CALL_ADDRESS,
+                    callAttributes.address,
+                )
             }
+            return extras
         }
     }
 }

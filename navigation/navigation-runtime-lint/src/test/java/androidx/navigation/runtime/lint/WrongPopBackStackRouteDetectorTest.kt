@@ -16,8 +16,6 @@
 
 package androidx.navigation.runtime.lint
 
-import androidx.navigation.lint.common.NAVIGATION_STUBS
-import androidx.navigation.lint.common.TEST_CODE
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
@@ -53,8 +51,7 @@ class WrongPopBackStackRouteDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *NAVIGATION_STUBS,
-                TEST_CODE
+                *STUBS,
             )
             .skipTestModes(TestMode.FULLY_QUALIFIED)
             .run()
@@ -96,8 +93,7 @@ class WrongPopBackStackRouteDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *NAVIGATION_STUBS,
-                TEST_CODE
+                *STUBS,
             )
             .skipTestModes(TestMode.FULLY_QUALIFIED)
             .run()
@@ -136,8 +132,7 @@ class WrongPopBackStackRouteDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *NAVIGATION_STUBS,
-                TEST_CODE
+                *STUBS,
             )
             .skipTestModes(TestMode.FULLY_QUALIFIED)
             .run()
@@ -166,30 +161,30 @@ src/com/example/test.kt:22: Error: Use popBackStack with reified class instead. 
             )
             .expectFixDiffs(
                 """
-Autofix for src/com/example/test.kt line 17: Use popBackStack with reified class instead.:
-@@ -17 +17
--     navController.popBackStack(route = TestClassComp, false)
-+     navController.popBackStack<TestClassComp>(false)
-Autofix for src/com/example/test.kt line 18: Use popBackStack with reified class instead.:
-@@ -18 +18
--     navController.popBackStack(route = TestClassWithArgComp, false)
-+     navController.popBackStack<TestClassWithArgComp>(false)
-Autofix for src/com/example/test.kt line 19: Use popBackStack with reified class instead.:
-@@ -19 +19
--     navController.popBackStack(route = OuterComp.InnerClassComp, false)
-+     navController.popBackStack<OuterComp.InnerClassComp>(false)
-Autofix for src/com/example/test.kt line 20: Use popBackStack with reified class instead.:
-@@ -20 +20
--     navController.popBackStack(route = InterfaceChildClassComp, false)
-+     navController.popBackStack<InterfaceChildClassComp>(false)
-Autofix for src/com/example/test.kt line 21: Use popBackStack with reified class instead.:
-@@ -21 +21
--     navController.popBackStack(route = AbstractChildClassComp, false)
-+     navController.popBackStack<AbstractChildClassComp>(false)
-Autofix for src/com/example/test.kt line 22: Use popBackStack with reified class instead.:
-@@ -22 +22
--     navController.popBackStack(route = TestAbstractComp, false)
-+     navController.popBackStack<TestAbstractComp>(false)
+                Autofix for src/com/example/test.kt line 17: Use popBackStack with reified class instead.:
+                @@ -17 +17
+                -     navController.popBackStack(route = TestClassComp, false)
+                +     navController.popBackStack<TestClassComp>(false)
+                Autofix for src/com/example/test.kt line 18: Use popBackStack with reified class instead.:
+                @@ -18 +18
+                -     navController.popBackStack(route = TestClassWithArgComp, false)
+                +     navController.popBackStack<TestClassWithArgComp>(false)
+                Autofix for src/com/example/test.kt line 19: Use popBackStack with reified class instead.:
+                @@ -19 +19
+                -     navController.popBackStack(route = OuterComp.InnerClassComp, false)
+                +     navController.popBackStack<OuterComp.InnerClassComp>(false)
+                Autofix for src/com/example/test.kt line 20: Use popBackStack with reified class instead.:
+                @@ -20 +20
+                -     navController.popBackStack(route = InterfaceChildClassComp, false)
+                +     navController.popBackStack<InterfaceChildClassComp>(false)
+                Autofix for src/com/example/test.kt line 21: Use popBackStack with reified class instead.:
+                @@ -21 +21
+                -     navController.popBackStack(route = AbstractChildClassComp, false)
+                +     navController.popBackStack<AbstractChildClassComp>(false)
+                Autofix for src/com/example/test.kt line 22: Use popBackStack with reified class instead.:
+                @@ -22 +22
+                -     navController.popBackStack(route = TestAbstractComp, false)
+                +     navController.popBackStack<TestAbstractComp>(false)
                 """
                     .trimIndent()
             )

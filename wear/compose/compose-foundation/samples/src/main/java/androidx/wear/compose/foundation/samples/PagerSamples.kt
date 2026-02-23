@@ -25,35 +25,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Sampled
 @Composable
 fun SimpleHorizontalPagerSample() {
     // Creates a horizontal pager with 10 elements
     val state = rememberPagerState { 10 }
-    HorizontalPager(
-        state = state,
-    ) { page ->
+    HorizontalPager(modifier = Modifier.fillMaxSize(), state = state) { page ->
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             BasicText(text = "Page $page", style = TextStyle(color = Color.White))
         }
     }
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Sampled
 @Composable
 fun SimpleVerticalPagerSample() {
     // Creates a vertical pager with 10 elements
     val state = rememberPagerState { 10 }
-    VerticalPager(
-        state = state,
-    ) { page ->
+    VerticalPager(modifier = Modifier.fillMaxSize(), state = state) { page ->
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             BasicText(text = "Page $page", style = TextStyle(color = Color.White))
         }

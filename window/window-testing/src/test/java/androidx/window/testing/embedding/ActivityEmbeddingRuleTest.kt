@@ -238,7 +238,7 @@ class ActivityEmbeddingRuleTest {
                             throw TestException
                         }
                     },
-                    Description.EMPTY
+                    Description.EMPTY,
                 )
                 .evaluate()
         } catch (e: TestException) {
@@ -290,7 +290,7 @@ class ActivityEmbeddingRuleTest {
                     TestSplitInfo(
                         TestActivityStack(listOf(mockActivity), isEmpty = false),
                         TestActivityStack(listOf(mockActivity), isEmpty = false),
-                        SplitAttributes(splitType = SPLIT_TYPE_HINGE),
+                        SplitAttributes.Builder().setSplitType(SPLIT_TYPE_HINGE).build(),
                     )
                 )
 

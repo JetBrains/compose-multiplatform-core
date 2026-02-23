@@ -19,11 +19,9 @@ package androidx.pdf.data;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.net.Uri;
-import android.os.Build;
 import android.os.Parcel;
 
 import androidx.pdf.models.Dimensions;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,10 +29,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link ContentOpenable}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Config(sdk = {Config.TARGET_SDK})
 public class ContentOpenableTest {
 
     private ContentOpenable mContentOpenable;

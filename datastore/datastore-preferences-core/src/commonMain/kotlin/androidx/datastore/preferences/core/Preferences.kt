@@ -20,18 +20,19 @@ import androidx.datastore.core.DataStore
 /**
  * Preferences and MutablePreferences are a lot like a generic Map and MutableMap keyed by the
  * Preferences.Key class. These are intended for use with DataStore. Construct a
- * DataStore<Preferences> instance using [PreferenceDataStoreFactory.create].
+ * `DataStore<Preferences>` instance using [PreferenceDataStoreFactory.create].
  */
 public abstract class Preferences internal constructor() {
     /**
      * Key for values stored in Preferences. Type T is the type of the value associated with the
      * Key.
      *
-     * T must be one of the following: Boolean, Int, Long, Float, String, Set<String>.
+     * T must be one of the following: Boolean, Int, Long, Float, String, Set<String>, Double,
+     * ByteArray.
      *
      * Construct Keys for your data type using: [booleanPreferencesKey], [intPreferencesKey],
      * [longPreferencesKey], [floatPreferencesKey], [stringPreferencesKey],
-     * [stringSetPreferencesKey]
+     * [stringSetPreferencesKey], [doublePreferencesKey], [byteArrayPreferencesKey].
      */
     public class Key<T> internal constructor(public val name: String) {
         /**
@@ -108,6 +109,29 @@ public abstract class Preferences internal constructor() {
     }
 
     /**
+     * Creates a new read-only Preferences with the changes from [block].
+     *
+     * The [block] runs on a [MutablePreferences] copy of this `Preferences` object, so any changes
+     * inside the block will be present in the returned `Preferences` object.
+     *
+     * Example:
+     * ```
+     * val newPrefs = prefs.copy { preferences ->
+     *     preferences[COUNTER_KEY] = 1
+     * }
+     * ```
+     *
+     * @param block The lambda to apply to a mutable copy of these preferences.
+     * @return A new read-only `Preferences` object with the applied changes.
+     */
+    fun copy(block: (MutablePreferences) -> Unit): Preferences {
+        return MutablePreferences(asMap().toMutableMap(), startFrozen = false).also {
+            block(it)
+            it.freeze()
+        }
+    }
+
+    /**
      * Gets a read-only copy of Preferences which contains all the preferences in this Preferences.
      *
      * This is similar to [Map.toMap].
@@ -125,7 +149,7 @@ public abstract class Preferences internal constructor() {
 public class MutablePreferences
 internal constructor(
     internal val preferencesMap: MutableMap<Key<*>, Any> = mutableMapOf(),
-    startFrozen: Boolean = true
+    startFrozen: Boolean = true,
 ) : Preferences() {
 
     /** If frozen, mutating methods will throw. */

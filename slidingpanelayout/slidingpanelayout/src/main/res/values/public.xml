@@ -18,6 +18,8 @@
     <public type="attr" name="isOverlappingEnabled"/>
     <public type="attr" name="isUserResizingEnabled"/>
     <public type="attr" name="userResizingDividerDrawable"/>
+    <public type="attr" name="userResizingDividerTint"/>
     <public type="attr" name="isChildClippingToResizeDividerEnabled"/>
     <public type="attr" name="userResizeBehavior"/>
+    <public type="attr" name="paneSpacing"/>
 </resources>

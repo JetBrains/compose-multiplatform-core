@@ -17,17 +17,22 @@
 package androidx.wear.compose.material3
 
 import android.content.res.Configuration
-import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -35,6 +40,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -42,10 +52,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ScrollIndicatorScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -54,21 +64,21 @@ class ScrollIndicatorScreenshotTest {
     @Test
     fun position_indicator_round_size_small_position_top() =
         position_indicator_position_test(
-            size = 0.1f,
+            size = 0.2f,
             position = 0.1f,
             ltr = true,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
     fun position_indicator_round_size_small_position_bottom() =
         position_indicator_position_test(
-            size = 0.1f,
+            size = 0.2f,
             position = 1f,
             ltr = true,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -78,7 +88,7 @@ class ScrollIndicatorScreenshotTest {
             position = 0.1f,
             ltr = true,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -88,7 +98,7 @@ class ScrollIndicatorScreenshotTest {
             position = 0.5f,
             ltr = true,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -98,7 +108,7 @@ class ScrollIndicatorScreenshotTest {
             position = 0.5f,
             ltr = true,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -108,7 +118,7 @@ class ScrollIndicatorScreenshotTest {
             position = 0.1f,
             ltr = false,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -118,8 +128,94 @@ class ScrollIndicatorScreenshotTest {
             position = 1f,
             ltr = false,
             roundScreen = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
+
+    @Test
+    fun position_indicator_round_with_slcAndContentPadding() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberScalingLazyListState()
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    contentPadding = PaddingValues(100.dp),
+                    autoCentering = null,
+                ) {
+                    items(6) { Text("item $it", modifier = Modifier.height(70.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_slc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberScalingLazyListState()
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_lc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberLazyListState()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_tlc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberTransformingLazyColumnState()
+                TransformingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
 
     private fun position_indicator_position_test(
         size: Float,
@@ -127,7 +223,7 @@ class ScrollIndicatorScreenshotTest {
         goldenIdentifier: String,
         roundScreen: Boolean,
         screenSizeDp: Int = 250,
-        ltr: Boolean = true
+        ltr: Boolean = true,
     ) {
         rule.setContentWithTheme {
             val actualLayoutDirection = if (ltr) LayoutDirection.Ltr else LayoutDirection.Rtl
@@ -144,7 +240,7 @@ class ScrollIndicatorScreenshotTest {
                 }
             CompositionLocalProvider(
                 LocalLayoutDirection provides actualLayoutDirection,
-                LocalConfiguration provides updatedConfig
+                LocalConfiguration provides updatedConfig,
             ) {
                 IndicatorImpl(
                     state =
@@ -158,7 +254,7 @@ class ScrollIndicatorScreenshotTest {
                     indicatorHeight = 50.dp,
                     indicatorWidth = 4.dp,
                     paddingHorizontal = 2.dp,
-                    modifier = Modifier.testTag(TEST_TAG).background(Color.Black)
+                    modifier = Modifier.testTag(TEST_TAG).background(Color.Black),
                 )
             }
         }

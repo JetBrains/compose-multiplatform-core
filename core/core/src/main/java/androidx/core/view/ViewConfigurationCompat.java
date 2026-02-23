@@ -27,9 +27,10 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Method;
 

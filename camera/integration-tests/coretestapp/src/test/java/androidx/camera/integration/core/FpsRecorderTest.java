@@ -19,10 +19,9 @@ package androidx.camera.integration.core;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.truth.StandardSubjectBuilder;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -124,8 +123,8 @@ public class FpsRecorderTest {
         assertThat(fpsOut).isLessThan(TEST_FPS);
     }
 
-    private void assertElementsWithinTolerance_ignoringNaN(@NonNull double[] actual,
-            @NonNull double[] expected) {
+    private void assertElementsWithinTolerance_ignoringNaN(double @NonNull [] actual,
+            double @NonNull [] expected) {
         // Cannot compare with withTolerance() since NaN is not considered equal to itself in
         // that case
         for (int i = 0; i < actual.length; ++i) {

@@ -17,6 +17,7 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.checkScrollableContainerConstraints
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
@@ -26,23 +27,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.LazyLayout
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.foundation.lazy.layout.lazyLayoutBeyondBoundsModifier
 import androidx.compose.foundation.lazy.layout.lazyLayoutSemantics
-import androidx.compose.foundation.scrollingContainer
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsContext
-import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalGraphicsContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.trace
 import kotlinx.coroutines.CoroutineScope
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -72,12 +73,14 @@ internal fun LazyGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     /** Whether scrolling via the user gestures is allowed. */
     userScrollEnabled: Boolean,
+    /** The overscroll effect to render and dispatch events to */
+    overscrollEffect: OverscrollEffect?,
     /** The vertical arrangement for items/lines. */
     verticalArrangement: Arrangement.Vertical,
     /** The horizontal arrangement for items/lines. */
     horizontalArrangement: Arrangement.Horizontal,
     /** The content of the grid */
-    content: LazyGridScope.() -> Unit
+    content: LazyGridScope.() -> Unit,
 ) {
     val itemProviderLambda = rememberLazyGridItemProviderLambda(state, content)
 
@@ -99,16 +102,22 @@ internal fun LazyGrid(
             verticalArrangement,
             coroutineScope,
             graphicsContext,
-            if (stickyHeadersEnabled) StickyItemsPlacement.StickToTopPlacement else null
+            if (stickyHeadersEnabled) StickyItemsPlacement.StickToTopPlacement else null,
         )
 
     val orientation = if (isVertical) Orientation.Vertical else Orientation.Horizontal
-    val reverseDirection =
-        ScrollableDefaults.reverseDirection(
-            LocalLayoutDirection.current,
-            orientation,
-            reverseLayout
-        )
+
+    val beyondBoundsModifier =
+        if (userScrollEnabled) {
+            Modifier.lazyLayoutBeyondBoundsModifier(
+                state = rememberLazyGridBeyondBoundsState(state = state),
+                beyondBoundsInfo = state.beyondBoundsInfo,
+                reverseLayout = reverseLayout,
+                orientation = orientation,
+            )
+        } else {
+            Modifier
+        }
 
     LazyLayout(
         modifier =
@@ -122,27 +131,20 @@ internal fun LazyGrid(
                     userScrollEnabled = userScrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
-                .lazyLayoutBeyondBoundsModifier(
-                    state = rememberLazyGridBeyondBoundsState(state = state),
-                    beyondBoundsInfo = state.beyondBoundsInfo,
-                    reverseLayout = reverseLayout,
-                    layoutDirection = LocalLayoutDirection.current,
-                    orientation = orientation,
-                    enabled = userScrollEnabled
-                )
+                .then(beyondBoundsModifier)
                 .then(state.itemAnimator.modifier)
-                .scrollingContainer(
+                .scrollableArea(
                     state = state,
                     orientation = orientation,
                     enabled = userScrollEnabled,
-                    reverseDirection = reverseDirection,
+                    reverseScrolling = reverseLayout,
                     flingBehavior = flingBehavior,
                     interactionSource = state.internalInteractionSource,
-                    overscrollEffect = ScrollableDefaults.overscrollEffect()
+                    overscrollEffect = overscrollEffect,
                 ),
         prefetchState = state.prefetchState,
         measurePolicy = measurePolicy,
-        itemProvider = itemProviderLambda
+        itemProvider = itemProviderLambda,
     )
 }
 
@@ -173,9 +175,9 @@ private fun rememberLazyGridMeasurePolicy(
     /** Used for creating graphics layers */
     graphicsContext: GraphicsContext,
     /** Configures the placement of sticky items */
-    stickyItemsScrollBehavior: StickyItemsPlacement?
+    stickyItemsScrollBehavior: StickyItemsPlacement?,
 ) =
-    remember<LazyLayoutMeasureScope.(Constraints) -> MeasureResult>(
+    remember(
         state,
         slots,
         contentPadding,
@@ -183,13 +185,15 @@ private fun rememberLazyGridMeasurePolicy(
         isVertical,
         horizontalArrangement,
         verticalArrangement,
-        graphicsContext
+        graphicsContext,
     ) {
-        { containerConstraints ->
+        LazyLayoutMeasurePolicy { containerConstraints ->
             state.measurementScopeInvalidator.attachToScope()
+            // Tracks if the lookahead pass has occurred
+            val isInLookaheadScope = state.hasLookaheadOccurred || isLookingAhead
             checkScrollableContainerConstraints(
                 containerConstraints,
-                if (isVertical) Orientation.Vertical else Orientation.Horizontal
+                if (isVertical) Orientation.Vertical else Orientation.Horizontal,
             )
 
             // resolve content paddings
@@ -227,7 +231,7 @@ private fun rememberLazyGridMeasurePolicy(
 
             val itemProvider = itemProviderLambda()
             val spanLayoutProvider = itemProvider.spanLayoutProvider
-            val resolvedSlots = slots.invoke(density = this, constraints = containerConstraints)
+            val resolvedSlots = slots.invoke(density = this, constraints = contentConstraints)
             val slotsPerLine = resolvedSlots.sizes.size
             spanLayoutProvider.slotsPerLine = slotsPerLine
 
@@ -264,7 +268,7 @@ private fun rememberLazyGridMeasurePolicy(
                     // we offset start padding by negative space between paddings.
                     IntOffset(
                         if (isVertical) startPadding else startPadding + mainAxisAvailableSize,
-                        if (isVertical) topPadding + mainAxisAvailableSize else topPadding
+                        if (isVertical) topPadding + mainAxisAvailableSize else topPadding,
                     )
                 }
 
@@ -279,7 +283,7 @@ private fun rememberLazyGridMeasurePolicy(
                         placeables: List<Placeable>,
                         constraints: Constraints,
                         lane: Int,
-                        span: Int
+                        span: Int,
                     ) =
                         LazyGridMeasuredItem(
                             index = index,
@@ -297,7 +301,7 @@ private fun rememberLazyGridMeasurePolicy(
                             animator = state.itemAnimator,
                             constraints = constraints,
                             lane = lane,
-                            span = span
+                            span = span,
                         )
                 }
             val measuredLineProvider =
@@ -308,13 +312,13 @@ private fun rememberLazyGridMeasurePolicy(
                         gridItemsCount = itemsCount,
                         spaceBetweenLines = spaceBetweenLines,
                         measuredItemProvider = measuredItemProvider,
-                        spanLayoutProvider = spanLayoutProvider
+                        spanLayoutProvider = spanLayoutProvider,
                     ) {
                     override fun createLine(
                         index: Int,
                         items: Array<LazyGridMeasuredItem>,
                         spans: List<GridItemSpan>,
-                        mainAxisSpacing: Int
+                        mainAxisSpacing: Int,
                     ) =
                         LazyGridMeasuredLine(
                             index = index,
@@ -339,6 +343,10 @@ private fun rememberLazyGridMeasurePolicy(
                 result
             }
 
+            val lineIndexProvider: (itemIndex: Int) -> Int = { itemIndex ->
+                spanLayoutProvider.getLineIndexOfItem(itemIndex)
+            }
+
             val firstVisibleLineIndex: Int
             val firstVisibleLineScrollOffset: Int
 
@@ -346,7 +354,7 @@ private fun rememberLazyGridMeasurePolicy(
                 val index =
                     state.updateScrollPositionIfTheFirstItemWasMoved(
                         itemProvider,
-                        state.firstVisibleItemIndex
+                        state.firstVisibleItemIndex,
                     )
                 if (index < itemsCount || itemsCount <= 0) {
                     firstVisibleLineIndex = spanLayoutProvider.getLineIndexOfItem(index)
@@ -362,8 +370,15 @@ private fun rememberLazyGridMeasurePolicy(
             val pinnedItems =
                 itemProvider.calculateLazyLayoutPinnedIndices(
                     state.pinnedItems,
-                    state.beyondBoundsInfo
+                    state.beyondBoundsInfo,
                 )
+
+            val scrollToBeConsumed =
+                if (isLookingAhead || !isInLookaheadScope) {
+                    state.scrollToBeConsumed
+                } else {
+                    state.scrollDeltaBetweenPasses
+                }
 
             // todo: wrap with snapshot when b/341782245 is resolved
             val measureResult =
@@ -377,7 +392,7 @@ private fun rememberLazyGridMeasurePolicy(
                     spaceBetweenLines = spaceBetweenLines,
                     firstVisibleLineIndex = firstVisibleLineIndex,
                     firstVisibleLineScrollOffset = firstVisibleLineScrollOffset,
-                    scrollToBeConsumed = state.scrollToBeConsumed,
+                    scrollToBeConsumed = scrollToBeConsumed,
                     constraints = contentConstraints,
                     isVertical = isVertical,
                     verticalArrangement = verticalArrangement,
@@ -387,9 +402,13 @@ private fun rememberLazyGridMeasurePolicy(
                     itemAnimator = state.itemAnimator,
                     slotsPerLine = slotsPerLine,
                     pinnedItems = pinnedItems,
+                    isInLookaheadScope = isInLookaheadScope,
+                    isLookingAhead = isLookingAhead,
+                    approachLayoutInfo = state.approachLayoutInfo,
                     coroutineScope = coroutineScope,
                     placementScopeInvalidator = state.placementScopeInvalidator,
                     prefetchInfoRetriever = prefetchInfoRetriever,
+                    lineIndexProvider = lineIndexProvider,
                     graphicsContext = graphicsContext,
                     stickyItemsScrollBehavior = stickyItemsScrollBehavior,
                     layout = { width, height, placement ->
@@ -397,11 +416,41 @@ private fun rememberLazyGridMeasurePolicy(
                             containerConstraints.constrainWidth(width + totalHorizontalPadding),
                             containerConstraints.constrainHeight(height + totalVerticalPadding),
                             emptyMap(),
-                            placement
+                            placement,
                         )
-                    }
+                    },
                 )
-            state.applyMeasureResult(measureResult)
+            state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
+            // apply keep around after updating the strategy with measure result.
+            (state.prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
+                measureResult.orientation,
+                measureResult.visibleItemsInfo,
+                measuredLineProvider,
+            )
             measureResult
         }
     }
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun CacheWindowLogic.keepAroundItems(
+    orientation: Orientation,
+    visibleItemsList: List<LazyGridMeasuredItem>,
+    measuredLineProvider: LazyGridMeasuredLineProvider,
+) {
+    trace("compose:lazy:cache_window:keepAroundItems") {
+        // only run if window and new layout info is available
+        if (hasValidBounds() && visibleItemsList.isNotEmpty()) {
+            val firstVisibleItemIndex = visibleItemsList.first().lineIndex(orientation)
+            val lastVisibleItemIndex = visibleItemsList.last().lineIndex(orientation)
+            // we must send a message in case of changing directions for items
+            // that were keep around and become prefetch forward
+            for (line in prefetchWindowStartLine..<firstVisibleItemIndex) {
+                measuredLineProvider.keepAround(line)
+            }
+
+            for (line in (lastVisibleItemIndex + 1)..prefetchWindowEndLine) {
+                measuredLineProvider.keepAround(line)
+            }
+        }
+    }
+}

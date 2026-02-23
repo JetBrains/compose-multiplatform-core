@@ -18,7 +18,6 @@ package androidx.leanback.tab.app;
 
 import android.os.Bundle;
 
-
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.tab.LeanbackViewPager;
 import androidx.leanback.tab.test.R;

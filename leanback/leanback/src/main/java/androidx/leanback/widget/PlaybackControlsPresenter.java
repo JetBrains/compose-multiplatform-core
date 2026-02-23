@@ -28,10 +28,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.util.MathUtil;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A presenter for a control bar that supports "more actions",
@@ -313,16 +314,15 @@ class PlaybackControlsPresenter extends ControlBarPresenter {
         vh.mTotalTime.setLayoutParams(lp);
     }
 
-    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.@NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
         View v = LayoutInflater.from(parent.getContext())
             .inflate(getLayoutResourceId(), parent, false);
         return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Presenter.ViewHolder holder, @Nullable Object item) {
+    public void onBindViewHolder(Presenter.@NonNull ViewHolder holder, @Nullable Object item) {
         ViewHolder vh = (ViewHolder) holder;
         BoundData data = (BoundData) item;
 
@@ -338,7 +338,7 @@ class PlaybackControlsPresenter extends ControlBarPresenter {
     }
 
     @Override
-    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder holder) {
+    public void onUnbindViewHolder(Presenter.@NonNull ViewHolder holder) {
         super.onUnbindViewHolder(holder);
         ViewHolder vh = (ViewHolder) holder;
         if (vh.mMoreActionsAdapter != null) {

@@ -18,11 +18,12 @@ package androidx.coordinatorlayout.widget;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.util.Pools;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -92,8 +93,7 @@ public final class DirectedAcyclicGraph<T> {
      *
      * @return a new list containing any incoming edges, or {@code null} if there are none
      */
-    @Nullable
-    public List<T> getIncomingEdges(@NonNull T node) {
+    public @Nullable List<T> getIncomingEdges(@NonNull T node) {
         ArrayList<T> result = getIncomingEdgesInternal(node);
         if (result == null) {
             return null;
@@ -107,8 +107,7 @@ public final class DirectedAcyclicGraph<T> {
      *
      * @return a list containing any incoming edges, or null if there are none.
      */
-    @Nullable
-    ArrayList<T> getIncomingEdgesInternal(@NonNull T node) {
+    @Nullable ArrayList<T> getIncomingEdgesInternal(@NonNull T node) {
         return mGraph.get(node);
     }
 
@@ -118,8 +117,7 @@ public final class DirectedAcyclicGraph<T> {
      *
      * @return a new list containing any outgoing edges, or {@code null} if there are none
      */
-    @Nullable
-    public List<T> getOutgoingEdges(@NonNull T node) {
+    public @Nullable List<T> getOutgoingEdges(@NonNull T node) {
         ArrayList<T> result = null;
         for (int i = 0, size = mGraph.size(); i < size; i++) {
             ArrayList<T> edges = mGraph.valueAt(i);
@@ -171,8 +169,7 @@ public final class DirectedAcyclicGraph<T> {
      * <p>The resulting list will be ordered such that index 0 will contain the node at the bottom
      * of the graph. The node at the end of the list will have no dependencies on other nodes.</p>
      */
-    @NonNull
-    public ArrayList<T> getSortedList() {
+    public @NonNull ArrayList<T> getSortedList() {
         mSortResult.clear();
         mSortTmpMarked.clear();
 
@@ -214,8 +211,7 @@ public final class DirectedAcyclicGraph<T> {
         return mGraph.size();
     }
 
-    @NonNull
-    private ArrayList<T> getEmptyList() {
+    private @NonNull ArrayList<T> getEmptyList() {
         ArrayList<T> list = mListPool.acquire();
         if (list == null) {
             list = new ArrayList<>();

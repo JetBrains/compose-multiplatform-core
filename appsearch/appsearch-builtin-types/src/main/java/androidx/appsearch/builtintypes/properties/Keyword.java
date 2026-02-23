@@ -19,9 +19,10 @@ package androidx.appsearch.builtintypes.properties;
 import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES;
 import static androidx.core.util.Preconditions.checkNotNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.Document;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -39,17 +40,14 @@ import java.util.Objects;
  */
 @Document
 public final class Keyword {
-    @NonNull
     @Document.Namespace
-    String mNamespace = "";
+    @NonNull String mNamespace = "";
 
-    @NonNull
     @Document.Id
-    String mId = "";
+    @NonNull String mId = "";
 
-    @Nullable
     @Document.StringProperty(indexingType = INDEXING_TYPE_PREFIXES)
-    final String mAsText;
+    final @Nullable String mAsText;
 
     public Keyword(@NonNull String asText) {
         mAsText = checkNotNull(asText);
@@ -58,8 +56,7 @@ public final class Keyword {
     /**
      * Returns the Text i.e. {@link String} variant, if populated. Otherwise, null.
      */
-    @Nullable
-    public String asText() {
+    public @Nullable String asText() {
         return mAsText;
     }
 

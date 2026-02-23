@@ -44,7 +44,7 @@ internal class RegistryManagerProviderFactory(private val context: Context) {
         val packageInfo =
             context.packageManager.getPackageInfo(
                 context.packageName,
-                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES,
             )
 
         val classNames = mutableListOf<String>()
@@ -69,7 +69,7 @@ internal class RegistryManagerProviderFactory(private val context: Context) {
                 val p =
                     klass.getConstructor(Context::class.java).newInstance(context)
                         as RegistryManagerProvider
-                if (p.isAvailableOnDevice()) {
+                if (p.isAvailable()) {
                     if (provider != null) { // Only one active OEM CredentialProvider allowed
                         return null
                     }

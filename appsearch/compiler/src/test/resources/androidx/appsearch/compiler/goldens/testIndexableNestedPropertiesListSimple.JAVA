@@ -2,6 +2,7 @@ package com.example.appsearch;
 
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactory;
+import androidx.appsearch.app.DocumentClassMappingContext;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.exceptions.AppSearchException;
 import java.lang.Class;
@@ -9,7 +10,6 @@ import java.lang.Override;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.processing.Generated;
 
 @Generated("androidx.appsearch.compiler.AppSearchCompiler")
@@ -64,7 +64,7 @@ public final class $$__AppSearch__Person implements DocumentClassFactory<Person>
 
   @Override
   public Person fromGenericDocument(GenericDocument genericDoc,
-      Map<String, List<String>> documentClassMap) throws AppSearchException {
+      DocumentClassMappingContext documentClassMappingContext) throws AppSearchException {
     String namespaceConv = genericDoc.getNamespace();
     String idConv = genericDoc.getId();
     String[] nameCopy = genericDoc.getPropertyStringArray("name");
@@ -75,7 +75,7 @@ public final class $$__AppSearch__Person implements DocumentClassFactory<Person>
     GenericDocument livesAtCopy = genericDoc.getPropertyDocument("livesAt");
     Address livesAtConv = null;
     if (livesAtCopy != null) {
-      livesAtConv = livesAtCopy.toDocumentClass(Address.class, documentClassMap);
+      livesAtConv = livesAtCopy.toDocumentClass(Address.class, documentClassMappingContext);
     }
     Person document = new Person();
     document.namespace = namespaceConv;

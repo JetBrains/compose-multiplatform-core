@@ -17,14 +17,13 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("kotlin-android")
 }
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk { version = release(29) }
     }
-    namespace "androidx.window.integration.macrobenchmark"
+    namespace = "androidx.window.integration.macrobenchmark"
     targetProjectPath = ":window:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }
@@ -37,7 +36,7 @@ androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'r
 dependencies {
     implementation(project(":benchmark:benchmark-junit4"))
     implementation(project(":benchmark:benchmark-macro-junit4"))
-    implementation(project(":internal-testutils-macrobenchmark"))
+    implementation(project(":internal-testutils-benchmark-macro"))
     implementation(libs.testRules)
     implementation(libs.testExtJunit)
     implementation(libs.testCore)

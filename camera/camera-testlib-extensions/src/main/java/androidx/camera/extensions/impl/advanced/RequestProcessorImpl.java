@@ -21,7 +21,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -78,20 +78,17 @@ public interface RequestProcessorImpl {
          * Gets the target ids of {@link Camera2OutputConfigImpl} which identifies corresponding
          * Surface to be the targeted for the request.
          */
-        @NonNull
-        List<Integer> getTargetOutputConfigIds();
+        @NonNull List<Integer> getTargetOutputConfigIds();
 
         /**
          * Gets all the parameters.
          */
-        @NonNull
-        Map<CaptureRequest.Key<?>, Object> getParameters();
+        @NonNull Map<CaptureRequest.Key<?>, Object> getParameters();
 
         /**
          * Gets the template id.
          */
-        @NonNull
-        Integer getTemplateId();
+        @NonNull Integer getTemplateId();
     }
 
     /**

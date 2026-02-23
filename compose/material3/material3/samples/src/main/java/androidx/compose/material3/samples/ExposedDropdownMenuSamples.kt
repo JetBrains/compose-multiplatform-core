@@ -20,18 +20,24 @@ package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -50,6 +56,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -57,11 +64,9 @@ fun ExposedDropdownMenuSample() {
     val options: List<String> = SampleData.take(5)
     var expanded by remember { mutableStateOf(false) }
     val textFieldState = rememberTextFieldState(options[0])
+    var checkedIndex: Int? by remember { mutableStateOf(null) }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         TextField(
             // The `menuAnchor` modifier must be passed to the text field to handle
             // expanding/collapsing the menu on click. A read-only text field has
@@ -77,13 +82,25 @@ fun ExposedDropdownMenuSample() {
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            containerColor = MenuDefaults.groupStandardContainerColor,
+            shape = MenuDefaults.standaloneGroupShape,
         ) {
-            options.forEach { option ->
+            val optionCount = options.size
+            options.forEachIndexed { index, option ->
                 DropdownMenuItem(
+                    shapes = MenuDefaults.itemShape(index, optionCount),
                     text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
+                    selected = index == checkedIndex,
                     onClick = {
                         textFieldState.setTextAndPlaceCursorAtEnd(option)
-                        expanded = false
+                        checkedIndex = index
+                    },
+                    selectedLeadingIcon = {
+                        Icon(
+                            Icons.Filled.Check,
+                            modifier = Modifier.size(MenuDefaults.LeadingIconSize),
+                            contentDescription = null,
+                        )
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                 )
@@ -106,10 +123,7 @@ fun EditableExposedDropdownMenuSample() {
     val (allowExpanded, setExpanded) = remember { mutableStateOf(false) }
     val expanded = allowExpanded && filteredOptions.isNotEmpty()
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = setExpanded,
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = setExpanded) {
         TextField(
             // The `menuAnchor` modifier must be passed to the text field to handle
             // expanding/collapsing the menu on click. An editable text field has
@@ -199,10 +213,7 @@ fun MultiAutocompleteExposedDropdownMenuSample() {
     val (allowExpanded, setExpanded) = remember { mutableStateOf(false) }
     val expanded = allowExpanded && filteredOptions.isNotEmpty()
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = setExpanded,
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = setExpanded) {
         TextField(
             modifier =
                 Modifier.width(280.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
@@ -230,7 +241,7 @@ fun MultiAutocompleteExposedDropdownMenuSample() {
                             textFieldState.replaceThenAddComma(
                                 tokenSelection.start,
                                 tokenSelection.end,
-                                option
+                                option,
                             )
                         }
                     },
@@ -293,5 +304,5 @@ private val SampleData =
         "W123",
         "X456",
         "Y789",
-        "Z000"
+        "Z000",
     )

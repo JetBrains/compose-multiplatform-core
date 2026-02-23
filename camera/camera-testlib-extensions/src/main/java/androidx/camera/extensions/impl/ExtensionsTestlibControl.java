@@ -16,7 +16,7 @@
 
 package androidx.camera.extensions.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An internal utility class that allows tests to specify whether to enable basic extender or
@@ -43,8 +43,7 @@ public class ExtensionsTestlibControl {
     /**
      * Gets the singleton instance.
      */
-    @NonNull
-    public static ExtensionsTestlibControl getInstance() {
+    public static @NonNull ExtensionsTestlibControl getInstance() {
         synchronized (sLock) {
             if (sInstance == null) {
                 sInstance = new ExtensionsTestlibControl();
@@ -93,8 +92,7 @@ public class ExtensionsTestlibControl {
     /**
      * Gets the implementation type;
      */
-    @NonNull
-    public ImplementationType getImplementationType() {
+    public @NonNull ImplementationType getImplementationType() {
         return mImplementationType;
     }
 }

@@ -22,6 +22,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -34,11 +35,12 @@ import android.widget.Checkable;
 import android.widget.TextView;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.test.uiautomator.util.Traces;
 import androidx.test.uiautomator.util.Traces.Section;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -70,7 +72,12 @@ public class UiObject2 implements Searchable {
     private static final int DEFAULT_DRAG_SPEED = 2_500; // dp/s
     private static final int DEFAULT_PINCH_SPEED = 1_000; // dp/s
     // Retry if scrollFinished has null result
-    private static final int MAX_NULL_SCROLL_RETRY = 2;
+    private static final int MAX_NULL_SCROLL_RETRY = 5;
+
+    private static final int WAIT_FOR_SNAPPING_BACK = 1_000;
+    // b/278551289
+    private static final int MAX_RECYCLERVIEW_SCROLL = 10;
+
     private static final long SCROLL_TIMEOUT = 1_000; // ms
     private static final long FLING_TIMEOUT = 5_000; // ms; longer as motion may continue.
 
@@ -78,6 +85,7 @@ public class UiObject2 implements Searchable {
     private final BySelector mSelector;
     private final GestureController mGestureController;
     private final WaitMixin<UiObject2> mWaitMixin = new WaitMixin<>(this);
+    private final Gestures mGestureFactory;
     private final int mDisplayId;
     private final float mDisplayDensity;
     private AccessibilityNodeInfo mCachedNode;
@@ -94,19 +102,21 @@ public class UiObject2 implements Searchable {
 
         // Fetch and cache display information. This is safe as moving the underlying view to
         // another display would invalidate the cached node and require recreating this UiObject2.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            AccessibilityWindowInfo window = cachedNode.getWindow();
-            mDisplayId = window == null ? Display.DEFAULT_DISPLAY : Api30Impl.getDisplayId(window);
+        int windowId = -1; // AccessibilityWindowInfo.UNDEFINED_WINDOW_ID
+        AccessibilityWindowInfo window = cachedNode.getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window != null) {
+            mDisplayId = Api30Impl.getDisplayId(window);
+            windowId = window.getId();
         } else {
             mDisplayId = Display.DEFAULT_DISPLAY;
         }
+        mGestureFactory = new Gestures(mDisplayId, windowId);
         Context uiContext = device.getUiContext(mDisplayId);
         int densityDpi = uiContext.getResources().getConfiguration().densityDpi;
         mDisplayDensity = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
     }
 
-    @Nullable
-    static UiObject2 create(@NonNull UiDevice device, @NonNull BySelector selector,
+    static @Nullable UiObject2 create(@NonNull UiDevice device, @Nullable BySelector selector,
             @NonNull AccessibilityNodeInfo cachedNode) {
         try {
             return new UiObject2(device, selector, cachedNode);
@@ -147,6 +157,14 @@ public class UiObject2 implements Searchable {
         mCachedNode = null;
     }
 
+    /**
+     * Calls the Accessibility Validator plugin to check the hierarchy for any issues and assert
+     * failures.
+     */
+    private void performAccessibilityChecks(@NonNull AccessibilityNodeInfo node) {
+        mDevice.performAccessibilityChecks(node);
+    }
+
     // Settings
 
     /**
@@ -155,7 +173,7 @@ public class UiObject2 implements Searchable {
      * The percentage is based on the object's visible size, e.g. to set 20% margins:
      * <pre>mUiObject2.setGestureMarginPercentage(0.2f);</pre>
      *
-     * @Param percent Float between [0, 0.5] for four margins: left, top, right, and bottom.
+     * @param percent Float between [0, 0.5] for four margins: left, top, right, and bottom.
      */
     public void setGestureMarginPercentage(@FloatRange(from = 0f, to = 0.5f) float percent) {
         setGestureMarginsPercentage(percent, percent, percent, percent);
@@ -246,8 +264,7 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns a collection of the child elements directly under this object. */
-    @NonNull
-    public List<UiObject2> getChildren() {
+    public @NonNull List<UiObject2> getChildren() {
         return findObjects(By.depth(1));
     }
 
@@ -285,8 +302,7 @@ public class UiObject2 implements Searchable {
      * Searches all elements under this object and returns those that match the {@code selector}.
      */
     @Override
-    @NonNull
-    public List<UiObject2> findObjects(@NonNull BySelector selector) {
+    public @NonNull List<UiObject2> findObjects(@NonNull BySelector selector) {
         Log.d(TAG, String.format("Retrieving nodes with selector: %s.", selector));
         List<UiObject2> ret = new ArrayList<>();
         for (AccessibilityNodeInfo node :
@@ -307,8 +323,7 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns this object's visible bounds. */
-    @NonNull
-    public Rect getVisibleBounds() {
+    public @NonNull Rect getVisibleBounds() {
         return getVisibleBounds(getAccessibilityNodeInfo());
     }
 
@@ -325,21 +340,14 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns a point in the center of this object's visible bounds. */
-    @NonNull
-    public Point getVisibleCenter() {
+    public @NonNull Point getVisibleCenter() {
         return getVisibleCenter(getAccessibilityNodeInfo());
     }
 
     /** Returns a point in the center of the {@code node}'s visible bounds. */
-    @NonNull
-    private Point getVisibleCenter(AccessibilityNodeInfo node) {
+    private @NonNull Point getVisibleCenter(AccessibilityNodeInfo node) {
         Rect bounds = getVisibleBounds(node);
         return new Point(bounds.centerX(), bounds.centerY());
-    }
-
-    /** Returns this object's visible bounds with the margins removed. */
-    private Rect getVisibleBoundsForGestures() {
-        return getVisibleBoundsForGestures(getAccessibilityNodeInfo());
     }
 
     /** Returns the {@code node}'s visible bounds with the margins removed. */
@@ -398,7 +406,8 @@ public class UiObject2 implements Searchable {
      *
      * @see TextView#getText()
      */
-    @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
+    // Avoid unnecessary null checks from nullable testing APIs.
+    @SuppressLint({"UnknownNullness", "GetterSetterNullability"})
     public String getText() {
         CharSequence chars = getAccessibilityNodeInfo().getText();
         return chars != null ? chars.toString() : null;
@@ -411,8 +420,7 @@ public class UiObject2 implements Searchable {
      * @see TextView#getHint()
      */
     @RequiresApi(26)
-    @Nullable
-    public String getHint() {
+    public @Nullable String getHint() {
         return Api26Impl.getHintText(getAccessibilityNodeInfo());
     }
 
@@ -516,12 +524,13 @@ public class UiObject2 implements Searchable {
     /** Clicks on this object's center. */
     public void click() {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Point center = getVisibleCenter(node);
         Log.d(TAG, String.format("Clicking on (%d, %d).", center.x, center.y));
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(center, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(center));
     }
 
     /**
@@ -531,23 +540,25 @@ public class UiObject2 implements Searchable {
      */
     public void click(@NonNull Point point) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         clipToGestureBounds(point, node);
         Log.d(TAG, String.format("Clicking on (%d, %d).", point.x, point.y));
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(point, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(point));
     }
 
     /** Clicks on this object's center for {@code duration} milliseconds. */
     public void click(long duration) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Point center = getVisibleCenter(node);
         Log.d(TAG, String.format("Clicking on (%d, %d) for %dms.", center.x, center.y, duration));
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(center, duration, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(center, duration));
     }
 
     /**
@@ -558,12 +569,13 @@ public class UiObject2 implements Searchable {
      */
     public void click(@NonNull Point point, long duration) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         clipToGestureBounds(point, node);
         Log.d(TAG, String.format("Clicking on (%d, %d) for %dms.", point.x, point.y, duration));
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(point, duration, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(point, duration));
     }
 
     /**
@@ -574,14 +586,15 @@ public class UiObject2 implements Searchable {
      */
     public <U> U clickAndWait(@NonNull EventCondition<U> condition, long timeout) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Point center = getVisibleCenter(node);
         Log.d(TAG, String.format("Clicking on (%d, %d) and waiting %dms for %s.", center.x,
                 center.y, timeout, condition));
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        return mGestureController.performGestureAndWait(condition, timeout,
-                Gestures.click(center, getDisplayId()));
+        return mGestureController.performGestureAndWait(
+                condition, timeout, mGestureFactory.click(center));
     }
 
     /**
@@ -595,6 +608,7 @@ public class UiObject2 implements Searchable {
     public <U> U clickAndWait(@NonNull Point point, @NonNull EventCondition<U> condition,
             long timeout) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         clipToGestureBounds(point, node);
         Log.d(TAG, String.format("Clicking on (%d, %d) and waiting %dms for %s.", point.x,
                 point.y, timeout, condition));
@@ -602,7 +616,7 @@ public class UiObject2 implements Searchable {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
         return mGestureController.performGestureAndWait(
-                condition, timeout, Gestures.click(point, getDisplayId()));
+                condition, timeout, mGestureFactory.click(point));
     }
 
     /**
@@ -621,24 +635,27 @@ public class UiObject2 implements Searchable {
      * @param speed The speed at which to perform this gesture in pixels per second.
      */
     public void drag(@NonNull Point dest, int speed) {
+        AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         if (speed < 0) {
             throw new IllegalArgumentException("Speed cannot be negative");
         }
-        Point center = getVisibleCenter();
+        Point center = getVisibleCenter(node);
         Log.d(TAG, String.format("Dragging from (%d, %d) to (%d, %d) at %dpx/s.", center.x,
                 center.y, dest.x, dest.y, speed));
-        mGestureController.performGesture(Gestures.drag(center, dest, speed, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.drag(center, dest, speed));
     }
 
     /** Performs a long click on this object's center. */
     public void longClick() {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Point center = getVisibleCenter(node);
         Log.d(TAG, String.format("Long-clicking on (%d, %d).", center.x, center.y));
         if (!node.isLongClickable()) {
             Log.w(TAG, String.format("Long-clicking on non-long-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.longClick(center, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.longClick(center));
     }
 
     /**
@@ -657,17 +674,19 @@ public class UiObject2 implements Searchable {
      * @param speed   The speed at which to perform this gesture in pixels per second.
      */
     public void pinchClose(float percent, int speed) {
+        AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         if (percent < 0.0f || percent > 1.0f) {
             throw new IllegalArgumentException("Percent must be between 0.0f and 1.0f");
         }
         if (speed < 0) {
             throw new IllegalArgumentException("Speed cannot be negative");
         }
-        Rect bounds = getVisibleBoundsForGestures();
+        Rect bounds = getVisibleBoundsForGestures(node);
         Log.d(TAG, String.format("Pinching close (bounds=%s, percent=%f) at %dpx/s.", bounds,
                 percent, speed));
         mGestureController.performGesture(
-                Gestures.pinchClose(bounds, percent, speed, getDisplayId()));
+                mGestureFactory.pinchClose(bounds, percent, speed));
     }
 
     /**
@@ -686,17 +705,19 @@ public class UiObject2 implements Searchable {
      * @param speed   The speed at which to perform this gesture in pixels per second.
      */
     public void pinchOpen(float percent, int speed) {
+        AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         if (percent < 0.0f || percent > 1.0f) {
             throw new IllegalArgumentException("Percent must be between 0.0f and 1.0f");
         }
         if (speed < 0) {
             throw new IllegalArgumentException("Speed cannot be negative");
         }
-        Rect bounds = getVisibleBoundsForGestures();
+        Rect bounds = getVisibleBoundsForGestures(node);
         Log.d(TAG, String.format("Pinching open (bounds=%s, percent=%f) at %dpx/s.", bounds,
                 percent, speed));
         mGestureController.performGesture(
-                Gestures.pinchOpen(bounds, percent, speed, getDisplayId()));
+                mGestureFactory.pinchOpen(bounds, percent, speed));
     }
 
     /**
@@ -717,17 +738,19 @@ public class UiObject2 implements Searchable {
      * @param speed     The speed at which to perform this gesture in pixels per second.
      */
     public void swipe(@NonNull Direction direction, float percent, int speed) {
+        AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         if (percent < 0.0f || percent > 1.0f) {
             throw new IllegalArgumentException("Percent must be between 0.0f and 1.0f");
         }
         if (speed < 0) {
             throw new IllegalArgumentException("Speed cannot be negative");
         }
-        Rect bounds = getVisibleBoundsForGestures();
+        Rect bounds = getVisibleBoundsForGestures(node);
         Log.d(TAG, String.format("Swiping %s (bounds=%s, percent=%f) at %dpx/s.",
                 direction.name().toLowerCase(), bounds, percent, speed));
         mGestureController.performGesture(
-                Gestures.swipeRect(bounds, direction, percent, speed, getDisplayId()));
+                mGestureFactory.swipeRect(bounds, direction, percent, speed));
     }
 
     /**
@@ -762,6 +785,7 @@ public class UiObject2 implements Searchable {
 
         // Scroll by performing repeated swipes
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Rect bounds = getVisibleBoundsForGestures(node);
         Log.d(TAG, String.format("Scrolling %s (bounds=%s, percent=%f) at %dpx/s.",
                 direction.name().toLowerCase(), bounds, percent, speed));
@@ -770,8 +794,8 @@ public class UiObject2 implements Searchable {
         }
         for (; percent > 0.0f; percent -= 1.0f) {
             float segment = Math.min(percent, 1.0f);
-            PointerGesture swipe = Gestures.swipeRect(
-                    bounds, swipeDirection, segment, speed, getDisplayId()).pause(250);
+            PointerGesture swipe =
+                    mGestureFactory.swipeRect(bounds, swipeDirection, segment, speed).pause(250);
 
             // Perform the gesture and return early if we reached the end
             Boolean scrollFinishedResult = mGestureController.performGestureAndWait(
@@ -800,11 +824,10 @@ public class UiObject2 implements Searchable {
     public <U> U scrollUntil(@NonNull Direction direction,
             @NonNull Condition<? super UiObject2, U> condition) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Rect bounds = getVisibleBoundsForGestures(node);
         int speed = (int) (DEFAULT_SCROLL_SPEED * mDisplayDensity);
         int nullScrollRetryCount = 0;
-
-        EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
 
         if (!node.isScrollable()) {
             Log.w(TAG, String.format("Scrolling on non-scrollable object: %s", node));
@@ -812,6 +835,8 @@ public class UiObject2 implements Searchable {
 
         // To scroll, we swipe in the opposite direction
         final Direction swipeDirection = Direction.reverse(direction);
+        Boolean scrollFinishedResult = false;
+        int scrollCount = 0;
         while (true) {
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
                 // b/267804786: clearing cache on API 28 before applying the condition.
@@ -822,9 +847,12 @@ public class UiObject2 implements Searchable {
                 // given condition is satisfied.
                 return result;
             }
-            PointerGesture swipe = Gestures.swipeRect(bounds, swipeDirection,
-                    DEFAULT_SCROLL_UNTIL_PERCENT, speed, getDisplayId()).pause(250);
-            Boolean scrollFinishedResult =
+            PointerGesture swipe =
+                    mGestureFactory
+                            .swipeRect(bounds, swipeDirection, DEFAULT_SCROLL_UNTIL_PERCENT, speed)
+                            .pause(250);
+            EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
+            scrollFinishedResult =
                     mGestureController.performGestureAndWait(scrollFinished, SCROLL_TIMEOUT, swipe);
             if (Boolean.TRUE.equals(scrollFinishedResult)) {
                 // Scroll has finished.
@@ -832,19 +860,31 @@ public class UiObject2 implements Searchable {
                 break;
             } else if (scrollFinishedResult == null) {
                 // Couldn't determine whether scroll finished after retries.
-                if (nullScrollRetryCount++ >= MAX_NULL_SCROLL_RETRY) {
+                if (++nullScrollRetryCount >= MAX_NULL_SCROLL_RETRY) {
                     Log.i(TAG, "scrollUntil reached max retries for null events.");
                     break;
                 }
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
-                        + "retrying: count %d", nullScrollRetryCount - 1));
+                        + "retrying: count %d", nullScrollRetryCount));
+            }
+            if (scrollCount++ >= MAX_RECYCLERVIEW_SCROLL && isRecyclerView()) {
+                Log.d(TAG, String.format("Exit scrollUntil as Recyclerview has scrolled %d times, "
+                        + "threshold: %d", scrollCount, MAX_RECYCLERVIEW_SCROLL));
+                break;
             }
         }
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
             // b/267804786: clearing cache on API 28 before applying the condition.
             clearCache();
         }
-        return condition.apply(this);
+        U result = condition.apply(this);
+        // b/339676505: sleep for snapping back animation when scroll reaches the end and
+        // also the condition is met.
+        if (result != null && !Boolean.FALSE.equals(result)
+                && Boolean.TRUE.equals(scrollFinishedResult)) {
+            SystemClock.sleep(WAIT_FOR_SNAPPING_BACK);
+        }
+        return result;
     }
 
     /**
@@ -858,34 +898,10 @@ public class UiObject2 implements Searchable {
      */
     public <U> U scrollUntil(@NonNull Direction direction, @NonNull EventCondition<U> condition) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         Rect bounds = getVisibleBoundsForGestures(node);
         int speed = (int) (DEFAULT_SCROLL_SPEED * mDisplayDensity);
         int nullScrollRetryCount = 0;
-
-        // combine the input condition with scroll finished condition.
-        EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
-        EventCondition<Boolean> combinedEventCondition = new EventCondition<Boolean>() {
-            @Override
-            public Boolean getResult() {
-                if (Boolean.TRUE.equals(scrollFinished.getResult())) {
-                    // scroll has finished.
-                    return true;
-                }
-                U result = condition.getResult();
-                return result != null && !Boolean.FALSE.equals(result);
-            }
-
-            @Override
-            public boolean accept(AccessibilityEvent event) {
-                return condition.accept(event) || scrollFinished.accept(event);
-            }
-
-            @NonNull
-            @Override
-            public String toString() {
-                return condition + " || " + scrollFinished;
-            }
-        };
 
         if (!node.isScrollable()) {
             Log.w(TAG, String.format("Scrolling on non-scrollable object: %s", node));
@@ -893,9 +909,35 @@ public class UiObject2 implements Searchable {
 
         // To scroll, we swipe in the opposite direction
         final Direction swipeDirection = Direction.reverse(direction);
+        int scrollCount = 0;
         while (true) {
-            PointerGesture swipe = Gestures.swipeRect(bounds, swipeDirection,
-                    DEFAULT_SCROLL_UNTIL_PERCENT, speed, getDisplayId()).pause(250);
+            // combine the input condition with scroll finished condition.
+            EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
+            EventCondition<Boolean> combinedEventCondition = new EventCondition<Boolean>() {
+                @Override
+                public Boolean getResult() {
+                    if (Boolean.TRUE.equals(scrollFinished.getResult())) {
+                        // scroll has finished.
+                        return true;
+                    }
+                    U result = condition.getResult();
+                    return result != null && !Boolean.FALSE.equals(result);
+                }
+
+                @Override
+                public boolean accept(AccessibilityEvent event) {
+                    return condition.accept(event) || scrollFinished.accept(event);
+                }
+
+                @Override
+                public @NonNull String toString() {
+                    return condition + " || " + scrollFinished;
+                }
+            };
+            PointerGesture swipe =
+                    mGestureFactory
+                            .swipeRect(bounds, swipeDirection, DEFAULT_SCROLL_UNTIL_PERCENT, speed)
+                            .pause(250);
             if (mGestureController.performGestureAndWait(combinedEventCondition, SCROLL_TIMEOUT,
                     swipe)) {
                 if (Boolean.TRUE.equals(scrollFinished.getResult())) {
@@ -911,6 +953,11 @@ public class UiObject2 implements Searchable {
                 }
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
                         + "retrying: count %d", nullScrollRetryCount - 1));
+            }
+            if (scrollCount++ >= MAX_RECYCLERVIEW_SCROLL && isRecyclerView()) {
+                Log.d(TAG, String.format("Exit scrollUntil as Recyclerview has scrolled %d times, "
+                        + "threshold: %d", scrollCount, MAX_RECYCLERVIEW_SCROLL));
+                break;
             }
         }
         return condition.getResult();
@@ -934,6 +981,8 @@ public class UiObject2 implements Searchable {
      * @return {@code true} if the object can still scroll in the given direction.
      */
     public boolean fling(@NonNull Direction direction, final int speed) {
+        AccessibilityNodeInfo node = getAccessibilityNodeInfo();
+        performAccessibilityChecks(node);
         ViewConfiguration vc = ViewConfiguration.get(getDevice().getUiContext(getDisplayId()));
         if (speed < vc.getScaledMinimumFlingVelocity()) {
             throw new IllegalArgumentException("Speed is less than the minimum fling velocity");
@@ -942,9 +991,8 @@ public class UiObject2 implements Searchable {
         // To fling, we swipe in the opposite direction
         final Direction swipeDirection = Direction.reverse(direction);
 
-        Rect bounds = getVisibleBoundsForGestures();
-        PointerGesture swipe = Gestures.swipeRect(
-                bounds, swipeDirection, 1.0f, speed, getDisplayId());
+        Rect bounds = getVisibleBoundsForGestures(node);
+        PointerGesture swipe = mGestureFactory.swipeRect(bounds, swipeDirection, 1.0f, speed);
 
         // Perform the gesture and return true if we did not reach the end
         Log.d(TAG, String.format("Flinging %s (bounds=%s) at %dpx/s.",
@@ -979,7 +1027,8 @@ public class UiObject2 implements Searchable {
      * underlying {@link View}. Note that this method can be expensive as it wait for the device to
      * be idle and tries multiple time to refresh the {@link AccessibilityNodeInfo}.
      */
-    private AccessibilityNodeInfo getAccessibilityNodeInfo() {
+    @NonNull
+    public AccessibilityNodeInfo getAccessibilityNodeInfo() {
         if (mCachedNode == null) {
             throw new IllegalStateException("This object has already been recycled.");
         }
@@ -1020,6 +1069,10 @@ public class UiObject2 implements Searchable {
             Log.e(TAG, "Fail to call AccessibilityInteractionClient#clearCache() reflection", e);
         }
 
+    }
+
+    private boolean isRecyclerView() {
+        return this.getClassName().contains("RecyclerView");
     }
 
     UiDevice getDevice() {

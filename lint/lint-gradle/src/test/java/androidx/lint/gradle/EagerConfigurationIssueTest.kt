@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4
 class EagerConfigurationIssueTest :
     GradleLintDetectorTest(
         detector = DiscouragedGradleMethodDetector(),
-        issues = listOf(DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE)
+        issues = listOf(DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE),
     ) {
     @Test
     fun `Test usage of TaskContainer#create`() {
@@ -36,7 +36,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.create("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -46,7 +46,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.create("example")
                               ~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -54,7 +54,49 @@ class EagerConfigurationIssueTest :
             @@ -4 +4
             -     project.tasks.create("example")
             +     project.tasks.register("example")
-        """
+            """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test usage of ConfigurationContainer#create`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    project.configurations.create("example")
+                    project.configurations.maybeCreate("example2")
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use register instead of create [EagerGradleConfiguration]
+                project.configurations.create("example")
+                                       ~~~~~~
+            src/test.kt:5: Error: Use register instead of maybeCreate [EagerGradleConfiguration]
+                project.configurations.maybeCreate("example2")
+                                       ~~~~~~~~~~~
+            2 errors, 0 warnings
+            """
+                .trimIndent()
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with register:
+            @@ -4 +4
+            -     project.configurations.create("example")
+            +     project.configurations.register("example")
+            Fix for src/test.kt line 5: Replace with register:
+            @@ -5 +5
+            -     project.configurations.maybeCreate("example2")
+            +     project.configurations.register("example2")
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -72,7 +114,7 @@ class EagerConfigurationIssueTest :
                 fun foo() {
                     Foo().create()
                 }
-            """
+                """
                     .trimIndent()
             )
         check(input).expectClean()
@@ -88,7 +130,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.getByName("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -98,7 +140,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.getByName("example")
                               ~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -106,7 +148,7 @@ class EagerConfigurationIssueTest :
             @@ -4 +4
             -     project.tasks.getByName("example")
             +     project.tasks.named("example")
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -124,7 +166,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, action: Action<Task>) {
                     project.tasks.all(action)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -134,7 +176,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.all(action)
                               ~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -142,7 +184,7 @@ class EagerConfigurationIssueTest :
             @@ -6 +6
             -     project.tasks.all(action)
             +     project.tasks.configureEach(action)
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -160,7 +202,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, action: Action<Task>) {
                     project.tasks.whenTaskAdded(action)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -170,7 +212,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.whenTaskAdded(action)
                               ~~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -178,8 +220,57 @@ class EagerConfigurationIssueTest :
             @@ -6 +6
             -     project.tasks.whenTaskAdded(action)
             +     project.tasks.configureEach(action)
-        """
+            """
                 .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test usage of TaskContainer with kotlin extension functions`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Action
+                import org.gradle.api.Project
+                import org.gradle.api.Task
+
+                fun configure(project: Project, action: Action<Task>) {
+                    project.tasks.any()
+                    project.tasks.any { it.enabled }
+                    project.tasks.map { it.name }
+                    project.tasks.mapNotNull { it.name }
+                    project.tasks.groupBy { it.group }
+                    project.tasks.forEach { it.enabled = true }
+                }
+                """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:6: Error: Avoid using method any [EagerGradleConfiguration]
+                project.tasks.any()
+                              ~~~
+            src/test.kt:7: Error: Avoid using method any [EagerGradleConfiguration]
+                project.tasks.any { it.enabled }
+                              ~~~
+            src/test.kt:8: Error: Avoid using method map [EagerGradleConfiguration]
+                project.tasks.map { it.name }
+                              ~~~
+            src/test.kt:9: Error: Avoid using method mapNotNull [EagerGradleConfiguration]
+                project.tasks.mapNotNull { it.name }
+                              ~~~~~~~~~~
+            src/test.kt:10: Error: Avoid using method groupBy [EagerGradleConfiguration]
+                project.tasks.groupBy { it.group }
+                              ~~~~~~~
+            src/test.kt:11: Error: Avoid using method forEach [EagerGradleConfiguration]
+                project.tasks.forEach { it.enabled = true }
+                              ~~~~~~~
+            6 errors, 0 warnings
+            """
+                .trimIndent()
+        val expectedFixDiffs = ""
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
     }
@@ -196,7 +287,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, action: Action<Task>) {
                     project.tasks.whenObjectAdded(action)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -206,7 +297,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.whenObjectAdded(action)
                               ~~~~~~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -214,7 +305,7 @@ class EagerConfigurationIssueTest :
             @@ -6 +6
             -     project.tasks.whenObjectAdded(action)
             +     project.tasks.configureEach(action)
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -230,7 +321,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.getAt("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -240,7 +331,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.getAt("example")
                               ~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
         val expectedFixDiffs =
             """
@@ -248,7 +339,7 @@ class EagerConfigurationIssueTest :
             @@ -4 +4
             -     project.tasks.getAt("example")
             +     project.tasks.named("example")
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
@@ -264,7 +355,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.getByPath("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -274,7 +365,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.getByPath("example")
                               ~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -290,7 +381,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.findByName("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -300,7 +391,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.findByName("example")
                               ~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -316,7 +407,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.findByPath("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -326,7 +417,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.findByPath("example")
                               ~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -342,7 +433,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.replace("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -352,7 +443,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.replace("example")
                               ~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -368,7 +459,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, task: Task) {
                     project.tasks.remove(task)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -378,7 +469,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.remove(task)
                               ~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -394,7 +485,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.findByPath("example")
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -404,7 +495,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.findByPath("example")
                               ~~~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -421,7 +512,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, closure: Closure) {
                     project.tasks.findAll(closure)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -431,7 +522,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.findAll(closure)
                               ~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -448,7 +539,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project, closure: Closure) {
                     project.tasks.matching(closure)
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -458,7 +549,7 @@ class EagerConfigurationIssueTest :
                 project.tasks.matching(closure)
                               ~~~~~~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
@@ -474,7 +565,7 @@ class EagerConfigurationIssueTest :
                 fun configure(project: Project) {
                     project.tasks.register("example").get()
                 }
-            """
+                """
                     .trimIndent()
             )
 
@@ -484,9 +575,42 @@ class EagerConfigurationIssueTest :
                 project.tasks.register("example").get()
                                                   ~~~
             1 errors, 0 warnings
-        """
+            """
                 .trimIndent()
 
         check(input).expect(expected)
+    }
+
+    @Test
+    fun `Test passing Configuration to ConfigurableFileCollection`() {
+        check(
+                kotlin(
+                    """
+                    import java.io.File
+                    import org.gradle.api.artifacts.Configuration
+                    import org.gradle.api.file.ConfigurableFileCollection
+
+                    fun configure(fileCollection: ConfigurableFileCollection, configuration: Configuration) {
+                        val file = File("path")
+                        fileCollection.from(configuration)
+                        fileCollection.from(configuration, file)
+                        fileCollection.from(file)
+                    }
+                    """
+                        .trimIndent()
+                )
+            )
+            .expect(
+                """
+                src/test.kt:7: Error: Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy. [EagerGradleConfiguration]
+                    fileCollection.from(configuration)
+                                   ~~~~
+                src/test.kt:8: Error: Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy. [EagerGradleConfiguration]
+                    fileCollection.from(configuration, file)
+                                   ~~~~
+                2 errors, 0 warnings
+                """
+                    .trimIndent()
+            )
     }
 }

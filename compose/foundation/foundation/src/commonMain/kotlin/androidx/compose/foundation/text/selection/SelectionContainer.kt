@@ -16,23 +16,31 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.isWriteSupported
+import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.ContextMenuArea
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
+import androidx.compose.foundation.text.rememberClipboardEventsHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.util.fastForEach
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 /**
  * Enables text selection for its direct or indirect children.
@@ -52,7 +60,7 @@ fun SelectionContainer(modifier: Modifier = Modifier, content: @Composable () ->
         modifier = modifier,
         selection = selection,
         onSelectionChange = { selection = it },
-        children = content
+        children = content,
     )
 }
 
@@ -82,24 +90,52 @@ internal fun SelectionContainer(
     selection: Selection?,
     /** A function containing customized behaviour when selection changes. */
     onSelectionChange: (Selection?) -> Unit,
-    children: @Composable () -> Unit
+    children: @Composable () -> Unit,
 ) {
     val registrarImpl =
         rememberSaveable(saver = SelectionRegistrarImpl.Saver) { SelectionRegistrarImpl() }
 
     val manager = remember { SelectionManager(registrarImpl) }
 
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     manager.hapticFeedBack = LocalHapticFeedback.current
-    manager.clipboardManager = LocalClipboardManager.current
+    manager.onCopyHandler =
+        remember(coroutineScope, clipboard) {
+            if (clipboard.isWriteSupported()) {
+                { textToCopy ->
+                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        clipboard.setClipEntry(textToCopy.toClipEntry())
+                    }
+                }
+            } else null
+        }
     manager.textToolbar = LocalTextToolbar.current
     manager.onSelectionChange = onSelectionChange
     manager.selection = selection
+    @OptIn(ExperimentalFoundationApi::class)
+    if (ComposeFoundationFlags.isSmartSelectionEnabled) {
+        manager.platformSelectionBehaviors =
+            rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, null)
+        manager.coroutineScope = coroutineScope
+    }
 
-    ContextMenuArea(manager) {
-        CompositionLocalProvider(LocalSelectionRegistrar provides registrarImpl) {
-            // Get the layout coordinates of the selection container. This is for hit test of
-            // cross-composable selection.
-            SimpleLayout(modifier = modifier.then(manager.modifier)) {
+    manager.shouldIgnoreCopyKeyEvent =
+        rememberClipboardEventsHandler(
+            onCopy = { manager.getSelectedText() },
+            isEnabled = manager.isNonEmptySelection(),
+        )
+
+    /*
+     * Need a layout for selection gestures that span multiple text children.
+     *
+     * b/372053402: SimpleLayout must be the top layout in this composable because
+     *     the modifier argument must be applied to the top layout in case it contains
+     *     something like `Modifier.weight`.
+     */
+    SimpleLayout(modifier = modifier.then(manager.modifier)) {
+        ContextMenuArea(manager) {
+            CompositionLocalProvider(LocalSelectionRegistrar provides registrarImpl) {
                 children()
                 if (
                     manager.isInTouchMode &&
@@ -129,11 +165,18 @@ internal fun SelectionContainer(
                                     it.end.direction
                                 }
 
+                            val lineHeight =
+                                if (isStartHandle) {
+                                    manager.startHandleLineHeight
+                                } else {
+                                    manager.endHandleLineHeight
+                                }
                             SelectionHandle(
                                 offsetProvider = positionProvider,
                                 isStartHandle = isStartHandle,
                                 direction = direction,
                                 handlesCrossed = it.handlesCrossed,
+                                lineHeight = lineHeight,
                                 modifier =
                                     Modifier.pointerInput(observer) {
                                         detectDownAndDragGesturesWithObserver(observer)

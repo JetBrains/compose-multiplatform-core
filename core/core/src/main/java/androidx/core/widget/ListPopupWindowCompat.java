@@ -16,13 +16,12 @@
 
 package androidx.core.widget;
 
-import android.os.Build;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.ListPopupWindow;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ListPopupWindow}.
@@ -33,8 +32,7 @@ public final class ListPopupWindowCompat {
     }
 
     /**
-     * On API {@link Build.VERSION_CODES#KITKAT} and higher, returns
-     * an {@link OnTouchListener} that can be added to the source view to
+     * Returns an {@link OnTouchListener} that can be added to the source view to
      * implement drag-to-open behavior. Generally, the source view should be the
      * same view that was passed to ListPopupWindow.setAnchorView(View).
      * <p>
@@ -67,8 +65,7 @@ public final class ListPopupWindowCompat {
     }
 
     /**
-     * On API {@link Build.VERSION_CODES#KITKAT} and higher, returns
-     * an {@link OnTouchListener} that can be added to the source view to
+     * Returns an {@link OnTouchListener} that can be added to the source view to
      * implement drag-to-open behavior. Generally, the source view should be the
      * same view that was passed to ListPopupWindow.setAnchorView(View).
      * <p>
@@ -94,8 +91,7 @@ public final class ListPopupWindowCompat {
      */
     @Deprecated
     @androidx.annotation.ReplaceWith(expression = "listPopupWindow.createDragToOpenListener(src)")
-    @Nullable
-    public static OnTouchListener createDragToOpenListener(
+    public static @Nullable OnTouchListener createDragToOpenListener(
             @NonNull ListPopupWindow listPopupWindow, @NonNull View src) {
         return listPopupWindow.createDragToOpenListener(src);
     }

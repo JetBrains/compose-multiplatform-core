@@ -20,9 +20,10 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.work.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link Service} which hosts an implementation of a {@link androidx.work.ListenableWorker}.
@@ -37,9 +38,8 @@ public class RemoteWorkerService extends Service {
         mBinder = new ListenableWorkerImpl(this);
     }
 
-    @Nullable
     @Override
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         Logger.get().info(TAG, "Binding to RemoteWorkerService");
         return mBinder;
     }

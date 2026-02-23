@@ -20,8 +20,9 @@ import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,9 +40,7 @@ class CanvasUtils {
      */
     @SuppressLint("SoonBlockedPrivateApi")
     static void enableZ(@NonNull Canvas canvas, boolean enable) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            // no shadows yet added into a platform
-        } else if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 29) {
             if (enable) {
                 Api29Impl.enableZ(canvas);
             } else {

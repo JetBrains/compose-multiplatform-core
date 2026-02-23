@@ -25,10 +25,11 @@ import android.widget.AdapterView;
 import android.widget.Spinner;
 import android.widget.Switch;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to exercise Force Dark Strategy functionality.
@@ -108,6 +109,7 @@ public class ForceDarkStrategyActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_force_dark_strategy);
         setTitle(R.string.force_dark_strategy_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {

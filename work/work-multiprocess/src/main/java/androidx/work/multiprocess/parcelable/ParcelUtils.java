@@ -16,12 +16,16 @@
 
 package androidx.work.multiprocess.parcelable;
 
+import android.os.Build;
 import android.os.Parcel;
+import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
+
 /**
+ *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class ParcelUtils {
@@ -42,5 +46,24 @@ public final class ParcelUtils {
      */
     public static void writeBooleanValue(@NonNull Parcel parcel, boolean value) {
         parcel.writeInt(value ? 1 : 0);
+    }
+
+    /**
+     * Reads a parcelable from a parcel.
+     * <p>
+     * It's safe for us to suppress warnings here, given the correct API is being used starting
+     * API 33.
+     */
+    @SuppressWarnings("deprecation")
+    public static <T extends Parcelable> T readParcelable(
+            @NonNull Parcel parcel,
+            @NonNull Class<T> klass
+    ) {
+        ClassLoader classLoader = klass.getClassLoader();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return parcel.readParcelable(classLoader, klass);
+        } else {
+            return parcel.readParcelable(classLoader);
+        }
     }
 }

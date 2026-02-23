@@ -24,7 +24,6 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.find.FindInFileView;
 import androidx.pdf.models.GotoLinkDestination;
@@ -33,6 +32,8 @@ import androidx.pdf.util.ZoomUtils;
 import androidx.pdf.widget.ZoomView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SingleTapHandler {
@@ -44,6 +45,7 @@ public class SingleTapHandler {
     private final PdfSelectionModel mPdfSelectionModel;
     private final PaginationModel mPaginationModel;
     private final LayoutHandler mLayoutHandler;
+    private final ImmersiveModeRequester mImmersiveModeRequester;
     private boolean mIsAnnotationIntentResolvable;
 
     public SingleTapHandler(@NonNull Context context,
@@ -53,7 +55,8 @@ public class SingleTapHandler {
             @NonNull ZoomView zoomView,
             @NonNull PdfSelectionModel pdfSelectionModel,
             @NonNull PaginationModel paginationModel,
-            @NonNull LayoutHandler layoutHandler) {
+            @NonNull LayoutHandler layoutHandler,
+            @NonNull ImmersiveModeRequester immersiveModeRequester) {
         mContext = context;
         mFloatingActionButton = floatingActionButton;
         mPaginatedView = paginatedView;
@@ -62,6 +65,7 @@ public class SingleTapHandler {
         mPdfSelectionModel = pdfSelectionModel;
         mPaginationModel = paginationModel;
         mLayoutHandler = layoutHandler;
+        mImmersiveModeRequester = immersiveModeRequester;
     }
 
     public void setAnnotationIntentResolvable(boolean annotationIntentResolvable) {
@@ -73,13 +77,14 @@ public class SingleTapHandler {
         if (mIsAnnotationIntentResolvable) {
             if (mFloatingActionButton.getVisibility() == View.GONE
                     && mFindInFileView.getVisibility() == GONE) {
-                mFloatingActionButton.show();
+                mImmersiveModeRequester.requestImmersiveModeChange(false);
             } else {
-                mFloatingActionButton.hide();
+                mImmersiveModeRequester.requestImmersiveModeChange(true);
             }
         }
 
         handleSelection();
+        mFindInFileView.handleSingleTapEvent();
 
         Point point = new Point((int) event.getX(), (int) event.getY());
         handleExternalLink(point, pageMosaicView);
@@ -91,8 +96,7 @@ public class SingleTapHandler {
     }
 
     private void handleSelection() {
-        boolean hadSelection =
-                mPdfSelectionModel != null && mPdfSelectionModel.selection().get() != null;
+        boolean hadSelection = mPdfSelectionModel.selection().get() != null;
         if (hadSelection) {
             mPdfSelectionModel.setSelection(null);
         }

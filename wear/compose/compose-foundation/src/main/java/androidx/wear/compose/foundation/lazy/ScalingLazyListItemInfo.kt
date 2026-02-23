@@ -22,10 +22,10 @@ package androidx.wear.compose.foundation.lazy
  */
 public sealed interface ScalingLazyListItemInfo {
     /** The index of the item in the list. */
-    val index: Int
+    public val index: Int
 
     /** The key of the item which was passed to the item() or items() function. */
-    val key: Any
+    public val key: Any
 
     /**
      * The main axis offset of the item before adjustment for scaling of the items in the viewport.
@@ -40,7 +40,7 @@ public sealed interface ScalingLazyListItemInfo {
      * item and the center-line of the viewport, for normal layout this will be the top edge of the
      * item, for reverseLayout it will be the bottom edge.
      */
-    val unadjustedOffset: Int
+    public val unadjustedOffset: Int
 
     /**
      * The main axis offset of the item after adjustment for scaling of the items in the viewport.
@@ -58,20 +58,20 @@ public sealed interface ScalingLazyListItemInfo {
      * A positive value indicates that the item's anchor point is below the viewport center-line, a
      * negative value indicates that the item anchor point is above the viewport center-line.
      */
-    val offset: Int
+    public val offset: Int
 
     /**
      * The scaled/adjusted main axis size of the item. Note that if you emit multiple layouts in the
      * composable slot for the item then this size will be calculated as the sum of their sizes.
      */
-    val size: Int
+    public val size: Int
 
     /** How much scaling has been applied to the item, between 0 and 1 */
-    val scale: Float
+    public val scale: Float
 
     /** How much alpha has been applied to the item, between 0 and 1 */
-    val alpha: Float
+    public val alpha: Float
 
     /** The original (before scaling) size of the list item */
-    val unadjustedSize: Int
+    public val unadjustedSize: Int
 }

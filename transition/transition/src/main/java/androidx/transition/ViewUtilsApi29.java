@@ -19,9 +19,10 @@ package androidx.transition;
 import android.graphics.Matrix;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(29)
 class ViewUtilsApi29 extends ViewUtilsApi23 {

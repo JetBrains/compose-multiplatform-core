@@ -32,18 +32,15 @@ class BanKeepAnnotationTest :
 
     @Test
     fun `Detection of Keep annotation in Java sources`() {
-        val input =
-            arrayOf(
-                javaSample("androidx.KeepAnnotationUsageJava"),
-            )
+        val input = arrayOf(javaSample("androidx.KeepAnnotationUsageJava"))
 
         val expected =
             """
-src/androidx/KeepAnnotationUsageJava.java:21: Error: Uses @Keep annotation [BanKeepAnnotation]
-@Keep
-~~~~~
-1 errors, 0 warnings
-        """
+            src/androidx/KeepAnnotationUsageJava.java:21: Error: Uses @Keep annotation [BanKeepAnnotation]
+            @Keep
+            ~~~~~
+            1 errors, 0 warnings
+            """
                 .trimIndent()
 
         check(*input).expect(expected)
@@ -51,18 +48,15 @@ src/androidx/KeepAnnotationUsageJava.java:21: Error: Uses @Keep annotation [BanK
 
     @Test
     fun `Detection of Keep annotation in Kotlin sources`() {
-        val input =
-            arrayOf(
-                ktSample("androidx.KeepAnnotationUsageKotlin"),
-            )
+        val input = arrayOf(ktSample("androidx.KeepAnnotationUsageKotlin"))
 
         val expected =
             """
-src/androidx/KeepAnnotationUsageKotlin.kt:21: Error: Uses @Keep annotation [BanKeepAnnotation]
-@Keep class KeepAnnotationUsageKotlin
-~~~~~
-1 errors, 0 warnings
-        """
+            src/androidx/KeepAnnotationUsageKotlin.kt:21: Error: Uses @Keep annotation [BanKeepAnnotation]
+            @Keep class KeepAnnotationUsageKotlin
+            ~~~~~
+            1 errors, 0 warnings
+            """
                 .trimIndent()
 
         check(*input).expect(expected)

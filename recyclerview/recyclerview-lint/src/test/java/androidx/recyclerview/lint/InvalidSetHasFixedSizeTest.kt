@@ -39,7 +39,7 @@ class InvalidSetHasFixedSizeTest {
                     const val my_recycler_view = 0
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -60,7 +60,7 @@ class InvalidSetHasFixedSizeTest {
                     recyclerView?.setHasFixedSize(true)
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -68,14 +68,15 @@ class InvalidSetHasFixedSizeTest {
         val layoutFile =
             xml(
                     "layout/recycler_view.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <androidx.recyclerview.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:id="@+id/my_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-            """
-                        .trimIndent()
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                                    <androidx.recyclerview.widget.RecyclerView
+                                        xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:id="@+id/my_recycler_view"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"/>
+                    """
+                        .trimIndent(),
                 )
                 .indented()
                 .within("res")
@@ -100,7 +101,7 @@ class InvalidSetHasFixedSizeTest {
                     const val my_recycler_view = 0
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -123,7 +124,7 @@ class InvalidSetHasFixedSizeTest {
                     }
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -131,14 +132,15 @@ class InvalidSetHasFixedSizeTest {
         val layoutFile =
             xml(
                     "layout/recycler_view.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <androidx.recyclerview.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:id="@+id/my_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-            """
-                        .trimIndent()
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                                    <androidx.recyclerview.widget.RecyclerView
+                                        xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:id="@+id/my_recycler_view"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"/>
+                    """
+                        .trimIndent(),
                 )
                 .indented()
                 .within("res")
@@ -163,7 +165,7 @@ class InvalidSetHasFixedSizeTest {
                     const val my_recycler_view = 0
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -184,7 +186,7 @@ class InvalidSetHasFixedSizeTest {
                     recyclerView?.setHasFixedSize(true)
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -192,14 +194,15 @@ class InvalidSetHasFixedSizeTest {
         val layoutFile =
             xml(
                     "layout/recycler_view.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <androidx.recyclerview.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:id="@+id/my_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-            """
-                        .trimIndent()
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                                    <androidx.recyclerview.widget.RecyclerView
+                                        xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:id="@+id/my_recycler_view"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"/>
+                    """
+                        .trimIndent(),
                 )
                 .indented()
                 .within("res")
@@ -232,7 +235,7 @@ class InvalidSetHasFixedSizeTest {
                     const val my_recycler_view = 0
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -253,7 +256,7 @@ class InvalidSetHasFixedSizeTest {
                     recyclerView?.setHasFixedSize(true)
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -261,15 +264,16 @@ class InvalidSetHasFixedSizeTest {
         val layoutFile =
             xml(
                     "layout/recycler_view.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <androidx.recyclerview.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:id="@+id/my_recycler_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal" />
-            """
-                        .trimIndent()
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                                    <androidx.recyclerview.widget.RecyclerView
+                                        xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:id="@+id/my_recycler_view"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="match_parent"
+                                        android:orientation="horizontal" />
+                    """
+                        .trimIndent(),
                 )
                 .indented()
                 .within("res")
@@ -302,7 +306,7 @@ class InvalidSetHasFixedSizeTest {
                     const val my_recycler_view = 0
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -327,7 +331,7 @@ class InvalidSetHasFixedSizeTest {
                     recyclerView?.setHasFixedSize(true)
                 }
             }
-        """
+        """,
                 )
                 .indented()
                 .within("src")
@@ -335,14 +339,15 @@ class InvalidSetHasFixedSizeTest {
         val layoutFile =
             xml(
                     "layout/recycler_view.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <androidx.recyclerview.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:id="@+id/my_recycler_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"/>
-            """
-                        .trimIndent()
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                                    <androidx.recyclerview.widget.RecyclerView
+                                        xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:id="@+id/my_recycler_view"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="match_parent"/>
+                    """
+                        .trimIndent(),
                 )
                 .indented()
                 .within("res")

@@ -18,23 +18,22 @@ package androidx.car.app.managers;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Tests for {@link Manager}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class ManagerTest {
     public static class MockManager implements Manager {
-        @Nullable
-        public final Integer mFoo;
-        @Nullable
-        public final String mBar;
+        public final @Nullable Integer mFoo;
+        public final @Nullable String mBar;
 
         /** Accessed via reflection */
         @SuppressWarnings("unused")

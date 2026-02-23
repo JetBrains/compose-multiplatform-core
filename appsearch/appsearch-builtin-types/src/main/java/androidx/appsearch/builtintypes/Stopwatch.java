@@ -20,12 +20,15 @@ import android.content.Context;
 import android.os.SystemClock;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.utils.BootCountUtil;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -72,6 +75,7 @@ public class Stopwatch extends Thing {
     @Document.DocumentProperty
     private final List<StopwatchLap> mLaps;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Stopwatch(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
@@ -146,8 +150,7 @@ public class Stopwatch extends Thing {
     }
 
     /** Returns all the {@link StopwatchLap} instances. */
-    @NonNull
-    public List<StopwatchLap> getLaps() {
+    public @NonNull List<StopwatchLap> getLaps() {
         return mLaps;
     }
 
@@ -252,8 +255,7 @@ public class Stopwatch extends Thing {
          * @param bootCount The current boot count of the device. See
          * {@link android.provider.Settings.Global#BOOT_COUNT}.
          */
-        @NonNull
-        public T setBaseTimeMillis(long baseTimeMillis,
+        public @NonNull T setBaseTimeMillis(long baseTimeMillis,
                 long baseTimeMillisInElapsedRealtime, int bootCount) {
             mBaseTimeMillis = baseTimeMillis;
             mBaseTimeMillisInElapsedRealtime = baseTimeMillisInElapsedRealtime;
@@ -272,8 +274,7 @@ public class Stopwatch extends Thing {
          * @param baseTimeMillisInElapsedRealtime The base time in milliseconds using the
          * {@link android.os.SystemClock#elapsedRealtime()} time base.
          */
-        @NonNull
-        public T setBaseTimeMillis(@NonNull Context context, long baseTimeMillis,
+        public @NonNull T setBaseTimeMillis(@NonNull Context context, long baseTimeMillis,
                 long baseTimeMillisInElapsedRealtime) {
             int bootCount = BootCountUtil.getCurrentBootCount(context);
             return setBaseTimeMillis(baseTimeMillis, baseTimeMillisInElapsedRealtime, bootCount);
@@ -285,8 +286,7 @@ public class Stopwatch extends Thing {
          * <p>Status can be {@link Stopwatch#STATUS_UNKNOWN}, {@link Stopwatch#STATUS_RESET},
          * {@link Stopwatch#STATUS_RUNNING}, or {@link Stopwatch#STATUS_PAUSED}.
          */
-        @NonNull
-        public T setStatus(@Status int status) {
+        public @NonNull T setStatus(@Status int status) {
             mStatus = Preconditions.checkArgumentInRange(status, STATUS_UNKNOWN, STATUS_PAUSED,
                     "status");
             return (T) this;
@@ -295,23 +295,20 @@ public class Stopwatch extends Thing {
         /**
          * Sets the total duration in milliseconds accumulated by the {@link Stopwatch}.
          */
-        @NonNull
-        public T setAccumulatedDurationMillis(long accumulatedDurationMillis) {
+        public @NonNull T setAccumulatedDurationMillis(long accumulatedDurationMillis) {
             mAccumulatedDurationMillis = accumulatedDurationMillis;
             return (T) this;
         }
 
         /** Sets all the {@link StopwatchLap} instances. */
-        @NonNull
-        public T setLaps(@NonNull List<StopwatchLap> laps) {
+        public @NonNull T setLaps(@NonNull List<StopwatchLap> laps) {
             mLaps = Preconditions.checkNotNull(laps);
             return (T) this;
         }
 
         /** Builds the {@link Stopwatch}. */
-        @NonNull
         @Override
-        public Stopwatch build() {
+        public @NonNull Stopwatch build() {
             return new Stopwatch(mNamespace, mId, mDocumentScore, mCreationTimestampMillis,
                     mDocumentTtlMillis, mName, mAlternateNames, mDescription, mImage, mUrl,
                     mPotentialActions,

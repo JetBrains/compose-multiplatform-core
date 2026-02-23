@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 // be used to get "typed character". By this simple function we are introducing common
 // denominator for both systems: if KeyEvent.isTypedEvent then it's safe to use
 // KeyEvent.utf16CodePoint
+@Suppress("KmpVisibilityMismatch") // public in commonStubs
 internal expect val KeyEvent.isTypedEvent: Boolean
 
 /**
@@ -125,10 +126,11 @@ internal class TextFieldKeyInput(
                 KeyCommand.END -> moveCursorToEnd()
                 KeyCommand.DELETE_PREV_CHAR ->
                     deleteIfSelectedOr {
-                            DeleteSurroundingTextCommand(
-                                selection.end - getPrecedingCharacterIndex(),
-                                0
-                            )
+                            val precedingCodePointIndex = getPrecedingCodePointOrEmojiStartIndex()
+                            if (precedingCodePointIndex == NoCharacterFound) {
+                                return@deleteIfSelectedOr null
+                            }
+                            DeleteSurroundingTextCommand(selection.end - precedingCodePointIndex, 0)
                         }
                         ?.apply()
                 KeyCommand.DELETE_NEXT_CHAR -> {
@@ -179,7 +181,8 @@ internal class TextFieldKeyInput(
                     if (!singleLine) {
                         CommitTextCommand("\n", 1).apply()
                     } else {
-                        this@TextFieldKeyInput.state.onImeActionPerformed(imeAction)
+                        consumed =
+                            this@TextFieldKeyInput.state.onImeActionPerformedWithResult(imeAction)
                     }
                 KeyCommand.TAB ->
                     if (!singleLine) {
@@ -215,6 +218,7 @@ internal class TextFieldKeyInput(
                 KeyCommand.CHARACTER_PALETTE -> {
                     showCharacterPalette()
                 }
+                KeyCommand.CENTER -> {} // No-op, this is handled by TextFieldFocusModifier.
             }
         }
         undoManager?.forceNextSnapshot()
@@ -227,7 +231,7 @@ internal class TextFieldKeyInput(
                 currentValue = value,
                 offsetMapping = offsetMapping,
                 layoutResultProxy = state.layoutResult,
-                state = preparedSelectionState
+                state = preparedSelectionState,
             )
         block(preparedSelection)
         if (

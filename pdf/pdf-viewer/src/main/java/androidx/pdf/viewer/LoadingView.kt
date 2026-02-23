@@ -41,7 +41,7 @@ public class LoadingView : LinearLayout {
     public constructor(
         context: Context,
         attrs: AttributeSet?,
-        defStyleAttr: Int = 0
+        defStyleAttr: Int = 0,
     ) : super(context, attrs, defStyleAttr) {
 
         // Inflate the layout
@@ -52,14 +52,22 @@ public class LoadingView : LinearLayout {
         errorMessage = findViewById(R.id.errorTextView)
     }
 
+    private fun ensureLoadingViewVisibility() {
+        if (this.visibility != VISIBLE) {
+            this.visibility = VISIBLE
+        }
+    }
+
     public fun showLoadingView() {
         progressBar.visibility = VISIBLE
         errorMessage.visibility = GONE
+        ensureLoadingViewVisibility()
     }
 
     public fun showErrorView(message: String) {
         progressBar.visibility = GONE
         errorMessage.text = message
         errorMessage.visibility = VISIBLE
+        ensureLoadingViewVisibility()
     }
 }

@@ -16,8 +16,8 @@
 
 package androidx.camera.testing.impl.mocks.helpers;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +48,7 @@ public class ArgumentCaptor<T> {
     /**
      * Returns the last value captured, or {@code null} if no value has been captured yet.
      */
-    @Nullable
-    public T getValue() {
+    public @Nullable T getValue() {
         if (mArguments.size() == 0) {
             return null;
         }
@@ -61,8 +60,7 @@ public class ArgumentCaptor<T> {
      * Returns a list that contains all values captured, or an empty list if no value has been
      * captured yet.
      */
-    @NonNull
-    public List<T> getAllValues() {
+    public @NonNull List<T> getAllValues() {
         return mArguments;
     }
 

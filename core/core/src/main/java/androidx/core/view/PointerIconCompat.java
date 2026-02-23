@@ -25,10 +25,11 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.view.PointerIcon;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link PointerIcon} in a backwards compatible
@@ -112,9 +113,8 @@ public final class PointerIconCompat {
 
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public Object getPointerIcon() {
+    public @Nullable Object getPointerIcon() {
         return mPointerIcon;
     }
 
@@ -126,8 +126,7 @@ public final class PointerIconCompat {
      * @param style The pointer icon style.
      * @return The pointer icon.
      */
-    @NonNull
-    public static PointerIconCompat getSystemIcon(@NonNull Context context, int style) {
+    public static @NonNull PointerIconCompat getSystemIcon(@NonNull Context context, int style) {
         if (SDK_INT >= 24) {
             return new PointerIconCompat(Api24Impl.getSystemIcon(context, style));
         } else {
@@ -148,8 +147,8 @@ public final class PointerIconCompat {
      * @throws IllegalArgumentException if bitmap is null, or if the x/y hotspot
      *         parameters are invalid.
      */
-    @NonNull
-    public static PointerIconCompat create(@NonNull Bitmap bitmap, float hotSpotX, float hotSpotY) {
+    public static @NonNull PointerIconCompat create(@NonNull Bitmap bitmap, float hotSpotX,
+            float hotSpotY) {
         if (SDK_INT >= 24) {
             return new PointerIconCompat(Api24Impl.create(bitmap, hotSpotX, hotSpotY));
         } else {
@@ -177,8 +176,7 @@ public final class PointerIconCompat {
      * @throws Resources.NotFoundException if the resource was not found or the drawable
      * linked in the resource was not found.
      */
-    @NonNull
-    public static PointerIconCompat load(@NonNull Resources resources, int resourceId) {
+    public static @NonNull PointerIconCompat load(@NonNull Resources resources, int resourceId) {
         if (SDK_INT >= 24) {
             return new PointerIconCompat(Api24Impl.load(resources, resourceId));
         } else {

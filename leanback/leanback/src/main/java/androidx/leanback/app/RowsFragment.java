@@ -26,8 +26,6 @@ import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.widget.BaseOnItemViewClickedListener;
 import androidx.leanback.widget.BaseOnItemViewSelectedListener;
@@ -43,6 +41,9 @@ import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.leanback.widget.ViewHolderTask;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 

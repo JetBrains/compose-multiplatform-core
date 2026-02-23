@@ -26,10 +26,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.graphics.drawable.DrawableCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -51,8 +52,7 @@ public class DrawableUtils {
      * Allows us to get the optical insets for a {@link Drawable}. Since this is hidden we need to
      * use reflection. Since the {@code Insets} class is hidden also, we return a Rect instead.
      */
-    @NonNull
-    public static Rect getOpticalBounds(@NonNull Drawable drawable) {
+    public static @NonNull Rect getOpticalBounds(@NonNull Drawable drawable) {
         if (Build.VERSION.SDK_INT >= 29) {
             final Insets insets = Api29Impl.getOpticalInsets(drawable);
             return new Rect(
@@ -73,12 +73,7 @@ public class DrawableUtils {
      */
     static void fixDrawable(@NonNull Drawable drawable) {
         String className = drawable.getClass().getName();
-        if (Build.VERSION.SDK_INT == 21
-                && "android.graphics.drawable.VectorDrawable".equals(className)) {
-            // VectorDrawable has an issue on API 21 where it sometimes doesn't create its tint
-            // filter until a state change event has occurred.
-            forceDrawableStateChange(drawable);
-        } else if (Build.VERSION.SDK_INT >= 29 && Build.VERSION.SDK_INT < 31
+        if (Build.VERSION.SDK_INT >= 29 && Build.VERSION.SDK_INT < 31
                 && "android.graphics.drawable.ColorStateListDrawable".equals(className)) {
             // ColorStateListDrawable has an issue on APIs 29 and 30 where it doesn't set up the
             // default color until a state change event has occurred.
@@ -189,8 +184,7 @@ public class DrawableUtils {
             // This class is not instantiable.
         }
 
-        @NonNull
-        static Rect getOpticalInsets(@NonNull Drawable drawable) {
+        static @NonNull Rect getOpticalInsets(@NonNull Drawable drawable) {
             // Check the SDK_INT to avoid UncheckedReflection error.
             if (Build.VERSION.SDK_INT < 29 && sReflectionSuccessful) {
                 try {

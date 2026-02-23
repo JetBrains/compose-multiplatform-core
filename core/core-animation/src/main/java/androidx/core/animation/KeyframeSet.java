@@ -19,9 +19,10 @@ package androidx.core.animation;
 import android.graphics.Path;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.core.animation.Keyframe.FloatKeyframe;
 import androidx.core.animation.Keyframe.IntKeyframe;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -184,9 +185,8 @@ class KeyframeSet<T> implements Keyframes<T> {
         return mFirstKeyframe.getType();
     }
 
-    @NonNull
     @Override
-    public KeyframeSet<T> clone() {
+    public @NonNull KeyframeSet<T> clone() {
         List<Keyframe<T>> keyframes = mKeyframes;
         int numKeyframes = mKeyframes.size();
         final ArrayList<Keyframe<T>> newKeyframes = new ArrayList<>(numKeyframes);
@@ -265,9 +265,8 @@ class KeyframeSet<T> implements Keyframes<T> {
         return mLastKeyframe.getValue();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         String returnVal = " ";
         for (int i = 0; i < mNumKeyframes; ++i) {
             returnVal += mKeyframes.get(i).getValue() + "  ";

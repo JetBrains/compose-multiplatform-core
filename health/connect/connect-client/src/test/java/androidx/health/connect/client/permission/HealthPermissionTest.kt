@@ -28,22 +28,14 @@ import org.junit.runner.RunWith
 class HealthPermissionTest {
 
     @Test
-    fun createReadPermissionLegacy() {
-        val permission = HealthPermission.createReadPermissionLegacy(StepsRecord::class)
-        assertThat(permission.accessType).isEqualTo(AccessTypes.READ)
-        assertThat(permission.recordType).isEqualTo(StepsRecord::class)
-    }
-
-    @Test
-    fun createWritePermissionLegacy() {
-        val permission = HealthPermission.createWritePermissionLegacy(StepsRecord::class)
-        assertThat(permission.accessType).isEqualTo(AccessTypes.WRITE)
-        assertThat(permission.recordType).isEqualTo(StepsRecord::class)
-    }
-
-    @Test
     fun createReadPermission() {
         val permission = HealthPermission.getReadPermission(StepsRecord::class)
+        assertThat(permission).isEqualTo(HealthPermission.READ_STEPS)
+    }
+
+    @Test
+    fun createReadPermission_reified() {
+        val permission = HealthPermission.getReadPermission<StepsRecord>()
         assertThat(permission).isEqualTo(HealthPermission.READ_STEPS)
     }
 
@@ -56,15 +48,28 @@ class HealthPermissionTest {
     }
 
     @Test
-    fun createReadPermission_invalidRecord_isNull() {
+    fun createReadPermission_invalidRecord_throwsIAE() {
         assertThrows(IllegalArgumentException::class.java) {
             HealthPermission.getReadPermission(Record::class)
         }
     }
 
     @Test
+    fun createReadPermission_reified_invalidRecord_throwsIAE() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HealthPermission.getReadPermission<Record>()
+        }
+    }
+
+    @Test
     fun createWritePermission() {
         val permission = HealthPermission.getWritePermission(StepsRecord::class)
+        assertThat(permission).isEqualTo(HealthPermission.WRITE_STEPS)
+    }
+
+    @Test
+    fun createWritePermission_reified() {
+        val permission = HealthPermission.getWritePermission<StepsRecord>()
         assertThat(permission).isEqualTo(HealthPermission.WRITE_STEPS)
     }
 
@@ -77,9 +82,28 @@ class HealthPermissionTest {
     }
 
     @Test
-    fun createWritePermission_invalidRecord_isNull() {
+    fun createWritePermission_invalidRecord_throwsIAE() {
         assertThrows(IllegalArgumentException::class.java) {
             HealthPermission.getWritePermission(Record::class)
         }
+    }
+
+    @Test
+    fun createWritePermission_reified_invalidRecord_throwsIAE() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HealthPermission.getWritePermission<Record>()
+        }
+    }
+
+    @Test
+    fun readExerciseRoutes_validPermissionStringContainedInAllPermissions() {
+        assertThat(HealthPermission.ALL_PERMISSIONS)
+            .contains("android.permission.health.READ_EXERCISE_ROUTES")
+    }
+
+    @Test
+    fun writeExerciseRoute_validPermissionStringContainedInAllPermissions() {
+        assertThat(HealthPermission.ALL_PERMISSIONS)
+            .contains("android.permission.health.WRITE_EXERCISE_ROUTE")
     }
 }

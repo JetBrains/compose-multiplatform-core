@@ -35,7 +35,9 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = "Copy task that is I/O bound")
 abstract class ApkCopyTask : DefaultTask() {
     @get:InputFiles
     @get:Optional
@@ -66,7 +68,7 @@ fun setupAppApkCopy(project: Project, buildType: String) {
                     task.apkLoader.set(variant.artifacts.getBuiltArtifactsLoader())
                     val file =
                         "apks/${project.path.substring(1).replace(':', '-')}-${variant.name}.apk"
-                    task.outputApk.set(File(project.getDistributionDirectory(), file))
+                    task.outputApk.set(project.getDistributionDirectory().file(file))
                 }
             project.addToBuildOnServer(apkCopy)
         }
@@ -82,14 +84,13 @@ fun setupTestApkCopy(project: Project) {
                         task.apkFolder.set(artifacts.get(SingleArtifact.APK))
                         task.apkLoader.set(artifacts.getBuiltArtifactsLoader())
                         val file = "apks/${project.path.substring(1).replace(':', '-')}-$name.apk"
-                        task.outputApk.set(File(project.getDistributionDirectory(), file))
+                        task.outputApk.set(project.getDistributionDirectory().file(file))
                     }
                 project.addToBuildOnServer(apkCopy)
             }
-            @Suppress("UnstableApiUsage") // usage of HasDeviceTests
             when {
                 variant is HasDeviceTests -> {
-                    variant.deviceTestsForEachCompat { deviceTest ->
+                    variant.deviceTests.forEach { (_, deviceTest) ->
                         registerAndAddToBuildOnServer(deviceTest.name, deviceTest.artifacts)
                     }
                 }

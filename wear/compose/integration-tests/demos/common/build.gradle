@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 
+
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     api("androidx.activity:activity:1.2.0")
-    implementation(project(':wear:compose:compose-material'))
+    implementation(project(":wear:compose:compose-material"))
 
 }
 
 android {
-    compileSdk 35
+    compileSdk { version = release(35) }
     defaultConfig {
-        minSdkVersion 25
+        minSdk { version = release(25) }
     }
-    namespace "androidx.wear.compose.integration.demos.common"
+    namespace = "androidx.wear.compose.integration.demos.common"
+}
+
+androidx {
 }

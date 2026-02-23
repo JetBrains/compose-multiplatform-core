@@ -26,9 +26,10 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -77,7 +78,7 @@ public class KeyEventDispatcher {
      */
     @SuppressLint("LambdaLast")
     public static boolean dispatchKeyEvent(@NonNull Component component,
-            @Nullable View root, @Nullable Window.Callback callback, @NonNull KeyEvent event) {
+            @Nullable View root, Window.@Nullable Callback callback, @NonNull KeyEvent event) {
         if (component == null) {
             return false;
         }

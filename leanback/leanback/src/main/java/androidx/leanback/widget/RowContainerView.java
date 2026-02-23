@@ -24,8 +24,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * RowContainerView wraps header and user defined row view

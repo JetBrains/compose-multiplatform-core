@@ -35,13 +35,14 @@ import android.view.WindowInsets;
 import android.widget.TextView;
 
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract base class which presents a dialog associated with a {@link DialogPreference}. Since
@@ -137,8 +138,7 @@ public abstract class PreferenceDialogFragmentCompat extends DialogFragment impl
     }
 
     @Override
-    public @NonNull
-    Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+    public     @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         mWhichButtonClicked = DialogInterface.BUTTON_NEGATIVE;
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
@@ -190,7 +190,7 @@ public abstract class PreferenceDialogFragmentCompat extends DialogFragment impl
      *
      * <p>Do not {@link AlertDialog.Builder#create()} or {@link AlertDialog.Builder#show()}.
      */
-    protected void onPrepareDialogBuilder(@NonNull AlertDialog.Builder builder) {}
+    protected void onPrepareDialogBuilder(AlertDialog.@NonNull Builder builder) {}
 
     /**
      * Returns whether the preference needs to display a soft input method when the dialog is
@@ -241,8 +241,7 @@ public abstract class PreferenceDialogFragmentCompat extends DialogFragment impl
      * @return The content view for the dialog
      * @see DialogPreference#setLayoutResource(int)
      */
-    @Nullable
-    protected View onCreateDialogView(@NonNull Context context) {
+    protected @Nullable View onCreateDialogView(@NonNull Context context) {
         final int resId = mDialogLayoutRes;
         if (resId == 0) {
             return null;

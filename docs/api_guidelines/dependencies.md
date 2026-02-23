@@ -236,15 +236,19 @@ dependencies {
 }
 ```
 
-### System health {#dependencies-health}
+### Dependency considerations {#dependencies-health}
 
 Generally, Jetpack libraries should avoid dependencies that negatively impact
 developers without providing substantial benefit. Libraries should consider the
-system health implications of their dependencies, including:
+implications of their dependencies, including:
 
 -   Large dependencies where only a small portion is needed (e.g. APK bloat)
 -   Dependencies that slow down build times through annotation processing or
     compiler overhead
+-   Dependencies which do not maintain binary compatibility and conflict with
+    semantic versioning guarantees
+-   Dependencies that are intended for server environments and don't interact
+    well with the Android build toolchain (e.g. R8) or runtime (e.g. ART)
 
 #### Kotlin {#dependencies-kotlin}
 
@@ -267,6 +271,13 @@ Java-based libraries *may* migrate to Kotlin, but they must be careful to
 maintain binary compatibility during the migration. Metalava does not cover all
 possible aspects of migration, so some manual work will be required.
 
+#### Kotlin reflect {#dependencies-kotlin-reflect}
+
+Reflection in libraries is
+[only allowed for backwards compatibility support](/docs/api_guidelines#sdk-reflection)
+and those users should use Java reflection. `kotlin-reflect` is very costly at
+runtime and should never be used.
+
 #### Kotlin coroutines {#dependencies-coroutines}
 
 The Kotlin coroutines library adds around 100kB post-shrinking. New libraries
@@ -280,6 +291,12 @@ dependencies {
     implementation(libs.kotlinCoroutinesAndroid)
 }
 ```
+
+#### GSON {#dependencies-gson}
+
+GSON relies heavily on reflection and interacts poorly with app optimization
+tools like R8. Instead, consider using `org.json` which is included in the
+Android platform SDK.
 
 #### Guava {#dependencies-guava}
 
@@ -310,13 +327,14 @@ implementation enables developers to maintain protocol compatibility across
 library versions, meaning that two clients can communicate regardless of the
 library versions included in their APKs.
 
-The Protobuf library itself, however, does not guarantee ABI compatibility
-across minor versions and a specific version **must** be used with a library to
-avoid conflict with other dependencies used by the developer. To do this, you
-must first create a new project to repackage the protobuf runtime classes, and
-then have it as a dependency in the project you generate protos in. In the
-project that generates protos, you must also relocate any import statements
-containing `com.google.protobuf` to your target package name. The
+The Protobuf library itself (`com.google.proto`), however, does not guarantee
+ABI compatibility across minor versions and a specific version **must** be used
+with a library to avoid conflict with other dependencies used by the developer.
+To do this, you must first create a new project to repackage the protobuf
+runtime classes, and then have it as a dependency in the project you generate
+protos in. In the project that generates protos, you must also relocate any
+import statements containing `com.google.protobuf` to your target package name.
+The
 [AndroidXRepackagePlugin](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/private/src/main/kotlin/androidx/build/AndroidXRepackageImplPlugin.kt)
 abstracts this for you. An example of its use to repackage the protobuf runtime
 library can be found
@@ -380,21 +398,24 @@ for external clients.
 
 For this reason, we try to separate (1) and (2) by pinning the Kotlin language
 and API versions until the new compiler has been in use in AndroidX for at least
-three months.
+three months. `kotlinc` only
+[supports three previous minor language versions](https://kotlinlang.org/docs/kotlin-evolution-principles.html#compatibility-options),
+therefore if we update to a `kotlinc` version that does not support the current
+AndroidX default `kotlinVersion`, the androidx default will be changed.
 
 Library owners *may* in limited cases update their Kotlin language version early
 by specifying the `kotlinVersion` DSL property:
 
 ```
 androidx {
-    kotlinVersion KOTLIN_1_9
+    kotlinVersion KOTLIN_2_2
 }
 ```
 
 Note that this propagates the version requirement to all dependencies and is not
 appropriate for low-level libraries.
 
-#### Java language
+#### Java language (host-side) {#java-host}
 
 The Java language level determines the minimum version of the Java runtime
 required for lint checks and other host-side libraries like compilers.
@@ -419,22 +440,19 @@ javaExtension.apply {
 When doing so, library owners **must** file a bug and establish a timeline to
 un-pin and rejoin the rest of AndroidX.
 
-#### Desugaring and R8/D8
+#### Java language (device-side) {#java-device}
 
 Currently, the highest Java language level supported for Android libraries is
-Java 1.8 (`VERSION_1_8``) via D8/R8 desugaring. See Use Java 8 language features
-and APIs for more details.
+Java 1.8 (`VERSION_1_8`). AndroidX **does not** currently support library API
+desugaring, so the use of Java 8 APIs requires `minSdk 26` or higher.
 
-AndroidX **does not** currently support library API desugaring, so the use of
-Java 8 APIs requires increasing the library's `minSdk`.
+#### Android SDK {#compile-sdk}
 
-#### Android SDK
+Similar to our library dependency versioning policy, libraries should depend on
+the lowest `compileSdk` version that provides the APIs needed by the library.
 
-The AndroidX Core & Tooling team automatically updates the `compileSdk` value
-following the first public release of a stable SDK, e.g. following SDK
-finalization during the Beta stage of platform SDK development.
-
-Library owners **must not** attempt to pin their `compileSdk` to a lower value.
-
-Libraries that are developed against extension SDKs *may* pin their `compileSdk`
-to a higher value, e.g. `34-ext5` when the rest of AndroidX is using `34`.
+We try to avoid unnecessary SDK upgrades because raising a library's
+`compileSdk` implicitly raises its `minCompileSdk`, which means that clients are
+required to raise their own `compileSdk`. This often requires updating Android
+Gradle Plugin, which can turn into a long process of upgrading many other
+dependencies.

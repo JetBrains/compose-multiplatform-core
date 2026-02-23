@@ -28,9 +28,10 @@ import android.location.GpsStatus;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -111,8 +112,7 @@ public abstract class GnssStatusCompat {
      * Wraps the given {@link GnssStatus} as GnssStatusCompat.
      */
     @RequiresApi(VERSION_CODES.N)
-    @NonNull
-    public static GnssStatusCompat wrap(@NonNull GnssStatus gnssStatus) {
+    public static @NonNull GnssStatusCompat wrap(@NonNull GnssStatus gnssStatus) {
         return new GnssStatusWrapper(gnssStatus);
     }
 
@@ -120,8 +120,7 @@ public abstract class GnssStatusCompat {
      * Wraps the given {@link GpsStatus} as GnssStatusCompat.
      */
     @SuppressLint("ReferencesDeprecated")
-    @NonNull
-    public static GnssStatusCompat wrap(@NonNull GpsStatus gpsStatus) {
+    public static @NonNull GnssStatusCompat wrap(@NonNull GpsStatus gpsStatus) {
         return new GpsStatusWrapper(gpsStatus);
     }
 

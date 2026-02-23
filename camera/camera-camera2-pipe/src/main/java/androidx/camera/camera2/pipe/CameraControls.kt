@@ -20,7 +20,6 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.Result3A.Status
 
 // Public controls and enums used to interact with a CameraGraph.
 
@@ -71,9 +70,19 @@ public value class AeMode(public val value: Int) {
             AeMode(CameraMetadata.CONTROL_AE_MODE_ON_AUTO_FLASH_REDEYE)
         public val ON_EXTERNAL_FLASH: AeMode =
             AeMode(CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
+        public val ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY: AeMode =
+            AeMode(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
 
         public val values: List<AeMode> =
-            listOf(OFF, ON, ON_AUTO_FLASH, ON_ALWAYS_FLASH, ON_AUTO_FLASH_REDEYE, ON_EXTERNAL_FLASH)
+            listOf(
+                OFF,
+                ON,
+                ON_AUTO_FLASH,
+                ON_ALWAYS_FLASH,
+                ON_AUTO_FLASH_REDEYE,
+                ON_EXTERNAL_FLASH,
+                ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
+            )
 
         @JvmStatic
         public fun fromIntOrNull(value: Int): AeMode? = values.firstOrNull { it.value == value }
@@ -87,6 +96,8 @@ public value class AeMode(public val value: Int) {
                 ON_ALWAYS_FLASH.value -> ON_ALWAYS_FLASH
                 ON_AUTO_FLASH_REDEYE.value -> ON_AUTO_FLASH_REDEYE
                 ON_EXTERNAL_FLASH.value -> ON_EXTERNAL_FLASH
+                ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY.value ->
+                    ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
                 else -> ON
             }
     }

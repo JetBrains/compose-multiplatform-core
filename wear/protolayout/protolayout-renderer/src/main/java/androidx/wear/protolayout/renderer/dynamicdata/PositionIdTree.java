@@ -23,12 +23,12 @@ import static androidx.wear.protolayout.renderer.common.ProtoLayoutDiffer.getPar
 
 import android.util.ArrayMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.annotation.VisibleForTesting;
 import androidx.wear.protolayout.renderer.dynamicdata.PositionIdTree.TreeNode;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +56,7 @@ public final class PositionIdTree<T extends TreeNode> {
         void destroy();
     }
 
-    @NonNull private final Map<String, T> mPosIdToTreeNode = new ArrayMap<>();
+    private final @NonNull Map<String, T> mPosIdToTreeNode = new ArrayMap<>();
 
     /** Calls {@code action} on all of the tree nodes. */
     void forEach(Consumer<T> action) {
@@ -103,14 +103,12 @@ public final class PositionIdTree<T extends TreeNode> {
     }
 
     /** Returns the node matching the {@code predicate} or an null if there is no match. */
-    @Nullable
-    T findFirst(@NonNull Predicate<? super T> predicate) {
+    @Nullable T findFirst(@NonNull Predicate<? super T> predicate) {
         return mPosIdToTreeNode.values().stream().filter(predicate).findFirst().orElse(null);
     }
 
     /** Returns the node with {@code posId} or null if it doesn't exist. */
-    @Nullable
-    public T get(@NonNull String posId) {
+    public @Nullable T get(@NonNull String posId) {
         return mPosIdToTreeNode.get(posId);
     }
 
@@ -118,8 +116,7 @@ public final class PositionIdTree<T extends TreeNode> {
      * Returns all of the ancestors of the node {@code posId} and value matching the {@code
      * predicate}.
      */
-    @NonNull
-    public List<T> findAncestorsFor(
+    public @NonNull List<T> findAncestorsFor(
             @NonNull String posId, @NonNull Predicate<? super T> predicate) {
         List<T> result = new ArrayList<>();
         for (String id : findAncestorsNodesFor(posId, predicate)) {
@@ -135,8 +132,7 @@ public final class PositionIdTree<T extends TreeNode> {
      * Returns all of the ancestors' posIds of the node {@code posId} with value matching the {@code
      * predicate}.
      */
-    @NonNull
-    public List<String> findAncestorsNodesFor(
+    public @NonNull List<String> findAncestorsNodesFor(
             @NonNull String posId, @NonNull Predicate<? super T> predicate) {
         List<String> result = new ArrayList<>();
         while (true) {
@@ -154,8 +150,7 @@ public final class PositionIdTree<T extends TreeNode> {
     }
 
     /** Returns all of the nodes in a subtree under the node with {@code posId}. */
-    @NonNull
-    List<T> findChildrenFor(@NonNull String posId) {
+    @NonNull List<T> findChildrenFor(@NonNull String posId) {
         return findChildrenFor(posId, node -> true);
     }
 
@@ -163,8 +158,8 @@ public final class PositionIdTree<T extends TreeNode> {
      * Returns all of the nodes in a subtree under the node with {@code posId} matching the {@code
      * predicate}.
      */
-    @NonNull
-    List<T> findChildrenFor(@NonNull String posId, @NonNull Predicate<? super T> predicate) {
+    @NonNull List<T> findChildrenFor(
+            @NonNull String posId, @NonNull Predicate<? super T> predicate) {
         List<T> result = new ArrayList<>();
         addChildrenFor(posId, predicate, result);
         return result;
@@ -188,9 +183,7 @@ public final class PositionIdTree<T extends TreeNode> {
     }
 
     /** Returns all of the current tree nodes. This is intended to be used only in tests. */
-    @VisibleForTesting
-    @NonNull
-    Collection<T> getAllNodes() {
+    @NonNull Collection<T> getAllNodes() {
         return Collections.unmodifiableCollection(mPosIdToTreeNode.values());
     }
 }

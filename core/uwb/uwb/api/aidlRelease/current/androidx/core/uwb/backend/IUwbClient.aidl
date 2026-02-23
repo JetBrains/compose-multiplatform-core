@@ -45,4 +45,6 @@ interface IUwbClient {
   void removeControlee(in androidx.core.uwb.backend.UwbAddress address);
   void reconfigureRangingInterval(in int intervalSkipCount);
   void reconfigureRangeDataNtf(in int configType, in int proximityNearCm, in int proximityFarCm);
+  void subscribeToAvailability(in androidx.core.uwb.backend.IUwbAvailabilityObserver observer);
+  void unsubscribeFromAvailability();
 }

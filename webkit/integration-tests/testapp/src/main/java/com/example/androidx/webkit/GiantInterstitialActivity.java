@@ -21,10 +21,11 @@ import android.util.DisplayMetrics;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate Quiet Giant interstitials. Similar to {@link
@@ -42,6 +43,7 @@ public class GiantInterstitialActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_giant_interstitial);
         setTitle(R.string.giant_interstitial_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
         WebView webview = findViewById(R.id.giant_webview);
 

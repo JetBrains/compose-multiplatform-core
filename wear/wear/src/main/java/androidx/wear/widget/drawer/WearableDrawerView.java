@@ -29,13 +29,14 @@ import android.widget.ImageView;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StyleableRes;
 import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.wear.R;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -254,8 +255,7 @@ public class WearableDrawerView extends FrameLayout {
     /**
      * Returns the drawer content view.
      */
-    @Nullable
-    public View getDrawerContent() {
+    public @Nullable View getDrawerContent() {
         return mContent;
     }
 

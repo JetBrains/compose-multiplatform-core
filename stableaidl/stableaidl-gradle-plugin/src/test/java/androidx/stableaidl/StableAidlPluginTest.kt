@@ -17,10 +17,9 @@
 package androidx.stableaidl
 
 import androidx.testutils.gradle.ProjectSetupRule
-import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.gradle.testkit.runner.GradleRunner
-import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,23 +46,23 @@ class StableAidlPluginTest {
                     id('com.android.application')
                     id('androidx.stableaidl')
                 }
-            """
+                """
                     .trimIndent(),
             suffix =
                 """
-            android {
-                namespace 'androidx.stableaidl.testapp'
-                buildFeatures {
-                  aidl = true
+                android {
+                    namespace 'androidx.stableaidl.testapp'
+                    buildFeatures {
+                      aidl = true
+                    }
+                    buildTypes.all {
+                      stableAidl {
+                        version 1
+                      }
+                    }
                 }
-                buildTypes.all {
-                  stableAidl {
-                    version 1
-                  }
-                }
-            }
-            """
-                    .trimIndent()
+                """
+                    .trimIndent(),
         )
 
         // Tasks should contain those defined in StableAidlTasks.
@@ -73,7 +72,7 @@ class StableAidlPluginTest {
     }
 
     @Test
-    fun applyPluginAndroidLibProject() {
+    fun applyPluginAndroidLibProject_withSdk34() {
         projectSetup.writeDefaultBuildGradle(
             prefix =
                 """
@@ -81,23 +80,59 @@ class StableAidlPluginTest {
                     id('com.android.library')
                     id('androidx.stableaidl')
                 }
-            """
+                """
                     .trimIndent(),
             suffix =
                 """
-            android {
-                namespace 'androidx.stableaidl.testapp'
-                buildFeatures {
-                  aidl = true
+                android {
+                    compileSdk = 36
+                    namespace 'androidx.stableaidl.testapp'
+                    buildFeatures {
+                      aidl = true
+                    }
+                    buildTypes.all {
+                      stableAidl {
+                        version 1
+                      }
+                    }
                 }
-                buildTypes.all {
-                  stableAidl {
-                    version 1
-                  }
+                """
+                    .trimIndent(),
+        )
+
+        // Tasks should contain those defined in StableAidlTasks.
+        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        assertTrue { output.output.contains("compileDebugAidlApi - ") }
+        assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
+    }
+
+    @Test
+    fun applyPluginAndroidLibProject_withSdk36() {
+        projectSetup.writeDefaultBuildGradle(
+            prefix =
+                """
+                plugins {
+                    id('com.android.library')
+                    id('androidx.stableaidl')
                 }
-            }
-            """
-                    .trimIndent()
+                """
+                    .trimIndent(),
+            suffix =
+                """
+                android {
+                    compileSdk = 34
+                    namespace 'androidx.stableaidl.testapp'
+                    buildFeatures {
+                      aidl = true
+                    }
+                    buildTypes.all {
+                      stableAidl {
+                        version 1
+                      }
+                    }
+                }
+                """
+                    .trimIndent(),
         )
 
         // Tasks should contain those defined in StableAidlTasks.
@@ -122,6 +157,9 @@ class StableAidlPluginTest {
                 .trimIndent()
         )
 
-        assertFailsWith(UnexpectedBuildFailure::class) { gradleRunner.withArguments("jar").build() }
+        // Tasks should not contain those defined in StableAidlTasks.
+        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        assertFalse { output.output.contains("compileDebugAidlApi - ") }
+        assertFalse { output.output.contains("checkDebugAidlApiRelease - ") }
     }
 }

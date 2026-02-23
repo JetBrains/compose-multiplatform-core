@@ -75,7 +75,7 @@ import java.util.UUID
 // Logic forked from androidx.compose.ui.window.DialogProperties. Removed dismissOnClickOutside
 // and usePlatformDefaultWidth as they are not relevant for fullscreen experience.
 /**
- * Properties used to customize the behavior of a [DismissibleModalWideNavigationRail].
+ * Properties used to customize the behavior of a [ModalWideNavigationRail].
  *
  * @param securePolicy Policy for setting [WindowManager.LayoutParams.FLAG_SECURE] on the modal
  *   navigation rail's window.
@@ -83,16 +83,15 @@ import java.util.UUID
  *   the back button. If true, pressing the back button will call onDismissRequest.
  */
 @Immutable
-@ExperimentalMaterial3ExpressiveApi
 actual class ModalWideNavigationRailProperties(
     val securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
     @get:Suppress("GetterSetterNames") actual val shouldDismissOnBackPress: Boolean = true,
 ) {
     actual constructor(
-        shouldDismissOnBackPress: Boolean,
+        shouldDismissOnBackPress: Boolean
     ) : this(
         securePolicy = SecureFlagPolicy.Inherit,
-        shouldDismissOnBackPress = shouldDismissOnBackPress
+        shouldDismissOnBackPress = shouldDismissOnBackPress,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -110,17 +109,11 @@ actual class ModalWideNavigationRailProperties(
     }
 }
 
-@Immutable
-@ExperimentalMaterial3ExpressiveApi
-actual object DismissibleModalWideNavigationRailDefaults {
-
-    /** Properties used to customize the behavior of a [DismissibleModalWideNavigationRail]. */
-    actual val Properties = ModalWideNavigationRailProperties()
-}
+internal actual fun createDefaultModalWideNavigationRailProperties() =
+    ModalWideNavigationRailProperties()
 
 // Fork of androidx.compose.ui.window.AndroidDialog_androidKt.Dialog
 // Added predictiveBackProgress param to pass into ModalWideNavigationRailDialogWrapper.
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal actual fun ModalWideNavigationRailDialog(
     onDismissRequest: () -> Unit,
@@ -128,7 +121,7 @@ internal actual fun ModalWideNavigationRailDialog(
     onPredictiveBack: (Float) -> Unit,
     onPredictiveBackCancelled: () -> Unit,
     predictiveBackState: RailPredictiveBackState,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
@@ -153,11 +146,7 @@ internal actual fun ModalWideNavigationRailDialog(
                 )
                 .apply {
                     setContent(composition) {
-                        Box(
-                            Modifier.semantics { dialog() },
-                        ) {
-                            currentContent()
-                        }
+                        Box(Modifier.semantics { dialog() }) { currentContent() }
                     }
                 }
         }
@@ -175,7 +164,7 @@ internal actual fun ModalWideNavigationRailDialog(
         dialog.updateParameters(
             onDismissRequest = onDismissRequest,
             properties = properties,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
     }
 }
@@ -240,7 +229,7 @@ private class ModalWideNavigationRailDialogLayout(
                         onPredictiveBack = onPredictiveBack,
                         onPredictiveBackCancelled = onPredictiveBackCancelled,
                         predictiveBackState = predictiveBackState,
-                        layoutDirection = layoutDirection
+                        layoutDirection = layoutDirection,
                     )
                 } else {
                     Api33Impl.createBackCallback(onDismissRequest)
@@ -265,13 +254,13 @@ private class ModalWideNavigationRailDialogLayout(
             onPredictiveBack: (Float) -> Unit,
             onPredictiveBackCancelled: () -> Unit,
             predictiveBackState: RailPredictiveBackState,
-            layoutDirection: LayoutDirection
+            layoutDirection: LayoutDirection,
         ) =
             object : OnBackAnimationCallback {
                 override fun onBackStarted(backEvent: BackEvent) {
                     predictiveBackState.update(
                         isSwipeEdgeLeft = backEvent.swipeEdge == BackEvent.EDGE_LEFT,
-                        isRtl = layoutDirection == LayoutDirection.Rtl
+                        isRtl = layoutDirection == LayoutDirection.Rtl,
                     )
                     onPredictiveBack(PredictiveBack.transform(backEvent.progress))
                 }
@@ -279,7 +268,7 @@ private class ModalWideNavigationRailDialogLayout(
                 override fun onBackProgressed(backEvent: BackEvent) {
                     predictiveBackState.update(
                         isSwipeEdgeLeft = backEvent.swipeEdge == BackEvent.EDGE_LEFT,
-                        isRtl = layoutDirection == LayoutDirection.Rtl
+                        isRtl = layoutDirection == LayoutDirection.Rtl,
                     )
                     onPredictiveBack(PredictiveBack.transform(backEvent.progress))
                 }
@@ -309,7 +298,7 @@ private class ModalWideNavigationRailDialogLayout(
                     .findOnBackInvokedDispatcher()
                     ?.registerOnBackInvokedCallback(
                         OnBackInvokedDispatcher.PRIORITY_OVERLAY,
-                        backCallback
+                        backCallback,
                     )
             }
         }
@@ -327,7 +316,6 @@ private class ModalWideNavigationRailDialogLayout(
 // Fork of androidx.compose.ui.window.DialogWrapper.
 // scope and predictive back related params added for predictive back implementation.
 // EdgeToEdgeFloatingDialogWindowTheme provided to allow theme to extend into status bar.
-@ExperimentalMaterial3ExpressiveApi
 private class ModalWideNavigationRailDialogWrapper(
     private var onDismissRequest: () -> Unit,
     private var properties: ModalWideNavigationRailProperties,
@@ -343,7 +331,7 @@ private class ModalWideNavigationRailDialogWrapper(
     ComponentDialog(
         ContextThemeWrapper(
             composeView.context,
-            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme
+            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme,
         )
     ),
     ViewRootForInspector {
@@ -450,14 +438,14 @@ private class ModalWideNavigationRailDialogWrapper(
             } else {
                 WindowManager.LayoutParams.FLAG_SECURE.inv()
             },
-            WindowManager.LayoutParams.FLAG_SECURE
+            WindowManager.LayoutParams.FLAG_SECURE,
         )
     }
 
     fun updateParameters(
         onDismissRequest: () -> Unit,
         properties: ModalWideNavigationRailProperties,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties
@@ -474,7 +462,7 @@ private class ModalWideNavigationRailDialogWrapper(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             } else {
                 @Suppress("DEPRECATION") WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            },
+            }
         )
     }
 

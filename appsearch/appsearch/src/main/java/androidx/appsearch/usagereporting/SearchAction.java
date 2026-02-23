@@ -17,12 +17,14 @@
 
 package androidx.appsearch.usagereporting;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link SearchAction} is a built-in AppSearch document type that contains different metrics.
@@ -40,10 +42,10 @@ import androidx.core.util.Preconditions;
  * default TTL is 60 days.
  */
 @Document(name = "builtin:SearchAction")
+@ExperimentalAppSearchApi
 public class SearchAction extends TakenAction {
-    @Nullable
     @Document.StringProperty(indexingType = StringPropertyConfig.INDEXING_TYPE_PREFIXES)
-    private final String mQuery;
+    private final @Nullable String mQuery;
 
     @Document.LongProperty
     private final int mFetchedResultCount;
@@ -58,8 +60,7 @@ public class SearchAction extends TakenAction {
     }
 
     /** Returns the user-entered search input (without any operators or rewriting). */
-    @Nullable
-    public String getQuery() {
+    public @Nullable String getQuery() {
         return mQuery;
     }
 
@@ -73,13 +74,9 @@ public class SearchAction extends TakenAction {
         return mFetchedResultCount;
     }
 
-    // TODO(b/314026345): redesign builder to enable inheritance for SearchAction.
     /** Builder for {@link SearchAction}. */
     @Document.BuilderProducer
     public static final class Builder extends BuilderImpl<Builder> {
-        private String mQuery;
-        private int mFetchedResultCount;
-
         /**
          * Constructor for {@link SearchAction.Builder}.
          *
@@ -89,17 +86,14 @@ public class SearchAction extends TakenAction {
          *                              since Unix epoch.
          */
         public Builder(@NonNull String namespace, @NonNull String id, long actionTimestampMillis) {
-            this(namespace, id, actionTimestampMillis, ActionConstants.ACTION_TYPE_SEARCH);
+            super(namespace, id, actionTimestampMillis, ActionConstants.ACTION_TYPE_SEARCH);
         }
 
         /**
-         * Constructor for {@link Builder} with all the existing values.
+         * Constructor for {@link SearchAction.Builder} with all the existing values.
          */
         public Builder(@NonNull SearchAction searchAction) {
-            super(Preconditions.checkNotNull(searchAction));
-
-            mQuery = searchAction.getQuery();
-            mFetchedResultCount = searchAction.getFetchedResultCount();
+            super(searchAction);
         }
 
         /**
@@ -117,18 +111,50 @@ public class SearchAction extends TakenAction {
         Builder(@NonNull String namespace, @NonNull String id, long actionTimestampMillis,
                 @TakenAction.ActionType int actionType) {
             super(namespace, id, actionTimestampMillis, actionType);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static class BuilderImpl<T extends BuilderImpl<T>> extends
+            TakenAction.BuilderImpl<T> {
+        protected String mQuery;
+        protected int mFetchedResultCount;
+
+        /**
+         * Constructs {@link BuilderImpl} with given {@code namespace}, {@code id},
+         * {@code actionTimestampMillis} and {@code actionType}.
+         *
+         * @param namespace             Namespace for the Document. See {@link Document.Namespace}.
+         * @param id                    Unique identifier for the Document. See {@link Document.Id}.
+         * @param actionTimestampMillis The timestamp when the user took the action, in milliseconds
+         *                              since Unix epoch.
+         * @param actionType            Action type enum for the Document. See
+         *                              {@link TakenAction.ActionType}.
+         */
+        BuilderImpl(@NonNull String namespace, @NonNull String id,
+                long actionTimestampMillis, @TakenAction.ActionType int actionType) {
+            super(namespace, id, actionTimestampMillis, actionType);
 
             // Default for unset fetchedResultCount. Since negative number is invalid for fetched
             // result count, -1 is used as an unset value and AppSearch will ignore it.
             mFetchedResultCount = -1;
         }
 
+        /**
+         * Constructor for {@link BuilderImpl} with all the existing values.
+         */
+        BuilderImpl(@NonNull SearchAction searchAction) {
+            super(Preconditions.checkNotNull(searchAction));
+
+            mQuery = searchAction.getQuery();
+            mFetchedResultCount = searchAction.getFetchedResultCount();
+        }
+
         /** Sets the user-entered search input (without any operators or rewriting). */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQuery(@Nullable String query) {
+        public @NonNull T setQuery(@Nullable String query) {
             mQuery = query;
-            return this;
+            return (T) this;
         }
 
         /**
@@ -138,16 +164,14 @@ public class SearchAction extends TakenAction {
          * @see SearchAction#getFetchedResultCount
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setFetchedResultCount(int fetchedResultCount) {
+        public @NonNull T setFetchedResultCount(int fetchedResultCount) {
             mFetchedResultCount = fetchedResultCount;
-            return this;
+            return (T) this;
         }
 
         /** Builds a {@link SearchAction}. */
         @Override
-        @NonNull
-        public SearchAction build() {
+        public @NonNull SearchAction build() {
             return new SearchAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
                     mActionType, mQuery, mFetchedResultCount);
         }

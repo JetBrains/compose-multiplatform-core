@@ -18,10 +18,8 @@ package androidx.camera.core.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Build;
-
 import androidx.camera.core.ImageInfo;
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult;
+import androidx.camera.testing.fakes.FakeCameraCaptureResult;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +29,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = {Config.ALL_SDKS})
 public class CameraCaptureResultImageInfoTest {
     @Test
     public void creationSuccess() {

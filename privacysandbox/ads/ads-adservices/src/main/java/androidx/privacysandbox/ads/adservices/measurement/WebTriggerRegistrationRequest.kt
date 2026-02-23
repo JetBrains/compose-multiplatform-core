@@ -29,8 +29,11 @@ import androidx.privacysandbox.ads.adservices.measurement.WebTriggerParams.Compa
  * @param webTriggerParams Registration info to fetch sources.
  * @param destination Destination [Uri].
  */
-class WebTriggerRegistrationRequest
-public constructor(val webTriggerParams: List<WebTriggerParams>, val destination: Uri) {
+public class WebTriggerRegistrationRequest
+public constructor(
+    public val webTriggerParams: List<WebTriggerParams>,
+    public val destination: Uri,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is WebTriggerRegistrationRequest) return false
@@ -49,14 +52,14 @@ public constructor(val webTriggerParams: List<WebTriggerParams>, val destination
             "Destination=$destination"
     }
 
-    @SuppressLint("ClassVerificationFailure", "NewApi")
+    @SuppressLint("NewApi")
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
     internal fun convertToAdServices():
         android.adservices.measurement.WebTriggerRegistrationRequest {
         return android.adservices.measurement.WebTriggerRegistrationRequest.Builder(
                 convertWebTriggerParams(webTriggerParams),
-                destination
+                destination,
             )
             .build()
     }

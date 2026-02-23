@@ -18,11 +18,10 @@ package androidx.appsearch.localstorage;
 
 import static androidx.appsearch.app.AppSearchResult.RESULT_INVALID_SCHEMA;
 import static androidx.appsearch.app.AppSearchResult.throwableToFailedResult;
+import static androidx.appsearch.stats.BaseStats.CALL_TYPE_SCHEMA_MIGRATION;
 
 import android.os.Parcel;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
@@ -39,6 +38,9 @@ import androidx.core.util.Preconditions;
 import com.google.android.icing.proto.PersistType;
 import com.google.android.icing.protobuf.CodedInputStream;
 import com.google.android.icing.protobuf.CodedOutputStream;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
@@ -60,12 +62,14 @@ class AppSearchMigrationHelper implements Closeable {
     private final String mDatabaseName;
     private final File mFile;
     private final Set<String> mDestinationTypes;
+    private final @Nullable AppSearchLogger mLogger;
     private int mTotalNeedMigratedDocumentCount = 0;
 
     AppSearchMigrationHelper(@NonNull AppSearchImpl appSearchImpl,
             @NonNull String packageName,
             @NonNull String databaseName,
-            @NonNull Set<AppSearchSchema> newSchemas) throws IOException {
+            @NonNull Set<AppSearchSchema> newSchemas,
+            @Nullable AppSearchLogger logger) throws IOException {
         mAppSearchImpl = Preconditions.checkNotNull(appSearchImpl);
         mPackageName = Preconditions.checkNotNull(packageName);
         mDatabaseName = Preconditions.checkNotNull(databaseName);
@@ -75,6 +79,7 @@ class AppSearchMigrationHelper implements Closeable {
         for (AppSearchSchema newSchema : newSchemas) {
             mDestinationTypes.add(newSchema.getSchemaType());
         }
+        mLogger = logger;
     }
 
     /**
@@ -94,7 +99,7 @@ class AppSearchMigrationHelper implements Closeable {
      */
     @WorkerThread
     public void queryAndTransform(@NonNull Map<String, Migrator> migrators, int currentVersion,
-            int finalVersion, @Nullable SchemaMigrationStats.Builder schemaMigrationStatsBuilder)
+            int finalVersion, SchemaMigrationStats.@Nullable Builder schemaMigrationStatsBuilder)
             throws IOException, AppSearchException {
         Preconditions.checkState(mFile.exists(), "Internal temp file does not exist.");
         try (FileOutputStream outputStream = new FileOutputStream(mFile, /*append=*/ true)) {
@@ -105,7 +110,8 @@ class AppSearchMigrationHelper implements Closeable {
                             .addFilterSchemas(migrators.keySet())
                             .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
                             .build(),
-                    /*logger=*/ null);
+                    /*logger=*/ null,
+                    /*callStatsBuilder=*/null);
             while (!searchResultPage.getResults().isEmpty()) {
                 for (int i = 0; i < searchResultPage.getResults().size(); i++) {
                     GenericDocument document =
@@ -144,7 +150,8 @@ class AppSearchMigrationHelper implements Closeable {
                 codedOutputStream.flush();
                 mTotalNeedMigratedDocumentCount += searchResultPage.getResults().size();
                 searchResultPage = mAppSearchImpl.getNextPage(mPackageName,
-                        searchResultPage.getNextPageToken(), /*sStatsBuilder=*/ null);
+                        searchResultPage.getNextPageToken(), /*queryStatsBuilder=*/ null,
+                        /*callStatsBuilder=*/null);
                 outputStream.flush();
             }
         }
@@ -169,15 +176,17 @@ class AppSearchMigrationHelper implements Closeable {
      * @throws IOException        on i/o problem
      * @throws AppSearchException on AppSearch problem
      */
-    @NonNull
     @WorkerThread
-    public SetSchemaResponse readAndPutDocuments(@NonNull SetSchemaResponse.Builder responseBuilder,
+    @SuppressWarnings("deprecation")
+    public @NonNull SetSchemaResponse readAndPutDocuments(
+            SetSchemaResponse.@NonNull Builder responseBuilder,
             SchemaMigrationStats.Builder schemaMigrationStatsBuilder)
             throws IOException, AppSearchException {
         Preconditions.checkState(mFile.exists(), "Internal temp file does not exist.");
         if (mTotalNeedMigratedDocumentCount == 0) {
             return responseBuilder.build();
         }
+
         try (InputStream inputStream = new FileInputStream(mFile)) {
             CodedInputStream codedInputStream = CodedInputStream.newInstance(inputStream);
             int savedDocsCount = 0;
@@ -186,12 +195,14 @@ class AppSearchMigrationHelper implements Closeable {
                 GenericDocument document = readDocumentFromInputStream(codedInputStream);
                 try {
                     // During schema migrations, only schema change notifications are dispatched.
+                    // TODO(b/394875109) switch to use batchPut
                     mAppSearchImpl.putDocument(
                             mPackageName,
                             mDatabaseName,
                             document,
                             /*sendChangeNotifications=*/ false,
-                            /*logger=*/ null);
+                            /*logger=*/ null,
+                            /*callStatsBuilder=*/null);
                     savedDocsCount++;
                 } catch (Throwable t) {
                     responseBuilder.addMigrationFailure(
@@ -203,7 +214,9 @@ class AppSearchMigrationHelper implements Closeable {
                     migrationFailureCount++;
                 }
             }
-            mAppSearchImpl.persistToDisk(PersistType.Code.FULL);
+            mAppSearchImpl.persistToDisk(mPackageName, CALL_TYPE_SCHEMA_MIGRATION,
+                    PersistType.Code.FULL, mLogger,
+                    /*callStatsBuilder=*/null);
             if (schemaMigrationStatsBuilder != null) {
                 schemaMigrationStatsBuilder.setTotalSuccessMigratedDocumentCount(savedDocsCount);
                 schemaMigrationStatsBuilder.setMigrationFailureCount(migrationFailureCount);
@@ -219,8 +232,7 @@ class AppSearchMigrationHelper implements Closeable {
      *
      * @throws IOException        on File operation error.
      */
-    @NonNull
-    private static GenericDocument readDocumentFromInputStream(
+    private static @NonNull GenericDocument readDocumentFromInputStream(
             @NonNull CodedInputStream codedInputStream) throws IOException {
         byte[] serializedMessage = codedInputStream.readByteArray();
 

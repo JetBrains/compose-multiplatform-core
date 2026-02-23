@@ -19,7 +19,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Paragraph
 import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -40,25 +39,25 @@ import androidx.compose.ui.unit.Density
 internal expect fun ActualParagraph(
     text: String,
     style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     maxLines: Int,
     ellipsis: Boolean,
     width: Float,
     density: Density,
-    resourceLoader: Font.ResourceLoader
+    resourceLoader: Font.ResourceLoader,
 ): Paragraph
 
 internal expect fun ActualParagraph(
     text: String,
     style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     maxLines: Int,
     overflow: TextOverflow,
     constraints: Constraints,
     density: Density,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ): Paragraph
 
 // TODO(b/157854677): remove after fixing.
@@ -66,15 +65,15 @@ internal expect fun ActualParagraph(
     paragraphIntrinsics: ParagraphIntrinsics,
     maxLines: Int,
     overflow: TextOverflow,
-    constraints: Constraints
+    constraints: Constraints,
 ): Paragraph
 
 // TODO(b/157854677): remove after fixing.
 internal expect fun ActualParagraphIntrinsics(
     text: String,
     style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ): ParagraphIntrinsics

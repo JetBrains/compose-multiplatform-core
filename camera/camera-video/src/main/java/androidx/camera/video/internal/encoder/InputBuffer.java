@@ -16,9 +16,9 @@
 
 package androidx.camera.video.internal.encoder;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -43,8 +43,7 @@ public interface InputBuffer {
      *
      * @throws IllegalStateException if InputBuffer is submitted or canceled.
      */
-    @NonNull
-    ByteBuffer getByteBuffer();
+    @NonNull ByteBuffer getByteBuffer();
 
     /**
      * Sets the timestamp of the input buffer in microseconds.
@@ -82,6 +81,5 @@ public interface InputBuffer {
      * The {@link ListenableFuture} that is complete when {@link #submit} or {@link #cancel} is
      * called.
      */
-    @NonNull
-    ListenableFuture<Void> getTerminationFuture();
+    @NonNull ListenableFuture<Void> getTerminationFuture();
 }

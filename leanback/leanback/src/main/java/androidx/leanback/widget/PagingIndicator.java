@@ -40,11 +40,12 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A page indicator with dots.

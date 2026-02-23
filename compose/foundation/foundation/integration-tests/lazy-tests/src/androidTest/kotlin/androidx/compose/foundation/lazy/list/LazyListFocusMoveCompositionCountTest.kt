@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
 
 package androidx.compose.foundation.lazy.list
 
@@ -29,12 +29,13 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LazyListFocusMoveCompositionCountTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val composedItems = mutableSetOf<Int>()
 
@@ -71,6 +72,93 @@ class LazyListFocusMoveCompositionCountTest {
 
         // Assert
         rule.runOnIdle { assertThat(composedItems).containsExactly(5) }
+    }
+
+    @Test
+    fun moveFocus_shouldCreateLimitedNumberOfItems() {
+        // Arrange.
+        val (rowSize, itemSize) = with(rule.density) { Pair(50.toDp(), 10.toDp()) }
+        lateinit var focusManager: FocusManager
+        rule.setContent {
+            focusManager = LocalFocusManager.current
+            LazyRow(Modifier.size(rowSize), state) {
+                items(100) { index ->
+                    Box(
+                        Modifier.size(itemSize)
+                            .testTag("$index")
+                            .then(if (index == 0 || index > 50) Modifier.focusable() else Modifier)
+                    )
+                    SideEffect { composedItems.add(index) }
+                }
+            }
+        }
+        rule.onNodeWithTag("0").requestFocus()
+        rule.runOnIdle { composedItems.clear() }
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Right) }
+
+        // Assert we composed only up to visible item count * BeyondBoundsViewportFactor
+        // (10 in this case).
+        rule.runOnIdle {
+            assertThat(composedItems).containsExactly(5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+        }
+    }
+
+    @Test
+    fun moveFocus_shouldCreateLimitedNumberOfItems_largeItems() {
+        // Arrange.
+        val (rowSize, itemSize) = with(rule.density) { Pair(50.toDp(), 50.toDp()) }
+        lateinit var focusManager: FocusManager
+        rule.setContent {
+            focusManager = LocalFocusManager.current
+            LazyRow(Modifier.size(rowSize), state) {
+                items(100) { index ->
+                    Box(
+                        Modifier.size(itemSize)
+                            .testTag("$index")
+                            .then(if (index == 0 || index > 50) Modifier.focusable() else Modifier)
+                    )
+                    SideEffect { composedItems.add(index) }
+                }
+            }
+        }
+        rule.onNodeWithTag("0").requestFocus()
+        rule.runOnIdle { composedItems.clear() }
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Right) }
+
+        // Assert we only compose visibleCount * BeyondBoundsViewportFactor items. (2 in this case).
+        rule.runOnIdle { assertThat(composedItems).containsExactly(1, 2) }
+    }
+
+    @Test
+    fun moveFocus_shouldCreateLimitedNumberOfItems_differentSizedItems() {
+        // Arrange.
+        val rowSize = with(rule.density) { 50.toDp() }
+        lateinit var focusManager: FocusManager
+        rule.setContent {
+            focusManager = LocalFocusManager.current
+            LazyRow(Modifier.size(rowSize), state) {
+                items(100) { index ->
+                    Box(
+                        Modifier.size(with(rule.density) { ((index % 10) * 10 + 10).toDp() })
+                            .testTag("$index")
+                            .then(if (index == 0 || index > 50) Modifier.focusable() else Modifier)
+                    )
+                    SideEffect { composedItems.add(index) }
+                }
+            }
+        }
+        rule.onNodeWithTag("0").requestFocus()
+        rule.runOnIdle { composedItems.clear() }
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Right) }
+
+        // Assert we only compose visibleCount * BeyondBoundsViewportFactor items. (2 in this case).
+        rule.runOnIdle { assertThat(composedItems).containsExactly(3, 4, 5, 6) }
     }
 
     @Test

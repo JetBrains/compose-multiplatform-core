@@ -15,28 +15,26 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
-    id('AndroidXPlugin')
-    id('com.android.library')
-    id('org.jetbrains.kotlin.android')
-    id('org.jetbrains.kotlin.kapt')
+    id("AndroidXPlugin")
+    id("com.android.library")
+    id("com.android.legacy-kapt")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
-    kaptAndroidTest project(':appsearch:appsearch-compiler')
-    androidTestImplementation project(':appsearch:appsearch')
-    androidTestImplementation project(':appsearch:appsearch-local-storage')
-    androidTestImplementation project(':appsearch:appsearch-test-util')
+    kaptAndroidTest(project(":appsearch:appsearch-compiler"))
+    androidTestImplementation(project(":appsearch:appsearch"))
+    androidTestImplementation(project(":appsearch:appsearch-local-storage"))
+    androidTestImplementation(project(":appsearch:appsearch-test-util"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
@@ -44,12 +42,12 @@ dependencies {
 
 androidx {
     name = "AppSearch - Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = '2021'
     description = 'AndroidX AppSearch - Kotlin Extensions'
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.appsearch.ktx"
+    compileSdk { version = release(36) }
+    namespace = "androidx.appsearch.ktx"
 }

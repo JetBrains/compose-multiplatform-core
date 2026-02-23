@@ -18,7 +18,7 @@ package androidx.core.os;
 
 import android.os.Build;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static library support version of the framework's {@link android.os.CancellationSignal}.
@@ -138,8 +138,7 @@ public final class CancellationSignal {
      * @return A framework cancellation signal object, or null on platform versions
      * prior to Jellybean.
      */
-    @Nullable
-    public Object getCancellationSignalObject() {
+    public @Nullable Object getCancellationSignalObject() {
         synchronized (this) {
             if (mCancellationSignalObj == null) {
                 mCancellationSignalObj = new android.os.CancellationSignal();

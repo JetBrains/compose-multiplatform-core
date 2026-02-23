@@ -24,6 +24,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,6 +45,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
@@ -134,7 +137,7 @@ private val overflowOptions =
         TextOverflow.Visible,
         TextOverflow.StartEllipsis,
         TextOverflow.MiddleEllipsis,
-        TextOverflow.Ellipsis
+        TextOverflow.Ellipsis,
     )
 private val boolOptions = listOf(true, false)
 @SuppressLint("PrimitiveInCollection")
@@ -145,7 +148,7 @@ private val textAlignments =
         TextAlign.Center,
         TextAlign.Right,
         TextAlign.End,
-        TextAlign.Justify
+        TextAlign.Justify,
     )
 
 @Preview
@@ -242,7 +245,7 @@ fun TagLine(tag: String) {
                 withStyle(style = SpanStyle(color = Color(0xFFAAAAAA), fontSize = fontSize6)) {
                     append(tag)
                 }
-            }
+            },
     )
 }
 
@@ -270,7 +273,7 @@ fun TextDemoBasic() {
                         color = Color(0xFFFF0000),
                         fontSize = fontSize6,
                         fontWeight = FontWeight.W200,
-                        fontStyle = FontStyle.Italic
+                        fontStyle = FontStyle.Italic,
                     )
                 ) {
                     append("$displayText   ")
@@ -281,7 +284,7 @@ fun TextDemoBasic() {
                         color = Color(0xFF00FF00),
                         fontSize = fontSize8,
                         fontWeight = FontWeight.W500,
-                        fontStyle = FontStyle.Normal
+                        fontStyle = FontStyle.Normal,
                     )
                 ) {
                     append("$displayText   ")
@@ -292,7 +295,7 @@ fun TextDemoBasic() {
                         color = Color(0xFF0000FF),
                         fontSize = fontSize10,
                         fontWeight = FontWeight.W800,
-                        fontStyle = FontStyle.Normal
+                        fontStyle = FontStyle.Normal,
                     )
                 ) {
                     append(displayText)
@@ -319,7 +322,7 @@ fun TextDemoLanguage() {
                             color = Color(0xFFFF0000),
                             fontSize = fontSize6,
                             fontWeight = FontWeight.W200,
-                            fontStyle = FontStyle.Italic
+                            fontStyle = FontStyle.Italic,
                         )
                 ) {
                     append("$displayTextChinese   ")
@@ -331,7 +334,7 @@ fun TextDemoLanguage() {
                             color = Color(0xFF00FF00),
                             fontSize = fontSize8,
                             fontWeight = FontWeight.W500,
-                            fontStyle = FontStyle.Normal
+                            fontStyle = FontStyle.Normal,
                         )
                 ) {
                     append("$displayTextArabic   ")
@@ -343,7 +346,7 @@ fun TextDemoLanguage() {
                             color = Color(0xFF0000FF),
                             fontSize = fontSize10,
                             fontWeight = FontWeight.W800,
-                            fontStyle = FontStyle.Normal
+                            fontStyle = FontStyle.Normal,
                         )
                 ) {
                     append(displayTextHindi)
@@ -416,7 +419,7 @@ fun TextDemoHeight() {
         Text(text = "$displayText\n$displayText   ", style = TextStyle(fontSize = fontSize8))
         Text(
             text = "$displayText\n$displayText   ",
-            style = TextStyle(fontSize = fontSize8, lineHeight = 50.sp)
+            style = TextStyle(fontSize = fontSize8, lineHeight = 50.sp),
         )
     }
 }
@@ -437,7 +440,7 @@ fun TextDemoBackground() {
 
                 withStyle(style = SpanStyle(background = Color(0xFF0000FF))) { append(displayText) }
             },
-        style = TextStyle(fontSize = fontSize8)
+        style = TextStyle(fontSize = fontSize8),
     )
 }
 
@@ -458,7 +461,7 @@ fun TextDemoLocale() {
 
                 withStyle(style = SpanStyle(localeList = LocaleList("zh-TW"))) { append(text) }
             },
-        style = TextStyle(fontSize = fontSize8)
+        style = TextStyle(fontSize = fontSize8),
     )
 }
 
@@ -476,28 +479,28 @@ fun TextDemoTextAlign() {
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayText,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Left)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Left),
         )
 
         SecondTagLine(tag = "textAlign = TextAlign.Right")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayText,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Right)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Right),
         )
 
         SecondTagLine(tag = "textAlign = TextAlign.Center")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayText,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Center)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Center),
         )
 
         SecondTagLine(tag = "textAlign = default and TextAlign.Justify")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = text,
-            style = TextStyle(fontSize = fontSize8, color = Color(0xFFFF0000))
+            style = TextStyle(fontSize = fontSize8, color = Color(0xFFFF0000)),
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
@@ -506,33 +509,33 @@ fun TextDemoTextAlign() {
                 TextStyle(
                     fontSize = fontSize8,
                     color = Color(0xFF0000FF),
-                    textAlign = TextAlign.Justify
-                )
+                    textAlign = TextAlign.Justify,
+                ),
         )
 
         SecondTagLine(tag = "textAlign = TextAlign.Start for Ltr")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayText,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Start)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Start),
         )
         SecondTagLine(tag = "textAlign = TextAlign.Start for Rtl")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayTextArabic,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Start)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Start),
         )
         SecondTagLine(tag = "textAlign = TextAlign.End for Ltr")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayText,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.End)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.End),
         )
         SecondTagLine(tag = "textAlign = TextAlign.End for Rtl")
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = displayTextArabic,
-            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.End)
+            style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.End),
         )
     }
 }
@@ -578,7 +581,7 @@ fun TextDemoShadowEffect() {
             buildAnnotatedString {
                 append("text with ")
                 withStyle(style = SpanStyle(shadow = shadow)) { append("shadow!") }
-            }
+            },
     )
 }
 
@@ -594,7 +597,7 @@ fun TextDemoFontSizeScale() {
                         append("fontSizeScale=$scale\n")
                     }
                 }
-            }
+            },
     )
 }
 
@@ -640,7 +643,7 @@ fun TextOverflowVisibleInDrawText() {
                 textMeasurer = textMeasurer,
                 text = text,
                 style = TextStyle(fontSize = fontSize6),
-                overflow = TextOverflow.Visible
+                overflow = TextOverflow.Visible,
             )
         }
     }
@@ -650,7 +653,7 @@ fun TextOverflowVisibleInDrawText() {
 fun TextOverflowDemo() {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier.verticalScroll(rememberScrollState())
+        modifier = Modifier.verticalScroll(rememberScrollState()),
     ) {
         var singleParagraph by remember { mutableStateOf(boolOptions[0]) }
         var selectedOverflow by remember { mutableStateOf(overflowOptions[0]) }
@@ -669,7 +672,7 @@ fun TextOverflowDemo() {
             height.dp,
             letterSpacing.sp,
             textAlign,
-            softWrap
+            softWrap,
         )
 
         Row(Modifier.fillMaxWidth()) {
@@ -681,13 +684,13 @@ fun TextOverflowDemo() {
                             .selectable(
                                 selected = (it == selectedOverflow),
                                 onClick = { selectedOverflow = it },
-                                role = Role.RadioButton
+                                role = Role.RadioButton,
                             ),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
                             selected = (it == selectedOverflow),
-                            onClick = null // null recommended for accessibility with screenreaders
+                            onClick = null, // null recommended for accessibility with screenreaders
                         )
                         Text(text = it.toString())
                     }
@@ -701,13 +704,13 @@ fun TextOverflowDemo() {
                             .selectable(
                                 selected = (it == singleParagraph),
                                 onClick = { singleParagraph = it },
-                                role = Role.RadioButton
+                                role = Role.RadioButton,
                             ),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
                             selected = (it == singleParagraph),
-                            onClick = null // null recommended for accessibility with screenreaders
+                            onClick = null, // null recommended for accessibility with screenreaders
                         )
                         Text(text = if (it) "Single" else "Multi")
                     }
@@ -721,9 +724,9 @@ fun TextOverflowDemo() {
                             .selectable(
                                 selected = (it == singleLinePerPar),
                                 onClick = { singleLinePerPar = it },
-                                role = Role.RadioButton
+                                role = Role.RadioButton,
                             ),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = (it == singleLinePerPar), onClick = null)
                         Text(text = it.toString())
@@ -752,9 +755,9 @@ fun TextOverflowDemo() {
                             .selectable(
                                 selected = (it == textAlign),
                                 onClick = { textAlign = it },
-                                role = Role.RadioButton
+                                role = Role.RadioButton,
                             ),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = (it == textAlign), onClick = null)
                         Text(text = it.toString())
@@ -769,9 +772,9 @@ fun TextOverflowDemo() {
                             .selectable(
                                 selected = (it == softWrap),
                                 onClick = { softWrap = it },
-                                role = Role.RadioButton
+                                role = Role.RadioButton,
                             ),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = (it == softWrap), onClick = null)
                         Text(text = it.toString())
@@ -791,7 +794,7 @@ private fun ColumnScope.TextOverflowDemo(
     height: Dp,
     letterSpacing: TextUnit,
     textAlign: TextAlign,
-    softWrap: Boolean
+    softWrap: Boolean,
 ) {
     Box(Modifier.weight(1f).fillMaxWidth()) {
         val text =
@@ -817,7 +820,7 @@ private fun ColumnScope.TextOverflowDemo(
             style = textStyle,
             overflow = textOverflow,
             maxLines = if (singeLine) 1 else Int.MAX_VALUE,
-            softWrap = softWrap
+            softWrap = softWrap,
         )
     }
 }
@@ -831,7 +834,7 @@ fun TextDemoInlineContent() {
                 Placeholder(
                     width = 5.em,
                     height = 1.em,
-                    placeholderVerticalAlign = PlaceholderVerticalAlign.AboveBaseline
+                    placeholderVerticalAlign = PlaceholderVerticalAlign.AboveBaseline,
                 )
         ) {
             val colorAnimation = rememberInfiniteTransition()
@@ -839,7 +842,7 @@ fun TextDemoInlineContent() {
                 colorAnimation.animateColor(
                     initialValue = Color.Red,
                     targetValue = Color.Blue,
-                    animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
+                    animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
                 )
             Box(modifier = Modifier.fillMaxSize().background(color))
         }
@@ -852,7 +855,7 @@ fun TextDemoInlineContent() {
                 append(" that is repeatedly changing its color.")
             },
         inlineContent = mapOf(inlineContentId to inlineTextContent),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 
     SecondTagLine(tag = "RTL Layout")
@@ -865,7 +868,7 @@ fun TextDemoInlineContent() {
                     append(" that is repeatedly changing its color.")
                 },
             inlineContent = mapOf(inlineContentId to inlineTextContent),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -878,7 +881,7 @@ fun TextDemoInlineContent() {
                 append("$displayTextArabic   ")
             },
         inlineContent = mapOf(inlineContentId to inlineTextContent),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 
     SecondTagLine(tag = "Bidi Text - RTL/LTR")
@@ -890,7 +893,7 @@ fun TextDemoInlineContent() {
                 append("$displayText   ")
             },
         inlineContent = mapOf(inlineContentId to inlineTextContent),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -906,20 +909,20 @@ fun EllipsizeDemo() {
     Column {
         ListItem(
             Modifier.selectable(softWrap) { softWrap = !softWrap },
-            trailing = { Switch(softWrap, null) }
+            trailing = { Switch(softWrap, null) },
         ) {
             Text("Soft wrap")
         }
         ListItem(
             Modifier.selectable(ellipsis) { ellipsis = !ellipsis },
-            trailing = { Switch(ellipsis, null) }
+            trailing = { Switch(ellipsis, null) },
         ) {
             Text("Ellipsis")
         }
         ListItem(
             Modifier.selectable(withSpans) { withSpans = !withSpans },
             trailing = { Switch(withSpans, null) },
-            secondaryText = { Text("Text with spans") }
+            secondaryText = { Text("Text with spans") },
         ) {
             Text("Spans")
         }
@@ -975,7 +978,26 @@ fun EllipsizeDemo() {
                     .width(200.dp)
                     .heightIn(max = heightRestriction.value),
             softWrap = softWrap,
-            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip
+            overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
+        )
+    }
+}
+
+@Composable
+fun AutoSizeTextDemo() {
+    val text = "This is a sample string!"
+    Column(Modifier.fillMaxWidth()) {
+        // This text will be sized according to default values of AutoSize.StepBased
+        BasicText(
+            text,
+            modifier = Modifier.border(1.dp, Color.Red).height(40.dp),
+            autoSize = TextAutoSize.StepBased(),
+        )
+        // This text can either have a font size of 10, 20, 30, 40, 50 or 60 sp
+        BasicText(
+            text,
+            autoSize =
+                TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 60.sp, stepSize = 10.sp),
         )
     }
 }

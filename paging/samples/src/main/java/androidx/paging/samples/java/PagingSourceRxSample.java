@@ -16,24 +16,21 @@
 
 package androidx.paging.samples.java;
 
-import androidx.annotation.NonNull;
 import androidx.paging.PagingState;
 import androidx.paging.rxjava2.RxPagingSource;
 import androidx.paging.samples.shared.ExampleRxBackendService;
 import androidx.paging.samples.shared.SearchUserResponse;
 import androidx.paging.samples.shared.User;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 class PagingSourceRxSample extends RxPagingSource<Integer, User> {
-    @NonNull
-    private ExampleRxBackendService mBackend;
-    @NonNull
-    private String mQuery;
+    private @NonNull ExampleRxBackendService mBackend;
+    private @NonNull String mQuery;
 
     PagingSourceRxSample(@NonNull ExampleRxBackendService backend,
             @NonNull String query) {
@@ -41,10 +38,9 @@ class PagingSourceRxSample extends RxPagingSource<Integer, User> {
         mQuery = query;
     }
 
-    @NotNull
     @Override
-    public Single<LoadResult<Integer, User>> loadSingle(
-            @NotNull LoadParams<Integer> params) {
+    public @NonNull Single<LoadResult<Integer, User>> loadSingle(
+            @NonNull LoadParams<Integer> params) {
         // Start refresh at page 1 if undefined.
         Integer nextPageNumber = params.getKey();
         if (nextPageNumber == null) {
@@ -67,9 +63,8 @@ class PagingSourceRxSample extends RxPagingSource<Integer, User> {
                 LoadResult.Page.COUNT_UNDEFINED);
     }
 
-    @Nullable
     @Override
-    public Integer getRefreshKey(@NotNull PagingState<Integer, User> state) {
+    public @Nullable Integer getRefreshKey(@NonNull PagingState<Integer, User> state) {
         Integer anchorPosition = state.getAnchorPosition();
         if (anchorPosition == null) {
             return null;

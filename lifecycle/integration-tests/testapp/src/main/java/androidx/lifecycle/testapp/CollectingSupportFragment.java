@@ -24,14 +24,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 
+import kotlin.Pair;
+
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import kotlin.Pair;
 
 /**
  * A support fragment that collects all of its events.
@@ -49,9 +50,8 @@ public class CollectingSupportFragment extends Fragment implements CollectingLif
         getLifecycle().addObserver(mTestObserver);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+    public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
         if (container == null) throw new IllegalStateException();
         FrameLayout layout = new FrameLayout(container.getContext());

@@ -16,13 +16,14 @@
 
 package androidx.work.impl.utils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Logger;
 import androidx.work.RunnableScheduler;
 import androidx.work.WorkRequest;
 import androidx.work.impl.model.WorkGenerationalId;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +62,7 @@ public class WorkTimer {
      *                             {@code processingTimeMillis}
      */
     @SuppressWarnings("FutureReturnValueIgnored")
-    public void startTimer(@NonNull final WorkGenerationalId id,
+    public void startTimer(final @NonNull WorkGenerationalId id,
             long processingTimeMillis,
             @NonNull TimeLimitExceededListener listener) {
 
@@ -81,7 +82,7 @@ public class WorkTimer {
      *
      * @param id The {@link androidx.work.impl.model.WorkSpec} id
      */
-    public void stopTimer(@NonNull final WorkGenerationalId id) {
+    public void stopTimer(final @NonNull WorkGenerationalId id) {
         synchronized (mLock) {
             WorkTimerRunnable removed = mTimerMap.remove(id);
             if (removed != null) {
@@ -92,16 +93,14 @@ public class WorkTimer {
     }
 
     @VisibleForTesting
-    @NonNull
-    public Map<WorkGenerationalId, WorkTimerRunnable> getTimerMap() {
+    public @NonNull Map<WorkGenerationalId, WorkTimerRunnable> getTimerMap() {
         synchronized (mLock) {
             return mTimerMap;
         }
     }
 
     @VisibleForTesting
-    @NonNull
-    public Map<WorkGenerationalId, TimeLimitExceededListener> getListeners() {
+    public @NonNull Map<WorkGenerationalId, TimeLimitExceededListener> getListeners() {
         synchronized (mLock) {
             return mListeners;
         }

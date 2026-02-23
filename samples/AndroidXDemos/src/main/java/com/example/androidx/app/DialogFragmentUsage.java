@@ -25,12 +25,13 @@ import android.view.ViewGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.appcompat.app.AppCompatDialogFragment;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This demonstrates idiomatic usage of AppCompatDialogFragment.
@@ -100,9 +101,8 @@ public class DialogFragmentUsage extends AppCompatActivity {
             setHasOptionsMenu(true);
         }
 
-        @Nullable
         @Override
-        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+        public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState) {
             Bundle args = getArguments();
             int contentView = args.getInt(PARAM_CONTENT_VIEW);

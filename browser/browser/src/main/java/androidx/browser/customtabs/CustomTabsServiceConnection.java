@@ -22,9 +22,10 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.customtabs.ICustomTabsService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract {@link ServiceConnection} to use while binding to a {@link CustomTabsService}. Any
@@ -32,8 +33,7 @@ import androidx.annotation.RestrictTo;
  * connection like rebinding on disconnect.
  */
 public abstract class CustomTabsServiceConnection implements ServiceConnection {
-    @Nullable
-    private Context mApplicationContext;
+    private @Nullable Context mApplicationContext;
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     /* package */ void setApplicationContext(@NonNull Context context) {
@@ -41,8 +41,7 @@ public abstract class CustomTabsServiceConnection implements ServiceConnection {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Nullable
-    /* package */ Context getApplicationContext() {
+    /* package */ @Nullable Context getApplicationContext() {
         return mApplicationContext;
     }
 

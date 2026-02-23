@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.MeasuredSizeAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
@@ -69,12 +69,12 @@ interface DragAndDropSourceScope : PointerInputScope {
     message =
         "Replaced by overload with a callback for obtain a transfer data," +
             "start detection is performed by Compose itself",
-    replaceWith = ReplaceWith("Modifier.dragAndDropSource(transferData)")
+    replaceWith = ReplaceWith("Modifier.dragAndDropSource(transferData)"),
 )
 @ExperimentalFoundationApi
 fun Modifier.dragAndDropSource(
     drawDragDecoration: DrawScope.() -> Unit,
-    block: suspend DragAndDropSourceScope.() -> Unit
+    block: suspend DragAndDropSourceScope.() -> Unit,
 ): Modifier =
     this then
         LegacyDragAndDropSourceElement(
@@ -83,11 +83,11 @@ fun Modifier.dragAndDropSource(
         )
 
 @ExperimentalFoundationApi
-private data class LegacyDragAndDropSourceElement(
+private class LegacyDragAndDropSourceElement(
     /** @see Modifier.dragAndDropSource */
     val drawDragDecoration: DrawScope.() -> Unit,
     /** @see Modifier.dragAndDropSource */
-    val dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit
+    val dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit,
 ) : ModifierNodeElement<LegacyDragAndDropSourceNode>() {
     override fun create() =
         LegacyDragAndDropSourceNode(
@@ -106,13 +106,29 @@ private data class LegacyDragAndDropSourceElement(
         properties["drawDragDecoration"] = drawDragDecoration
         properties["dragAndDropSourceHandler"] = dragAndDropSourceHandler
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is LegacyDragAndDropSourceElement) return false
+
+        if (drawDragDecoration !== other.drawDragDecoration) return false
+        if (dragAndDropSourceHandler !== other.dragAndDropSourceHandler) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = drawDragDecoration.hashCode()
+        result = 31 * result + dragAndDropSourceHandler.hashCode()
+        return result
+    }
 }
 
 @ExperimentalFoundationApi
 internal class LegacyDragAndDropSourceNode(
     var drawDragDecoration: DrawScope.() -> Unit,
-    var dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit
-) : DelegatingNode(), LayoutAwareModifierNode {
+    var dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit,
+) : DelegatingNode(), MeasuredSizeAwareModifierNode {
 
     private var size: IntSize = IntSize.Zero
 
@@ -127,7 +143,7 @@ internal class LegacyDragAndDropSourceNode(
                             dragAndDropModifierNode.drag(
                                 transferData = transferData,
                                 decorationSize = size.toSize(),
-                                drawDragDecoration = drawDragDecoration
+                                drawDragDecoration = drawDragDecoration,
                             )
                     }
                 )

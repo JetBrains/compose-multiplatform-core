@@ -87,7 +87,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
                 firstItemIndex,
                 getDefaultSpans(
                     slotsPerLine.coerceAtMost(totalSize - firstItemIndex).coerceAtLeast(0)
-                )
+                ),
             )
         }
 
@@ -119,7 +119,9 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
             cachedBucket.clear()
         }
 
-        checkPrecondition(currentLine <= lineIndex) { "currentLine > lineIndex" }
+        checkPrecondition(currentLine <= lineIndex) {
+            "currentLine ($currentLine) > lineIndex ($lineIndex)"
+        }
 
         while (currentLine < lineIndex && currentItemIndex < totalSize) {
             if (cacheThisBucket) {
@@ -245,7 +247,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
         /** Index of the first item in the bucket */
         val firstItemIndex: Int,
         /** Known span of the first item. Not zero only if this item caused "line break". */
-        val firstItemKnownSpan: Int = 0
+        val firstItemKnownSpan: Int = 0,
     )
 
     private object LazyGridItemSpanScopeImpl : LazyGridItemSpanScope {

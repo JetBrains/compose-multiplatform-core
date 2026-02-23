@@ -18,8 +18,9 @@ package androidx.swiperefreshlayout.widget;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 public class RequestDisallowInterceptRecordingRecyclerView extends RecyclerView {
 

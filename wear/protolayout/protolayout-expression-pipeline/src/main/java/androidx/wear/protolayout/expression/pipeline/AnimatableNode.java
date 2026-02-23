@@ -23,11 +23,12 @@ import android.animation.FloatEvaluator;
 import android.animation.IntEvaluator;
 import android.animation.TypeEvaluator;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.util.Pair;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /** Data animatable source node within a dynamic data pipeline. */
 abstract class AnimatableNode {
@@ -36,8 +37,7 @@ abstract class AnimatableNode {
     static final FloatEvaluator FLOAT_EVALUATOR = new FloatEvaluator();
 
     private boolean mIsVisible = false;
-    @NonNull
-    final QuotaAwareAnimator mQuotaAwareAnimator;
+    final @NonNull QuotaAwareAnimator mQuotaAwareAnimator;
 
 
     protected AnimatableNode(

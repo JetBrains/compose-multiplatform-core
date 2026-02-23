@@ -18,7 +18,6 @@ package androidx.work.impl.background.systemjob;
 import static android.content.Context.JOB_SCHEDULER_SERVICE;
 
 import static androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST;
-import static androidx.work.impl.WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.createErrorMessage;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.getSafePendingJobs;
 import static androidx.work.impl.background.systemjob.JobSchedulerExtKt.getWmJobScheduler;
@@ -35,9 +34,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.util.Consumer;
@@ -52,6 +48,9 @@ import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
 import androidx.work.impl.utils.IdGenerator;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +61,6 @@ import java.util.Set;
  * A class that schedules work using {@link android.app.job.JobScheduler}.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobScheduler implements Scheduler {
 
     private static final String TAG = Logger.tagWithPrefix("SystemJobScheduler");
@@ -100,7 +98,7 @@ public class SystemJobScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(@NonNull WorkSpec... workSpecs) {
+    public void schedule(WorkSpec @NonNull ... workSpecs) {
         IdGenerator idGenerator = new IdGenerator(mWorkDatabase);
 
         for (WorkSpec workSpec : workSpecs) {
@@ -357,8 +355,7 @@ public class SystemJobScheduler implements Scheduler {
         return needsReconciling;
     }
 
-    @Nullable
-    static List<JobInfo> getPendingJobs(
+    static @Nullable List<JobInfo> getPendingJobs(
             @NonNull Context context,
             @NonNull JobScheduler jobScheduler) {
         List<JobInfo> pendingJobs = getSafePendingJobs(jobScheduler);
@@ -383,8 +380,7 @@ public class SystemJobScheduler implements Scheduler {
      *
      * For reference: b/133556574, b/133556809, b/133556535
      */
-    @Nullable
-    private static List<Integer> getPendingJobIds(
+    private static @Nullable List<Integer> getPendingJobIds(
             @NonNull Context context,
             @NonNull JobScheduler jobScheduler,
             @NonNull String workSpecId) {
@@ -407,8 +403,8 @@ public class SystemJobScheduler implements Scheduler {
         return jobIds;
     }
 
-    @Nullable
-    private static WorkGenerationalId getWorkGenerationalIdFromJobInfo(@NonNull JobInfo jobInfo) {
+    private static @Nullable WorkGenerationalId getWorkGenerationalIdFromJobInfo(
+            @NonNull JobInfo jobInfo) {
         PersistableBundle extras = jobInfo.getExtras();
         try {
             if (extras != null && extras.containsKey(EXTRA_WORK_SPEC_ID)) {

@@ -24,8 +24,6 @@ import android.os.Bundle;
 import android.text.TextUtils;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -33,10 +31,13 @@ import androidx.appsearch.safeparcel.GenericDocumentParcel;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Util methods for Document <-> shortcut conversion.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+@ExperimentalAppSearchApi
 public class ShortcutAdapter {
 
     private ShortcutAdapter() {
@@ -100,6 +101,7 @@ public class ShortcutAdapter {
      * published. i.e. Any shortcut returned from queries toward
      * {@link androidx.core.content.pm.ShortcutManagerCompat} would not carry any document at all.
      *
+     * @param context the context used to provide the package and resources
      * @param document a document object annotated with
      *                 {@link androidx.appsearch.annotation.Document} that carries structured
      *                 data in a pre-defined format.
@@ -112,9 +114,8 @@ public class ShortcutAdapter {
      *                            encountered an unexpected error during the conversion to
      *                            {@link GenericDocument}.
      */
-    @NonNull
-    public static ShortcutInfoCompat.Builder createShortcutBuilderFromDocument(
-            @NonNull final Context context, @NonNull Object document) throws AppSearchException {
+    public static ShortcutInfoCompat.@NonNull Builder createShortcutBuilderFromDocument(
+            final @NonNull Context context, @NonNull Object document) throws AppSearchException {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(document);
         final GenericDocument doc = GenericDocument.fromDocumentClass(document);
@@ -137,9 +138,9 @@ public class ShortcutAdapter {
      *
      * @exportToFramework:hide
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public static GenericDocument extractDocument(@NonNull final ShortcutInfoCompat shortcut) {
+    public static @Nullable GenericDocument extractDocument(
+            final @NonNull ShortcutInfoCompat shortcut) {
         Preconditions.checkNotNull(shortcut);
         final Bundle extras = shortcut.getTransientExtras();
         if (extras == null) {
@@ -172,15 +173,13 @@ public class ShortcutAdapter {
      *                            {@link androidx.appsearch.annotation.Document} or encountered an
      *                            unexpected error during the conversion to {@link GenericDocument}.
      */
-    @NonNull
-    public static Uri getDocumentUri(@NonNull final Object document)
+    public static @NonNull Uri getDocumentUri(final @NonNull Object document)
             throws AppSearchException {
         Preconditions.checkNotNull(document);
         return getDocumentUri(GenericDocument.fromDocumentClass(document));
     }
 
-    @NonNull
-    private static Uri getDocumentUri(@NonNull final GenericDocument obj) {
+    private static @NonNull Uri getDocumentUri(final @NonNull GenericDocument obj) {
         Preconditions.checkNotNull(obj);
         return getDocumentUri(obj.getId());
     }
@@ -190,8 +189,7 @@ public class ShortcutAdapter {
      *
      * @param id id of the document.
      */
-    @NonNull
-    public static Uri getDocumentUri(@NonNull final String id) {
+    public static @NonNull Uri getDocumentUri(final @NonNull String id) {
         Preconditions.checkNotNull(id);
         return new Uri.Builder()
                 .scheme(SCHEME_APPSEARCH)

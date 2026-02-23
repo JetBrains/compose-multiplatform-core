@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.input.pointer
 
 import androidx.compose.runtime.Immutable
@@ -21,9 +23,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.input.pointer.PointerEventPass.Final
-import androidx.compose.ui.input.pointer.PointerEventPass.Initial
-import androidx.compose.ui.input.pointer.PointerEventPass.Main
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.unit.IntSize
@@ -89,8 +88,11 @@ abstract class PointerInputFilter {
      * then get a chance to respond as well. This trigger acts at the Layout level, so if any
      * [PointerInputFilter]s on a Layout has [shareWithSiblings] set to `true` then the Layout will
      * share with siblings.
+     *
+     * Setting this true everywhere or high in the UI tree can negatively impact performance.
+     * Therefore, use it sparingly and only at the nearest shared parent of the two target UI
+     * elements.
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     open val shareWithSiblings: Boolean
         get() = false
 }
@@ -99,7 +101,7 @@ abstract class PointerInputFilter {
 expect class PointerEvent
 internal constructor(
     changes: List<PointerInputChange>,
-    internalPointerEvent: InternalPointerEvent?
+    internalPointerEvent: InternalPointerEvent?,
 ) {
     /** @param changes The changes. */
     constructor(changes: List<PointerInputChange>)
@@ -119,6 +121,7 @@ internal constructor(
 }
 
 // TODO mark internal once https://youtrack.jetbrains.com/issue/KT-36695 is fixed
+@Suppress("KmpVisibilityMismatch") // linked to todo above
 /* internal */ expect class NativePointerButtons
 
 /** Contains the state of pointer buttons (e.g. mouse and stylus buttons). */
@@ -174,6 +177,7 @@ expect fun PointerButtons.indexOfFirstPressed(): Int
 expect fun PointerButtons.indexOfLastPressed(): Int
 
 // TODO mark internal once https://youtrack.jetbrains.com/issue/KT-36695 is fixed
+@Suppress("KmpVisibilityMismatch") // linked to todo above
 /* internal */ expect class NativePointerKeyboardModifiers
 
 /**
@@ -293,6 +297,19 @@ value class PointerEventType private constructor(internal val value: Int) {
          * event indicates that the [PointerInputChange.scrollDelta]'s [Offset] is non-zero.
          */
         val Scroll = PointerEventType(6)
+
+        /**
+         * A scale event was sent. This can happen, for example, due to a trackpad gesture. This
+         * event indicates that the [PointerInputChange.scaleGestureFactor]'s [Offset] is different
+         * from 1.
+         */
+        val Scale = PointerEventType(7)
+
+        /**
+         * A pan event was sent. This can happen, for example, due to a trackpad gesture. This event
+         * indicates that the [PointerInputChange.panGestureOffset]'s [Offset].
+         */
+        val Pan = PointerEventType(8)
     }
 
     override fun toString(): String =
@@ -303,6 +320,8 @@ value class PointerEventType private constructor(internal val value: Int) {
             Enter -> "Enter"
             Exit -> "Exit"
             Scroll -> "Scroll"
+            Scale -> "Scale"
+            Pan -> "Pan"
             else -> "Unknown"
         }
 }
@@ -359,8 +378,15 @@ value class PointerEventType private constructor(internal val value: Int) {
  *   change over time as change is propagated through the pointer handlers. To query the actual
  *   status of the change use [isConsumed]
  * @param type The device type that produced the event, such as [mouse][PointerType.Mouse], or
- *   [touch][PointerType.Touch].git
+ *   [touch][PointerType.Touch].
  * @param scrollDelta The amount of scroll wheel movement in the horizontal and vertical directions.
+ *   Note that this is not an offset in pixel coordinates. Also consider [panGestureOffset].
+ * @param scaleGestureFactor A multiplicative scale factor indicating the amount of scale to perform
+ *   as part of this pointer input change. A value of `1f` indicates no scale, a value less than
+ *   `1f` indicates a scale down, commonly causing a zoom out, and a value greater than `1f`
+ *   indicates a scale up, commonly causing a zoom in.
+ * @param panGestureOffset An [Offset] in pixel coordinates indicating an amount of scrolling. Also
+ *   consider [scrollDelta].
  */
 @Immutable
 class PointerInputChange(
@@ -374,7 +400,9 @@ class PointerInputChange(
     val previousPressed: Boolean,
     isInitiallyConsumed: Boolean,
     val type: PointerType = PointerType.Touch,
-    val scrollDelta: Offset = Offset.Zero
+    val scrollDelta: Offset = Offset.Zero,
+    val scaleGestureFactor: Float = 1f,
+    val panGestureOffset: Offset = Offset.Zero,
 ) {
     constructor(
         id: PointerId,
@@ -386,19 +414,75 @@ class PointerInputChange(
         previousPressed: Boolean,
         isInitiallyConsumed: Boolean,
         type: PointerType = PointerType.Touch,
-        scrollDelta: Offset = Offset.Zero
+        scrollDelta: Offset = Offset.Zero,
+        scaleGestureFactor: Float = 1f,
+        panGestureOffset: Offset = Offset.Zero,
     ) : this(
-        id,
-        uptimeMillis,
-        position,
-        pressed,
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
         pressure = 1.0f,
-        previousUptimeMillis,
-        previousPosition,
-        previousPressed,
-        isInitiallyConsumed,
-        type,
-        scrollDelta
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+        isInitiallyConsumed = isInitiallyConsumed,
+        type = type,
+        scrollDelta = scrollDelta,
+        scaleGestureFactor = scaleGestureFactor,
+        panGestureOffset = panGestureOffset,
+    )
+
+    @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        id: PointerId,
+        uptimeMillis: Long,
+        position: Offset,
+        pressed: Boolean,
+        pressure: Float,
+        previousUptimeMillis: Long,
+        previousPosition: Offset,
+        previousPressed: Boolean,
+        isInitiallyConsumed: Boolean,
+        type: PointerType = PointerType.Touch,
+        scrollDelta: Offset = Offset.Zero,
+    ) : this(
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
+        pressure = pressure,
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+        isInitiallyConsumed = isInitiallyConsumed,
+        type = type,
+        scrollDelta = scrollDelta,
+    )
+
+    @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    constructor(
+        id: PointerId,
+        uptimeMillis: Long,
+        position: Offset,
+        pressed: Boolean,
+        previousUptimeMillis: Long,
+        previousPosition: Offset,
+        previousPressed: Boolean,
+        isInitiallyConsumed: Boolean,
+        type: PointerType = PointerType.Touch,
+        scrollDelta: Offset = Offset.Zero,
+    ) : this(
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+        isInitiallyConsumed = isInitiallyConsumed,
+        type = type,
+        scrollDelta = scrollDelta,
     )
 
     @Deprecated(
@@ -409,7 +493,7 @@ class PointerInputChange(
                     " previousPosition, previousPressed," +
                     " consumed.downChange || consumed.positionChange, type, Offset.Zero)"
             ),
-        message = "Use another constructor with `scrollDelta` and without `ConsumedData` instead"
+        message = "Use another constructor with `scrollDelta` and without `ConsumedData` instead",
     )
     @Suppress("DEPRECATION")
     constructor(
@@ -421,7 +505,7 @@ class PointerInputChange(
         previousPosition: Offset,
         previousPressed: Boolean,
         consumed: ConsumedData,
-        type: PointerType = PointerType.Touch
+        type: PointerType = PointerType.Touch,
     ) : this(
         id,
         uptimeMillis,
@@ -433,7 +517,7 @@ class PointerInputChange(
         previousPressed,
         consumed.downChange || consumed.positionChange,
         type,
-        Offset.Zero
+        Offset.Zero,
     )
 
     internal constructor(
@@ -449,19 +533,23 @@ class PointerInputChange(
         type: PointerType,
         historical: List<HistoricalChange>,
         scrollDelta: Offset,
+        scaleGestureFactor: Float,
+        panGestureOffset: Offset,
         originalEventPosition: Offset,
     ) : this(
-        id,
-        uptimeMillis,
-        position,
-        pressed,
-        pressure,
-        previousUptimeMillis,
-        previousPosition,
-        previousPressed,
-        isInitiallyConsumed,
-        type,
-        scrollDelta
+        id = id,
+        uptimeMillis = uptimeMillis,
+        position = position,
+        pressed = pressed,
+        pressure = pressure,
+        previousUptimeMillis = previousUptimeMillis,
+        previousPosition = previousPosition,
+        previousPressed = previousPressed,
+        isInitiallyConsumed = isInitiallyConsumed,
+        type = type,
+        scrollDelta = scrollDelta,
+        scaleGestureFactor = scaleGestureFactor,
+        panGestureOffset = panGestureOffset,
     ) {
         _historical = historical
         this.originalEventPosition = originalEventPosition
@@ -469,12 +557,11 @@ class PointerInputChange(
 
     /**
      * Optional high-frequency pointer moves in between the last two dispatched events. Can be used
-     * for extra accuracy when touchscreen rate exceeds framerate.
+     * for extra accuracy when input rate exceeds framerate.
      */
     // With these experimental annotations, the API can be either cleanly removed or
     // stabilized. It doesn't appear in current.txt; and in experimental_current.txt,
     // it has the same effect as a primary constructor val.
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val historical: List<HistoricalChange>
         get() = _historical ?: listOf()
 
@@ -530,7 +617,7 @@ class PointerInputChange(
                 "copy(id,currentTime, currentPosition, currentPressed, previousTime," +
                     "previousPosition, previousPressed, consumed, type, this.scrollDelta)"
             ),
-        message = "Use another copy() method with scrollDelta parameter instead"
+        message = "Use another copy() method with scrollDelta parameter instead",
     )
     @Suppress("DEPRECATION")
     fun copy(
@@ -545,19 +632,21 @@ class PointerInputChange(
         type: PointerType = this.type,
     ): PointerInputChange =
         PointerInputChange(
-                id,
-                currentTime,
-                currentPosition,
-                currentPressed,
-                this.pressure,
-                previousTime,
-                previousPosition,
-                previousPressed,
-                consumed.downChange || consumed.positionChange,
-                type,
-                this.historical,
-                this.scrollDelta,
-                this.originalEventPosition,
+                id = id,
+                uptimeMillis = currentTime,
+                position = currentPosition,
+                pressed = currentPressed,
+                pressure = this.pressure,
+                previousUptimeMillis = previousTime,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
+                isInitiallyConsumed = consumed.downChange || consumed.positionChange,
+                type = type,
+                historical = this.historical,
+                scrollDelta = this.scrollDelta,
+                scaleGestureFactor = this.scaleGestureFactor,
+                panGestureOffset = this.panGestureOffset,
+                originalEventPosition = this.originalEventPosition,
             )
             .also {
                 // This method makes a deep copy, copy the consumed state directly without setting
@@ -583,7 +672,7 @@ class PointerInputChange(
         previousPosition: Offset = this.previousPosition,
         previousPressed: Boolean = this.previousPressed,
         type: PointerType = this.type,
-        scrollDelta: Offset = this.scrollDelta
+        scrollDelta: Offset = this.scrollDelta,
     ): PointerInputChange =
         copy(
                 id = id,
@@ -596,7 +685,7 @@ class PointerInputChange(
                 previousPressed = previousPressed,
                 type = type,
                 historical = this.historical,
-                scrollDelta = scrollDelta
+                scrollDelta = scrollDelta,
             )
             .also {
                 // This method makes a shallow copy, copy the delegate to share the consumed state
@@ -614,7 +703,7 @@ class PointerInputChange(
             ReplaceWith(
                 "copy(id, currentTime, currentPosition, currentPressed, previousTime, " +
                     "previousPosition, previousPressed, type, scrollDelta)"
-            )
+            ),
     )
     fun copy(
         id: PointerId = this.id,
@@ -626,22 +715,24 @@ class PointerInputChange(
         previousPressed: Boolean = this.previousPressed,
         consumed: ConsumedData,
         type: PointerType = this.type,
-        scrollDelta: Offset = this.scrollDelta
+        scrollDelta: Offset = this.scrollDelta,
     ): PointerInputChange =
         PointerInputChange(
-                id,
-                currentTime,
-                currentPosition,
-                currentPressed,
-                this.pressure,
-                previousTime,
-                previousPosition,
-                previousPressed,
-                consumed.downChange || consumed.positionChange,
-                type,
-                this.historical,
-                scrollDelta,
-                this.originalEventPosition,
+                id = id,
+                uptimeMillis = currentTime,
+                position = currentPosition,
+                pressed = currentPressed,
+                pressure = this.pressure,
+                previousUptimeMillis = previousTime,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
+                isInitiallyConsumed = consumed.downChange || consumed.positionChange,
+                type = type,
+                historical = this.historical,
+                scrollDelta = scrollDelta,
+                scaleGestureFactor = this.scaleGestureFactor,
+                panGestureOffset = this.panGestureOffset,
+                originalEventPosition = this.originalEventPosition,
             )
             .also {
                 // This method makes a deep copy, copy the consumed state directly without setting
@@ -668,22 +759,24 @@ class PointerInputChange(
         previousPosition: Offset = this.previousPosition,
         previousPressed: Boolean = this.previousPressed,
         type: PointerType = this.type,
-        scrollDelta: Offset = this.scrollDelta
+        scrollDelta: Offset = this.scrollDelta,
     ): PointerInputChange =
         PointerInputChange(
-                id,
-                currentTime,
-                currentPosition,
-                currentPressed,
-                pressure,
-                previousTime,
-                previousPosition,
-                previousPressed,
+                id = id,
+                uptimeMillis = currentTime,
+                position = currentPosition,
+                pressed = currentPressed,
+                pressure = pressure,
+                previousUptimeMillis = previousTime,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
                 isInitiallyConsumed = false, // doesn't matter, we will copy the consumed booleans
-                type,
+                type = type,
                 historical = this.historical,
-                scrollDelta,
-                this.originalEventPosition,
+                scrollDelta = scrollDelta,
+                scaleGestureFactor = this.scaleGestureFactor,
+                panGestureOffset = this.panGestureOffset,
+                originalEventPosition = this.originalEventPosition,
             )
             .also {
                 // This method makes a shallow copy, copy the delegate to share the consumed state
@@ -711,7 +804,7 @@ class PointerInputChange(
         previousPressed: Boolean = this.previousPressed,
         type: PointerType = this.type,
         historical: List<HistoricalChange>,
-        scrollDelta: Offset = this.scrollDelta
+        scrollDelta: Offset = this.scrollDelta,
     ): PointerInputChange =
         copy(
                 id = id,
@@ -724,7 +817,7 @@ class PointerInputChange(
                 previousPressed = previousPressed,
                 type = type,
                 historical = historical,
-                scrollDelta = scrollDelta
+                scrollDelta = scrollDelta,
             )
             .also {
                 // This method makes a shallow copy, copy the delegate to share the consumed state
@@ -752,21 +845,70 @@ class PointerInputChange(
         previousPressed: Boolean = this.previousPressed,
         type: PointerType = this.type,
         historical: List<HistoricalChange> = this.historical,
-        scrollDelta: Offset = this.scrollDelta
+        scrollDelta: Offset = this.scrollDelta,
     ): PointerInputChange =
         PointerInputChange(
-                id,
-                currentTime,
-                currentPosition,
-                currentPressed,
-                pressure,
-                previousTime,
-                previousPosition,
-                previousPressed,
+                id = id,
+                uptimeMillis = currentTime,
+                position = currentPosition,
+                pressed = currentPressed,
+                pressure = pressure,
+                previousUptimeMillis = previousTime,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
                 isInitiallyConsumed = false, // doesn't matter, we will copy the consumed booleans
-                type,
-                historical,
-                scrollDelta,
+                type = type,
+                historical = historical,
+                scrollDelta = scrollDelta,
+                scaleGestureFactor = this.scaleGestureFactor,
+                panGestureOffset = this.panGestureOffset,
+                originalEventPosition = this.originalEventPosition,
+            )
+            .also {
+                // This method makes a shallow copy, copy the delegate to share the consumed state
+                // across instances. The local consumed state is irrelevant since we won't look at
+                // it, meaning there's no need to copy positionChange and downChange.
+                it.consumedDelegate = this.consumedDelegate ?: this
+            }
+
+    /**
+     * Make a shallow copy of the [PointerInputChange]
+     *
+     * **NOTE:** Due to the need of the inner contract of the [PointerInputChange], this method
+     * performs a shallow copy of the [PointerInputChange]. Any [consume] call between any of the
+     * copies will consume any other copy automatically. Therefore, copy with the new [isConsumed]
+     * is not possible. Consider creating a new [PointerInputChange].
+     */
+    fun copy(
+        id: PointerId = this.id,
+        currentTime: Long = this.uptimeMillis,
+        currentPosition: Offset = this.position,
+        currentPressed: Boolean = this.pressed,
+        pressure: Float = this.pressure,
+        previousTime: Long = this.previousUptimeMillis,
+        previousPosition: Offset = this.previousPosition,
+        previousPressed: Boolean = this.previousPressed,
+        type: PointerType = this.type,
+        historical: List<HistoricalChange> = this.historical,
+        scrollDelta: Offset = this.scrollDelta,
+        scaleGestureFactor: Float = this.scaleGestureFactor,
+        panGestureOffset: Offset = this.panGestureOffset,
+    ): PointerInputChange =
+        PointerInputChange(
+                id = id,
+                uptimeMillis = currentTime,
+                position = currentPosition,
+                pressed = currentPressed,
+                pressure = pressure,
+                previousUptimeMillis = previousTime,
+                previousPosition = previousPosition,
+                previousPressed = previousPressed,
+                isInitiallyConsumed = false, // doesn't matter, we will copy the consumed booleans
+                type = type,
+                historical = historical,
+                scrollDelta = scrollDelta,
+                scaleGestureFactor = scaleGestureFactor,
+                panGestureOffset = panGestureOffset,
                 originalEventPosition = this.originalEventPosition,
             )
             .also {
@@ -787,8 +929,10 @@ class PointerInputChange(
             "previousPressed=$previousPressed, " +
             "isConsumed=$isConsumed, " +
             "type=$type, " +
-            "historical=$historical," +
-            "scrollDelta=$scrollDelta)"
+            "historical=$historical, " +
+            "scrollDelta=$scrollDelta, " +
+            "scaleGestureFactor=$scaleGestureFactor, " +
+            "panGestureOffset=$panGestureOffset)"
     }
 }
 
@@ -796,27 +940,53 @@ class PointerInputChange(
  * Data structure for "historical" pointer moves.
  *
  * Optional high-frequency pointer moves in between the last two dispatched events: can be used for
- * extra accuracy when touchscreen rate exceeds framerate.
+ * extra accuracy when input rate exceeds framerate.
  *
  * @param uptimeMillis The time of the historical pointer event, in milliseconds. In between the
  *   current and previous pointer event times.
  * @param position The [Offset] of the historical pointer event, relative to the containing element.
+ * @param scaleGestureFactor A multiplicative scale factor indicating the amount of scale to perform
+ *   as part of this pointer input change. A value of `1f` indicates no scale, a value less than
+ *   `1f` indicates a scale down, commonly causing a zoom out, and a value greater than `1f`
+ *   indicates a scale up, commonly causing a zoom in.
+ * @param panGestureOffset An [Offset] in pixel coordinates indicating an amount of scrolling.
  */
 @Immutable
-class HistoricalChange(val uptimeMillis: Long, val position: Offset) {
+class HistoricalChange(
+    val uptimeMillis: Long,
+    val position: Offset,
+    val scaleGestureFactor: Float = 1f,
+    val panGestureOffset: Offset = Offset.Zero,
+) {
     internal var originalEventPosition: Offset = Offset.Zero
         private set
+
+    @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    public constructor(
+        uptimeMillis: Long,
+        position: Offset,
+    ) : this(
+        uptimeMillis = uptimeMillis,
+        position = position,
+        scaleGestureFactor = 1f,
+        panGestureOffset = Offset.Zero,
+    )
 
     internal constructor(
         uptimeMillis: Long,
         position: Offset,
-        originalEventPosition: Offset
-    ) : this(uptimeMillis, position) {
+        scaleGestureFactor: Float,
+        panGestureOffset: Offset,
+        originalEventPosition: Offset,
+    ) : this(uptimeMillis, position, scaleGestureFactor, panGestureOffset) {
         this.originalEventPosition = originalEventPosition
     }
 
     override fun toString(): String {
-        return "HistoricalChange(uptimeMillis=$uptimeMillis, position=$position)"
+        return "HistoricalChange(uptimeMillis=$uptimeMillis, " +
+            "position=$position, " +
+            "scaleGestureFactor=$scaleGestureFactor, " +
+            "panGestureOffset=$panGestureOffset)"
     }
 }
 
@@ -896,7 +1066,7 @@ class ConsumedData(positionChange: Boolean = false, downChange: Boolean = false)
 enum class PointerEventPass {
     Initial,
     Main,
-    Final
+    Final,
 }
 
 /**
@@ -960,14 +1130,14 @@ private fun PointerInputChange.positionChangeInternal(ignoreConsumed: Boolean = 
 /** True if this [PointerInputChange]'s movement has been consumed. */
 @Deprecated(
     "Partial consumption has been deprecated. Use isConsumed instead",
-    replaceWith = ReplaceWith("isConsumed")
+    replaceWith = ReplaceWith("isConsumed"),
 )
 fun PointerInputChange.positionChangeConsumed() = isConsumed
 
 /** True if any aspect of this [PointerInputChange] has been consumed. */
 @Deprecated(
     "Partial consumption has been deprecated. Use isConsumed instead",
-    replaceWith = ReplaceWith("isConsumed")
+    replaceWith = ReplaceWith("isConsumed"),
 )
 fun PointerInputChange.anyChangeConsumed() = isConsumed
 
@@ -977,7 +1147,7 @@ fun PointerInputChange.anyChangeConsumed() = isConsumed
  */
 @Deprecated(
     "Partial consumption has been deprecated. Use consume() instead.",
-    replaceWith = ReplaceWith("if (pressed != previousPressed) consume()")
+    replaceWith = ReplaceWith("if (pressed != previousPressed) consume()"),
 )
 fun PointerInputChange.consumeDownChange() {
     if (pressed != previousPressed) {
@@ -988,7 +1158,7 @@ fun PointerInputChange.consumeDownChange() {
 /** Consume position change if there is any */
 @Deprecated(
     "Partial consumption has been deprecated. Use consume() instead.",
-    replaceWith = ReplaceWith("if (positionChange() != Offset.Zero) consume()")
+    replaceWith = ReplaceWith("if (positionChange() != Offset.Zero) consume()"),
 )
 fun PointerInputChange.consumePositionChange() {
     if (positionChange() != Offset.Zero) {
@@ -1008,7 +1178,7 @@ fun PointerInputChange.consumeAllChanges() {
  */
 @Deprecated(
     message = "Use isOutOfBounds() that supports minimum touch target",
-    replaceWith = ReplaceWith("this.isOutOfBounds(size, extendedTouchPadding)")
+    replaceWith = ReplaceWith("this.isOutOfBounds(size, extendedTouchPadding)"),
 )
 fun PointerInputChange.isOutOfBounds(size: IntSize): Boolean {
     val position = position
@@ -1016,7 +1186,8 @@ fun PointerInputChange.isOutOfBounds(size: IntSize): Boolean {
     val y = position.y
     val width = size.width
     val height = size.height
-    return x < 0f || x > width || y < 0f || y > height
+    // Branch-less
+    return (x < 0f) or (x > width) or (y < 0f) or (y > height)
 }
 
 /**
@@ -1027,15 +1198,24 @@ fun PointerInputChange.isOutOfBounds(size: IntSize): Boolean {
  * the pointer region.
  */
 fun PointerInputChange.isOutOfBounds(size: IntSize, extendedTouchPadding: Size): Boolean {
-    if (type != PointerType.Touch) {
-        @Suppress("DEPRECATION") return isOutOfBounds(size)
-    }
+    // Set to 1 when the pointer type is touch, 0 otherwise
+    // No-op at the CPU level
+    val isTouch = (type == PointerType.Touch).toInt()
+
     val position = position
     val x = position.x
     val y = position.y
-    val minX = -extendedTouchPadding.width
-    val maxX = size.width + extendedTouchPadding.width
-    val minY = -extendedTouchPadding.height
-    val maxY = size.height + extendedTouchPadding.height
-    return x < minX || x > maxX || y < minY || y > maxY
+
+    // Set extentX to 0 when the pointer type is *not* touch
+    val extentX = extendedTouchPadding.width * isTouch
+    val maxX = size.width + extentX
+
+    // Set extentY to 0 when the pointer type is *not* touch
+    val extentY = extendedTouchPadding.height * isTouch
+    val maxY = size.height + extentY
+
+    // Don't branch
+    return (x < -extentX) or (x > maxX) or (y < -extentY) or (y > maxY)
 }
+
+private inline fun Boolean.toInt() = if (this) 1 else 0

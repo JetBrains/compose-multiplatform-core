@@ -18,8 +18,6 @@ package androidx.camera.view;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureCallback;
@@ -35,6 +33,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +81,7 @@ final class PreviewStreamStateObserver implements Observable.Observer<CameraInte
 
     @Override
     @MainThread
-    public void onNewData(@Nullable CameraInternal.State value) {
+    public void onNewData(CameraInternal.@Nullable State value) {
         if (value == CameraInternal.State.CLOSING
                 || value == CameraInternal.State.CLOSED
                 || value == CameraInternal.State.RELEASING

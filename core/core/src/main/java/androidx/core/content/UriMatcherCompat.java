@@ -19,8 +19,9 @@ package androidx.core.content;
 import android.content.UriMatcher;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Predicate;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing {@link UriMatcher} to create Uri Predicate.
@@ -35,8 +36,7 @@ public class UriMatcherCompat {
      * @param matcher the uriMatcher.
      * @return the predicate created from the uriMatcher.
      */
-    @NonNull
-    public static Predicate<Uri> asPredicate(@NonNull UriMatcher matcher) {
+    public static @NonNull Predicate<Uri> asPredicate(@NonNull UriMatcher matcher) {
         return v -> matcher.match(v) != UriMatcher.NO_MATCH;
     }
 }

@@ -22,9 +22,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @deprecated Use {@link EditTextPreferenceDialogFragmentCompat} instead
@@ -48,9 +49,8 @@ public class EditTextPreferenceDialogFragment extends PreferenceDialogFragment {
     /**
      * @deprecated Use {@link EditTextPreferenceDialogFragmentCompat} instead
      */
-    @NonNull
     @Deprecated
-    public static EditTextPreferenceDialogFragment newInstance(String key) {
+    public static @NonNull EditTextPreferenceDialogFragment newInstance(String key) {
         final EditTextPreferenceDialogFragment
                 fragment = new EditTextPreferenceDialogFragment();
         final Bundle b = new Bundle(1);

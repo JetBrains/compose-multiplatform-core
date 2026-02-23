@@ -22,10 +22,11 @@ import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.GestureTracker.Gesture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link FrameLayout} plus helper methods to reliably share gestures with its hierarchy, by:
@@ -130,8 +131,7 @@ public abstract class GestureTrackingView extends FrameLayout {
      */
     protected abstract boolean interceptGesture(@NonNull GestureTracker gestureTracker);
 
-    @NonNull
-    protected OnGestureListener patchGestureListener(@NonNull OnGestureListener original) {
+    protected @NonNull OnGestureListener patchGestureListener(@NonNull OnGestureListener original) {
         return new PatchedSimpleGestureHandler(original);
     }
 

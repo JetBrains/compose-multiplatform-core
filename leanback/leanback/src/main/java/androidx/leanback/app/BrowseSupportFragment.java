@@ -28,8 +28,6 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -56,6 +54,9 @@ import androidx.leanback.widget.ScaleFrameLayout;
 import androidx.leanback.widget.TitleViewAdapter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -1244,9 +1245,8 @@ public class BrowseSupportFragment extends BaseSupportFragment {
     }
 
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         if (getChildFragmentManager().findFragmentById(R.id.scale_frame) == null) {
             mHeadersSupportFragment = onCreateHeadersSupportFragment();

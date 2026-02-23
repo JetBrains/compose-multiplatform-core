@@ -22,12 +22,13 @@ import android.content.Context;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,9 +92,9 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
      */
     static final String METADATA_TAG_CUSTOM_CONTENT = "CSTCHP";
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Box mElement;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mElement;
 
-    Chip(@NonNull androidx.wear.tiles.LayoutElementBuilders.Box element) {
+    Chip(androidx.wear.tiles.LayoutElementBuilders.@NonNull Box element) {
         mElement = element;
     }
 
@@ -110,19 +111,19 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
         @IntDef({NOT_SET, TEXT, ICON, CUSTOM_CONTENT})
         @interface ChipType {}
 
-        @NonNull private final Context mContext;
-        @Nullable private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mCustomContent;
-        @Nullable private String mImageResourceId = null;
-        @Nullable private String mPrimaryLabel = null;
-        @Nullable private String mSecondaryLabel = null;
-        @NonNull private final androidx.wear.tiles.ModifiersBuilders.Clickable mClickable;
-        @NonNull private CharSequence mContentDescription = "";
-        @NonNull private androidx.wear.tiles.DimensionBuilders.ContainerDimension mWidth;
+        private final @NonNull Context mContext;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement mCustomContent;
+        private @Nullable String mImageResourceId = null;
+        private @Nullable String mPrimaryLabel = null;
+        private @Nullable String mSecondaryLabel = null;
+        private final androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable mClickable;
+        private @NonNull CharSequence mContentDescription = "";
+        private androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension mWidth;
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp mHeight = ChipDefaults.DEFAULT_HEIGHT;
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp mHeight =
+                ChipDefaults.DEFAULT_HEIGHT;
 
-        @NonNull private ChipColors mChipColors = ChipDefaults.PRIMARY_COLORS;
+        private @NonNull ChipColors mChipColors = ChipDefaults.PRIMARY_COLORS;
 
         @androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment
         private int mHorizontalAlign =
@@ -130,15 +131,14 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
 
         @Typography.TypographyName private int mPrimaryLabelTypography;
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp mHorizontalPadding =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp mHorizontalPadding =
                 ChipDefaults.HORIZONTAL_PADDING;
 
         private boolean mIsScalable = true;
         private int mMaxLines = 0; // 0 indicates that is not set.
-        @NonNull private String mMetadataTag = "";
+        private @NonNull String mMetadataTag = "";
 
-        @NonNull static final Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
+        static final @NonNull Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
 
         static {
             TYPE_TO_TAG.put(ICON, METADATA_TAG_ICON);
@@ -157,10 +157,9 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          */
         public Builder(
                 @NonNull Context context,
-                @NonNull androidx.wear.tiles.ModifiersBuilders.Clickable clickable,
-                @NonNull
-                        androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
-                                deviceParameters) {
+                androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable clickable,
+                androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
+                        deviceParameters) {
             mContext = context;
             mClickable = clickable;
             mWidth =
@@ -174,9 +173,8 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
         /**
          * Sets the width of {@link Chip}. If not set, default value will be set to fill the screen.
          */
-        @NonNull
-        public Builder setWidth(
-                @NonNull androidx.wear.tiles.DimensionBuilders.ContainerDimension width) {
+        public @NonNull Builder setWidth(
+                androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension width) {
             mWidth = width;
             return this;
         }
@@ -185,8 +183,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
          * screen.
          */
-        @NonNull
-        public Builder setWidth(@Dimension(unit = DP) float width) {
+        public @NonNull Builder setWidth(@Dimension(unit = DP) float width) {
             mWidth = androidx.wear.tiles.DimensionBuilders.dp(width);
             return this;
         }
@@ -195,9 +192,8 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * Sets the custom content for the {@link Chip}. Any previously added content will be
          * overridden.
          */
-        @NonNull
-        public Builder setCustomContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement content) {
+        public @NonNull Builder setCustomContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement content) {
             this.mCustomContent = content;
             this.mPrimaryLabel = "";
             this.mSecondaryLabel = "";
@@ -209,8 +205,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * Sets the content description for the {@link Chip}. It is highly recommended to provide
          * this for chip containing icon.
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -220,8 +215,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * overridden. Primary label can be on 1 or 2 lines, depending on the length and existence
          * of secondary label.
          */
-        @NonNull
-        public Builder setPrimaryLabelContent(@NonNull String primaryLabel) {
+        public @NonNull Builder setPrimaryLabelContent(@NonNull String primaryLabel) {
             this.mPrimaryLabel = primaryLabel;
             this.mCustomContent = null;
             return this;
@@ -232,8 +226,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          *
          * <p>Sets the font for the primary label and should only be used internally.
          */
-        @NonNull
-        Builder setPrimaryLabelTypography(@Typography.TypographyName int typography) {
+        @NonNull Builder setPrimaryLabelTypography(@Typography.TypographyName int typography) {
             this.mPrimaryLabelTypography = typography;
             return this;
         }
@@ -243,8 +236,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          *
          * <p>Sets whether the font for the primary label is scalable.
          */
-        @NonNull
-        Builder setIsPrimaryLabelScalable(boolean isScalable) {
+        @NonNull Builder setIsPrimaryLabelScalable(boolean isScalable) {
             this.mIsScalable = isScalable;
             return this;
         }
@@ -254,8 +246,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * be overridden. If secondary label is set, primary label must be set too with {@link
          * #setPrimaryLabelContent}.
          */
-        @NonNull
-        public Builder setSecondaryLabelContent(@NonNull String secondaryLabel) {
+        public @NonNull Builder setSecondaryLabelContent(@NonNull String secondaryLabel) {
             this.mSecondaryLabel = secondaryLabel;
             this.mCustomContent = null;
             return this;
@@ -267,8 +258,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * ChipColors}. This icon should be image with chosen alpha channel and not an actual image.
          * If icon is set, primary label must be set too with {@link #setPrimaryLabelContent}.
          */
-        @NonNull
-        public Builder setIconContent(@NonNull String imageResourceId) {
+        public @NonNull Builder setIconContent(@NonNull String imageResourceId) {
             this.mImageResourceId = imageResourceId;
             this.mCustomContent = null;
             return this;
@@ -281,8 +271,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * ChipColors#getIconColor()} will be used as color for the icon itself. If not set, {@link
          * ChipDefaults#PRIMARY_COLORS} will be used.
          */
-        @NonNull
-        public Builder setChipColors(@NonNull ChipColors chipColors) {
+        public @NonNull Builder setChipColors(@NonNull ChipColors chipColors) {
             mChipColors = chipColors;
             return this;
         }
@@ -295,8 +284,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
          * androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment#HORIZONTAL_ALIGN_START}
          * will be used.
          */
-        @NonNull
-        public Builder setHorizontalAlignment(
+        public @NonNull Builder setHorizontalAlignment(
                 @androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment
                         int horizontalAlignment) {
             mHorizontalAlign = horizontalAlignment;
@@ -304,38 +292,33 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
         }
 
         /** Used for creating CompactChip and TitleChip. */
-        @NonNull
-        Builder setHorizontalPadding(
-                @NonNull androidx.wear.tiles.DimensionBuilders.DpProp horizontalPadding) {
+        @NonNull Builder setHorizontalPadding(
+                androidx.wear.tiles.DimensionBuilders.@NonNull DpProp horizontalPadding) {
             this.mHorizontalPadding = horizontalPadding;
             return this;
         }
 
         /** Used for creating CompactChip and TitleChip. */
-        @NonNull
-        Builder setHeight(@NonNull androidx.wear.tiles.DimensionBuilders.DpProp height) {
+        @NonNull Builder setHeight(androidx.wear.tiles.DimensionBuilders.@NonNull DpProp height) {
             this.mHeight = height;
             return this;
         }
 
         /** Used for creating CompactChip and TitleChip. */
-        @NonNull
-        Builder setMaxLines(int maxLines) {
+        @NonNull Builder setMaxLines(int maxLines) {
             this.mMaxLines = maxLines;
             return this;
         }
 
         /** Used for setting the correct tag in CompactChip and TitleChip. */
-        @NonNull
-        Builder setMetadataTag(@NonNull String metadataTag) {
+        @NonNull Builder setMetadataTag(@NonNull String metadataTag) {
             this.mMetadataTag = metadataTag;
             return this;
         }
 
         /** Constructs and returns {@link Chip} with the provided content and look. */
-        @NonNull
         @Override
-        public Chip build() {
+        public @NonNull Chip build() {
             androidx.wear.tiles.ModifiersBuilders.Modifiers.Builder modifiers =
                     new androidx.wear.tiles.ModifiersBuilders.Modifiers.Builder()
                             .setClickable(mClickable)
@@ -374,8 +357,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
             return new Chip(element.build());
         }
 
-        @NonNull
-        private String getCorrectContentDescription() {
+        private @NonNull String getCorrectContentDescription() {
             if (mContentDescription.length() == 0) {
                 mContentDescription = "";
                 if (mPrimaryLabel != null) {
@@ -414,8 +396,8 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
             return METADATA_TAG_TEXT;
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement getCorrectContent() {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement
+                getCorrectContent() {
             if (mCustomContent != null) {
                 return mCustomContent;
             }
@@ -493,41 +475,36 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
         }
 
         private androidx.wear.tiles.LayoutElementBuilders.Box.Builder putLayoutInBox(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
             // Wrapped and centered content are default.
             return new androidx.wear.tiles.LayoutElementBuilders.Box.Builder().addContent(element);
         }
     }
 
     /** Returns height of this Chip. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.ContainerDimension getHeight() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension getHeight() {
         return Helper.checkNotNull(mElement.getHeight());
     }
 
     /** Returns width of this Chip. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.ContainerDimension getWidth() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension getWidth() {
         return Helper.checkNotNull(mElement.getWidth());
     }
 
     /** Returns click event action associated with this Chip. */
-    @NonNull
-    public androidx.wear.tiles.ModifiersBuilders.Clickable getClickable() {
+    public androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable getClickable() {
         return Helper.checkNotNull(Helper.checkNotNull(mElement.getModifiers()).getClickable());
     }
 
     /** Returns background color of this Chip. */
-    @NonNull
-    private androidx.wear.tiles.ColorBuilders.ColorProp getBackgroundColor() {
+    private androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getBackgroundColor() {
         return Helper.checkNotNull(
                 Helper.checkNotNull(Helper.checkNotNull(mElement.getModifiers()).getBackground())
                         .getColor());
     }
 
     /** Returns chip colors of this Chip. */
-    @NonNull
-    public ChipColors getChipColors() {
+    public @NonNull ChipColors getChipColors() {
         androidx.wear.tiles.ColorBuilders.ColorProp backgroundColor = getBackgroundColor();
         androidx.wear.tiles.ColorBuilders.ColorProp contentColor = null;
         androidx.wear.tiles.ColorBuilders.ColorProp secondaryContentColor = null;
@@ -563,8 +540,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
     }
 
     /** Returns content description of this Chip. */
-    @Nullable
-    public CharSequence getContentDescription() {
+    public @Nullable CharSequence getContentDescription() {
         androidx.wear.tiles.ModifiersBuilders.Semantics semantics =
                 Helper.checkNotNull(mElement.getModifiers()).getSemantics();
         if (semantics == null) {
@@ -574,8 +550,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
     }
 
     /** Returns custom content from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getCustomContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement getCustomContent() {
         if (getMetadataTag().equals(METADATA_TAG_CUSTOM_CONTENT)) {
             return Helper.checkNotNull(Helper.checkNotNull(mElement.getContents()).get(0));
         }
@@ -583,38 +558,32 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
     }
 
     /** Returns primary label from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public String getPrimaryLabelContent() {
+    public @Nullable String getPrimaryLabelContent() {
         Text primaryLabel = getPrimaryLabelContentObject();
         return primaryLabel != null ? primaryLabel.getText() : null;
     }
 
     /** Returns secondary label from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public String getSecondaryLabelContent() {
+    public @Nullable String getSecondaryLabelContent() {
         Text label = getSecondaryLabelContentObject();
         return label != null ? label.getText() : null;
     }
 
     /** Returns icon id from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public String getIconContent() {
+    public @Nullable String getIconContent() {
         androidx.wear.tiles.LayoutElementBuilders.Image icon = getIconContentObject();
         return icon != null ? Helper.checkNotNull(icon.getResourceId()).getValue() : null;
     }
 
-    @Nullable
-    private Text getPrimaryLabelContentObject() {
+    private @Nullable Text getPrimaryLabelContentObject() {
         return getPrimaryOrSecondaryLabelContent(0);
     }
 
-    @Nullable
-    private Text getSecondaryLabelContentObject() {
+    private @Nullable Text getSecondaryLabelContentObject() {
         return getPrimaryOrSecondaryLabelContent(1);
     }
 
-    @Nullable
-    private androidx.wear.tiles.LayoutElementBuilders.Image getIconContentObject() {
+    private androidx.wear.tiles.LayoutElementBuilders.@Nullable Image getIconContentObject() {
         if (!getMetadataTag().equals(METADATA_TAG_ICON)) {
             return null;
         }
@@ -624,8 +593,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
                         .get(0));
     }
 
-    @Nullable
-    private Text getPrimaryOrSecondaryLabelContent(int index) {
+    private @Nullable Text getPrimaryOrSecondaryLabelContent(int index) {
         String metadataTag = getMetadataTag();
         if (metadataTag.equals(METADATA_TAG_CUSTOM_CONTENT)) {
             return null;
@@ -669,8 +637,7 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
     }
 
     /** Returns metadata tag set to this Chip. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return Helper.getMetadataTagName(
                 Helper.checkNotNull(Helper.checkNotNull(mElement.getModifiers()).getMetadata()));
     }
@@ -681,9 +648,8 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
      * container.getContents().get(index)}) if that element can be converted to Chip. Otherwise, it
      * will return null.
      */
-    @Nullable
-    public static Chip fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable Chip fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof Chip) {
             return (Chip) element;
         }
@@ -699,17 +665,15 @@ public class Chip implements androidx.wear.tiles.LayoutElementBuilders.LayoutEle
         return new Chip(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

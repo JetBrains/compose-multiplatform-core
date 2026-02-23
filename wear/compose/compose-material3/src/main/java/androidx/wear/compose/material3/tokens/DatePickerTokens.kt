@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
+// VERSION: v0_107
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 package androidx.wear.compose.material3.tokens
-
 internal object DatePickerTokens {
-    val SelectedPickerContentColor = ColorSchemeKeyTokens.OnBackground
-    val UnselectedPickerContentColor = ColorSchemeKeyTokens.SecondaryDim
-    val PickerLabelColor = ColorSchemeKeyTokens.Primary
-    val NextButtonContentColor = ColorSchemeKeyTokens.Primary
-    val NextButtonContainerColor = ColorSchemeKeyTokens.SurfaceContainer
-    val ConfirmButtonContentColor = ColorSchemeKeyTokens.OnPrimary
     val ConfirmButtonContainerColor = ColorSchemeKeyTokens.PrimaryDim
-
-    val PickerLabelLargeTypography = TypographyKeyTokens.TitleLarge
-    val PickerLabelTypography = TypographyKeyTokens.TitleMedium
-    val PickerContentLargeTypography = TypographyKeyTokens.NumeralMedium
-    val PickerContentTypography = TypographyKeyTokens.NumeralSmall
+    val ConfirmButtonContentColor = ColorSchemeKeyTokens.OnPrimary
+    val NextButtonContainerColor = ColorSchemeKeyTokens.SurfaceContainer
+    val NextButtonContentColor = ColorSchemeKeyTokens.Primary
+    val ContentLargeTypography = TypographyKeyTokens.NumeralMedium
+    val ContentTypography = TypographyKeyTokens.NumeralSmall
+    val InvalidContentColor = ColorSchemeKeyTokens.OnSurface
+    val InvalidContentOpacity = 0.38f
+    val LabelColor = ColorSchemeKeyTokens.Primary
+    val LabelLargeTypography = TypographyKeyTokens.TitleLarge
+    val LabelTypography = TypographyKeyTokens.TitleMedium
+    val SelectedContentColor = ColorSchemeKeyTokens.OnBackground
+    val UnselectedContentColor = ColorSchemeKeyTokens.PrimaryDim
 }

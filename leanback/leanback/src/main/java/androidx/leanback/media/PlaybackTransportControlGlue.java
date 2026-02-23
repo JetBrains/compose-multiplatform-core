@@ -23,7 +23,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -34,6 +33,8 @@ import androidx.leanback.widget.PlaybackSeekDataProvider;
 import androidx.leanback.widget.PlaybackSeekUi;
 import androidx.leanback.widget.PlaybackTransportRowPresenter;
 import androidx.leanback.widget.RowPresenter;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 
@@ -154,14 +155,14 @@ public class PlaybackTransportControlGlue<T extends PlayerAdapter>
         PlaybackTransportRowPresenter rowPresenter = new PlaybackTransportRowPresenter() {
             @Override
             protected void onBindRowViewHolder(
-                    @NonNull RowPresenter.ViewHolder vh,
+                    RowPresenter.@NonNull ViewHolder vh,
                     @NonNull Object item
             ) {
                 super.onBindRowViewHolder(vh, item);
                 vh.setOnKeyListener(PlaybackTransportControlGlue.this);
             }
             @Override
-            protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder vh) {
+            protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder vh) {
                 super.onUnbindRowViewHolder(vh);
                 vh.setOnKeyListener(null);
             }

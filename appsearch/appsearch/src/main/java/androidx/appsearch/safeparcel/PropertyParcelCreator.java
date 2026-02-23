@@ -20,9 +20,12 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +60,8 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
 
     /** Creates a {@link PropertyParcel} from a {@link Bundle}. */
     @SuppressWarnings({"unchecked"})
-    @NonNull
-    private static PropertyParcel createPropertyParcelFromBundle(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    private static @NonNull PropertyParcel createPropertyParcelFromBundle(
             @NonNull Bundle propertyParcelBundle) {
         Objects.requireNonNull(propertyParcelBundle);
         String propertyName = propertyParcelBundle.getString(PROPERTY_NAME_FIELD);
@@ -121,7 +124,7 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
             }
             builder.setBytesValues(bytes);
             valueSet = true;
-        } else if (docValues != null && docValues.length > 0) {
+        } else if (docValues != null) {
             GenericDocumentParcel[] documentParcels =
                     new GenericDocumentParcel[docValues.length];
             System.arraycopy(docValues, 0, documentParcels, 0, docValues.length);
@@ -154,8 +157,7 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
     }
 
     /** Creates a {@link Bundle} from a {@link PropertyParcel}. */
-    @NonNull
-    private static Bundle createBundleFromPropertyParcel(
+    private static @NonNull Bundle createBundleFromPropertyParcel(
             @NonNull PropertyParcel propertyParcel) {
         Objects.requireNonNull(propertyParcel);
         Bundle propertyParcelBundle = new Bundle();
@@ -203,9 +205,8 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
         return propertyParcelBundle;
     }
 
-    @NonNull
     @Override
-    public PropertyParcel createFromParcel(Parcel in) {
+    public @NonNull PropertyParcel createFromParcel(Parcel in) {
         Bundle bundle = in.readBundle(getClass().getClassLoader());
         return createPropertyParcelFromBundle(bundle);
     }
@@ -217,7 +218,7 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
 
     /** Writes a {@link PropertyParcel} to a {@link Parcel}. */
     public static void writeToParcel(@NonNull PropertyParcel propertyParcel,
-            @NonNull android.os.Parcel parcel, int flags) {
+            android.os.@NonNull Parcel parcel, int flags) {
         parcel.writeBundle(createBundleFromPropertyParcel(propertyParcel));
     }
 }

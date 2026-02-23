@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
+@file:JvmName("SavedStateKt")
+@file:JvmMultifileClass
+@file:Suppress("NOTHING_TO_INLINE")
+
 package androidx.savedstate
+
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
 /**
  * An opaque (empty) common type that holds saveable values to be saved and restored by native
@@ -31,18 +38,48 @@ package androidx.savedstate
  */
 public expect class SavedState
 
-/** Constructs an empty [SavedState] instance. */
-public expect inline fun savedState(block: SavedStateWriter.() -> Unit = {}): SavedState
+/**
+ * Builds a new [SavedState] with the specified [initialState], given as a [Map] of [String] keys
+ * and [Any] value.
+ *
+ * Allows further modification of the state using the [builderAction].
+ *
+ * **IMPORTANT:** The [SavedStateWriter] passed as a receiver to the [builderAction] is valid only
+ * inside that function. Using it outside of the function may produce an unspecified behavior.
+ *
+ * @param initialState An initial map of key-value pairs to populate the state. Defaults to an empty
+ *   map.
+ * @param builderAction A lambda function with a [SavedStateWriter] receiver to modify the state.
+ * @return A [SavedState] instance containing the initialized key-value pairs.
+ */
+public expect inline fun savedState(
+    initialState: Map<String, Any?> = emptyMap(),
+    builderAction: SavedStateWriter.() -> Unit = {},
+): SavedState
 
-/** Creates a new [SavedStateReader] for the [SavedState]. */
-public fun SavedState.reader(): SavedStateReader = SavedStateReader(source = this)
-
-/** Creates a new [SavedStateWriter] for the [SavedState]. */
-public fun SavedState.writer(): SavedStateWriter = SavedStateWriter(source = this)
+/**
+ * Builds a new [SavedState] with the specified [initialState], given as a [SavedState] instance.
+ *
+ * Allows further modification of the state using the [builderAction].
+ *
+ * **IMPORTANT:** The [SavedStateWriter] passed as a receiver to the [builderAction] is valid only
+ * inside that function. Using it outside of the function may produce an unspecified behavior.
+ *
+ * @param initialState An initial [SavedState] to populate the state.
+ * @param builderAction A lambda function with a [SavedStateWriter] receiver to modify the state.
+ * @return A [SavedState] instance containing the initialized key-value pairs.
+ */
+public expect inline fun savedState(
+    initialState: SavedState,
+    builderAction: SavedStateWriter.() -> Unit = {},
+): SavedState
 
 /**
  * Calls the specified function [block] with a [SavedStateReader] value as its receiver and returns
  * the [block] value.
+ *
+ * **IMPORTANT:** The [SavedStateReader] passed as a receiver to the [block] is valid only inside
+ * that function. Using it outside of the function may produce an unspecified behavior.
  *
  * @param block A lambda function that performs read operations using the [SavedStateReader].
  * @return The result of the lambda function's execution.
@@ -50,25 +87,15 @@ public fun SavedState.writer(): SavedStateWriter = SavedStateWriter(source = thi
  * @see [SavedStateWriter]
  */
 public inline fun <T> SavedState.read(block: SavedStateReader.() -> T): T {
-    return block(reader())
-}
-
-/**
- * Calls the specified function [block] with a [SavedStateReader] value as its receiver and returns
- * the [block] value.
- *
- * @param block A lambda function that performs read operations using the [SavedStateReader].
- * @return The result of the lambda function's execution.
- * @see [SavedStateReader]
- * @see [SavedStateWriter]
- */
-public inline fun <T> SavedStateWriter.read(block: SavedStateReader.() -> T): T {
-    return source.read(block)
+    return block(SavedStateReader(source = this))
 }
 
 /**
  * Calls the specified function [block] with a [SavedStateWriter] value as its receiver and returns
  * the [block] value.
+ *
+ * **IMPORTANT:** The [SavedStateWriter] passed as a receiver to the [block] is valid only inside
+ * that function. Using it outside of the function may produce an unspecified behavior.
  *
  * @param block A lambda function that performs write operations using the [SavedStateWriter].
  * @return The result of the lambda function's execution.
@@ -76,18 +103,5 @@ public inline fun <T> SavedStateWriter.read(block: SavedStateReader.() -> T): T 
  * @see [SavedStateWriter]
  */
 public inline fun <T> SavedState.write(block: SavedStateWriter.() -> T): T {
-    return block(writer())
-}
-
-/**
- * Calls the specified function [block] with a [SavedStateWriter] value as its receiver and returns
- * the [block] value.
- *
- * @param block A lambda function that performs write operations using the [SavedStateWriter].
- * @return The result of the lambda function's execution.
- * @see [SavedStateReader]
- * @see [SavedStateWriter]
- */
-public inline fun <T> SavedStateReader.write(block: SavedStateWriter.() -> T): T {
-    return source.write(block)
+    return block(SavedStateWriter(source = this))
 }

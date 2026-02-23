@@ -30,6 +30,8 @@ import java.time.ZoneOffset
  * <p>Each record contains a start time, end time, an exercise type and a list of
  * [PlannedExerciseBlock] which describe the details of the planned session. The start and end times
  * may be in the future.
+ *
+ * Requires [androidx.health.connect.client.HealthConnectFeatures.FEATURE_PLANNED_EXERCISE].
  */
 class PlannedExerciseSessionRecord
 internal constructor(
@@ -70,6 +72,7 @@ internal constructor(
         startZoneOffset: ZoneOffset?,
         endTime: Instant,
         endZoneOffset: ZoneOffset?,
+        metadata: Metadata,
         blocks: List<PlannedExerciseBlock>,
         /** Type of exercise (e.g. walking, swimming). Required field. */
         exerciseType: Int,
@@ -77,7 +80,6 @@ internal constructor(
         title: String? = null,
         /** Additional notes for the session. Optional field. */
         notes: String? = null,
-        metadata: Metadata = Metadata.EMPTY,
     ) : this(
         startTime,
         startZoneOffset,
@@ -107,6 +109,7 @@ internal constructor(
      */
     @JvmOverloads
     constructor(
+        metadata: Metadata,
         startDate: LocalDate,
         duration: Duration,
         blocks: List<PlannedExerciseBlock>,
@@ -116,7 +119,6 @@ internal constructor(
         title: String? = null,
         /** Additional notes for the session. Optional field. */
         notes: String? = null,
-        metadata: Metadata = Metadata.EMPTY,
     ) : this(
         startDate.toPhysicalTimeAtNoon(),
         startDate.toPhysicalTimeAtNoon().getOffset(),

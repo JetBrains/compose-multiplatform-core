@@ -266,15 +266,29 @@ public abstract class MediaRouteProvider {
     }
 
     /**
+     * Creates a {@link RouteController}.
+     *
+     * <p>It will be called from an app or {@link MediaRouter} when a single route is selected.
+     *
+     * @param routeId the selected route's ID.
+     * @param routeControllerOptions the parameters to be used to create the route controller.
+     * @return {@link RouteController}. Returns null if there is no such route.
+     */
+    @Nullable
+    public RouteController onCreateRouteController(
+            @NonNull String routeId, @NonNull RouteControllerOptions routeControllerOptions) {
+        return onCreateRouteController(routeId);
+    }
+
+    /**
      * Called by the media router to obtain a route controller for a particular route.
-     * <p>
-     * The media router will invoke the {@link RouteController#onRelease} method of the route
+     *
+     * <p>The media router will invoke the {@link RouteController#onRelease} method of the route
      * controller when it is no longer needed to allow it to free its resources.
-     * </p>
      *
      * @param routeId The unique id of the route.
-     * @return The route controller.  Returns null if there is no such route or if the route
-     * cannot be controlled using the route controller interface.
+     * @return The route controller. Returns null if there is no such route or if the route cannot
+     *     be controlled using the route controller interface.
      */
     @Nullable
     public RouteController onCreateRouteController(@NonNull String routeId) {
@@ -307,7 +321,7 @@ public abstract class MediaRouteProvider {
         if (routeGroupId == null) {
             throw new IllegalArgumentException("routeGroupId cannot be null");
         }
-        return onCreateRouteController(routeId);
+        return onCreateRouteController(routeId, MediaRouteProvider.RouteControllerOptions.EMPTY);
     }
 
     /**
@@ -317,27 +331,25 @@ public abstract class MediaRouteProvider {
      * static group is selected.
      *
      * @param initialMemberRouteId initially selected route's id.
-     * @param controlHints the hints passed by the client application for creating the route
-     *     controller, or {@code null} if the client has not provided control hints. The
-     *     controlHints may be provided by {@link
-     *     android.media.MediaRouter2.OnGetControllerHintsListener}.
+     * @param routeControllerOptions the parameters to be used to create the route controller.
      * @return {@link DynamicGroupRouteController}. Returns null if there is no such route or if the
      *     route cannot be controlled using the {@link DynamicGroupRouteController} interface.
      */
     @Nullable
     public DynamicGroupRouteController onCreateDynamicGroupRouteController(
-            @NonNull String initialMemberRouteId, @Nullable Bundle controlHints) {
+            @NonNull String initialMemberRouteId,
+            @NonNull RouteControllerOptions routeControllerOptions) {
         return onCreateDynamicGroupRouteController(initialMemberRouteId);
     }
 
     /**
      * Creates a {@link DynamicGroupRouteController}.
      *
-     * <p>It is equivalent to {@link #onCreateDynamicGroupRouteController(String, Bundle)}, except
-     * it doesn't take {@code controlHints}.
+     * <p>It is equivalent to {@link #onCreateDynamicGroupRouteController(String,
+     * RouteControllerOptions)}, except it doesn't take {@code RouteControllerOptions}.
      *
      * <p>This method is only called when the subclass doesn't implement {@link
-     * #onCreateDynamicGroupRouteController(String, Bundle)}.
+     * #onCreateDynamicGroupRouteController(String, RouteControllerOptions)}.
      *
      * @param initialMemberRouteId initially selected route's id.
      * @return {@link DynamicGroupRouteController}. Returns null if there is no such route or if the
@@ -684,21 +696,16 @@ public abstract class MediaRouteProvider {
             static final String KEY_IS_GROUPABLE = "isGroupable";
             static final String KEY_IS_TRANSFERABLE = "isTransferable";
 
-            /**
-             */
+            /** */
             @RestrictTo(LIBRARY)
-            @IntDef({
-                    UNSELECTING,
-                    UNSELECTED,
-                    SELECTING,
-                    SELECTED
-            })
+            @IntDef({UNSELECTING, UNSELECTED, SELECTING, SELECTED, NOT_IN_GROUP})
             @Retention(RetentionPolicy.SOURCE)
             public @interface SelectionState {}
+
             /**
              * After a user unselects a route, it might take some time for a provider to complete
-             * the operation. This state is used in this between time. MediaRouter can either
-             * block the UI or show the route as unchecked.
+             * the operation. This state is used in this between time. MediaRouter can either block
+             * the UI or show the route as unchecked.
              */
             public static final int UNSELECTING = 0;
 
@@ -724,6 +731,17 @@ public abstract class MediaRouteProvider {
              * </p>
              */
             public static final int SELECTED = 3;
+
+            /**
+             * The route is not in a dynamic group.
+             *
+             * <p>The NOT_IN_GROUP selection state is different from the UNSELECTED state. The
+             * former represents a route that is not in a dynamic group. The latter represents an
+             * unselected route which could be selected to be part of the dynamic group.
+             *
+             * @see MediaRouter.GroupRouteInfo#getSelectionState(MediaRouter.RouteInfo)
+             */
+            public static final int NOT_IN_GROUP = 4;
 
             //TODO: mMediaRouteDescriptor could have an old info. We should provide a way to
             // update it or use only the route ID.
@@ -906,19 +924,92 @@ public abstract class MediaRouteProvider {
         }
     }
 
-    /**
-     * Callback which is invoked when route information becomes available or changes.
-     */
-    public static abstract class Callback {
+    /** Holds parameters for creating {@link RouteController}. */
+    public static final class RouteControllerOptions {
+        static final RouteControllerOptions EMPTY = new RouteControllerOptions.Builder().build();
+        private static final String KEY_CONTROL_HINTS = "controlHints";
+        private static final String KEY_CLIENT_PACKAGE_NAME = "clientPackageName";
+        private static final String EMPTY_CLIENT_PACKAGE_NAME = "";
+        private final Bundle mBundle;
+
+        /* package */ RouteControllerOptions(Bundle bundle) {
+            mBundle = new Bundle(bundle);
+        }
+
+        /** Returns the contents of this object represented as a bundle. */
+        /* package */ @NonNull
+        Bundle asBundle() {
+            return mBundle;
+        }
+
+        @NonNull
+        public Bundle getControlHints() {
+            // The controlHints is passed by the application for creating the route controller, or
+            // {@code null} if the client has not provided control hints. The controlHints may be
+            // provided by {@link android.media.MediaRouter2.OnGetControllerHintsListener}.
+            Bundle controlHints = mBundle.getParcelable(KEY_CONTROL_HINTS);
+            return (controlHints != null) ? controlHints : Bundle.EMPTY;
+        }
+
+        /** Returns the package name of the client requesting the route controller creation. */
+        @NonNull
+        public String getClientPackageName() {
+            return mBundle.getString(KEY_CLIENT_PACKAGE_NAME, EMPTY_CLIENT_PACKAGE_NAME);
+        }
+
+        /** Builder for {@link RouteControllerOptions}. */
+        public static final class Builder {
+            private final Bundle mBundle;
+
+            public Builder() {
+                mBundle = new Bundle();
+            }
+
+            /**
+             * Copies the properties from the given {@link RouteControllerOptions}.
+             *
+             * <p>The values are read from the given {@link RouteControllerOptions} but can be
+             * overridden with the other setters in the builder.
+             */
+            public Builder(@NonNull RouteControllerOptions routeControllerOptions) {
+                mBundle = new Bundle();
+                setControlHints(routeControllerOptions.getControlHints());
+                setClientPackageName(routeControllerOptions.getClientPackageName());
+            }
+
+            /** Sets controlHints passed by the client application. */
+            @NonNull
+            public Builder setControlHints(@Nullable Bundle controlHints) {
+                mBundle.putParcelable(KEY_CONTROL_HINTS, controlHints);
+                return this;
+            }
+
+            /** Sets the client package name for creating the route controller. */
+            @NonNull
+            public Builder setClientPackageName(@NonNull String clientPackageName) {
+                mBundle.putString(KEY_CLIENT_PACKAGE_NAME, clientPackageName);
+                return this;
+            }
+
+            /** Builds the {@link RouteControllerOptions}. */
+            @NonNull
+            public RouteControllerOptions build() {
+                return new RouteControllerOptions(mBundle);
+            }
+        }
+    }
+
+    /** Callback which is invoked when route information becomes available or changes. */
+    public abstract static class Callback {
         /**
          * Called when information about a route provider and its routes change.
          *
          * @param provider The media route provider that changed, never null.
          * @param descriptor The new media route provider descriptor, or null if none.
          */
-        public void onDescriptorChanged(@NonNull MediaRouteProvider provider,
-                @Nullable MediaRouteProviderDescriptor descriptor) {
-        }
+        public void onDescriptorChanged(
+                @NonNull MediaRouteProvider provider,
+                @Nullable MediaRouteProviderDescriptor descriptor) {}
     }
 
     private final class ProviderHandler extends Handler {

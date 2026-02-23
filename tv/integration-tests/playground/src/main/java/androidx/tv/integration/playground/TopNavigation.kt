@@ -68,7 +68,7 @@ internal fun TopNavigation(
     PillIndicatorTabRow(
         tabs = tabs,
         selectedTabIndex = selectedTabIndex,
-        updateSelectedTab = { selectedTabIndex = it }
+        updateSelectedTab = { selectedTabIndex = it },
     )
 
     // Underlined indicator
@@ -92,25 +92,22 @@ internal fun TopNavigation(
 fun PillIndicatorTabRow(
     tabs: List<String>,
     selectedTabIndex: Int,
-    updateSelectedTab: (Int) -> Unit
+    updateSelectedTab: (Int) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
 
-    TabRow(
-        selectedTabIndex = selectedTabIndex,
-        modifier = Modifier.focusRestorer { focusRequester }
-    ) {
+    TabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.focusRestorer(focusRequester)) {
         tabs.forEachIndexed { index, tab ->
             key(index) {
                 Tab(
                     selected = index == selectedTabIndex,
                     onFocus = { updateSelectedTab(index) },
-                    modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(focusRequester))
+                    modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(focusRequester)),
                 ) {
                     Text(
                         text = tab,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                     )
                 }
             }
@@ -124,7 +121,7 @@ fun PillIndicatorTabRow(
 fun UnderlinedIndicatorTabRow(
     tabs: List<String>,
     selectedTabIndex: Int,
-    updateSelectedTab: (Int) -> Unit
+    updateSelectedTab: (Int) -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -137,7 +134,7 @@ fun UnderlinedIndicatorTabRow(
                 doesTabRowHaveFocus = doesTabRowHaveFocus,
             )
         },
-        modifier = Modifier.focusRestorer { focusRequester },
+        modifier = Modifier.focusRestorer(focusRequester),
     ) {
         tabs.forEachIndexed { index, tab ->
             Tab(

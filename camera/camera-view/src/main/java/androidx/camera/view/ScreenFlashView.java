@@ -29,8 +29,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.camera.core.ImageCapture;
@@ -38,6 +36,9 @@ import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.Logger;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Custom View that implements a basic UI for screen flash photo capture.
@@ -173,6 +174,9 @@ public final class ScreenFlashView extends View {
 
     /** Update {@link #mScreenFlash} if required. */
     private void updateScreenFlash(Window window) {
+        Logger.d(TAG, "updateScreenFlash: is new window null = " + (window == null)
+                + ",  is new window same as previous = " + (window == mScreenFlashWindow));
+
         if (mScreenFlashWindow != window) {
             mScreenFlash = window == null ? null : new ScreenFlash() {
                 private float mPreviousBrightness;
@@ -180,7 +184,7 @@ public final class ScreenFlashView extends View {
 
                 @Override
                 public void apply(long expirationTimeMillis,
-                        @NonNull ImageCapture.ScreenFlashListener screenFlashListener) {
+                        ImageCapture.@NonNull ScreenFlashListener screenFlashListener) {
                     Logger.d(TAG, "ScreenFlash#apply");
 
                     mPreviousBrightness = getBrightness();
@@ -194,7 +198,7 @@ public final class ScreenFlashView extends View {
 
                 @Override
                 public void clear() {
-                    Logger.d(TAG, "ScreenFlash#clearScreenFlashUi");
+                    Logger.d(TAG, "ScreenFlash#clear");
 
                     if (mAnimator != null) {
                         mAnimator.cancel();
@@ -305,8 +309,7 @@ public final class ScreenFlashView extends View {
      * {@code Window} instance hasn't been set.
      */
     @UiThread
-    @Nullable
-    public ScreenFlash getScreenFlash() {
+    public @Nullable ScreenFlash getScreenFlash() {
         return mScreenFlash;
     }
 

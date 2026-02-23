@@ -25,12 +25,12 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Lifecycle.Event;
 
+import kotlin.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import kotlin.Pair;
 
 /**
  * LifecycleRegistryOwner that extends FragmentActivity.

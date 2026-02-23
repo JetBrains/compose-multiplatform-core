@@ -100,18 +100,33 @@ private object ColorSpaceVerificationHelper {
                                 transferParams.d,
                                 transferParams.e,
                                 transferParams.f,
-                                transferParams.gamma
+                                transferParams.gamma,
                             )
                         } else {
                             null
                         }
+                    val transform = this.transform
                     if (androidTransferParams != null) {
-                        android.graphics.ColorSpace.Rgb(
-                            this.name,
-                            this.primaries,
-                            whitePointArray,
-                            androidTransferParams
-                        )
+                        val directColorSpace =
+                            android.graphics.ColorSpace.Rgb(
+                                this.name,
+                                this.primaries,
+                                whitePointArray,
+                                androidTransferParams,
+                            )
+                        if (transform[0].isNaN()) {
+                            directColorSpace
+                        } else {
+                            if (directColorSpace.transform.contentEquals(transform)) {
+                                directColorSpace
+                            } else {
+                                android.graphics.ColorSpace.Rgb(
+                                    this.name,
+                                    transform,
+                                    androidTransferParams,
+                                )
+                            }
+                        }
                     } else {
                         android.graphics.ColorSpace.Rgb(
                             this.name,
@@ -120,7 +135,7 @@ private object ColorSpaceVerificationHelper {
                             this.oetf,
                             this.eotf,
                             this.getMinValue(0),
-                            this.getMaxValue(0)
+                            this.getMaxValue(0),
                         )
                     }
                 } else {
@@ -177,7 +192,7 @@ private object ColorSpaceVerificationHelper {
                                 c = transferParams.c,
                                 d = transferParams.d,
                                 e = transferParams.e,
-                                f = transferParams.f
+                                f = transferParams.f,
                             )
                         } else {
                             null
@@ -192,7 +207,7 @@ private object ColorSpaceVerificationHelper {
                         min = this.getMinValue(0),
                         max = this.getMaxValue(0),
                         transferParameters = composeTransferParams,
-                        id = this.id
+                        id = this.id,
                     )
                 } else {
                     ColorSpaces.Srgb

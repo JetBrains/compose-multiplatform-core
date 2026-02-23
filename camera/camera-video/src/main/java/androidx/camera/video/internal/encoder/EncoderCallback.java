@@ -16,7 +16,7 @@
 
 package androidx.camera.video.internal.encoder;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The encoder callback event.

@@ -16,6 +16,10 @@
 
 package androidx.camera.video.internal;
 
+import static androidx.camera.video.internal.utils.MediaFormatExt.KEY_CSD_0;
+import static androidx.camera.video.internal.utils.MediaFormatExt.KEY_CSD_1;
+import static androidx.camera.video.internal.utils.MediaFormatExt.KEY_CSD_2;
+
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
@@ -23,13 +27,15 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.video.internal.compat.Api28Impl;
 import androidx.camera.video.internal.compat.Api31Impl;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,8 +64,7 @@ public final class DebugUtils {
      * @param time input time in microseconds.
      * @return the formatted string.
      */
-    @NonNull
-    public static String readableUs(long time) {
+    public static @NonNull String readableUs(long time) {
         return readableMs(TimeUnit.MICROSECONDS.toMillis(time));
     }
 
@@ -70,8 +75,7 @@ public final class DebugUtils {
      * @param time input time in milliseconds.
      * @return the formatted string.
      */
-    @NonNull
-    public static String readableMs(long time) {
+    public static @NonNull String readableMs(long time) {
         return formatInterval(time);
     }
 
@@ -81,9 +85,8 @@ public final class DebugUtils {
      * @param bufferInfo the {@link MediaCodec.BufferInfo}.
      * @return the formatted string.
      */
-    @NonNull
     @SuppressWarnings("ObjectToString")
-    public static String readableBufferInfo(@NonNull MediaCodec.BufferInfo bufferInfo) {
+    public static @NonNull String readableBufferInfo(MediaCodec.@NonNull BufferInfo bufferInfo) {
         StringBuilder sb = new StringBuilder();
         sb.append("Dump BufferInfo: " + bufferInfo.toString() + "\n");
         sb.append("\toffset: " + bufferInfo.offset + "\n");
@@ -127,9 +130,8 @@ public final class DebugUtils {
      * Dumps {@link MediaCodecInfo} of input {@link MediaCodecList} and support for input
      * {@link MediaFormat}.
      */
-    @NonNull
-    public static String dumpMediaCodecListForFormat(@NonNull MediaCodecList mediaCodecList,
-            @NonNull MediaFormat mediaFormat) {
+    public static @NonNull String dumpMediaCodecListForFormat(
+            @NonNull MediaCodecList mediaCodecList, @NonNull MediaFormat mediaFormat) {
         StringBuilder sb = new StringBuilder();
         logToString(sb, "[Start] Dump MediaCodecList for mediaFormat " + mediaFormat);
 
@@ -160,9 +162,8 @@ public final class DebugUtils {
     /**
      * Dumps {@link MediaCodecInfo.CodecCapabilities} and {@link MediaFormat}.
      */
-    @NonNull
-    public static String dumpCodecCapabilities(@NonNull String mimeType, @NonNull MediaCodec codec,
-            @NonNull MediaFormat mediaFormat) {
+    public static @NonNull String dumpCodecCapabilities(@NonNull String mimeType,
+            @NonNull MediaCodec codec, @NonNull MediaFormat mediaFormat) {
         StringBuilder sb = new StringBuilder();
         try {
             MediaCodecInfo.CodecCapabilities caps = codec.getCodecInfo().getCapabilitiesForType(
@@ -177,7 +178,7 @@ public final class DebugUtils {
     }
 
     private static void dumpCodecCapabilities(@NonNull StringBuilder sb,
-            @NonNull MediaCodecInfo.CodecCapabilities caps,
+            MediaCodecInfo.@NonNull CodecCapabilities caps,
             @NonNull MediaFormat mediaFormat) {
         try {
             logToString(sb,
@@ -219,7 +220,7 @@ public final class DebugUtils {
     }
 
     private static void dumpVideoCapabilities(@NonNull StringBuilder sb,
-            @NonNull MediaCodecInfo.VideoCapabilities caps,
+            MediaCodecInfo.@NonNull VideoCapabilities caps,
             @NonNull MediaFormat mediaFormat) {
         // Bitrate
         logToString(sb, VIDEO_CAPS_PREFIX + "getBitrateRange = " + caps.getBitrateRange());
@@ -285,7 +286,7 @@ public final class DebugUtils {
     }
 
     private static void dumpAudioCapabilities(@NonNull StringBuilder sb,
-            @NonNull MediaCodecInfo.AudioCapabilities caps,
+            MediaCodecInfo.@NonNull AudioCapabilities caps,
             @NonNull MediaFormat mediaFormat) {
         // Bitrate
         logToString(sb, AUDIO_CAPS_PREFIX + "getBitrateRange = " + caps.getBitrateRange());
@@ -317,7 +318,7 @@ public final class DebugUtils {
     }
 
     private static void dumpEncoderCapabilities(@NonNull StringBuilder sb,
-            @NonNull MediaCodecInfo.EncoderCapabilities caps,
+            MediaCodecInfo.@NonNull EncoderCapabilities caps,
             @NonNull MediaFormat mediaFormat) {
 
         logToString(sb, ENCODER_CAPS_PREFIX + "getComplexityRange = " + caps.getComplexityRange());
@@ -352,12 +353,58 @@ public final class DebugUtils {
         }
     }
 
-    @NonNull
-    private static String toString(@Nullable MediaCodecInfo.CodecProfileLevel codecProfileLevel) {
+    private static @NonNull String toString(
+            MediaCodecInfo.@Nullable CodecProfileLevel codecProfileLevel) {
         if (codecProfileLevel == null) {
             return "null";
         }
         return String.format("{level=%d, profile=%d}", codecProfileLevel.level,
                 codecProfileLevel.profile);
+    }
+
+    /** Converts the given byte array to a hex string. */
+    @NonNull
+    public static String bytesToHexString(byte @Nullable [] bytes) {
+        if (bytes == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+        return sb.toString().trim();
+    }
+
+    /** Converts the given ByteBuffer to a hex string. */
+    @NonNull
+    public static String byteBufferToHex(@Nullable ByteBuffer byteBuffer) {
+        if (byteBuffer == null) return "null";
+
+        int originalPosition = byteBuffer.position();
+        try {
+            byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes);
+            return bytesToHexString(bytes);
+        } finally {
+            byteBuffer.position(originalPosition);
+        }
+    }
+
+    /** Returns a string of CSD (Codec-Specific Data) in hex format from the given MediaFormat. */
+    @NonNull
+    public static String getCsdHex(@NonNull MediaFormat mediaFormat) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{");
+        // Always get csd-0 even if it is null.
+        builder.append(KEY_CSD_0).append(" = ")
+                .append(byteBufferToHex(mediaFormat.getByteBuffer(KEY_CSD_0)));
+        if (mediaFormat.containsKey(KEY_CSD_1)) {
+            builder.append(", ").append(KEY_CSD_1).append(" = ")
+                    .append(byteBufferToHex(mediaFormat.getByteBuffer(KEY_CSD_1)));
+        }
+        if (mediaFormat.containsKey(KEY_CSD_2)) {
+            builder.append(", ").append(KEY_CSD_2).append(" = ")
+                    .append(byteBufferToHex(mediaFormat.getByteBuffer(KEY_CSD_2)));
+        }
+        builder.append("}");
+        return builder.toString();
     }
 }

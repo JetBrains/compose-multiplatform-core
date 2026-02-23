@@ -18,10 +18,11 @@ package androidx.camera.video;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Class to provide the information of the output.
@@ -29,8 +30,7 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class OutputResults {
 
-    @NonNull
-    static OutputResults of(@NonNull Uri outputUri) {
+    static @NonNull OutputResults of(@NonNull Uri outputUri) {
         Preconditions.checkNotNull(outputUri, "OutputUri cannot be null.");
         return new AutoValue_OutputResults(outputUri);
     }
@@ -42,6 +42,5 @@ public abstract class OutputResults {
      * is implemented by {@link MediaStoreOutputOptions} or {@link FileOutputOptions}, otherwise
      * returns {@link Uri#EMPTY}.
      */
-    @NonNull
-    public abstract Uri getOutputUri();
+    public abstract @NonNull Uri getOutputUri();
 }

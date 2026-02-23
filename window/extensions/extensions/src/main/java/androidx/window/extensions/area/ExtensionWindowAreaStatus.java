@@ -18,8 +18,9 @@ package androidx.window.extensions.area;
 
 import android.util.DisplayMetrics;
 
-import androidx.annotation.NonNull;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to provide information around the current status of a window area feature.
@@ -41,6 +42,5 @@ public interface ExtensionWindowAreaStatus {
      * interacts with. This is converted to size class information provided to developers.
      */
     @RequiresVendorApiLevel(level = 3)
-    @NonNull
-    DisplayMetrics getWindowAreaDisplayMetrics();
+    @NonNull DisplayMetrics getWindowAreaDisplayMetrics();
 }

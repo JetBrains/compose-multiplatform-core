@@ -19,6 +19,7 @@ package androidx.compose.ui.text.input
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.internal.requirePrecondition
 
 /**
  * The editing buffer
@@ -35,7 +36,7 @@ class EditingBuffer(
      * selection must points the valid index of the initialText, otherwise IndexOutOfBoundsException
      * will be thrown.
      */
-    selection: TextRange
+    selection: TextRange,
 ) {
     internal companion object {
         internal const val NOWHERE = -1
@@ -46,14 +47,18 @@ class EditingBuffer(
     /** The inclusive selection start offset */
     internal var selectionStart = selection.min
         private set(value) {
-            require(value >= 0) { "Cannot set selectionStart to a negative value: $value" }
+            requirePrecondition(value >= 0) {
+                "Cannot set selectionStart to a negative value: $value"
+            }
             field = value
         }
 
     /** The exclusive selection end offset */
     internal var selectionEnd = selection.max
         private set(value) {
-            require(value >= 0) { "Cannot set selectionEnd to a negative value: $value" }
+            requirePrecondition(value >= 0) {
+                "Cannot set selectionEnd to a negative value: $value"
+            }
             field = value
         }
 
@@ -113,7 +118,7 @@ class EditingBuffer(
 
     internal constructor(
         text: String,
-        selection: TextRange
+        selection: TextRange,
     ) : this(AnnotatedString(text), selection)
 
     init {

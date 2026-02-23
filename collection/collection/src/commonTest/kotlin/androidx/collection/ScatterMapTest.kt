@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -31,7 +32,9 @@ class ScatterMapTest {
     @Test
     fun scatterMap() {
         val map = MutableScatterMap<String, String>()
-        assertEquals(7, map.capacity)
+        if (!isJs()) {
+            assertEquals(7, map.capacity)
+        }
         assertEquals(0, map.size)
     }
 
@@ -47,7 +50,9 @@ class ScatterMapTest {
     @Test
     fun scatterMapFunction() {
         val map = mutableScatterMapOf<String, String>()
-        assertEquals(7, map.capacity)
+        if (!isJs()) {
+            assertEquals(7, map.capacity)
+        }
         assertEquals(0, map.size)
     }
 
@@ -63,7 +68,9 @@ class ScatterMapTest {
         // When unloading the suggested capacity, we'll fall outside of the
         // expected bucket of 2047 entries, and we'll get 4095 instead
         val map = MutableScatterMap<String, String>(1800)
-        assertEquals(4095, map.capacity)
+        if (!isJs()) {
+            assertEquals(4095, map.capacity)
+        }
         assertEquals(0, map.size)
     }
 
@@ -73,6 +80,58 @@ class ScatterMapTest {
         assertEquals(2, map.size)
         assertEquals("World", map["Hello"])
         assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun mutableScatterMapFromMap() {
+        val from = mapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toMutableScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun mutableScatterMapFromScatterMap() {
+        val from = mutableScatterMapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toMutableScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromMap() {
+        val from = mapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromScatterMap() {
+        val from = mutableScatterMapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = from.toScatterMap()
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun scatterMapFromEmptyMap() {
+        val from = mapOf<String, String>()
+        val map = from.toScatterMap()
+        assertEquals(0, map.size)
+        assertSame(emptyScatterMap<String, String>(), map)
+    }
+
+    @Test
+    fun scatterMapFromEmptyScatterMap() {
+        val from = mutableScatterMapOf<String, String>()
+        val map = from.toScatterMap()
+        assertEquals(0, map.size)
+        assertSame(emptyScatterMap<String, String>(), map)
     }
 
     @Test
@@ -106,7 +165,9 @@ class ScatterMapTest {
         map["Hello"] = "World"
 
         assertEquals(1, map.size)
-        assertEquals(7, map.capacity)
+        if (!isJs()) {
+            assertEquals(7, map.capacity)
+        }
         assertEquals("World", map["Hello"])
     }
 
@@ -421,6 +482,9 @@ class ScatterMapTest {
 
     @Test
     fun removeDoesNotCauseGrowthOnInsert() {
+        // JS does not track capacity.
+        if (isJs()) return
+
         val map = MutableScatterMap<String, String>(10) // Must be > GroupWidth (8)
         assertEquals(15, map.capacity)
 
@@ -679,27 +743,28 @@ class ScatterMapTest {
             "${order[0]}=${order[0].toFloat()}, ${order[1]}=${order[1].toFloat()}, " +
                 "${order[2]}=${order[2].toFloat()}, ${order[3]}=${order[3].toFloat()}, " +
                 "${order[4]}=${order[4].toFloat()}",
-            map.joinToString()
+            map.joinToString(),
         )
         assertEquals(
             "x${order[0]}=${order[0].toFloat()}, ${order[1]}=${order[1].toFloat()}, " +
-                "${order[2]}=${order[2].toFloat()}...",
-            map.joinToString(prefix = "x", postfix = "y", limit = 3)
+                "${order[2]}=${order[2].toFloat()}, ...y",
+            map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${order[0]}=${order[0].toFloat()}-${order[1]}=${order[1].toFloat()}-" +
                 "${order[2]}=${order[2].toFloat()}-${order[3]}=${order[3].toFloat()}-" +
                 "${order[4]}=${order[4].toFloat()}<",
-            map.joinToString(separator = "-", prefix = ">", postfix = "<")
+            map.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            map.joinToString(limit = 3) { key, _ -> names[key] }
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
+            map.joinToString(limit = 3) { key, _ -> names[key] },
         )
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableScatterMap<String?, String?>()
         map["Hello"] = "World"
@@ -1107,6 +1172,15 @@ class ScatterMapTest {
         map["Bonjour"] = "Monde"
         map["Hallo"] = "Welt"
 
+        // Capture the first value for assertion below. Iteration order is non-deterministic
+        // across platforms, but self-consistent across mechanisms.
+        var firstValue: String? = null
+        map.forEachValue { value ->
+            if (firstValue == null) {
+                firstValue = value
+            }
+        }
+
         val mutableMap = map.asMutableMap()
         val values = mutableMap.values
 
@@ -1116,13 +1190,12 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = values.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())
-        assertEquals("Monde", iterator.next())
+        assertEquals(firstValue, iterator.next())
         iterator.remove()
         assertEquals(2, map.size)
 
@@ -1206,6 +1279,15 @@ class ScatterMapTest {
         map["Bonjour"] = "Monde"
         map["Hallo"] = "Welt"
 
+        // Capture the first key for assertion below. Iteration order is non-deterministic
+        // across platforms, but self-consistent across mechanisms.
+        var firstKey: String? = null
+        map.forEachKey { key ->
+            if (firstKey == null) {
+                firstKey = key
+            }
+        }
+
         val mutableMap = map.asMutableMap()
         val keys = mutableMap.keys
 
@@ -1215,13 +1297,12 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = keys.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())
-        assertEquals("Bonjour", iterator.next())
+        assertEquals(firstKey, iterator.next())
         iterator.remove()
         assertEquals(2, map.size)
 
@@ -1326,7 +1407,7 @@ class ScatterMapTest {
                 listOf(
                     MutableMapEntry("Hello", "World"),
                     MutableMapEntry("Bonjour", "Monde"),
-                    MutableMapEntry("Hallo", "Welt")
+                    MutableMapEntry("Hallo", "Welt"),
                 )
             )
         )
@@ -1337,19 +1418,13 @@ class ScatterMapTest {
                 listOf(
                     MutableMapEntry("Hello", "World"),
                     MutableMapEntry("Bonjour", "Le Monde"),
-                    MutableMapEntry("Hallo", "Welt")
+                    MutableMapEntry("Hallo", "Welt"),
                 )
             )
         )
         assertEquals(2, map.size)
 
-        assertTrue(
-            entries.retainAll(
-                listOf(
-                    MutableMapEntry("Hello", "World"),
-                )
-            )
-        )
+        assertTrue(entries.retainAll(listOf(MutableMapEntry("Hello", "World"))))
         assertEquals(1, map.size)
 
         entries.clear()
@@ -1363,6 +1438,15 @@ class ScatterMapTest {
         map["Bonjour"] = "Monde"
         map["Hallo"] = "Welt"
 
+        // Capture the first entry for assertion below. Iteration order is non-deterministic
+        // across platforms, but self-consistent across mechanisms.
+        var firstEntry: Pair<String, String>? = null
+        map.forEach { key, value ->
+            if (firstEntry == null) {
+                firstEntry = key to value
+            }
+        }
+
         val mutableMap = map.asMutableMap()
         val entries = mutableMap.entries
 
@@ -1372,15 +1456,14 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = entries.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())
         val next = iterator.next()
-        assertEquals("Bonjour", next.key)
-        assertEquals("Monde", next.value)
+        assertEquals(firstEntry!!.first, next.key)
+        assertEquals(firstEntry.second, next.value)
         iterator.remove()
         assertEquals(2, map.size)
 
@@ -1398,7 +1481,86 @@ class ScatterMapTest {
     }
 
     @Test
+    @JsName("jsAsMapEquals")
+    fun asMapEquals() {
+        val map = MutableScatterMap<String?, String?>()
+        map["Hello"] = "World"
+        map[null] = "Monde"
+        map["Bonjour"] = null
+
+        assertFalse(map.asMap().equals(null))
+        assertFalse(map.asMutableMap().equals(null))
+        assertEquals(map.asMap(), map.asMap())
+        assertEquals(map.asMutableMap(), map.asMutableMap())
+
+        val map2 = MutableScatterMap<String?, String?>()
+        map2["Bonjour"] = null
+        map2[null] = "Monde"
+
+        assertNotEquals(map.asMap(), map2.asMap())
+        assertNotEquals(map.asMutableMap(), map2.asMutableMap())
+
+        map2["Hello"] = "World"
+        assertEquals(map.asMap(), map2.asMap())
+        assertEquals(map.asMutableMap(), map2.asMutableMap())
+    }
+
+    @Test
+    fun asMapToString() {
+        val map = MutableScatterMap<String?, String?>()
+        assertEquals("{}", map.asMap().toString())
+        assertEquals("{}", map.asMutableMap().toString())
+
+        map["Hello"] = "World"
+        map["Bonjour"] = "Monde"
+        assertTrue(
+            "{Hello=World, Bonjour=Monde}" == map.asMap().toString() ||
+                "{Bonjour=Monde, Hello=World}" == map.asMap().toString()
+        )
+        assertTrue(
+            "{Hello=World, Bonjour=Monde}" == map.asMutableMap().toString() ||
+                "{Bonjour=Monde, Hello=World}" == map.asMutableMap().toString()
+        )
+
+        map.clear()
+        map["Hello"] = null
+        assertEquals("{Hello=null}", map.asMap().toString())
+        assertEquals("{Hello=null}", map.asMutableMap().toString())
+
+        map.clear()
+        map[null] = "Monde"
+        assertEquals("{null=Monde}", map.asMap().toString())
+        assertEquals("{null=Monde}", map.asMutableMap().toString())
+
+        val selfAsKeyMap = MutableScatterMap<Any, String>()
+        selfAsKeyMap[selfAsKeyMap] = "Hello"
+        assertEquals("{(this)=Hello}", selfAsKeyMap.asMap().toString())
+        assertEquals("{(this)=Hello}", selfAsKeyMap.asMutableMap().toString())
+
+        val selfAsValueMap = MutableScatterMap<String, Any>()
+        selfAsValueMap["Hello"] = selfAsValueMap
+        assertEquals("{Hello=(this)}", selfAsValueMap.asMap().toString())
+        assertEquals("{Hello=(this)}", selfAsValueMap.asMutableMap().toString())
+
+        // Test with a small map
+        val map2 = MutableScatterMap<String?, String?>(2)
+        map2["Hello"] = "World"
+        map2["Bonjour"] = "Monde"
+        assertTrue(
+            "{Hello=World, Bonjour=Monde}" == map2.asMap().toString() ||
+                "{Bonjour=Monde, Hello=World}" == map2.asMap().toString()
+        )
+        assertTrue(
+            "{Hello=World, Bonjour=Monde}" == map2.asMutableMap().toString() ||
+                "{Bonjour=Monde, Hello=World}" == map2.asMutableMap().toString()
+        )
+    }
+
+    @Test
     fun trim() {
+        // Trim is not supported on JS.
+        if (isJs()) return
+
         val map = MutableScatterMap<String, String>()
         assertEquals(7, map.trim())
 
@@ -1470,7 +1632,9 @@ class ScatterMapTest {
             }
         }
 
-        assertEquals(127, map.capacity)
+        if (!isJs()) {
+            assertEquals(127, map.capacity)
+        }
         for (i in 0..100) {
             assertTrue(map.contains(i), "Map should contain element $i")
         }

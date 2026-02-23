@@ -21,8 +21,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to exercise Restricted Content blocking functionality.
@@ -36,6 +37,7 @@ public class RestrictedContentActivity extends AppCompatActivity {
 
     private void setupLayout() {
         setContentView(R.layout.activity_restricted_content);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(R.string.restricted_content_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 

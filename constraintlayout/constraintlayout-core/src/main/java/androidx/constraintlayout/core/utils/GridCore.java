@@ -18,12 +18,13 @@ package androidx.constraintlayout.core.utils;
 
 import static androidx.constraintlayout.core.widgets.ConstraintWidget.DimensionBehaviour.MATCH_CONSTRAINT;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.constraintlayout.core.LinearSystem;
 import androidx.constraintlayout.core.widgets.ConstraintWidget;
 import androidx.constraintlayout.core.widgets.ConstraintWidgetContainer;
 import androidx.constraintlayout.core.widgets.VirtualLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -181,8 +182,8 @@ public class GridCore extends VirtualLayout {
      *
      * @return the parent ConstraintWidgetContainer
      */
-    @Nullable
-    public ConstraintWidgetContainer getContainer() {
+    @SuppressWarnings("GetterSetterNullability")
+    public @Nullable ConstraintWidgetContainer getContainer() {
         return mContainer;
     }
 
@@ -278,8 +279,8 @@ public class GridCore extends VirtualLayout {
      *
      * @return the string value of rowWeights
      */
-    @Nullable
-    public String getRowWeights() {
+    @SuppressWarnings("GetterSetterNullability")
+    public @Nullable String getRowWeights() {
         return mRowWeights;
     }
 
@@ -301,8 +302,8 @@ public class GridCore extends VirtualLayout {
      *
      * @return the string value of columnWeights
      */
-    @Nullable
-    public String getColumnWeights() {
+    @SuppressWarnings("GetterSetterNullability")
+    public @Nullable String getColumnWeights() {
         return mColumnWeights;
     }
 

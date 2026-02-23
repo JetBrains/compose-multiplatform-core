@@ -18,8 +18,9 @@ package androidx.appsearch.safeparcel;
 
 import android.os.Parcel;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implements {@link SafeParcelable}.

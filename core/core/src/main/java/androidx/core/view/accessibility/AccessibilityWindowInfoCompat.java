@@ -27,18 +27,17 @@ import android.os.SystemClock;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.os.LocaleListCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing {@link android.view.accessibility.AccessibilityWindowInfo}.
  */
 public class AccessibilityWindowInfoCompat {
-    private final Object mInfo;
-
-    private static final int UNDEFINED = -1;
+    private final AccessibilityWindowInfo mInfo;
 
     /**
      * Window type: This is an application window. Such a window shows UI for
@@ -89,7 +88,7 @@ public class AccessibilityWindowInfoCompat {
      * @param object The info to wrap.
      * @return A wrapper for if the object is not null, null otherwise.
      */
-    static AccessibilityWindowInfoCompat wrapNonNullInstance(Object object) {
+    static AccessibilityWindowInfoCompat wrapNonNullInstance(AccessibilityWindowInfo object) {
         if (object != null) {
             return new AccessibilityWindowInfoCompat(object);
         }
@@ -115,7 +114,7 @@ public class AccessibilityWindowInfoCompat {
         }
     }
 
-    private AccessibilityWindowInfoCompat(Object info) {
+    private AccessibilityWindowInfoCompat(AccessibilityWindowInfo info) {
         mInfo = info;
     }
 
@@ -129,11 +128,7 @@ public class AccessibilityWindowInfoCompat {
      * @see #TYPE_ACCESSIBILITY_OVERLAY
      */
     public int getType() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getType((AccessibilityWindowInfo) mInfo);
-        } else {
-            return UNDEFINED;
-        }
+        return mInfo.getType();
     }
 
     /**
@@ -143,11 +138,7 @@ public class AccessibilityWindowInfoCompat {
      * @return The window layer.
      */
     public int getLayer() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getLayer((AccessibilityWindowInfo) mInfo);
-        } else {
-            return UNDEFINED;
-        }
+        return mInfo.getLayer();
     }
 
     /**
@@ -155,14 +146,8 @@ public class AccessibilityWindowInfoCompat {
      *
      * @return The root node.
      */
-    @Nullable
-    public AccessibilityNodeInfoCompat getRoot() {
-        if (SDK_INT >= 21) {
-            return AccessibilityNodeInfoCompat.wrapNonNullInstance(
-                    Api21Impl.getRoot((AccessibilityWindowInfo) mInfo));
-        } else {
-            return null;
-        }
+    public @Nullable AccessibilityNodeInfoCompat getRoot() {
+        return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getRoot());
     }
 
     /**
@@ -173,8 +158,7 @@ public class AccessibilityWindowInfoCompat {
      *
      * @see AccessibilityNodeInfoCompat#getParent(int) for a description of prefetching.
      */
-    @Nullable
-    public AccessibilityNodeInfoCompat getRoot(int prefetchingStrategy) {
+    public @Nullable AccessibilityNodeInfoCompat getRoot(int prefetchingStrategy) {
         if (Build.VERSION.SDK_INT >= 33) {
             return Api33Impl.getRoot(mInfo, prefetchingStrategy);
         }
@@ -203,13 +187,8 @@ public class AccessibilityWindowInfoCompat {
      *
      * @return The parent window.
      */
-    @Nullable
-    public AccessibilityWindowInfoCompat getParent() {
-        if (SDK_INT >= 21) {
-            return wrapNonNullInstance(Api21Impl.getParent((AccessibilityWindowInfo) mInfo));
-        } else {
-            return null;
-        }
+    public @Nullable AccessibilityWindowInfoCompat getParent() {
+        return wrapNonNullInstance(((AccessibilityWindowInfo) mInfo).getParent());
     }
 
     /**
@@ -218,11 +197,7 @@ public class AccessibilityWindowInfoCompat {
      * @return windowId The window id.
      */
     public int getId() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getId((AccessibilityWindowInfo) mInfo);
-        } else {
-            return UNDEFINED;
-        }
+        return mInfo.getId();
     }
 
     /**
@@ -239,9 +214,9 @@ public class AccessibilityWindowInfoCompat {
     public void getRegionInScreen(@NonNull Region outRegion) {
         if (SDK_INT >= 33) {
             Api33Impl.getRegionInScreen((AccessibilityWindowInfo) mInfo, outRegion);
-        } else if (SDK_INT >= 21) {
+        } else {
             Rect outBounds = new Rect();
-            Api21Impl.getBoundsInScreen((AccessibilityWindowInfo) mInfo, outBounds);
+            mInfo.getBoundsInScreen(outBounds);
             outRegion.set(outBounds);
         }
     }
@@ -257,9 +232,7 @@ public class AccessibilityWindowInfoCompat {
      * @param outBounds The out window bounds.
      */
     public void getBoundsInScreen(@NonNull Rect outBounds) {
-        if (SDK_INT >= 21) {
-            Api21Impl.getBoundsInScreen((AccessibilityWindowInfo) mInfo, outBounds);
-        }
+        mInfo.getBoundsInScreen(outBounds);
     }
 
     /**
@@ -270,11 +243,7 @@ public class AccessibilityWindowInfoCompat {
      * @return Whether this is the active window.
      */
     public boolean isActive() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.isActive((AccessibilityWindowInfo) mInfo);
-        } else {
-            return true;
-        }
+        return mInfo.isActive();
     }
 
     /**
@@ -283,11 +252,7 @@ public class AccessibilityWindowInfoCompat {
      * @return Whether has input focus.
      */
     public boolean isFocused() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.isFocused((AccessibilityWindowInfo) mInfo);
-        } else {
-            return true;
-        }
+        return mInfo.isFocused();
     }
 
     /**
@@ -296,11 +261,7 @@ public class AccessibilityWindowInfoCompat {
      * @return Whether has accessibility focus.
      */
     public boolean isAccessibilityFocused() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.isAccessibilityFocused((AccessibilityWindowInfo) mInfo);
-        } else {
-            return true;
-        }
+        return mInfo.isAccessibilityFocused();
     }
 
     /**
@@ -309,11 +270,7 @@ public class AccessibilityWindowInfoCompat {
      * @return The child count.
      */
     public int getChildCount() {
-        if (SDK_INT >= 21) {
-            return Api21Impl.getChildCount((AccessibilityWindowInfo) mInfo);
-        } else {
-            return 0;
-        }
+        return mInfo.getChildCount();
     }
 
     /**
@@ -322,13 +279,8 @@ public class AccessibilityWindowInfoCompat {
      * @param index The index.
      * @return The child.
      */
-    @Nullable
-    public AccessibilityWindowInfoCompat getChild(int index) {
-        if (SDK_INT >= 21) {
-            return wrapNonNullInstance(Api21Impl.getChild((AccessibilityWindowInfo) mInfo, index));
-        } else {
-            return null;
-        }
+    public @Nullable AccessibilityWindowInfoCompat getChild(int index) {
+        return wrapNonNullInstance(mInfo.getChild(index));
     }
 
     /**
@@ -390,8 +342,7 @@ public class AccessibilityWindowInfoCompat {
      * @return The title of the window, or the application label for the window if no title was
      * explicitly set, or {@code null} if neither is available.
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         if (SDK_INT >= 24) {
             return Api24Impl.getTitle((AccessibilityWindowInfo) mInfo);
         } else {
@@ -404,8 +355,7 @@ public class AccessibilityWindowInfoCompat {
      *
      * @return The anchor node, or {@code null} if none exists.
      */
-    @Nullable
-    public AccessibilityNodeInfoCompat getAnchor() {
+    public @Nullable AccessibilityNodeInfoCompat getAnchor() {
         if (SDK_INT >= 24) {
             return AccessibilityNodeInfoCompat.wrapNonNullInstance(
                     Api24Impl.getAnchor((AccessibilityWindowInfo) mInfo));
@@ -420,13 +370,8 @@ public class AccessibilityWindowInfoCompat {
      *
      * @return An instance.
      */
-    @Nullable
-    public static AccessibilityWindowInfoCompat obtain() {
-        if (SDK_INT >= 21) {
-            return wrapNonNullInstance(Api21Impl.obtain());
-        } else {
-            return null;
-        }
+    public static @Nullable AccessibilityWindowInfoCompat obtain() {
+        return wrapNonNullInstance(AccessibilityWindowInfo.obtain());
     }
 
     /**
@@ -437,17 +382,11 @@ public class AccessibilityWindowInfoCompat {
      * @param info The other info.
      * @return An instance.
      */
-    @Nullable
-    public static AccessibilityWindowInfoCompat obtain(
+    public static @Nullable AccessibilityWindowInfoCompat obtain(
             @Nullable AccessibilityWindowInfoCompat info) {
-        if (SDK_INT >= 21) {
-            return info == null
-                    ? null
-                    : wrapNonNullInstance(
-                            Api21Impl.obtain((AccessibilityWindowInfo) info.mInfo));
-        } else {
-            return null;
-        }
+        return info == null
+                ? null
+                : wrapNonNullInstance(AccessibilityWindowInfo.obtain(info.mInfo));
     }
 
     /**
@@ -464,13 +403,8 @@ public class AccessibilityWindowInfoCompat {
     /**
      * @return The unwrapped {@link android.view.accessibility.AccessibilityWindowInfo}.
      */
-    @Nullable
-    public AccessibilityWindowInfo unwrap() {
-        if (SDK_INT >= 21) {
-            return (AccessibilityWindowInfo) mInfo;
-        } else {
-            return null;
-        }
+    public @Nullable AccessibilityWindowInfo unwrap() {
+        return mInfo;
     }
 
     @Override
@@ -496,9 +430,8 @@ public class AccessibilityWindowInfoCompat {
         return mInfo.equals(other.mInfo);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder builder = new StringBuilder();
         Rect bounds = new Rect();
         getBoundsInScreen(bounds);
@@ -533,65 +466,6 @@ public class AccessibilityWindowInfoCompat {
             }
             default:
                 return "<UNKNOWN>";
-        }
-    }
-
-    @RequiresApi(21)
-    private static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static void getBoundsInScreen(AccessibilityWindowInfo info, Rect outBounds) {
-            info.getBoundsInScreen(outBounds);
-        }
-
-        static AccessibilityWindowInfo getChild(AccessibilityWindowInfo info, int index) {
-            return info.getChild(index);
-        }
-
-        static int getChildCount(AccessibilityWindowInfo info) {
-            return info.getChildCount();
-        }
-
-        static int getId(AccessibilityWindowInfo info) {
-            return info.getId();
-        }
-
-        static int getLayer(AccessibilityWindowInfo info) {
-            return info.getLayer();
-        }
-
-        static AccessibilityWindowInfo getParent(AccessibilityWindowInfo info) {
-            return info.getParent();
-        }
-
-        static AccessibilityNodeInfo getRoot(AccessibilityWindowInfo info) {
-            return info.getRoot();
-        }
-
-        static int getType(AccessibilityWindowInfo info) {
-            return info.getType();
-        }
-
-        static boolean isAccessibilityFocused(AccessibilityWindowInfo info) {
-            return info.isAccessibilityFocused();
-        }
-
-        static boolean isActive(AccessibilityWindowInfo info) {
-            return info.isActive();
-        }
-
-        static boolean isFocused(AccessibilityWindowInfo info) {
-            return info.isFocused();
-        }
-
-        static AccessibilityWindowInfo obtain() {
-            return AccessibilityWindowInfo.obtain();
-        }
-
-        static AccessibilityWindowInfo obtain(AccessibilityWindowInfo info) {
-            return AccessibilityWindowInfo.obtain(info);
         }
     }
 

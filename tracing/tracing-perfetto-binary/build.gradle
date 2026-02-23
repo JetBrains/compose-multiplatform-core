@@ -15,19 +15,17 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.AndroidXConfig
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
 }
 
 /**
@@ -66,23 +64,28 @@ if (reusePrebuiltsAar) {
 }
 
 android {
-    if (reusePrebuiltsAar) {
-        sourceSets {
-            main.jniLibs.srcDirs += new File(unzippedPrebuiltsAarDir, "jni")
-        }
-    } else { // build .so files from scratch
+    // build .so files from scratch
+    if (!reusePrebuiltsAar) {
         externalNativeBuild {
             cmake {
                 path "src/main/cpp/CMakeLists.txt"
-                version libs.versions.cmake.get()
+                version = libs.versions.cmake.get()
             }
         }
     }
-    namespace "androidx.tracing.perfetto.binary"
+    namespace = "androidx.tracing.perfetto.binary"
+}
+
+if (reusePrebuiltsAar) {
+    androidComponents {
+        def jniLibsPath = new File(unzippedPrebuiltsAarDir, "jni").absolutePath
+        onVariants(selector().all()) { variant ->
+            variant.sources.jniLibs.addStaticSourceDirectory(jniLibsPath)
+        }
+    }
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(project(":benchmark:benchmark-common")) // for supported ABI checks
@@ -90,7 +93,7 @@ dependencies {
 
 androidx {
     name = "Tracing Perfetto Binary"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides native binaries required by AndroidX Tracing: Perfetto SDK " +
         "and is not intended to be used outside of that context."

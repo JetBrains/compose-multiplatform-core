@@ -34,14 +34,15 @@ import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
 import androidx.concurrent.futures.ResolvableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -72,15 +73,15 @@ import java.util.Objects;
  */
 public final class ProfileVerifier {
     private static final String REF_PROFILES_BASE_DIR = "/data/misc/profiles/ref/";
-    private static final String CUR_PROFILES_BASE_DIR = "/data/misc/profiles/cur/0/";
+    private static final String CUR_PROFILES_BASE_DIR = "/data/misc/profiles/cur/"
+            + UserInfo.getCurrentUserId() + "/";
     private static final String PROFILE_FILE_NAME = "primary.prof";
     private static final String PROFILE_INSTALLED_CACHE_FILE_NAME = "profileInstalled";
     private static final ResolvableFuture<CompilationStatus> sFuture = ResolvableFuture.create();
     private static final Object SYNC_OBJ = new Object();
     private static final String TAG = "ProfileVerifier";
 
-    @Nullable
-    private static CompilationStatus sCompilationStatus = null;
+    private static @Nullable CompilationStatus sCompilationStatus = null;
 
     private ProfileVerifier() {
     }
@@ -96,8 +97,7 @@ public final class ProfileVerifier {
      * {@link CompilationStatus} obtained through {@link #getCompilationStatusAsync()}.
      */
     @WorkerThread
-    @NonNull
-    public static CompilationStatus writeProfileVerification(@NonNull Context context
+    public static @NonNull CompilationStatus writeProfileVerification(@NonNull Context context
     ) {
         return writeProfileVerification(context, false);
     }
@@ -116,10 +116,9 @@ public final class ProfileVerifier {
      * @return the {@link CompilationStatus} of the app profile. Note that this is the same
      * {@link CompilationStatus} obtained through {@link #getCompilationStatusAsync()}.
      */
-    @NonNull
     @WorkerThread
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    static CompilationStatus writeProfileVerification(
+    static @NonNull CompilationStatus writeProfileVerification(
             @NonNull Context context,
             boolean forceVerifyCurrentProfile
     ) {
@@ -336,8 +335,7 @@ public final class ProfileVerifier {
      *
      * @return A future containing the {@link CompilationStatus}.
      */
-    @NonNull
-    public static ListenableFuture<CompilationStatus> getCompilationStatusAsync() {
+    public static @NonNull ListenableFuture<CompilationStatus> getCompilationStatusAsync() {
         return sFuture;
     }
 

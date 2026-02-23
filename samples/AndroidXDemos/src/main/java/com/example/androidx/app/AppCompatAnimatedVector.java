@@ -25,7 +25,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.androidx.R;
 
-
 public class AppCompatAnimatedVector extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

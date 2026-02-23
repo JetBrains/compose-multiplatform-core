@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.requirePrecondition
 import androidx.collection.internal.throwNoSuchElementException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -52,12 +57,7 @@ public fun longIntMapOf(key1: Long, value1: Int): LongIntMap =
  * Returns a new [LongIntMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun longIntMapOf(
-    key1: Long,
-    value1: Int,
-    key2: Long,
-    value2: Int,
-): LongIntMap =
+public fun longIntMapOf(key1: Long, value1: Int, key2: Long, value2: Int): LongIntMap =
     MutableLongIntMap().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -210,6 +210,36 @@ public fun mutableLongIntMapOf(
         map[key4] = value4
         map[key5] = value5
     }
+
+/**
+ * Builds a new [LongIntMap] by populating a [MutableLongIntMap] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableLongIntMap] can be populated.
+ */
+public inline fun buildLongIntMap(builderAction: MutableLongIntMap.() -> Unit): LongIntMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongIntMap().apply(builderAction)
+}
+
+/**
+ * Builds a new [LongIntMap] by populating a [MutableLongIntMap] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableLongIntMap] can be populated.
+ */
+public inline fun buildLongIntMap(
+    initialCapacity: Int,
+    builderAction: MutableLongIntMap.() -> Unit,
+): LongIntMap {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongIntMap(initialCapacity).apply(builderAction)
+}
 
 /**
  * [LongIntMap] is a container with a [Map]-like interface for [Long] primitive keys and [Int]
@@ -390,13 +420,13 @@ public sealed class LongIntMap {
         return count
     }
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
-    public operator fun contains(key: Long): Boolean = findKeyIndex(key) >= 0
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
+    public inline operator fun contains(key: Long): Boolean = containsKey(key)
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
     public fun containsKey(key: Long): Boolean = findKeyIndex(key) >= 0
 
-    /** Returns true if the specified [value] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [value] is present in this map, false otherwise. */
     public fun containsValue(value: Int): Boolean {
         forEachValue { v -> if (value == v) return true }
         return false
@@ -419,19 +449,21 @@ public sealed class LongIntMap {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -451,20 +483,22 @@ public sealed class LongIntMap {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Long, value: Int) -> CharSequence
+        crossinline transform: (key: Long, value: Int) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongIntMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongIntMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -501,7 +535,8 @@ public sealed class LongIntMap {
         }
 
         forEach { key, value ->
-            if (value != other[key]) {
+            val index = other.findKeyIndex(key)
+            if (index < 0 || value != other.values[index]) {
                 return false
             }
         }

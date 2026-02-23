@@ -19,8 +19,9 @@ package androidx.appsearch.compiler;
 import static androidx.appsearch.compiler.CodegenUtils.createNewArrayExpr;
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
+import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
+import static androidx.room.compiler.processing.compat.XConverters.toJavac;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.DocumentPropertyAnnotation;
@@ -29,18 +30,17 @@ import androidx.appsearch.compiler.annotationwrapper.MetadataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.SerializerClass;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
+import androidx.room.compiler.codegen.XTypeName;
+import androidx.room.compiler.processing.XProcessingEnv;
+import androidx.room.compiler.processing.XType;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.WildcardTypeName;
 
-import javax.annotation.processing.ProcessingEnvironment;
+import org.jspecify.annotations.NonNull;
+
 import javax.lang.model.element.Modifier;
-import javax.lang.model.type.PrimitiveType;
-import javax.lang.model.type.TypeMirror;
 
 /**
  * Generates java code for a translator from an instance of a class annotated with
@@ -48,21 +48,21 @@ import javax.lang.model.type.TypeMirror;
  * {@link androidx.appsearch.app.GenericDocument}.
  */
 class ToGenericDocumentCodeGenerator {
-    private final ProcessingEnvironment mEnv;
+    private final XProcessingEnv mEnv;
     private final IntrospectionHelper mHelper;
     private final DocumentModel mModel;
 
     private ToGenericDocumentCodeGenerator(
-            @NonNull ProcessingEnvironment env, @NonNull DocumentModel model) {
+            @NonNull XProcessingEnv env, @NonNull DocumentModel model) {
         mEnv = env;
         mHelper = new IntrospectionHelper(env);
         mModel = model;
     }
 
     public static void generate(
-            @NonNull ProcessingEnvironment env,
+            @NonNull XProcessingEnv env,
             @NonNull DocumentModel model,
-            @NonNull TypeSpec.Builder classBuilder) {
+            TypeSpec.@NonNull Builder classBuilder) {
         new ToGenericDocumentCodeGenerator(env, model).generate(classBuilder);
     }
 
@@ -74,17 +74,17 @@ class ToGenericDocumentCodeGenerator {
         // Method header
         MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("toGenericDocument")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(GENERIC_DOCUMENT_CLASS)
+                .returns(toJavaPoet(GENERIC_DOCUMENT_CLASS))
                 .addAnnotation(Override.class)
-                .addParameter(ClassName.get(mModel.getClassElement()), "document")
-                .addException(APPSEARCH_EXCEPTION_CLASS);
+                .addParameter(toJavaPoet(mModel.getClassElement().asClassName()), "document")
+                .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS));
 
         // Construct a new GenericDocument.Builder with the namespace, id, and schema type
         methodBuilder.addStatement("$T builder =\nnew $T<>($L, $L, SCHEMA_NAME)",
-                ParameterizedTypeName.get(
-                        GENERIC_DOCUMENT_CLASS.nestedClass("Builder"),
-                        WildcardTypeName.subtypeOf(Object.class)),
-                GENERIC_DOCUMENT_CLASS.nestedClass("Builder"),
+                toJavaPoet(
+                        GENERIC_DOCUMENT_CLASS.nestedClass("Builder")
+                                .parametrizedBy(XTypeName.ANY_WILDCARD)),
+                toJavaPoet(GENERIC_DOCUMENT_CLASS.nestedClass("Builder")),
                 createReadExpr(mModel.getNamespaceAnnotatedGetterOrField()),
                 createReadExpr(mModel.getIdAnnotatedGetterOrField()));
 
@@ -133,7 +133,7 @@ class ToGenericDocumentCodeGenerator {
     private CodeBlock codeToCopyIntoGenericDoc(
             @NonNull MetadataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        if (getterOrField.getJvmType() instanceof PrimitiveType) {
+        if (getterOrField.getJvmType().asTypeName().isPrimitive()) {
             // Directly set it
             return CodeBlock.builder()
                     .addStatement("builder.$N($L)",
@@ -165,10 +165,10 @@ class ToGenericDocumentCodeGenerator {
         //       care of unboxing and widening where necessary.
         //
         //   1b: CollectionCallToArray
-        //       Collection contains String, GenericDocument or EmbeddingVector.
-        //       We have to convert this into an array of String[], GenericDocument[] or
-        //       EmbeddingVector[], but no conversion of the collection elements is
-        //       needed. We can use Collection#toArray for this.
+        //       Collection contains String, GenericDocument, EmbeddingVector or
+        //       AppSearchBlobHandle. We have to convert this into an array of String[],
+        //       GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[], but no conversion of
+        //       the collection elements is needed. We can use Collection#toArray for this.
         //
         //   1c: CollectionForLoopCallToGenericDocument
         //       Collection contains a class which is annotated with @Document.
@@ -189,7 +189,7 @@ class ToGenericDocumentCodeGenerator {
         //
         //   2b: ArrayUseDirectly
         //       Array is of type String[], long[], double[], boolean[], byte[][],
-        //       GenericDocument[] or EmbeddingVector[].
+        //       GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[].
         //       We can directly use this field with no conversion.
         //
         //   2c: ArrayForLoopCallToGenericDocument
@@ -207,8 +207,8 @@ class ToGenericDocumentCodeGenerator {
 
         // Scenario 3: Single valued fields
         //   3a: FieldUseDirectlyWithNullCheck
-        //       Field is of type String, Long, Integer, Double, Float, Boolean or
-        //       EmbeddingVector.
+        //       Field is of type String, Long, Integer, Double, Float, Boolean, EmbeddingVector or
+        //       AppSearchBlobHandle.
         //       We can use this field directly, after testing for null. The java compiler will box
         //       or unbox as needed.
         //
@@ -280,7 +280,7 @@ class ToGenericDocumentCodeGenerator {
                             return collectionForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case ARRAY:
                         if (longSerializer != null) { // CustomType[]: 2d
@@ -292,12 +292,12 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case SINGLE:
                         if (longSerializer != null) { // CustomType: 3d
                             return fieldCallSerialize(annotation, getterOrField, longSerializer);
-                        } else if (getterOrField.getJvmType() instanceof PrimitiveType) {
+                        } else if (getterOrField.getJvmType().asTypeName().isPrimitive()) {
                             // long|int: 3b
                             return fieldUseDirectlyWithoutNullCheck(annotation, getterOrField);
                         } else { // Long|Integer: 3a
@@ -312,7 +312,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveDoubleArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // double[]: 2b
@@ -321,10 +321,10 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                         }
                     case SINGLE:
-                        if (getterOrField.getJvmType() instanceof PrimitiveType) {
+                        if (getterOrField.getJvmType().asTypeName().isPrimitive()) {
                             // double|float: 3b
                             return fieldUseDirectlyWithoutNullCheck(annotation, getterOrField);
                         } else {
@@ -340,7 +340,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveBooleanArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // boolean[]: 2b
@@ -349,10 +349,10 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                         }
                     case SINGLE:
-                        if (getterOrField.getJvmType() instanceof PrimitiveType) {
+                        if (getterOrField.getJvmType().asTypeName().isPrimitive()) {
                             // boolean: 3b
                             return fieldUseDirectlyWithoutNullCheck(annotation, getterOrField);
                         } else {
@@ -368,7 +368,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBytePrimitiveArrayType);
+                                /* targetArrayComponentType= */mHelper.bytePrimitiveArrayType);
                     case ARRAY: // byte[][]: 2b
                         return arrayUseDirectly(annotation, getterOrField);
                     case SINGLE: // byte[]: 2e
@@ -390,6 +390,17 @@ class ToGenericDocumentCodeGenerator {
                     default:
                         throw new IllegalStateException("Unhandled type-category: " + typeCategory);
                 }
+            case BLOB_HANDLE_PROPERTY:
+                switch (typeCategory) {
+                    case COLLECTION: // List<AppSearchBlobHandle[]>: 1b
+                        return collectionCallToArray(annotation, getterOrField);
+                    case ARRAY: // AppSearchBlobHandle[]: 2b
+                        return arrayUseDirectly(annotation, getterOrField);
+                    case SINGLE: // AppSearchBlobHandle: 3a
+                        return fieldUseDirectlyWithNullCheck(annotation, getterOrField);
+                    default:
+                        throw new IllegalStateException("Unhandled type-category: " + typeCategory);
+                }
             default:
                 throw new IllegalStateException("Unhandled annotation: " + annotation);
         }
@@ -400,27 +411,26 @@ class ToGenericDocumentCodeGenerator {
     //     We have to pack it into a primitive array of type long[], double[], boolean[] or
     //     byte[][] by reading each element one-by-one and assigning it. The compiler takes
     //     care of unboxing and widening where necessary.
-    @NonNull
-    private CodeBlock collectionForLoopAssign(
+    private @NonNull CodeBlock collectionForLoopAssign(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
-            @NonNull TypeMirror targetArrayComponentType) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. List<Long>
-        TypeMirror componentType = getterOrField.getComponentType(); // e.g. Long
+            @NonNull XType targetArrayComponentType) {
+        XType jvmType = getterOrField.getJvmType(); // e.g. List<Long>
+        XType componentType = getterOrField.getComponentType(); // e.g. Long
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = $L",
-                        targetArrayComponentType,
+                        targetArrayComponentType.getTypeName(),
                         jvmName,
                         createNewArrayExpr(
                                 targetArrayComponentType,
                                 /* size= */CodeBlock.of("$NCopy.size()", jvmName),
                                 mEnv))
                 .addStatement("int i = 0")
-                .beginControlFlow("for ($T item : $NCopy)", componentType, jvmName)
+                .beginControlFlow("for ($T item : $NCopy)", componentType.getTypeName(), jvmName)
                 .addStatement("$NConv[i++] = item", jvmName)
                 .endControlFlow() // for (...) {
                 .addStatement("builder.$N($S, $NConv)",
@@ -433,22 +443,21 @@ class ToGenericDocumentCodeGenerator {
 
     // 1b: CollectionCallToArray
     //     Collection contains String, GenericDocument or EmbeddingVector.
-    //     We have to convert this into an array of String[], GenericDocument[] or
-    //     EmbeddingVector[], but no conversion of the collection elements is
-    //     needed. We can use Collection#toArray for this.
-    @NonNull
-    private CodeBlock collectionCallToArray(
+    //     We have to convert this into an array of String[], GenericDocument[]
+    //     EmbeddingVector[] or AppSearchBlobHandle[], but no conversion of the
+    //     collection elements is needed. We can use Collection#toArray for this.
+    private @NonNull CodeBlock collectionCallToArray(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror collectionType = getterOrField.getJvmType(); // e.g. List<String>
-        TypeMirror componentType = getterOrField.getComponentType(); // e.g. String
+        XType collectionType = getterOrField.getJvmType(); // e.g. List<String>
+        XType componentType = getterOrField.getComponentType(); // e.g. String
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        collectionType, jvmName, createReadExpr(getterOrField))
+                        collectionType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = $NCopy.toArray(new $T[0])",
-                        componentType, jvmName, jvmName, componentType)
+                        componentType.getTypeName(), jvmName, jvmName, componentType.getTypeName())
                 .addStatement("builder.$N($S, $NConv)",
                         getterOrField.getAnnotation().getGenericDocSetterName(),
                         annotation.getName(),
@@ -461,23 +470,23 @@ class ToGenericDocumentCodeGenerator {
     //     Collection contains a class which is annotated with @Document.
     //     We have to convert this into an array of GenericDocument[], by reading each element
     //     one-by-one and converting it through the standard conversion machinery.
-    @NonNull
-    private CodeBlock collectionForLoopCallToGenericDocument(
+    private @NonNull CodeBlock collectionForLoopCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror collectionType = getterOrField.getJvmType(); // e.g. List<Person>
-        TypeMirror documentClass = getterOrField.getComponentType(); // e.g. Person
+        XType collectionType = getterOrField.getJvmType(); // e.g. List<Person>
+        XType documentClass = getterOrField.getComponentType(); // e.g. Person
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        collectionType, jvmName, createReadExpr(getterOrField))
+                        collectionType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.size()]",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .addStatement("int i = 0")
-                .beginControlFlow("for ($T item : $NCopy)", documentClass, jvmName)
+                .beginControlFlow("for ($T item : $NCopy)", documentClass.getTypeName(), jvmName)
                 .addStatement("$NConv[i++] = $T.fromDocumentClass(item)",
-                        jvmName, GENERIC_DOCUMENT_CLASS)
+                        jvmName, toJavaPoet(GENERIC_DOCUMENT_CLASS))
                 .endControlFlow() // for (...) {
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
@@ -489,25 +498,26 @@ class ToGenericDocumentCodeGenerator {
     //     Collection contains a custom type for which we have a serializer.
     //     We have to convert this into an array of String[]|long[], by reading each element
     //     one-by-one and passing it to serializerClass.serialize(customType).
-    @NonNull
-    private CodeBlock collectionForLoopCallSerialize(
+    private @NonNull CodeBlock collectionForLoopCallSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. List<CustomType>
-        TypeMirror customType = getterOrField.getComponentType(); // e.g. CustomType
+        XType jvmType = getterOrField.getJvmType(); // e.g. List<CustomType>
+        XType customType = getterOrField.getComponentType(); // e.g. CustomType
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
-        TypeMirror propType = annotation.getUnderlyingTypeWithinGenericDoc(mHelper); // e.g. String
+        XType propType = annotation.getUnderlyingTypeWithinGenericDoc(mHelper); // e.g. String
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.size()]",
-                        propType, jvmName, propType, jvmName)
-                .addStatement("$T serializer = new $T()",
-                        serializerClass.getElement(), serializerClass.getElement())
+                        propType.getTypeName(), jvmName, propType.getTypeName(), jvmName)
+                .addStatement(
+                        "$T serializer = new $T()",
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
                 .addStatement("int i = 0")
-                .beginControlFlow("for ($T item : $NCopy)", customType, jvmName)
+                .beginControlFlow("for ($T item : $NCopy)", customType.getTypeName(), jvmName)
                 .addStatement("$NConv[i++] = serializer.serialize(item)", jvmName)
                 .endControlFlow() // for (...) {
                 .addStatement("builder.$N($S, $NConv)",
@@ -521,19 +531,18 @@ class ToGenericDocumentCodeGenerator {
     //     We have to pack it into a primitive array of type long[], double[], boolean[]
     //     by reading each element one-by-one and assigning it. The compiler takes care of
     //     unboxing and widening where necessary.
-    @NonNull
-    private CodeBlock arrayForLoopAssign(
+    private @NonNull CodeBlock arrayForLoopAssign(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
-            @NonNull TypeMirror targetArrayComponentType) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. Long[]
+            @NonNull XType targetArrayComponentType) {
+        XType jvmType = getterOrField.getJvmType(); // e.g. Long[]
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = $L",
-                        targetArrayComponentType,
+                        targetArrayComponentType.getTypeName(),
                         jvmName,
                         createNewArrayExpr(
                                 targetArrayComponentType,
@@ -552,17 +561,16 @@ class ToGenericDocumentCodeGenerator {
 
     // 2b: ArrayUseDirectly
     //     Array is of type String[], long[], double[], boolean[], byte[][],
-    //     GenericDocument[] or EmbeddingVector[].
+    //     GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[].
     //     We can directly use this field with no conversion.
-    @NonNull
-    private CodeBlock arrayUseDirectly(
+    private @NonNull CodeBlock arrayUseDirectly(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. String[]
+        XType jvmType = getterOrField.getJvmType(); // e.g. String[]
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("builder.$N($S, $NCopy)",
                         getterOrField.getAnnotation().getGenericDocSetterName(),
@@ -576,21 +584,21 @@ class ToGenericDocumentCodeGenerator {
     //     Array is of a class which is annotated with @Document.
     //     We have to convert this into an array of GenericDocument[], by reading each element
     //     one-by-one and converting it through the standard conversion machinery.
-    @NonNull
-    private CodeBlock arrayForLoopCallToGenericDocument(
+    private @NonNull CodeBlock arrayForLoopCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. Person[]
+        XType jvmType = getterOrField.getJvmType(); // e.g. Person[]
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.length]",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .beginControlFlow("for (int i = 0; i < $NConv.length; i++)", jvmName)
                 .addStatement("$NConv[i] = $T.fromDocumentClass($NCopy[i])",
-                        jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        jvmName, toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .endControlFlow() // for (...) {
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
@@ -602,22 +610,23 @@ class ToGenericDocumentCodeGenerator {
     //     Array is of a custom type for which we have a serializer.
     //     We have to convert this into an array of String[]|long[], by reading each element
     //     one-by-one and passing it to serializerClass.serialize(customType).
-    @NonNull
-    private CodeBlock arrayForLoopCallToSerialize(
+    private @NonNull CodeBlock arrayForLoopCallToSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {
-        TypeMirror jvmType = getterOrField.getJvmType(); // e.g. CustomType[]
-        TypeMirror propType = annotation.getUnderlyingTypeWithinGenericDoc(mHelper); // e.g. String
+        XType jvmType = getterOrField.getJvmType(); // e.g. CustomType[]
+        XType propType = annotation.getUnderlyingTypeWithinGenericDoc(mHelper); // e.g. String
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.length]",
-                        propType, jvmName, propType, jvmName)
-                .addStatement("$T serializer = new $T()",
-                        serializerClass.getElement(), serializerClass.getElement())
+                        propType.getTypeName(), jvmName, propType.getTypeName(), jvmName)
+                .addStatement(
+                        "$T serializer = new $T()",
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
                 .beginControlFlow("for (int i = 0; i < $NConv.length; i++)", jvmName)
                 .addStatement("$NConv[i] = serializer.serialize($NCopy[i])", jvmName, jvmName)
                 .endControlFlow() // for (...) {
@@ -628,19 +637,18 @@ class ToGenericDocumentCodeGenerator {
     }
 
     // 3a: FieldUseDirectlyWithNullCheck
-    //     Field is of type String, Long, Integer, Double, Float, Boolean or
-    //     EmbeddingVector.
+    //     Field is of type String, Long, Integer, Double, Float, Boolean,
+    //     EmbeddingVector or AppSearchBlobHandle.
     //     We can use this field directly, after testing for null. The java compiler will box
     //     or unbox as needed.
-    @NonNull
-    private CodeBlock fieldUseDirectlyWithNullCheck(
+    private @NonNull CodeBlock fieldUseDirectlyWithNullCheck(
             @NonNull PropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror jvmType = getterOrField.getJvmType();
+        XType jvmType = getterOrField.getJvmType();
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         CodeBlock.Builder codeBlock = CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        jvmType, jvmName, createReadExpr(getterOrField))
+                        jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName);
 
         switch (annotation.getPropertyKind()) {
@@ -665,8 +673,7 @@ class ToGenericDocumentCodeGenerator {
     // 3b: FieldUseDirectlyWithoutNullCheck
     //     Field is of type long, int, double, float, or boolean.
     //     We can use this field directly without testing for null.
-    @NonNull
-    private CodeBlock fieldUseDirectlyWithoutNullCheck(
+    private @NonNull CodeBlock fieldUseDirectlyWithoutNullCheck(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         return CodeBlock.builder()
@@ -681,18 +688,18 @@ class ToGenericDocumentCodeGenerator {
     //     Field is of a class which is annotated with @Document.
     //     We have to convert this into a GenericDocument through the standard conversion
     //     machinery.
-    @NonNull
-    private CodeBlock fieldCallToGenericDocument(
+    private @NonNull CodeBlock fieldCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
-        TypeMirror documentClass = getterOrField.getJvmType(); // Person
+        XType documentClass = getterOrField.getJvmType(); // Person
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
                 .addStatement("$T $NCopy = $L",
-                        documentClass, jvmName, createReadExpr(getterOrField))
+                        documentClass.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T $NConv = $T.fromDocumentClass($NCopy)",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
                 .endControlFlow() // if ($NCopy != null) {
@@ -703,20 +710,25 @@ class ToGenericDocumentCodeGenerator {
     //     Field is of a some custom type for which we have a serializer.
     //     We have to convert this into a String|long by calling
     //     serializeClass.serialize(customType).
-    @NonNull
-    private CodeBlock fieldCallSerialize(
+    private @NonNull CodeBlock fieldCallSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {
-        TypeMirror customType = getterOrField.getJvmType();
+        XType customType = getterOrField.getJvmType();
         String jvmName = getterOrField.getJvmName(); // e.g. mProp|getProp
         return CodeBlock.builder()
-                .addStatement("$T $NCopy = $L", customType, jvmName, createReadExpr(getterOrField))
+                .addStatement(
+                        "$T $NCopy = $L",
+                        customType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
-                .addStatement("$T serializer = new $T()",
-                        serializerClass.getElement(), serializerClass.getElement())
-                .addStatement("$T $NConv = serializer.serialize($NCopy)",
-                        annotation.getUnderlyingTypeWithinGenericDoc(mHelper), jvmName, jvmName)
+                .addStatement(
+                        "$T serializer = new $T()",
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
+                .addStatement(
+                        "$T $NConv = serializer.serialize($NCopy)",
+                        annotation.getUnderlyingTypeWithinGenericDoc(mHelper).getTypeName(),
+                        jvmName, jvmName)
                 .addStatement("builder.$N($S, $NConv)",
                         annotation.getGenericDocSetterName(), annotation.getName(), jvmName)
                 .endControlFlow() // if ($NCopy != null)
@@ -731,9 +743,9 @@ class ToGenericDocumentCodeGenerator {
     private CodeBlock createReadExpr(@NonNull AnnotatedGetterOrField annotatedGetterOrField) {
         PropertyAccessor accessor = mModel.getAccessor(annotatedGetterOrField);
         if (accessor.isField()) {
-            return CodeBlock.of("document.$N", accessor.getElement().getSimpleName().toString());
+            return CodeBlock.of("document.$N", accessor.getElement().getName());
         } else { // getter
-            return CodeBlock.of("document.$N()", accessor.getElement().getSimpleName().toString());
+            return CodeBlock.of("document.$N()", accessor.getElement().getName());
         }
     }
 }

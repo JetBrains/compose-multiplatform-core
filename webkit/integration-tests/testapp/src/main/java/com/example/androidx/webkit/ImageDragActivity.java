@@ -20,8 +20,9 @@ import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An Activity to demonstrate example for dragging image out to other apps.
@@ -33,6 +34,7 @@ public class ImageDragActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_drag);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebView demoWebview = findViewById(R.id.image_webview);
         demoWebview.setWebViewClient(new WebViewClient()); // Open links in this WebView.
 

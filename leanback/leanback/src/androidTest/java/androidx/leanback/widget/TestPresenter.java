@@ -20,8 +20,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,9 +116,8 @@ final class TestPresenter extends Presenter {
         return newList;
     }
 
-    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+    public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         TextView tv = new TextView(parent.getContext());
         tv.setFocusable(true);
         tv.setFocusableInTouchMode(true);

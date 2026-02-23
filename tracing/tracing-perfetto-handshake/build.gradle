@@ -15,14 +15,12 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.BuildServerConfigurationKt
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,17 +29,12 @@ plugins {
 }
 
 dependencies {
-    compileOnly(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
-}
-
-tasks.withType(Jar) {
-    destinationDirectory.set(BuildServerConfigurationKt.getDistributionDirectory(rootProject))
 }
 
 androidx {
     name = "Tracing Perfetto Handshake"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "AndroidX Tracing: Perfetto Handshake"
 }

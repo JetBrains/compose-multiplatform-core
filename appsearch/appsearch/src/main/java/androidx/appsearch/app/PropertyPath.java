@@ -18,12 +18,13 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.checker.initialization.qual.UnderInitialization;
 import androidx.appsearch.checker.nullness.qual.RequiresNonNull;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -131,9 +132,8 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
      * @param controlPos the position of the start bracket
      * @return the rest of the path after the end brackets, or null if there is nothing after them
      */
-    @Nullable
     @RequiresNonNull("mPathList")
-    private String consumePropertyWithIndex(
+    private @Nullable String consumePropertyWithIndex(
             @UnderInitialization PropertyPath this, @NonNull String path, int controlPos) {
         Preconditions.checkNotNull(path);
         String propertyName = path.substring(0, controlPos);
@@ -178,8 +178,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
     // Allow use of the Kotlin indexing operator
     @SuppressWarnings("KotlinOperator")
     @SuppressLint("KotlinOperator")
-    @NonNull
-    public PathSegment get(int index) {
+    public @NonNull PathSegment get(int index) {
         return mPathList.get(index);
     }
 
@@ -195,8 +194,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
 
     /** Returns a valid path string representing this PropertyPath */
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < mPathList.size(); i++) {
             result.append(get(i).toString());
@@ -209,9 +207,8 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
     }
 
     /** Returns an iterator over the PathSegments within the PropertyPath */
-    @NonNull
     @Override
-    public Iterator<PathSegment> iterator() {
+    public @NonNull Iterator<PathSegment> iterator() {
         return mPathList.iterator();
     }
 
@@ -250,7 +247,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
          */
         public static final int NON_REPEATED_CARDINALITY = -1;
 
-        @NonNull private final String mPropertyName;
+        private final @NonNull String mPropertyName;
         private final int mPropertyIndex;
 
         /**
@@ -266,8 +263,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
          * @return A new PathSegment
          * @throws IllegalArgumentException if the property name or index is invalid.
          */
-        @NonNull
-        public static PathSegment create(@NonNull String propertyName, int propertyIndex) {
+        public static @NonNull PathSegment create(@NonNull String propertyName, int propertyIndex) {
             ObjectsCompat.requireNonNull(propertyName);
             // A path may contain control characters, but a PathSegment may not
             if (propertyName.isEmpty() || propertyName.contains("[") || propertyName.contains("]")
@@ -288,8 +284,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
          * @param propertyName the name of the property
          * @return A new PathSegment
          */
-        @NonNull
-        public static PathSegment create(@NonNull String propertyName) {
+        public static @NonNull PathSegment create(@NonNull String propertyName) {
             return create(ObjectsCompat.requireNonNull(propertyName), NON_REPEATED_CARDINALITY);
         }
 
@@ -305,8 +300,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
         }
 
         /** Returns the name of the property. */
-        @NonNull
-        public String getPropertyName() {
+        public @NonNull String getPropertyName() {
             return mPropertyName;
         }
 
@@ -320,8 +314,7 @@ public class PropertyPath implements Iterable<PropertyPath.PathSegment> {
 
         /** Returns a path representing a PathSegment, either "foo" or "foo[1]" */
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             if (mPropertyIndex != NON_REPEATED_CARDINALITY) {
                 return mPropertyName + "[" + mPropertyIndex + "]";
             }

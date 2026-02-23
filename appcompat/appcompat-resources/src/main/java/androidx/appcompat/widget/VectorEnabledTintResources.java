@@ -21,10 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 
@@ -38,8 +38,7 @@ public class VectorEnabledTintResources extends ResourcesWrapper {
     private static boolean sCompatVectorFromResourcesEnabled = false;
 
     public static boolean shouldBeUsed() {
-        return isCompatVectorFromResourcesEnabled()
-                && Build.VERSION.SDK_INT <= MAX_SDK_WHERE_REQUIRED;
+        return false;
     }
 
     /**
@@ -50,8 +49,8 @@ public class VectorEnabledTintResources extends ResourcesWrapper {
     private final WeakReference<Context> mContextRef;
 
     @SuppressWarnings("deprecation")
-    public VectorEnabledTintResources(@NonNull final Context context,
-            @NonNull final Resources res) {
+    public VectorEnabledTintResources(final @NonNull Context context,
+            final @NonNull Resources res) {
         super(res);
         mContextRef = new WeakReference<>(context);
     }

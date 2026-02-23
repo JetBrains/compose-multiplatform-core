@@ -33,13 +33,14 @@ import android.widget.HeaderViewListAdapter;
 import android.widget.ListAdapter;
 import android.widget.PopupWindow;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.view.menu.ListMenuItemView;
 import androidx.appcompat.view.menu.MenuAdapter;
 import androidx.appcompat.view.menu.MenuBuilder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -74,24 +75,19 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    @NonNull
     @Override
-    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+    @NonNull DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
         return view;
     }
 
     public void setEnterTransition(Object enterTransition) {
-        if (Build.VERSION.SDK_INT >= 23) {
-            Api23Impl.setEnterTransition(mPopup, (Transition) enterTransition);
-        }
+        mPopup.setEnterTransition((Transition) enterTransition);
     }
 
     public void setExitTransition(Object exitTransition) {
-        if (Build.VERSION.SDK_INT >= 23) {
-            Api23Impl.setExitTransition(mPopup, (Transition) exitTransition);
-        }
+        mPopup.setExitTransition((Transition) exitTransition);
     }
 
     public void setHoverListener(MenuItemHoverListener hoverListener) {
@@ -238,21 +234,6 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
             }
 
             return super.onHoverEvent(ev);
-        }
-    }
-
-    @RequiresApi(23)
-    static class Api23Impl {
-        private Api23Impl() {
-            // This class is not instantiable.
-        }
-
-        static void setEnterTransition(PopupWindow popupWindow, Transition enterTransition) {
-            popupWindow.setEnterTransition(enterTransition);
-        }
-
-        static void setExitTransition(PopupWindow popupWindow, Transition exitTransition) {
-            popupWindow.setExitTransition(exitTransition);
         }
     }
 

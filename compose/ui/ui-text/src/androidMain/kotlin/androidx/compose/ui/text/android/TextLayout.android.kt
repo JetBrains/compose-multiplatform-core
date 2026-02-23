@@ -72,13 +72,17 @@ import androidx.compose.ui.text.android.style.BaselineShiftSpan
 import androidx.compose.ui.text.android.style.LineHeightStyleSpan
 import androidx.compose.ui.text.android.style.getEllipsizedLeftPadding
 import androidx.compose.ui.text.android.style.getEllipsizedRightPadding
+import androidx.compose.ui.text.internal.requirePrecondition
+import androidx.compose.ui.text.style.LineHeightStyle
+import kotlin.concurrent.getOrSet
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-/** We swap canvas delegates, and can share the wrapper. */
-private val SharedTextAndroidCanvas: TextAndroidCanvas = TextAndroidCanvas()
+/** We swap canvas delegates, and can share the wrapper on the current thread. */
+@VisibleForTesting
+internal val SharedTextAndroidCanvas: ThreadLocal<TextAndroidCanvas> = ThreadLocal()
 
 /**
  * Wrapper for Static Text Layout classes.
@@ -119,7 +123,7 @@ constructor(
     width: Float,
     val textPaint: TextPaint,
     @TextLayoutAlignment alignment: Int = DEFAULT_ALIGNMENT,
-    ellipsize: TextUtils.TruncateAt? = null,
+    private val ellipsize: TextUtils.TruncateAt? = null,
     @TextDirection textDirectionHeuristic: Int = DEFAULT_TEXT_DIRECTION,
     lineSpacingMultiplier: Float = DEFAULT_LINESPACING_MULTIPLIER,
     @Px lineSpacingExtra: Float = DEFAULT_LINESPACING_EXTRA,
@@ -134,7 +138,7 @@ constructor(
     leftIndents: IntArray? = null,
     rightIndents: IntArray? = null,
     val layoutIntrinsics: LayoutIntrinsics =
-        LayoutIntrinsics(charSequence, textPaint, textDirectionHeuristic)
+        LayoutIntrinsics(charSequence, textPaint, textDirectionHeuristic),
 ) {
     val maxIntrinsicWidth: Float
         get() = layoutIntrinsics.maxIntrinsicWidth
@@ -253,7 +257,7 @@ constructor(
                         includePadding = includePadding,
                         useFallbackLineSpacing = fallbackLineSpacing,
                         ellipsize = ellipsize,
-                        ellipsizedWidth = widthInt
+                        ellipsizedWidth = widthInt,
                     )
                 } else {
                     isBoringLayout = false
@@ -278,7 +282,7 @@ constructor(
                         lineBreakWordStyle = lineBreakWordStyle,
                         hyphenationFrequency = hyphenationFrequency,
                         leftIndents = leftIndents,
-                        rightIndents = rightIndents
+                        rightIndents = rightIndents,
                     )
                 }
         } finally {
@@ -326,9 +330,32 @@ constructor(
                     layout.getLineEnd(lastLine) != charSequence.length
             }
 
-        val verticalPaddings = getVerticalPaddings()
-
         lineHeightSpans = getLineHeightSpans()
+        // Even though it is an array of spans, we know that LineHeightStyle is part of
+        // ParagraphStyle and there can only be one ParagraphStyle per text layout. So there should
+        // also be only one LineHeightStyleSpan in this array. Please check getLastLineMetrics that
+        // uses a similar approach.
+        val shouldForceTrimTop =
+            lineHeightSpans?.firstOrNull()?.let {
+                it.trimFirstLineTop && it.mode == LineHeightStyle.Mode.Tight
+            } ?: false
+
+        val shouldForceTrimBottom =
+            lineHeightSpans?.firstOrNull()?.let {
+                it.trimLastLineBottom && it.mode == LineHeightStyle.Mode.Tight
+            } ?: false
+
+        val verticalPaddings =
+            if (shouldForceTrimTop && shouldForceTrimBottom) {
+                ZeroVerticalPadding
+            } else {
+                val paddings = getVerticalPaddings()
+                VerticalPaddings(
+                    topPadding = if (shouldForceTrimTop) 0 else paddings.topPadding,
+                    bottomPadding = if (shouldForceTrimBottom) 0 else paddings.bottomPadding,
+                )
+            }
+
         val lineHeightPaddings = lineHeightSpans?.getLineHeightPaddings() ?: ZeroVerticalPadding
         topPadding = max(verticalPaddings.topPadding, lineHeightPaddings.topPadding)
         bottomPadding = max(verticalPaddings.bottomPadding, lineHeightPaddings.bottomPadding)
@@ -457,13 +484,13 @@ constructor(
      * returns the length of the text.
      */
     fun getLineEnd(lineIndex: Int): Int =
-        if (layout.getEllipsisStart(lineIndex) == 0) { // no ellipsis
-            layout.getLineEnd(lineIndex)
-        } else {
+        if (layout.isLineEllipsized(lineIndex) && ellipsize == TextUtils.TruncateAt.END) {
             // Layout#getLineEnd usually gets the end of text for the last line even if ellipsis
             // happens. However, if LF character is included in the ellipsized region, getLineEnd
             // returns LF character offset. So, use end of text for line end here.
             layout.text.length
+        } else {
+            layout.getLineEnd(lineIndex)
         }
 
     /**
@@ -471,10 +498,10 @@ constructor(
      * whitespaces are not counted as visible characters.
      */
     fun getLineVisibleEnd(lineIndex: Int): Int =
-        if (layout.getEllipsisStart(lineIndex) == 0) { // no ellipsis
-            layoutHelper.getLineVisibleEnd(lineIndex)
-        } else {
+        if (layout.isLineEllipsized(lineIndex) && ellipsize == TextUtils.TruncateAt.END) {
             layout.getLineStart(lineIndex) + layout.getEllipsisStart(lineIndex)
+        } else {
+            layoutHelper.getLineVisibleEnd(lineIndex)
         }
 
     fun isLineEllipsized(lineIndex: Int) = layout.isLineEllipsized(lineIndex)
@@ -522,7 +549,7 @@ constructor(
         return layoutHelper.getHorizontalPosition(
             offset,
             usePrimaryDirection = true,
-            upstream = upstream
+            upstream = upstream,
         ) + getHorizontalPadding(getLineForOffset(offset))
     }
 
@@ -559,7 +586,7 @@ constructor(
         return layoutHelper.getHorizontalPosition(
             offset,
             usePrimaryDirection = false,
-            upstream = upstream
+            upstream = upstream,
         ) + getHorizontalPadding(getLineForOffset(offset))
     }
 
@@ -579,7 +606,7 @@ constructor(
     fun getRangeForRect(
         rect: RectF,
         @TextGranularity granularity: Int,
-        inclusionStrategy: (RectF, RectF) -> Boolean
+        inclusionStrategy: (RectF, RectF) -> Boolean,
     ): IntArray? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             return AndroidLayoutApi34.getRangeForRect(this, rect, granularity, inclusionStrategy)
@@ -593,17 +620,14 @@ constructor(
      * given [array] where the left or right bounds i-th character in the line is stored as the (i *
      * 2)-th or (i * 2 + 1)-th element respectively.
      */
-    internal fun fillLineHorizontalBounds(
-        lineIndex: Int,
-        array: FloatArray,
-    ) {
+    internal fun fillLineHorizontalBounds(lineIndex: Int, array: FloatArray) {
         val lineStartOffset = getLineStart(lineIndex)
         val lineEndOffset = getLineEnd(lineIndex)
 
         val range = lineEndOffset - lineStartOffset
         val minArraySize = range * 2
 
-        require(array.size >= minArraySize) {
+        requirePrecondition(array.size >= minArraySize) {
             "array.size - arrayStart must be greater or equal than (endOffset - startOffset) * 2"
         }
 
@@ -670,15 +694,21 @@ constructor(
      */
     fun fillBoundingBoxes(startOffset: Int, endOffset: Int, array: FloatArray, arrayStart: Int) {
         val textLength = text.length
-        require(startOffset >= 0) { "startOffset must be > 0" }
-        require(startOffset < textLength) { "startOffset must be less than text length" }
-        require(endOffset > startOffset) { "endOffset must be greater than startOffset" }
-        require(endOffset <= textLength) { "endOffset must be smaller or equal to text length" }
+        requirePrecondition(startOffset >= 0) { "startOffset must be > 0" }
+        requirePrecondition(startOffset < textLength) {
+            "startOffset must be less than text length"
+        }
+        requirePrecondition(endOffset > startOffset) {
+            "endOffset must be greater than startOffset"
+        }
+        requirePrecondition(endOffset <= textLength) {
+            "endOffset must be smaller or equal to text length"
+        }
 
         val range = endOffset - startOffset
         val minArraySize = range * 4
 
-        require((array.size - arrayStart) >= minArraySize) {
+        requirePrecondition((array.size - arrayStart) >= minArraySize) {
             "array.size - arrayStart must be greater or equal than (endOffset - startOffset) * 4"
         }
 
@@ -785,9 +815,9 @@ constructor(
             canvas.translate(0f, topPadding.toFloat())
         }
 
-        with(SharedTextAndroidCanvas) {
-            setCanvas(canvas)
-            layout.draw(this)
+        val threadSharedTextAndroidCanvas = SharedTextAndroidCanvas.getOrSet { TextAndroidCanvas() }
+        threadSharedTextAndroidCanvas.withCanvas(canvas) { clipFixedCanvas ->
+            layout.draw(clipFixedCanvas)
         }
 
         if (topPadding != 0) {
@@ -795,13 +825,17 @@ constructor(
         }
     }
 
+    /**
+     * Checks certain configuration values to understand whether the created text layout comes with
+     * fallback line spacing behavior included. Otherwise it needs to be handled here.
+     */
     internal fun isFallbackLinespacingApplied(): Boolean {
         return if (isBoringLayout) {
             BoringLayoutFactory.isFallbackLineSpacingEnabled(layout as BoringLayout)
         } else {
             StaticLayoutFactory.isFallbackLineSpacingEnabled(
                 layout as StaticLayout,
-                fallbackLineSpacing
+                fallbackLineSpacing,
             )
         }
     }
@@ -961,7 +995,11 @@ internal value class VerticalPaddings internal constructor(internal val packedVa
         get() = unpackInt2(packedValue)
 }
 
-@OptIn(InternalPlatformTextApi::class)
+/**
+ * When includeFontPadding is turned off and fallback line spacing is not applied, there remains a
+ * chance that tall glyphs may be cut on top and bottom of the text layout. Vertical paddings is a
+ * backport of `useFallbackLineSpacing` from the platform.
+ */
 private fun TextLayout.getVerticalPaddings(): VerticalPaddings {
     if (includePadding || isFallbackLinespacingApplied()) return ZeroVerticalPadding
 
@@ -1034,7 +1072,7 @@ private fun Array<LineHeightStyleSpan>.getLineHeightPaddings(): VerticalPaddings
 private fun TextLayout.getLastLineMetrics(
     textPaint: TextPaint,
     frameworkTextDir: TextDirectionHeuristic,
-    lineHeightSpans: Array<LineHeightStyleSpan>?
+    lineHeightSpans: Array<LineHeightStyleSpan>?,
 ): FontMetricsInt? {
     val lastLine = lineCount - 1
     // did not check for "\n" since the last line might include zero width characters
@@ -1053,7 +1091,7 @@ private fun TextLayout.getLastLineMetrics(
                         false
                     } else {
                         lineHeightSpan.trimLastLineBottom
-                    }
+                    },
             )
 
         emptyText.setSpan(newLineHeightSpan, 0, emptyText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -1067,7 +1105,7 @@ private fun TextLayout.getLastLineMetrics(
                 end = emptyText.length,
                 textDir = frameworkTextDir,
                 includePadding = includePadding,
-                useFallbackLineSpacing = fallbackLineSpacing
+                useFallbackLineSpacing = fallbackLineSpacing,
             )
 
         val lastLineFontMetrics =
@@ -1104,7 +1142,7 @@ internal object AndroidLayoutApi34 {
         layout: TextLayout,
         rectF: RectF,
         @TextGranularity granularity: Int,
-        inclusionStrategy: (RectF, RectF) -> Boolean
+        inclusionStrategy: (RectF, RectF) -> Boolean,
     ): IntArray? {
 
         val segmentFinder =

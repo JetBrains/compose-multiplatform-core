@@ -16,11 +16,12 @@
 
 package androidx.pdf.service;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.PdfStatus;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A struct that holds either a successfully loaded PdfDocument, or the reason why it failed.
@@ -29,8 +30,7 @@ import androidx.pdf.util.Preconditions;
 public class LoadPdfResult {
 
     private final PdfStatus mStatus;
-    @Nullable
-    private final PdfDocument mPdfDocument;
+    private final @Nullable PdfDocument mPdfDocument;
 
     public LoadPdfResult(int status, @Nullable PdfDocument pdfDocument) {
         if (status == PdfStatus.LOADED.getNumber()) {
@@ -43,13 +43,11 @@ public class LoadPdfResult {
         this.mPdfDocument = pdfDocument;
     }
 
-    @NonNull
-    public PdfStatus getStatus() {
+    public @NonNull PdfStatus getStatus() {
         return mStatus;
     }
 
-    @Nullable
-    public PdfDocument getPdfDocument() {
+    public @Nullable PdfDocument getPdfDocument() {
         return mPdfDocument;
     }
 

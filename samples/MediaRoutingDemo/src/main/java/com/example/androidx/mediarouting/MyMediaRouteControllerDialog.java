@@ -22,8 +22,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.mediarouter.app.MediaRouteControllerDialog;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An example MediaRouteControllerDialog for demonstrating
@@ -34,9 +35,8 @@ public class MyMediaRouteControllerDialog extends MediaRouteControllerDialog {
         super(context);
     }
 
-    @NonNull
     @Override
-    public View onCreateMediaControlView(@NonNull Bundle savedInstanceState) {
+    public @NonNull View onCreateMediaControlView(@NonNull Bundle savedInstanceState) {
         TextView view = new TextView(getContext());
         view.setText(R.string.my_media_control_text);
         view.setBackgroundColor(Color.GRAY);

@@ -18,7 +18,7 @@ package androidx.core.view;
 
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link MotionEvent}.

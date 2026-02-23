@@ -17,11 +17,27 @@
 # Keep all the functions created to throw an exception. We don't want these functions to be
 # inlined in any way, which R8 will do by default. The whole point of these functions is to
 # reduce the amount of code generated at the call site.
--keep,allowshrinking,allowobfuscation class androidx.compose.runtime.** {
+-keepclassmembers,allowshrinking,allowobfuscation class androidx.compose.runtime.** {
     # java.lang.Void == methods that return Nothing
     static void throw*Exception(...);
+    static void throw*ExceptionForNullCheck(...);
     static java.lang.Void throw*Exception(...);
+    static java.lang.Void throw*ExceptionForNullCheck(...);
+
+    # For functions generating error messages
+    static java.lang.String exceptionMessage*(...);
+    java.lang.String exceptionMessage*(...);
 
     static void compose*RuntimeError(...);
     static java.lang.Void compose*RuntimeError(...);
+}
+
+# Runtime uses this field to enable group key based stack trace collection.
+-assumevalues class androidx.compose.runtime.tooling.ComposeStackTraceMode {
+     private static boolean isMinified return true;
+}
+
+# Assume the experimental link-buffer composer is not enabled
+-assumevalues public class androidx.compose.runtime.ComposeRuntimeFlags {
+    static boolean isLinkBufferComposerEnabled return false;
 }

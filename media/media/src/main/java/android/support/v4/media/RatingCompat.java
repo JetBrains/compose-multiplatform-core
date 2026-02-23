@@ -32,13 +32,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * A class to encapsulate rating information used as content metadata.
- * A rating is defined by its rating style (see {@link #RATING_HEART},
- * {@link #RATING_THUMB_UP_DOWN}, {@link #RATING_3_STARS}, {@link #RATING_4_STARS},
- * {@link #RATING_5_STARS} or {@link #RATING_PERCENTAGE}) and the actual rating value (which may
- * be defined as "unrated"), both of which are defined when the rating instance is constructed
- * through one of the factory methods.
+ * A class to encapsulate rating information used as content metadata. A rating is defined by its
+ * rating style (see {@link #RATING_HEART}, {@link #RATING_THUMB_UP_DOWN}, {@link #RATING_3_STARS},
+ * {@link #RATING_4_STARS}, {@link #RATING_5_STARS} or {@link #RATING_PERCENTAGE}) and the actual
+ * rating value (which may be defined as "unrated"), both of which are defined when the rating
+ * instance is constructed through one of the factory methods.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class RatingCompat implements Parcelable {
     private final static String TAG = "Rating";

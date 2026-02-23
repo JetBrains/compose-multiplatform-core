@@ -24,16 +24,15 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.SuppressLint;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
-import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
-import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,6 +84,15 @@ public final class QualitySelector {
     private static final String TAG = "QualitySelector";
 
     /**
+     * A QualitySelector that contains no preferred qualities and no fallback strategy.
+     * When used, the resolution engine will have to rely entirely on system defaults
+     * or other specification components (like AspectRatio).
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static final @NonNull QualitySelector NONE =
+            new QualitySelector(Collections.emptyList(), FallbackStrategy.NONE);
+
+    /**
      * Gets all supported qualities on the device.
      *
      * <p>The returned list is sorted by quality size from largest to smallest. For the qualities in
@@ -100,8 +108,7 @@ public final class QualitySelector {
      * @deprecated use {@link VideoCapabilities#getSupportedQualities(DynamicRange)} instead.
      */
     @Deprecated
-    @NonNull
-    public static List<Quality> getSupportedQualities(@NonNull CameraInfo cameraInfo) {
+    public static @NonNull List<Quality> getSupportedQualities(@NonNull CameraInfo cameraInfo) {
         return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(SDR);
     }
 
@@ -146,12 +153,11 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if quality is not one of the possible values.
      * @see #isQualitySupported
      */
-    @Nullable
-    public static Size getResolution(@NonNull CameraInfo cameraInfo, @NonNull Quality quality) {
+    public static @Nullable Size getResolution(@NonNull CameraInfo cameraInfo,
+            @NonNull Quality quality) {
         checkQualityConstantsOrThrow(quality);
         VideoCapabilities videoCapabilities = Recorder.getVideoCapabilities(cameraInfo);
-        VideoValidatedEncoderProfilesProxy profiles = videoCapabilities.getProfiles(quality, SDR);
-        return profiles != null ? getProfileVideoSize(profiles) : null;
+        return videoCapabilities.getResolution(quality, SDR);
     }
 
     /**
@@ -161,13 +167,12 @@ public final class QualitySelector {
      * @param dynamicRange the dynamicRange to query the supported qualities.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public static Map<Quality, Size> getQualityToResolutionMap(
+    public static @NonNull Map<Quality, Size> getQualityToResolutionMap(
             @NonNull VideoCapabilities videoCapabilities, @NonNull DynamicRange dynamicRange) {
         Map<Quality, Size> map = new HashMap<>();
         for (Quality supportedQuality : videoCapabilities.getSupportedQualities(dynamicRange)) {
-            map.put(supportedQuality, getProfileVideoSize(
-                    requireNonNull(videoCapabilities.getProfiles(supportedQuality, dynamicRange))));
+            map.put(supportedQuality, requireNonNull(
+                    videoCapabilities.getResolution(supportedQuality, dynamicRange)));
         }
         return map;
     }
@@ -177,9 +182,6 @@ public final class QualitySelector {
 
     QualitySelector(@NonNull List<Quality> preferredQualityList,
             @NonNull FallbackStrategy fallbackStrategy) {
-        Preconditions.checkArgument(
-                !preferredQualityList.isEmpty() || fallbackStrategy != FallbackStrategy.NONE,
-                "No preferred quality and fallback strategy.");
         mPreferredQualityList = Collections.unmodifiableList(new ArrayList<>(preferredQualityList));
         mFallbackStrategy = fallbackStrategy;
     }
@@ -194,8 +196,7 @@ public final class QualitySelector {
      * @throws NullPointerException if {@code quality} is {@code null}.
      * @throws IllegalArgumentException if {@code quality} is not one of the possible values.
      */
-    @NonNull
-    public static QualitySelector from(@NonNull Quality quality) {
+    public static @NonNull QualitySelector from(@NonNull Quality quality) {
         return from(quality, FallbackStrategy.NONE);
     }
 
@@ -216,8 +217,7 @@ public final class QualitySelector {
      * is {@code null}.
      * @throws IllegalArgumentException if {@code quality} is not one of the possible values.
      */
-    @NonNull
-    public static QualitySelector from(@NonNull Quality quality,
+    public static @NonNull QualitySelector from(@NonNull Quality quality,
             @NonNull FallbackStrategy fallbackStrategy) {
         Preconditions.checkNotNull(quality, "quality cannot be null");
         Preconditions.checkNotNull(fallbackStrategy, "fallbackStrategy cannot be null");
@@ -238,8 +238,7 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if {@code qualities} is empty or contains a quality that is
      * not one of the possible values, including a {@code null} value.
      */
-    @NonNull
-    public static QualitySelector fromOrderedList(@NonNull List<Quality> qualities) {
+    public static @NonNull QualitySelector fromOrderedList(@NonNull List<Quality> qualities) {
         return fromOrderedList(qualities, FallbackStrategy.NONE);
     }
 
@@ -261,8 +260,7 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if {@code qualities} is empty or contains a quality that is
      * not one of the possible values, including a {@code null} value.
      */
-    @NonNull
-    public static QualitySelector fromOrderedList(@NonNull List<Quality> qualities,
+    public static @NonNull QualitySelector fromOrderedList(@NonNull List<Quality> qualities,
             @NonNull FallbackStrategy fallbackStrategy) {
         Preconditions.checkNotNull(qualities, "qualities cannot be null");
         Preconditions.checkNotNull(fallbackStrategy, "fallbackStrategy cannot be null");
@@ -282,11 +280,11 @@ public final class QualitySelector {
      * @param supportedQualities the supported qualities.
      * @return a sorted supported quality list according to the desired quality settings.
      */
-    @NonNull
     @SuppressLint("UsesNonDefaultVisibleForTesting")
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public List<Quality> getPrioritizedQualities(@NonNull List<Quality> supportedQualities) {
+    public @NonNull List<Quality> getPrioritizedQualities(
+            @NonNull List<Quality> supportedQualities) {
         if (supportedQualities.isEmpty()) {
             Logger.w(TAG, "No supported quality on the device.");
             return new ArrayList<>();
@@ -323,9 +321,8 @@ public final class QualitySelector {
         return new ArrayList<>(sortedQualities);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "QualitySelector{"
                 + "preferredQualities=" + mPreferredQualityList
                 + ", fallbackStrategy=" + mFallbackStrategy
@@ -412,12 +409,6 @@ public final class QualitySelector {
             default:
                 throw new AssertionError("Unhandled fallback strategy: " + mFallbackStrategy);
         }
-    }
-
-    @NonNull
-    private static Size getProfileVideoSize(@NonNull VideoValidatedEncoderProfilesProxy profiles) {
-        VideoProfileProxy videoProfile = profiles.getDefaultVideoProfile();
-        return new Size(videoProfile.getWidth(), videoProfile.getHeight());
     }
 
     private static void checkQualityConstantsOrThrow(@NonNull List<Quality> qualities) {

@@ -24,13 +24,12 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Intent;
 
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
-
 
 /**
  * Tests for color scheme parameters api.
@@ -39,6 +38,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
  */
 @SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class CustomTabColorSchemeParamsTest {
     @Test

@@ -26,11 +26,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.car.app.CarContext;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.InvalidParameterException;
 import java.util.List;
@@ -95,8 +97,7 @@ public final class CarPendingIntent {
      * @return an existing or new PendingIntent matching the given parameters. May return {@code
      * null} only if {@link PendingIntent#FLAG_NO_CREATE} has been supplied.
      */
-    @NonNull
-    public static PendingIntent getCarApp(@NonNull Context context, int requestCode,
+    public static @NonNull PendingIntent getCarApp(@NonNull Context context, int requestCode,
             @NonNull Intent intent, int flags) {
         requireNonNull(context);
         requireNonNull(intent);
@@ -105,6 +106,10 @@ public final class CarPendingIntent {
 
         flags &= ~PendingIntent.FLAG_IMMUTABLE;
         flags |= FLAG_MUTABLE;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            flags |= PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT;
+        }
 
         if (isAutomotiveOS(context)) {
             return createForAutomotive(context, requestCode, intent, flags);
@@ -233,8 +238,7 @@ public final class CarPendingIntent {
      * <p>For example if Uri string is 'geo:0,0?q=124+Foo+St', return value will be '124+Foo+St'.
      */
     @SuppressWarnings("StringSplitter")
-    @Nullable
-    private static String getQueryString(Uri uri) {
+    private static @Nullable String getQueryString(Uri uri) {
         if (uri.isHierarchical()) {
             List<String> queries = uri.getQueryParameters(SEARCH_QUERY_PARAMETER);
             return queries.isEmpty() ? null : queries.get(0);

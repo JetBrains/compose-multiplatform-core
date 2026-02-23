@@ -16,8 +16,6 @@
 
 package androidx.wear.compose.material
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,17 +23,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealScope
-import androidx.wear.compose.foundation.RevealState
-import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.rememberRevealState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -43,10 +37,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalWearMaterialApi::class, ExperimentalWearFoundationApi::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+@OptIn(ExperimentalWearMaterialApi::class)
 class SwipeToRevealScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -56,8 +50,8 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealCard_singleAction() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealCard(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing),
-                secondaryAction = null
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
+                secondaryAction = null,
             )
         }
     }
@@ -66,8 +60,8 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealChip_singleAction() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealChip(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing),
-                secondaryAction = null
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
+                secondaryAction = null,
             )
         }
     }
@@ -76,7 +70,7 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealCard_twoActions() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealCard(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             )
         }
     }
@@ -85,7 +79,7 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealChip_twoActions() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealChip(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             )
         }
     }
@@ -94,7 +88,7 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealChip_undoPrimaryAction() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealChip(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
     }
@@ -103,7 +97,7 @@ class SwipeToRevealScreenshotTest {
     fun swipeToRevealCard_undoPrimaryAction() {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealCard(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
     }
@@ -113,7 +107,7 @@ class SwipeToRevealScreenshotTest {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             val revealState = rememberRevealState()
             val coroutineScope = rememberCoroutineScope()
-            coroutineScope.launch { revealState.animateTo(RevealValue.Revealed) }
+            coroutineScope.launch { revealState.animateTo(RevealValue.RightRevealed) }
             revealState.lastActionType = RevealActionType.SecondaryAction
             swipeToRevealChip(revealState = revealState)
         }
@@ -124,7 +118,7 @@ class SwipeToRevealScreenshotTest {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             val revealState = rememberRevealState()
             val coroutineScope = rememberCoroutineScope()
-            coroutineScope.launch { revealState.animateTo(RevealValue.Revealed) }
+            coroutineScope.launch { revealState.animateTo(RevealValue.RightRevealed) }
             revealState.lastActionType = RevealActionType.SecondaryAction
             swipeToRevealCard(revealState = revealState)
         }
@@ -133,27 +127,27 @@ class SwipeToRevealScreenshotTest {
     @Composable
     private fun swipeToRevealCard(
         revealState: RevealState = rememberRevealState(),
-        secondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        secondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
-                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
+                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") },
             )
         },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
         },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
-        }
+        },
     ) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
             SwipeToRevealCard(
@@ -163,14 +157,14 @@ class SwipeToRevealScreenshotTest {
                         revealState = revealState,
                         onClick = {},
                         icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
-                        label = { Text("Delete") }
+                        label = { Text("Delete") },
                     )
                 },
                 onFullSwipe = {},
                 secondaryAction = secondaryAction,
                 undoPrimaryAction = undoPrimaryAction,
                 undoSecondaryAction = undoSecondaryAction,
-                revealState = revealState
+                revealState = revealState,
             ) {
                 TitleCard(
                     onClick = { /*TODO*/ },
@@ -186,27 +180,27 @@ class SwipeToRevealScreenshotTest {
     @Composable
     private fun swipeToRevealChip(
         revealState: RevealState = rememberRevealState(),
-        secondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        secondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
-                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
+                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") },
             )
         },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
         },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
-        }
+        },
     ) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
             SwipeToRevealChip(
@@ -216,19 +210,19 @@ class SwipeToRevealScreenshotTest {
                         revealState = revealState,
                         onClick = {},
                         icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
-                        label = { Text("Delete") }
+                        label = { Text("Delete") },
                     )
                 },
                 onFullSwipe = {},
                 secondaryAction = secondaryAction,
                 undoPrimaryAction = undoPrimaryAction,
                 undoSecondaryAction = undoSecondaryAction,
-                revealState = revealState
+                revealState = revealState,
             ) {
                 Chip(
                     onClick = { /* onClick handler for chip */ },
                     colors = ChipDefaults.primaryChipColors(),
-                    border = ChipDefaults.outlinedChipBorder()
+                    border = ChipDefaults.outlinedChipBorder(),
                 ) {
                     Text("Swipe To Reveal - Chip")
                 }

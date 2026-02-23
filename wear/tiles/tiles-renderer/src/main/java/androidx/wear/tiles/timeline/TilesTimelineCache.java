@@ -17,11 +17,12 @@
 package androidx.wear.tiles.timeline;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.TimelineBuilders;
 import androidx.wear.protolayout.proto.TimelineProto.TimelineEntry;
 import androidx.wear.tiles.timeline.internal.TilesTimelineCacheInternal;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Timeline cache for Wear Tiles. This will take in a full timeline, and return the appropriate
@@ -36,12 +37,12 @@ public final class TilesTimelineCache {
      * @deprecated Use {@link #TilesTimelineCache(TimelineBuilders.Timeline)} instead.
      */
     @Deprecated
-    public TilesTimelineCache(@NonNull androidx.wear.tiles.TimelineBuilders.Timeline timeline) {
+    public TilesTimelineCache(androidx.wear.tiles.TimelineBuilders.@NonNull Timeline timeline) {
         mCache = new TilesTimelineCacheInternal(timeline.toProto());
     }
 
     /** Default constructor. */
-    public TilesTimelineCache(@NonNull TimelineBuilders.Timeline timeline) {
+    public TilesTimelineCache(TimelineBuilders.@NonNull Timeline timeline) {
         mCache = new TilesTimelineCacheInternal(timeline.toProto());
     }
 
@@ -58,8 +59,7 @@ public final class TilesTimelineCache {
      */
     @Deprecated
     @MainThread
-    @Nullable
-    public androidx.wear.tiles.TimelineBuilders.TimelineEntry findTimelineEntryForTime(
+    public androidx.wear.tiles.TimelineBuilders.@Nullable TimelineEntry findTimelineEntryForTime(
             long timeMillis) {
         TimelineEntry entry = mCache.findTimelineEntryForTime(timeMillis);
 
@@ -81,8 +81,7 @@ public final class TilesTimelineCache {
      *     none are valid.
      */
     @MainThread
-    @Nullable
-    public TimelineBuilders.TimelineEntry findTileTimelineEntryForTime(long timeMillis) {
+    public TimelineBuilders.@Nullable TimelineEntry findTileTimelineEntryForTime(long timeMillis) {
         TimelineEntry entry = mCache.findTimelineEntryForTime(timeMillis);
 
         if (entry == null) {
@@ -107,9 +106,8 @@ public final class TilesTimelineCache {
      * @deprecated Use {@link #findClosestTileTimelineEntry(long)} instead.
      */
     @MainThread
-    @Nullable
     @Deprecated
-    public androidx.wear.tiles.TimelineBuilders.TimelineEntry findClosestTimelineEntry(
+    public androidx.wear.tiles.TimelineBuilders.@Nullable TimelineEntry findClosestTimelineEntry(
             long timeMillis) {
         TimelineEntry entry = mCache.findClosestTimelineEntry(timeMillis);
 
@@ -134,8 +132,7 @@ public final class TilesTimelineCache {
      * @return The timeline entry with validity period closest to {@code timeMillis}.
      */
     @MainThread
-    @Nullable
-    public TimelineBuilders.TimelineEntry findClosestTileTimelineEntry(long timeMillis) {
+    public TimelineBuilders.@Nullable TimelineEntry findClosestTileTimelineEntry(long timeMillis) {
         TimelineEntry entry = mCache.findClosestTimelineEntry(timeMillis);
 
         if (entry == null) {
@@ -161,7 +158,7 @@ public final class TilesTimelineCache {
     @Deprecated
     @MainThread
     public long findCurrentTimelineEntryExpiry(
-            @NonNull androidx.wear.tiles.TimelineBuilders.TimelineEntry entry,
+            androidx.wear.tiles.TimelineBuilders.@NonNull TimelineEntry entry,
             long fromTimeMillis) {
         return mCache.findCurrentTimelineEntryExpiry(entry.toProto(), fromTimeMillis);
     }
@@ -179,7 +176,7 @@ public final class TilesTimelineCache {
      */
     @MainThread
     public long findCurrentTimelineEntryExpiry(
-            @NonNull TimelineBuilders.TimelineEntry entry, long fromTimeMillis) {
+            TimelineBuilders.@NonNull TimelineEntry entry, long fromTimeMillis) {
         return mCache.findCurrentTimelineEntryExpiry(entry.toProto(), fromTimeMillis);
     }
 }

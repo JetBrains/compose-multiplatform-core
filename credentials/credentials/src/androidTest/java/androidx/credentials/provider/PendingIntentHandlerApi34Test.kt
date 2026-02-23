@@ -18,22 +18,27 @@ package androidx.credentials.provider
 import android.content.Intent
 import android.content.pm.SigningInfo
 import android.credentials.CredentialOption
-import android.os.Build
+import android.os.Binder
 import android.os.Bundle
 import android.service.credentials.CallingAppInfo
 import android.service.credentials.CreateCredentialRequest
 import android.service.credentials.GetCredentialRequest
-import androidx.annotation.RequiresApi
+import androidx.credentials.CreateCustomCredentialResponse
 import androidx.credentials.CreatePasswordResponse
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.PasswordCredential
+import androidx.credentials.assertEquals
 import androidx.credentials.equals
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.domerrors.ConstraintError
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
+import androidx.credentials.provider.PendingIntentHandler.Companion.setCreateCredentialResponse
 import androidx.credentials.setUpCreatePasswordRequest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Test
@@ -41,7 +46,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@RequiresApi(34)
 @SdkSuppress(minSdkVersion = 34, codeName = "UpsideDownCake")
 class PendingIntentHandlerApi34Test {
     companion object {
@@ -51,7 +55,7 @@ class PendingIntentHandlerApi34Test {
         private val GET_CREDENTIAL_REQUEST =
             GetCredentialRequest(
                 CallingAppInfo("package_name", SigningInfo()),
-                ArrayList(setOf(GET_CREDENTIAL_OPTION))
+                ArrayList(setOf(GET_CREDENTIAL_OPTION)),
             )
 
         private const val BIOMETRIC_AUTHENTICATOR_TYPE = 1
@@ -68,6 +72,8 @@ class PendingIntentHandlerApi34Test {
 
         private const val FRAMEWORK_EXPECTED_CONSTANT_AUTH_RESULT =
             "androidx.credentials.provider.BIOMETRIC_AUTH_RESULT"
+
+        private val context = InstrumentationRegistry.getInstrumentation().context
     }
 
     @Test
@@ -95,7 +101,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(biometricPromptResult.authenticationResult)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationResult!!.authenticationType,
-                jetpackResult
+                jetpackResult,
             )
         }
     }
@@ -113,7 +119,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertEquals(biometricPromptResult, request.biometricPromptResult)
             Assert.assertEquals(
                 request.biometricPromptResult!!.authenticationResult!!.authenticationType,
-                jetpackResult
+                jetpackResult,
             )
         }
     }
@@ -127,7 +133,7 @@ class PendingIntentHandlerApi34Test {
                 BiometricPromptResult(
                     AuthenticationResult.createFrom(
                         uiAuthenticationType = frameworkResult,
-                        isFrameworkBiometricPrompt = true
+                        isFrameworkBiometricPrompt = true,
                     )
                 )
             val request = setUpCreatePasswordRequest()
@@ -143,7 +149,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(biometricPromptResult.authenticationResult)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationResult!!.authenticationType,
-                expectedResult
+                expectedResult,
             )
         }
     }
@@ -157,7 +163,7 @@ class PendingIntentHandlerApi34Test {
                 BiometricPromptResult(
                     AuthenticationResult.createFrom(
                         uiAuthenticationType = frameworkResult,
-                        isFrameworkBiometricPrompt = true
+                        isFrameworkBiometricPrompt = true,
                     )
                 )
             val expectedResult =
@@ -171,7 +177,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertEquals(biometricPromptResult, request.biometricPromptResult)
             Assert.assertEquals(
                 request.biometricPromptResult!!.authenticationResult!!.authenticationType,
-                expectedResult
+                expectedResult,
             )
         }
     }
@@ -194,7 +200,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(retrievedRequest.biometricPromptResult!!.authenticationError)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationError!!.errorCode,
-                jetpackError
+                jetpackError,
             )
         }
     }
@@ -215,7 +221,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(retrievedRequest.biometricPromptResult!!.authenticationError)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationError!!.errorCode,
-                jetpackError
+                jetpackError,
             )
         }
     }
@@ -228,7 +234,7 @@ class PendingIntentHandlerApi34Test {
                     AuthenticationError.createFrom(
                         uiErrorCode = frameworkError,
                         uiErrorMessage = BIOMETRIC_AUTHENTICATOR_ERROR_MSG,
-                        isFrameworkBiometricPrompt = true
+                        isFrameworkBiometricPrompt = true,
                     )
                 )
             val expectedErrorCode =
@@ -244,7 +250,7 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(retrievedRequest.biometricPromptResult!!.authenticationError)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationError!!.errorCode,
-                expectedErrorCode
+                expectedErrorCode,
             )
         }
     }
@@ -257,7 +263,7 @@ class PendingIntentHandlerApi34Test {
                     AuthenticationError.createFrom(
                         uiErrorCode = frameworkError,
                         uiErrorMessage = BIOMETRIC_AUTHENTICATOR_ERROR_MSG,
-                        isFrameworkBiometricPrompt = true
+                        isFrameworkBiometricPrompt = true,
                     )
                 )
             val expectedErrorCode =
@@ -271,35 +277,44 @@ class PendingIntentHandlerApi34Test {
             Assert.assertNotNull(retrievedRequest.biometricPromptResult!!.authenticationError)
             Assert.assertEquals(
                 retrievedRequest.biometricPromptResult!!.authenticationError!!.errorCode,
-                expectedErrorCode
+                expectedErrorCode,
             )
         }
     }
 
     @Test
-    fun test_createCredentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun createCredentialException_success() {
         val intent = Intent()
-        val initialException = CreateCredentialInterruptedException("message")
+        val expected = CreateCredentialInterruptedException("message")
 
-        PendingIntentHandler.setCreateCredentialException(intent, initialException)
+        PendingIntentHandler.setCreateCredentialException(intent, expected)
 
-        val finalException = intent.getCreateCredentialException()
-        assertThat(finalException).isNotNull()
-        assertThat(finalException).isEqualTo(initialException)
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
+        assertThat(actual.type).isEqualTo(expected.type)
+        assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
     }
 
     @Test
-    fun test_createCredentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun createCredentialException_domException_success() {
         val intent = Intent()
-        assertThat(intent.getCreateCredentialException()).isNull()
+        val expected = CreatePublicKeyCredentialDomException(ConstraintError(), "Error msg")
+
+        PendingIntentHandler.setCreateCredentialException(intent, expected)
+
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
+        assertThat(actual.type).isEqualTo(expected.type)
+        assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
+        val actualConverted = actual as CreatePublicKeyCredentialDomException
+        assertThat(actualConverted.domError).isInstanceOf((expected.domError)::class.java)
+    }
+
+    @Test
+    fun createCredentialException_emptyIntent_returnsNull() {
+        val intent = Intent()
+
+        assertThat(PendingIntentHandler.retrieveCreateCredentialException(intent)).isNull()
     }
 
     @Test
@@ -322,7 +337,7 @@ class PendingIntentHandlerApi34Test {
             BiometricPromptResult(
                 AuthenticationError(
                     BIOMETRIC_AUTHENTICATOR_ERROR_CODE,
-                    BIOMETRIC_AUTHENTICATOR_ERROR_MSG
+                    BIOMETRIC_AUTHENTICATOR_ERROR_MSG,
                 )
             )
         val request = setUpCreatePasswordRequest()
@@ -354,7 +369,7 @@ class PendingIntentHandlerApi34Test {
             BiometricPromptResult(
                 AuthenticationError(
                     BIOMETRIC_AUTHENTICATOR_ERROR_CODE,
-                    BIOMETRIC_AUTHENTICATOR_ERROR_MSG
+                    BIOMETRIC_AUTHENTICATOR_ERROR_MSG,
                 )
             )
         val intent = prepareIntentWithGetRequest(GET_CREDENTIAL_REQUEST, biometricPromptResult)
@@ -368,12 +383,12 @@ class PendingIntentHandlerApi34Test {
 
     private fun prepareIntentWithGetRequest(
         request: GetCredentialRequest,
-        biometricPromptResult: BiometricPromptResult
+        biometricPromptResult: BiometricPromptResult,
     ): Intent {
         val intent = Intent()
         intent.putExtra(
             android.service.credentials.CredentialProviderService.EXTRA_GET_CREDENTIAL_REQUEST,
-            request
+            request,
         )
         prepareIntentWithBiometricResult(intent, biometricPromptResult)
         return intent
@@ -381,12 +396,12 @@ class PendingIntentHandlerApi34Test {
 
     private fun prepareIntentWithCreateRequest(
         request: CreateCredentialRequest,
-        biometricPromptResult: BiometricPromptResult
+        biometricPromptResult: BiometricPromptResult,
     ): Intent {
         val intent = Intent()
         intent.putExtra(
             android.service.credentials.CredentialProviderService.EXTRA_CREATE_CREDENTIAL_REQUEST,
-            request
+            request,
         )
         prepareIntentWithBiometricResult(intent, biometricPromptResult)
         return intent
@@ -394,14 +409,14 @@ class PendingIntentHandlerApi34Test {
 
     private fun prepareIntentWithBiometricResult(
         intent: Intent,
-        biometricPromptResult: BiometricPromptResult
+        biometricPromptResult: BiometricPromptResult,
     ) {
         if (biometricPromptResult.isSuccessful) {
             Assert.assertNotNull(biometricPromptResult.authenticationResult)
             var extraResultKey = AuthenticationResult.EXTRA_BIOMETRIC_AUTH_RESULT_TYPE
             intent.putExtra(
                 extraResultKey,
-                biometricPromptResult.authenticationResult!!.authenticationType
+                biometricPromptResult.authenticationResult!!.authenticationType,
             )
         } else {
             Assert.assertNotNull(biometricPromptResult.authenticationError)
@@ -410,17 +425,13 @@ class PendingIntentHandlerApi34Test {
             intent.putExtra(extraErrorKey, biometricPromptResult.authenticationError!!.errorCode)
             intent.putExtra(
                 extraErrorMessageKey,
-                biometricPromptResult.authenticationError!!.errorMsg
+                biometricPromptResult.authenticationError!!.errorMsg,
             )
         }
     }
 
     @Test
     fun test_credentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialException = GetCredentialInterruptedException("message")
 
@@ -428,25 +439,19 @@ class PendingIntentHandlerApi34Test {
 
         val finalException = intent.getGetCredentialException()
         assertThat(finalException).isNotNull()
-        assertThat(finalException).isEqualTo(initialException)
+        assertThat(finalException!!.type).isEqualTo(initialException.type)
+        assertThat(finalException.message).isEqualTo(initialException.message)
     }
 
     @Test
-    fun test_credentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_credentialException_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getGetCredentialException()).isNull()
     }
 
     @Test
     fun test_beginGetResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialResponse = BeginGetCredentialResponse.Builder().build()
 
@@ -454,25 +459,18 @@ class PendingIntentHandlerApi34Test {
 
         val finalResponse = intent.getBeginGetResponse()
         assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        assertEquals(context, finalResponse!!, initialResponse)
     }
 
     @Test
-    fun test_beginGetResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_beginGetResponse_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getBeginGetResponse()).isNull()
     }
 
     @Test
     fun test_credentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val credential = PasswordCredential("a", "b")
         val initialResponse = GetCredentialResponse(credential)
@@ -481,43 +479,45 @@ class PendingIntentHandlerApi34Test {
 
         val finalResponse = intent.getGetCredentialResponse()
         assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        assertEquals(finalResponse!!, initialResponse)
     }
 
     @Test
-    fun test_credentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_credentialResponse_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getGetCredentialResponse()).isNull()
     }
 
     @Test
-    fun test_createCredentialCredentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun createCredentialCredentialResponse_passwordResponse_success() {
         val intent = Intent()
-        val initialResponse = CreatePasswordResponse()
+        val expected = CreatePasswordResponse()
 
-        PendingIntentHandler.setCreateCredentialResponse(intent, initialResponse)
+        PendingIntentHandler.setCreateCredentialResponse(intent, expected)
 
-        val finalResponse = intent.getCreateCredentialCredentialResponse()
-        assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
+        assertEquals(actual, expected)
     }
 
     @Test
-    fun test_createCredentialCredentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun setCreateCredentialResponse_customResponse_success() {
         val intent = Intent()
-        val r = intent.getCreateCredentialCredentialResponse()
-        assertThat(r).isNull()
+        val customData = Bundle()
+        customData.putString("k1", "text")
+        customData.putBinder("k2", Binder())
+        val expected = CreateCustomCredentialResponse("type", customData)
+
+        setCreateCredentialResponse(intent, expected)
+
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun retrieveCreateCredentialResponse_emptyResponse_returnsNull() {
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse("type", Intent())
+
+        assertThat(actual).isNull()
     }
 }

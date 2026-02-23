@@ -16,10 +16,11 @@
 
 package androidx.paging.integration.testapp.room;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample entity
@@ -87,9 +88,8 @@ public class Customer {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "Customer{"
                 + "mId=" + mId
                 + ", mName='" + mName + '\''

@@ -16,7 +16,7 @@
 
 package androidx.core.appdigest;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

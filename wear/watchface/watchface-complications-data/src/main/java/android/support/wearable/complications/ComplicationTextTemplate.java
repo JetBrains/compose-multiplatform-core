@@ -31,9 +31,10 @@ import android.text.style.SuperscriptSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.UnderlineSpan;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -55,14 +56,12 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
     public static final Creator<ComplicationTextTemplate> CREATOR =
             new Creator<ComplicationTextTemplate>() {
                 @Override
-                @NonNull
-                public ComplicationTextTemplate createFromParcel(@NonNull Parcel in) {
+                public @NonNull ComplicationTextTemplate createFromParcel(@NonNull Parcel in) {
                     return new ComplicationTextTemplate(in);
                 }
 
                 @Override
-                @NonNull
-                public ComplicationTextTemplate[] newArray(int size) {
+                public ComplicationTextTemplate @NonNull [] newArray(int size) {
                     return new ComplicationTextTemplate[size];
                 }
             };
@@ -77,7 +76,8 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
     private final ComplicationText[] mComplicationTexts;
 
     ComplicationTextTemplate(
-            @Nullable CharSequence surroundingText, @NonNull ComplicationText[] complicationTexts) {
+            @Nullable CharSequence surroundingText,
+            ComplicationText @NonNull [] complicationTexts) {
         mSurroundingText = surroundingText;
         mComplicationTexts = complicationTexts;
         checkFields();
@@ -103,11 +103,11 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
 
     private static class SerializedForm implements Serializable {
         @Nullable CharSequence mSurroundingText;
-        @NonNull ComplicationText[] mComplicationTexts;
+        ComplicationText @NonNull [] mComplicationTexts;
 
         SerializedForm(
                 @Nullable CharSequence surroundingText,
-                @NonNull ComplicationText[] complicationTexts) {
+                ComplicationText @NonNull [] complicationTexts) {
             mSurroundingText = surroundingText;
             mComplicationTexts = complicationTexts;
         }
@@ -150,9 +150,8 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
         out.writeBundle(bundle);
     }
 
-    @NonNull
     @Override
-    public CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
+    public @NonNull CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
         final int len = mComplicationTexts.length;
         if (len == 0) {
             return mSurroundingText;
@@ -195,8 +194,7 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return "ComplicationTextTemplate{"
                 + "surroundingText="
                 + mSurroundingText
@@ -214,8 +212,7 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
         private final List<ComplicationText> mTexts = new ArrayList<>(2);
 
         /** Adds a ComplicationText to be applied to the {@link #setSurroundingText} template. */
-        @NonNull
-        public Builder addComplicationText(@NonNull ComplicationText text) {
+        public @NonNull Builder addComplicationText(@NonNull ComplicationText text) {
             mTexts.add(text);
             return this;
         }
@@ -239,8 +236,7 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
          * @param surroundingText string template
          * @return this builder for chaining
          */
-        @NonNull
-        public Builder setSurroundingText(@Nullable CharSequence surroundingText) {
+        public @NonNull Builder setSurroundingText(@Nullable CharSequence surroundingText) {
             mSurroundingText = surroundingText;
             return this;
         }
@@ -254,8 +250,7 @@ public final class ComplicationTextTemplate implements Parcelable, TimeDependent
          * Returns {@link ComplicationTextTemplate} including the ComplicationText objects formatted
          * as specified.
          */
-        @NonNull
-        public ComplicationTextTemplate build() {
+        public @NonNull ComplicationTextTemplate build() {
             if (mTexts.isEmpty()) {
                 throw new IllegalStateException("At least one text must be specified.");
             }

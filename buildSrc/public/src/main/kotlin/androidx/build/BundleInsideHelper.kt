@@ -19,6 +19,7 @@ package androidx.build
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
 import com.github.jengelman.gradle.plugins.shadow.transformers.TransformerContext
+import org.apache.tools.zip.ZipOutputStream
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Usage
@@ -28,12 +29,11 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.named
-import shadow.org.apache.tools.zip.ZipOutputStream
 
 /** Allow java and Android libraries to bundle other projects inside the project jar/aar. */
 object BundleInsideHelper {
-    val CONFIGURATION_NAME = "bundleInside"
-    val REPACKAGE_TASK_NAME = "repackageBundledJars"
+    const val CONFIGURATION_NAME = "bundleInside"
+    const val REPACKAGE_TASK_NAME = "repackageBundledJars"
 
     /**
      * Creates a configuration for the users to use that will be used to bundle these dependency
@@ -114,23 +114,9 @@ object BundleInsideHelper {
         compileOnly.extendsFrom(bundle)
         testImplementation.extendsFrom(bundle)
 
-        // Relocation needed to avoid classpath conflicts with Android Studio (b/337980250)
-        // Can be removed if we migrate from using kotlinx-metadata-jvm inside of lint checks
-        val relocations = listOf(Relocation("kotlinx.metadata", "androidx.lint.kotlinx.metadata"))
-        val repackage = configureRepackageTaskForType(relocations, bundle, null)
+        val repackage = configureRepackageTaskForType(null, bundle, null)
         val sourceSets = extensions.getByType(SourceSetContainer::class.java)
-        repackage.configure { task ->
-            task.from(sourceSets.findByName("main")?.output)
-            // kotlinx-metadata-jvm has a service descriptor that needs transformation
-            task.mergeServiceFiles()
-            // Exclude Kotlin metadata files from kotlinx-metadata-jvm
-            task.exclude(
-                "META-INF/kotlinx-metadata-jvm.kotlin_module",
-                "META-INF/kotlinx-metadata.kotlin_module",
-                "META-INF/metadata.jvm.kotlin_module",
-                "META-INF/metadata.kotlin_module"
-            )
-        }
+        repackage.configure { task -> task.from(sourceSets.findByName("main")!!.output) }
 
         listOf("apiElements", "runtimeElements").forEach { config ->
             configurations.getByName(config).apply {
@@ -145,7 +131,7 @@ object BundleInsideHelper {
     private fun Project.configureRepackageTaskForType(
         relocations: List<Relocation>?,
         configuration: Configuration,
-        dropResourcesWithSuffix: String?
+        dropResourcesWithSuffix: String?,
     ): TaskProvider<ShadowJar> {
         return tasks.register(REPACKAGE_TASK_NAME, ShadowJar::class.java) { task ->
             task.apply {
@@ -168,8 +154,11 @@ object BundleInsideHelper {
     private fun Project.createBundleConfiguration(): Configuration {
         val bundle =
             configurations.create(CONFIGURATION_NAME) {
-                it.attributes {
-                    it.attribute(Usage.USAGE_ATTRIBUTE, objects.named<Usage>(Usage.JAVA_RUNTIME))
+                it.attributes { attributes ->
+                    attributes.attribute(
+                        Usage.USAGE_ATTRIBUTE,
+                        objects.named<Usage>(Usage.JAVA_RUNTIME),
+                    )
                 }
                 it.isCanBeConsumed = false
             }

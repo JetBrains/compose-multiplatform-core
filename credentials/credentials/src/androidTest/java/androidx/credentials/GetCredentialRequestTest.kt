@@ -27,6 +27,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalDigitalCredentialApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class GetCredentialRequestTest {
@@ -37,6 +38,41 @@ class GetCredentialRequestTest {
     @Test
     fun constructor_emptyCredentialOptions_throws() {
         assertThrows(IllegalArgumentException::class.java) { GetCredentialRequest(ArrayList()) }
+    }
+
+    @Test
+    fun constructor_mixedUseOfGetRestoreCredentialOption_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            val credentialOptions = ArrayList<CredentialOption>()
+            credentialOptions.add(GetRestoreCredentialOption(TEST_JSON))
+            credentialOptions.add(GetPasswordOption())
+            GetCredentialRequest(credentialOptions)
+        }
+    }
+
+    @Test
+    fun constructor_singleUseOfGetRestoreCredentialOption_doesNotThrow() {
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetRestoreCredentialOption(TEST_JSON))
+        GetCredentialRequest(credentialOptions)
+    }
+
+    @Test
+    fun constructor_mixedUseOfDigitalCredentialOption_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            val credentialOptions = ArrayList<CredentialOption>()
+            credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+            credentialOptions.add(GetPasswordOption())
+            GetCredentialRequest(credentialOptions)
+        }
+    }
+
+    @Test
+    fun constructor_singleUseOfDigitalCredentialOption_doesNotThrow() {
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+        credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+        GetCredentialRequest(credentialOptions)
     }
 
     @Test
@@ -82,7 +118,7 @@ class GetCredentialRequestTest {
                 options,
                 /*origin=*/ null,
                 /*preferIdentityDocUi=*/ false,
-                expectedComponentName
+                expectedComponentName,
             )
 
         assertThat(request.credentialOptions[0].isAutoSelectAllowed).isFalse()
@@ -101,7 +137,7 @@ class GetCredentialRequestTest {
                 origin = null,
                 preferIdentityDocUi = false,
                 preferUiBrandingComponentName = null,
-                expectedPreferImmediatelyAvailableCredentials
+                expectedPreferImmediatelyAvailableCredentials,
             )
 
         assertThat(request.credentialOptions[0].isAutoSelectAllowed).isFalse()
@@ -229,7 +265,7 @@ class GetCredentialRequestTest {
                 expectedOrigin,
                 expectedPreferIdentityDocUi,
                 expectedComponentName,
-                expectedPreferImmediatelyAvailableCredentials
+                expectedPreferImmediatelyAvailableCredentials,
             )
 
         val convertedRequest =
@@ -257,7 +293,7 @@ class GetCredentialRequestTest {
                 expectedOrigin,
                 expectedPreferIdentityDocUi,
                 expectedComponentName,
-                expectedPreferImmediatelyAvailableCredentials
+                expectedPreferImmediatelyAvailableCredentials,
             )
 
         val convertedRequest =
@@ -269,7 +305,7 @@ class GetCredentialRequestTest {
                             android.credentials.CredentialOption.Builder(
                                     it.type,
                                     it.requestData,
-                                    it.candidateQueryData
+                                    it.candidateQueryData,
                                 )
                                 .setAllowedProviders(it.allowedProviders)
                                 .setIsSystemProviderRequired(it.isSystemProviderRequired)

@@ -17,8 +17,10 @@
 package androidx.camera.extensions.impl.advanced;
 
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.ColorSpaceProfiles;
+import android.hardware.camera2.params.SessionConfiguration;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -33,14 +35,12 @@ public interface Camera2SessionConfigImpl {
      * Returns all the {@link Camera2OutputConfigImpl}s that will be used to create
      * {@link android.hardware.camera2.params.OutputConfiguration}.
      */
-    @NonNull
-    List<Camera2OutputConfigImpl> getOutputConfigs();
+    @NonNull List<Camera2OutputConfigImpl> getOutputConfigs();
 
     /**
      * Gets all the parameters to create the session parameters with.
      */
-    @NonNull
-    Map<CaptureRequest.Key<?>, Object> getSessionParameters();
+    @NonNull Map<CaptureRequest.Key<?>, Object> getSessionParameters();
 
     /**
      * Gets the template id used for creating {@link CaptureRequest}s to be passed in
@@ -59,5 +59,17 @@ public interface Camera2SessionConfigImpl {
      *
      * @since 1.4
      */
-    int getSessionType();
+    default int getSessionType() {
+        return SessionConfiguration.SESSION_REGULAR;
+    }
+
+    /**
+     * Gets the color space.
+     *
+     * @since 1.5
+     * @return {@link android.graphics.ColorSpace.Named} set for session configuration
+     */
+    default int getColorSpace() {
+        return ColorSpaceProfiles.UNSPECIFIED;
+    }
 }

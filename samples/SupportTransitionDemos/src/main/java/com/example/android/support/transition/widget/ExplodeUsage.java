@@ -21,13 +21,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.transition.Explode;
 import androidx.transition.Transition;
 import androidx.transition.TransitionManager;
 
 import com.example.android.support.transition.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 

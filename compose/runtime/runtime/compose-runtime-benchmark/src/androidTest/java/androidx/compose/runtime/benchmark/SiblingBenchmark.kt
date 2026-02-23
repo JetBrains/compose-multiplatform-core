@@ -23,7 +23,6 @@ import androidx.compose.runtime.benchmark.siblings.SiblingManagement
 import androidx.compose.runtime.benchmark.siblings.update
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.test.annotation.UiThreadTest
 import androidx.test.filters.LargeTest
 import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,34 +77,19 @@ class SiblingBenchmark(val count: Int, val reorder: ReorderType, val identity: I
         }
     }
 
-    @UiThreadTest
     @Test
     fun runBenchmark() {
-        activityRule.runUiRunnable {
-            val listA = (0..count).map { Item(it) }
-            val random = Random(0)
-            val listB = listA.update(reorder, random) { Item(it + 1) }
-            val items = mutableStateOf(listA)
+        val listA = (0..count).map { Item(it) }
+        val random = Random(0)
+        val listB = listA.update(reorder, random) { Item(it + 1) }
+        val items = mutableStateOf(listA)
 
-            runBlockingTestWithFrameClock {
-                measureRecomposeSuspending {
-                    compose { SiblingManagement(identity = identity, items = items.value) }
-                    update { items.value = listB }
-                    reset { items.value = listA }
-                }
+        runBlockingTestWithFrameClock {
+            measureRecompose {
+                compose { SiblingManagement(identity = identity, items = items.value) }
+                update { items.value = listB }
+                reset { items.value = listA }
             }
         }
     }
-}
-
-// NOTE: remove when SAM conversion works in IR
-@Suppress("DEPRECATION")
-fun androidx.test.rule.ActivityTestRule<ComposeActivity>.runUiRunnable(block: () -> Unit) {
-    runOnUiThread(
-        object : Runnable {
-            override fun run() {
-                block()
-            }
-        }
-    )
 }

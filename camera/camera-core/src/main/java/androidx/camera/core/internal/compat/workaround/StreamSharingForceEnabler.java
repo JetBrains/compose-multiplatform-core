@@ -16,12 +16,13 @@
 
 package androidx.camera.core.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.core.internal.compat.quirk.ImageCaptureFailedForSpecificCombinationQuirk;
 import androidx.camera.core.internal.compat.quirk.PreviewGreenTintQuirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -32,12 +33,11 @@ import java.util.Collection;
  * @see PreviewGreenTintQuirk
  */
 public class StreamSharingForceEnabler {
-    @Nullable
-    private final ImageCaptureFailedForSpecificCombinationQuirk mSpecificCombinationQuirk =
+    private final @Nullable ImageCaptureFailedForSpecificCombinationQuirk
+            mSpecificCombinationQuirk =
             DeviceQuirks.get(ImageCaptureFailedForSpecificCombinationQuirk.class);
 
-    @Nullable
-    private final PreviewGreenTintQuirk mPreviewGreenTintQuirk =
+    private final @Nullable PreviewGreenTintQuirk mPreviewGreenTintQuirk =
             DeviceQuirks.get(PreviewGreenTintQuirk.class);
 
     /**

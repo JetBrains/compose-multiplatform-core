@@ -25,8 +25,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -66,9 +67,8 @@ public class ListFragment extends Fragment {
             super(context, resource, textViewResourceId, objects);
         }
 
-        @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public @NonNull View getView(int position, View convertView, ViewGroup parent) {
             View view = super.getView(position, convertView, parent);
             ViewHolder holder = (ViewHolder) view.getTag();
             if (holder == null) {

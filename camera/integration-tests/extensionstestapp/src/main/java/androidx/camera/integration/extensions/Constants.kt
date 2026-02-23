@@ -30,8 +30,6 @@ const val PERMISSIONS_REQUEST_CODE = 42
 
 /** Intent extra keys to pass necessary information between the caller and callee activities. */
 object IntentExtraKey {
-    /** Launches the activity with the specified CameraX implementation. */
-    const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
 
     /**
      * Launches the activity with the specified direction of camera.
@@ -54,6 +52,9 @@ object IntentExtraKey {
     /** Launches the activity with the specified extension mode. */
     const val INTENT_EXTRA_KEY_EXTENSION_MODE = "extension_mode"
 
+    /** Takes the still image with the specified output format. */
+    const val INTENT_EXTRA_KEY_OUTPUT_FORMAT = "still_image_output_format"
+
     /**
      * The captured image will be deleted automatically if the intent used to launch the activity
      * includes the setting as true.
@@ -75,6 +76,9 @@ object IntentExtraKey {
      * image in correct orientation.
      */
     const val INTENT_EXTRA_KEY_IMAGE_ROTATION_DEGREES = "ImageRotationDegrees"
+
+    /** Used to pass the info that whether VideoCapture should be enabled. */
+    const val INTENT_EXTRA_KEY_VIDEO_CAPTURE_ENABLED = "VideoCaptureEnabled"
 
     /** Used to pass the request code to the callee activity. */
     const val INTENT_EXTRA_KEY_REQUEST_CODE = "RequestCode"
@@ -162,8 +166,6 @@ object RequestResultErrorCode {
     const val RESULT_ERROR_FAILED_TO_RETRIEVE_EXTENSIONS_MANAGER = 3
     /** Target testing extension mode is not supported on the target camera device. */
     const val RESULT_ERROR_EXTENSION_MOD_NOT_SUPPORTED = 4
-    /** Incorrect camera implementation. */
-    const val RESULT_ERROR_INCORRECT_CAMERA_IMPLEMENTATION = 5
     /** Failed to take a picture. */
-    const val RESULT_ERROR_TAKE_PICTURE_FAILED = 6
+    const val RESULT_ERROR_TAKE_PICTURE_FAILED = 5
 }

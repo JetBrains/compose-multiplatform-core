@@ -16,8 +16,9 @@
 
 package androidx.window.extensions.layout;
 
-import androidx.annotation.NonNull;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +39,8 @@ public final class SupportedWindowFeatures {
     /**
      * Returns the possible {@link DisplayFoldFeature}s that can be reported to an application.
      */
-    @NonNull
     @RequiresVendorApiLevel(level = 6)
-    public List<DisplayFoldFeature> getDisplayFoldFeatures() {
+    public @NonNull List<DisplayFoldFeature> getDisplayFoldFeatures() {
         return new ArrayList<>(mDisplayFoldFeatureList);
     }
 
@@ -63,9 +63,8 @@ public final class SupportedWindowFeatures {
         /**
          * Creates an instance of {@link SupportedWindowFeatures} with the features set.
          */
-        @NonNull
         @RequiresVendorApiLevel(level = 6)
-        public SupportedWindowFeatures build() {
+        public @NonNull SupportedWindowFeatures build() {
             return new SupportedWindowFeatures(mDisplayFoldFeatures);
         }
     }

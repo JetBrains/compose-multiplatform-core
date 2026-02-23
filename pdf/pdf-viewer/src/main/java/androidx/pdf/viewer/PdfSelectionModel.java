@@ -16,12 +16,13 @@
 
 package androidx.pdf.viewer;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.models.SelectionBoundary;
 import androidx.pdf.select.SelectionModel;
 import androidx.pdf.viewer.loader.PdfLoader;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Selection model for pdfs.
@@ -41,9 +42,8 @@ public class PdfSelectionModel extends SelectionModel<PageSelection> {
         return (value != null) ? value.getPage() : -1;
     }
 
-    @NonNull
     @Override
-    public String getText() {
+    public @NonNull String getText() {
         PageSelection value = mSelection.get();
         return (value != null) ? value.getText() : "";
     }

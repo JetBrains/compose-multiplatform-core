@@ -28,13 +28,14 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.processing.ShaderProvider;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -107,9 +108,8 @@ public final class GLUtils {
                     + "}\n";
 
     private static final ShaderProvider SHADER_PROVIDER_DEFAULT = new ShaderProvider() {
-        @NonNull
         @Override
-        public String createFragmentShader(@NonNull String samplerVarName,
+        public @NonNull String createFragmentShader(@NonNull String samplerVarName,
                 @NonNull String fragCoordsVarName) {
             return String.format(Locale.US,
                     "#extension GL_OES_EGL_image_external : require\n"
@@ -126,9 +126,8 @@ public final class GLUtils {
     };
 
     private static final ShaderProvider SHADER_PROVIDER_HDR_DEFAULT = new ShaderProvider() {
-        @NonNull
         @Override
-        public String createFragmentShader(@NonNull String samplerVarName,
+        public @NonNull String createFragmentShader(@NonNull String samplerVarName,
                 @NonNull String fragCoordsVarName) {
             return String.format(Locale.US,
                     "#version 300 es\n"
@@ -148,9 +147,8 @@ public final class GLUtils {
     };
 
     private static final ShaderProvider SHADER_PROVIDER_HDR_YUV = new ShaderProvider() {
-        @NonNull
         @Override
-        public String createFragmentShader(@NonNull String samplerVarName,
+        public @NonNull String createFragmentShader(@NonNull String samplerVarName,
                 @NonNull String fragCoordsVarName) {
             return String.format(Locale.US,
                     "#version 300 es\n"
@@ -297,7 +295,7 @@ public final class GLUtils {
         }
 
         /** Updates the global transform matrix */
-        public void updateTransformMatrix(@NonNull float[] transformMat) {
+        public void updateTransformMatrix(float @NonNull [] transformMat) {
             GLES20.glUniformMatrix4fv(mTransMatrixLoc,
                     /*count=*/1, /*transpose=*/false, transformMat,
                     /*offset=*/0);
@@ -369,7 +367,7 @@ public final class GLUtils {
         }
 
         /** Updates the texture transform matrix */
-        public void updateTextureMatrix(@NonNull float[] textureMat) {
+        public void updateTextureMatrix(float @NonNull [] textureMat) {
             GLES20.glUniformMatrix4fv(mTexMatrixLoc, /*count=*/1, /*transpose=*/false,
                     textureMat, /*offset=*/0);
             checkGlErrorOrThrow("glUniformMatrix4fv");
@@ -410,9 +408,8 @@ public final class GLUtils {
     /**
      * Creates an {@link EGLSurface}.
      */
-    @NonNull
-    public static EGLSurface createWindowSurface(@NonNull EGLDisplay eglDisplay,
-            @NonNull EGLConfig eglConfig, @NonNull Surface surface, @NonNull int[] surfaceAttrib) {
+    public static @NonNull EGLSurface createWindowSurface(@NonNull EGLDisplay eglDisplay,
+            @NonNull EGLConfig eglConfig, @NonNull Surface surface, int @NonNull [] surfaceAttrib) {
         // Create a window surface, and attach it to the Surface we received.
         EGLSurface eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, surface,
                 surfaceAttrib, /*offset=*/0);
@@ -456,8 +453,7 @@ public final class GLUtils {
     /**
      * Gets the size of {@link EGLSurface}.
      */
-    @NonNull
-    public static Size getSurfaceSize(@NonNull EGLDisplay eglDisplay,
+    public static @NonNull Size getSurfaceSize(@NonNull EGLDisplay eglDisplay,
             @NonNull EGLSurface eglSurface) {
         int width = querySurface(eglDisplay, eglSurface, EGL14.EGL_WIDTH);
         int height = querySurface(eglDisplay, eglSurface, EGL14.EGL_HEIGHT);
@@ -467,8 +463,7 @@ public final class GLUtils {
     /**
      * Creates a {@link FloatBuffer}.
      */
-    @NonNull
-    public static FloatBuffer createFloatBuffer(@NonNull float[] coords) {
+    public static @NonNull FloatBuffer createFloatBuffer(float @NonNull [] coords) {
         ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * SIZEOF_FLOAT);
         bb.order(ByteOrder.nativeOrder());
         FloatBuffer fb = bb.asFloatBuffer();
@@ -481,8 +476,7 @@ public final class GLUtils {
      * Creates a new EGL pixel buffer surface.
      */
     @SuppressWarnings("SameParameterValue") // currently hard code width/height with 1/1
-    @NonNull
-    public static EGLSurface createPBufferSurface(@NonNull EGLDisplay eglDisplay,
+    public static @NonNull EGLSurface createPBufferSurface(@NonNull EGLDisplay eglDisplay,
             @NonNull EGLConfig eglConfig, int width, int height) {
         int[] surfaceAttrib = {
                 EGL14.EGL_WIDTH, width,
@@ -506,8 +500,8 @@ public final class GLUtils {
      * to the program when the input format changes so we correctly sample the input texture
      * (or no-op, in some cases).
      */
-    @NonNull
-    public static Map<InputFormat, Program2D> createPrograms(@NonNull DynamicRange dynamicRange,
+    public static @NonNull Map<InputFormat, Program2D> createPrograms(
+            @NonNull DynamicRange dynamicRange,
             @NonNull Map<InputFormat, ShaderProvider> shaderProviderOverrides) {
         HashMap<InputFormat, Program2D> programs = new HashMap<>();
         for (InputFormat inputFormat : InputFormat.values()) {
@@ -560,7 +554,7 @@ public final class GLUtils {
         checkGlErrorOrThrow("glBindTexture " + texId);
 
         GLES20.glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,
-                GLES20.GL_NEAREST);
+                GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER,
                 GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S,
@@ -574,8 +568,7 @@ public final class GLUtils {
     /**
      * Creates a 4x4 identity matrix.
      */
-    @NonNull
-    public static float[] create4x4IdentityMatrix() {
+    public static float @NonNull [] create4x4IdentityMatrix() {
         float[] matrix = new float[16];
         Matrix.setIdentityM(matrix, /* smOffset= */ 0);
         return matrix;
@@ -643,8 +636,7 @@ public final class GLUtils {
     /**
      * Gets the gl version number.
      */
-    @NonNull
-    public static String getGlVersionNumber() {
+    public static @NonNull String getGlVersionNumber() {
         // Logic adapted from CTS Egl14Utils:
         // https://cs.android.com/android/platform/superproject/+/master:cts/tests/tests/opengl/src/android/opengl/cts/Egl14Utils.java;l=46;drc=1c705168ab5118c42e5831cd84871d51ff5176d1
         String glVersion = GLES20.glGetString(GLES20.GL_VERSION);
@@ -661,8 +653,7 @@ public final class GLUtils {
     /**
      * Chooses the surface attributes for HDR 10bit.
      */
-    @NonNull
-    public static int[] chooseSurfaceAttrib(@NonNull String eglExtensions,
+    public static int @NonNull [] chooseSurfaceAttrib(@NonNull String eglExtensions,
             @NonNull DynamicRange dynamicRange) {
         int[] attribs = EMPTY_ATTRIBS;
         if (dynamicRange.getEncoding() == DynamicRange.ENCODING_HLG) {

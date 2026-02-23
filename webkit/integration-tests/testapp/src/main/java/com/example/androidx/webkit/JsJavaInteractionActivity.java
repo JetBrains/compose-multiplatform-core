@@ -21,8 +21,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to exercise Js Java interaction related functionality.
@@ -34,6 +35,7 @@ public class JsJavaInteractionActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_js_java_interaction);
         setTitle(R.string.js_java_interaction_activity_title);
+        WebkitHelpers.enableEdgeToEdge(this);
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         final Context activityContext = this;

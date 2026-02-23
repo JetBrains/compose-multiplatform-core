@@ -31,7 +31,7 @@ public abstract class SuspendingComplicationDataSourceService : ComplicationData
 
     final override fun onComplicationRequest(
         request: ComplicationRequest,
-        listener: ComplicationRequestListener
+        listener: ComplicationRequestListener,
     ) {
         scope.launch { listener.onComplicationData(onComplicationRequest(request)) }
     }
@@ -48,7 +48,9 @@ public abstract class SuspendingComplicationDataSourceService : ComplicationData
      * @see ComplicationDataSourceService.ComplicationRequestListener.onComplicationData
      */
     @UiThread
-    abstract suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData?
+    public abstract suspend fun onComplicationRequest(
+        request: ComplicationRequest
+    ): ComplicationData?
 
     @CallSuper
     open override fun onDestroy() {
@@ -67,7 +69,7 @@ public abstract class SuspendingTimelineComplicationDataSourceService :
 
     final override fun onComplicationRequest(
         request: ComplicationRequest,
-        listener: ComplicationRequestListener
+        listener: ComplicationRequestListener,
     ) {
         scope.launch { listener.onComplicationDataTimeline(onComplicationRequest(request)) }
     }
@@ -84,7 +86,7 @@ public abstract class SuspendingTimelineComplicationDataSourceService :
      * @see ComplicationDataSourceService.ComplicationRequestListener.onComplicationData
      */
     @UiThread
-    abstract suspend fun onComplicationRequest(
+    public abstract suspend fun onComplicationRequest(
         request: ComplicationRequest
     ): ComplicationDataTimeline?
 

@@ -25,17 +25,16 @@ import android.content.res.TypedArray;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.PointF;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.view.ViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -94,11 +93,6 @@ public class ChangeTransform extends Transition {
                     object.setTranslation(value);
                 }
             };
-
-    /**
-     * Newer platforms suppress view removal at the beginning of the animation.
-     */
-    private static final boolean SUPPORTS_VIEW_REMOVAL_SUPPRESSION = Build.VERSION.SDK_INT >= 21;
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     boolean mUseOverlay = true;
@@ -187,8 +181,7 @@ public class ChangeTransform extends Transition {
     }
 
     @Override
-    @NonNull
-    public String[] getTransitionProperties() {
+    public String @NonNull [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -223,13 +216,6 @@ public class ChangeTransform extends Transition {
     @Override
     public void captureStartValues(@NonNull TransitionValues transitionValues) {
         captureValues(transitionValues);
-        if (!SUPPORTS_VIEW_REMOVAL_SUPPRESSION) {
-            // We still don't know if the view is removed or not, but we need to do this here, or
-            // the view will be actually removed, resulting in flickering at the beginning of the
-            // animation. We are canceling this afterwards.
-            ((ViewGroup) transitionValues.view.getParent()).startViewTransition(
-                    transitionValues.view);
-        }
     }
 
     @Override
@@ -237,9 +223,8 @@ public class ChangeTransform extends Transition {
         captureValues(transitionValues);
     }
 
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues,
             @Nullable TransitionValues endValues) {
         if (startValues == null || endValues == null
@@ -274,9 +259,6 @@ public class ChangeTransform extends Transition {
 
         if (handleParentChange && transformAnimator != null && mUseOverlay) {
             createGhostView(sceneRoot, startValues, endValues);
-        } else if (!SUPPORTS_VIEW_REMOVAL_SUPPRESSION) {
-            // We didn't need to suppress the view removal in this case. Cancel the suppression.
-            startParent.endViewTransition(startValues.view);
         }
 
         return transformAnimator;
@@ -368,14 +350,10 @@ public class ChangeTransform extends Transition {
         GhostListener listener = new GhostListener(view, ghostView);
         outerTransition.addListener(listener);
 
-        // We cannot do this for older platforms or it invalidates the view and results in
-        // flickering, but the view will still be invisible by actually removing it from the parent.
-        if (SUPPORTS_VIEW_REMOVAL_SUPPRESSION) {
-            if (startValues.view != endValues.view) {
-                ViewUtils.setTransitionAlpha(startValues.view, 0);
-            }
-            ViewUtils.setTransitionAlpha(view, 1);
+        if (startValues.view != endValues.view) {
+            ViewUtils.setTransitionAlpha(startValues.view, 0);
         }
+        ViewUtils.setTransitionAlpha(view, 1);
     }
 
     private void setMatricesForParent(TransitionValues startValues, TransitionValues endValues) {

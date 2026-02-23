@@ -19,9 +19,10 @@ package androidx.window.area.reflectionguard;
 import android.content.Context;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.area.ExtensionWindowAreaPresentation;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * API requirements for [ExtensionWindowAreaPresentation]
@@ -29,8 +30,7 @@ import androidx.window.extensions.area.ExtensionWindowAreaPresentation;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface ExtensionWindowAreaPresentationRequirements {
     /** @see ExtensionWindowAreaPresentation#getPresentationContext */
-    @NonNull
-    Context getPresentationContext();
+    @NonNull Context getPresentationContext();
 
     /** @see ExtensionWindowAreaPresentation#setPresentationView */
     void setPresentationView(@NonNull View view);

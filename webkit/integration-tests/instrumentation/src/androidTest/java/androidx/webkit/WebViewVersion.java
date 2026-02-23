@@ -19,9 +19,10 @@ package androidx.webkit;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -49,8 +50,7 @@ class WebViewVersion implements Comparable<WebViewVersion> {
         }
     }
 
-    @Nullable
-    static WebViewVersion getInstalledWebViewVersionFromPackage() {
+    static @Nullable WebViewVersion getInstalledWebViewVersionFromPackage() {
         Context context = ApplicationProvider.getApplicationContext();
         // Before M42, we used the major version number, followed by other text wrapped in
         // parentheses.
@@ -92,9 +92,8 @@ class WebViewVersion implements Comparable<WebViewVersion> {
         return 0;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return this.mComponents[0] + "." + this.mComponents[1] + "."
                 + this.mComponents[2] + "." + this.mComponents[3];
     }

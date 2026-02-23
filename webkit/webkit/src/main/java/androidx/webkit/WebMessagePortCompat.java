@@ -20,11 +20,11 @@ import android.os.Handler;
 import android.webkit.WebMessagePort;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 
@@ -164,18 +164,15 @@ public abstract class WebMessagePortCompat {
      * Internal getter returning the private {@link WebMessagePort} implementing this class. This is
      * only available on devices with an Android versions supporting WebMessagePorts.
      */
-    @RequiresApi(23)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public abstract WebMessagePort getFrameworkPort();
+    public abstract @NonNull WebMessagePort getFrameworkPort();
 
     /**
      * Internal getter returning the private {@link java.lang.reflect.InvocationHandler}
      * implementing this class. This is only available on devices where the support library glue in
      * the WebView APK supports {@link WebMessagePortCompat}.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public abstract InvocationHandler getInvocationHandler();
+    public abstract @NonNull InvocationHandler getInvocationHandler();
 
 }

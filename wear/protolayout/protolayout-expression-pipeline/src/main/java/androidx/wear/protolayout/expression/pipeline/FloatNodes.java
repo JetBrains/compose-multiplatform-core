@@ -18,8 +18,6 @@ package androidx.wear.protolayout.expression.pipeline;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
@@ -29,6 +27,9 @@ import androidx.wear.protolayout.expression.proto.DynamicProto.ArithmeticFloatOp
 import androidx.wear.protolayout.expression.proto.DynamicProto.StateFloatSource;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedFloat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /** Dynamic data nodes which yield floats. */
 class FloatNodes {
 
@@ -36,7 +37,7 @@ class FloatNodes {
 
     /** Dynamic float node that has a fixed value. */
     static class FixedFloatNode implements DynamicDataSourceNode<Float> {
-        @Nullable private final Float mValue;
+        private final @Nullable Float mValue;
         private final DynamicTypeValueReceiverWithPreUpdate<Float> mDownstream;
 
         FixedFloatNode(
@@ -286,8 +287,7 @@ class FloatNodes {
         return value != null && Float.isFinite(value);
     }
 
-    @Nullable
-    private static Float getValidValueOrNull(Float value) {
+    private static @Nullable Float getValidValueOrNull(Float value) {
         return isValid(value) ? value : null;
     }
 }

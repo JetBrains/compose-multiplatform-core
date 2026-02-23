@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 import android.util.SparseArray;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.regex.Pattern;
 
@@ -74,8 +74,7 @@ public class UiSelector {
         mSelectorAttributes = selector.cloneSelector().mSelectorAttributes;
     }
 
-    @NonNull
-    protected UiSelector cloneSelector() {
+    protected @NonNull UiSelector cloneSelector() {
         UiSelector ret = new UiSelector();
         ret.mSelectorAttributes = mSelectorAttributes.clone();
         if (hasChildSelector())
@@ -109,8 +108,7 @@ public class UiSelector {
      * @param text Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector text(@NonNull String text) {
+    public @NonNull UiSelector text(@NonNull String text) {
         requireNonNull(text, "text cannot be null");
         return buildSelector(SELECTOR_TEXT, text);
     }
@@ -125,8 +123,7 @@ public class UiSelector {
      * @param regex a regular expression
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector textMatches(@NonNull String regex) {
+    public @NonNull UiSelector textMatches(@NonNull String regex) {
         requireNonNull(regex, "regex cannot be null");
         return buildSelector(SELECTOR_TEXT_REGEX, Pattern.compile(regex, Pattern.DOTALL));
     }
@@ -140,8 +137,7 @@ public class UiSelector {
      * @param text Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector textStartsWith(@NonNull String text) {
+    public @NonNull UiSelector textStartsWith(@NonNull String text) {
         requireNonNull(text, "text cannot be null");
         return buildSelector(SELECTOR_START_TEXT, text);
     }
@@ -155,8 +151,7 @@ public class UiSelector {
      * @param text Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector textContains(@NonNull String text) {
+    public @NonNull UiSelector textContains(@NonNull String text) {
         requireNonNull(text, "text cannot be null");
         return buildSelector(SELECTOR_CONTAINS_TEXT, text);
     }
@@ -168,8 +163,7 @@ public class UiSelector {
      * @param className Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector className(@NonNull String className) {
+    public @NonNull UiSelector className(@NonNull String className) {
         requireNonNull(className, "className cannot be null");
         return buildSelector(SELECTOR_CLASS, className);
     }
@@ -181,8 +175,7 @@ public class UiSelector {
      * @param regex a regular expression
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector classNameMatches(@NonNull String regex) {
+    public @NonNull UiSelector classNameMatches(@NonNull String regex) {
         requireNonNull(regex, "regex cannot be null");
         return buildSelector(SELECTOR_CLASS_REGEX, Pattern.compile(regex));
     }
@@ -194,8 +187,7 @@ public class UiSelector {
      * @param type type
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public <T> UiSelector className(@NonNull Class<T> type) {
+    public <T> @NonNull UiSelector className(@NonNull Class<T> type) {
         requireNonNull(type, "type cannot be null");
         return buildSelector(SELECTOR_CLASS, type.getName());
     }
@@ -216,8 +208,7 @@ public class UiSelector {
      * @param desc Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector description(@NonNull String desc) {
+    public @NonNull UiSelector description(@NonNull String desc) {
         requireNonNull(desc, "desc cannot be null");
         return buildSelector(SELECTOR_DESCRIPTION, desc);
     }
@@ -236,8 +227,7 @@ public class UiSelector {
      * @param regex a regular expression
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector descriptionMatches(@NonNull String regex) {
+    public @NonNull UiSelector descriptionMatches(@NonNull String regex) {
         requireNonNull(regex, "regex cannot be null");
         return buildSelector(SELECTOR_DESCRIPTION_REGEX, Pattern.compile(regex, Pattern.DOTALL));
     }
@@ -258,8 +248,7 @@ public class UiSelector {
      * @param desc Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector descriptionStartsWith(@NonNull String desc) {
+    public @NonNull UiSelector descriptionStartsWith(@NonNull String desc) {
         requireNonNull(desc, "desc cannot be null");
         return buildSelector(SELECTOR_START_DESCRIPTION, desc);
     }
@@ -280,8 +269,7 @@ public class UiSelector {
      * @param desc Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector descriptionContains(@NonNull String desc) {
+    public @NonNull UiSelector descriptionContains(@NonNull String desc) {
         requireNonNull(desc, "desc cannot be null");
         return buildSelector(SELECTOR_CONTAINS_DESCRIPTION, desc);
     }
@@ -292,8 +280,7 @@ public class UiSelector {
      * @param id Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector resourceId(@NonNull String id) {
+    public @NonNull UiSelector resourceId(@NonNull String id) {
         requireNonNull(id, "id cannot be null");
         return buildSelector(SELECTOR_RESOURCE_ID, id);
     }
@@ -305,8 +292,7 @@ public class UiSelector {
      * @param regex a regular expression
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector resourceIdMatches(@NonNull String regex) {
+    public @NonNull UiSelector resourceIdMatches(@NonNull String regex) {
         requireNonNull(regex, "regex cannot be null");
         return buildSelector(SELECTOR_RESOURCE_ID_REGEX, Pattern.compile(regex));
     }
@@ -324,8 +310,7 @@ public class UiSelector {
      * @param index Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector index(final int index) {
+    public @NonNull UiSelector index(final int index) {
         return buildSelector(SELECTOR_INDEX, index);
     }
 
@@ -350,8 +335,7 @@ public class UiSelector {
      * @param instance Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector instance(final int instance) {
+    public @NonNull UiSelector instance(final int instance) {
         return buildSelector(SELECTOR_INSTANCE, instance);
     }
 
@@ -369,8 +353,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector enabled(boolean val) {
+    public @NonNull UiSelector enabled(boolean val) {
         return buildSelector(SELECTOR_ENABLED, val);
     }
 
@@ -388,8 +371,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector focused(boolean val) {
+    public @NonNull UiSelector focused(boolean val) {
         return buildSelector(SELECTOR_FOCUSED, val);
     }
 
@@ -407,8 +389,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector focusable(boolean val) {
+    public @NonNull UiSelector focusable(boolean val) {
         return buildSelector(SELECTOR_FOCUSABLE, val);
     }
 
@@ -426,8 +407,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector scrollable(boolean val) {
+    public @NonNull UiSelector scrollable(boolean val) {
         return buildSelector(SELECTOR_SCROLLABLE, val);
     }
 
@@ -446,8 +426,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector selected(boolean val) {
+    public @NonNull UiSelector selected(boolean val) {
         return buildSelector(SELECTOR_SELECTED, val);
     }
 
@@ -466,8 +445,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector checked(boolean val) {
+    public @NonNull UiSelector checked(boolean val) {
         return buildSelector(SELECTOR_CHECKED, val);
     }
 
@@ -485,8 +463,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector clickable(boolean val) {
+    public @NonNull UiSelector clickable(boolean val) {
         return buildSelector(SELECTOR_CLICKABLE, val);
     }
 
@@ -504,8 +481,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector checkable(boolean val) {
+    public @NonNull UiSelector checkable(boolean val) {
         return buildSelector(SELECTOR_CHECKABLE, val);
     }
 
@@ -523,8 +499,7 @@ public class UiSelector {
      * @param val Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector longClickable(boolean val) {
+    public @NonNull UiSelector longClickable(boolean val) {
         return buildSelector(SELECTOR_LONG_CLICKABLE, val);
     }
 
@@ -537,8 +512,7 @@ public class UiSelector {
      * @param selector
      * @return UiSelector with this added search criterion
      */
-    @NonNull
-    public UiSelector childSelector(@NonNull UiSelector selector) {
+    public @NonNull UiSelector childSelector(@NonNull UiSelector selector) {
         requireNonNull(selector, "selector cannot be null");
         return buildSelector(SELECTOR_CHILD, selector);
     }
@@ -561,8 +535,7 @@ public class UiSelector {
      * @param selector
      * @return UiSelector with this added search criterion
      */
-    @NonNull
-    public UiSelector fromParent(@NonNull UiSelector selector) {
+    public @NonNull UiSelector fromParent(@NonNull UiSelector selector) {
         requireNonNull(selector, "selector cannot be null");
         return buildSelector(SELECTOR_PARENT, selector);
     }
@@ -574,8 +547,7 @@ public class UiSelector {
      * @param name Value to match
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector packageName(@NonNull String name) {
+    public @NonNull UiSelector packageName(@NonNull String name) {
         requireNonNull(name, "name cannot be null");
         return buildSelector(SELECTOR_PACKAGE_NAME, name);
     }
@@ -587,8 +559,7 @@ public class UiSelector {
      * @param regex a regular expression
      * @return UiSelector with the specified search criteria
      */
-    @NonNull
-    public UiSelector packageNameMatches(@NonNull String regex) {
+    public @NonNull UiSelector packageNameMatches(@NonNull String regex) {
         requireNonNull(regex, "regex cannot be null");
         return buildSelector(SELECTOR_PACKAGE_NAME_REGEX, Pattern.compile(regex));
     }

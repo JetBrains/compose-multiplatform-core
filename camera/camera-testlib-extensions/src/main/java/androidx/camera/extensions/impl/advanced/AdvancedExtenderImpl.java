@@ -19,12 +19,14 @@ package androidx.camera.extensions.impl.advanced;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
+import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.extensions.impl.ExtensionVersionImpl;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -98,8 +100,7 @@ public interface AdvancedExtenderImpl {
      * @return the range of estimated minimal and maximal capture latency in milliseconds.
      * Returns null if no capture latency info can be provided.
      */
-    @Nullable
-    Range<Long> getEstimatedCaptureLatencyRange(@NonNull String cameraId,
+    @Nullable Range<Long> getEstimatedCaptureLatencyRange(@NonNull String cameraId,
             @Nullable Size captureOutputSize, int imageFormat);
 
     /**
@@ -113,8 +114,8 @@ public interface AdvancedExtenderImpl {
      * the HAL. Alternatively OEM can configure a intermediate YUV surface of the same size and
      * writes the output to the preview output surface.
      */
-    @NonNull
-    Map<Integer, List<Size>> getSupportedPreviewOutputResolutions(@NonNull String cameraId);
+    @NonNull Map<Integer, List<Size>> getSupportedPreviewOutputResolutions(
+            @NonNull String cameraId);
 
     /**
      * Returns supported output format/size map for image capture. OEM is required to support
@@ -124,8 +125,8 @@ public interface AdvancedExtenderImpl {
      * format/size could be either added in CameraCaptureSession with HAL processing OR it
      * configures intermediate surfaces(YUV/RAW..) and writes the output to the output surface.
      */
-    @NonNull
-    Map<Integer, List<Size>> getSupportedCaptureOutputResolutions(@NonNull String cameraId);
+    @NonNull Map<Integer, List<Size>> getSupportedCaptureOutputResolutions(
+            @NonNull String cameraId);
 
     /**
      * Returns supported output format/size map for postview image. OEM is required to support
@@ -137,8 +138,7 @@ public interface AdvancedExtenderImpl {
      *
      * @since 1.4
      */
-    @NonNull
-    Map<Integer, List<Size>> getSupportedPostviewResolutions(@NonNull Size captureSize);
+    @NonNull Map<Integer, List<Size>> getSupportedPostviewResolutions(@NonNull Size captureSize);
 
     /**
      * Returns supported output sizes for Image Analysis (YUV_420_888 format).
@@ -147,15 +147,13 @@ public interface AdvancedExtenderImpl {
      * output surfaces. If imageAnalysis YUV surface is not supported, OEM should return null or
      * empty list.
      */
-    @Nullable
-    List<Size> getSupportedYuvAnalysisResolutions(@NonNull String cameraId);
+    @Nullable List<Size> getSupportedYuvAnalysisResolutions(@NonNull String cameraId);
 
     /**
      * Returns a processor for activating extension sessions. It implements all the interactions
      * required for starting a extension and cleanup.
      */
-    @NonNull
-    SessionProcessorImpl createSessionProcessor();
+    @NonNull SessionProcessorImpl createSessionProcessor();
 
     /**
      * Returns a list of orthogonal capture request keys.
@@ -188,8 +186,7 @@ public interface AdvancedExtenderImpl {
      * are not supported.
      * @since 1.3
      */
-    @NonNull
-    List<CaptureRequest.Key> getAvailableCaptureRequestKeys();
+    @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys();
 
     /**
      * Returns a list of supported capture result keys.
@@ -204,8 +201,7 @@ public interface AdvancedExtenderImpl {
      * an empty list if capture results are not supported.
      * @since 1.3
      */
-    @NonNull
-    List<CaptureResult.Key> getAvailableCaptureResultKeys();
+    @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys();
 
     /**
      * Advertise support for {@link SessionProcessorImpl#onCaptureProcessProgressed}.
@@ -226,4 +222,34 @@ public interface AdvancedExtenderImpl {
      * @since 1.4
      */
     boolean isPostviewAvailable();
+
+    /**
+     * Returns a list of {@link CameraCharacteristics} key/value pairs for apps to use when
+     * querying {@link CameraExtensionCharacteristics#get} and
+     * {@link CameraExtensionCharacteristics#getKeys}. The key/value pairs define the limitations
+     * on the controls returned from {@link #getAvailableCaptureRequestKeys}. If a key is not
+     * present in the returned list, then the capability is either undefined or unsupported.
+     *
+     * <p>For example, an extension may limit the zoom ratio range. In this case, an OEM returns
+     * a new zoom ratio range for the key {@link CameraCharacteristics#CONTROL_ZOOM_RATIO_RANGE}.
+     *
+     * <p>Similarly, an extension may support preview stabilization. In this case, the OEM returns
+     * the array containing the elements
+     * {@link CameraCharacteristics#CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION} and
+     * {@link CameraCharacteristics#CONTROL_VIDEO_STABILIZATION_MODE_OFF} for the key
+     * {@link CameraCharacteristics#CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES}.
+     *
+     * <p>Please note that it is mandatory to include
+     * {@link CameraCharacteristics#CONTROL_ZOOM_RATIO_RANGE} and
+     * {@link CameraCharacteristics#CONTROL_AF_AVAILABLE_MODES} in the list.
+     *
+     * <p>Currently, the only synthetic keys supported for override are
+     * {@link CameraCharacteristics#REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES} and
+     * {@link CameraCharacteristics#REQUEST_AVAILABLE_COLOR_SPACE_PROFILES}. To enable them, an OEM
+     * should override the respective native keys
+     * {@link CameraCharacteristics#REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES_MAP} and
+     *  {@link CameraCharacteristics#REQUEST_AVAILABLE_COLOR_SPACE_PROFILES_MAP}.
+     * @since 1.5
+     */
+    @NonNull List<Pair<CameraCharacteristics.Key, Object>> getAvailableCharacteristicsKeyValues();
 }

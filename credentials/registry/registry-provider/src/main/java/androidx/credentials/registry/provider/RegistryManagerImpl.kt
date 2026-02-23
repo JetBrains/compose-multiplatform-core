@@ -21,25 +21,100 @@ import android.os.CancellationSignal
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 
-internal class RegistryManagerImpl(private val context: Context) : RegistryManager {
+internal class RegistryManagerImpl(private val context: Context) : RegistryManager() {
     override fun registerCredentialsAsync(
         request: RegisterCredentialsRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback:
-            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>
+            CredentialManagerCallback<RegisterCredentialsResponse, RegisterCredentialsException>,
     ) {
         val provider: RegistryManagerProvider? =
             RegistryManagerProviderFactory(context).getBestAvailableProvider()
         if (provider == null) {
-            callback.onError(
-                RegisterCredentialsConfigurationException(
-                    "registerCredentials: no provider dependencies found - please ensure " +
-                        "the desired provider dependencies are added"
+            executor.execute {
+                callback.onError(
+                    RegisterCredentialsConfigurationException(
+                        "registerCredentials: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
                 )
-            )
+            }
             return
         }
         provider.onRegisterCredentials(request, cancellationSignal, executor, callback)
+    }
+
+    override fun registerCreationOptionsAsync(
+        request: RegisterCreationOptionsRequest,
+        cancellationSignal: CancellationSignal?,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<
+                RegisterCreationOptionsResponse,
+                RegisterCreationOptionsException,
+            >,
+    ) {
+        val provider: RegistryManagerProvider? =
+            RegistryManagerProviderFactory(context).getBestAvailableProvider()
+        if (provider == null) {
+            executor.execute {
+                callback.onError(
+                    RegisterCreationOptionsConfigurationException(
+                        "registerCredentials: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
+                )
+            }
+            return
+        }
+        provider.onRegisterCreationOptions(request, cancellationSignal, executor, callback)
+    }
+
+    override fun clearCredentialRegistryAsync(
+        request: ClearCredentialRegistryRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<
+                ClearCredentialRegistryResponse,
+                ClearCredentialRegistryException,
+            >,
+    ) {
+        val provider: RegistryManagerProvider? =
+            RegistryManagerProviderFactory(context).getBestAvailableProvider()
+        if (provider == null) {
+            executor.execute {
+                callback.onError(
+                    ClearCredentialRegistryConfigurationException(
+                        "clearCredentialRegistry: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
+                )
+            }
+            return
+        }
+        provider.onClearCredentialRegistry(request, executor, callback)
+    }
+
+    override fun clearCreationOptionsAsync(
+        request: ClearCreationOptionsRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<ClearCreationOptionsResponse, ClearCreationOptionsException>,
+    ) {
+        val provider: RegistryManagerProvider? =
+            RegistryManagerProviderFactory(context).getBestAvailableProvider()
+        if (provider == null) {
+            executor.execute {
+                callback.onError(
+                    ClearCreationOptionsConfigurationException(
+                        "clearCreationOptions: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
+                )
+            }
+            return
+        }
+        provider.onClearCreationOptions(request, executor, callback)
     }
 }

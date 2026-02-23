@@ -18,9 +18,10 @@ package androidx.work.worker;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 public class ExceptionWorker extends Worker {
 

@@ -25,8 +25,8 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link ListPreference} that presents the options in a drop down menu rather than a dialog.
@@ -83,7 +83,7 @@ public class DropDownPreference extends ListPreference {
     }
 
     @Override
-    public void setEntries(@NonNull CharSequence[] entries) {
+    public void setEntries(CharSequence @NonNull [] entries) {
         super.setEntries(entries);
         updateEntries();
     }
@@ -97,8 +97,7 @@ public class DropDownPreference extends ListPreference {
      *
      * @return The custom {@link ArrayAdapter} that needs to be used with this class
      */
-    @NonNull
-    protected ArrayAdapter createAdapter() {
+    protected @NonNull ArrayAdapter createAdapter() {
         return new ArrayAdapter<>(mContext, android.R.layout.simple_spinner_dropdown_item);
     }
 

@@ -26,14 +26,12 @@ import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW;
 import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_MAX;
 import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_MIN;
 
-import static org.mockito.Mockito.spy;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,7 +45,6 @@ import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
-import android.service.notification.StatusBarNotification;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -63,7 +60,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
@@ -532,7 +528,6 @@ public class NotificationManagerCompatTest {
         assertEquals(IMPORTANCE_DEFAULT, result.getImportance());
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     public void testCreateNotificationChannelCompatWithParams() {
         String channelId = genUniqueId(TYPE_CHANNEL);
@@ -1189,13 +1184,9 @@ public class NotificationManagerCompatTest {
         NotificationManagerCompat notificationManager =
                 new NotificationManagerCompat(fakeManager, mContext);
 
-        List<StatusBarNotification> notifs = notificationManager.getActiveNotifications();
+        notificationManager.getActiveNotifications();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            verify(fakeManager, times(1)).getActiveNotifications();
-        } else {
-            assertEquals(0, notifs.size());
-        }
+        verify(fakeManager, times(1)).getActiveNotifications();
     }
 
     @Test
@@ -1213,17 +1204,6 @@ public class NotificationManagerCompatTest {
     }
 
     @Test
-    @SdkSuppress(maxSdkVersion = 22)
-    public void testGetCurrentInterruptionFilterLegacy() {
-        NotificationManager fakeManager = mPlatformNotificationManager;
-        NotificationManagerCompat notificationManager = new NotificationManagerCompat(fakeManager,
-                mContext);
-        assertEquals(NotificationManagerCompat.INTERRUPTION_FILTER_UNKNOWN,
-                notificationManager.getCurrentInterruptionFilter());
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 23)
     public void testGetCurrentInterruptionFilter() {
         NotificationManagerCompat notificationManager = new NotificationManagerCompat(
                 mPlatformNotificationManager,

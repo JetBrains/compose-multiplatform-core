@@ -16,11 +16,14 @@
 
 package androidx.appsearch.ast;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.Objects;
 
 /**
  * {@link Node} that stores text.
@@ -34,7 +37,8 @@ import androidx.core.util.Preconditions;
  *     single term "world peace" instead of terms "world" and "peace".
  *     <li> 49.99 is a number. {@link TextNode}s may represent integers or doubles and treat numbers
  *     as terms.
- *     <li> price is NOT a string but a property path as part of a {@link PropertyRestrictNode}.
+ *     <li> price is NOT a string but a property path as part of a
+ *     {@link androidx.appsearch.ast.operators.PropertyRestrictNode}.
  * </ul>
  *
  * <p>The node will be segmented and normalized based on the flags set in the Node.
@@ -84,8 +88,7 @@ public final class TextNode implements Node{
      *
      * @return A string representing the text that the TextNode holds.
      */
-    @NonNull
-    public String getValue() {
+    public @NonNull String getValue() {
         return mValue;
     }
 
@@ -167,5 +170,108 @@ public final class TextNode implements Node{
      */
     public void setVerbatim(boolean isVerbatim) {
         mVerbatim = isVerbatim;
+    }
+
+    /**
+     * Get the query string representation of {@link TextNode}.
+     *
+     * <p>If no flags are set, then the string representation is just the value
+     * held by {@link TextNode}. Otherwise the value will be formatted depending on the combination
+     * of flags set.
+     *
+     * <p>The string representation of {@link TextNode} maybe different from {@link #mValue} if it
+     * contains operators that need to be escaped for the query string to be treated as a string
+     * rather than a query.
+     */
+    @Override
+    public @NonNull String toString() {
+        StringBuilder queryStringBuilder = new StringBuilder();
+        queryStringBuilder.append('(');
+        if (mVerbatim) {
+            queryStringBuilder.append('\"');
+        }
+        escapeString(queryStringBuilder);
+        if (mVerbatim) {
+            queryStringBuilder.append('\"');
+        }
+        if (mPrefix) {
+            queryStringBuilder.append('*');
+        }
+        queryStringBuilder.append(')');
+        return queryStringBuilder.toString();
+    }
+
+    /**
+     * Escapes {@link #mValue} by adding backslashes to special characters that could be
+     * interpreted by Icing as operators and making everything lower case.
+     */
+    private void escapeString(StringBuilder queryStringBuilder) {
+        for (int i = 0; i < mValue.length(); i++) {
+            char currChar = mValue.charAt(i);
+            if ((!mVerbatim && isSpecialCharacter(currChar)) || currChar == '"') {
+                // If the Text is not verbatim, we need to escape all characters that either are
+                // themselves operators or signify an operator, such as parentheses for functions.
+                // If the Text is verbatim, we only need to escape quotes.
+                queryStringBuilder.append('\\');
+            } else if (!mVerbatim && isLatinLetter(currChar)
+                    && Character.isUpperCase(currChar)) {
+                // If not verbatim, escape operators such as NOT, AND, OR.
+                currChar = Character.toLowerCase(currChar);
+            }
+            queryStringBuilder.append(currChar);
+        }
+    }
+
+    /**
+     * Returns whether or not a given character is a special symbol in the query language.
+     *
+     * <p>Special symbols include:
+     * <ul>
+     *     <li>Logical operators such as negation ("-").
+     *     <li>Numeric search operators such as less than (">").
+     *     <li>Other characters that are tricky to handle such as comma (",").
+     * </ul>
+     */
+    private boolean isSpecialCharacter(char character) {
+        switch (character) {
+            case '-':
+            case '*':
+            case ':':
+            case '"':
+            case '>':
+            case '<':
+            case '=':
+            case '(':
+            case ')':
+            case '\\':
+            case ',':
+            case '.':
+            case '&':
+            case '|':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Returns whether or not a given character is a letter in the Latin alphabet.
+     */
+    private boolean isLatinLetter(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TextNode textNode = (TextNode) o;
+        return mPrefix == textNode.mPrefix && mVerbatim == textNode.mVerbatim
+                && Objects.equals(mValue, textNode.mValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mValue, mPrefix, mVerbatim);
     }
 }

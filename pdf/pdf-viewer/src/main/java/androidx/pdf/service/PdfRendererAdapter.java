@@ -24,9 +24,10 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Supplier;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Map;
@@ -58,8 +59,7 @@ class PdfRendererAdapter implements AutoCloseable {
      * Caller should use {@link #releasePage(PdfPageAdapter, int)} to close the page resource
      * reliably after usage.
      */
-    @NonNull
-    PdfPageAdapter openPage(int pageNum, boolean useCache) {
+    @NonNull PdfPageAdapter openPage(int pageNum, boolean useCache) {
         if (mPdfRenderer != null) {
             if (useCache) {
                 return openPageWithCache(pageNum);
@@ -69,8 +69,7 @@ class PdfRendererAdapter implements AutoCloseable {
         return new PdfPageAdapter(mPdfRendererPreV, pageNum);
     }
 
-    @NonNull
-    private PdfPageAdapter openPageWithCache(int pageNum) {
+    private @NonNull PdfPageAdapter openPageWithCache(int pageNum) {
         if (mPdfRenderer != null) {
             // Fetched either from cache or native layer.
             PdfPageAdapter page = mCachedPageMap.get(pageNum);

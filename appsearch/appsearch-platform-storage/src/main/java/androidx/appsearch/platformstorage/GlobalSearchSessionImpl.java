@@ -17,19 +17,21 @@ package androidx.appsearch.platformstorage;
 
 import android.app.appsearch.AppSearchResult;
 import android.app.appsearch.BatchResultCallback;
+import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.GlobalSearchSession;
+import androidx.appsearch.app.OpenBlobForReadResponse;
 import androidx.appsearch.app.ReportSystemUsageRequest;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
@@ -38,20 +40,27 @@ import androidx.appsearch.observer.DocumentChangeInfo;
 import androidx.appsearch.observer.ObserverCallback;
 import androidx.appsearch.observer.ObserverSpec;
 import androidx.appsearch.observer.SchemaChangeInfo;
+import androidx.appsearch.platformstorage.converter.AppSearchBlobHandleToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.AppSearchResultToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GenericDocumentToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GetSchemaResponseToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.ObserverSpecToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.RequestToPlatformConverter;
+import androidx.appsearch.platformstorage.converter.ResponseToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.SearchSpecToPlatformConverter;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.appsearch.platformstorage.util.BatchResultCallbackAdapter;
 import androidx.collection.ArrayMap;
+import androidx.collection.ArraySet;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -66,27 +75,30 @@ import java.util.function.Consumer;
 class GlobalSearchSessionImpl implements GlobalSearchSession {
     private final android.app.appsearch.GlobalSearchSession mPlatformSession;
     private final Executor mExecutor;
+    private final Context mContext;
     private final Features mFeatures;
 
     // Management of observer callbacks.
     @GuardedBy("mObserverCallbacksLocked")
-    private final Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
+    private final Map<String, Map<ObserverCallback,
+            android.app.appsearch.observer.ObserverCallback>>
             mObserverCallbacksLocked = new ArrayMap<>();
 
     GlobalSearchSessionImpl(
-            @NonNull android.app.appsearch.GlobalSearchSession platformSession,
+            android.app.appsearch.@NonNull GlobalSearchSession platformSession,
             @NonNull Executor executor,
-            @NonNull Features features) {
+            @NonNull Context context) {
         mPlatformSession = Preconditions.checkNotNull(platformSession);
         mExecutor = Preconditions.checkNotNull(executor);
-        mFeatures = Preconditions.checkNotNull(features);
+        mContext = Preconditions.checkNotNull(context);
+        mFeatures = new FeaturesImpl(mContext);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
-            @NonNull String packageName, @NonNull String databaseName,
-            @NonNull GetByDocumentIdRequest request) {
+    public @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>>
+            getByDocumentIdAsync(
+                    @NonNull String packageName, @NonNull String databaseName,
+                    @NonNull GetByDocumentIdRequest request) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             throw new UnsupportedOperationException(Features.GLOBAL_SEARCH_SESSION_GET_BY_ID
                     + " is not supported on this AppSearch implementation.");
@@ -104,8 +116,33 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
     }
 
     @Override
-    @NonNull
-    public SearchResults search(
+    public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<OpenBlobForReadResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.openBlobForRead(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackOpenBlobForReadResponse));
+        return future;
+    }
+
+    @Override
+    public @NonNull SearchResults search(
             @NonNull String queryExpression,
             @NonNull SearchSpec searchSpec) {
         Preconditions.checkNotNull(queryExpression);
@@ -113,13 +150,12 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         android.app.appsearch.SearchResults platformSearchResults =
                 mPlatformSession.search(
                         queryExpression,
-                        SearchSpecToPlatformConverter.toPlatformSearchSpec(searchSpec));
-        return new SearchResultsImpl(platformSearchResults, searchSpec, mExecutor);
+                        SearchSpecToPlatformConverter.toPlatformSearchSpec(mContext, searchSpec));
+        return new SearchResultsImpl(platformSearchResults, searchSpec, mExecutor, mContext);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> reportSystemUsageAsync(
+    public @NonNull ListenableFuture<Void> reportSystemUsageAsync(
             @NonNull ReportSystemUsageRequest request) {
         Preconditions.checkNotNull(request);
         ResolvableFuture<Void> future = ResolvableFuture.create();
@@ -131,9 +167,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         return future;
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
+    public @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
             @NonNull String databaseName) {
         // Superclass is annotated with @RequiresFeature, so we shouldn't get here on an
         // unsupported build.
@@ -151,13 +186,11 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         return future;
     }
 
-    @NonNull
     @Override
-    public Features getFeatures() {
+    public @NonNull Features getFeatures() {
         return mFeatures;
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Override
     public void registerObserverCallback(
             @NonNull String targetPackageName,
@@ -177,14 +210,18 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         }
 
         synchronized (mObserverCallbacksLocked) {
-            android.app.appsearch.observer.ObserverCallback frameworkCallback =
-                    mObserverCallbacksLocked.get(observer);
+            Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
+                    observersForPackage = mObserverCallbacksLocked.get(targetPackageName);
+            android.app.appsearch.observer.ObserverCallback frameworkCallback = null;
+            if (observersForPackage != null) {
+                frameworkCallback = observersForPackage.get(observer);
+            }
             if (frameworkCallback == null) {
                 // No stub is associated with this package and observer, so we must create one.
                 frameworkCallback = new android.app.appsearch.observer.ObserverCallback() {
                     @Override
                     public void onSchemaChanged(
-                            @NonNull android.app.appsearch.observer.SchemaChangeInfo
+                            android.app.appsearch.observer.@NonNull SchemaChangeInfo
                                     platformSchemaChangeInfo) {
                         SchemaChangeInfo jetpackSchemaChangeInfo =
                                 ObserverSpecToPlatformConverter.toJetpackSchemaChangeInfo(
@@ -194,7 +231,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
 
                     @Override
                     public void onDocumentChanged(
-                            @NonNull android.app.appsearch.observer.DocumentChangeInfo
+                            android.app.appsearch.observer.@NonNull DocumentChangeInfo
                                     platformDocumentChangeInfo) {
                         DocumentChangeInfo jetpackDocumentChangeInfo =
                                 ObserverSpecToPlatformConverter.toJetpackDocumentChangeInfo(
@@ -217,7 +254,11 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
             // Now that registration has succeeded, save this stub into our in-memory cache. This
             // isn't done when errors occur because the user may not call removeObserver if
             // addObserver threw.
-            mObserverCallbacksLocked.put(observer, frameworkCallback);
+            if (observersForPackage == null) {
+                observersForPackage = new ArrayMap<>();
+                mObserverCallbacksLocked.put(targetPackageName, observersForPackage);
+            }
+            observersForPackage.put(observer, frameworkCallback);
         }
     }
 
@@ -237,7 +278,12 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
 
         android.app.appsearch.observer.ObserverCallback frameworkCallback;
         synchronized (mObserverCallbacksLocked) {
-            frameworkCallback = mObserverCallbacksLocked.get(observer);
+            Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
+                    observersForPackage = mObserverCallbacksLocked.get(targetPackageName);
+            if (observersForPackage == null) {
+                return; // No observers registered for this package. Nothing to do.
+            }
+            frameworkCallback = observersForPackage.get(observer);
             if (frameworkCallback == null) {
                 return;  // No such observer registered. Nothing to do.
             }
@@ -250,7 +296,10 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
             }
 
             // Only remove from the in-memory map once removal from the service side succeeds
-            mObserverCallbacksLocked.remove(observer);
+            observersForPackage.remove(observer);
+            if (observersForPackage.isEmpty()) {
+                mObserverCallbacksLocked.remove(targetPackageName);
+            }
         }
     }
 

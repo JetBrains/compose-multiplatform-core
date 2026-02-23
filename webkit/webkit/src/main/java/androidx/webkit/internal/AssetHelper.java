@@ -19,11 +19,10 @@ package androidx.webkit.internal;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Build;
 import android.util.TypedValue;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,20 +43,18 @@ public class AssetHelper {
      */
     public static final String DEFAULT_MIME_TYPE = "text/plain";
 
-    @NonNull private final Context mContext;
+    private final @NonNull Context mContext;
 
     public AssetHelper(@NonNull Context context) {
         this.mContext = context;
     }
 
-    @NonNull
-    private static InputStream handleSvgzStream(@NonNull String path,
+    private static @NonNull InputStream handleSvgzStream(@NonNull String path,
             @NonNull InputStream stream) throws IOException {
         return path.endsWith(".svgz") ? new GZIPInputStream(stream) : stream;
     }
 
-    @NonNull
-    private static String removeLeadingSlash(@NonNull String path) {
+    private static @NonNull String removeLeadingSlash(@NonNull String path) {
         if (path.length() > 1 && path.charAt(0) == '/') {
             path = path.substring(1);
         }
@@ -81,8 +78,7 @@ public class AssetHelper {
      * @param path Path of the form "resource_type/resource_name.ext".
      * @return An {@link InputStream} to the Android resource.
      */
-    @NonNull
-    public InputStream openResource(@NonNull String path)
+    public @NonNull InputStream openResource(@NonNull String path)
             throws Resources.NotFoundException, IOException {
         path = removeLeadingSlash(path);
         // The path must be of the form "resource_type/resource_name.ext".
@@ -114,8 +110,7 @@ public class AssetHelper {
      * @param path Path to the asset file to load.
      * @return An {@link InputStream} to the Android asset.
      */
-    @NonNull
-    public InputStream openAsset(@NonNull String path) throws IOException {
+    public @NonNull InputStream openAsset(@NonNull String path) throws IOException {
         path = removeLeadingSlash(path);
         AssetManager assets = mContext.getAssets();
         return handleSvgzStream(path, assets.open(path, AssetManager.ACCESS_STREAMING));
@@ -127,8 +122,7 @@ public class AssetHelper {
      * @param file The file to be opened.
      * @return An {@code InputStream} for the requested file.
      */
-    @NonNull
-    public static InputStream openFile(@NonNull File file) throws FileNotFoundException,
+    public static @NonNull InputStream openFile(@NonNull File file) throws FileNotFoundException,
             IOException {
         FileInputStream fis = new FileInputStream(file);
         return handleSvgzStream(file.getPath(), fis);
@@ -145,9 +139,8 @@ public class AssetHelper {
      * @return {@link File} for the given child path or {@code null} if the given path doesn't
      *         resolve to be a child of the given parent.
      */
-    @Nullable
-    public static File getCanonicalFileIfChild(@NonNull File parent, @NonNull String child)
-            throws IOException {
+    public static @Nullable File getCanonicalFileIfChild(@NonNull File parent,
+            @NonNull String child) throws IOException {
         String parentCanonicalPath = getCanonicalDirPath(parent);
         String childCanonicalPath = new File(parent, child).getCanonicalPath();
         if (childCanonicalPath.startsWith(parentCanonicalPath)) {
@@ -165,8 +158,7 @@ public class AssetHelper {
      * E.g: the directory {@code "/some/path/to"} is not a parent of "/some/path/to_file". However,
      * it will pass the {@code parentPath.startsWith(childPath)} check.
      */
-    @NonNull
-    public static String getCanonicalDirPath(@NonNull File file) throws IOException {
+    public static @NonNull String getCanonicalDirPath(@NonNull File file) throws IOException {
         String canonicalPath = file.getCanonicalPath();
         if (!canonicalPath.endsWith("/")) canonicalPath += "/";
         return canonicalPath;
@@ -178,15 +170,8 @@ public class AssetHelper {
      * @param context the {@link Context} used to get the data dir.
      * @return data dir {@link File} for that app.
      */
-    @NonNull
-    public static File getDataDir(@NonNull Context context) {
-        // Context#getDataDir is only available in APIs >= 24.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return ApiHelperForN.getDataDir(context);
-        } else {
-            // For APIs < 24 cache dir is created under the data dir.
-            return context.getCacheDir().getParentFile();
-        }
+    public static @NonNull File getDataDir(@NonNull Context context) {
+        return context.getDataDir();
     }
 
     /**
@@ -196,8 +181,7 @@ public class AssetHelper {
      * @param filePath path of the file to guess its MIME type.
      * @return MIME type guessed from file extension or {@link AssetHelper#DEFAULT_MIME_TYPE}.
      */
-    @NonNull
-    public static String guessMimeType(@NonNull String filePath) {
+    public static @NonNull String guessMimeType(@NonNull String filePath) {
         String mimeType = MimeUtil.getMimeFromFileName(filePath);
         return mimeType == null ? DEFAULT_MIME_TYPE : mimeType;
     }

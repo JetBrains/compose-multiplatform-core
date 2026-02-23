@@ -19,13 +19,14 @@ package androidx.appsearch.app;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.VisibilityPermissionConfigCreator;
 import androidx.collection.ArraySet;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -39,8 +40,7 @@ import java.util.Set;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SafeParcelable.Class(creator = "VisibilityPermissionConfigCreator")
 public final class VisibilityPermissionConfig extends AbstractSafeParcelable {
-    @NonNull
-    public static final Parcelable.Creator<VisibilityPermissionConfig> CREATOR =
+    public static final Parcelable.@NonNull Creator<VisibilityPermissionConfig> CREATOR =
             new VisibilityPermissionConfigCreator();
 
     /**
@@ -65,22 +65,19 @@ public final class VisibilityPermissionConfig extends AbstractSafeParcelable {
                     .build())
             .build();
 
-    @Nullable
     @Field(id = 1)
-    final int[] mAllRequiredPermissions;
+    final int @Nullable [] mAllRequiredPermissions;
 
-    @Nullable
     // We still need to convert this class to a GenericDocument until we completely treat it
     // differently in AppSearchImpl.
     // TODO(b/298118943) Remove this once internally we don't use GenericDocument to store
     //  visibility information.
-    private GenericDocument mGenericDocument;
+    private @Nullable GenericDocument mGenericDocument;
 
-    @Nullable
-    private Integer mHashCode;
+    private @Nullable Integer mHashCode;
 
     @Constructor
-    VisibilityPermissionConfig(@Param(id = 1) @Nullable int[] allRequiredPermissions) {
+    VisibilityPermissionConfig(@Param(id = 1) int @Nullable [] allRequiredPermissions) {
         mAllRequiredPermissions = allRequiredPermissions;
     }
 
@@ -96,13 +93,11 @@ public final class VisibilityPermissionConfig extends AbstractSafeParcelable {
      * Returns an array of Android Permissions that caller mush hold to access the schema that the
      * outer {@link SchemaVisibilityConfig} represents.
      */
-    @Nullable
-    public Set<Integer> getAllRequiredPermissions() {
+    public @Nullable Set<Integer> getAllRequiredPermissions() {
         return toIntegerSet(mAllRequiredPermissions);
     }
 
-    @NonNull
-    private static int[] toInts(@NonNull Set<Integer> properties) {
+    private static int @NonNull [] toInts(@NonNull Set<Integer> properties) {
         int[] outputs = new int[properties.size()];
         int i = 0;
         for (int property : properties) {
@@ -111,8 +106,7 @@ public final class VisibilityPermissionConfig extends AbstractSafeParcelable {
         return outputs;
     }
 
-    @Nullable
-    private static Set<Integer> toIntegerSet(@Nullable int[] properties) {
+    private static @Nullable Set<Integer> toIntegerSet(int @Nullable [] properties) {
         if (properties == null) {
             return null;
         }
@@ -129,8 +123,7 @@ public final class VisibilityPermissionConfig extends AbstractSafeParcelable {
      * <p>This conversion is needed until we don't treat Visibility related documents as
      * {@link GenericDocument}s internally.
      */
-    @NonNull
-    public GenericDocument toGenericDocument() {
+    public @NonNull GenericDocument toGenericDocument() {
         if (mGenericDocument == null) {
             // This is used as a nested document, we do not need a namespace or id.
             GenericDocument.Builder<?> builder = new GenericDocument.Builder<>(

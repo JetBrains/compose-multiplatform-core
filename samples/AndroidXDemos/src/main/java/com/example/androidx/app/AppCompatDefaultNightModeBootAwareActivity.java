@@ -22,11 +22,12 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This is used to test implicit direct boot violations. To test:

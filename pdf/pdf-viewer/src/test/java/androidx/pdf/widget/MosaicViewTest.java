@@ -35,22 +35,20 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.BitmapRecycler;
 import androidx.pdf.util.TileBoard;
 import androidx.pdf.util.TileBoard.TileInfo;
 import androidx.pdf.widget.MosaicView.BitmapSource;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,11 +65,9 @@ import java.util.List;
 import java.util.Set;
 
 /** Unit tests for {@link MosaicView}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @SuppressWarnings("deprecation")
-//TODO: Remove minsdk check after sdk extension 13 release
-@Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class MosaicViewTest {
 
     @Mock

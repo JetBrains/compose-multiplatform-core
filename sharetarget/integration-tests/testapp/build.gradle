@@ -27,5 +27,5 @@ dependencies {
 }
 
 android {
-    namespace "androidx.sharetarget.testapp"
+    namespace = "androidx.sharetarget.testapp"
 }

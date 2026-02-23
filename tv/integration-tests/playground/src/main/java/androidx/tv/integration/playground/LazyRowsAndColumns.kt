@@ -53,8 +53,8 @@ fun SampleLazyRow(modifier: Modifier = Modifier) {
     val focusRequester = remember { FocusRequester() }
 
     LazyRow(
-        modifier = modifier.lazyListSemantics(1, columnsCount).focusRestorer { focusRequester },
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = modifier.lazyListSemantics(1, columnsCount).focusRestorer(focusRequester),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         itemsIndexed(backgroundColors) { index, item ->
             Card(
@@ -62,7 +62,7 @@ fun SampleLazyRow(modifier: Modifier = Modifier) {
                     Modifier.ifElse(index == 0, Modifier.focusRequester(focusRequester)).semantics {
                         collectionItemInfo = CollectionItemInfo(0, 1, index, 1)
                     },
-                backgroundColor = item
+                backgroundColor = item,
             )
         }
     }

@@ -16,12 +16,13 @@
 
 package androidx.car.app.testing;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.car.app.IOnDoneCallback;
 import androidx.car.app.serialization.Bundleable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A stub for use in API calls for the car app testing library.
@@ -35,5 +36,10 @@ public class TestOnDoneCallbackStub extends IOnDoneCallback.Stub {
 
     @Override
     public void onFailure(@NonNull Bundleable failureResponse) {
+    }
+
+    @Override
+    public int getInterfaceVersion() {
+        return super.VERSION;
     }
 }

@@ -30,14 +30,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.credentials.CredentialEntry;
 
-import androidx.core.os.BuildCompat;
 import androidx.credentials.R;
 import androidx.credentials.TestUtilsKt;
 import androidx.credentials.provider.BeginGetCredentialOption;
 import androidx.credentials.provider.BeginGetCustomCredentialOption;
+import androidx.credentials.provider.BiometricPromptData;
 import androidx.credentials.provider.CustomCredentialEntry;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -80,7 +81,15 @@ public class CustomCredentialEntryJavaTest {
     }
     @Test
     public void build_allParameters_success() {
-        CustomCredentialEntry entry = constructEntryWithAllParams();
+        CustomCredentialEntry entry =
+                constructEntryWithAllParams(/*nullBiometricPromptData=*/ false);
+        assertNotNull(entry);
+        assertEntryWithAllParams(entry);
+    }
+    @Test
+    public void build_allParamsForcedBiometricPromptDataNull_success() {
+        CustomCredentialEntry entry =
+                constructEntryWithAllParams(/*nullBiometricPromptData=*/ true);
         assertNotNull(entry);
         assertEntryWithAllParams(entry);
     }
@@ -136,7 +145,7 @@ public class CustomCredentialEntryJavaTest {
     public void build_nullIcon_defaultIconSet() {
         CustomCredentialEntry entry = constructEntryWithRequiredParams();
         assertThat(TestUtilsKt.equals(entry.getIcon(),
-                Icon.createWithResource(mContext, R.drawable.ic_other_sign_in))).isTrue();
+                Icon.createWithResource(mContext, R.drawable.adx_ic_other_sign_in))).isTrue();
     }
     @Test
     public void builder_setPreferredDefaultIconBit_retrieveSetIconBit() {
@@ -197,7 +206,8 @@ public class CustomCredentialEntryJavaTest {
     @SdkSuppress(minSdkVersion = 28)
     @SuppressWarnings("deprecation")
     public void fromSlice_allParams_success() {
-        CustomCredentialEntry originalEntry = constructEntryWithAllParams();
+        CustomCredentialEntry originalEntry =
+                constructEntryWithAllParams(/*nullBiometricPromptData=*/ false);
         android.app.slice.Slice slice = CustomCredentialEntry
                 .toSlice(originalEntry);
         CustomCredentialEntry entry = CustomCredentialEntry.fromSlice(slice);
@@ -208,7 +218,8 @@ public class CustomCredentialEntryJavaTest {
     @SdkSuppress(minSdkVersion = 34)
     @SuppressWarnings("deprecation")
     public void fromCredentialEntry_allParams_success() {
-        CustomCredentialEntry originalEntry = constructEntryWithAllParams();
+        CustomCredentialEntry originalEntry =
+                constructEntryWithAllParams(/*nullBiometricPromptData=*/ false);
         android.app.slice.Slice slice = CustomCredentialEntry.toSlice(originalEntry);
         assertNotNull(slice);
         CustomCredentialEntry entry = CustomCredentialEntry.fromCredentialEntry(
@@ -300,7 +311,7 @@ public class CustomCredentialEntryJavaTest {
                 mBeginCredentialOption
         ).build();
     }
-    private CustomCredentialEntry constructEntryWithAllParams() {
+    private CustomCredentialEntry constructEntryWithAllParams(boolean nullBiometricPromptData) {
         CustomCredentialEntry.Builder testBuilder = new CustomCredentialEntry.Builder(
                 mContext,
                 TYPE,
@@ -314,8 +325,12 @@ public class CustomCredentialEntryJavaTest {
                 .setEntryGroupId(ENTRY_GROUP_ID)
                 .setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT);
 
-        if (BuildCompat.isAtLeastV()) {
-            testBuilder.setBiometricPromptData(testBiometricPromptData());
+        if (Build.VERSION.SDK_INT >= 35) {
+            BiometricPromptData biometricPromptData = null;
+            if (!nullBiometricPromptData) {
+                biometricPromptData = testBiometricPromptData();
+            }
+            testBuilder.setBiometricPromptData(biometricPromptData);
         }
         return testBuilder.build();
     }
@@ -354,7 +369,7 @@ public class CustomCredentialEntryJavaTest {
         assertThat(entry.getEntryGroupId()).isEqualTo(ENTRY_GROUP_ID);
         assertThat(entry.isDefaultIconPreferredAsSingleProvider()).isEqualTo(
                 SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {
@@ -375,7 +390,7 @@ public class CustomCredentialEntryJavaTest {
         assertThat(entry.getEntryGroupId()).isEqualTo(ENTRY_GROUP_ID);
         assertThat(entry.isDefaultIconPreferredAsSingleProvider()).isEqualTo(
                 SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {

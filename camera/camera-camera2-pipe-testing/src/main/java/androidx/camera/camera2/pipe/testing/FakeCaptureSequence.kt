@@ -39,6 +39,7 @@ public data class FakeCaptureSequence(
     val requestMetadata: Map<Request, RequestMetadata>,
     val defaultParameters: Map<*, Any?>,
     val requiredParameters: Map<*, Any?>,
+    val graphParameters: Map<*, Any?>,
     override val listeners: List<Request.Listener>,
     override val sequenceListener: CaptureSequence.CaptureSequenceListener,
     override var sequenceNumber: Int,
@@ -73,8 +74,9 @@ public data class FakeCaptureSequence(
             defaultTemplate: RequestTemplate = RequestTemplate(1),
             defaultParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
             requiredParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
+            graphParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
             listeners: List<Request.Listener> = emptyList(),
-            sequenceListener: CaptureSequence.CaptureSequenceListener = fakeCaptureSequenceListener
+            sequenceListener: CaptureSequence.CaptureSequenceListener = fakeCaptureSequenceListener,
         ): FakeCaptureSequence? {
             if (surfaceMap.isEmpty()) {
                 println(
@@ -95,6 +97,13 @@ public data class FakeCaptureSequence(
                         } else if (k is Metadata.Key<*>) {
                             metadataParameters[k] = v
                         }
+                    }
+                }
+                for ((k, v) in graphParameters) {
+                    if (k is CaptureRequest.Key<*>) {
+                        captureParameters[k] = v
+                    } else if (k is Metadata.Key<*>) {
+                        metadataParameters[k] = v
                     }
                 }
                 for ((k, v) in request.parameters) {
@@ -139,7 +148,7 @@ public data class FakeCaptureSequence(
                         template = request.template ?: defaultTemplate,
                         streams = streamMap,
                         repeating = repeating,
-                        requestNumber = requestNumber
+                        requestNumber = requestNumber,
                     )
                 requestInfoList.add(requestMetadata)
                 requestInfoMap[request] = requestMetadata
@@ -154,9 +163,10 @@ public data class FakeCaptureSequence(
                 requestMetadata = requestInfoMap,
                 defaultParameters = defaultParameters.toMap(),
                 requiredParameters = requiredParameters.toMap(),
+                graphParameters = graphParameters.toMap(),
                 listeners = listeners.toList(),
                 sequenceListener = sequenceListener,
-                sequenceNumber = -1 // Sequence number is not set until it has been submitted.
+                sequenceNumber = -1, // Sequence number is not set until it has been submitted.
             )
         }
     }

@@ -1,11 +1,19 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [iosArm64, iosSimulatorArm64, linuxArm64, linuxX64, macosArm64, tvosArm64, tvosSimulatorArm64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
 // - Show declarations: true
 
 // Library unique name: <androidx.datastore:datastore-core>
+abstract interface <#A: kotlin/Any?> androidx.datastore.core/CorruptionHandler { // androidx.datastore.core/CorruptionHandler|null[0]
+    abstract suspend fun handleCorruption(androidx.datastore.core/CorruptionException): #A // androidx.datastore.core/CorruptionHandler.handleCorruption|handleCorruption(androidx.datastore.core.CorruptionException){}[0]
+}
+
+abstract interface <#A: kotlin/Any?> androidx.datastore.core/CurrentDataProviderStore : androidx.datastore.core/DataStore<#A> { // androidx.datastore.core/CurrentDataProviderStore|null[0]
+    abstract suspend fun currentData(): #A // androidx.datastore.core/CurrentDataProviderStore.currentData|currentData(){}[0]
+}
+
 abstract interface <#A: kotlin/Any?> androidx.datastore.core/DataMigration { // androidx.datastore.core/DataMigration|null[0]
     abstract suspend fun cleanUp() // androidx.datastore.core/DataMigration.cleanUp|cleanUp(){}[0]
     abstract suspend fun migrate(#A): #A // androidx.datastore.core/DataMigration.migrate|migrate(1:0){}[0]
@@ -73,6 +81,7 @@ final object androidx.datastore.core/DataStoreFactory { // androidx.datastore.co
 }
 
 final fun androidx.datastore.core/createSingleProcessCoordinator(kotlin/String): androidx.datastore.core/InterProcessCoordinator // androidx.datastore.core/createSingleProcessCoordinator|createSingleProcessCoordinator(kotlin.String){}[0]
+final fun androidx.datastore.core/wrapExceptionIfDueToDirectBoot(kotlin/String?, kotlin/Exception): kotlin/Exception // androidx.datastore.core/wrapExceptionIfDueToDirectBoot|wrapExceptionIfDueToDirectBoot(kotlin.String?;kotlin.Exception){}[0]
 final inline fun <#A: androidx.datastore.core/Closeable, #B: kotlin/Any?> (#A).androidx.datastore.core/use(kotlin/Function1<#A, #B>): #B // androidx.datastore.core/use|use@0:0(kotlin.Function1<0:0,0:1>){0§<androidx.datastore.core.Closeable>;1§<kotlin.Any?>}[0]
 final suspend fun <#A: kotlin/Any?> (androidx.datastore.core/StorageConnection<#A>).androidx.datastore.core/readData(): #A // androidx.datastore.core/readData|readData@androidx.datastore.core.StorageConnection<0:0>(){0§<kotlin.Any?>}[0]
 final suspend fun <#A: kotlin/Any?> (androidx.datastore.core/StorageConnection<#A>).androidx.datastore.core/writeData(#A) // androidx.datastore.core/writeData|writeData@androidx.datastore.core.StorageConnection<0:0>(0:0){0§<kotlin.Any?>}[0]

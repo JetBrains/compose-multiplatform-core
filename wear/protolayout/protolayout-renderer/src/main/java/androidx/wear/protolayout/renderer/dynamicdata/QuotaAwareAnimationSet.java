@@ -23,11 +23,12 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationSet;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.core.os.HandlerCompat;
 import androidx.wear.protolayout.expression.pipeline.QuotaManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -36,21 +37,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * manager allows. Any existing listeners on wrapped {@link AnimationSet} will be replaced.
  */
 final class QuotaAwareAnimationSet {
-    @NonNull private final AnimationSet mAnimationSet;
-    @NonNull private final QuotaManager mQuotaManager;
+    private final @NonNull AnimationSet mAnimationSet;
+    private final @NonNull QuotaManager mQuotaManager;
 
-    @NonNull private final View mAssociatedView;
-    @NonNull private final QuotaReleasingAnimationListener mListener;
+    private final @NonNull View mAssociatedView;
+    private final @NonNull QuotaReleasingAnimationListener mListener;
 
-    @Nullable private final Runnable mOnAnimationEnd;
+    private final @Nullable Runnable mOnAnimationEnd;
     private final long mCommonDelay;
-    @NonNull private final Handler mUiHandler;
+    private final @NonNull Handler mUiHandler;
 
     // Suppress initialization warnings here. These are only used inside of methods, and this class
     // is final, so these cannot actually be referenced while the class is under initialization.
     @SuppressWarnings("methodref.receiver.bound")
-    @NonNull
-    private final Runnable mTryAcquireQuotaAndStartAnimation =
+    private final @NonNull Runnable mTryAcquireQuotaAndStartAnimation =
             this::tryAcquireQuotaAndStartAnimation;
 
     QuotaAwareAnimationSet(
@@ -153,10 +153,10 @@ final class QuotaAwareAnimationSet {
 
     private static final class QuotaReleasingAnimationListener implements AnimationListener {
 
-        @Nullable private final Runnable mOnAnimationEnd;
-        @NonNull private final QuotaManager mQuotaManager;
+        private final @Nullable Runnable mOnAnimationEnd;
+        private final @NonNull QuotaManager mQuotaManager;
         private final int mAnimationNum;
-        @NonNull final AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
+        final @NonNull AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
 
         QuotaReleasingAnimationListener(
                 @NonNull QuotaManager mQuotaManager,

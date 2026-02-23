@@ -107,9 +107,9 @@ value class Offset(val packedValue: Long) {
      */
     @Stable
     inline fun isValid(): Boolean {
-        // Take the unsigned packed floats and see if they are < InfinityBase + 1 (first NaN)
+        // Take the unsigned packed floats and see if they are > InfinityBase (any NaN)
         val v = packedValue and DualUnsignedFloatMask
-        return (v - DualFirstNaN) and Uint64High32 == Uint64High32
+        return (v + DualLoadedSignificand) and Uint64High32 == 0L
     }
 
     /**
@@ -162,7 +162,7 @@ value class Offset(val packedValue: Long) {
         return Offset(
             packFloats(
                 unpackFloat1(packedValue) - unpackFloat1(other.packedValue),
-                unpackFloat2(packedValue) - unpackFloat2(other.packedValue)
+                unpackFloat2(packedValue) - unpackFloat2(other.packedValue),
             )
         )
     }
@@ -178,7 +178,7 @@ value class Offset(val packedValue: Long) {
         return Offset(
             packFloats(
                 unpackFloat1(packedValue) + unpackFloat1(other.packedValue),
-                unpackFloat2(packedValue) + unpackFloat2(other.packedValue)
+                unpackFloat2(packedValue) + unpackFloat2(other.packedValue),
             )
         )
     }
@@ -251,7 +251,7 @@ fun lerp(start: Offset, stop: Offset, fraction: Float): Offset {
     return Offset(
         packFloats(
             lerp(unpackFloat1(start.packedValue), unpackFloat1(stop.packedValue), fraction),
-            lerp(unpackFloat2(start.packedValue), unpackFloat2(stop.packedValue), fraction)
+            lerp(unpackFloat2(start.packedValue), unpackFloat2(stop.packedValue), fraction),
         )
     )
 }

@@ -18,26 +18,91 @@ package androidx.browser.trusted;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.IntentCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Holds an {@link Intent} and other data necessary to start a Trusted Web Activity.
  */
 public final class TrustedWebActivityIntent {
-    @NonNull
-    private final Intent mIntent;
+    private final @NonNull Intent mIntent;
 
-    @NonNull
-    private final List<Uri> mSharedFileUris;
+    private final @NonNull List<Uri> mSharedFileUris;
+    private final @NonNull List<Uri> mFileHandlingUris;
 
-    TrustedWebActivityIntent(@NonNull Intent intent, @NonNull List<Uri> sharedFileUris) {
+    TrustedWebActivityIntent(
+            @NonNull Intent intent,
+            @NonNull List<Uri> sharedFileUris,
+            @NonNull List<Uri> fileHandlingUris) {
         mIntent = intent;
         mSharedFileUris = sharedFileUris;
+        mFileHandlingUris = fileHandlingUris;
+    }
+
+    /**
+     * Used by Protocol Handlers to provide context for the browser. When a custom data scheme
+     * link (e.g. web+coffee://latte) is being processed by a WebAPK/TWA, it will get replaced
+     * with an actual http/https location (e.g. https://coffee.com/?type=latte) and that URL gets
+     * sent to the browser. This extra will then store the original link in case the browser needs
+     * different logic for Protocol Handlers and regular links.
+     *
+     * {@see https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/protocol_handlers}
+     *
+     * @return The original URL before being processed by a Protocol Handler, or null if this was
+     *         never a custom data scheme link.
+     */
+    public @Nullable Uri getOriginalLaunchUrl() {
+        return IntentCompat.getParcelableExtra(getIntent(),
+                TrustedWebActivityIntentBuilder.EXTRA_ORIGINAL_LAUNCH_URL, Uri.class);
+    }
+
+    public @Nullable FileHandlingData getFileHandlingData() {
+        return FileHandlingData.fromBundle(
+            getIntent().getBundleExtra(TrustedWebActivityIntentBuilder.EXTRA_FILE_HANDLING_DATA));
+    }
+
+    /**
+     * Used for Launch Handler API to provide client mode to a browser.
+     *
+     * {@see https://developer.mozilla.org/en-US/docs/Web/API/Launch_Handler_API}
+     *
+     * @return An integer that represents Launch Handler API client mode.
+     */
+    public @LaunchHandlerClientMode.ClientMode int getLaunchHandlerClientMode() {
+        return getIntent().getIntExtra(
+                TrustedWebActivityIntentBuilder.EXTRA_LAUNCH_HANDLER_CLIENT_MODE,
+                LaunchHandlerClientMode.AUTO);
+    }
+
+    /**
+     * Used by the web app manifest to specify the fallback order for display modes.
+     *
+     * This can be changed using {@link TrustedWebActivityIntentBuilder#setDisplayOverrideList}.
+     *
+     * @return A list of {@link TrustedWebActivityDisplayMode} that represents the
+     * fallback order of display modes.
+     */
+    public @NonNull List<TrustedWebActivityDisplayMode> getDisplayOverrideList() {
+        ArrayList<Bundle> bundles = IntentCompat.getParcelableArrayListExtra(getIntent(),
+                TrustedWebActivityIntentBuilder.EXTRA_DISPLAY_OVERRIDE, Bundle.class);
+        if (bundles == null) return new ArrayList<>();
+
+        ArrayList<TrustedWebActivityDisplayMode> displayOverrideList = new ArrayList<>();
+        for (Bundle bundle : bundles) {
+            displayOverrideList.add(TrustedWebActivityDisplayMode.fromBundle(bundle));
+        }
+
+        return displayOverrideList;
     }
 
     /**
@@ -53,14 +118,30 @@ public final class TrustedWebActivityIntent {
             context.grantUriPermission(mIntent.getPackage(), uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
+        for (Uri uri : mFileHandlingUris) {
+            boolean hasReadPermission = context.checkCallingOrSelfUriPermission(uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION) == PackageManager.PERMISSION_GRANTED;
+            if (!hasReadPermission) continue;
+
+            boolean hasWritePermission = context.checkCallingOrSelfUriPermission(uri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == PackageManager.PERMISSION_GRANTED;
+
+            if (hasWritePermission) {
+                context.grantUriPermission(mIntent.getPackage(), uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } else {
+                context.grantUriPermission(mIntent.getPackage(), uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+        }
     }
 
     /**
      * Returns the held {@link Intent}. For launching a Trusted Web Activity prefer using
      * {@link #launchTrustedWebActivity}.
      */
-    @NonNull
-    public Intent getIntent() {
+    public @NonNull Intent getIntent() {
         return mIntent;
     }
 }

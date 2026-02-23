@@ -19,14 +19,15 @@ package androidx.camera.core.impl;
 import android.graphics.ImageFormat;
 import android.media.ImageReader;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageAnalysis.BackpressureStrategy;
 import androidx.camera.core.ImageReaderProxyProvider;
 import androidx.camera.core.internal.ThreadConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Configuration for an image analysis use case.
@@ -65,9 +66,8 @@ public final class ImageAnalysisConfig
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
@@ -135,8 +135,9 @@ public final class ImageAnalysisConfig
      * Returns the output image format for image analysis.
      *
      * <p>The supported output image format
-     * is {@link ImageAnalysis.OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888} and
-     * {@link ImageAnalysis.OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888}.
+     * is {@link ImageAnalysis.OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888},
+     * {@link ImageAnalysis.OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888} and
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_NV21}.
      *
      * @param valueIfMissing The value to return if this configuration option has not been set.
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
@@ -152,8 +153,7 @@ public final class ImageAnalysisConfig
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
-    public Boolean getOnePixelShiftEnabled(@Nullable Boolean valueIfMissing) {
+    public @Nullable Boolean getOnePixelShiftEnabled(@Nullable Boolean valueIfMissing) {
         return retrieveOption(OPTION_ONE_PIXEL_SHIFT_ENABLED, valueIfMissing);
     }
 
@@ -162,8 +162,7 @@ public final class ImageAnalysisConfig
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
-    public Boolean isOutputImageRotationEnabled(@Nullable Boolean valueIfMissing) {
+    public @Nullable Boolean isOutputImageRotationEnabled(@Nullable Boolean valueIfMissing) {
         return retrieveOption(OPTION_OUTPUT_IMAGE_ROTATION_ENABLED, valueIfMissing);
     }
 
@@ -172,8 +171,7 @@ public final class ImageAnalysisConfig
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
-    public ImageReaderProxyProvider getImageReaderProxyProvider() {
+    public @Nullable ImageReaderProxyProvider getImageReaderProxyProvider() {
         return retrieveOption(OPTION_IMAGE_READER_PROXY_PROVIDER, null);
     }
 

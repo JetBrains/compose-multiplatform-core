@@ -80,7 +80,8 @@ public class DateTimeFormatValidatorTest {
 
     @Test
     public void testValidateISO8601DateTime_nonArabicNumeralLocale_returnsTrue() {
-        Locale.setDefault(new Locale("ar", "EG"));
+        Locale locale = new Locale.Builder().setLanguage("ar").setRegion("EG").build();
+        Locale.setDefault(locale);
         assertThat(DateTimeFormatValidator.validateISO8601DateTime("2022-01-01T00:00:00"))
                 .isTrue();
     }

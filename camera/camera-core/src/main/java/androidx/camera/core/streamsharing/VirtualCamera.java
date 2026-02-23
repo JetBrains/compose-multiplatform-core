@@ -18,7 +18,6 @@ package androidx.camera.core.streamsharing;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraControlInternal;
 import androidx.camera.core.impl.CameraInfoInternal;
@@ -26,6 +25,8 @@ import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.Observable;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 
@@ -38,12 +39,9 @@ import java.util.Collection;
 class VirtualCamera implements CameraInternal {
     private static final String UNSUPPORTED_MESSAGE = "Operation not supported by VirtualCamera.";
     // The parent camera instance.
-    @NonNull
-    private final CameraInternal mParentCamera;
-    @NonNull
-    private final VirtualCameraControl mVirtualCameraControl;
-    @NonNull
-    private final VirtualCameraInfo mVirtualCameraInfo;
+    private final @NonNull CameraInternal mParentCamera;
+    private final @NonNull VirtualCameraControl mVirtualCameraControl;
+    private final @NonNull VirtualCameraInfo mVirtualCameraInfo;
 
     private final UseCase.StateChangeCallback mStateChangeCallback;
 
@@ -52,8 +50,8 @@ class VirtualCamera implements CameraInternal {
      *                     real camera.
      */
     VirtualCamera(@NonNull CameraInternal parentCamera,
-            @NonNull UseCase.StateChangeCallback useCaseStateCallback,
-            @NonNull StreamSharing.Control streamSharingControl) {
+            UseCase.@NonNull StateChangeCallback useCaseStateCallback,
+            StreamSharing.@NonNull Control streamSharingControl) {
         mParentCamera = parentCamera;
         mStateChangeCallback = useCaseStateCallback;
         mVirtualCameraControl = new VirtualCameraControl(parentCamera.getCameraControlInternal(),
@@ -105,21 +103,18 @@ class VirtualCamera implements CameraInternal {
         return false;
     }
 
-    @NonNull
     @Override
-    public CameraControlInternal getCameraControlInternal() {
+    public @NonNull CameraControlInternal getCameraControlInternal() {
         return mVirtualCameraControl;
     }
 
-    @NonNull
     @Override
-    public CameraInfoInternal getCameraInfoInternal() {
+    public @NonNull CameraInfoInternal getCameraInfoInternal() {
         return mVirtualCameraInfo;
     }
 
-    @NonNull
     @Override
-    public Observable<State> getCameraState() {
+    public @NonNull Observable<State> getCameraState() {
         return mParentCamera.getCameraState();
     }
 
@@ -135,9 +130,8 @@ class VirtualCamera implements CameraInternal {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> release() {
+    public @NonNull ListenableFuture<Void> release() {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 

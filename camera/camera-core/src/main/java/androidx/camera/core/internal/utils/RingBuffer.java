@@ -16,7 +16,7 @@
 
 package androidx.camera.core.internal.utils;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.NoSuchElementException;
 
@@ -44,7 +44,7 @@ public interface RingBuffer<T> {
      *
      * @return dequeued element.
      */
-    @NonNull  T dequeue();
+    @NonNull T dequeue();
 
     /**
      * Returns the max capacity of the RingBuffer.

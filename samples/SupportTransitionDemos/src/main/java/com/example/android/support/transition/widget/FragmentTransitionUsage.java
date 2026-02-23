@@ -21,7 +21,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -31,6 +30,8 @@ import androidx.transition.Fade;
 import androidx.transition.Transition;
 
 import com.example.android.support.transition.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Demonstrates usage of shared element Transition between Fragments.
@@ -107,9 +108,8 @@ public class FragmentTransitionUsage extends TransitionUsageBase {
      */
     public static class FirstFragment extends TransitionFragment {
 
-        @Nullable
         @Override
-        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+        public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState) {
             return inflater.inflate(R.layout.fragment_transition_first, container, false);
         }
@@ -136,9 +136,8 @@ public class FragmentTransitionUsage extends TransitionUsageBase {
      */
     public static class SecondFragment extends TransitionFragment {
 
-        @Nullable
         @Override
-        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+        public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState) {
             return inflater.inflate(R.layout.fragment_transition_second, container, false);
         }

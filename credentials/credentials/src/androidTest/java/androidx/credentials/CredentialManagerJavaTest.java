@@ -23,8 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.Context;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.ClearCredentialProviderConfigurationException;
 import androidx.credentials.exceptions.CreateCredentialException;
@@ -39,6 +37,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +48,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-@RequiresApi(34)
 @SdkSuppress(minSdkVersion = 34, codeName = "UpsideDownCake")
 public class CredentialManagerJavaTest {
 
@@ -104,7 +102,7 @@ public class CredentialManagerJavaTest {
     }
 
     @Test
-    public void testGetCredentialAsyc_successCallbackThrows() throws InterruptedException {
+    public void testGetCredentialAsync_successCallbackThrows() throws InterruptedException {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }

@@ -27,8 +27,12 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import org.jetbrains.kotlin.psi.KtSimpleNameStringTemplateEntry
+import org.jetbrains.kotlin.psi.KtStringTemplateEntry
+import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 
 /**
  * Checks for usages of
@@ -38,43 +42,133 @@ import org.jetbrains.uast.UElement
 class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> =
-        listOf(UCallExpression::class.java)
+        listOf(UCallExpression::class.java, UExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
         object : UElementHandler() {
             override fun visitCallExpression(node: UCallExpression) {
+                checkForConfigurationToConfigurableFileCollection(node)
                 val methodName = node.methodName
-                val (containingClassName, replacementMethod, issue) =
-                    REPLACEMENTS[methodName] ?: return
+                val potentialReplacements = REPLACEMENTS[methodName] ?: return
                 val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
                 // Check that the called method is from the expected class (or a child class) and
-                // not an
-                // unrelated method with the same name).
-                if (!containingClass.isInstanceOf(containingClassName)) return
+                // not an unrelated method with the same name).
+                potentialReplacements.forEach { (containingClassName, replacement) ->
+                    if (!containingClass.isInstanceOf(containingClassName)) return@forEach
+
+                    val fix =
+                        replacement.recommendedReplacement?.let {
+                            fix()
+                                .replace()
+                                .with(it)
+                                .reformat(true)
+                                // Don't auto-fix from the command line because the replacement
+                                // methods
+                                // don't
+                                // have the same return types, so the fixed code likely won't
+                                // compile.
+                                .autoFix(robot = false, independent = false)
+                                .build()
+                        }
+                    val message =
+                        replacement.recommendedReplacement?.let { "Use $it instead of $methodName" }
+                            ?: "Avoid using method $methodName"
+
+                    val incident =
+                        Incident(context)
+                            .issue(replacement.issue)
+                            .location(context.getNameLocation(node))
+                            .message(message)
+                            .fix(fix)
+                            .scope(node)
+                    context.report(incident)
+                }
+            }
+
+            private fun checkForConfigurationToConfigurableFileCollection(node: UCallExpression) {
+                if (node.methodName != "from") return
+                val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
+                // Check that the called method is from the expected class (or a child class) and
+                // not an unrelated method with the same name).
+                if (!containingClass.isInstanceOf(CONFIGURABLE_FILE_COLLECTION)) return
+                val hasConfigurationParameter =
+                    node.valueArguments.any { parameter ->
+                        val parameterType =
+                            (parameter.getExpressionType() as? PsiClassType)?.resolve()
+                                ?: return@any false
+                        parameterType.isInstanceOf(CONFIGURATION)
+                    }
+                if (!hasConfigurationParameter) return
+                val incident =
+                    Incident(context)
+                        .issue(EAGER_CONFIGURATION_ISSUE)
+                        .location(context.getNameLocation(node))
+                        .message(
+                            "Passing Configuration to ConfigurableFileCollection.from " +
+                                "results in eager resolution of this configuration. Instead use " +
+                                "project.files(configuration) or " +
+                                "configuration.incoming.artifactView {}.files to wrap the " +
+                                "configuration making it lazy."
+                        )
+                        .scope(node)
+                context.report(incident)
+            }
+
+            /** Check for implicit calls to Provider.toString(). */
+            override fun visitExpression(node: UExpression) {
+                val parent = node.sourcePsi?.parent ?: return
+                // Check if the node is part of a Kotlin formatted string.
+                if (parent is KtStringTemplateEntry) {
+                    checkImplicitToString(node, parent)
+                    return
+                }
+
+                // Binary expression for string concatenation
+                if ((node is UBinaryExpression) && (node.operator.text == "+")) {
+                    val leftType = node.leftOperand.getExpressionType()
+                    val rightType = node.rightOperand.getExpressionType()
+
+                    // If one operand is a String, check if the other is a Provider
+                    if (leftType?.equalsToText("java.lang.String") == true) {
+                        checkImplicitToString(node.rightOperand)
+                    } else if (rightType?.equalsToText("java.lang.String") == true) {
+                        checkImplicitToString(node.leftOperand)
+                    }
+                }
+            }
+
+            private fun checkImplicitToString(
+                node: UExpression,
+                stringTemplateParent: KtStringTemplateEntry? = null,
+            ) {
+                val type = node.getExpressionType() as? PsiClassType ?: return
+                val clazz = type.resolve() ?: return
+
+                if (!clazz.isInstanceOf("org.gradle.api.provider.Provider")) return
+
+                val replacementText =
+                    if (stringTemplateParent is KtSimpleNameStringTemplateEntry) {
+                        "{${node.asSourceString()}.get()}"
+                    } else {
+                        "${node.asSourceString()}.get()"
+                    }
 
                 val fix =
-                    replacementMethod?.let {
-                        fix()
-                            .replace()
-                            .with(it)
-                            .reformat(true)
-                            // Don't auto-fix from the command line because the replacement methods
-                            // don't
-                            // have the same return types, so the fixed code likely won't compile.
-                            .autoFix(robot = false, independent = false)
-                            .build()
-                    }
-                val message =
-                    replacementMethod?.let { "Use $it instead of $methodName" }
-                        ?: "Avoid using method $methodName"
+                    fix()
+                        .replace()
+                        .with(replacementText)
+                        .reformat(true)
+                        .autoFix(robot = true, independent = true)
+                        .build()
 
                 val incident =
                     Incident(context)
-                        .issue(issue)
+                        .issue(TO_STRING_ON_PROVIDER_ISSUE)
                         .location(context.getNameLocation(node))
-                        .message(message)
+                        .message("Implicit usage of toString on a Provider")
                         .fix(fix)
                         .scope(node)
+
                 context.report(incident)
             }
         }
@@ -85,13 +179,20 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         qualifiedName == this.qualifiedName || supers.any { it.isInstanceOf(qualifiedName) }
 
     companion object {
+        private const val CONFIGURATION = "org.gradle.api.artifacts.Configuration"
+        private const val CONFIGURATION_CONTAINER =
+            "org.gradle.api.artifacts.ConfigurationContainer"
+        private const val CONFIGURABLE_FILE_COLLECTION =
+            "org.gradle.api.file.ConfigurableFileCollection"
         private const val PROJECT = "org.gradle.api.Project"
+        private const val TASK = "org.gradle.api.Task"
         private const val TASK_CONTAINER = "org.gradle.api.tasks.TaskContainer"
         private const val TASK_PROVIDER = "org.gradle.api.tasks.TaskProvider"
         private const val DOMAIN_OBJECT_COLLECTION = "org.gradle.api.DomainObjectCollection"
         private const val TASK_COLLECTION = "org.gradle.api.tasks.TaskCollection"
         private const val NAMED_DOMAIN_OBJECT_COLLECTION =
             "org.gradle.api.NamedDomainObjectCollection"
+        private const val PROVIDER = "org.gradle.api.provider.Provider"
 
         val EAGER_CONFIGURATION_ISSUE =
             Issue.create(
@@ -106,7 +207,7 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 Category.CORRECTNESS,
                 5,
                 Severity.ERROR,
-                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
 
         val PROJECT_ISOLATION_ISSUE =
@@ -122,7 +223,36 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 Category.CORRECTNESS,
                 5,
                 Severity.ERROR,
-                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
+        val TO_STRING_ON_PROVIDER_ISSUE =
+            Issue.create(
+                "GradleLikelyBug",
+                "Use of this API is likely a bug",
+                """
+                    Calling Provider.toString() will return you a generic hash of the instance of this provider.
+                    You most likely want to call Provider.get() method to get the actual value instead of the
+                    provider.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
+        val PERFORMANCE_ISSUE =
+            Issue.create(
+                "GradlePerformance",
+                "Use of this API is expensive",
+                """
+                    Calling Task.mustRunAfter and Task.shouldRunAfter is expensive as it causes Gradle to traverse
+                    the task graph a second time in order to re-order tasks and fix these constraints.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
 
         // A map from eager method name to the containing class of the method and the name of the
@@ -130,49 +260,88 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         private val REPLACEMENTS =
             mapOf(
                 "all" to
-                    Replacement(
-                        DOMAIN_OBJECT_COLLECTION,
-                        "configureEach",
-                        EAGER_CONFIGURATION_ISSUE
+                    mapOf(
+                        DOMAIN_OBJECT_COLLECTION to
+                            Replacement("configureEach", EAGER_CONFIGURATION_ISSUE)
                     ),
-                "create" to Replacement(TASK_CONTAINER, "register", EAGER_CONFIGURATION_ISSUE),
+                "any" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "create" to
+                    mapOf(
+                        TASK_CONTAINER to Replacement("register", EAGER_CONFIGURATION_ISSUE),
+                        CONFIGURATION_CONTAINER to
+                            Replacement("register", EAGER_CONFIGURATION_ISSUE),
+                    ),
+                "evaluationDependsOn" to
+                    mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
+                "evaluationDependsOnChildren" to
+                    mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "findAll" to
-                    Replacement(NAMED_DOMAIN_OBJECT_COLLECTION, null, EAGER_CONFIGURATION_ISSUE),
-                "findByName" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
-                "findByPath" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
-                "findProject" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
+                    mapOf(
+                        NAMED_DOMAIN_OBJECT_COLLECTION to
+                            Replacement(null, EAGER_CONFIGURATION_ISSUE)
+                    ),
+                "findByName" to
+                    mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "findByPath" to
+                    mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "findProject" to mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "findProperty" to
-                    Replacement(PROJECT, "providers.gradleProperty", PROJECT_ISOLATION_ISSUE),
+                    mapOf(
+                        PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
+                    ),
+                "forEach" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "hasProperty" to
-                    Replacement(PROJECT, "providers.gradleProperty", PROJECT_ISOLATION_ISSUE),
+                    mapOf(
+                        PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
+                    ),
                 "property" to
-                    Replacement(PROJECT, "providers.gradleProperty", PROJECT_ISOLATION_ISSUE),
-                "iterator" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
-                "get" to Replacement(TASK_PROVIDER, null, EAGER_CONFIGURATION_ISSUE),
-                "getAt" to Replacement(TASK_COLLECTION, "named", EAGER_CONFIGURATION_ISSUE),
-                "getByPath" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
-                "getByName" to Replacement(TASK_CONTAINER, "named", EAGER_CONFIGURATION_ISSUE),
-                "getParent" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
+                    mapOf(
+                        PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
+                    ),
+                "iterator" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "get" to mapOf(TASK_PROVIDER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "getAt" to
+                    mapOf(TASK_COLLECTION to Replacement("named", EAGER_CONFIGURATION_ISSUE)),
+                "getByPath" to
+                    mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "getByName" to
+                    mapOf(TASK_CONTAINER to Replacement("named", EAGER_CONFIGURATION_ISSUE)),
+                "getParent" to mapOf(PROJECT to Replacement(null, PROJECT_ISOLATION_ISSUE)),
                 "getProperties" to
-                    Replacement(PROJECT, "providers.gradleProperty", PROJECT_ISOLATION_ISSUE),
-                "getRootProject" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
-                "matching" to Replacement(TASK_COLLECTION, null, EAGER_CONFIGURATION_ISSUE),
-                "replace" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
-                "remove" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
+                    mapOf(
+                        PROJECT to Replacement("providers.gradleProperty", PROJECT_ISOLATION_ISSUE)
+                    ),
+                "getRootProject" to
+                    mapOf(PROJECT to Replacement("isolated.rootProject", PROJECT_ISOLATION_ISSUE)),
+                "groupBy" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "matching" to
+                    mapOf(TASK_COLLECTION to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "map" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "mapNotNull" to
+                    mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "maybeCreate" to
+                    mapOf(
+                        CONFIGURATION_CONTAINER to
+                            Replacement("register", EAGER_CONFIGURATION_ISSUE)
+                    ),
+                "mustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "replace" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "remove" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "setMustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "setShouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "shouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "toString" to mapOf(PROVIDER to Replacement("get", TO_STRING_ON_PROVIDER_ISSUE)),
                 "whenTaskAdded" to
-                    Replacement(TASK_CONTAINER, "configureEach", EAGER_CONFIGURATION_ISSUE),
+                    mapOf(
+                        TASK_CONTAINER to Replacement("configureEach", EAGER_CONFIGURATION_ISSUE)
+                    ),
                 "whenObjectAdded" to
-                    Replacement(
-                        DOMAIN_OBJECT_COLLECTION,
-                        "configureEach",
-                        EAGER_CONFIGURATION_ISSUE
+                    mapOf(
+                        DOMAIN_OBJECT_COLLECTION to
+                            Replacement("configureEach", EAGER_CONFIGURATION_ISSUE)
                     ),
             )
     }
 }
 
-private data class Replacement(
-    val qualifiedName: String,
-    val recommendedReplacement: String?,
-    val issue: Issue
-)
+private data class Replacement(val recommendedReplacement: String?, val issue: Issue)

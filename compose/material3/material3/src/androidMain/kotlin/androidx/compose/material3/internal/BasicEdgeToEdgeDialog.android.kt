@@ -20,23 +20,20 @@ import android.content.Context
 import android.graphics.Outline
 import android.os.Build
 import android.view.ContextThemeWrapper
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowManager
-import androidx.activity.BackEventCompat
 import androidx.activity.ComponentDialog
-import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.isFlagSecureEnabled
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
@@ -45,7 +42,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -67,7 +63,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.util.UUID
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A dialog that is _always_ full screen and edge-to-edge. This is intended to be the underlying
@@ -86,12 +81,12 @@ import kotlin.coroutines.cancellation.CancellationException
  * if [DialogProperties.dismissOnBackPress] is true.
  */
 @Composable
-internal fun BasicEdgeToEdgeDialog(
+internal actual fun BasicEdgeToEdgeDialog(
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    properties: DialogProperties = DialogProperties(),
-    lightStatusBars: Boolean = LocalContentColor.current.luminance() < 0.5f,
-    lightNavigationBars: Boolean = LocalContentColor.current.luminance() < 0.5f,
+    modifier: Modifier,
+    properties: DialogProperties,
+    lightStatusBars: Boolean,
+    lightNavigationBars: Boolean,
     content: @Composable (PredictiveBackState) -> Unit,
 ) {
     val view = LocalView.current
@@ -164,7 +159,7 @@ private class DialogWrapper(
     ComponentDialog(
         ContextThemeWrapper(
             composeView.context,
-            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme
+            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme,
         )
     ),
     ViewRootForInspector {
@@ -227,6 +222,19 @@ private class DialogWrapper(
         )
     }
 
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (
+            properties.dismissOnBackPress &&
+                event.isTracking &&
+                !event.isCanceled &&
+                keyCode == KeyEvent.KEYCODE_ESCAPE
+        ) {
+            onDismissRequest()
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+
     private fun setLayoutDirection(layoutDirection: LayoutDirection) {
         dialogLayout.layoutDirection =
             when (layoutDirection) {
@@ -248,7 +256,7 @@ private class DialogWrapper(
             } else {
                 WindowManager.LayoutParams.FLAG_SECURE.inv()
             },
-            WindowManager.LayoutParams.FLAG_SECURE
+            WindowManager.LayoutParams.FLAG_SECURE,
         )
     }
 
@@ -278,7 +286,7 @@ private class DialogWrapper(
                     WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
                 } else {
                     @Suppress("DEPRECATION") WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-                },
+                }
             )
         }
     }
@@ -303,10 +311,8 @@ private class DialogWrapper(
 }
 
 @Suppress("ViewConstructor")
-private class DialogLayout(
-    context: Context,
-    override val window: Window,
-) : AbstractComposeView(context), DialogWindowProvider {
+private class DialogLayout(context: Context, override val window: Window) :
+    AbstractComposeView(context), DialogWindowProvider {
 
     private var content: @Composable () -> Unit by mutableStateOf({})
 
@@ -323,87 +329,6 @@ private class DialogLayout(
     @Composable
     override fun Content() {
         content()
-    }
-}
-
-internal enum class SwipeEdge {
-    Left,
-    Right
-}
-
-/**
- * The state describing a one-shot back state, with use in a [PredictiveBackStateHandler].
- *
- * Because the back handler can only be used once, there are three states that [BackEventProgress]
- * can be in:
- * - [NotRunning]
- * - [InProgress], which can happen on API 34 and above if a predictive back is in progress.
- * - [Completed]
- */
-internal sealed interface BackEventProgress {
-    /** There is no predictive back ongoing, and the back has not been completed. */
-    object NotRunning : BackEventProgress
-
-    /** There is an ongoing predictive back animation, with the given [progress]. */
-    data class InProgress(
-        val touchX: Float,
-        val touchY: Float,
-        val progress: Float,
-        val swipeEdge: SwipeEdge,
-    ) : BackEventProgress
-
-    /** The back has completed. */
-    object Completed : BackEventProgress
-}
-
-@Composable
-internal fun rememberPredictiveBackState(): PredictiveBackState = remember {
-    PredictiveBackStateImpl()
-}
-
-internal sealed interface PredictiveBackState {
-    val value: BackEventProgress
-}
-
-private class PredictiveBackStateImpl : PredictiveBackState {
-    override var value: BackEventProgress by mutableStateOf(BackEventProgress.NotRunning)
-}
-
-@Composable
-internal fun PredictiveBackStateHandler(
-    state: PredictiveBackState,
-    enabled: Boolean = true,
-    onBack: () -> Unit,
-) {
-    // Safely update the current `onBack` lambda when a new one is provided
-    val currentOnBack by rememberUpdatedState(onBack)
-
-    key(state) {
-        state as PredictiveBackStateImpl
-        PredictiveBackHandler(
-            enabled = enabled && state.value !is BackEventProgress.Completed,
-        ) { progress ->
-            try {
-                progress.collect { backEvent ->
-                    state.value =
-                        BackEventProgress.InProgress(
-                            backEvent.touchX,
-                            backEvent.touchY,
-                            backEvent.progress,
-                            when (backEvent.swipeEdge) {
-                                BackEventCompat.EDGE_LEFT -> SwipeEdge.Left
-                                BackEventCompat.EDGE_RIGHT -> SwipeEdge.Right
-                                else -> error("Unknown swipe edge")
-                            },
-                        )
-                }
-                state.value = BackEventProgress.Completed
-                currentOnBack()
-            } catch (e: CancellationException) {
-                state.value = BackEventProgress.NotRunning
-                throw e
-            }
-        }
     }
 }
 

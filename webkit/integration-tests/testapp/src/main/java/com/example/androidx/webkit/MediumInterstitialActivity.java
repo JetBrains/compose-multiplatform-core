@@ -22,12 +22,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import com.google.common.collect.ImmutableMap;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -57,6 +58,7 @@ public class MediumInterstitialActivity extends AppCompatActivity {
         boolean isHorizontal = intent.getBooleanExtra(LAYOUT_HORIZONTAL, true);
 
         setContentView(R.layout.activity_medium_interstitial);
+        WebkitHelpers.enableEdgeToEdge(this);
         setTitle(isHorizontal
                 ? R.string.medium_tall_interstitial_activity_title
                 : R.string.medium_wide_interstitial_activity_title);

@@ -16,11 +16,12 @@
 
 package androidx.sqlite.inspection;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.inspection.ArtTooling.EntryHook;
 import androidx.inspection.ArtTooling.ExitHook;
 import androidx.inspection.InspectorEnvironment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -44,9 +45,8 @@ final class EntryExitMatchingHookRegistry {
     EntryExitMatchingHookRegistry(InspectorEnvironment environment) {
         mEnvironment = environment;
         mFrameStack = new ThreadLocal<Deque<Frame>>() {
-            @NonNull
             @Override
-            protected Deque<Frame> initialValue() {
+            protected @NonNull Deque<Frame> initialValue() {
                 return new ArrayDeque<>();
             }
         };

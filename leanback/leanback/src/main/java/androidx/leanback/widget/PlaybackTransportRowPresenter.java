@@ -18,7 +18,6 @@ package androidx.leanback.widget;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.os.Build;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -28,10 +27,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
 import androidx.leanback.widget.ControlBarPresenter.OnControlClickedListener;
 import androidx.leanback.widget.ControlBarPresenter.OnControlSelectedListener;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -317,8 +317,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
                             if (keyEvent.getAction() == KeyEvent.ACTION_UP) {
                                 // SeekBar does not support cancel in accessibility mode, so always
                                 // "confirm" if accessibility is on.
-                                stopSeek(Build.VERSION.SDK_INT >= 21
-                                        ? !mProgressBar.isAccessibilityFocused() : true);
+                                stopSeek(!mProgressBar.isAccessibilityFocused());
                             }
                             return true;
                     }
@@ -718,7 +717,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
 
     @Override
     protected void onBindRowViewHolder(
-            @NonNull RowPresenter.ViewHolder holder,
+            RowPresenter.@NonNull ViewHolder holder,
             @NonNull Object item
     ) {
         super.onBindRowViewHolder(holder, item);
@@ -760,7 +759,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder holder) {
+    protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder holder) {
         ViewHolder vh = (ViewHolder) holder;
         PlaybackControlsRow row = (PlaybackControlsRow) vh.getRow();
 
@@ -821,7 +820,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewAttachedToWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewAttachedToWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewAttachedToWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewAttachedToWindow(
@@ -830,7 +829,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewDetachedFromWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewDetachedFromWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewDetachedFromWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewDetachedFromWindow(

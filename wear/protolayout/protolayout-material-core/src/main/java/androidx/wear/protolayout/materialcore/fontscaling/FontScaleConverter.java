@@ -16,8 +16,9 @@
 
 package androidx.wear.protolayout.materialcore.fontscaling;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -51,7 +52,7 @@ public class FontScaleConverter {
      * @param toDp array of dimensions in DP that correspond to an SP value in fromSp
      * @throws IllegalArgumentException if the array lengths don't match or are empty
      */
-    FontScaleConverter(@NonNull float[] fromSp, @NonNull float[] toDp) {
+    FontScaleConverter(float @NonNull [] fromSp, float @NonNull [] toDp) {
         if (fromSp.length != toDp.length || fromSp.length == 0) {
             throw new IllegalArgumentException("Array lengths must match and be nonzero");
         }
@@ -142,9 +143,8 @@ public class FontScaleConverter {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "FontScaleConverter{"
                 + "fromSpValues="
                 + Arrays.toString(mFromSpValues)

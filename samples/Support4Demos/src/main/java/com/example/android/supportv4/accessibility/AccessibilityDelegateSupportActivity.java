@@ -23,12 +23,13 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 
 import com.example.android.supportv4.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class demonstrates how to use the support library to register

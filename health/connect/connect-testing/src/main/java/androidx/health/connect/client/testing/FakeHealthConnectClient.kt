@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.testing
 
+import androidx.annotation.IntRange
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
@@ -25,7 +26,6 @@ import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.changes.Change
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
-import androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi
 import androidx.health.connect.client.feature.HealthConnectFeaturesUnavailableImpl
 import androidx.health.connect.client.impl.converters.datatype.RECORDS_TYPE_NAME_MAP
 import androidx.health.connect.client.impl.converters.records.toProto
@@ -40,8 +40,8 @@ import androidx.health.connect.client.response.ChangesResponse
 import androidx.health.connect.client.response.InsertRecordsResponse
 import androidx.health.connect.client.response.ReadRecordResponse
 import androidx.health.connect.client.response.ReadRecordsResponse
-import androidx.health.connect.client.testing.stubs.throwOrContinue
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.platform.client.proto.DataProto
 import java.time.Clock
 import kotlin.reflect.KClass
 
@@ -62,12 +62,10 @@ import kotlin.reflect.KClass
  * @param clock used to close open-ended [TimeRangeFilter]s and record update times.
  * @param permissionController grants and revokes permissions.
  */
-@ExperimentalTestingApi
-@OptIn(ExperimentalFeatureAvailabilityApi::class)
 public class FakeHealthConnectClient(
-    private val packageName: String = DEFAULT_PACKAGE_NAME,
+    private var packageName: String = DEFAULT_PACKAGE_NAME,
     private val clock: Clock = Clock.systemDefaultZone(),
-    override val permissionController: PermissionController = FakePermissionController()
+    override val permissionController: PermissionController = FakePermissionController(),
 ) : HealthConnectClient {
 
     override val features: HealthConnectFeatures = HealthConnectFeaturesUnavailableImpl
@@ -115,8 +113,10 @@ public class FakeHealthConnectClient(
      * precedence.
      */
     override suspend fun insertRecords(records: List<Record>): InsertRecordsResponse {
-        // Stub that only throws
-        overrides.insertRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.insertRecords?.next(records)?.let {
+            return it
+        }
 
         // Fake implementation
         val recordIdsList = mutableListOf<String>()
@@ -130,6 +130,9 @@ public class FakeHealthConnectClient(
                         .toProto()
                         .toBuilder()
                         .setUid(recordId)
+                        .setDataOrigin(
+                            DataProto.DataOrigin.newBuilder().setApplicationId(packageName).build()
+                        )
                         .setUpdateTimeMillis(clock.millis())
                         .build()
                 )
@@ -146,12 +149,12 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun updateRecords(records: List<Record>) {
-        // Stub that throws if set
-        overrides.updateRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.updateRecords?.next(records)
 
         // Check if all records belong to the package
         if (records.any { it.packageName != packageName }) {
-            throw SecurityException("Trying to delete records owned by another package")
+            throw SecurityException("Trying to update records owned by another package")
         }
 
         // Fake implementation
@@ -162,7 +165,7 @@ public class FakeHealthConnectClient(
             val updatedRecord =
                 toRecord(record.toProto().toBuilder().setUpdateTimeMillis(clock.millis()).build())
             idsToRecords[recordId] = updatedRecord
-            removeUpsertion(recordId)
+            removeUpsertionChange(recordId)
             addUpsertionChange(updatedRecord)
         }
     }
@@ -170,75 +173,64 @@ public class FakeHealthConnectClient(
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
-        clientRecordIdsList: List<String>
+        clientRecordIdsList: List<String>,
     ) {
-        // Stub that throws if set
-        overrides.deleteRecords?.throwOrContinue(null)
-
-        // Check if all records belong to the package
-        if (
-            recordIdsList
-                .asSequence()
-                .mapNotNull { idsToRecords[it]?.packageName }
-                .any { it != packageName }
-        ) {
-            throw SecurityException("Trying to delete records owned by another package")
-        }
-
-        // Check if all records belong to the package in clientRecordIdsList
-        if (
-            clientRecordIdsList
-                .asSequence()
-                .mapNotNull { idsToRecords[it.toRecordId(packageName)]?.packageName }
-                .any { it != packageName }
-        ) {
-            throw SecurityException("Trying to delete records owned by another package")
-        }
+        // Stubs
+        overrides.deleteRecords?.next(Unit)
 
         // Fake implementation
-        recordIdsList.forEach { recordId ->
-            idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
-            idsToRecords.remove(recordId)
-            removeUpsertion(recordId)
-            addDeletionChange(recordId)
-        }
-        clientRecordIdsList.forEach {
-            val recordId = it.toRecordId(packageName)
-            idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
-            idsToRecords.remove(recordId)
-            addDeletionChange(recordId)
-        }
+        recordIdsList
+            .filter { idsToRecords[it]?.packageName == packageName }
+            .forEach { recordId ->
+                idsToRecords[recordId]?.let {
+                    deletedIdsToRecords[recordId] = it
+                    removeUpsertionChange(recordId)
+                    addDeletionChange(recordId)
+                }
+                idsToRecords.remove(recordId)
+            }
+        clientRecordIdsList
+            .filter { idsToRecords[it.toRecordId(packageName)]?.packageName == packageName }
+            .forEach {
+                val recordId = it.toRecordId(packageName)
+                idsToRecords[recordId]?.let {
+                    deletedIdsToRecords[recordId] = it
+                    removeUpsertionChange(recordId)
+                    addDeletionChange(recordId)
+                }
+                idsToRecords.remove(recordId)
+            }
     }
 
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        timeRangeFilter: TimeRangeFilter
+        timeRangeFilter: TimeRangeFilter,
     ) {
-        // Stub that throws if set
-        overrides.deleteRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.deleteRecords?.next(Unit)
 
         // Fake implementation
-        val recordIdsToRemove =
-            idsToRecords
-                .filterValues { record ->
-                    record::class == recordType && record.isWithin(timeRangeFilter, clock)
-                }
-                .keys
-        for (recordId in recordIdsToRemove) {
-            idsToRecords[recordId]?.let { deletedIdsToRecords[recordId] = it }
-            idsToRecords.remove(recordId)
-            removeUpsertion(recordId)
-            addDeletionChange(recordId)
-        }
+        idsToRecords
+            .filterValues { record ->
+                record::class == recordType && record.isWithin(timeRangeFilter, clock)
+            }
+            .forEach { recordId, record ->
+                deletedIdsToRecords[recordId] = record
+                idsToRecords.remove(recordId)
+                removeUpsertionChange(recordId)
+                addDeletionChange(recordId)
+            }
     }
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T> {
         // Stubs
-        overrides.readRecord?.throwOrContinue(null)
+        overrides.readRecord?.next(recordId)?.let {
+            return it as ReadRecordResponse<T>
+        }
 
         // Fake implementation
         return ReadRecordResponse(idsToRecords[recordId.toRecordId(packageName)] as T)
@@ -259,7 +251,9 @@ public class FakeHealthConnectClient(
             TODO("Not yet implemented")
         }
         // Stubs
-        overrides.readRecords?.throwOrContinue(null)
+        overrides.readRecords?.next(request)?.let {
+            return it as ReadRecordsResponse<T>
+        }
 
         // Fake implementation
         val startIndex = request.pageToken?.toIntOrNull() ?: 0
@@ -288,7 +282,7 @@ public class FakeHealthConnectClient(
         // Fake implementation
         return ReadRecordsResponse(
             records = recordsPending.take(request.pageSize),
-            pageToken = nextPageToken?.toString()
+            pageToken = nextPageToken?.toString(),
         )
     }
 
@@ -334,7 +328,10 @@ public class FakeHealthConnectClient(
      * track changes from the moment this function is called.
      */
     override suspend fun getChangesToken(request: ChangesTokenRequest): String {
-        overrides.getChangesToken?.throwOrContinue(null)
+        // Stubs
+        overrides.getChangesToken?.next(request)?.let {
+            return it
+        }
 
         if (request.recordTypes.isEmpty()) {
             throw IllegalArgumentException("Record types must not be empty")
@@ -373,8 +370,17 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
+        return getChanges(changesToken, pageSizeGetChanges)
+    }
+
+    override suspend fun getChanges(
+        changesToken: String,
+        @IntRange(from = 1, to = 5000) pageSize: Int,
+    ): ChangesResponse {
         // Stubs
-        overrides.getChanges?.throwOrContinue(null)
+        overrides.getChanges?.next(changesToken)?.let {
+            return it
+        }
 
         // Fake implementation
 
@@ -399,24 +405,24 @@ public class FakeHealthConnectClient(
                     }
                 }
                 .values
-        val hasMoreChanges = changes.size > pageSizeGetChanges
+        val hasMoreChanges = changes.size > pageSize
         val nextChangesToken =
             if (hasMoreChanges) {
                 // Next page token
-                generateNewToken(timeInToken + pageSizeGetChanges, recordTypes)
+                generateNewToken(timeInToken + pageSize, recordTypes)
             } else {
                 // Future changes token
                 generateNewToken(timeToChangesLastKey + 1, recordTypes)
             }
 
         // Store metadata for new token
-        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSizeGetChanges)
+        tokens[nextChangesToken] = tokenInfo.copy(time = tokenInfo.time + pageSize)
 
         return ChangesResponse(
-            changes.take(pageSizeGetChanges).toList(),
+            changes.take(pageSize).toList(),
             hasMore = hasMoreChanges,
             changesTokenExpired = tokenInfo.expired,
-            nextChangesToken = nextChangesToken
+            nextChangesToken = nextChangesToken,
         )
     }
 
@@ -432,11 +438,23 @@ public class FakeHealthConnectClient(
         timeToChanges[++timeToChangesLastKey] = UpsertionChange(updatedRecord)
     }
 
-    private fun removeUpsertion(recordId: String) {
+    private fun removeUpsertionChange(recordId: String) {
         timeToChanges
             .filterValues { it is UpsertionChange && it.record.metadata.id == recordId }
             .keys
             .forEach { timeToChanges.remove(it) }
+    }
+
+    /**
+     * Sets the package name used by the [FakeHealthConnectClient].
+     *
+     * This method overrides the [DEFAULT_PACKAGE_NAME] and designates the provided [newPackage] as
+     * the caller for all subsequent method invocations on this [FakeHealthConnectClient] instance.
+     *
+     * @param newPackage The package name to be used for all calls to the [FakeHealthConnectClient].
+     */
+    public fun setPackageName(newPackage: String) {
+        packageName = newPackage
     }
 
     public companion object {
@@ -456,5 +474,5 @@ public class FakeHealthConnectClient(
 private data class TokenInfo(
     val time: Long,
     val recordTypes: Set<KClass<out Record>>,
-    val expired: Boolean = false
+    val expired: Boolean = false,
 )

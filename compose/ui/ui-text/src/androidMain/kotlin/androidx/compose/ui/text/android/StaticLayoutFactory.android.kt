@@ -32,6 +32,7 @@ import androidx.compose.ui.text.android.LayoutCompat.HyphenationFrequency
 import androidx.compose.ui.text.android.LayoutCompat.JustificationMode
 import androidx.compose.ui.text.android.LayoutCompat.LineBreakStyle
 import androidx.compose.ui.text.android.LayoutCompat.LineBreakWordStyle
+import androidx.compose.ui.text.internal.requirePrecondition
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 
@@ -71,7 +72,7 @@ object StaticLayoutFactory {
         @HyphenationFrequency
         hyphenationFrequency: Int = LayoutCompat.DEFAULT_HYPHENATION_FREQUENCY,
         leftIndents: IntArray? = null,
-        rightIndents: IntArray? = null
+        rightIndents: IntArray? = null,
     ): StaticLayout {
         return delegate.create(
             StaticLayoutParams(
@@ -95,7 +96,7 @@ object StaticLayoutFactory {
                 lineBreakWordStyle = lineBreakWordStyle,
                 hyphenationFrequency = hyphenationFrequency,
                 leftIndents = leftIndents,
-                rightIndents = rightIndents
+                rightIndents = rightIndents,
             )
         )
     }
@@ -109,7 +110,7 @@ object StaticLayoutFactory {
      */
     fun isFallbackLineSpacingEnabled(
         layout: StaticLayout,
-        useFallbackLineSpacing: Boolean
+        useFallbackLineSpacing: Boolean,
     ): Boolean {
         return delegate.isFallbackLineSpacingEnabled(layout, useFallbackLineSpacing)
     }
@@ -136,15 +137,15 @@ private class StaticLayoutParams(
     val lineBreakWordStyle: Int,
     val hyphenationFrequency: Int,
     val leftIndents: IntArray?,
-    val rightIndents: IntArray?
+    val rightIndents: IntArray?,
 ) {
     init {
-        require(start in 0..end) { "invalid start value" }
-        require(end in 0..text.length) { "invalid end value" }
-        require(maxLines >= 0) { "invalid maxLines value" }
-        require(width >= 0) { "invalid width value" }
-        require(ellipsizedWidth >= 0) { "invalid ellipsizedWidth value" }
-        require(lineSpacingMultiplier >= 0f) { "invalid lineSpacingMultiplier value" }
+        requirePrecondition(start in 0..end) { "invalid start value" }
+        requirePrecondition(end in 0..text.length) { "invalid end value" }
+        requirePrecondition(maxLines >= 0) { "invalid maxLines value" }
+        requirePrecondition(width >= 0) { "invalid width value" }
+        requirePrecondition(ellipsizedWidth >= 0) { "invalid ellipsizedWidth value" }
+        requirePrecondition(lineSpacingMultiplier >= 0f) { "invalid lineSpacingMultiplier value" }
     }
 }
 
@@ -178,15 +179,21 @@ private class StaticLayoutFactory23 : StaticLayoutFactoryImpl {
                 if (Build.VERSION.SDK_INT >= 28) {
                     StaticLayoutFactory28.setUseLineSpacingFromFallbacks(
                         this,
-                        params.useFallbackLineSpacing
+                        params.useFallbackLineSpacing,
                     )
                 }
                 if (Build.VERSION.SDK_INT >= 33) {
                     StaticLayoutFactory33.setLineBreakConfig(
                         this,
                         params.lineBreakStyle,
-                        params.lineBreakWordStyle
+                        params.lineBreakWordStyle,
                     )
+                }
+                if (Build.VERSION.SDK_INT >= 35) { // b/391378120
+                    // Due to a bug in API35, the useBoundsForWidth flag may become true if it was
+                    // true in the recycled object. To avoid unexpected line break behavior,
+                    // manually disable useBoundsForWidth every time we create a StaticLayout.
+                    StaticLayoutFactory35.disableUseBoundsForWidth(this)
                 }
             }
             .build()
@@ -194,7 +201,7 @@ private class StaticLayoutFactory23 : StaticLayoutFactoryImpl {
 
     override fun isFallbackLineSpacingEnabled(
         layout: StaticLayout,
-        useFallbackLineSpacing: Boolean
+        useFallbackLineSpacing: Boolean,
     ): Boolean {
         return if (Build.VERSION.SDK_INT >= 33) {
             StaticLayoutFactory33.isFallbackLineSpacingEnabled(layout)
@@ -240,6 +247,14 @@ private object StaticLayoutFactory33 {
     }
 }
 
+@RequiresApi(35)
+private object StaticLayoutFactory35 {
+    @JvmStatic
+    fun disableUseBoundsForWidth(builder: Builder) {
+        builder.setUseBoundsForWidth(false)
+    }
+}
+
 private class StaticLayoutFactoryDefault : StaticLayoutFactoryImpl {
 
     companion object {
@@ -266,7 +281,7 @@ private class StaticLayoutFactoryDefault : StaticLayoutFactoryImpl {
                             Boolean::class.javaPrimitiveType, /* includePadding */
                             TruncateAt::class.java,
                             Int::class.javaPrimitiveType, /* ellipsizeWidth */
-                            Int::class.javaPrimitiveType /* maxLines */
+                            Int::class.javaPrimitiveType, /* maxLines */
                         )
             } catch (e: NoSuchMethodException) {
                 staticLayoutConstructor = null
@@ -296,7 +311,7 @@ private class StaticLayoutFactoryDefault : StaticLayoutFactoryImpl {
                         params.includePadding,
                         params.ellipsize,
                         params.ellipsizedWidth,
-                        params.maxLines
+                        params.maxLines,
                     )
                 } catch (e: IllegalAccessException) {
                     staticLayoutConstructor = null
@@ -329,13 +344,13 @@ private class StaticLayoutFactoryDefault : StaticLayoutFactoryImpl {
             params.lineSpacingExtra,
             params.includePadding,
             params.ellipsize,
-            params.ellipsizedWidth
+            params.ellipsizedWidth,
         )
     }
 
     override fun isFallbackLineSpacingEnabled(
         layout: StaticLayout,
-        useFallbackLineSpacing: Boolean
+        useFallbackLineSpacing: Boolean,
     ): Boolean {
         return false
     }

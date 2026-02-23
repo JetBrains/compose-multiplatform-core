@@ -23,10 +23,11 @@ import static androidx.core.view.ViewCompat.TYPE_TOUCH;
 import android.view.View;
 import android.view.ViewParent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat.NestedScrollType;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper class for implementing nested scrolling child views compatible with Android platform
@@ -201,7 +202,7 @@ public class NestedScrollingChildHelper {
      * @return <code>true</code> if the parent consumed any of the nested scroll distance
      */
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed,
-            int dxUnconsumed, int dyUnconsumed, @Nullable int[] offsetInWindow) {
+            int dxUnconsumed, int dyUnconsumed, int @Nullable [] offsetInWindow) {
         return dispatchNestedScrollInternal(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow, TYPE_TOUCH, null);
     }
@@ -215,7 +216,7 @@ public class NestedScrollingChildHelper {
      * @return <code>true</code> if the parent consumed any of the nested scroll distance
      */
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @Nullable int[] offsetInWindow, @NestedScrollType int type) {
+            int dyUnconsumed, int @Nullable [] offsetInWindow, @NestedScrollType int type) {
         return dispatchNestedScrollInternal(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow, type, null);
     }
@@ -227,15 +228,15 @@ public class NestedScrollingChildHelper {
      * method with the same signature to implement the standard policy.
      */
     public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @Nullable int[] offsetInWindow, @NestedScrollType int type,
-            @Nullable int[] consumed) {
+            int dyUnconsumed, int @Nullable [] offsetInWindow, @NestedScrollType int type,
+            int @Nullable [] consumed) {
         dispatchNestedScrollInternal(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow, type, consumed);
     }
 
     private boolean dispatchNestedScrollInternal(int dxConsumed, int dyConsumed,
-            int dxUnconsumed, int dyUnconsumed, @Nullable int[] offsetInWindow,
-            @NestedScrollType int type, @Nullable int[] consumed) {
+            int dxUnconsumed, int dyUnconsumed, int @Nullable [] offsetInWindow,
+            @NestedScrollType int type, int @Nullable [] consumed) {
         if (isNestedScrollingEnabled()) {
             final ViewParent parent = getNestedScrollingParentForType(type);
             if (parent == null) {
@@ -284,8 +285,8 @@ public class NestedScrollingChildHelper {
      *
      * @return true if the parent consumed any of the nested scroll
      */
-    public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow) {
+    public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow) {
         return dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, TYPE_TOUCH);
     }
 
@@ -298,8 +299,8 @@ public class NestedScrollingChildHelper {
      *
      * @return true if the parent consumed any of the nested scroll
      */
-    public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow, @NestedScrollType int type) {
+    public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow, @NestedScrollType int type) {
         if (isNestedScrollingEnabled()) {
             final ViewParent parent = getNestedScrollingParentForType(type);
             if (parent == null) {

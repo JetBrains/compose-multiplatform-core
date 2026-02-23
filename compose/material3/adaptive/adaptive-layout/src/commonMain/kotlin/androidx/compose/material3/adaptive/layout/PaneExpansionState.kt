@@ -19,35 +19,47 @@ package androidx.compose.material3.adaptive.layout
 import androidx.annotation.FloatRange
 import androidx.annotation.VisibleForTesting
 import androidx.collection.MutableLongList
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.DragScope
 import androidx.compose.foundation.gestures.DraggableState
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.PaneExpansionState.Companion.DefaultAnchoringAnimationSpec
 import androidx.compose.material3.adaptive.layout.PaneExpansionState.Companion.Unspecified
+import androidx.compose.material3.adaptive.layout.internal.Strings
+import androidx.compose.material3.adaptive.layout.internal.getString
+import androidx.compose.material3.adaptive.layout.internal.getValue
+import androidx.compose.material3.adaptive.layout.internal.identityHashCode
+import androidx.compose.material3.adaptive.layout.internal.rememberPersistentlyWithKey
+import androidx.compose.material3.adaptive.layout.internal.rememberUpdatedRef
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.packInts
 import androidx.compose.ui.util.unpackInt1
 import androidx.compose.ui.util.unpackInt2
+import kotlin.jvm.JvmInline
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
@@ -76,7 +88,7 @@ sealed interface PaneExpansionStateKey {
         }
 
         override fun hashCode(): Int {
-            return System.identityHashCode(this)
+            return identityHashCode(this)
         }
     }
 
@@ -105,15 +117,32 @@ sealed interface PaneExpansionStateKey {
  *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
  *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
  *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
  */
+@Deprecated(
+    "This method has been deprecated in favor of the one that accepts a consumeDragDelta.",
+    level = DeprecationLevel.HIDDEN,
+)
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun rememberPaneExpansionState(
     keyProvider: PaneExpansionStateKeyProvider,
     anchors: List<PaneExpansionAnchor> = emptyList(),
-    initialAnchoredIndex: Int = -1
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
 ): PaneExpansionState =
-    rememberPaneExpansionState(keyProvider.paneExpansionStateKey, anchors, initialAnchoredIndex)
+    rememberPaneExpansionState(
+        keyProvider.paneExpansionStateKey,
+        anchors,
+        initialAnchoredIndex,
+        anchoringAnimationSpec,
+        flingBehavior,
+        PaneExpansionState.noOpConsumeDragDelta,
+    )
 
 /**
  * Remembers and returns a [PaneExpansionState] associated to a given [PaneExpansionStateKey].
@@ -127,32 +156,138 @@ fun rememberPaneExpansionState(
  *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
  *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
  *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
  */
+@Deprecated(
+    "This method has been deprecated in favor of the one that accepts a consumeDragDelta.",
+    level = DeprecationLevel.HIDDEN,
+)
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun rememberPaneExpansionState(
     key: PaneExpansionStateKey = PaneExpansionStateKey.Default,
     anchors: List<PaneExpansionAnchor> = emptyList(),
-    initialAnchoredIndex: Int = -1
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+): PaneExpansionState =
+    rememberPaneExpansionState(
+        key,
+        anchors,
+        initialAnchoredIndex,
+        anchoringAnimationSpec,
+        flingBehavior,
+        PaneExpansionState.noOpConsumeDragDelta,
+    )
+
+/**
+ * Remembers and returns a [PaneExpansionState] associated to a given
+ * [PaneExpansionStateKeyProvider].
+ *
+ * Note that the remembered [PaneExpansionState] with all keys that have been used will be
+ * persistent through the associated pane scaffold's lifecycles.
+ *
+ * @param keyProvider the provider of [PaneExpansionStateKey]
+ * @param anchors the anchor list of the returned [PaneExpansionState]
+ * @param initialAnchoredIndex the index of the anchor that is supposed to be used during the
+ *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
+ *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
+ *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
+ * @param consumeDragDelta the callback that will be called before the drag starts to change the
+ *   pane sizes; the input of the lambda will be the raw delta by user dragging, and it should
+ *   returns the remaining delta after the consumption by the callback; this can be used to
+ *   implement custom behavior like nested scrolling or combining pane expansion with other element
+ *   expansion behavior like navigation rails.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun rememberPaneExpansionState(
+    keyProvider: PaneExpansionStateKeyProvider,
+    anchors: List<PaneExpansionAnchor> = emptyList(),
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    consumeDragDelta: ((delta: Float) -> Float) = PaneExpansionState.noOpConsumeDragDelta,
+): PaneExpansionState =
+    rememberPaneExpansionState(
+        keyProvider.paneExpansionStateKey,
+        anchors,
+        initialAnchoredIndex,
+        anchoringAnimationSpec,
+        flingBehavior,
+        consumeDragDelta,
+    )
+
+/**
+ * Remembers and returns a [PaneExpansionState] associated to a given [PaneExpansionStateKey].
+ *
+ * Note that the remembered [PaneExpansionState] with all keys that have been used will be
+ * persistent through the associated pane scaffold's lifecycles.
+ *
+ * @param key the key of [PaneExpansionStateKey]
+ * @param anchors the anchor list of the returned [PaneExpansionState]
+ * @param initialAnchoredIndex the index of the anchor that is supposed to be used during the
+ *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
+ *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
+ *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
+ * @param consumeDragDelta the callback that will be called before the drag starts to change the
+ *   pane sizes; the input of the lambda will be the raw delta by user dragging, and it should
+ *   returns the remaining delta after the consumption by the callback; this can be used to
+ *   implement custom behavior like nested scrolling or combining pane expansion with other element
+ *   expansion behavior like navigation rails.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+@Suppress("UnnecessaryLambdaCreation") // It's necessary to stabilize the lambda parameter
+fun rememberPaneExpansionState(
+    key: PaneExpansionStateKey = PaneExpansionStateKey.Default,
+    anchors: List<PaneExpansionAnchor> = emptyList(),
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    consumeDragDelta: ((Float) -> Float) = PaneExpansionState.noOpConsumeDragDelta,
 ): PaneExpansionState {
-    val dataMap = rememberSaveable(saver = PaneExpansionStateSaver()) { mutableStateMapOf() }
     val initialAnchor =
         remember(anchors, initialAnchoredIndex) {
             if (initialAnchoredIndex == -1) null else anchors[initialAnchoredIndex]
         }
+    // Note that this will only be updated when the current anchors change, which will serve as a
+    // fallback if the current anchor is no longer in the current anchors.
+    val initialAnchorForCurrentAnchors = remember(anchors) { initialAnchor }
+    val data =
+        rememberPersistentlyWithKey(
+            key = key,
+            keySaver = PaneExpansionStateKeySaver(),
+            valueSaver = PaneExpansionStateDataSaver(),
+        ) {
+            PaneExpansionStateData(currentAnchor = initialAnchor)
+        }
+    // Create a stable reference to the latest consumeDragDelta
+    val consumeDragDeltaRef by rememberUpdatedRef(consumeDragDelta)
     val expansionState = remember {
-        PaneExpansionState(
-            dataMap[PaneExpansionStateKey.Default]
-                ?: PaneExpansionStateData(currentAnchor = initialAnchor)
+        PaneExpansionState(data) { delta -> consumeDragDeltaRef(delta) }
+    }
+    LaunchedEffect(key, anchors, anchoringAnimationSpec, flingBehavior) {
+        expansionState.restore(
+            data = data,
+            anchors = anchors,
+            anchoringAnimationSpec = anchoringAnimationSpec,
+            flingBehavior = flingBehavior,
+            initialAnchorForCurrentAnchors = initialAnchorForCurrentAnchors,
         )
     }
-    return expansionState.apply {
-        restore(
-            dataMap[key]
-                ?: PaneExpansionStateData(currentAnchor = initialAnchor).also { dataMap[key] = it },
-            anchors
-        )
-    }
+    return expansionState
 }
 
 /**
@@ -165,15 +300,13 @@ fun rememberPaneExpansionState(
  * [PaneExpansionState] to store and manage dragging and anchoring of the handle, and thus the pane
  * expansion state.
  */
-@ExperimentalMaterial3AdaptiveApi
 @Stable
 class PaneExpansionState
 internal constructor(
     // TODO(conradchen): Handle state change during dragging and settling
     data: PaneExpansionStateData = PaneExpansionStateData(),
-    anchors: List<PaneExpansionAnchor> = emptyList()
-) : DraggableState {
-
+    @get:VisibleForTesting internal val consumeDragDelta: ((Float) -> Float) = noOpConsumeDragDelta,
+) {
     internal val firstPaneWidth
         get() =
             if (maxExpansionWidth == Unspecified || data.firstPaneWidthState == Unspecified) {
@@ -196,11 +329,39 @@ internal constructor(
             currentMeasuredDraggingOffset = coercedValue
         }
 
-    @VisibleForTesting
-    internal var currentAnchor
+    /**
+     * The current anchor that pane expansion has been settled or is settling to. Note that this
+     * field might be `null` if:
+     * 1. No anchors have been set to the state.
+     * 2. Pane expansion is set directly via [setFirstPaneWidth] or set [setFirstPaneProportion].
+     * 3. Pane expansion is in its initial state without an initial anchor provided.
+     */
+    var currentAnchor
         get() = data.currentAnchorState
-        set(value) {
+        private set(value) {
             data.currentAnchorState = value
+        }
+
+    internal val nextAnchor: PaneExpansionAnchor?
+        get() {
+            // maxExpansionWidth will be initialized in onMeasured and is backed by a state. Check
+            // it
+            // here so the next anchor will be updated when measuring is done.
+            if (maxExpansionWidth == Unspecified || anchors.isEmpty()) {
+                return null
+            }
+            val currentOffset =
+                if (currentDraggingOffset == Unspecified) {
+                    currentMeasuredDraggingOffset
+                } else {
+                    currentDraggingOffset
+                }
+            measuredAnchorPositions.forEach { index, position ->
+                if (currentOffset < position) {
+                    return anchors[index]
+                }
+            }
+            return anchors[0]
         }
 
     private var data by mutableStateOf(data)
@@ -224,36 +385,58 @@ internal constructor(
     internal var currentMeasuredDraggingOffset = Unspecified
         private set
 
-    private var anchors: List<PaneExpansionAnchor> by mutableStateOf(anchors)
+    private var anchors: List<PaneExpansionAnchor> by mutableStateOf(emptyList())
 
-    private lateinit var measuredDensity: Density
+    internal var measuredAnchorPositions = IndexedAnchorPositionList(0)
+        private set
 
-    private val dragScope: DragScope =
-        object : DragScope {
-            override fun dragBy(pixels: Float): Unit = dispatchRawDelta(pixels)
+    private lateinit var anchoringAnimationSpec: FiniteAnimationSpec<Float>
+
+    private lateinit var flingBehavior: FlingBehavior
+
+    private var measuredDensity: Density? = null
+
+    private var measuredLayoutDirection: LayoutDirection? = null
+
+    private val dragScope =
+        object : DragScope, ScrollScope {
+            override fun dragBy(pixels: Float): Unit = draggableState.dispatchRawDelta(pixels)
+
+            override fun scrollBy(pixels: Float): Float { // To support fling
+                val offsetBeforeDrag = currentDraggingOffset
+                dragBy(pixels)
+                val consumed = currentDraggingOffset - offsetBeforeDrag
+                return consumed.toFloat()
+            }
         }
 
     private val dragMutex = MutatorMutex()
+
+    internal val draggableState: DraggableState =
+        object : DraggableState {
+            override fun dispatchRawDelta(delta: Float) {
+                val remainingDelta = consumeDragDelta(delta)
+                if (currentMeasuredDraggingOffset == Unspecified) {
+                    return
+                }
+                currentDraggingOffset = (currentMeasuredDraggingOffset + remainingDelta).toInt()
+            }
+
+            override suspend fun drag(
+                dragPriority: MutatePriority,
+                block: suspend DragScope.() -> Unit,
+            ) = coroutineScope {
+                isDragging = true
+                dragMutex.mutateWith(dragScope, dragPriority, block)
+                isDragging = false
+            }
+        }
 
     /** Returns `true` if none of [firstPaneWidth] or [firstPaneProportion] has been set. */
     fun isUnspecified(): Boolean =
         firstPaneWidth == Unspecified &&
             firstPaneProportion.isNaN() &&
             currentDraggingOffset == Unspecified
-
-    override fun dispatchRawDelta(delta: Float) {
-        if (currentMeasuredDraggingOffset == Unspecified) {
-            return
-        }
-        currentDraggingOffset = (currentMeasuredDraggingOffset + delta).toInt()
-    }
-
-    override suspend fun drag(dragPriority: MutatePriority, block: suspend DragScope.() -> Unit) =
-        coroutineScope {
-            isDragging = true
-            dragMutex.mutateWith(dragScope, dragPriority, block)
-            isDragging = false
-        }
 
     /**
      * Set the width of the first expanded pane in the layout. When the set value gets applied, it
@@ -268,6 +451,7 @@ internal constructor(
         data.firstPaneProportionState = Float.NaN
         data.currentDraggingOffsetState = Unspecified
         data.firstPaneWidthState = firstPaneWidth
+        currentAnchor = null
     }
 
     /**
@@ -284,6 +468,24 @@ internal constructor(
         data.firstPaneWidthState = Unspecified
         data.currentDraggingOffsetState = Unspecified
         data.firstPaneProportionState = firstPaneProportion
+        currentAnchor = null
+    }
+
+    /**
+     * Animate the pane expansion to the given [PaneExpansionAnchor]. Note that the given anchor
+     * must be one of the provided anchor when creating the state with [rememberPaneExpansionState];
+     * otherwise the function throws.
+     *
+     * @param anchor the anchor to animate to
+     * @param initialVelocity the initial velocity of the animation
+     */
+    suspend fun animateTo(anchor: PaneExpansionAnchor, initialVelocity: Float = 0F) {
+        require(anchors.contains(anchor)) { "The provided $anchor is not in the anchor list!" }
+        currentAnchor = anchor
+        measuredDensity?.apply {
+            val position = anchor.positionIn(maxExpansionWidth, this, measuredLayoutDirection)
+            animateToInternal(position, initialVelocity)
+        }
     }
 
     /**
@@ -296,29 +498,60 @@ internal constructor(
         data.currentDraggingOffsetState = Unspecified
     }
 
-    internal fun restore(data: PaneExpansionStateData, anchors: List<PaneExpansionAnchor>) {
-        this.data = data
-        this.anchors = anchors
-        if (!anchors.contains(Snapshot.withoutReadObservation { currentAnchor })) {
-            currentAnchor = null
+    internal suspend fun restore(
+        data: PaneExpansionStateData,
+        anchors: List<PaneExpansionAnchor>,
+        anchoringAnimationSpec: FiniteAnimationSpec<Float>,
+        flingBehavior: FlingBehavior,
+        initialAnchorForCurrentAnchors: PaneExpansionAnchor?,
+    ) {
+        dragMutex.mutate(MutatePriority.PreventUserInput) {
+            this.data = data
+            this.anchors = anchors
+            measuredDensity?.let {
+                measuredAnchorPositions =
+                    anchors.toPositions(
+                        // When maxExpansionWidth is updated, the anchor positions will be
+                        // recalculated.
+                        maxExpansionWidth,
+                        it,
+                        measuredLayoutDirection,
+                    )
+            }
+            if (!anchors.contains(currentAnchor)) {
+                currentAnchor = initialAnchorForCurrentAnchors
+            }
+            this.anchoringAnimationSpec = anchoringAnimationSpec
+            this.flingBehavior = flingBehavior
         }
     }
 
-    internal fun onMeasured(measuredWidth: Int, density: Density) {
-        if (measuredWidth == maxExpansionWidth) {
+    internal fun onMeasured(
+        measuredWidth: Int,
+        density: Density,
+        layoutDirection: LayoutDirection,
+    ) {
+        if (
+            measuredWidth == maxExpansionWidth &&
+                measuredDensity == density &&
+                measuredLayoutDirection == layoutDirection
+        ) {
             return
         }
         maxExpansionWidth = measuredWidth
         measuredDensity = density
+        measuredLayoutDirection = layoutDirection
         Snapshot.withoutReadObservation {
+            measuredAnchorPositions =
+                anchors.toPositions(measuredWidth, density, measuredLayoutDirection)
             // Changes will always apply to the ongoing measurement, no need to trigger remeasuring
-            currentAnchor?.also { currentDraggingOffset = it.positionIn(measuredWidth, density) }
-                ?: {
-                    if (currentDraggingOffset != Unspecified) {
-                        // To re-coerce the value
-                        currentDraggingOffset = currentDraggingOffset
-                    }
-                }
+            if (!isDraggingOrSettling && currentAnchor != null) {
+                currentDraggingOffset =
+                    currentAnchor!!.positionIn(measuredWidth, density, measuredLayoutDirection)
+            } else if (currentDraggingOffset != Unspecified) {
+                // To re-coerce the value
+                currentDraggingOffset = currentDraggingOffset
+            }
         }
     }
 
@@ -326,49 +559,80 @@ internal constructor(
         currentMeasuredDraggingOffset = measuredOffset
     }
 
+    internal fun snapToAnchor(anchor: PaneExpansionAnchor) {
+        Snapshot.withoutReadObservation {
+            measuredDensity?.let {
+                currentDraggingOffset =
+                    anchor.positionIn(maxExpansionWidth, it, measuredLayoutDirection)
+            }
+        }
+    }
+
     internal suspend fun settleToAnchorIfNeeded(velocity: Float) {
-        val currentAnchorPositions = anchors.toPositions(maxExpansionWidth, measuredDensity)
-        if (currentAnchorPositions.isEmpty()) {
+        if (measuredAnchorPositions.isEmpty()) {
             return
         }
 
         dragMutex.mutate(MutatePriority.PreventUserInput) {
+            try {
+                isSettling = true
+                val leftVelocity = flingBehavior.run { dragScope.performFling(velocity) }
+                val anchorPosition =
+                    measuredAnchorPositions.getPositionOfTheClosestAnchor(
+                        currentMeasuredDraggingOffset,
+                        leftVelocity,
+                    )
+                currentAnchor = anchors[anchorPosition.index]
+                animateToInternal(anchorPosition.position, leftVelocity)
+            } finally {
+                isSettling = false
+            }
+        }
+    }
+
+    private suspend fun animateToInternal(offset: Int, initialVelocity: Float) {
+        try {
             isSettling = true
-            val anchorPosition =
-                currentAnchorPositions.getPositionOfTheClosestAnchor(
-                    currentMeasuredDraggingOffset,
-                    velocity
-                )
-            currentAnchor = anchors[anchorPosition.index]
             animate(
                 currentMeasuredDraggingOffset.toFloat(),
-                anchorPosition.position.toFloat(),
-                velocity,
-                PaneSnapAnimationSpec,
+                offset.toFloat(),
+                initialVelocity,
+                anchoringAnimationSpec,
             ) { value, _ ->
                 currentDraggingOffset = value.toInt()
             }
+        } finally {
+            currentDraggingOffset = offset
             isSettling = false
         }
     }
 
     private fun IndexedAnchorPositionList.getPositionOfTheClosestAnchor(
         currentPosition: Int,
-        velocity: Float
+        velocity: Float,
     ): IndexedAnchorPosition =
-        // TODO(conradchen): Add fling support
         minBy(
             when {
                 velocity >= AnchoringVelocityThreshold -> {
                     { anchorPosition: Int ->
                         val delta = anchorPosition - currentPosition
-                        if (delta < 0) Int.MAX_VALUE else delta
+                        if (delta < 0) {
+                            // If there's no anchor on the swiping direction, use the closet anchor
+                            maxExpansionWidth - delta
+                        } else {
+                            delta
+                        }
                     }
                 }
                 velocity <= -AnchoringVelocityThreshold -> {
                     { anchorPosition: Int ->
                         val delta = currentPosition - anchorPosition
-                        if (delta < 0) Int.MAX_VALUE else delta
+                        if (delta < 0) {
+                            // If there's no anchor on the swiping direction, use the closet anchor
+                            maxExpansionWidth - delta
+                        } else {
+                            delta
+                        }
                     }
                 }
                 else -> {
@@ -383,8 +647,10 @@ internal constructor(
 
         private const val AnchoringVelocityThreshold = 200F
 
-        private val PaneSnapAnimationSpec =
+        internal val DefaultAnchoringAnimationSpec =
             spring(dampingRatio = 0.8f, stiffness = 380f, visibilityThreshold = 1f)
+
+        internal val noOpConsumeDragDelta: ((Float) -> Float) = { delta -> delta }
     }
 }
 
@@ -394,30 +660,36 @@ internal class PaneExpansionStateData(
     firstPaneWidth: Int = Unspecified,
     firstPaneProportion: Float = Float.NaN,
     currentDraggingOffset: Int = Unspecified,
-    currentAnchor: PaneExpansionAnchor? = null
+    currentAnchor: PaneExpansionAnchor? = null,
 ) {
     var firstPaneWidthState by mutableIntStateOf(firstPaneWidth)
     var firstPaneProportionState by mutableFloatStateOf(firstPaneProportion)
     var currentDraggingOffsetState by mutableIntStateOf(currentDraggingOffset)
     var currentAnchorState by mutableStateOf(currentAnchor)
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PaneExpansionStateData) return false
-        if (firstPaneWidthState != other.firstPaneWidthState) return false
-        if (firstPaneProportionState != other.firstPaneProportionState) return false
-        if (currentDraggingOffsetState != other.currentDraggingOffsetState) return false
-        if (currentAnchorState != other.currentAnchorState) return false
-        return true
-    }
+    override fun equals(other: Any?): Boolean =
+        // TODO(conradchen): Check if we can remove this by directly reading/writing states in
+        //                   PaneExpansionState
+        Snapshot.withoutReadObservation {
+            if (this === other) return true
+            if (other !is PaneExpansionStateData) return false
+            if (firstPaneWidthState != other.firstPaneWidthState) return false
+            if (firstPaneProportionState != other.firstPaneProportionState) return false
+            if (currentDraggingOffsetState != other.currentDraggingOffsetState) return false
+            if (currentAnchorState != other.currentAnchorState) return false
+            return true
+        }
 
-    override fun hashCode(): Int {
-        var result = firstPaneWidthState
-        result = 31 * result + firstPaneProportionState.hashCode()
-        result = 31 * result + currentDraggingOffsetState
-        result = 31 * result + currentAnchorState.hashCode()
-        return result
-    }
+    override fun hashCode(): Int =
+        // TODO(conradchen): Check if we can remove this by directly reading/writing states in
+        //                   PaneExpansionState
+        Snapshot.withoutReadObservation {
+            var result = firstPaneWidthState
+            result = 31 * result + firstPaneProportionState.hashCode()
+            result = 31 * result + currentDraggingOffsetState
+            result = 31 * result + currentAnchorState.hashCode()
+            return result
+        }
 }
 
 /**
@@ -425,23 +697,63 @@ internal class PaneExpansionStateData(
  * dragging. Setting up anchors when create [PaneExpansionState] will force user dragging to snap to
  * the set anchors after user releases the drag.
  */
-@ExperimentalMaterial3AdaptiveApi
-sealed class PaneExpansionAnchor private constructor() {
+sealed class PaneExpansionAnchor {
+    internal fun positionIn(
+        totalSizePx: Int,
+        density: Density,
+        layoutDirection: LayoutDirection?,
+    ): Int {
+        val offset = positionIn(totalSizePx, density)
+        return if (layoutDirection == LayoutDirection.Rtl) {
+            totalSizePx - offset
+        } else {
+            offset
+        }
+    }
+
     internal abstract fun positionIn(totalSizePx: Int, density: Density): Int
 
     internal abstract val type: Int
 
     /**
+     * The description of the anchor that will be used in
+     * [androidx.compose.ui.semantics.SemanticsProperties] like accessibility services.
+     */
+    @get:Composable abstract val description: String
+
+    internal abstract val CompositionLocalConsumerModifierNode.description: String
+
+    /**
      * [PaneExpansionAnchor] implementation that specifies the anchor position in the proportion of
      * the total size of the layout at the start side of the anchor.
      *
-     * @property proportion the proportion of the layout at the start side of the anchor. layout.
+     * @param proportion the proportion of the layout at the start side of the anchor. For example,
+     *   if the current layout from the start to the end is list-detail, when the proportion value
+     *   is 0.3 and this anchor is used, the list pane will occupy 30% of the layout and the detail
+     *   pane will occupy 70% of it.
      */
     class Proportion(@FloatRange(0.0, 1.0) val proportion: Float) : PaneExpansionAnchor() {
         override val type = ProportionType
 
+        override val description
+            @Composable
+            get() =
+                getString(
+                    Strings.defaultPaneExpansionProportionAnchorDescription,
+                    (proportion * 100).toInt(),
+                )
+
+        override val CompositionLocalConsumerModifierNode.description: String
+            get() =
+                getString(
+                    Strings.defaultPaneExpansionProportionAnchorDescription,
+                    (proportion * 100).toInt(),
+                )
+
         override fun positionIn(totalSizePx: Int, density: Density) =
             (totalSizePx * proportion).roundToInt().coerceIn(0, totalSizePx)
+
+        override fun toString(): String = "PaneExpansionAnchor(Proportion = $proportion)"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -455,113 +767,205 @@ sealed class PaneExpansionAnchor private constructor() {
     }
 
     /**
-     * [PaneExpansionAnchor] implementation that specifies the anchor position in the offset in
-     * [Dp]. If a positive value is provided, the offset will be treated as a start offset, on the
-     * other hand, if a negative value is provided, the absolute value of the provided offset will
-     * be used as an end offset. For example, if -150.dp is provided, the resulted anchor will be at
-     * the position that is 150dp away from the end side of the associated layout.
+     * [PaneExpansionAnchor] implementation that specifies the anchor position based on the offset
+     * in [Dp].
      *
      * @property offset the offset of the anchor in [Dp].
      */
-    class Offset(val offset: Dp) : PaneExpansionAnchor() {
-        override val type = OffsetType
+    abstract class Offset internal constructor(val offset: Dp, override internal val type: Int) :
+        PaneExpansionAnchor() {
+        /**
+         * Indicates the direction of the offset.
+         *
+         * @see Direction.FromStart
+         * @see Direction.FromEnd
+         */
+        val direction: Direction = Direction(type)
 
-        override fun positionIn(totalSizePx: Int, density: Density) =
-            with(density) { offset.toPx() }.toInt().let { if (it < 0) totalSizePx + it else it }
+        override fun toString(): String = "PaneExpansionAnchor(Offset = $offset)"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Offset) return false
-            return offset == other.offset
+            return offset == other.offset && direction == other.direction
         }
 
         override fun hashCode(): Int {
-            return offset.hashCode()
+            return offset.hashCode() * 31 + direction.hashCode()
+        }
+
+        /** Represents the direction from where the offset will be calculated. */
+        @JvmInline
+        value class Direction internal constructor(internal val value: Int) {
+            companion object {
+                /**
+                 * Indicates the offset will be calculated from the start. For example, if the
+                 * offset is 150.dp, the resulted anchor will be at the position that is 150dp away
+                 * from the start side of the associated layout.
+                 */
+                val FromStart = Direction(OffsetFromStartType)
+
+                /**
+                 * Indicates the offset will be calculated from the end. For example, if the offset
+                 * is 150.dp, the resulted anchor will be at the position that is 150dp away from
+                 * the end side of the associated layout.
+                 */
+                val FromEnd = Direction(OffsetFromEndType)
+            }
+        }
+
+        private class StartOffset(offset: Dp) : Offset(offset, OffsetFromStartType) {
+            override val description
+                @Composable
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionStartOffsetAnchorDescription,
+                        offset.value.toInt(),
+                    )
+
+            override val CompositionLocalConsumerModifierNode.description
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionStartOffsetAnchorDescription,
+                        offset.value.toInt(),
+                    )
+
+            override fun positionIn(totalSizePx: Int, density: Density) =
+                with(density) { offset.roundToPx() }
+        }
+
+        private class EndOffset(offset: Dp) : Offset(offset, OffsetFromEndType) {
+            override val description
+                @Composable
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionEndOffsetAnchorDescription,
+                        offset.value.toInt(),
+                    )
+
+            override val CompositionLocalConsumerModifierNode.description
+                get() =
+                    getString(
+                        Strings.defaultPaneExpansionEndOffsetAnchorDescription,
+                        offset.value.toInt(),
+                    )
+
+            override fun positionIn(totalSizePx: Int, density: Density) =
+                totalSizePx - with(density) { offset.roundToPx() }
+        }
+
+        companion object {
+            /**
+             * Create an [androidx.compose.material3.adaptive.layout.PaneExpansionAnchor.Offset]
+             * anchor from the start side of the layout.
+             *
+             * @param offset offset to be used in [Dp].
+             */
+            fun fromStart(offset: Dp): Offset {
+                require(offset >= 0.dp) { "Offset must larger than or equal to 0 dp." }
+                return StartOffset(offset)
+            }
+
+            /**
+             * Create an [androidx.compose.material3.adaptive.layout.PaneExpansionAnchor.Offset]
+             * anchor from the end side of the layout.
+             *
+             * @param offset offset to be used in [Dp].
+             */
+            fun fromEnd(offset: Dp): Offset {
+                require(offset >= 0.dp) { "Offset must larger than or equal to 0 dp." }
+                return EndOffset(offset)
+            }
         }
     }
 
     internal companion object {
         internal const val UnspecifiedType = 0
         internal const val ProportionType = 1
-        internal const val OffsetType = 2
+        internal const val OffsetFromStartType = 2
+        internal const val OffsetFromEndType = 3
     }
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-@VisibleForTesting
-internal fun PaneExpansionStateSaver():
-    Saver<MutableMap<PaneExpansionStateKey, PaneExpansionStateData>, *> =
-    listSaver<MutableMap<PaneExpansionStateKey, PaneExpansionStateData>, Any>(
-        save = {
-            val dataSaver = PaneExpansionStateDataSaver()
-            buildList { it.forEach { entry -> add(with(dataSaver) { save(entry) }!!) } }
-        },
-        restore = {
-            val dataSaver = PaneExpansionStateDataSaver()
-            val map = mutableMapOf<PaneExpansionStateKey, PaneExpansionStateData>()
-            it.fastForEach { with(dataSaver) { restore(it) }!!.apply { map[key] = value } }
-            map
-        }
-    )
+@Composable
+internal fun rememberDefaultPaneExpansionState(
+    keyProvider: () -> PaneExpansionStateKeyProvider,
+    mutable: Boolean,
+): PaneExpansionState =
+    if (mutable) {
+        rememberPaneExpansionState(keyProvider())
+    } else {
+        remember { PaneExpansionState() } // Use a stub impl to avoid performance overhead
+    }
 
+@VisibleForTesting
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private fun PaneExpansionStateDataSaver():
-    Saver<Map.Entry<PaneExpansionStateKey, PaneExpansionStateData>, Any> =
+internal fun PaneExpansionStateKeySaver(): Saver<PaneExpansionStateKey, Any> =
     listSaver(
         save = {
-            val keyType = it.key.type
-            val currentAnchorType =
-                it.value.currentAnchorState?.type ?: PaneExpansionAnchor.UnspecifiedType
+            val keyType = it.type
             listOf(
                 keyType,
                 if (keyType == DefaultPaneExpansionStateKey) {
                     null
                 } else {
                     with(TwoPaneExpansionStateKeyImpl.saver()) {
-                        save(it.key as TwoPaneExpansionStateKeyImpl)
+                        save(it as TwoPaneExpansionStateKeyImpl)
                     }
                 },
-                it.value.firstPaneWidthState,
-                it.value.firstPaneProportionState,
-                it.value.currentDraggingOffsetState,
+            )
+        },
+        restore = {
+            val keyType = it[0] as Int
+            if (keyType == DefaultPaneExpansionStateKey || it[1] == null) {
+                PaneExpansionStateKey.Default
+            } else {
+                with(TwoPaneExpansionStateKeyImpl.saver()) { restore(it[1]!!) }
+            }
+        },
+    )
+
+@VisibleForTesting
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+internal fun PaneExpansionStateDataSaver(): Saver<PaneExpansionStateData, Any> =
+    listSaver(
+        save = {
+            val currentAnchorType =
+                it.currentAnchorState?.type ?: PaneExpansionAnchor.UnspecifiedType
+            listOf(
+                it.firstPaneWidthState,
+                it.firstPaneProportionState,
+                it.currentDraggingOffsetState,
                 currentAnchorType,
-                with(it.value.currentAnchorState) {
+                with(it.currentAnchorState) {
                     when (this) {
                         is PaneExpansionAnchor.Proportion -> this.proportion
                         is PaneExpansionAnchor.Offset -> this.offset.value
                         else -> null
                     }
-                }
+                },
             )
         },
         restore = {
-            val keyType = it[0] as Int
-            val key =
-                if (keyType == DefaultPaneExpansionStateKey || it[1] == null) {
-                    PaneExpansionStateKey.Default
-                } else {
-                    with(TwoPaneExpansionStateKeyImpl.saver()) { restore(it[1]!!) }
-                }
-            val currentAnchorType = it[5] as Int
+            val currentAnchorType = it[3] as Int
             val currentAnchor =
                 when (currentAnchorType) {
                     PaneExpansionAnchor.ProportionType ->
-                        PaneExpansionAnchor.Proportion(it[6] as Float)
-                    PaneExpansionAnchor.OffsetType ->
-                        PaneExpansionAnchor.Offset((it[6] as Float).dp)
+                        PaneExpansionAnchor.Proportion(it[4] as Float)
+                    PaneExpansionAnchor.OffsetFromStartType ->
+                        PaneExpansionAnchor.Offset.fromStart((it[4] as Float).dp)
+                    PaneExpansionAnchor.OffsetFromEndType ->
+                        PaneExpansionAnchor.Offset.fromEnd((it[4] as Float).dp)
                     else -> null
                 }
-            object : Map.Entry<PaneExpansionStateKey, PaneExpansionStateData> {
-                override val key: PaneExpansionStateKey = key!!
-                override val value: PaneExpansionStateData =
-                    PaneExpansionStateData(
-                        firstPaneWidth = it[2] as Int,
-                        firstPaneProportion = it[3] as Float,
-                        currentDraggingOffset = it[4] as Int,
-                        currentAnchor = currentAnchor
-                    )
-            }
-        }
+            PaneExpansionStateData(
+                firstPaneWidth = it[0] as Int,
+                firstPaneProportion = it[1] as Float,
+                currentDraggingOffset = it[2] as Int,
+                currentAnchor = currentAnchor,
+            )
+        },
     )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -579,12 +983,18 @@ private const val TwoPaneExpansionStateKey = 1
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private fun List<PaneExpansionAnchor>.toPositions(
     maxExpansionWidth: Int,
-    density: Density
+    density: Density,
+    layoutDirection: LayoutDirection?,
 ): IndexedAnchorPositionList {
     val anchors = IndexedAnchorPositionList(size)
     @Suppress("ListIterator") // Not necessarily a random-accessible list
     forEachIndexed { index, anchor ->
-        anchors.add(IndexedAnchorPosition(anchor.positionIn(maxExpansionWidth, density), index))
+        anchors.add(
+            IndexedAnchorPosition(
+                anchor.positionIn(maxExpansionWidth, density, layoutDirection),
+                index,
+            )
+        )
     }
     anchors.sort()
     return anchors
@@ -610,7 +1020,7 @@ private fun <T : Comparable<T>> IndexedAnchorPositionList.minBy(
 }
 
 @JvmInline
-private value class IndexedAnchorPositionList(val value: MutableLongList) {
+internal value class IndexedAnchorPositionList(val value: MutableLongList) {
     constructor(size: Int) : this(MutableLongList(size))
 
     val size
@@ -625,8 +1035,12 @@ private value class IndexedAnchorPositionList(val value: MutableLongList) {
     operator fun get(index: Int) = IndexedAnchorPosition(value[index])
 }
 
+internal inline fun IndexedAnchorPositionList.forEach(action: (index: Int, position: Int) -> Unit) {
+    value.forEach { with(IndexedAnchorPosition(it)) { action(index, position) } }
+}
+
 @JvmInline
-private value class IndexedAnchorPosition(val value: Long) {
+internal value class IndexedAnchorPosition(val value: Long) {
     constructor(position: Int, index: Int) : this(packInts(position, index))
 
     val position

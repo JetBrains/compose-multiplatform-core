@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Facade class name cannot be updated, the Kt name has been released
 @file:Suppress(
     "RedundantVisibilityModifier",
     "KotlinRedundantDiagnosticSuppress",
@@ -21,13 +22,17 @@
     "PropertyName",
     "ConstPropertyName",
     "PrivatePropertyName",
-    "NOTHING_TO_INLINE"
+    "NOTHING_TO_INLINE",
+    "FacadeClassJvmName",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.annotation.IntRange
 import androidx.collection.internal.requirePrecondition
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -96,6 +101,36 @@ public fun mutableIntSetOf(element1: Int, element2: Int, element3: Int): Mutable
 /** Returns a new [MutableIntSet] with the specified elements. */
 public fun mutableIntSetOf(vararg elements: Int): MutableIntSet =
     MutableIntSet(elements.size).apply { plusAssign(elements) }
+
+/**
+ * Builds a new [IntSet] by populating a [MutableIntSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableIntSet] can be populated.
+ */
+public inline fun buildIntSet(builderAction: MutableIntSet.() -> Unit): IntSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableIntSet().apply(builderAction)
+}
+
+/**
+ * Builds a new [IntSet] by populating a [MutableIntSet] using the given [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function. Using it
+ * outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableIntSet] can be populated.
+ */
+public inline fun buildIntSet(
+    initialCapacity: Int,
+    builderAction: MutableIntSet.() -> Unit,
+): IntSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableIntSet(initialCapacity).apply(builderAction)
+}
 
 /**
  * [IntSet] is a container with a [Set]-like interface designed to avoid allocations, including
@@ -288,17 +323,19 @@ public sealed class IntSet {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@IntSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@IntSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
-            index++
         }
         append(postfix)
     }
@@ -318,20 +355,22 @@ public sealed class IntSet {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (Int) -> CharSequence
+        crossinline transform: (Int) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@IntSet.forEach { element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@IntSet.forEach { element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
-            index++
         }
         append(postfix)
     }

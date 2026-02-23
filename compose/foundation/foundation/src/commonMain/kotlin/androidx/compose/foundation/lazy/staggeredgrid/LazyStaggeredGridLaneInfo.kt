@@ -41,11 +41,11 @@ internal class LazyStaggeredGridLaneInfo {
     /**
      * Get lane for given item index.
      *
-     * @return lane previously recorded for given item or [Unset] if it doesn't exist.
+     * @return lane previously recorded for given item or [LaneUnset] if it doesn't exist.
      */
     fun getLane(itemIndex: Int): Int {
         if (itemIndex < lowerBound() || itemIndex >= upperBound()) {
-            return Unset
+            return LaneUnset
         }
         return lanes[itemIndex - anchor] - 1
     }
@@ -58,7 +58,7 @@ internal class LazyStaggeredGridLaneInfo {
      */
     fun assignedToLane(itemIndex: Int, targetLane: Int): Boolean {
         val lane = getLane(itemIndex)
-        return lane == targetLane || lane == Unset || lane == FullSpan
+        return lane == targetLane || lane == LaneUnset || lane == LaneFullSpan
     }
 
     /** @return upper bound of currently valid item range */
@@ -123,7 +123,7 @@ internal class LazyStaggeredGridLaneInfo {
                         lanes,
                         destinationOffset = 0,
                         startIndex = delta,
-                        endIndex = lanes.size
+                        endIndex = lanes.size,
                     )
                 }
                 // fill the rest of the spans with default values
@@ -141,7 +141,7 @@ internal class LazyStaggeredGridLaneInfo {
                             lanes,
                             destinationOffset = delta,
                             startIndex = 0,
-                            endIndex = lanes.size - delta
+                            endIndex = lanes.size - delta,
                         )
                     }
                     // fill the rest of the spans with default values
@@ -162,7 +162,7 @@ internal class LazyStaggeredGridLaneInfo {
     }
 
     fun setGaps(itemIndex: Int, gaps: IntArray?) {
-        val foundIndex = spannedItems.binarySearchBy(itemIndex) { it.index }
+        val foundIndex = spannedItems.searchByIndex(itemIndex)
         if (foundIndex < 0) {
             if (gaps == null) {
                 return
@@ -182,7 +182,7 @@ internal class LazyStaggeredGridLaneInfo {
     }
 
     fun getGaps(itemIndex: Int): IntArray? {
-        val foundIndex = spannedItems.binarySearchBy(itemIndex) { it.index }
+        val foundIndex = spannedItems.searchByIndex(itemIndex)
         return spannedItems.getOrNull(foundIndex)?.gaps
     }
 
@@ -197,9 +197,30 @@ internal class LazyStaggeredGridLaneInfo {
         }
     }
 
+    private fun List<SpannedItem>.searchByIndex(index: Int): Int {
+        var low = 0
+        var high = size - 1
+
+        while (low <= high) {
+            val mid = (low + high).ushr(1)
+            val midVal = get(mid)
+            val cmp = midVal.index - index
+
+            if (cmp < 0) {
+                low = mid + 1
+            } else if (cmp > 0) {
+                high = mid - 1
+            } else {
+                // key found
+                return mid
+            }
+        }
+        return -(low + 1) // key not found
+    }
+
     companion object {
         private const val MaxCapacity = 131_072 // Closest to 100_000, 2 ^ 17
-        internal const val Unset = -1
-        internal const val FullSpan = -2
+        internal const val LaneUnset = -1
+        internal const val LaneFullSpan = -2
     }
 }

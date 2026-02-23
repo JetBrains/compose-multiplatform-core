@@ -47,8 +47,6 @@ import android.os.Looper;
 import android.os.PersistableBundle;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.work.Logger;
@@ -63,6 +61,9 @@ import androidx.work.impl.WorkLauncherImpl;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.WorkGenerationalId;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,6 @@ import java.util.Map;
  * Service invoked by {@link JobScheduler} to run work tasks.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
 public class SystemJobService extends JobService implements ExecutionListener {
     private static final String TAG = Logger.tagWithPrefix("SystemJobService");
     private WorkManagerImpl mWorkManagerImpl;
@@ -220,9 +220,8 @@ public class SystemJobService extends JobService implements ExecutionListener {
         }
     }
 
-    @Nullable
     @SuppressWarnings("ConstantConditions")
-    private static WorkGenerationalId workGenerationalIdFromJobParameters(
+    private static @Nullable WorkGenerationalId workGenerationalIdFromJobParameters(
             @NonNull JobParameters parameters
     ) {
         try {

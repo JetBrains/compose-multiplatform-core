@@ -32,8 +32,6 @@ import android.os.Handler;
 import android.os.Process;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.LruCache;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.content.res.FontResourcesParserCompat;
@@ -42,6 +40,9 @@ import androidx.core.provider.FontsContractCompat.FontFamilyResult;
 import androidx.core.provider.FontsContractCompat.FontRequestCallback.FontRequestFailReason;
 import androidx.core.util.Consumer;
 import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,9 +100,9 @@ class FontRequestWorker {
      * @return
      */
     static Typeface requestFontSync(
-            @NonNull final Context context,
-            @NonNull final FontRequest request,
-            @NonNull final CallbackWrapper callback,
+            final @NonNull Context context,
+            final @NonNull FontRequest request,
+            final @NonNull CallbackWrapper callback,
             final int style,
             int timeoutInMillis
     ) {
@@ -161,11 +162,11 @@ class FontRequestWorker {
      * @return
      */
     static Typeface requestFontAsync(
-            @NonNull final Context context,
-            @NonNull final List<FontRequest> requests,
+            final @NonNull Context context,
+            final @NonNull List<FontRequest> requests,
             final int style,
-            @Nullable final Executor executor,
-            @NonNull final CallbackWrapper callback
+            final @Nullable Executor executor,
+            final @NonNull CallbackWrapper callback
     ) {
         final String id = createCacheId(requests, style);
         Typeface cached = sTypefaceCache.get(id);
@@ -242,11 +243,10 @@ class FontRequestWorker {
     }
 
     /** Package protected to prevent synthetic accessor */
-    @NonNull
-    static TypefaceResult getFontSync(
-            @NonNull final String cacheId,
-            @NonNull final Context context,
-            @NonNull final List<FontRequest> requests,
+    static @NonNull TypefaceResult getFontSync(
+            final @NonNull String cacheId,
+            final @NonNull Context context,
+            final @NonNull List<FontRequest> requests,
             int style
     ) {
         if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {

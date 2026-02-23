@@ -26,8 +26,9 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.ObjectsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 class MediaSessionManagerImplBase implements MediaSessionManager.MediaSessionManagerImpl {
     private static final String TAG = MediaSessionManager.TAG;
@@ -55,7 +56,7 @@ class MediaSessionManagerImplBase implements MediaSessionManager.MediaSessionMan
     @Override
     @SuppressWarnings("deprecation")
     public boolean isTrustedForMediaControl(
-            @NonNull MediaSessionManager.RemoteUserInfoImpl userInfo) {
+            MediaSessionManager.@NonNull RemoteUserInfoImpl userInfo) {
         try {
             ApplicationInfo applicationInfo = mContext.getPackageManager().getApplicationInfo(
                     userInfo.getPackageName(), 0);
@@ -94,7 +95,7 @@ class MediaSessionManagerImplBase implements MediaSessionManager.MediaSessionMan
      */
     @SuppressWarnings("StringSplitter")
     boolean isEnabledNotificationListener(
-            @NonNull MediaSessionManager.RemoteUserInfoImpl userInfo) {
+            MediaSessionManager.@NonNull RemoteUserInfoImpl userInfo) {
         final String enabledNotifListeners = Settings.Secure.getString(mContentResolver,
                 ENABLED_NOTIFICATION_LISTENERS);
         if (enabledNotifListeners != null) {

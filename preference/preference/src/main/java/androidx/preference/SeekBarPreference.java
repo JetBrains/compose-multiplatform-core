@@ -28,8 +28,8 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Preference based on android.preference.SeekBarPreference but uses support preference as a base
@@ -414,9 +414,8 @@ public class SeekBarPreference extends Preference {
         }
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         if (isPersistent()) {
             // No need to save instance state since it's persistent
