@@ -84,6 +84,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
@@ -1377,12 +1378,15 @@ class ModalBottomSheetTest {
             }
         }
 
-        // wait for layout
         rule.waitForIdle()
         assertThat(sheetState.requireOffset()).isGreaterThan(providedTopInsets)
-        // Consumed insets are the larger of the two provided consumed insets, in this case, the
-        // sheets offset as inset 1, and top window insets as inset 2.
-        assertThat(consumedTopInsets).isEqualTo(sheetState.requireOffset().toInt())
+        // UPDATED BEHAVIOR:
+        // The content inside the sheet only consumes the insets explicitly provided
+        // to it (10px). It does NOT consume the empty space (offset) above the sheet
+        // because that space is outside the content's coordinate system.
+        // This is functionally the same for users for as long as the sheets offset is larger than
+        // or equal to the provided insets, the visual padding will remain 0.
+        assertThat(consumedTopInsets).isEqualTo(providedTopInsets)
     }
 
     @Test
@@ -1517,6 +1521,52 @@ class ModalBottomSheetTest {
             rule.waitForIdle()
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
         }
+
+    @Test
+    fun sheetWindowInsets_reportsOffset_asTopInset() {
+        lateinit var state: SheetState
+        lateinit var scope: CoroutineScope
+        lateinit var insets: WindowInsets
+        lateinit var density: Density
+
+        rule.setContent {
+            state = rememberSheetState(initialValue = SheetValue.PartiallyExpanded)
+            scope = rememberCoroutineScope()
+            density = LocalDensity.current
+            insets = remember(state) { SheetWindowInsets(state) }
+
+            Box(Modifier.fillMaxSize()) {
+                BottomSheet(
+                    state = state,
+                    onDismissRequest = {},
+                    content = { Box(Modifier.fillMaxSize()) },
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isGreaterThan(0)
+        }
+
+        scope.launch { state.expand() }
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isEqualTo(0)
+        }
+
+        scope.launch { state.hide() }
+        rule.runOnIdle {
+            val reportedTopInset = insets.getTop(density).toFloat()
+            val actualOffset = state.requireOffset()
+            assertThat(reportedTopInset).isWithin(1f).of(actualOffset)
+            assertThat(reportedTopInset).isGreaterThan(0)
+        }
+    }
 
     private val Bundle.traversalBefore: Int
         get() = getInt("android.view.accessibility.extra.EXTRA_DATA_TEST_TRAVERSALBEFORE_VAL")

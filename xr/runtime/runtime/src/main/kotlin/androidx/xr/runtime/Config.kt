@@ -830,8 +830,7 @@ constructor(
              * - Include the Google Play Services Location Library as a dependency for your app. See
              *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
              *   for instructions on how to include this library in your app. If this library is not
-             *   linked, [Session.configure] returns
-             *   [SessionConfigureGooglePlayServicesLocationLibraryNotLinked].
+             *   linked, [Session.configure] returns [SessionConfigureLibraryNotLinked].
              *
              * Location is tracked only while the [Session] is resumed.
              *

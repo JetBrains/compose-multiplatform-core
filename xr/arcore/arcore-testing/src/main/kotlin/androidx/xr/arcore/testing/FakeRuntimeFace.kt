@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.arcore.runtime.Mesh
@@ -46,17 +45,10 @@ public class FakeRuntimeFace(
      * Controls whether calling [createAnchor] will succeed or throw an [IllegalStateException].
      * Defaults to `true`.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @get:JvmName("canCreateAnchors")
-    public var canCreateAnchors: Boolean = true
+    @get:JvmName("canCreateAnchors") public var canCreateAnchors: Boolean = true
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override var centerPose: Pose = Pose()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override var mesh: Mesh =
         Mesh(
             ShortBuffer.allocate(1),
@@ -65,16 +57,13 @@ public class FakeRuntimeFace(
             FloatBuffer.allocate(1),
         )
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the tip of the nose. */
     override var noseTipPose: Pose = Pose(Vector3(1f, 1f, 0f), Quaternion.Identity)
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the left side of the detected face's forehead. */
     override var foreheadLeftPose: Pose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /** The [Pose] located at the right side of the detected face's forehead. */
     override var foreheadRightPose: Pose = Pose(Vector3(2f, 0f, 0f), Quaternion.Identity)
 
     init {
@@ -89,7 +78,6 @@ public class FakeRuntimeFace(
      *
      * Defaults to `true`.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun createAnchor(pose: Pose): Anchor {
         if (!canCreateAnchors) {
             throw IllegalStateException()

@@ -37,7 +37,7 @@ import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
+import androidx.xr.runtime.SessionConfigureLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
@@ -369,10 +369,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 try {
                     Log.info { "session.configure(currentConfig)" }
                     when (val configResult = session.configure(currentConfig)) {
-                        is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                            Log.error {
-                                "Google Play Services Location Library is not linked, this should not happen."
-                            }
+                        is SessionConfigureLibraryNotLinked -> {
+                            Log.error { "Library \"${configResult.libraryName}\" not linked." }
                         }
                         is SessionConfigureSuccess -> {
                             Log.info { "Session created successfully!!" }
@@ -395,6 +393,9 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 Log.error { "Can't create session, unsupported device" }
                 finish()
             }
+            else -> {
+                Log.error { "Unexpected ${result::class.simpleName}" }
+            }
         }
     }
 
@@ -416,10 +417,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
                         // Reset initial pose when config changes for correct diffs
                         initialGeospatialPose = null
                     }
-                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                        Log.error {
-                            "Google Play Services Location Library is not linked, this should not happen."
-                        }
+                    is SessionConfigureLibraryNotLinked -> {
+                        Log.error { "Library \"${configResult.libraryName}\" not linked." }
                     }
                     else -> {
                         Log.error { "Session reconfigure error: $configResult" }

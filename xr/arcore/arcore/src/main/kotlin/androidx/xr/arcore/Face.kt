@@ -38,7 +38,7 @@ public class Face
 internal constructor(
     internal val runtimeFace: RuntimeFace,
     internal val xrResourceManager: XrResourcesManager,
-) : Updatable {
+) : Trackable<Face.State>, Updatable {
 
     public companion object {
         /**
@@ -62,7 +62,6 @@ internal constructor(
         }
 
         /** Emits the faces that are currently being tracked in the [Session]. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Face>> {
             check(session.config.faceTracking == FaceTrackingMode.MESHES) {
@@ -167,18 +166,29 @@ internal constructor(
      * The representation of the current state of [Face].
      *
      * @param trackingState the current [TrackingState] of the face.
+     * @param centerPose the pose at the center of the face, defined to have the origin located
+     *   behind the nose and between the two cheek bones
+     *
+     *   Z+ is forward out of the nose, Y+ is upwards, and X+ is towards the left. The units are in
+     *   meters.
+     *
+     *   [centerPose] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
+     *
+     * @param mesh the polygonal representation of the face as observed by the perception system
+     *
+     *   [mesh] will be null if the Session is not configured with [FaceTrackingMode.MESHES].
      */
     public class State
     internal constructor(
-        public val trackingState: TrackingState,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val centerPose: Pose? = null,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val mesh: Mesh? = null,
+        public override val trackingState: TrackingState,
+        public val centerPose: Pose? = null,
+        public val mesh: Mesh? = null,
         internal val blendShapeValues: FloatArray? = null,
         internal val confidenceValues: FloatArray? = null,
         internal val noseTipPose: Pose? = null,
         internal val foreheadLeftPose: Pose? = null,
         internal val foreheadRightPose: Pose? = null,
-    ) {
+    ) : Trackable.State {
 
         /**
          * Represents the blend shapes of the face.
@@ -210,16 +220,18 @@ internal constructor(
             }
         }
 
-        /** Map of [Pose] values on the Face for each [FaceMeshRegion] */
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public val regionPoses: Map<FaceMeshRegion, Pose>? =
-            if (noseTipPose == null || foreheadLeftPose == null || foreheadRightPose == null) null
-            else
-                mapOf(
-                    FaceMeshRegion.NOSE_TIP to noseTipPose,
-                    FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
-                    FaceMeshRegion.FOREHEAD_RIGHT to foreheadRightPose,
-                )
+        /**
+         * Map of [Pose] values on the Face for each [FaceMeshRegion]
+         *
+         * Each [Pose] value in the Map will be null if the Session is not configured with
+         * [FaceTrackingMode.MESHES].
+         */
+        public val regionPoses: Map<FaceMeshRegion, Pose?> =
+            mapOf(
+                FaceMeshRegion.NOSE_TIP to noseTipPose,
+                FaceMeshRegion.FOREHEAD_LEFT to foreheadLeftPose,
+                FaceMeshRegion.FOREHEAD_RIGHT to foreheadRightPose,
+            )
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -263,10 +275,10 @@ internal constructor(
         )
 
     /** The current [State] of this Face. */
-    public val state: StateFlow<State> = _state.asStateFlow()
+    public override val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun createAnchor(pose: Pose): AnchorCreateResult {
+    /** Create and attach an [Anchor] to the Face at the given [Pose] in world space. */
+    public override fun createAnchor(pose: Pose): AnchorCreateResult {
         val runtimeAnchor: RuntimeAnchor
         try {
             runtimeAnchor = runtimeFace.createAnchor(pose)
@@ -280,7 +292,7 @@ internal constructor(
         return AnchorCreateSuccess(anchor)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public override suspend fun update() {
         if (!runtimeFace.isValid) return
         _state.emit(

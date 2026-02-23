@@ -186,22 +186,31 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  public final class Face {
+  public final class Face implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Face.State> {
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
     method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
   }
 
   public static final class Face.Companion {
     method public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Face>> subscribe(androidx.xr.runtime.Session session);
   }
 
-  public static final class Face.State {
+  public static final class Face.State implements androidx.xr.arcore.Trackable.State {
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCenterPose();
     method @FloatRange(from=0.0, to=1.0, fromInclusive=true, toInclusive=true) public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Mesh? getMesh();
+    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> getRegionPoses();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
+    property public androidx.xr.runtime.math.Pose? centerPose;
+    property public androidx.xr.arcore.runtime.Mesh? mesh;
+    property public java.util.Map<androidx.xr.arcore.FaceMeshRegion,androidx.xr.runtime.math.Pose?> regionPoses;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
@@ -359,6 +368,19 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LEFT_UPPER;
     property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LOWER;
     property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_RIGHT_UPPER;
+  }
+
+  public final class FaceMeshRegion {
+    field public static final androidx.xr.arcore.FaceMeshRegion.Companion Companion;
+    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
+    field public static final androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
+    field public static final androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
+  }
+
+  public static final class FaceMeshRegion.Companion {
+    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_LEFT;
+    property public androidx.xr.arcore.FaceMeshRegion FOREHEAD_RIGHT;
+    property public androidx.xr.arcore.FaceMeshRegion NOSE_TIP;
   }
 
   public final class Geospatial {

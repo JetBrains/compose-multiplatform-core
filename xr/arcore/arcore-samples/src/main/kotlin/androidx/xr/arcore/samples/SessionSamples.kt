@@ -29,6 +29,8 @@ import androidx.xr.runtime.SessionConfigureCalibrationRequired
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.SessionCreateTimedOut
+import androidx.xr.runtime.SessionCreateUnknownError
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
 import com.google.ar.core.ArCoreApk
 import kotlinx.coroutines.Dispatchers
@@ -142,6 +144,13 @@ fun callSessionCreate(activity: ComponentActivity, userRequestedInstall: Boolean
                         )
                         .show()
                     activity.finish()
+                }
+
+                is SessionCreateTimedOut -> {
+                    Toast.makeText(activity, "Session creation timed out.", Toast.LENGTH_LONG)
+                }
+                is SessionCreateUnknownError -> {
+                    Toast.makeText(activity, result.errorMessage, Toast.LENGTH_LONG)
                 }
             }
         } catch (e: SecurityException) {

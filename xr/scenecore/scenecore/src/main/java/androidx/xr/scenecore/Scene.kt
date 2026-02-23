@@ -196,7 +196,7 @@ public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public con
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override fun initialize(runtimes: List<JxrRuntime>) {
         this.sceneRuntime = runtimes.filterIsInstance<SceneRuntime>().first()
-        spatialEnvironment = SpatialEnvironment(sceneRuntime)
+        spatialEnvironment = SpatialEnvironment(sceneRuntime, entityManager)
         perceptionSpace = PerceptionSpace.create(sceneRuntime)
         activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
         val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().first()

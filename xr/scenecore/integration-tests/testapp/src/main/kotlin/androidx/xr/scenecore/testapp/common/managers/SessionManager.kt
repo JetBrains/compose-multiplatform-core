@@ -66,6 +66,12 @@ class SessionManager(private val activity: AppCompatActivity) {
                     Toast.makeText(activity, "Unsupported device.", Toast.LENGTH_LONG).show()
                     activity.finish()
                 }
+
+                else -> {
+                    androidx.xr.runtime.Log.error {
+                        "Unexpected ${sessionCreateResult::class.simpleName}"
+                    }
+                }
             }
         } catch (e: SecurityException) {
             obtainUserPermissions(activity)
