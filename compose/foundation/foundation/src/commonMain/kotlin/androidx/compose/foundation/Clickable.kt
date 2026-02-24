@@ -931,6 +931,7 @@ internal open class ClickableNode(
         down.consume()
         this.downEvent = down
         if (enabled) {
+            requestFocusWhenInMouseInputMode()
             if (isDelayPressesUsingGestureConsumptionEnabled) {
                 handlePressInteractionStart(down)
             } else {
