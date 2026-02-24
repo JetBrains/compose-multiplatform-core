@@ -1990,7 +1990,6 @@ class ScrollableTest {
         onNodeWithTag("childScrollable").performTouchInput {
             down(centerLeft)
             moveBy(Offset(100f, 0f))
-            move(100)
             up()
         }
 
@@ -2407,7 +2406,6 @@ class ScrollableTest {
         onNodeWithTag(scrollableBoxTag).performTouchInput {
             down(this.center)
             moveBy(Offset(115f, 0f))
-            move(100)
             up()
         }
         assertThat(flingCalled).isEqualTo(1)
@@ -2987,7 +2985,6 @@ class ScrollableTest {
         onRoot().performTouchInput {
             down(center)
             moveBy(Offset(scrollDelta, 0f))
-            move(100)
             up()
         }
 

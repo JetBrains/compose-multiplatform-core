@@ -92,7 +92,6 @@ internal class BackingDomInput(
     }
 
     fun dispose() {
-        inputStrategy.dispose()
         backingElement.remove()
     }
 }

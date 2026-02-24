@@ -228,22 +228,14 @@ class ImageComposeScene @ExperimentalComposeUiApi constructor(
         set(value) { scene.size = value.toIntSize() }
 
     /**
-     * Returns whether there are pending recompositions, renders, or dispatched tasks.
+     * Returns true if there are pending recompositions, renders or dispatched tasks.
      * Can be called from any thread.
-     *
-     * Note that changes to snapshot state don't immediately trigger an invalidation.
-     * To guarantee that there are no changes expected in the scene use
-     * ```
-     * !Snapshot.current.hasPendingChanges()
-     *     && !Snapshot.isApplyObserverNotificationPending
-     *     && !scene.hasInvalidations()
-     * ```
      */
     fun hasInvalidations() = scene.hasInvalidations()
 
     /**
      * Update the composition with the content described by the [content] composable. After this
-     * has been called, the changes to produce the initial composition have been calculated and
+     * has been called the changes to produce the initial composition has been calculated and
      * applied to the composition.
      *
      * Will throw an [IllegalStateException] if the composition has been disposed.

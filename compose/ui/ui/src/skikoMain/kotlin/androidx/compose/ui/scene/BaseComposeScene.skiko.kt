@@ -66,6 +66,9 @@ internal abstract class BaseComposeScene(
             processKeyEvent = ::processKeyEvent,
         )
 
+    // Store this to avoid creating a lambda every frame
+    private val updatePointerPosition = inputHandler::updatePointerPosition
+
     private val frameClock = BroadcastFrameClock(onNewAwaiters = ::updateInvalidations)
     private val recomposer: ComposeSceneRecomposer =
         ComposeSceneRecomposer(coroutineContext, frameClock)
@@ -176,9 +179,7 @@ internal abstract class BaseComposeScene(
 
             // Schedule synthetic events to be sent after `render` completes
             if (inputHandler.needUpdatePointerPosition) {
-                recomposer.scheduleAsEffect {
-                    inputHandler.updatePointerPosition()
-                }
+                recomposer.scheduleAsEffect { updatePointerPosition() }
             }
 
             // Between layout and draw, Android's Choreographer flushes the main dispatcher.

@@ -20,19 +20,15 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
-import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.JsName
 import kotlin.js.definedExternally
 import kotlin.js.js
-import kotlin.js.unsafeCast
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.CompositionEvent
-import org.w3c.dom.events.Event
 import org.w3c.dom.events.InputEvent
 import org.w3c.dom.events.KeyboardEvent
 
@@ -43,10 +39,6 @@ internal class DomInputStrategy(
     val htmlInput = imeOptions.createDomElement()
 
     private var lastMeaningfulUpdate = TextFieldValue("")
-
-    // To avoid the re-triggering of the selection change
-    private var pauseSelectionChangeListener = false
-    private var selectionChangeListener: ((Event) -> Unit)? = null
 
     init {
         initEvents()
@@ -63,18 +55,14 @@ internal class DomInputStrategy(
     fun updateState(textFieldValue: TextFieldValue) {
         htmlInput as HTMLElementWithValue
 
-        val needsTextUpdate = lastMeaningfulUpdate.text != textFieldValue.text
-        val needsSelectionUpdate = lastMeaningfulUpdate.selection != textFieldValue.selection
-        lastMeaningfulUpdate = textFieldValue
-
-        if (needsTextUpdate) {
+        if (lastMeaningfulUpdate.text != textFieldValue.text) {
             htmlInput.value = textFieldValue.text
         }
-        if (needsSelectionUpdate) {
-            pauseSelectionChangeListener = true
+        if (lastMeaningfulUpdate.selection != textFieldValue.selection) {
             htmlInput.setSelectionRange(textFieldValue.selection.min, textFieldValue.selection.max)
-            pauseSelectionChangeListener = false
         }
+
+        lastMeaningfulUpdate = textFieldValue
     }
 
     private val tabKeyCode = Key.Tab.keyCode.toInt()
@@ -91,9 +79,6 @@ internal class DomInputStrategy(
                 // Compose logic will handle the focus movement or insert Tabs if necessary
                 evt.preventDefault()
             }
-
-            // Let Compose decide the selection right after a new key input
-            pauseSelectionChangeListener = true
         })
 
         htmlInput.addEventListener("keyup", { evt ->
@@ -119,43 +104,7 @@ internal class DomInputStrategy(
         htmlInput.addEventListener("compositionend", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
         })
-
-        selectionChangeListener = listener@{ _ ->
-            if (pauseSelectionChangeListener || !isInputActive()) return@listener
-            htmlInput as HTMLElementWithValue
-            val start = htmlInput.selectionStart
-            val end = htmlInput.selectionEnd
-            val selection = lastMeaningfulUpdate.selection
-
-            if (start != selection.min || end != selection.max) {
-                val normalizedStart = minOf(start, end)
-                val normalizedEnd = maxOf(start, end)
-                composeSender.sendEditCommand(SetSelectionCommand(normalizedStart, normalizedEnd))
-            }
-        }
-        document.addEventListener("selectionchange", selectionChangeListener)
     }
-
-    fun dispose() {
-        document.removeEventListener("selectionchange", selectionChangeListener)
-        selectionChangeListener = null
-    }
-
-    @OptIn(ExperimentalWasmJsInterop::class)
-    private fun isInputActive(): Boolean {
-        val root = htmlInput.unsafeCast<NodeWithRootNode>().getRootNode()
-        val rootActive = root?.activeElement
-        return rootActive == htmlInput
-    }
-}
-
-@OptIn(ExperimentalWasmJsInterop::class)
-private external interface NodeWithRootNode : JsAny {
-    fun getRootNode(): DocumentOrShadowRootLike?
-}
-
-private external interface DocumentOrShadowRootLike : JsAny {
-    val activeElement: HTMLElement?
 }
 
 @JsName("InputEvent")

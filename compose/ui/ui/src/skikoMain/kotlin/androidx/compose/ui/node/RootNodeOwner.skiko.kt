@@ -31,6 +31,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -146,10 +147,8 @@ internal class RootNodeOwner(
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
-            if (field != value) {
-                field = value
-                onRootConstrainsChanged(value?.toConstraints())
-            }
+            field = value
+            onRootConstrainsChanged(value?.toConstraints())
         }
     var density by mutableStateOf(density)
 
@@ -221,7 +220,7 @@ internal class RootNodeOwner(
                 height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
+            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
         }
     }
 

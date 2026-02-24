@@ -21,7 +21,6 @@ import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.merging
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 
@@ -40,7 +39,7 @@ import androidx.compose.ui.util.fastMapNotNull
  * The alternative of sending synthetic moves is to send a native press/release as
  * Enter/Exit separately from Press/Release.
  * But this approach requires more changes - we need a separate HitPathTracker for Enter/Exit.
- * The user code won't see anything new with this approach
+ * The user code  won't see anything new with this approach
  * (besides that Enter/Exit event will have nativeEvent.type == Release/Press)
  *
  * We don't send synthetic events for touch, as it doesn't have Enter/Exit, and it will be
@@ -58,7 +57,6 @@ internal class SyntheticEventSender(
 ) {
     private val _send: (PointerInputEvent) -> PointerEventResult = send
     private var previousEvent: PointerInputEvent? = null
-    private var isMousePointerInside: Boolean = false
 
     /**
      * If something happened with Compose content (it relayouted), we need to send an
@@ -79,8 +77,6 @@ internal class SyntheticEventSender(
      * Send [event] and synthetic events before it if needed. On each sent event we just call [send]
      */
     fun send(event: PointerInputEvent): PointerEventResult {
-        trackMousePointerState(event)
-
         val syntheticMoveForHoverResult = sendMissingMoveForHover(event)
         val syntheticReleasesResult = sendMissingReleases(event)
         val syntheticPressesResult = sendMissingPresses(event)
@@ -92,40 +88,19 @@ internal class SyntheticEventSender(
         )
     }
 
-    private fun trackMousePointerState(event: PointerInputEvent) {
-        if (!event.pointers.fastAny { it.type == PointerType.Mouse }) return
-
-        when (event.eventType) {
-            // Mark as true not just on Enter, just in case the system didn't send
-            // us an Enter event (also, some tests don't bother sending it)
-            PointerEventType.Enter,
-            PointerEventType.Move,
-            PointerEventType.Press,
-            PointerEventType.Scroll,
-                -> isMousePointerInside = true
-            PointerEventType.Exit
-                -> isMousePointerInside = false
-        }
-    }
-
     fun updatePointerPosition(): PointerEventResult {
-        val nothingConsumed = PointerEventResult(anyMovementConsumed = false)
+        if (needUpdatePointerPosition) {
+            needUpdatePointerPosition = false
 
-        if (!needUpdatePointerPosition) return nothingConsumed
-        needUpdatePointerPosition = false
-
-        // Re-send pointer position update only for mouse events.
-        // Aligned with [AndroidComposeView.resendMotionEventOnLayout], but fixing b/397352507.
-        val previousEvent = previousEvent ?: return nothingConsumed
-        val mousePointer = previousEvent.pointers.fastFirstOrNull { it.type == PointerType.Mouse }
-            ?: return nothingConsumed
-
-        // Send synthetic move only if the scene is the current "target" of mouse events
-        return if (isMousePointerInside || mousePointer.down) {
-            sendSyntheticMove(previousEvent)
-        } else {
-            nothingConsumed
+            previousEvent?.let { event ->
+                // Re-send pointer position update only for hover mouse events.
+                // Aligned with [AndroidComposeView.resendMotionEventOnLayout], but fixing b/397352507.
+                if (event.pointers.fastAny { it.type == PointerType.Mouse }) {
+                    return sendSyntheticMove(event)
+                }
+            }
         }
+        return PointerEventResult(anyMovementConsumed = false)
     }
 
     /**
