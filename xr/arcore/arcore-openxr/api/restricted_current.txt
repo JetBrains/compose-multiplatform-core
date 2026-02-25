@@ -227,7 +227,7 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRuntimeFactory implements androidx.xr.runtime.internal.PerceptionRuntimeFactory {
     ctor public OpenXrRuntimeFactory();
-    method public androidx.xr.arcore.runtime.PerceptionRuntime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
+    method public androidx.xr.arcore.runtime.PerceptionRuntime createRuntime(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
     field public static final androidx.xr.arcore.openxr.OpenXrRuntimeFactory.Companion Companion;

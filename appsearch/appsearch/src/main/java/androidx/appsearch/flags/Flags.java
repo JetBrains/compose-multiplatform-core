@@ -302,19 +302,6 @@ public final class Flags {
             FLAG_PREFIX + "enable_early_set_schema_exit";
 
     /**
-     * Whether to enable the new embedding iterator which has improved access order.
-     */
-    public static final String FLAG_ENABLE_EMBEDDING_ITERATOR_V2 =
-            FLAG_PREFIX + "enable_embedding_iterator_v2";
-
-    /**
-     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
-     * every single document read..
-     */
-    public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
-            FLAG_PREFIX + "enable_reusable_decompression_buffer";
-
-    /**
      * Whether to enable sharded storage for embedding index.
      */
     public static final String FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE =
@@ -381,6 +368,10 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_EMBED_QUERY_OPTIMIZATION =
             FLAG_PREFIX + "enable_embed_query_optimization";
+
+    /** Enables set SearchFeatures and RankingFeatures APIs. */
+    public static final String FLAG_ENABLE_SET_SEARCH_AND_RANKING_FEATURE =
+            FLAG_PREFIX + "enable_set_search_and_ranking_feature";
 
     // Whether the features should be enabled.
     //
@@ -734,23 +725,6 @@ public final class Flags {
     }
 
     /**
-     * Whether to enable the new embedding iterator which has improved access order.
-     */
-    public static boolean enableEmbeddingIteratorV2() {
-        // TODO(b/435005853): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
-     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
-     * every single document read..
-     */
-    public static boolean enableReusableDecompressionBuffer() {
-        // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
      * Whether to enable sharded storage for embedding index.
      */
     public static boolean enableShardedEmbeddingStorage() {
@@ -837,6 +811,14 @@ public final class Flags {
      * Whether to enable the query optimization to rewrite AND'd embedding queries.
      */
     public static boolean enableEmbedQueryOptimization() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.SearchFeatures} and
+     * {@link androidx.appsearch.app.RankingFeatures} related APIs should be enabled.
+     */
+    public static boolean enableSetSearchAndRankingFeature() {
         return true;
     }
 }

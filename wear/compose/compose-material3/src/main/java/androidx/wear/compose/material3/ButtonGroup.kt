@@ -44,6 +44,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexed
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.materialcore.screenHeightDp
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -294,10 +295,13 @@ public object ButtonGroupDefaults {
     }
 
     /**
-     * The minimum recommended parent top and bottom content padding for a [ButtonGroup] in a list
-     * such as [TransformingLazyColumn], based on the screen height.
+     * The minimum vertical content padding for the list when a [ButtonGroup] is placed at the top
+     * or bottom edge. Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      */
-    public val minimumListVerticalContentPadding: Dp
+    public val minimumVerticalListContentPadding: Dp
         @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** How much buttons grow (and neighbors shrink) when pressed. */

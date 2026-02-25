@@ -21,8 +21,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
-import androidx.xr.compose.unit.Meter
-import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -438,15 +436,14 @@ public sealed interface FollowTarget {
 }
 
 internal interface FollowTargetFlow : FollowTarget {
-    // Distance to stay away from the target when following it.
-    val offset: Meter
-
     val poseUpdates: Flow<Pose>
 }
 
 /** A concrete [FollowTarget] that wraps the head pose updates from [ArDevice]. */
 internal class ArDeviceTarget(private val session: Session) : FollowTargetFlow {
-    override val offset: Meter = DEFAULT_OFFSET.meters
+    // Distance to stay away from the target when following it.
+    val offset: Pose = DEFAULT_OFFSET
+
     override val poseUpdates: Flow<Pose> =
         ArDevice.getInstance(session)
             .state
@@ -471,7 +468,8 @@ internal class ArDeviceTarget(private val session: Session) : FollowTargetFlow {
 
     internal companion object {
         const val INITIAL_POSE_DELAY_MS: Long = 1000
-        const val DEFAULT_OFFSET: Float = -0.5f
+        // Distance to stay away from the target in meters.
+        val DEFAULT_OFFSET: Pose = Pose(translation = Vector3(0f, 0f, -.5f))
     }
 }
 
@@ -483,7 +481,6 @@ internal class ArDeviceTarget(private val session: Session) : FollowTargetFlow {
  * instance provided by the developer.
  */
 internal class AnchorTarget(val anchorEntity: AnchorEntity) : FollowTargetFlow {
-    override val offset: Meter = DEFAULT_OFFSET.meters
     private val pose: Pose
         get() = anchorEntity.getPose(Space.ACTIVITY)
 
@@ -510,9 +507,5 @@ internal class AnchorTarget(val anchorEntity: AnchorEntity) : FollowTargetFlow {
 
     override fun hashCode(): Int {
         return anchorEntity.hashCode()
-    }
-
-    private companion object {
-        private const val DEFAULT_OFFSET: Float = 0f
     }
 }

@@ -16,6 +16,9 @@
 
 package androidx.xr.scenecore.impl.impress
 
+import androidx.xr.runtime.math.Matrix4
+import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape
 import androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel
@@ -411,15 +414,17 @@ class FakeImpressApiImplTest {
         val childEntityNode = fakeImpressApi.createImpressNode()
         val parentEntityNode = fakeImpressApi.createImpressNode()
         fakeImpressApi.setImpressNodeParent(childEntityNode, parentEntityNode)
-        val entityId = fakeImpressApi.getImpressNodeParent(childEntityNode)
-        assertThat(entityId).isEqualTo(parentEntityNode.handle)
+
+        val parentNode = fakeImpressApi.getImpressNodeParent(childEntityNode)
+        assertThat(parentNode.handle).isEqualTo(parentEntityNode.handle)
     }
 
     @Test
     fun getImpressNodeParent_whenParentIsNotSet_returnsNegativeOne() {
         val childEntityNode = fakeImpressApi.createImpressNode()
-        val entityId = fakeImpressApi.getImpressNodeParent(childEntityNode)
-        assertThat(entityId).isEqualTo(-1)
+
+        val parentNode = fakeImpressApi.getImpressNodeParent(childEntityNode)
+        assertThat(parentNode.handle).isEqualTo(-1)
     }
 
     @Test
@@ -1202,5 +1207,141 @@ class FakeImpressApiImplTest {
         assertThat(fakeImpressApi.getGltfModels()).isEmpty()
         assertThat(fakeImpressApi.getTextureImages()).isEmpty()
         assertThat(fakeImpressApi.getMaterials()).isEmpty()
+    }
+
+    @Test
+    fun getImpressNodeChildCount_returnsCorrectCount() {
+        val parent = fakeImpressApi.createImpressNode()
+        val child1 = fakeImpressApi.createImpressNode()
+        val child2 = fakeImpressApi.createImpressNode()
+
+        assertThat(fakeImpressApi.getImpressNodeChildCount(parent)).isEqualTo(0)
+
+        fakeImpressApi.setImpressNodeParent(child1, parent)
+        fakeImpressApi.setImpressNodeParent(child2, parent)
+
+        assertThat(fakeImpressApi.getImpressNodeChildCount(parent)).isEqualTo(2)
+    }
+
+    @Test
+    fun getImpressNodeChildAt_returnsCorrectChild() {
+        val parent = fakeImpressApi.createImpressNode()
+        val child1 = fakeImpressApi.createImpressNode()
+        val child2 = fakeImpressApi.createImpressNode()
+
+        fakeImpressApi.setImpressNodeParent(child1, parent)
+        fakeImpressApi.setImpressNodeParent(child2, parent)
+
+        // In the fake implementation, children are usually added in order
+        val fetchedChild0 = fakeImpressApi.getImpressNodeChildAt(parent, 0)
+        val fetchedChild1 = fakeImpressApi.getImpressNodeChildAt(parent, 1)
+
+        assertThat(fetchedChild0.handle).isEqualTo(child1.handle)
+        assertThat(fetchedChild1.handle).isEqualTo(child2.handle)
+    }
+
+    @Test
+    fun getImpressNodeChildAt_throwsOnInvalidIndex() {
+        val parent = fakeImpressApi.createImpressNode()
+
+        val thrown =
+            assertThrows(IllegalArgumentException::class.java) {
+                fakeImpressApi.getImpressNodeChildAt(parent, 0)
+            }
+        assertThat(thrown).hasMessageThat().contains("Invalid child index")
+    }
+
+    @Test
+    fun getImpressNodeName_returnsDefaultName() {
+        val node = fakeImpressApi.createImpressNode()
+        // Default name in fake is empty string
+        assertThat(fakeImpressApi.getImpressNodeName(node)).isEmpty()
+    }
+
+    @Test
+    fun setAndGetImpressNodeLocalTransform_worksCorrectly() {
+        val node = fakeImpressApi.createImpressNode()
+        val translation = Vector3(1f, 2f, 3f)
+        val rotation = Quaternion(0f, 0f, 0f, 1f)
+        val scale = Vector3(2f, 2f, 2f)
+        val transform = Matrix4.fromTrs(translation, rotation, scale)
+
+        fakeImpressApi.setImpressNodeLocalTransform(node, transform)
+
+        val outTransform = fakeImpressApi.getImpressNodeLocalTransform(node)
+
+        assertThat(outTransform.pose.translation).isEqualTo(translation)
+        assertThat(outTransform.pose.rotation).isEqualTo(rotation)
+        assertThat(outTransform.scale).isEqualTo(scale)
+    }
+
+    @Test
+    fun setAndGetImpressNodeRelativeTransform_worksCorrectly() {
+        val node = fakeImpressApi.createImpressNode()
+        val relative = fakeImpressApi.createImpressNode()
+        val translation = Vector3(1f, 2f, 3f)
+        val rotation = Quaternion(0f, 0f, 0f, 1f)
+        val scale = Vector3(2f, 2f, 2f)
+        val transform = Matrix4.fromTrs(translation, rotation, scale)
+
+        fakeImpressApi.setImpressNodeRelativeTransform(node, relative, transform)
+
+        val outTransform = fakeImpressApi.getImpressNodeRelativeTransform(node, relative)
+
+        assertThat(outTransform.pose.translation).isEqualTo(translation)
+        assertThat(outTransform.pose.rotation).isEqualTo(rotation)
+        assertThat(outTransform.scale).isEqualTo(scale)
+    }
+
+    @Test
+    fun getImpressNodeRelativeTransform_identityWhenSameNode() {
+        val node = fakeImpressApi.createImpressNode()
+
+        val outTransform = fakeImpressApi.getImpressNodeRelativeTransform(node, node)
+
+        assertThat(outTransform).isEqualTo(Matrix4.Identity)
+    }
+
+    @Test
+    fun scheduleGltfReskinning_setsFlagInInternalState() {
+        val node = fakeImpressApi.createImpressNode()
+        fakeImpressApi.scheduleGltfReskinning(node)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+        assertThat(nodeData.isReskinningScheduled).isTrue()
+    }
+
+    @Test
+    fun setGltfModelNodeMaterialOverride_setsOverride() = runBlocking {
+        val node = fakeImpressApi.createImpressNode()
+        val material = fakeImpressApi.createWaterMaterial(true)
+        val primIndex = 0
+
+        fakeImpressApi.setGltfModelNodeMaterialOverride(node, material.nativeHandle, primIndex)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+
+        val storedMat = nodeData.nodeMaterialOverrides[primIndex]
+        assertNotNull(storedMat)
+        assertThat(storedMat.materialHandle).isEqualTo(material.nativeHandle)
+    }
+
+    @Test
+    fun clearGltfModelNodeMaterialOverride_clearsOverride() = runBlocking {
+        val node = fakeImpressApi.createImpressNode()
+        val material = fakeImpressApi.createWaterMaterial(true)
+        val primIndex = 0
+
+        fakeImpressApi.setGltfModelNodeMaterialOverride(node, material.nativeHandle, primIndex)
+        fakeImpressApi.clearGltfModelNodeMaterialOverride(node, primIndex)
+
+        val nodes = fakeImpressApi.getImpressNodes()
+        val nodeData = nodes.keys.firstOrNull { it.entityId == node.handle }
+        assertNotNull(nodeData)
+        assertThat(nodeData.nodeMaterialOverrides).doesNotContainKey(primIndex)
     }
 }

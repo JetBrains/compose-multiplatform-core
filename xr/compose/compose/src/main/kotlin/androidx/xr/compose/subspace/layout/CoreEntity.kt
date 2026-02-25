@@ -41,6 +41,7 @@ import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.GltfModelNode
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
@@ -538,6 +539,9 @@ internal class CoreModelEntity() : CoreEntity() {
         val context = requireOwner().coroutineContext
         CoroutineScope(context + Job(context[Job]))
     }
+
+    val nodes: List<GltfModelNode>
+        get() = (entity as? GltfModelEntity)?.nodes ?: emptyList()
 
     val animationStateFlow by lazy {
         callbackFlow {

@@ -63,15 +63,6 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
         }
 
-        nonAndroidMain.dependsOn(commonMain)
-        jvmMain.dependsOn(nonAndroidMain)
-        jvmTest.dependsOn(nonAndroidTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
-
-        desktopMain.dependsOn(nonAndroidMain)
-        desktopTest.dependsOn(nonAndroidTest)
-
         androidMain.dependencies {
             api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
             api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
@@ -101,7 +92,23 @@ androidXMultiplatform {
             implementation(libs.dexmakerMockito)
             implementation(libs.mockitoCore)
         }
-        nonJvmMain {
+
+        webMain.dependencies {
+            implementation(libs.kotlinXw3c)
+        }
+
+        create("nonAndroidMain").dependsOn(commonMain)
+        desktopMain.dependsOn(nonAndroidMain)
+        nativeMain.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
+
+        desktopMain.dependsOn(jvmMain)
+        desktopTest.dependsOn(jvmTest)
+
+        desktopMain.dependsOn(nonAndroidMain)
+        desktopTest.dependsOn(nonAndroidTest)
+
+		nonJvmMain {
             dependsOn(nonAndroidMain)
             dependencies {
                 implementation(libs.atomicFu)
@@ -114,10 +121,6 @@ androidXMultiplatform {
         }
         nativeTest {
             dependsOn(nonJvmTest)
-        }
-
-        webMain.dependencies {
-            implementation(libs.kotlinXw3c)
         }
     }
 }

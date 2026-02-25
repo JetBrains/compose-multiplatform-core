@@ -25,10 +25,10 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -76,7 +76,7 @@ class RemoteTimeTextTest {
             RemoteTimeText(
                 modifier = RemoteModifier.fillMaxSize(),
                 time = "10:09".rs,
-                fontSize = 15.sp,
+                fontSize = 15.rsp,
                 fontFamily = FontFamily.SansSerif,
             )
         }

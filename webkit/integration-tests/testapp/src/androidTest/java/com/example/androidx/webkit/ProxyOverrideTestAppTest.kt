@@ -34,49 +34,33 @@ class ProxyOverrideTestAppTest {
 
     @Before
     fun setUp() {
-        WebkitTestHelpers.assumeFeature(WebViewFeature.PROXY_OVERRIDE)
+        assumeFeature(WebViewFeature.PROXY_OVERRIDE)
     }
 
     @Test
     fun testProxyOverride() {
-        WebkitTestHelpers.clickMenuListItemWithString(R.string.proxy_override_activity_title)
-        WebkitTestHelpers.assertViewHasText(
-            R.id.proxy_override_textview,
-            R.string.proxy_override_requests_served,
-            0,
-        )
+        clickMenuListItemWithString(R.string.proxy_override_activity_title)
+        assertViewHasText(R.id.proxy_override_textview, R.string.proxy_override_requests_served, 0)
 
         // set proxy override and load url
-        WebkitTestHelpers.clickViewWithId(R.id.proxy_override_button)
-        WebkitTestHelpers.clickViewWithId(R.id.proxy_override_load_url_button)
+        clickViewWithId(R.id.proxy_override_button)
+        clickViewWithId(R.id.proxy_override_load_url_button)
 
         // assert proxy served 1 request
-        WebkitTestHelpers.assertViewHasText(
-            R.id.proxy_override_textview,
-            R.string.proxy_override_requests_served,
-            1,
-        )
+        assertViewHasText(R.id.proxy_override_textview, R.string.proxy_override_requests_served, 1)
     }
 
     @Test
     fun testReverseBypass() {
-        WebkitTestHelpers.clickMenuListItemWithString(R.string.proxy_override_activity_title)
-        WebkitTestHelpers.assertViewHasText(
-            R.id.proxy_override_textview,
-            R.string.proxy_override_requests_served,
-            0,
-        )
+        clickMenuListItemWithString(R.string.proxy_override_activity_title)
+        assertViewHasText(R.id.proxy_override_textview, R.string.proxy_override_requests_served, 0)
 
         // check proxy override bypass, set proxy override and load bypass url
-        WebkitTestHelpers.clickViewWithId(R.id.proxy_override_reverse_bypass_checkbox)
-        WebkitTestHelpers.clickViewWithId(R.id.proxy_override_button)
-        WebkitTestHelpers.clickViewWithId(R.id.proxy_override_load_bypass_button)
+        clickViewWithId(R.id.proxy_override_reverse_bypass_checkbox)
+        clickViewWithId(R.id.proxy_override_button)
+        clickViewWithId(R.id.proxy_override_load_bypass_button)
 
         // assert proxy served 1 request
-        WebkitTestHelpers.assertViewHasText(
-            R.id.proxy_override_textview,
-            R.string.proxy_override_requests_served,
-            1,
-        )
+        assertViewHasText(R.id.proxy_override_textview, R.string.proxy_override_requests_served, 1)
     }
 }

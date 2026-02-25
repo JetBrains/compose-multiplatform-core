@@ -24,7 +24,7 @@ import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 def isIdeBuild() {
-    return project.properties['android.injected.invoked.from.ide'] == 'true'
+    return project.providers.gradleProperty("android.injected.invoked.from.ide").map { it.toBoolean() }.orElse(false).get()
 }
 
 plugins {

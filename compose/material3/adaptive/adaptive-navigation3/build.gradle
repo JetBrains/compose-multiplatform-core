@@ -61,6 +61,7 @@ androidXMultiplatform {
         androidDeviceTest.dependencies {
             implementation(project(":compose:material3:material3"))
             implementation(project(":compose:test-utils"))
+            implementation(project(":navigation3:navigation3-ui"))
             implementation(libs.testRules)
             implementation(libs.testRunner)
             implementation(libs.junit)

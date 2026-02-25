@@ -96,7 +96,7 @@ androidXMultiplatform {
         linuxTest.dependsOn(hostNativeTest)
 
         // iOS, watchOS and tvOS families, but not Mac OS
-        appleOsNativeTest {}.dependsOn(nativeTest)
+        create("appleOsNativeTest").dependsOn(nativeTest)
         tvosTest.dependsOn(appleOsNativeTest)
         watchosTest.dependsOn(appleOsNativeTest)
 
@@ -104,6 +104,11 @@ androidXMultiplatform {
         iosTest {
             dependsOn(appleOsNativeTest)
             dependsOn(pagingCommonTest)
+        }
+
+        webTest.dependencies {
+            implementation(project(":sqlite:sqlite-web"))
+            implementation(project(":sqlite:sqlite-web-worker-test"))
         }
     }
 }

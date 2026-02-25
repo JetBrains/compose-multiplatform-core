@@ -19,8 +19,8 @@ package androidx.room3
 import androidx.annotation.RestrictTo
 import androidx.room3.RoomDatabase.JournalMode.TRUNCATE
 import androidx.room3.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
-import androidx.room3.concurrent.ExclusiveLock
 import androidx.room3.coroutines.ConnectionFactory
+import androidx.room3.coroutines.ExclusiveMutex
 import androidx.room3.util.findMigrationPath
 import androidx.room3.util.isMigrationRequired
 import androidx.sqlite.SQLiteConnection
@@ -69,7 +69,7 @@ public abstract class BaseRoomConnectionManager {
     /* Open and configure a connection. Called from the connection factory. */
     private suspend fun openLocked(delegate: SQLiteDriver, filename: String): SQLiteConnection {
         val resolvedFileName = resolveFileName(filename)
-        return ExclusiveLock(
+        return ExclusiveMutex(
                 filename = resolvedFileName,
                 useFileLock = !isConfigured && !isInitializing && resolvedFileName != ":memory:",
             )

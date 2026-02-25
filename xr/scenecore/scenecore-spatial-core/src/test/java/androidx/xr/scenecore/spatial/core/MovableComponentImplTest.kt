@@ -492,6 +492,50 @@ class MovableComponentImplTest {
     }
 
     @Test
+    fun addMovableComponentToPanelEntity_updatesComponentSize() {
+        val panelEntity = createTestPanelEntity()
+        val movableComponent =
+            MovableComponentImpl(
+                systemMovable = true,
+                scaleInZ = true,
+                userAnchorable = false,
+                activitySpaceImpl = activitySpaceImpl,
+                panelShadowRenderer = mockPanelShadowRenderer,
+                runtimeExecutor = fakeExecutor,
+            )
+
+        // Initial size of movableComponent should be (0, 0, 0)
+        Truth.assertThat(movableComponent.size).isEqualTo(Dimensions(0f, 0f, 0f))
+
+        Truth.assertThat(panelEntity.addComponent(movableComponent)).isTrue()
+
+        // After attaching, size should match entity size
+        Truth.assertThat(movableComponent.size).isEqualTo(panelEntity.size)
+    }
+
+    @Test
+    fun addMovableComponentToMainPanelEntity_updatesComponentSize() {
+        val mainPanelEntity = sceneRuntime.mainPanelEntity
+        val movableComponent =
+            MovableComponentImpl(
+                systemMovable = true,
+                scaleInZ = true,
+                userAnchorable = false,
+                activitySpaceImpl = activitySpaceImpl,
+                panelShadowRenderer = mockPanelShadowRenderer,
+                runtimeExecutor = fakeExecutor,
+            )
+
+        // Initial size of movableComponent should be (0, 0, 0)
+        Truth.assertThat(movableComponent.size).isEqualTo(Dimensions(0f, 0f, 0f))
+
+        Truth.assertThat(mainPanelEntity.addComponent(movableComponent)).isTrue()
+
+        // After attaching, size should match entity size
+        Truth.assertThat(movableComponent.size).isEqualTo(mainPanelEntity.size)
+    }
+
+    @Test
     fun scaleWithDistanceOnMovableComponent_defaultsToDefaultMode() {
         val entity = createTestEntity()
         val movableComponent: MovableComponent =

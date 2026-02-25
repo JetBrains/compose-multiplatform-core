@@ -118,9 +118,12 @@ class SessionLifecycleHelper(
 
     // TODO: b/442623996 -- this code needs to be reworked to better convey
     // the correct usage pattern.
+    @Suppress("deprecation")
     internal fun tryCreateSession() {
         try {
-            when (val result = Session.create(activity)) {
+            when (
+                val result = Session.create(activity, unscaledGravityAlignedActivitySpace = false)
+            ) {
                 is SessionCreateSuccess -> {
                     session = result.session
                     try {

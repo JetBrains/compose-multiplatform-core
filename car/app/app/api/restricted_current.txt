@@ -55,7 +55,7 @@ package androidx.car.app {
     method public void finishCarApp();
     method @androidx.car.app.annotations.RequiresCarApi(2) public android.content.ComponentName? getCallingComponent();
     method public int getCarAppApiLevel();
-    method public <T> T getCarService(Class<T!>);
+    method public <T> T getCarService(Class<T>);
     method public Object getCarService(String);
     method public String getCarServiceName(Class<? extends java.lang.Object!>);
     method public androidx.car.app.HostInfo? getHostInfo();
@@ -370,7 +370,7 @@ package @SuppressCompatibility androidx.car.app.hardware.climate {
   @SuppressCompatibility @MainThread @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(5) public interface CarClimate {
     method public void fetchClimateProfile(java.util.concurrent.Executor, androidx.car.app.hardware.climate.ClimateProfileRequest, androidx.car.app.hardware.climate.CarClimateProfileCallback);
     method public void registerClimateStateCallback(java.util.concurrent.Executor, androidx.car.app.hardware.climate.RegisterClimateStateRequest, androidx.car.app.hardware.climate.CarClimateStateCallback);
-    method public <E> void setClimateState(java.util.concurrent.Executor, androidx.car.app.hardware.climate.ClimateStateRequest<E!>, androidx.car.app.hardware.common.CarSetOperationStatusCallback);
+    method public <E> void setClimateState(java.util.concurrent.Executor, androidx.car.app.hardware.climate.ClimateStateRequest<E>, androidx.car.app.hardware.common.CarSetOperationStatusCallback);
     method public void unregisterClimateStateCallback(androidx.car.app.hardware.climate.CarClimateStateCallback);
   }
 
@@ -469,9 +469,9 @@ package @SuppressCompatibility androidx.car.app.hardware.climate {
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class ClimateStateRequest.Builder<T> {
-    ctor public ClimateStateRequest.Builder(int, T!);
-    method public androidx.car.app.hardware.climate.ClimateStateRequest.Builder<T!> addCarZones(androidx.car.app.hardware.common.CarZone);
-    method public androidx.car.app.hardware.climate.ClimateStateRequest<T!> build();
+    ctor public ClimateStateRequest.Builder(int, T);
+    method public androidx.car.app.hardware.climate.ClimateStateRequest.Builder<T> addCarZones(androidx.car.app.hardware.common.CarZone);
+    method public androidx.car.app.hardware.climate.ClimateStateRequest<T> build();
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public final class DefrosterProfile {
@@ -1907,8 +1907,8 @@ package androidx.car.app.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi public abstract class Section<T extends androidx.car.app.model.Item> {
     ctor protected Section();
-    ctor protected Section(androidx.car.app.model.Section.BaseBuilder<T!,? extends java.lang.Object!>);
-    method public androidx.car.app.serialization.ListDelegate<T!> getItemsDelegate();
+    ctor protected Section(androidx.car.app.model.Section.BaseBuilder<T,? extends java.lang.Object!>);
+    method public androidx.car.app.serialization.ListDelegate<T> getItemsDelegate();
     method public androidx.car.app.model.CarText? getNoItemsMessage();
     method public androidx.car.app.model.OnItemVisibilityChangedDelegate? getOnItemVisibilityChangedDelegate();
     method public androidx.car.app.model.CarText? getTitle();
@@ -1918,7 +1918,7 @@ package androidx.car.app.model {
     ctor protected Section.BaseBuilder();
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B addItem(T);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B clearItems();
-    method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setItems(java.util.List<T!>);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setItems(java.util.List<T>);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setNoItemsMessage(androidx.car.app.model.CarText?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setNoItemsMessage(CharSequence?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setOnItemVisibilityChangedListener(androidx.car.app.model.ItemList.OnItemVisibilityChangedListener?);

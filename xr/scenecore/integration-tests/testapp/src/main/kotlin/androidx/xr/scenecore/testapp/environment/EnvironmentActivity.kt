@@ -154,22 +154,29 @@ class EnvironmentActivity : AppCompatActivity() {
 
     private fun skyBoxButtonHandlers() {
         // Load skybox from a Path
-        findViewById<Button>(R.id.environment_load_path).setOnClickListener {
+        val loadPathButton = findViewById<Button>(R.id.environment_load_path)
+        loadPathButton.setOnClickListener {
             lifecycleScope.launch {
                 greySkybox =
                     ExrImage.createFromZip(session!!, Paths.get("skyboxes", "GreySkybox.zip"))
                 addEvent(EventType.SKYBOX_CHANGED, "Grey Skybox loaded from Path")
+                findViewById<Button>(R.id.environment_button2_1).isEnabled = true
             }
         }
+        loadPathButton.isEnabled = true
 
         // Load skybox from a bytes
-        findViewById<Button>(R.id.environment_load_bytes).setOnClickListener {
+        val loadBytesButton = findViewById<Button>(R.id.environment_load_bytes)
+        loadBytesButton.setOnClickListener {
             lifecycleScope.launch {
                 val bytes = assets.open("skyboxes/BlueSkybox.zip").readBytes()
                 blueSkybox = ExrImage.createFromZip(session!!, bytes, "BlueSkybox.zip")
                 addEvent(EventType.SKYBOX_CHANGED, "Blue Skybox loaded from Bytes")
+                findViewById<Button>(R.id.environment_button2_2).isEnabled = true
+                findViewById<Button>(R.id.environment_button4_1).isEnabled = true
             }
         }
+        loadBytesButton.isEnabled = true
 
         // handle grey skybox
         findViewById<Button>(R.id.environment_button2_1).setOnClickListener {

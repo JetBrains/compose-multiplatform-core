@@ -22,6 +22,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -39,6 +40,9 @@ public open class FakeGltfEntity(
     }
 
     public val node: Node = Node()
+
+    override val nodes: List<GltfModelNodeFeature>
+        get() = feature?.nodes ?: emptyList()
 
     private val _animationStateListeners = mutableMapOf<Consumer<Int>, Executor?>()
 

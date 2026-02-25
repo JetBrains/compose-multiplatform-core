@@ -102,11 +102,17 @@ public sealed interface TransformingLazyColumnItemScope {
      * recommended values in Material3 `ButtonDefaults`, `CardDefaults`, `ListHeaderDefaults` and so
      * on.
      *
+     * This modifier can be used to ensure that, when a list item is at the top or bottom of the
+     * list, the distance from the item to the screen edge is sufficient (such as to avoid the item
+     * being clipped by edges of a round screen).
+     *
      * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
-     * @param top The minimum top padding above this item in the parent `TransformingLazyColumn` (or
-     *   minimum bottom padding if reverseLayout is true)
-     * @param bottom The minimum bottom padding below this item in the parent
-     *   `TransformingLazyColumn` (or minimum top padding if reverseLayout is true).
+     * @param top The preferred top content padding for the list, when this item is placed at the
+     *   top edge. Used when either this is the first item for a layout that is not reversed, or
+     *   this is the last item for a reversed layout.
+     * @param bottom The preferred bottom content padding for the list, when this item is placed at
+     *   the bottom edge. Used when either this is the last item for a layout that is not reversed,
+     *   or this is the first item for a reversed layout.
      */
     public fun Modifier.minimumVerticalContentPadding(top: Dp, bottom: Dp): Modifier
 
@@ -120,9 +126,13 @@ public sealed interface TransformingLazyColumnItemScope {
      * recommended values in Material3 `ButtonDefaults`, `CardDefaults`, `ListHeaderDefaults` and so
      * on.
      *
+     * This modifier can be used to ensure that, when a list item is at the top or bottom of the
+     * list, the distance from the item to the screen edge is sufficient (such as to avoid the item
+     * being clipped by edges of a round screen).
+     *
      * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
-     * @param padding The minimum padding above or below this item in the parent
-     *   `TransformingLazyColumn`.
+     * @param padding The preferred content padding for the list, when this item is placed at either
+     *   the top or bottom edges.
      */
     public fun Modifier.minimumVerticalContentPadding(padding: Dp): Modifier
 }
@@ -277,7 +287,7 @@ internal class TransformingLazyColumnItemScopeImpl(
         this then MinimumVerticalContentPaddingElement(top = top, bottom = bottom)
 
     override fun Modifier.minimumVerticalContentPadding(padding: Dp): Modifier =
-        this then MinimumVerticalContentPaddingElement(top = padding, bottom = padding)
+        this then Modifier.minimumVerticalContentPadding(top = padding, bottom = padding)
 }
 
 internal class TransformingLazyColumnCompositeParentDataModifier(

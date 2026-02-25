@@ -72,7 +72,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 @RunWith(AndroidJUnit4.class)
@@ -182,11 +181,7 @@ public class SystemJobServiceTest extends WorkManagerTest {
         mInstrumentation.runOnMainSync(() -> {
             JobParameters mockParams = createMockJobParameters(work.getStringId());
             assertThat(mSystemJobServiceSpy.onStartJob(mockParams), is(true));
-            try {
-                mWorkManagerImpl.cancelWorkById(work.getId()).getResult().get();
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            mWorkManagerImpl.cancelWorkById(work.getId());
             assertThat(mSystemJobServiceSpy.onStopJob(mockParams), is(false));
         });
     }

@@ -327,13 +327,14 @@ implementation enables developers to maintain protocol compatibility across
 library versions, meaning that two clients can communicate regardless of the
 library versions included in their APKs.
 
-The Protobuf library itself, however, does not guarantee ABI compatibility
-across minor versions and a specific version **must** be used with a library to
-avoid conflict with other dependencies used by the developer. To do this, you
-must first create a new project to repackage the protobuf runtime classes, and
-then have it as a dependency in the project you generate protos in. In the
-project that generates protos, you must also relocate any import statements
-containing `com.google.protobuf` to your target package name. The
+The Protobuf library itself (`com.google.proto`), however, does not guarantee
+ABI compatibility across minor versions and a specific version **must** be used
+with a library to avoid conflict with other dependencies used by the developer.
+To do this, you must first create a new project to repackage the protobuf
+runtime classes, and then have it as a dependency in the project you generate
+protos in. In the project that generates protos, you must also relocate any
+import statements containing `com.google.protobuf` to your target package name.
+The
 [AndroidXRepackagePlugin](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/private/src/main/kotlin/androidx/build/AndroidXRepackageImplPlugin.kt)
 abstracts this for you. An example of its use to repackage the protobuf runtime
 library can be found

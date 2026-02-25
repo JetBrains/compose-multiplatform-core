@@ -64,6 +64,5 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "Testing utilities for Android Wear Tiles."
-    legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
 }

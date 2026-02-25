@@ -52,6 +52,7 @@ internal class FrameState(
     val frameNumber: FrameNumber,
     val frameTimestamp: CameraTimestamp,
     imageStreams: Set<CameraStream>,
+    val concurrentImageStreams: Set<StreamId>?,
 ) {
     val frameId = nextFrameId()
     val frameInfoOutput: FrameInfoOutput = FrameInfoOutput()

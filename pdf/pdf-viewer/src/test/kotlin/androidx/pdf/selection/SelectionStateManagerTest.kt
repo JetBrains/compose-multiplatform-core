@@ -702,6 +702,94 @@ class SelectionStateManagerTest {
         assertThat((selection as TextSelection).text).isEqualTo(expectedText)
     }
 
+    @Test
+    fun processInitialSelection_withTextSelection_isSetCorrectly() = runTest {
+        // Use a non-image selection as the initial state
+        val initialTextSelection = getInitialSelectionForDragging()
+        val manager =
+            SelectionStateManager(
+                pdfDocument,
+                testScope,
+                initialSelection = initialTextSelection,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+
+        // Verify the initial selection is set directly
+        assertThat(manager.selectionModel.value).isEqualTo(initialTextSelection)
+    }
+
+    @Test
+    fun processInitialSelection_withPlaceholderImage_returnsNullAndStartsRefetch() = runTest {
+        // Create a placeholder ImageSelection
+        val placeholderBounds = PdfRect(0, RectF(10f, 10f, 90f, 90f))
+        val topLeft = PdfPoint(0, 10f, 10f)
+        val bottomRight = PdfPoint(0, 90f, 90f)
+        val placeHolderBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ALPHA_8)
+        val placeholderImageSelection =
+            ImageSelection(bitmap = placeHolderBitmap, imageBounds = placeholderBounds).apply {
+                isPlaceholder = true
+            }
+        val initialImageSelection =
+            SelectionModel(
+                DocumentSelection(
+                    SparseArray<List<Selection>>().apply {
+                        set(0, listOf(placeholderImageSelection))
+                    }
+                ),
+                UiSelectionBoundary(topLeft, false),
+                UiSelectionBoundary(bottomRight, false),
+            )
+
+        val manager =
+            SelectionStateManager(
+                fakePdfDocument, // Use FakePdfDocument which can find an image
+                testScope,
+                initialSelection = initialImageSelection,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+        manager.isImageSelectionEnabled = true
+
+        // Verify the initial state is null, as placeholders are filtered out
+        assertNull(manager.selectionModel.value)
+
+        // Advance the coroutine to allow the background re-fetch to complete
+        testDispatcher.scheduler.runCurrent()
+
+        // Verify the final selection is the actual image from the document
+        val finalSelection = manager.selectionModel.value?.documentSelection?.selection
+        assertThat(finalSelection).isInstanceOf(ImageSelection::class.java)
+        val finalImageSelection = finalSelection as ImageSelection
+
+        // Check that the placeholder has been replaced with the actual bitmap
+        assertThat(finalImageSelection.isPlaceholder).isFalse()
+        assertThat(finalImageSelection.bitmap).isNotNull()
+        assertThat(finalImageSelection.bounds.first().pageNum).isEqualTo(placeholderBounds.pageNum)
+    }
+
+    @Test
+    fun processInitialSelection_withNullInitialSelection_remainsNull() = runTest {
+        // Pass null as the initial selection
+        val manager =
+            SelectionStateManager(
+                pdfDocument,
+                testScope,
+                initialSelection = null,
+                handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
+                errorFlow = errorFlow,
+                pageLayoutManager = null,
+                pageManager = null,
+            )
+
+        // Verify the selection model remains null
+        assertNull(manager.selectionModel.value)
+    }
+
     private fun getInitialSelectionForDragging(pageNumber: Int = 0): SelectionModel {
         return SelectionModel(
             DocumentSelection(

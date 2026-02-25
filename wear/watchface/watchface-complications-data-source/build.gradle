@@ -67,6 +67,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
-    legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
 }

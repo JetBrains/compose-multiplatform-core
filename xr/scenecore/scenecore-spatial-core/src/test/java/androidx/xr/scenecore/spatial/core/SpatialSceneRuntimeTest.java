@@ -162,6 +162,7 @@ public class SpatialSceneRuntimeTest {
         mActivity = Robolectric.buildActivity(Activity.class).create().start().get();
         mShadowContentResolver = shadowOf(mActivity.getContentResolver());
         mContentResolver = mActivity.getContentResolver();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(1);
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE);
         mRuntime =
@@ -2475,7 +2476,26 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void setKeyEntity_subscribesToTransformAndUpdatesHint() {
+    public void setKeyEntity_apiV1_doesNotSubscribe() {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(1);
+        mRuntime = createRuntime();
+
+        Entity entity = createGroupEntity();
+        ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
+
+        mRuntime.setKeyEntity(entity);
+
+        assertThat(node.getTransformListener()).isNull();
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNull();
+    }
+
+    @Test
+    public void setKeyEntity_apiV2_subscribesToTransformAndUpdatesHint() {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(2);
+        mRuntime = createRuntime();
+
         Entity entity = createGroupEntity();
         ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
 
@@ -2500,7 +2520,11 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void setKeyEntity_null_unsubscribes() throws Exception {
+    public void setKeyEntity_apiV2_null_unsubscribes() throws Exception {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(2);
+        mRuntime = createRuntime();
+
         Entity entity = createGroupEntity();
         ShadowNode node = ShadowNode.extract(((AndroidXrEntity) entity).getNode());
 
@@ -2523,7 +2547,11 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void setKeyEntity_sameEntity_doesNotResubscribe() {
+    public void setKeyEntity_apiV2_sameEntity_doesNotResubscribe() {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(2);
+        mRuntime = createRuntime();
+
         Entity entity = createGroupEntity();
         mRuntime.setKeyEntity(entity);
         Closeable closeable1 = mRuntime.mKeyEntityTransformCloseable;
@@ -2535,7 +2563,11 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void setKeyEntity_differentEntity_resubscribes() throws Exception {
+    public void setKeyEntity_apiV2_differentEntity_resubscribes() throws Exception {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(2);
+        mRuntime = createRuntime();
+
         Entity entity1 = createGroupEntity();
         Entity entity2 = createGroupEntity();
         ShadowNode node1 = ShadowNode.extract(((AndroidXrEntity) entity1).getNode());
@@ -2560,6 +2592,23 @@ public class SpatialSceneRuntimeTest {
     public void setKeyEntity_nullWhenAlreadyNull_doesNothing() {
         mRuntime.setKeyEntity(null);
         assertThat(mRuntime.getKeyEntity()).isNull();
+        assertThat(mRuntime.mKeyEntityTransformCloseable).isNull();
+    }
+
+    @Test
+    public void destroy_apiV2_unsubscribesKeyEntity() throws Exception {
+        mRuntime.destroy();
+        ShadowXrExtensions.extract(mXrExtensions).setApiVersion(2);
+        mRuntime = createRuntime();
+
+        Entity entity = createGroupEntity();
+        mRuntime.setKeyEntity(entity);
+        FakeCloseable closeable = (FakeCloseable) mRuntime.mKeyEntityTransformCloseable;
+        assertThat(closeable.isClosed()).isFalse();
+
+        mRuntime.destroy();
+
+        assertThat(closeable.isClosed()).isTrue();
         assertThat(mRuntime.mKeyEntityTransformCloseable).isNull();
     }
 }

@@ -18,7 +18,6 @@ package androidx.pdf.selection.model
 
 import android.graphics.Bitmap
 import android.os.Parcel
-import androidx.core.os.ParcelCompat
 import androidx.pdf.PdfRect
 import androidx.pdf.selection.Selection
 import androidx.pdf.view.PdfView
@@ -50,6 +49,11 @@ public class ImageSelection internal constructor(public val bitmap: Bitmap, imag
 
     public override val bounds: List<PdfRect> = listOf(imageBounds)
 
+    /**
+     * Internal flag to indicate if this selection was restored from a parcel without its bitmap.
+     */
+    internal var isPlaceholder: Boolean = false
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is ImageSelection) return false
@@ -68,7 +72,7 @@ public class ImageSelection internal constructor(public val bitmap: Bitmap, imag
     }
 
     override fun close() {
-        if (!bitmap.isRecycled) {
+        if (!bitmap.isRecycled && !isPlaceholder) {
             bitmap.recycle()
         }
     }
@@ -83,7 +87,13 @@ public class ImageSelection internal constructor(public val bitmap: Bitmap, imag
             dest.writeFloat(bound.right)
             dest.writeFloat(bound.bottom)
         }
-        dest.writeParcelable(bitmap, flags)
+        // We do not write the bitmap to the parcel due to its large size.
+        // It will be re-fetched on restoration.
+    }
+
+    internal companion object {
+        /** Tiny placeholder bitmap used when restoring ImageSelection from a parcel. */
+        val PLACEHOLDER_BITMAP: Bitmap by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ALPHA_8) }
     }
 }
 
@@ -103,8 +113,10 @@ internal fun imageSelectionFromParcel(source: Parcel): ImageSelection {
         val bottom = source.readFloat()
         bounds.add(PdfRect(pageNum, left, top, right, bottom))
     }
-    val bitmap: Bitmap? =
-        ParcelCompat.readParcelable(source, Bitmap::class.java.classLoader, Bitmap::class.java)
-    if (bitmap != null && bounds.isNotEmpty()) return ImageSelection(bitmap, bounds.first())
-    throw IllegalArgumentException("bitmap cannot be null")
+
+    // Return an ImageSelection with a placeholder bitmap.
+    // The SelectionStateManager is responsible for re-fetching the actual bitmap.
+    return ImageSelection(ImageSelection.PLACEHOLDER_BITMAP, bounds.first()).apply {
+        isPlaceholder = true
+    }
 }

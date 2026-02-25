@@ -19,7 +19,6 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
@@ -59,9 +58,8 @@ public fun RemoteIcon(
     modifier: RemoteModifier = RemoteModifier.size(DefaultIconDimension),
     tint: RemoteColor = LocalRemoteContentColor.current,
 ) {
-    val density = LocalRemoteComposeCreationState.current.remoteDensity
     RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
-        val painter = painterRemoteVector(imageVector, tint, density)
+        val painter = painterRemoteVector(imageVector, tint)
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
             with(painter) { onDraw() }
             // TODO(b/474687917): Temporary fix to reset tinted paint

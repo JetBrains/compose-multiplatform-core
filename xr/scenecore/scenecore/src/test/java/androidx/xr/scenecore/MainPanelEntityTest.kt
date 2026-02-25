@@ -22,7 +22,6 @@ import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
@@ -188,10 +187,9 @@ class MainPanelEntityTest {
     }
 
     @Test
-    @OptIn(ExperimentalPanelCoordinateApi::class)
-    fun transformPixelCoordinatesToPose_callsRuntime() {
+    fun transformPixelCoordinatesToLocalPosition_callsRuntime() {
         val input = Vector2(100f, 100f)
-        val result = session.scene.mainPanelEntity.transformPixelCoordinatesToPose(input)
+        val result = session.scene.mainPanelEntity.transformPixelCoordinatesToLocalPosition(input)
 
         val sizeInPixels = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).sizeInPixels
         val u = input.x / sizeInPixels.width
@@ -200,21 +198,21 @@ class MainPanelEntityTest {
         val size = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).size
         val xInLocal3DSpace = coordinates.x * size.width / 2f
         val yInLocal3DSpace = coordinates.y * size.height / 2f
-        val expected = Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
+        val expected = Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
 
         assertThat(result).isEqualTo(expected)
     }
 
     @Test
-    @OptIn(ExperimentalPanelCoordinateApi::class)
-    fun transformNormalizedCoordinatesToPose_callsRuntime() {
+    fun transformNormalizedCoordinatesToLocalPosition_callsRuntime() {
         val input = Vector2(0.5f, 0.5f)
-        val result = session.scene.mainPanelEntity.transformNormalizedCoordinatesToPose(input)
+        val result =
+            session.scene.mainPanelEntity.transformNormalizedCoordinatesToLocalPosition(input)
 
         val size = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).size
         val xInLocal3DSpace = input.x * size.width / 2f
         val yInLocal3DSpace = input.y * size.height / 2f
-        val expected = Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
+        val expected = Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
 
         assertThat(result).isEqualTo(expected)
     }

@@ -39,7 +39,7 @@ package androidx.navigationevent.compose {
   }
 
   public final class RememberNavigationEventStateKt {
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigationevent.NavigationEventInfo> androidx.navigationevent.compose.NavigationEventState<T!> rememberNavigationEventState(T, java.util.List<? extends T!>?, java.util.List<? extends T!>?, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigationevent.NavigationEventInfo> androidx.navigationevent.compose.NavigationEventState<T> rememberNavigationEventState(T, java.util.List<? extends T>?, java.util.List<? extends T>?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigationevent.NavigationEventInfo> androidx.navigationevent.compose.NavigationEventState<T> rememberNavigationEventState(T currentInfo, optional java.util.List<T> backInfo, optional java.util.List<T> forwardInfo);
   }
 

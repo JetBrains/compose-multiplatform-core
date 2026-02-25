@@ -342,7 +342,12 @@ internal class ResizableComponentImpl(
     override fun removeResizeEventListener(resizeEventListener: ResizeEventListener) {
         resizeEventListenerMap.remove(resizeEventListener)
         if (resizeEventListenerMap.isEmpty()) {
-            (entity as AndroidXrEntity).removeReformEventConsumer(reformEventConsumer!!)
+            // When the last listener is removed, unregister the consumer from the entity
+            // and reset the consumer variable to null to clean up the state.
+            reformEventConsumer?.let {
+                (entity as AndroidXrEntity).removeReformEventConsumer(it)
+                reformEventConsumer = null
+            }
         }
     }
 

@@ -329,7 +329,7 @@ internal fun TransformingLazyColumnReducedMotionSample() {
                             onClick = {},
                             modifier =
                                 Modifier.minimumVerticalContentPadding(
-                                        ButtonDefaults.minimumListVerticalContentPadding
+                                        ButtonDefaults.minimumVerticalListContentPadding
                                     )
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
@@ -377,7 +377,7 @@ fun TransformingLazyColumnAnimationSample() {
                         onClick = {},
                         modifier =
                             Modifier.minimumVerticalContentPadding(
-                                    CardDefaults.minimumListVerticalContentPadding
+                                    CardDefaults.minimumVerticalListContentPadding
                                 )
                                 .transformedHeight(this, transformationSpec)
                                 .animateItem(),
@@ -438,7 +438,7 @@ fun TransformingLazyColumnReverseLayoutSample() {
                         onClick = {},
                         modifier =
                             Modifier.minimumVerticalContentPadding(
-                                    CardDefaults.minimumListVerticalContentPadding
+                                    CardDefaults.minimumVerticalListContentPadding
                                 )
                                 .transformedHeight(this, transformationSpec)
                                 .animateItem(),
@@ -477,7 +477,7 @@ fun TransformingLazyColumnExpandableCardSample() {
                         },
                         modifier =
                             Modifier.minimumVerticalContentPadding(
-                                    CardDefaults.minimumListVerticalContentPadding
+                                    CardDefaults.minimumVerticalListContentPadding
                                 )
                                 .fillMaxWidth()
                                 .transformedHeight(this, transformationSpec),

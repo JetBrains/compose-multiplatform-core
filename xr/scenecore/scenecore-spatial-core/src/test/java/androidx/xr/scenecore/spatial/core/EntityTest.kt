@@ -218,14 +218,11 @@ class EntityTest {
     @Test
     fun getScale_worldSpace_returnsWorldSpaceScale() {
         val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace.mWorldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
+        activitySpace._worldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
         val scale = Vector3(1.0f, 2.0f, 3.0f)
         entity.setScale(scale, Space.PARENT)
 
-        assertVector3(
-            entity.getScale(Space.REAL_WORLD),
-            scale.scale(activitySpace.mWorldSpaceScale),
-        )
+        assertVector3(entity.getScale(Space.REAL_WORLD), scale.scale(activitySpace.worldSpaceScale))
     }
 
     @Test
@@ -257,7 +254,7 @@ class EntityTest {
     @Test
     fun setScale_worldSpace_setsWorldSpaceScale() {
         val activitySpace = spatialSceneRuntime.activitySpace as ActivitySpaceImpl
-        activitySpace.mWorldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
+        activitySpace._worldSpaceScale = Vector3(2.0f, 2.0f, 2.0f)
         val scale = Vector3(1.0f, 2.0f, 3.0f)
         entity.setScale(scale, Space.PARENT)
         val child =
@@ -269,11 +266,11 @@ class EntityTest {
                 fakeScheduledExecutorService,
             )
         child.parent = entity
-        child.setScale(scale.scale(scale.scale(activitySpace.mWorldSpaceScale)), Space.REAL_WORLD)
+        child.setScale(scale.scale(scale.scale(activitySpace.worldSpaceScale)), Space.REAL_WORLD)
 
         assertVector3(
             child.getScale(Space.REAL_WORLD),
-            scale.scale(scale.scale(activitySpace.mWorldSpaceScale)),
+            scale.scale(scale.scale(activitySpace.worldSpaceScale)),
         )
     }
 

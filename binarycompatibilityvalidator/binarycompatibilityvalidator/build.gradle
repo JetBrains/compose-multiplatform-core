@@ -60,8 +60,7 @@ configurations {
             )
         }
     }
-    compileOnly {}.extendsFrom(friends)
-
+    create("compileOnly").extendsFrom(friends)
 }
 
 androidXMultiplatform {

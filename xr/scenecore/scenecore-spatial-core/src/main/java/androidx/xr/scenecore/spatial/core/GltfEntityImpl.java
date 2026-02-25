@@ -24,6 +24,7 @@ import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfAnimationFeature;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature;
 import androidx.xr.scenecore.runtime.MaterialResource;
 
 import com.android.extensions.xr.XrExtensions;
@@ -54,6 +55,12 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
         super(context, feature, extensions, entityManager, executor);
         mFeature = feature;
         setParent(parentEntity);
+    }
+
+    @Override
+    @NonNull
+    public List<GltfModelNodeFeature> getNodes() {
+        return mFeature.getNodes();
     }
 
     @Override

@@ -279,7 +279,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
     private fun updateDebugPanel(projectedPose: Pose) {
         mDebugPanel.view.setLine(
             "ActivitySpace ActivityPose",
-            session!!.scene.activitySpace.activitySpacePose.toFormattedString(),
+            session!!.scene.activitySpace.poseInActivitySpace.toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "ActivitySpace WorldScale",
@@ -293,7 +293,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(device.state.value.devicePose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
@@ -302,7 +302,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(cameraLeft!!.state.value.pose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
@@ -311,12 +311,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 .scene
                 .perceptionSpace
                 .getScenePoseFromPerceptionPose(cameraRight!!.state.value.pose)
-                .activitySpacePose
+                .poseInActivitySpace
                 .toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Projection Source ActivityPose",
-            getProjectionSource()?.activitySpacePose!!.toFormattedString(),
+            getProjectionSource()?.poseInActivitySpace!!.toFormattedString(),
         )
         mDebugPanel.view.setLine(
             "Head locked Pose ActivitySpace",

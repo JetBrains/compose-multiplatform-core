@@ -69,14 +69,14 @@ androidXMultiplatform {
             implementation(libs.testRunner)
         }
 
-        nonAndroidMain {}.dependsOn(commonMain)
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
         desktopMain.dependsOn(nonAndroidMain)
         desktopTest.dependsOn(nonAndroidTest)
         nonJvmMain.dependsOn(nonAndroidMain)
         nonJvmTest.dependsOn(nonAndroidTest)
 
-        webTest {}.dependencies {
+        webTest.dependencies {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }

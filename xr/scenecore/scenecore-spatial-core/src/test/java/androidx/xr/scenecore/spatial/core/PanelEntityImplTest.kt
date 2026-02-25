@@ -284,55 +284,55 @@ class PanelEntityImplTest {
     }
 
     @Test
-    fun transformPixelCoordinatesToPose_center_returnsIdentity() {
+    fun transformPixelCoordinatesToLocalPosition_center_returnsZeroVector() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX) // 640px x 480px
-        val pose = panelEntity.transformPixelCoordinatesToPose(Vector2(320f, 240f))
-        Truth.assertThat(pose).isEqualTo(Pose.Identity)
+        val position = panelEntity.transformPixelCoordinatesToLocalPosition(Vector2(320f, 240f))
+        Truth.assertThat(position).isEqualTo(Vector3.Zero)
     }
 
     @Test
-    fun transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+    fun transformPixelCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX) // 640px x 480px
-        val pose = panelEntity.transformPixelCoordinatesToPose(Vector2(0f, 0f))
+        val position = panelEntity.transformPixelCoordinatesToLocalPosition(Vector2(0f, 0f))
         val expected = Vector3(panelEntity.size.width * -0.5f, panelEntity.size.height * 0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test
-    fun transformPixelCoordinatesToPose_bottomRight_returnsCorrectPose() {
+    fun transformPixelCoordinatesToLocalPosition_bottomRight_returnsCorrectPosition() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX) // 640px x 480px
-        val pose = panelEntity.transformPixelCoordinatesToPose(Vector2(640f, 480f))
+        val position = panelEntity.transformPixelCoordinatesToLocalPosition(Vector2(640f, 480f))
         val expected = Vector3(panelEntity.size.width * 0.5f, panelEntity.size.height * -0.5f, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+    fun transformNormalizedCoordinatesToLocalPosition_center_returnsZeroVector() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX)
-        val pose = panelEntity.transformNormalizedCoordinatesToPose(Vector2(0f, 0f))
-        Truth.assertThat(pose).isEqualTo(Pose.Identity)
+        val position = panelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(0f, 0f))
+        Truth.assertThat(position).isEqualTo(Vector3.Zero)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+    fun transformNormalizedCoordinatesToLocalPosition_topLeft_returnsCorrectPosition() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX)
         val width = 10.0f
         val height = 20.0f
         panelEntity.size = Dimensions(width, height, 0.0f)
-        val pose = panelEntity.transformNormalizedCoordinatesToPose(Vector2(-1f, 1f))
+        val position = panelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(-1f, 1f))
         val expected = Vector3(-width / 2, height / 2, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test
-    fun transformNormalizedCoordinatesToPose_bottomRight_returnsCorrectPose() {
+    fun transformNormalizedCoordinatesToLocalPosition_bottomRight_returnsCorrectPosition() {
         val panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX)
         val width = 10.0f
         val height = 20.0f
         panelEntity.size = Dimensions(width, height, 0.0f)
-        val pose = panelEntity.transformNormalizedCoordinatesToPose(Vector2(1f, -1f))
+        val position = panelEntity.transformNormalizedCoordinatesToLocalPosition(Vector2(1f, -1f))
         val expected = Vector3(width / 2, -height / 2, 0.0f)
-        Truth.assertThat(pose.translation).isEqualTo(expected)
+        Truth.assertThat(position).isEqualTo(expected)
     }
 
     @Test

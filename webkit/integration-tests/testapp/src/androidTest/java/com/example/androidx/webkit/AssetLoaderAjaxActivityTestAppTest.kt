@@ -35,7 +35,7 @@ class AssetLoaderAjaxActivityTestAppTest {
 
     @Before
     fun setUp() {
-        WebkitTestHelpers.enableJavaScript(R.id.webview_asset_loader_webview)
+        enableJavaScript(R.id.webview_asset_loader_webview)
         rule.getScenario().onActivity {
             IdlingRegistry.getInstance().register(it.uriIdlingResource)
         }
@@ -51,17 +51,17 @@ class AssetLoaderAjaxActivityTestAppTest {
     @Test
     fun testAssetLoaderAjaxActivity() {
         rule.getScenario().onActivity(AssetLoaderAjaxActivity::loadUrl)
-        WebkitTestHelpers.assertHtmlElementContainsText(
+        assertHtmlElementContainsText(
             R.id.webview_asset_loader_webview,
             "title",
             "Loaded HTML should appear below on success",
         )
-        WebkitTestHelpers.assertHtmlElementContainsText(
+        assertHtmlElementContainsText(
             R.id.webview_asset_loader_webview,
             "assets_html",
             "Successfully loaded html from assets!",
         )
-        WebkitTestHelpers.assertHtmlElementContainsText(
+        assertHtmlElementContainsText(
             R.id.webview_asset_loader_webview,
             "res_html",
             "Successfully loaded html from resources!",

@@ -26,7 +26,6 @@ import androidx.compose.remote.creation.RemoteComposeWriterAndroid
 import androidx.compose.remote.creation.actions.ValueFloatExpressionChange
 import androidx.compose.remote.creation.modifiers.DrawWithContentModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.remote.creation.modifiers.ScrollModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.glance.Emittable
@@ -39,6 +38,7 @@ import androidx.glance.appwidget.remotecompose.convertGlanceModifierToRemoteComp
 import androidx.glance.appwidget.remotecompose.custom.CustomScrollModifier
 import androidx.glance.appwidget.remotecompose.toColumnLayoutEnum
 import androidx.glance.appwidget.toPixels
+import kotlin.text.toFloat
 
 internal class RcLazyColumn(
     emittable: EmittableLazyColumn,
@@ -49,12 +49,12 @@ internal class RcLazyColumn(
         emittable.horizontalAlignment.toColumnLayoutEnum() // horizontal align
     private val children = mutableListOf<RcElement>()
 
-    private val snapScrollMode: VerticalScrollMode?
+    private val verticalScrollMode: VerticalScrollMode?
 
     // TODO vvvvvvv
     // workaround for match-parent sizing of snap scrollable children
     val heightVariableId: Float
-    //    val widthVariableId: Float
+
     val visFloatExpId: Float
     val notVisFloatExpId: Float
     var touchPositionVariable: Float = 0f
@@ -83,7 +83,7 @@ internal class RcLazyColumn(
                 modifiers = emittable.modifier,
                 translationContext = translationContext,
             )
-        this.snapScrollMode = emittable.verticalScrollMode
+        this.verticalScrollMode = emittable.verticalScrollMode
         val notches: Int =
             when (emittable.verticalScrollMode) {
                 is VerticalScrollMode.SnapScrollMatchHeight,
@@ -93,14 +93,9 @@ internal class RcLazyColumn(
 
         // this will only be referenced if we do snap scrolling .
         val defaultChildHeightF: Float =
-            if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
-                val defaultSizeDp = snapScrollMode.initialChildHeight
-                val f = defaultSizeDp.toPixels(translationContext.context).toFloat()
-                //                Log.i("~~~", "defaultSizeDp to F is $defaultSizeDp -> $f")
-                f
+            if (verticalScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
+                verticalScrollMode.initialChildHeight.toPixels(translationContext.context).toFloat()
             } else {
-                //                Log.i("~~~", "not setting defaultChildHeight: scroll mode is
-                // $snapScrollMode")
                 0f
             }
 
@@ -112,7 +107,7 @@ internal class RcLazyColumn(
                 numItems = notches,
                 rcContext = translationContext.remoteComposeContext,
             )
-        //            makeStandardScrollModifier(scrollState, notches)
+
         outputModifier = userSpecifiedModifier.then(scrollModifier)
     }
 
@@ -128,7 +123,7 @@ internal class RcLazyColumn(
              * for children of a scrollable container. This expression will grab the scrollable
              * column's height at runtime, and apply it to the child elements
              */
-            if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
+            if (verticalScrollMode !is VerticalScrollMode.Normal) {
                 val writer: RemoteComposeWriterAndroid =
                     translationContext.remoteComposeContext.writer as RemoteComposeWriterAndroid
 
@@ -168,24 +163,6 @@ internal class RcLazyColumn(
                 writer.addAction(action)
                 writer.endRunActions()
                 writer.drawComponentContent() // draws the normal content
-                val widthVariableId = writer.addComponentWidthValue()
-
-                // TouchEventTime is the time of the last touch event, in seconds f
-                // AnimationTime is the current time, in seconds f
-                val touchEventTimeExpr =
-                    writer.floatExpression(
-                        Rc.Time.ANIMATION_TIME,
-                        Rc.Touch.TOUCH_EVENT_TIME,
-                        Rc.FloatExpression.SUB,
-                        ////
-                        0f,
-                        Rc.FloatExpression
-                            .MAX // clamp a negative value to 0 (probably not needed here)
-                        ,
-                        /////
-                        2f,
-                        Rc.FloatExpression.MIN, // clamp a large value to half a second
-                    )
 
                 //                /// Vvvvv TODO: remove. This is only a reminder for how to write
                 // expressions  vvvv
@@ -198,65 +175,17 @@ internal class RcLazyColumn(
                 // expression
                 //                // TODO: ^^^^^^^^^^
 
-                val alphaExpr =
-                    writer.floatExpression(2f, touchEventTimeExpr, Rc.FloatExpression.SUB)
-                val clampedAlpha =
-                    writer.floatExpression(0f, 1f, alphaExpr, Rc.FloatExpression.CLAMP)
-                writer.painter.setAlpha(clampedAlpha).commit()
-                if (DebugRemoteCompose) {
-                    writer.addDebugMessage("alpha ", alphaExpr)
-                    writer.addDebugMessage("alpha clamped", clampedAlpha)
-                }
-
-                // vvvvv Draw BG Dots vvvvvvvv
-                val dimenScale = 2f // TODO: do actual dp to px scaling, not this
-                val maxDots = 5f
-                val xPadding = 3f * dimenScale * 4 // 4 is arbitrary
-                val numDots = Math.min(maxDots, children.size.toFloat())
-                val dotRadius = 3f * dimenScale
-                val dotVPad = 4f * dimenScale
-                val pillHeight = 6f * dimenScale // todo, change back to 12f
-                val cx = writer.floatExpression(widthVariableId, xPadding, Rc.FloatExpression.SUB)
-                val scrollSectionHeight =
-                    ((numDots - 1) * (2 * dotRadius) + (numDots - 1) * dotVPad + pillHeight)
-                val scrollSectionY0: RFloat =
-                    ((rf(computedHeight) / rf(2f)) - (scrollSectionHeight / 2f))
-
-                for (i in 0 until children.size) {
-                    // now, we can draw an overlay
-                    writer.painter.setColor(Color.Magenta.toArgb()).setAlpha(clampedAlpha).commit()
-                    writer.drawCircle(
-                        cx,
-                        (scrollSectionY0 + i * (2 * dotRadius + dotVPad)).toFloat(),
-                        dotRadius,
-                    )
-                }
-
-                // Next, draw the pill at the right spot
-                writer.painter.setColor(Color.Cyan.toArgb()).setAlpha(clampedAlpha).commit()
-                val pillYExpr =
-                    (scrollSectionY0 + (rf(touchPositionVariable) * rf((2 * dotRadius + dotVPad))))
-                        .toFloat()
-                if (DebugRemoteCompose) {
-                    rcContext.addDebugMessage("RcLazyColumn: pillYExpr ", pillYExpr)
-                }
-                writer.drawCircle(cx, pillYExpr, dotRadius)
-
-                // ^^^^^^ end: Draw-dots ^^^^^^^^^
-
-                writer.painter.setAlpha(1f).commit() // reset alpha to a normal value
-                //                writer.floatExpression(
-                //                    Rc.Time.CONTINUOUS_SEC
-                //                ) // force repaint // TODO: without this, the fade out animation
-                // doesn't run
+                drawDots(computedHeight = computedHeight)
 
                 writer.endCanvasOperations()
                 // ^^^^ end: height hack ^^^^
 
                 // now update all the children's modifiers
-                @Suppress("ListIterator")
-                for (child in children) {
-                    child.outputModifier.height(heightVariableId)
+                if (verticalScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
+                    @Suppress("ListIterator")
+                    for (child in children) {
+                        child.outputModifier.height(heightVariableId)
+                    }
                 }
             } // end-if-isSnapScrollMatchHeight special case
 
@@ -268,7 +197,7 @@ internal class RcLazyColumn(
         } // end column
 
         //  TODO: snap scrolling  workaround (continued)
-        if (snapScrollMode is VerticalScrollMode.SnapScrollMatchHeight) {
+        if (verticalScrollMode !is VerticalScrollMode.Normal) {
             rcContext.startCanvas(
                 RecordingModifier().visibility(visFloatExpId.toIntId()).height(1).width(1)
             )
@@ -278,16 +207,6 @@ internal class RcLazyColumn(
             )
             rcContext.endCanvas()
         }
-    }
-
-    private fun makeStandardScrollModifier(
-        //        scrollState: Float,
-        translationContext: TranslationContext,
-        notches: Int,
-    ): RecordingModifier.Element {
-        val scrollState: Float = Utils.asNan(translationContext.remoteComposeContext.nextId())
-
-        return ScrollModifier(ScrollModifier.VERTICAL, scrollState, notches)
     }
 
     private fun makeCustomScrollModifier(
@@ -320,7 +239,7 @@ internal class RcLazyColumn(
             )
         }
 
-        val m =
+        val customScrollModifier =
             CustomScrollModifier(
                 direction = CustomScrollModifier.VERTICAL,
                 touchPosition = touchPositionVariable,
@@ -342,8 +261,77 @@ internal class RcLazyColumn(
             rcContext.addDebugMessage("RcLazyColumn: maxScrollPxExpr", maxScrollPxExpr)
         }
 
-        return m
+        return customScrollModifier
     }
+
+    ///
+    private fun RemoteComposeContext.drawDots(computedHeight: Float) {
+        val widthVariableId = writer.addComponentWidthValue()
+        val writer: RemoteComposeWriterAndroid = writer as RemoteComposeWriterAndroid
+
+        val touchEventTimeExpr =
+            writer.floatExpression(
+                Rc.Time.ANIMATION_TIME, // current time, in seconds f
+                Rc.Touch.TOUCH_EVENT_TIME, // time of the last touch event, in seconds f
+                Rc.FloatExpression.SUB,
+                ////
+                0f,
+                Rc.FloatExpression.MAX // clamp a negative value to 0 (probably not needed here)
+                ,
+                /////
+                2f,
+                Rc.FloatExpression.MIN, // clamp a large value to 2
+            )
+
+        val alphaExpr = writer.floatExpression(2f, touchEventTimeExpr, Rc.FloatExpression.SUB)
+        val clampedAlpha = writer.floatExpression(0f, 1f, alphaExpr, Rc.FloatExpression.CLAMP)
+        writer.painter.setAlpha(clampedAlpha).commit()
+        if (DebugRemoteCompose) {
+            writer.addDebugMessage("alpha ", alphaExpr)
+            writer.addDebugMessage("alpha clamped", clampedAlpha)
+        }
+
+        val dimenScale = 2f // TODO: do actual dp to px scaling, not this
+        val maxDots = 5f
+        val xPadding = 3f * dimenScale * 4 // 4 is arbitrary
+        val numDots = Math.min(maxDots, children.size.toFloat())
+        val dotRadius = 3f * dimenScale
+        val dotVPad = 4f * dimenScale
+        val pillHeight = 6f * dimenScale // todo, change back to 12f
+        val cx = writer.floatExpression(widthVariableId, xPadding, Rc.FloatExpression.SUB)
+        val scrollSectionHeight =
+            ((numDots - 1) * (2 * dotRadius) + (numDots - 1) * dotVPad + pillHeight)
+        val scrollSectionY0: RFloat = ((rf(computedHeight) / rf(2f)) - (scrollSectionHeight / 2f))
+
+        for (child in 0 until children.size) {
+            // now, we can draw an overlay
+            writer.painter.setColor(Color.Magenta.toArgb()).setAlpha(clampedAlpha).commit()
+            writer.drawCircle(
+                cx,
+                (scrollSectionY0 + child * (2 * dotRadius + dotVPad)).toFloat(),
+                dotRadius,
+            )
+        }
+
+        // Next, draw the pill at the right spot
+        writer.painter.setColor(Color.Cyan.toArgb()).setAlpha(clampedAlpha).commit()
+        val pillYExpr =
+            (scrollSectionY0 + (rf(touchPositionVariable) * rf((2 * dotRadius + dotVPad))))
+                .toFloat()
+        if (DebugRemoteCompose) {
+            addDebugMessage("RcLazyColumn: pillYExpr ", pillYExpr)
+        }
+        writer.drawCircle(cx, pillYExpr, dotRadius)
+        writer.painter.setAlpha(1f).commit() // reset alpha to a normal value
+        //                writer.floatExpression(
+        //                    Rc.Time.CONTINUOUS_SEC
+        //                ) // force repaint // TODO: without this, the fade out animation
+        // doesn't run
+
+    }
+
+    //
+
 }
 
 /** @return a NaN float which is really an expression */

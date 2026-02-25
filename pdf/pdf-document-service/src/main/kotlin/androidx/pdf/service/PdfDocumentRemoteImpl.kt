@@ -231,4 +231,6 @@ internal class PdfDocumentRemoteImpl(
     override fun closePdfDocument() {
         rendererAdapter.close()
     }
+
+    override fun getInterfaceVersion(): Int = VERSION
 }

@@ -19,6 +19,7 @@ package androidx.pdf.testapp.ui.v2
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RequiresExtension
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.pdf.PdfWriteHandle
@@ -27,9 +28,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
-class EditablePdfHostViewModel : ViewModel() {
+class EditablePdfHostViewModel(private val state: SavedStateHandle) : ViewModel() {
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Ready)
     val saveState = _saveState.asStateFlow()
+
+    private val _isDiscardDialogShown =
+        MutableStateFlow(state.get<Boolean>(DISCARD_DIALOG_SHOWN_KEY) ?: false)
+    val isDiscardDialogShown = _isDiscardDialogShown.asStateFlow()
+
+    fun showDiscardDialog(isShown: Boolean) {
+        _isDiscardDialogShown.value = isShown
+        state[DISCARD_DIALOG_SHOWN_KEY] = isShown
+    }
 
     fun saveDocument(handle: PdfWriteHandle, pfd: ParcelFileDescriptor) {
         if (_saveState.value == SaveState.Saving) return
@@ -50,6 +60,10 @@ class EditablePdfHostViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Ready
+    }
+
+    companion object {
+        private const val DISCARD_DIALOG_SHOWN_KEY = "discard_dialog_shown"
     }
 }
 

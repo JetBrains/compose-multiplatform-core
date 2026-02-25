@@ -28,6 +28,7 @@ data class CustomDaoReturnTypeConverter(
     val isEnclosingClassKotlinObject: Boolean,
     val function: XMethodElement,
     val isProvidedConverter: Boolean,
+    val hasNullableLambdaReturnType: Boolean,
     val rowAdapterTypeArgPosition: Int = -1,
 ) {
     val className: XClassName by lazy { enclosingClass.asClassName() }

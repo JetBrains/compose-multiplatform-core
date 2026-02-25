@@ -695,7 +695,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      *
      * @see ensureCapacity
      */
-    @Suppress("MissingJvmstatic")
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {

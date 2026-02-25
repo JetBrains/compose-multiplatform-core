@@ -39,13 +39,18 @@ import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.Result3A.Status
+import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.core.Log.debug
+import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.cancel
 
 /** This class implements the 3A methods of [CameraGraphSessionImpl]. */
-internal class Controller3A(
+@CameraGraphScope
+internal class Controller3A
+@Inject
+constructor(
     private val graphProcessor: GraphProcessor,
     private val metadata: CameraMetadata,
     private val graphState3A: GraphState3A,

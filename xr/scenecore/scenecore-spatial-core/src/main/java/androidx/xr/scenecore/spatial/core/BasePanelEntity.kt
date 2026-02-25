@@ -21,7 +21,6 @@ import android.util.TypedValue
 import androidx.core.util.TypedValueCompat
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
-import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector3.Companion.distance
@@ -138,7 +137,7 @@ internal abstract class BasePanelEntity(
             }
         }
 
-    override fun transformPixelCoordinatesToPose(coordinates: Vector2): Pose {
+    override fun transformPixelCoordinatesToLocalPosition(coordinates: Vector2): Vector3 {
         // Convert Pixel units to a normalized [0, 1] (x) and [1, 0] (y) range
         val normalizedPixelWidth = coordinates.x / sizeInPixels.width
         val normalizedPixelHeight = coordinates.y / sizeInPixels.height
@@ -148,18 +147,18 @@ internal abstract class BasePanelEntity(
         val normalizedPixelHeightFlipped = 1 - normalizedPixelHeight
 
         // Multiply by 2 to get [0,2] and subtract one to get [-1,1] to match the extents range
-        return transformNormalizedCoordinatesToPose(
+        return transformNormalizedCoordinatesToLocalPosition(
             Vector2(normalizedPixelWidth * 2 - 1, normalizedPixelHeightFlipped * 2 - 1)
         )
     }
 
-    override fun transformNormalizedCoordinatesToPose(coordinates: Vector2): Pose {
+    override fun transformNormalizedCoordinatesToLocalPosition(coordinates: Vector2): Vector3 {
         // One input unit covers the extent from the center to the edge so we have to multiply by
         // the half-width or half-height to get the appropriate position in 3D space.
         val size = size
         val xInLocal3DSpace = coordinates.x * (size.width / 2f)
         val yInLocal3DSpace = coordinates.y * (size.height / 2f)
-        return Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
+        return Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
     }
 
     companion object {

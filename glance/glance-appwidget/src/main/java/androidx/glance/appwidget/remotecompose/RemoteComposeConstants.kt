@@ -34,5 +34,5 @@ internal object RemoteComposeConstants {
     val GlanceRemoteComposeProfile: Profile
         get() = RcPlatformProfiles.WIDGETS_V6
 
-    internal val DebugRemoteCompose = true // TODO: change to false before release
+    internal val DebugRemoteCompose = true // TODO: change to false before release b/483748434
 }

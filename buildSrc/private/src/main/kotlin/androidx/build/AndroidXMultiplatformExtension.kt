@@ -428,6 +428,11 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     // don't try running common tests for stubs target if disabled
                     it.enabled = runTests
                 }
+                kotlinExtension.sourceSets.apply {
+                    val commonStubsMain = maybeCreate("commonStubsMain")
+                    commonStubsMain.dependsOn(getByName("commonMain"))
+                    getByName("jvmStubsMain").dependsOn(commonStubsMain)
+                }
             }
         } else {
             null
@@ -671,6 +676,11 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     // don't try running common tests for stubs target
                     it.enabled = false
                 }
+                kotlinExtension.sourceSets.apply {
+                    val commonStubsMain = maybeCreate("commonStubsMain")
+                    commonStubsMain.dependsOn(getByName("commonMain"))
+                    getByName("linuxx64StubsMain").dependsOn(commonStubsMain)
+                }
             }
         } else {
             null
@@ -721,7 +731,19 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         createTarget: (KotlinJsTargetDsl.() -> Unit) -> T,
         block: Action<KotlinJsTargetDsl>? = null,
     ): T? {
-        if (buildFeatures.isIsolatedProjectsEnabled()) return null
+        if (buildFeatures.isIsolatedProjectsEnabled()) {
+            if (platform == PlatformIdentifier.JS) {
+                kotlinExtension.sourceSets.create("jsMain")
+                kotlinExtension.sourceSets.create("jsTest")
+            }
+            if (platform == PlatformIdentifier.WASM_JS) {
+                kotlinExtension.sourceSets.create("wasmJsMain")
+                kotlinExtension.sourceSets.create("wasmJsTest")
+            }
+            kotlinExtension.sourceSets.maybeCreate("webMain")
+            kotlinExtension.sourceSets.maybeCreate("webTest")
+            return null
+        }
         supportedPlatforms.add(platform)
         return if (isEnabled) {
             createTarget {

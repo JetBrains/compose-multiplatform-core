@@ -150,7 +150,8 @@ class FrameStateTest {
             requestMetadata = fakeRequestMetadata,
             frameNumber = frameNumber,
             frameTimestamp = frameTimestamp,
-            imageStreams,
+            imageStreams = imageStreams,
+            concurrentImageStreams = setOf(),
         )
 
     private val imageResult1 = frameState.imageOutputs.first { it.streamId == stream1Id }

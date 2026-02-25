@@ -20,15 +20,24 @@ import androidx.room3.TransactionScope
 import androidx.room3.Transactor
 import androidx.room3.concurrent.AtomicInt
 import androidx.room3.concurrent.ReentrantLock
-import androidx.room3.concurrent.withLock
+import androidx.room3.concurrent.currentThreadId
+import androidx.room3.util.PlatformType
+import androidx.room3.util.SQLiteResultCode.SQLITE_MISUSE
+import androidx.room3.util.platform
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.executeSQL
 import androidx.sqlite.prepare
+import androidx.sqlite.throwSQLiteException
+import kotlin.concurrent.Volatile
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 
 internal typealias TransactionWrapper<T> = suspend (suspend () -> T) -> T
@@ -47,28 +56,74 @@ internal class PassthroughConnectionPool(
 ) : ConnectionPool {
 
     private val lock = ReentrantLock()
+    private val mutex = Mutex()
     private lateinit var connection: SQLiteConnection
+
+    @Volatile private var isClosed = false
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
         block: suspend (Transactor) -> R,
     ): R {
+        if (isClosed) {
+            throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
+        }
         val confinedConnection = currentCoroutineContext()[ConnectionElement]?.connectionWrapper
         if (confinedConnection != null) {
             return block.invoke(confinedConnection)
         }
-        val delegate =
-            lock.withLock {
+        if (!::connection.isInitialized) {
+            withInitializationLock {
                 if (!::connection.isInitialized) {
                     connection = connectionFactory.invoke()
+                    if (isClosed) {
+                        // Pool was closed in-between opening a new connection, close it and throw.
+                        connection.close()
+                        throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
+                    }
                 }
-                connection
             }
-        val connectionWrapper = PassthroughConnection(transactionWrapper, delegate)
+        }
+        val connectionWrapper = PassthroughConnection(transactionWrapper, connection)
         return withContext(ConnectionElement(connectionWrapper)) { block.invoke(connectionWrapper) }
     }
 
+    /**
+     * Executes the connection initialization [block] around a lock.
+     *
+     * For most situations this simply uses the [mutex] to protect connection initialization.
+     * However, it also contains protection logic to specifically support Room's SupportSQLite
+     * wrapper and its ability to avoid thread hops during a SupportSQLite transaction that is
+     * thread confined and backed by a SupportSQLite driver.
+     *
+     * TODO(b/441117897): Consider removing this cross-module implicit logic.
+     */
+    private suspend fun withInitializationLock(block: suspend () -> Unit) {
+        if (
+            platform == PlatformType.ANDROID &&
+                currentCoroutineContext()[ContinuationInterceptor] === Dispatchers.Unconfined &&
+                currentCoroutineContext()[CoroutineName]?.name == "RoomSupportSQLiteTransaction"
+        ) {
+            val lockThreadId = currentThreadId()
+            lock.lock()
+            try {
+                return block()
+            } finally {
+                val unlockThreadId = currentThreadId()
+                check(lockThreadId == unlockThreadId) {
+                    "Resumed on a different thread during connection pool initialization. This can " +
+                        "occur when Room's SupportSQLite wrapper is used with a suspending " +
+                        "driver. Please report this issue at $BUG_LINK."
+                }
+                lock.unlock()
+            }
+        } else {
+            mutex.withReentrantLock { block() }
+        }
+    }
+
     override fun close() {
+        isClosed = true
         if (::connection.isInitialized) {
             connection.close()
         }
@@ -80,6 +135,11 @@ internal class PassthroughConnectionPool(
 
         override val key: CoroutineContext.Key<ConnectionElement>
             get() = ConnectionElement
+    }
+
+    private companion object {
+        const val BUG_LINK =
+            "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }
 }
 

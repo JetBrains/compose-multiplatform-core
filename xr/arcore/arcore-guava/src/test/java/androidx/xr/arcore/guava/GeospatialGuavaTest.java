@@ -145,7 +145,7 @@ public class GeospatialGuavaTest {
 
                         assertThat(result).isInstanceOf(AnchorCreateIllegalState.class);
                     } catch (Exception e) {
-                        throw new RuntimeException();
+                        throw new RuntimeException(e);
                     }
                 });
     }
@@ -280,13 +280,13 @@ public class GeospatialGuavaTest {
                         mSession.configure(
                                 new Config(
                                         PlaneTrackingMode.DISABLED,
-                                        java.util.Collections.emptyList(),
                                         HandTrackingMode.DISABLED,
                                         DeviceTrackingMode.DISABLED,
                                         DepthEstimationMode.DISABLED,
                                         AnchorPersistenceMode.DISABLED,
                                         FaceTrackingMode.DISABLED,
                                         GeospatialMode.VPS_AND_GPS,
+                                        java.util.Collections.emptyList(),
                                         EyeTrackingMode.DISABLED,
                                         CameraFacingDirection.WORLD));
 

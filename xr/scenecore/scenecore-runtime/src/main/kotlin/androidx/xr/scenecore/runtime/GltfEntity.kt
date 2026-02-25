@@ -25,6 +25,9 @@ import java.util.function.Consumer
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface GltfEntity : Entity {
 
+    /** The flattened list of all nodes contained within this glTF model entity. */
+    public val nodes: List<GltfModelNodeFeature>
+
     /** Returns the current animation state of the glTF entity. */
     @AnimationStateValue public val animationState: Int
 

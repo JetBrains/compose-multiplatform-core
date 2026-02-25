@@ -57,7 +57,7 @@ androidXMultiplatform {
             implementation(project(":navigation:navigation-testing"))
             implementation(project(":kruth:kruth"))
         }
-        androidTest {}.dependencies {
+        create("androidTest").dependencies {
             implementation("androidx.arch.core:core-testing:2.1.0")
         }
         androidDeviceTest.dependencies {
@@ -71,24 +71,15 @@ androidXMultiplatform {
         androidHostTest.dependsOn(androidTest)
         androidDeviceTest.dependsOn(androidTest)
 
-        nonAndroidMain {}.dependsOn(commonMain)
+        create("nonAndroidMain").dependsOn(commonMain)
         desktopMain.dependsOn(nonAndroidMain)
         nativeMain.dependsOn(nonAndroidMain)
-        webMain {}.dependsOn(nonAndroidMain)
+        webMain.dependsOn(nonAndroidMain)
 
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidTest").dependsOn(commonTest)
         desktopTest.dependsOn(nonAndroidTest)
         nativeTest.dependsOn(nonAndroidTest)
-        webTest {}.dependsOn(nonAndroidTest)
-
-		jbMain.dependsOn(nonAndroidMain)
-        jbTest.dependsOn(nonAndroidTest)
-        nativeMain.dependsOn(jbMain)
-        nativeTest.dependsOn(jbTest)
-        webMain.dependsOn(jbMain)
-        webTest.dependsOn(jbTest)
-        desktopMain.dependsOn(jbMain)
-        desktopTest.dependsOn(jbTest)
+        webTest.dependsOn(nonAndroidTest)
     }
 }
 

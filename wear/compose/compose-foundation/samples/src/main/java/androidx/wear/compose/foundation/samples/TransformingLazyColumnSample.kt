@@ -190,7 +190,7 @@ fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
                     Modifier.fillMaxWidth()
                         .transformedHeight(this, transformationSpec)
                         .minimumVerticalContentPadding(
-                            ButtonDefaults.minimumListVerticalContentPadding
+                            ButtonDefaults.minimumVerticalListContentPadding
                         ),
                 transformation = SurfaceTransformation(transformationSpec),
                 onClick = {},

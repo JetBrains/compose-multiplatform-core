@@ -27,6 +27,9 @@ import java.util.function.Consumer
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface GltfFeature : RenderingFeature {
 
+    /** The flattened list of all nodes contained within this glTF model. */
+    @get:MainThread public val nodes: List<GltfModelNodeFeature>
+
     /**
      * The unscaled size of the glTF model's axis-aligned bounding box in the entity's local space,
      * in meters.

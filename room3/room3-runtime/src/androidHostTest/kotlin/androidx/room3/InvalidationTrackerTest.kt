@@ -407,16 +407,6 @@ class InvalidationTrackerTest {
     }
 
     @Test
-    fun createLiveDataWithNoExistingTable() {
-        // Validate that sending a bad createLiveData table name fails quickly
-        assertThrows<IllegalArgumentException> {
-                tracker.createLiveData(tableNames = arrayOf("x"), inTransaction = false) {}
-            }
-            .hasMessageThat()
-            .isEqualTo("There is no table with name x")
-    }
-
-    @Test
     fun addAndRemoveObserver() = runTest {
         val invalidations = tracker.createFlow("a", emitInitialState = false).produceIn(this)
 

@@ -71,12 +71,12 @@ androidXMultiplatform {
             }
         }
 
-        unixMain {}.dependsOn(nativeMain)
-        appleMain {}.dependsOn(unixMain)
+        create("unixMain").dependsOn(nativeMain)
+        appleMain.dependsOn(unixMain)
         linuxMain.dependsOn(unixMain)
 
         nativeTest.dependsOn(nonJsTest)
-        wasmJsTest {}.dependsOn(nonJsTest)
+        wasmJsTest.dependsOn(nonJsTest)
     }
 }
 

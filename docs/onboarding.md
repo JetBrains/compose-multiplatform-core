@@ -88,9 +88,9 @@ Finally, you will need to either start a new terminal session or run `source
 >
 > Run the `Install Certificates.command` in the Python folder of Application
 > (e.g. `/Applications/Python\ 3.11/Install\ Certificates.command`). You may
-> also need to install `pip` via `python3 -m ensurepip` to run this command. For
-> more information about SSL/TLS certificate validation, you can read the
-> "Important Information" displayed during Python installation.
+> also need to install `certifi` via `python3 -m pip install certifi` to run
+> this command. For more information about SSL/TLS certificate validation, you
+> can read the "Important Information" displayed during Python installation.
 
 ### Windows {#setup-win}
 

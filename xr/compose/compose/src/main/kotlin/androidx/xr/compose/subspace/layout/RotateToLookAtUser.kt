@@ -77,16 +77,12 @@ private class RotateToLookAtUserElement(private val upDirection: Vector3) :
         node.upDirection = upDirection
     }
 
-    override fun hashCode(): Int {
-        val result = upDirection.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = upDirection.hashCode()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is RotateToLookAtUserElement) return false
-        if (upDirection != other.upDirection) return false
-        return true
+        return (upDirection == other.upDirection)
     }
 }
 
@@ -118,6 +114,8 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
         arDevice = ArDevice.getInstance(session)
     }
 
+    // Launching coroutineScope in onAttach throws IllegalStateException
+    // Deferring to onPlaced ensures the node is attached to a valid Owner
     override fun onPlaced(coordinates: SubspaceLayoutCoordinates) {
         manageHeadPoseJob()
     }

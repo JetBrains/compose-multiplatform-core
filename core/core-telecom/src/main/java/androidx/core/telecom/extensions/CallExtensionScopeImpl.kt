@@ -301,10 +301,21 @@ internal class CallExtensionScopeImpl(
                     callProxy.getExtensionDetailsFlow().first()
                 }
         if (details == null) {
-            Log.i(TAG, "resolveCallExtensionsType: details is null")
+            Log.w(
+                TAG,
+                "resolveCallExtensionsType: details are null after waiting" +
+                    " 1 second to populate. Early exit",
+            )
             return NONE
         }
-
+        if (!details.isSelfManagedProperty) {
+            Log.w(
+                TAG,
+                "connectExtensions: MANAGED extensions are not supported at this " +
+                    " time. Early exit",
+            )
+            return NONE
+        }
         var type = NONE
         if (!Utils.shouldUseBackwardsCompatImplementation()) {
             // Android CallsManager V+ check
@@ -628,6 +639,7 @@ internal interface CallProxy {
 @VisibleForTesting
 internal data class ExtensionCallDetails(
     val hasTransactionalProperty: Boolean,
+    val isSelfManagedProperty: Boolean,
     val accountHandle: PhoneAccountHandle?,
     val extras: Bundle?,
 )
@@ -654,6 +666,7 @@ private class RealCallProxy(private val applicationContext: Context, override va
         return call.details?.let {
             ExtensionCallDetails(
                 it.hasProperty(CallsManager.PROPERTY_IS_TRANSACTIONAL),
+                it.hasProperty(Call.Details.PROPERTY_SELF_MANAGED),
                 it.accountHandle,
                 it.extras,
             )
@@ -668,6 +681,7 @@ private class RealCallProxy(private val applicationContext: Context, override va
                         trySendBlocking(
                             ExtensionCallDetails(
                                 it.hasProperty(CallsManager.PROPERTY_IS_TRANSACTIONAL),
+                                it.hasProperty(Call.Details.PROPERTY_SELF_MANAGED),
                                 it.accountHandle,
                                 it.extras?.let { original -> Bundle(original) },
                             )
@@ -681,6 +695,7 @@ private class RealCallProxy(private val applicationContext: Context, override va
             trySendBlocking(
                 ExtensionCallDetails(
                     it.hasProperty(CallsManager.PROPERTY_IS_TRANSACTIONAL),
+                    it.hasProperty(Call.Details.PROPERTY_SELF_MANAGED),
                     it.accountHandle,
                     it.extras?.let { original -> Bundle(original) },
                 )

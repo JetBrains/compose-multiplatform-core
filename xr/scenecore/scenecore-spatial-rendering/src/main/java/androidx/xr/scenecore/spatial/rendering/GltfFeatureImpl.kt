@@ -28,6 +28,7 @@ import androidx.xr.scenecore.impl.impress.Material
 import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.GltfModelNodeFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.spatial.core.AndroidXrEntity
 import com.android.extensions.xr.XrExtensions
@@ -96,6 +97,17 @@ internal class GltfFeatureImpl(
 
     init {
         bindImpressNodeToSubspace("gltf_entity_subspace_", modelImpressNode)
+    }
+
+    override val nodes: List<GltfModelNodeFeature> by lazy {
+        val count = impressApi.getImpressNodeChildCount(modelImpressNode)
+        val nodeList = ArrayList<GltfModelNodeFeature>(count)
+        for (i in 0 until count) {
+            val childNode = impressApi.getImpressNodeChildAt(modelImpressNode, i)
+            val name = impressApi.getImpressNodeName(childNode)
+            nodeList.add(GltfModelNodeFeatureImpl(impressApi, childNode, modelImpressNode, name))
+        }
+        nodeList.toList()
     }
 
     override val size: FloatSize3d = getGltfModelBoundingBox().halfExtents.times(2f)

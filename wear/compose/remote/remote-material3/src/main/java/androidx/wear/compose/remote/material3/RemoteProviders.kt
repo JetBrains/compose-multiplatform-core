@@ -17,34 +17,52 @@
 
 package androidx.wear.compose.remote.material3
 
+import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.text.RemoteTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.text.TextStyle
 import androidx.wear.compose.material3.LocalTextConfiguration
-import androidx.wear.compose.material3.LocalTextStyle
 import androidx.wear.compose.material3.TextConfiguration
+
+/**
+ * This function is used to set the current value of [LocalRemoteTextStyle], merging the given style
+ * with the current style values for any missing attributes. Any [RemoteText] components included in
+ * this component's [content] will be styled with this style unless styled explicitly.
+ *
+ * @see LocalRemoteTextStyle
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+public fun ProvideRemoteTextStyle(
+    value: RemoteTextStyle,
+    content: @RemoteComposable @Composable () -> Unit,
+) {
+    val mergedStyle = LocalRemoteTextStyle.current.merge(value)
+    CompositionLocalProvider(LocalRemoteTextStyle provides mergedStyle, content = content)
+}
 
 internal fun provideScopeContent(
     contentColor: RemoteColor,
-    textStyle: TextStyle,
+    textStyle: RemoteTextStyle,
     content: (@Composable () -> Unit),
 ): (@Composable () -> Unit) = {
     CompositionLocalProvider(
         LocalRemoteContentColor provides contentColor,
-        LocalTextStyle provides textStyle,
+        LocalRemoteTextStyle provides textStyle,
         content = content,
     )
 }
 
 internal fun <T> provideScopeContent(
     contentColor: RemoteColor,
-    textStyle: TextStyle,
+    textStyle: RemoteTextStyle,
     content: (@Composable T.() -> Unit),
 ): (@Composable T.() -> Unit) = {
     CompositionLocalProvider(
         LocalRemoteContentColor provides contentColor,
-        LocalTextStyle provides textStyle,
+        LocalRemoteTextStyle provides textStyle,
     ) {
         content()
     }
@@ -52,13 +70,13 @@ internal fun <T> provideScopeContent(
 
 internal fun <T> provideScopeContent(
     contentColor: RemoteColor,
-    textStyle: TextStyle,
+    textStyle: RemoteTextStyle,
     textConfiguration: TextConfiguration,
     content: (@Composable T.() -> Unit),
 ): (@Composable T.() -> Unit) = {
     CompositionLocalProvider(
         LocalRemoteContentColor provides contentColor,
-        LocalTextStyle provides textStyle,
+        LocalRemoteTextStyle provides textStyle,
         LocalTextConfiguration provides textConfiguration,
     ) {
         content()
@@ -67,7 +85,7 @@ internal fun <T> provideScopeContent(
 
 internal fun <T> provideNullableScopeContent(
     contentColor: RemoteColor,
-    textStyle: TextStyle,
+    textStyle: RemoteTextStyle,
     textConfiguration: TextConfiguration,
     content: (@Composable T.() -> Unit)?,
 ): (@Composable T.() -> Unit)? =
@@ -75,7 +93,7 @@ internal fun <T> provideNullableScopeContent(
         {
             CompositionLocalProvider(
                 LocalRemoteContentColor provides contentColor,
-                LocalTextStyle provides textStyle,
+                LocalRemoteTextStyle provides textStyle,
                 LocalTextConfiguration provides textConfiguration,
             ) {
                 content()

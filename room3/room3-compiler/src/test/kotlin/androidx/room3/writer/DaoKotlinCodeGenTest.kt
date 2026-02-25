@@ -2409,35 +2409,53 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-                import androidx.room3.*
-                import io.reactivex.rxjava3.core.*
+                    import androidx.room3.*
+                    import io.reactivex.rxjava3.core.*
+                    import com.google.common.base.Optional
 
-                @Dao
-                interface MyDao {
-                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                    fun getFlowable(vararg arg: String?): Flowable<MyEntity>
-
-                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                    fun getObservable(vararg arg: String?): Observable<MyEntity>
-
-                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                    fun getSingle(vararg arg: String?): Single<MyEntity>
-
-                    @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                    fun getMaybe(vararg arg: String?): Maybe<MyEntity>
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                @DaoReturnTypeConverters(
+                    androidx.room3.rxjava3.Rx3DaoReturnTypeConverters::class
+                )
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
                 }
 
-                @Entity
-                data class MyEntity(
-                    @PrimaryKey
-                    val pk: Int,
-                    val other: String
-                )
+                @Dao
+                    interface MyDao {
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getFlowable(vararg arg: String?): Flowable<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getFlowableOptional(vararg arg: String?): Flowable<Optional<MyEntity>>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getObservable(vararg arg: String?): Observable<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getSingle(vararg arg: String?): Single<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybe(vararg arg: String?): Maybe<MyEntity>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybeList(vararg arg: String?): Maybe<List<MyEntity>>
+
+                        @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
+                        fun getMaybeMutableList(vararg arg: String?): Maybe<MutableList<MyEntity>>
+                    }
+
+                    @Entity
+                    data class MyEntity(
+                        @PrimaryKey
+                        val pk: Int,
+                        val other: String
+                    )
                 """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc),
+            sources = listOf(src),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2570,47 +2588,55 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             Source.kotlin(
                 "MyDao.kt",
                 """
-                import androidx.room3.*
-                import io.reactivex.rxjava3.core.*
+                    import androidx.room3.*
+                    import io.reactivex.rxjava3.core.*
 
-                @Dao
-                interface MyDao {
-                    @Insert
-                    fun insertSingle(vararg entities: MyEntity): Single<List<Long>>
-
-                    @Upsert
-                    fun upsertSingle(vararg entities: MyEntity): Single<List<Long>>
-
-                    @Delete
-                    fun deleteSingle(entity: MyEntity): Single<Int>
-
-                    @Update
-                    fun updateSingle(entity: MyEntity): Single<Int>
-                    
-                    @Insert
-                    fun insertCompletable(vararg entities: MyEntity): Completable
-
-                    @Upsert
-                    fun upsertCompletable(vararg entities: MyEntity): Completable
-
-                    @Delete
-                    fun deleteCompletable(entity: MyEntity): Completable
-
-                    @Update
-                    fun updateCompletable(entity: MyEntity): Completable
+                @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+                @DaoReturnTypeConverters(
+                    androidx.room3.rxjava3.Rx3DaoReturnTypeConverters::class
+                )
+                abstract class MyDatabase : RoomDatabase() {
+                    abstract fun getDao(): MyDao
                 }
 
-                @Entity
-                data class MyEntity(
-                    @PrimaryKey
-                    val pk: Int,
-                    val other: String
-                )
+                @Dao
+                    interface MyDao {
+                        @Insert
+                        fun insertSingle(vararg entities: MyEntity): Single<List<Long>>
+
+                        @Upsert
+                        fun upsertSingle(vararg entities: MyEntity): Single<List<Long>>
+
+                        @Delete
+                        fun deleteSingle(entity: MyEntity): Single<Int>
+
+                        @Update
+                        fun updateSingle(entity: MyEntity): Single<Int>
+
+                        @Insert
+                        fun insertCompletable(vararg entities: MyEntity): Completable
+
+                        @Upsert
+                        fun upsertCompletable(vararg entities: MyEntity): Completable
+
+                        @Delete
+                        fun deleteCompletable(entity: MyEntity): Completable
+
+                        @Update
+                        fun updateCompletable(entity: MyEntity): Completable
+                    }
+
+                    @Entity
+                    data class MyEntity(
+                        @PrimaryKey
+                        val pk: Int,
+                        val other: String
+                    )
                 """
                     .trimIndent(),
             )
         runTest(
-            sources = listOf(src, databaseSrc),
+            sources = listOf(src),
             compiledFiles =
                 compileFiles(
                     listOf(
@@ -2726,8 +2752,13 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 """
                 import androidx.room3.*
                 import androidx.lifecycle.*
+                import kotlinx.coroutines.flow.map
+                import androidx.lifecycle.LiveData
+                import androidx.lifecycle.asLiveData
+                import androidx.room3.livedata.LiveDataDaoReturnTypeConverter
 
                 @Dao
+                @DaoReturnTypeConverters(LiveDataDaoReturnTypeConverter::class)
                 interface MyDao {
                     @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
                     fun getLiveData(vararg arg: String?): LiveData<MyEntity>
@@ -2748,7 +2779,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
         runTest(
             sources = listOf(src, databaseSrc),
             expectedFilePath = getTestGoldenPath(testName.methodName),
-            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA)),
+            compiledFiles = compileFiles(listOf(COMMON.LIVE_DATA, COMMON.FLOW_LIVE_DATA)),
         )
     }
 

@@ -26,7 +26,6 @@ import androidx.room3.ext.ArrayLiteral
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
-import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
@@ -70,9 +69,7 @@ class DaoReturnTypeQueryResultBinder(
                             val performBlock =
                                 InvokeWithLambdaParameter(
                                     scope = scope,
-                                    functionName =
-                                        if (converter.isSuspend) DB_UTIL_PERFORM_SUSPENDING
-                                        else DB_UTIL_PERFORM_BLOCKING,
+                                    functionName = DB_UTIL_PERFORM_SUSPENDING,
                                     argFormat = listOf("%N", "%L", "%L"),
                                     args =
                                         listOf(dbProperty, /* isReadOnly= */ true, inTransaction),

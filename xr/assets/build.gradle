@@ -33,13 +33,14 @@ plugins {
 
 android {
     namespace = "androidx.xr.assets"
+}
 
-    sourceSets {
-        main {
-            assets {
-                srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/assets")
-            }
-        }
+androidComponents {
+    def assetsPath = new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/assets")
+            .absolutePath
+
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets.addStaticSourceDirectory(assetsPath)
     }
 }
 

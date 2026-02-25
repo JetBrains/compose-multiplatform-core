@@ -108,7 +108,7 @@ class RotateToLookAtUserActivity : ComponentActivity() {
             config = session.config.copy(deviceTracking = DeviceTrackingMode.LAST_KNOWN)
         )
 
-        var isRotateToLookAtUserOn by remember { mutableStateOf(true) }
+        var isRotateToLookAtUserOn by remember { mutableStateOf(false) }
 
         IntegrationTestsAppTheme {
             Subspace(modifier = SubspaceModifier.width(1600.dp).height(1400.dp)) {
@@ -154,7 +154,7 @@ class RotateToLookAtUserActivity : ComponentActivity() {
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Text(
-                        "Enable RotateToLookAtUser Modifier:",
+                        "rotateToLookAtUser()",
                         color = PurpleGrey40,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,

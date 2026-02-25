@@ -12,7 +12,7 @@ package androidx.wear.compose.navigation3 {
 
   public final class SwipeDismissableSceneStrategyKt {
     method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.wear.compose.navigation3.SwipeDismissableSceneStrategy<T> rememberSwipeDismissableSceneStrategy(optional boolean isUserSwipeEnabled);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.wear.compose.navigation3.SwipeDismissableSceneStrategy<T!> rememberSwipeDismissableSceneStrategy(boolean, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.wear.compose.navigation3.SwipeDismissableSceneStrategy<T> rememberSwipeDismissableSceneStrategy(boolean, androidx.compose.runtime.Composer?, int, int);
   }
 
 }

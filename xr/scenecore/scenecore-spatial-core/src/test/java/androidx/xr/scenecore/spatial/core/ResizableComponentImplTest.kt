@@ -1507,6 +1507,35 @@ class ResizableComponentImplTest {
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f)
     }
 
+    @Test
+    fun onAttach_afterRemovingAllListenersAndDetaching_doesNotReRegisterConsumer() {
+        // 1. Attach the ResizableComponent
+        val entity = createTestEntity() as AndroidXrEntity
+        val resizableComponent =
+            ResizableComponentImpl(fakeExecutor, xrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS)
+        assertThat(entity.addComponent(resizableComponent)).isTrue()
+
+        // 2. Add a listener
+        val mockListener = mock<ResizeEventListener>()
+        resizableComponent.addResizeEventListener(MoreExecutors.directExecutor(), mockListener)
+        // At this point, the consumer should be registered.
+        assertThat(entity.reformEventConsumerMap).isNotEmpty()
+
+        // 3. Remove the listener (making the listener map empty)
+        resizableComponent.removeResizeEventListener(mockListener)
+        // The consumer should now be unregistered from the entity.
+        assertThat(entity.reformEventConsumerMap).isEmpty()
+
+        // 4. Detach the ResizableComponent
+        entity.removeComponent(resizableComponent)
+
+        // 5. Attach the ResizableComponent again
+        assertThat(entity.addComponent(resizableComponent)).isTrue()
+
+        // VERIFY: The consumer should NOT be registered again, because there are no listeners.
+        assertThat(entity.reformEventConsumerMap).isEmpty()
+    }
+
     companion object {
         private val MIN_DIMENSIONS = Dimensions(0f, 0f, 0f)
         private val MAX_DIMENSIONS = Dimensions(10f, 10f, 10f)

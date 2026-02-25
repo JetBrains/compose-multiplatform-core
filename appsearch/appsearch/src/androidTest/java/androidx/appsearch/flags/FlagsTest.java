@@ -312,18 +312,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableEmbeddingIteratorV2() {
-        assertThat(Flags.FLAG_ENABLE_EMBEDDING_ITERATOR_V2)
-                .isEqualTo("com.android.appsearch.flags.enable_embedding_iterator_v2");
-    }
-
-    @Test
-    public void testFlagValue_enableReusableDecompressionBuffer() {
-        assertThat(Flags.FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER)
-                .isEqualTo("com.android.appsearch.flags.enable_reusable_decompression_buffer");
-    }
-
-    @Test
     public void testFlagValue_enableShardedEmbeddingStorage() {
         assertThat(Flags.FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE)
                 .isEqualTo("com.android.appsearch.flags.enable_sharded_embedding_storage");

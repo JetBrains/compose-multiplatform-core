@@ -20,6 +20,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -134,6 +135,14 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
 
     internal var visiblePageRange: IntRange = 0..0
 
+    internal val shouldShowAnnotationToolbar: StateFlow<Boolean> =
+        combine(pdfEditModeFlow, isTextSearchActiveFlow) { pdfEditMode, isTextSearchActive ->
+                pdfEditMode is PdfEditMode.Enabled &&
+                    pdfEditMode.journey == EDITING_JOURNEY_ANNOTATIONS &&
+                    !isTextSearchActive
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     /** Reactive state that combines multiple flows to determine if interaction is enabled. */
     internal val isAnnotationInteractionEnabled: StateFlow<Boolean> =
         combine(
@@ -141,12 +150,14 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
                 areAnnotationsVisibleFlow,
                 _applyEditsStatus,
                 _isPdfViewGestureActive,
-            ) { pdfEditMode, isVisible, status, isGestureActive ->
+                isTextSearchActiveFlow,
+            ) { pdfEditMode, isVisible, status, isGestureActive, isTextSearchActive ->
                 (pdfEditMode is PdfEditMode.Enabled &&
                     pdfEditMode.journey == EDITING_JOURNEY_ANNOTATIONS) &&
                     isVisible &&
                     status != ApplyEditsState.InProgress &&
-                    !isGestureActive
+                    !isGestureActive &&
+                    !isTextSearchActive
             }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
@@ -378,10 +389,13 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
                     AnnotationDrawingMode.PenMode(toolInfo.brushSize, toolInfo.color)
             is Highlighter -> {
                 if (toolInfo.color != null && pdfDocument != null) {
+                    val colorWithHighlighterAlpha =
+                        ColorUtils.setAlphaComponent(toolInfo.color, InkDefaults.HIGHLIGHTER_ALPHA)
+
                     _drawingMode.value =
                         AnnotationDrawingMode.HighlighterMode(
                             toolInfo.brushSize,
-                            toolInfo.color,
+                            colorWithHighlighterAlpha,
                             pdfDocument,
                         )
                 } else {

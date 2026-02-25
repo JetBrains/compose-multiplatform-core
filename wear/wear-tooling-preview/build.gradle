@@ -43,5 +43,4 @@ androidx {
     description = "Tools for Wear UI Previews"
     type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_TOOLING_PREVIEW
-    legacyDisableKotlinStrictApiMode = true
 }

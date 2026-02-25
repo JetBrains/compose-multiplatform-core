@@ -37,6 +37,8 @@ import androidx.glance.action.action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.R
 import androidx.glance.appwidget.isAtLeastApi31
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.unit.ColorProvider
 
 /**
@@ -378,7 +380,7 @@ private fun M3IconButtonElement(
     modifier: GlanceModifier,
     enabled: Boolean,
 ) {
-    val finalModifier =
+    var finalModifier =
         if (enabled)
             modifier.clickable(
                 onClick = onClick,
@@ -388,11 +390,17 @@ private fun M3IconButtonElement(
             )
         else modifier
 
+    finalModifier =
+        if (contentDescription != null) {
+            finalModifier.semantics { this.contentDescription = contentDescription }
+        } else {
+            finalModifier
+        }
+
     GlanceNode(
         factory = ::EmittableM3IconButton,
         update = {
             this.set(imageProvider) { this.imageProvider = it }
-            this.set(contentDescription) { this.contentDescription = it }
             this.set(contentColor) { this.contentColor = it }
             this.set(backgroundColor) { this.backgroundColor = it }
             this.set(shape) { this.shape = it }
@@ -489,7 +497,6 @@ private constructor(
 public class EmittableM3IconButton
 private constructor(
     public var imageProvider: ImageProvider?,
-    public var contentDescription: String?,
     public var contentColor: ColorProvider?,
     public var backgroundColor: ColorProvider?,
     public var shape: IconButtonShape,
@@ -500,7 +507,6 @@ private constructor(
     public constructor() :
         this(
             imageProvider = null,
-            contentDescription = null,
             contentColor = null,
             backgroundColor = null,
             shape = IconButtonShape.Circle,
@@ -511,7 +517,6 @@ private constructor(
     override fun copy(): Emittable {
         return EmittableM3IconButton(
             imageProvider = imageProvider,
-            contentDescription = contentDescription,
             contentColor = contentColor,
             backgroundColor = backgroundColor,
             shape = shape,

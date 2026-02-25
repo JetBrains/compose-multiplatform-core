@@ -51,11 +51,8 @@ import androidx.room3.solver.binderprovider.DaoReturnTypeQueryResultBinderProvid
 import androidx.room3.solver.binderprovider.GuavaListenableFutureQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.InstantQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.LiveDataQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.PagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.RxJava3PagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxLambdaQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.SuspendResultBinderProvider
 import androidx.room3.solver.prepared.binder.PreparedQueryResultBinder
 import androidx.room3.solver.prepared.binderprovider.GuavaListenableFuturePreparedQueryResultBinderProvider
@@ -221,10 +218,7 @@ private constructor(
 
     private val queryResultBinderProviders: List<QueryResultBinderProvider> =
         mutableListOf<QueryResultBinderProvider>().apply {
-            add(LiveDataQueryResultBinderProvider(context))
             add(GuavaListenableFutureQueryResultBinderProvider(context))
-            addAll(RxQueryResultBinderProvider.getAll(context))
-            addAll(RxLambdaQueryResultBinderProvider.getAll(context))
             add(RxJava3PagingSourceQueryResultBinderProvider(context))
             add(ListenableFuturePagingSourceQueryResultBinderProvider(context))
             add(PagingSourceQueryResultBinderProvider(context))

@@ -27,7 +27,7 @@ import androidx.xr.scenecore.runtime.ScenePose
  *
  * <p>A ScenePose is an object that has a pose in the world space.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class BaseScenePose : ScenePose {
     override val activitySpacePose: Pose
         get() =
@@ -94,5 +94,36 @@ public abstract class BaseScenePose : ScenePose {
                 pose.rotation,
             )
         )
+    }
+
+    override fun transformPositionTo(position: Vector3, destination: ScenePose): Vector3 {
+        return this.transformPoseTo(Pose(position), destination).translation
+    }
+
+    override fun transformVectorTo(vector: Vector3, destination: ScenePose): Vector3 {
+        // To isolate rotation and scale, transform two points: the origin and the vector endpoint.
+        // The difference between the transformed points yields the transformed vector.
+
+        // Transform the origin point
+        val originPointInDest = this.transformPositionTo(Vector3.Zero, destination)
+
+        // Transform the point representing the vector endpoint
+        val vectorEndPointInDest = this.transformPositionTo(vector, destination)
+
+        // The transformed vector is the difference between the transformed endpoint and origin.
+        return vectorEndPointInDest - originPointInDest
+    }
+
+    override fun transformDirectionTo(direction: Vector3, destination: ScenePose): Vector3 {
+        // We need to transform the direction vector into the destination space similar to
+        // transformVectorTo and then we need to remove the scaling effect
+        val transformedVectorInDest = transformVectorTo(direction, destination)
+
+        // Preserve the original magnitude by normalizing and rescaling.
+        val originalMagnitude = direction.length
+        if (originalMagnitude == 0.0f) {
+            return Vector3.Zero
+        }
+        return transformedVectorInDest.toNormalized() * originalMagnitude
     }
 }

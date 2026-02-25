@@ -561,7 +561,7 @@ class SwipeDismissableSceneStrategyTest {
                     slideInHorizontally(tween(testDuration)) { -it / 2 } togetherWith
                         slideOutHorizontally(tween(testDuration)) { it / 2 }
                 },
-                sceneStrategy = rememberSwipeDismissableSceneStrategy(),
+                sceneStrategies = listOf(rememberSwipeDismissableSceneStrategy()),
                 entryProvider =
                     entryProvider {
                         entry(FIRST_KEY) {
@@ -616,7 +616,7 @@ class SwipeDismissableSceneStrategyTest {
     ) {
         NavDisplay(
             backStack = backStack,
-            sceneStrategy = sceneStrategy,
+            sceneStrategies = listOf(sceneStrategy),
             entryProvider = entryProvider,
         )
     }

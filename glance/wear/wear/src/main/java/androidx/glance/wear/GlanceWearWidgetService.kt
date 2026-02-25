@@ -19,6 +19,7 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
+import androidx.glance.wear.core.WearWidgetProviderInfo
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.LegacyTileProviderImpl
 import androidx.glance.wear.parcel.WearWidgetProviderImpl

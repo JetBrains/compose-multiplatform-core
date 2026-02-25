@@ -22,19 +22,19 @@ import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
-import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
-import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetData
 import androidx.glance.wear.WearWidgetDocument
-import androidx.glance.wear.WearWidgetEvent
-import androidx.glance.wear.WearWidgetEventBatch
-import androidx.glance.wear.WearWidgetParams
-import androidx.glance.wear.WearWidgetRawContent
-import androidx.glance.wear.WearWidgetVisibleEvent
-import androidx.glance.wear.WidgetInstanceId
+import androidx.glance.wear.core.ActiveWearWidgetHandle
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
+import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
+import androidx.glance.wear.core.WearWidgetEvent
+import androidx.glance.wear.core.WearWidgetEventBatch
+import androidx.glance.wear.core.WearWidgetParams
+import androidx.glance.wear.core.WearWidgetRawContent
+import androidx.glance.wear.core.WearWidgetVisibleEvent
+import androidx.glance.wear.core.WidgetInstanceId
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
@@ -66,6 +66,8 @@ class WearWidgetProviderImplTest {
             override fun onError(errorCode: Int, message: String) {
                 isFailure = true
             }
+
+            override fun getInterfaceVersion(): Int = VERSION
         }
 
     private val testName = ComponentName("package.name", "class.name")
@@ -347,5 +349,7 @@ class WearWidgetProviderImplTest {
                 channel.close(IllegalStateException("null contentParcel"))
             }
         }
+
+        override fun getInterfaceVersion(): Int = VERSION
     }
 }

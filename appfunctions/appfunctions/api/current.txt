@@ -200,9 +200,9 @@ package androidx.appfunctions {
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface AppFunctionSerializable {
-    ctor @KotlinOnly public AppFunctionSerializable(optional boolean isDescribedByKdoc);
-    method @InaccessibleFromKotlin public abstract boolean isDescribedByKdoc() default false;
-    property public abstract boolean isDescribedByKdoc;
+    ctor @KotlinOnly public AppFunctionSerializable(optional boolean isDescribedByKDoc);
+    method @InaccessibleFromKotlin public abstract boolean isDescribedByKDoc() default false;
+    property public abstract boolean isDescribedByKDoc;
   }
 
   @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public abstract class AppFunctionService extends android.app.appfunctions.AppFunctionService {
@@ -225,7 +225,7 @@ package androidx.appfunctions {
     ctor @BytecodeOnly public AppFunctionSystemUnknownException(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
   }
 
-  @androidx.appfunctions.AppFunctionSerializable(isDescribedByKdoc=true) public final class AppFunctionTextResource {
+  @androidx.appfunctions.AppFunctionSerializable(isDescribedByKDoc=true) public final class AppFunctionTextResource {
     ctor public AppFunctionTextResource(String mimeType, String content);
     method @InaccessibleFromKotlin public String getContent();
     method @InaccessibleFromKotlin public String getMimeType();

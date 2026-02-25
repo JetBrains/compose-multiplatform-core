@@ -54,6 +54,7 @@ import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.DisplayBlendMode
 import androidx.xr.runtime.GeospatialMode
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -155,7 +156,7 @@ class HelloArPlaneActivity : ComponentActivity() {
                     )
                     Text(
                         modifier = Modifier.padding(start = 10.dp).weight(3f),
-                        text = "$blendMode",
+                        text = blendMode.toLocalString(),
                         fontSize = 20.sp,
                     )
                 }
@@ -189,6 +190,15 @@ class HelloArPlaneActivity : ComponentActivity() {
                     Text(text = "PerceptionState is null.", fontSize = 22.sp)
                 }
             }
+        }
+    }
+
+    private fun DisplayBlendMode.toLocalString(): String {
+        return when (this) {
+            DisplayBlendMode.ADDITIVE -> "ADDITIVE"
+            DisplayBlendMode.ALPHA_BLEND -> "ALPHA_BLEND"
+            DisplayBlendMode.NO_DISPLAY -> "NO_DISPLAY"
+            else -> "UNKNOWN"
         }
     }
 }

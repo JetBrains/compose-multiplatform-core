@@ -28,6 +28,9 @@ plugins {
     id("com.android.library")
 }
 android {
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     namespace = "androidx.webkit.instrumentation"
 }
 

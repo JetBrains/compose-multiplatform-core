@@ -23,6 +23,7 @@
 import androidx.build.KotlinTarget
 import androidx.build.ProjectLayoutType
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
@@ -63,6 +64,12 @@ android {
     namespace = "androidx.work"
 }
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.assets.addStaticSourceDirectory("src/schemas")
+    }
+}
+
 dependencies {
     api(libs.jspecify)
     ksp("androidx.room:room-compiler:2.7.0")
@@ -87,7 +94,6 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.mockitoKotlin)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)

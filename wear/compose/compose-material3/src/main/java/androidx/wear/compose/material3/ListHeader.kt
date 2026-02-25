@@ -175,19 +175,25 @@ public object ListHeaderDefaults {
         PaddingValues(HorizontalPadding, TopPadding, HorizontalPadding, SubHeaderBottomPadding)
 
     /**
-     * The minimum recommended parent top content padding for a [ListHeader] in a list such as
-     * [TransformingLazyColumn], based on the screen height.
+     * The minimum top content padding for the list when a [ListHeader] is placed at the top.
+     * Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      *
      * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
      */
-    public val minimumListTopContentPadding: Dp
+    public val minimumTopListContentPadding: Dp
         @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /**
-     * The minimum recommended parent bottom content padding for a [ListHeader] in a list such as
-     * [TransformingLazyColumn], based on the screen height.
+     * The minimum bottom content padding for the list when a [ListHeader] is placed at the bottom.
+     * Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      */
-    public val minimumListBottomContentPadding: Dp
+    public val minimumBottomListContentPadding: Dp
         @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** The default color for ListHeader */

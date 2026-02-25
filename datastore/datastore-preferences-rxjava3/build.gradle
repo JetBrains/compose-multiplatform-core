@@ -24,6 +24,8 @@
 
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasUnitTest
 
 plugins {
     id("AndroidXPlugin")
@@ -33,11 +35,15 @@ plugins {
 }
 
 android {
-    sourceSets {
-        test.java.srcDirs += "src/test-common/java"
-        androidTest.java.srcDirs += "src/test-common/java"
-    }
     namespace = "androidx.datastore.preferences.rxjava3"
+}
+
+androidComponents {
+    def sharedTestDir = "src/test-common/java"
+    onVariants(selector().all()) { variant ->
+        (variant as HasUnitTest).unitTest.sources.java.addStaticSourceDirectory(sharedTestDir)
+        (variant as HasAndroidTest).androidTest.sources.java.addStaticSourceDirectory(sharedTestDir)
+    }
 }
 
 dependencies {

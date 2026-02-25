@@ -80,10 +80,11 @@ import androidx.wear.compose.foundation.rotary.rotaryScrollable
  * @param contentPadding The padding around the whole content. This will add padding for the content
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add
  *   padding before the first item or after the last one. Note that if the first or last item uses
- *   [Modifier.responsiveVerticalPadding], the effective vertical padding at that edge will be the
- *   maximum of the value provided here and the value calculated by the responsive padding modifier.
- *   This allows enforcing a minimum padding (e.g. for global screen insets) while still allowing
- *   specific items to request larger, responsive padding.
+ *   [Modifier.minimumVerticalContentPadding], the effective vertical padding at that edge will be
+ *   the maximum of the value provided here and the value calculated by
+ *   [Modifier.minimumVerticalContentPadding]. This allows enforcing a minimum padding (e.g. for
+ *   global screen insets) while still allowing specific items to request larger padding at the
+ *   screen edge for specific items.
  * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
  *   composed from the bottom to the top
  * @param verticalArrangement The vertical arrangement of the items, to be used when there is enough
@@ -292,10 +293,11 @@ public fun TransformingLazyColumn(
  * @param contentPadding The padding around the whole content. This will add padding for the content
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add
  *   padding before the first item or after the last one. Note that if the first or last item uses
- *   [Modifier.responsiveVerticalPadding], the effective vertical padding at that edge will be the
- *   maximum of the value provided here and the value calculated by the responsive padding modifier.
- *   This allows enforcing a minimum padding (e.g. for global screen insets) while still allowing
- *   specific items to request larger, responsive padding.
+ *   [Modifier.minimumVerticalContentPadding], the effective vertical padding at that edge will be
+ *   the maximum of the value provided here and the value calculated by
+ *   [Modifier.minimumVerticalContentPadding]. This allows enforcing a minimum padding (e.g. for
+ *   global screen insets) while still allowing specific items to request larger padding at the
+ *   screen edge for specific items.
  * @param verticalArrangement The vertical arrangement of the items.
  * @param horizontalAlignment The horizontal alignment of the items.
  * @param flingBehavior Logic describing fling behavior for touch scroll. If snapping is required

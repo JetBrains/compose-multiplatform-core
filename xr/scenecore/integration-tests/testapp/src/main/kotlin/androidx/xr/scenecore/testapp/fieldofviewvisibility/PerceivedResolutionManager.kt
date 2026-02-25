@@ -221,8 +221,8 @@ class PerceivedResolutionManager(
         val distance =
             if (cameraPose != null && pose != null)
                 Vector3.distance(
-                        cameraPose.activitySpacePose.translation,
-                        pose.activitySpacePose.translation,
+                        cameraPose.poseInActivitySpace.translation,
+                        pose.poseInActivitySpace.translation,
                     )
                     .toString()
             else "Can't retrieve distance to Camera"

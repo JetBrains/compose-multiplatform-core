@@ -14,6 +14,7 @@ package androidx.security.state {
     method public androidx.security.state.SecurityPatchState.SecurityPatchLevel getDeviceSecurityPatchLevel(@androidx.security.state.SecurityPatchState.Component String component);
     method public java.util.Map<androidx.security.state.SecurityPatchState.Severity,java.util.Set<java.lang.String>> getPatchedCves(@androidx.security.state.SecurityPatchState.Component String component, androidx.security.state.SecurityPatchState.SecurityPatchLevel spl);
     method public java.util.List<androidx.security.state.SecurityPatchState.SecurityPatchLevel> getPublishedSecurityPatchLevel(@androidx.security.state.SecurityPatchState.Component String component);
+    method @RequiresApi(26) public static final android.net.Uri getVulnerabilityReportUrl();
     method @RequiresApi(26) public static final android.net.Uri getVulnerabilityReportUrl(optional android.net.Uri serverUrl);
     method public final boolean isDeviceFullyUpdated();
     method @WorkerThread public final void loadVulnerabilityReport(String jsonString);
@@ -30,6 +31,7 @@ package androidx.security.state {
 
   public static final class SecurityPatchState.Companion {
     method public androidx.security.state.SecurityPatchState.SecurityPatchLevel getComponentSecurityPatchLevel(@androidx.security.state.SecurityPatchState.Component String component, String securityPatchLevel);
+    method @RequiresApi(26) public android.net.Uri getVulnerabilityReportUrl();
     method @RequiresApi(26) public android.net.Uri getVulnerabilityReportUrl(optional android.net.Uri serverUrl);
     method @BytecodeOnly @RequiresApi(26) public static android.net.Uri! getVulnerabilityReportUrl$default(androidx.security.state.SecurityPatchState.Companion!, android.net.Uri!, int, Object!);
     property public static String COMPONENT_KERNEL;
@@ -95,6 +97,7 @@ package androidx.security.state {
     ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile);
     ctor public SecurityStateManagerCompat(android.content.Context context, optional String systemSupplementalPatchConfigFile, optional String vendorSupplementalPatchConfigFile);
     ctor @BytecodeOnly public SecurityStateManagerCompat(android.content.Context!, String!, String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public android.os.Bundle getGlobalSecurityState();
     method public android.os.Bundle getGlobalSecurityState(optional String moduleMetadataProviderPackageName);
     method @BytecodeOnly public static android.os.Bundle! getGlobalSecurityState$default(androidx.security.state.SecurityStateManagerCompat!, String!, int, Object!);
     field public static final androidx.security.state.SecurityStateManagerCompat.Companion Companion;

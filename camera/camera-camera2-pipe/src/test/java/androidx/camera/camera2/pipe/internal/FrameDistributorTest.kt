@@ -84,7 +84,9 @@ class FrameDistributorTest {
 
     private val imageSimulator = ImageSimulator(streamConfigs)
     private val stream1Id = imageSimulator.streamGraph[stream1Config]!!.id
+    private val stream1OutputId = imageSimulator.streamGraph[stream1Config]!!.outputs.first().id
     private val stream2Id = imageSimulator.streamGraph[stream2Config]!!.id
+    private val stream2OutputId = imageSimulator.streamGraph[stream2Config]!!.outputs.first().id
     private val stream3Id = imageSimulator.streamGraph[stream3Config]!!.id
     private val stream3OutputIds = imageSimulator.streamGraph[stream3Config]!!.outputs.map { it.id }
     private val stream4Id = imageSimulator.streamGraph[stream4Config]!!.id
@@ -129,9 +131,17 @@ class FrameDistributorTest {
         val frame = fakeFrameBuffer.frames[0]
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.PENDING)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.PENDING)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
         assertThat(frame.imageStreams).containsExactly(stream1Id, stream2Id, stream3Id, stream4Id)
 
         // Closing should cause all outputs to be closed, since this should be the only frame.
@@ -147,9 +157,17 @@ class FrameDistributorTest {
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.UNAVAILABLE)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.UNAVAILABLE)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.UNAVAILABLE)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.UNAVAILABLE)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.UNAVAILABLE)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.UNAVAILABLE)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.UNAVAILABLE)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.UNAVAILABLE)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.UNAVAILABLE)
+        }
     }
 
     @Test
@@ -161,14 +179,19 @@ class FrameDistributorTest {
 
         val image1 = imageSimulator.simulateImage(stream1Id, cameraTimestamp.value)
         assertThat(frame.isImageAvailable(stream1Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream1OutputId)).isTrue()
         assertThat(frame.isImageAvailable(stream2Id)).isFalse()
+        assertThat(frame.isImageAvailable(stream2OutputId)).isFalse()
         assertThat(frame.isImageAvailable(stream3Id)).isFalse()
+        stream3OutputIds.forEach { assertThat(frame.isImageAvailable(it)).isFalse() }
         assertThat(frame.isImageAvailable(stream4Id)).isFalse()
+        stream4OutputIds.forEach { assertThat(frame.isImageAvailable(it)).isFalse() }
         assertThat(frame.isFrameInfoAvailable).isFalse()
         assertThat(image1.isClosed).isFalse()
 
         val image2 = imageSimulator.simulateImage(stream2Id, cameraTimestamp.value)
         assertThat(frame.isImageAvailable(stream2Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream2OutputId)).isTrue()
         assertThat(frame.isFrameInfoAvailable).isFalse()
         assertThat(image2.isClosed).isFalse()
 
@@ -212,9 +235,17 @@ class FrameDistributorTest {
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.PENDING)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.PENDING)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
 
         frameDistributor.onFailed(
             fakeRequestMetadata,
@@ -224,9 +255,17 @@ class FrameDistributorTest {
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.PENDING)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.PENDING)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
 
         // Images are still delivered, even after onFailed
         imageSimulator.simulateImage(stream1Id, cameraTimestamp.value)
@@ -246,10 +285,18 @@ class FrameDistributorTest {
         imageSimulator.simulateImage(stream4Id, cameraTimestamp.value, stream4OutputIds[2])
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
-        assertThat(frame.isImageAvailable(stream1Id)).isEqualTo(true)
-        assertThat(frame.isImageAvailable(stream2Id)).isEqualTo(true)
-        assertThat(frame.isImageAvailable(stream3Id)).isEqualTo(true)
-        assertThat(frame.isImageAvailable(stream4Id)).isEqualTo(true)
+        assertThat(frame.isImageAvailable(stream1Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream1OutputId)).isTrue()
+        assertThat(frame.isImageAvailable(stream2Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream2OutputId)).isTrue()
+        assertThat(frame.isImageAvailable(stream3Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream3OutputIds[0])).isTrue()
+        assertThat(frame.isImageAvailable(stream3OutputIds[1])).isFalse()
+        assertThat(frame.isImageAvailable(stream3OutputIds[2])).isFalse()
+        assertThat(frame.isImageAvailable(stream4Id)).isTrue()
+        assertThat(frame.isImageAvailable(stream4OutputIds[0])).isTrue()
+        assertThat(frame.isImageAvailable(stream4OutputIds[1])).isFalse()
+        assertThat(frame.isImageAvailable(stream4OutputIds[2])).isTrue()
     }
 
     @Test
@@ -260,9 +307,17 @@ class FrameDistributorTest {
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.PENDING)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.PENDING)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.PENDING)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.PENDING)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.PENDING)
+        }
 
         frameDistributor.onFailed(
             fakeRequestMetadata,
@@ -272,9 +327,17 @@ class FrameDistributorTest {
 
         assertThat(frame.frameInfoStatus).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
         assertThat(frame.imageStatus(stream1Id)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        assertThat(frame.imageStatus(stream1OutputId)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
         assertThat(frame.imageStatus(stream2Id)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        assertThat(frame.imageStatus(stream2OutputId)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
         assertThat(frame.imageStatus(stream3Id)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        stream3OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        }
         assertThat(frame.imageStatus(stream4Id)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        stream4OutputIds.forEach {
+            assertThat(frame.imageStatus(it)).isEqualTo(OutputStatus.ERROR_OUTPUT_FAILED)
+        }
 
         // Images are still delivered, even after onFailed
         val fakeImage1 = imageSimulator.simulateImage(stream1Id, cameraTimestamp.value)

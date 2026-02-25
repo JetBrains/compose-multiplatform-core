@@ -80,8 +80,8 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
         }
 
-        nonAndroidMain {}.dependsOn(commonMain)
-        nonAndroidTest {}.dependsOn(commonTest)
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
 
         desktopMain.dependsOn(nonAndroidMain)
         desktopTest.dependsOn(nonAndroidTest)

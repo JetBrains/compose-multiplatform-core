@@ -23,7 +23,17 @@ import kotlin.math.asin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.runningFold
 
+/**
+ * Marks declarations that are part of the experimental Tilt Gesture API.
+ *
+ * This API is subject to change or removal in a future release.
+ */
+@RequiresOptIn(message = "This is an experimental API. It may be changed or removed in the future.")
+@Retention(AnnotationRetention.BINARY)
+public annotation class ExperimentalGesturesApi
+
 /** Represents the vertical tilt state of the device. */
+@ExperimentalGesturesApi
 public class Tilt private constructor(private val value: Int) {
     public companion object {
         /** The device is tilted upwards, surpassing the defined upper threshold. */
@@ -56,6 +66,7 @@ public class Tilt private constructor(private val value: Int) {
  * The primary way to use this is via the [TiltGesture.detect] method, which provides a [Flow] of
  * [Tilt] states.
  */
+@ExperimentalGesturesApi
 public object TiltGesture {
     /**
      * The lower angle threshold in degrees to trigger a transition to the `Tilt.DOWN` state. See
@@ -113,6 +124,7 @@ public object TiltGesture {
      * @param progress A value from 0.0 to 1.0 indicating the progress of the current transition. It
      *   is 0.0 if no transition is in progress. This is useful for driving animations.
      */
+    @ExperimentalGesturesApi
     public class State(
         public val tilt: Tilt = Tilt.UP,
         @FloatRange(from = 0.0, to = 1.0) public val progress: Float = 0f,

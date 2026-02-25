@@ -51,7 +51,6 @@ import androidx.xr.projected.platform.ProjectedDeviceState
 import androidx.xr.projected.platform.ProjectedInputEvent
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
-import java.util.concurrent.Executor
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -64,6 +63,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowVirtualDeviceManager
 
 /**
@@ -339,37 +339,19 @@ public class ProjectedTestRule : TestRule {
         }
     }
 
-    // TODO: b/476403759 - Replace reflection with the shadow APIs when they are available.
-    @SuppressLint("BanUncheckedReflection")
-    private fun createVirtualDisplayForDevice(virtualDevice: Any): VirtualDisplay {
-        val virtualDisplayConfig =
-            VirtualDisplayConfig.Builder(
-                    PROJECTED_DISPLAY_NAME,
-                    DISPLAY_WIDTH,
-                    DISPLAY_HEIGHT,
-                    DISPLAY_DENSITY,
-                )
-                .build()
-
-        try {
-            val method: Method =
-                virtualDevice::class
-                    .java
-                    .getMethod(
-                        "createVirtualDisplay",
-                        VirtualDisplayConfig::class.java,
-                        Executor::class.java,
-                        VirtualDisplay.Callback::class.java,
+    private fun createVirtualDisplayForDevice(virtualDevice: Any): VirtualDisplay =
+        Shadow.extract<ShadowVirtualDeviceManager.ShadowVirtualDevice>(virtualDevice)
+            .createVirtualDisplay(
+                VirtualDisplayConfig.Builder(
+                        PROJECTED_DISPLAY_NAME,
+                        DISPLAY_WIDTH,
+                        DISPLAY_HEIGHT,
+                        DISPLAY_DENSITY,
                     )
-            // Note: The cast to VirtualDisplay might be unsafe if the method returns null
-            // or a different type. Consider adding checks.
-            return method.invoke(virtualDevice, virtualDisplayConfig, null, null) as VirtualDisplay
-        } catch (e: NoSuchMethodException) {
-            throw RuntimeException("Failed to find createVirtualDisplay method", e)
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to call createVirtualDisplay method", e)
-        }
-    }
+                    .build(),
+                /* executor= */ null,
+                /* callback= */ null,
+            )
 
     private fun enableProjectedService() {
         shadowOf(context.packageManager).apply {

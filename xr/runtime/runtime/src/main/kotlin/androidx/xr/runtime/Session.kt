@@ -322,6 +322,7 @@ public constructor(
 
         private val SCENE_RUNTIME_FACTORY_PROVIDERS =
             listOf(
+                "androidx.xr.scenecore.projected.ProjectedSceneRuntimeFactory",
                 "androidx.xr.scenecore.spatial.core.SpatialSceneRuntimeFactory",
                 "androidx.xr.scenecore.testing.FakeSceneRuntimeFactory",
             )
@@ -355,15 +356,7 @@ public constructor(
 
     /** The current state of the runtime configuration. */
     @GuardedBy("lock")
-    public var config: Config =
-        Config(
-            PlaneTrackingMode.DISABLED,
-            augmentedObjectCategories = listOf(),
-            HandTrackingMode.DISABLED,
-            DeviceTrackingMode.DISABLED,
-            DepthEstimationMode.DISABLED,
-            AnchorPersistenceMode.DISABLED,
-        )
+    public var config: Config = Config()
         private set
 
     private val lifecycleObserver = LifecycleEventObserver { _, event ->

@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ChildButtonTokens
 import androidx.wear.compose.material3.tokens.CompactButtonTokens
 import androidx.wear.compose.material3.tokens.FilledButtonTokens
@@ -1703,12 +1704,15 @@ public object ButtonDefaults {
         )
 
     /**
-     * The minimum recommended top and bottom content padding for a [Button] in a list such as
-     * [TransformingLazyColumn], based on the screen height.
+     * The minimum vertical content padding for the list when a [Button] is placed at the top or
+     * bottom edge. Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      *
      * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnButtonsSample
      */
-    public val minimumListVerticalContentPadding: Dp
+    public val minimumVerticalListContentPadding: Dp
         @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
@@ -2023,12 +2027,15 @@ public object CompactButtonDefaults {
         )
 
     /**
-     * The minimum recommended parent top and bottom content padding for a [CompactButton] in a list
-     * such as [TransformingLazyColumn].
+     * The minimum vertical content padding for the list when a [CompactButton] is placed at the top
+     * or bottom edge. Recommended for use with [TransformingLazyColumnItemScope]'s
+     * [Modifier.minimumVerticalContentPadding], which allows items to choose a preferred content
+     * padding for the list. [TransformingLazyColumn] takes its contentPadding as the maximum of the
+     * preferred content padding values and its own contentPadding parameter.
      *
      * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
      */
-    public val minimumListVerticalContentPadding: Dp
+    public val minimumVerticalListContentPadding: Dp
         @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /**

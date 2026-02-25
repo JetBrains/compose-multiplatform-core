@@ -141,6 +141,7 @@ class FrameBufferImplTest {
                 frameNumber = frameNumber,
                 frameTimestamp = frameTimestamp,
                 imageStreams = setOf(stream1, stream2),
+                concurrentImageStreams = emptySet(),
             )
 
         val frame = FrameImpl(frameState)

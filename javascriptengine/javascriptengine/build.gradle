@@ -41,6 +41,7 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {

@@ -20,6 +20,7 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.net.Uri
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.SavedStateHandle
 import androidx.pdf.FakeEditablePdfDocument
 import androidx.pdf.SandboxedPdfLoader
@@ -34,6 +35,7 @@ import androidx.pdf.ink.state.AnnotationDrawingMode
 import androidx.pdf.ink.state.PdfEditMode
 import androidx.pdf.ink.state.PdfEditMode.Companion.EDITING_JOURNEY_ANNOTATIONS
 import androidx.pdf.ink.state.PdfEditMode.Companion.EDITING_JOURNEY_FORM_FILLING
+import androidx.pdf.ink.util.InkDefaults
 import androidx.pdf.ink.view.tool.Eraser
 import androidx.pdf.ink.view.tool.Highlighter
 import androidx.pdf.ink.view.tool.Pen
@@ -539,7 +541,9 @@ class EditableDocumentViewModelTest {
         val drawingMode = annotationsViewModel.drawingMode.first()
         assertThat(drawingMode).isInstanceOf(AnnotationDrawingMode.HighlighterMode::class.java)
         assertThat((drawingMode as AnnotationDrawingMode.HighlighterMode).size).isEqualTo(10.0f)
-        assertThat(drawingMode.color).isEqualTo(Color.YELLOW)
+        val colorWithHighlighterAlpha =
+            ColorUtils.setAlphaComponent(Color.YELLOW, InkDefaults.HIGHLIGHTER_ALPHA)
+        assertThat(drawingMode.color).isEqualTo(colorWithHighlighterAlpha)
     }
 
     @Test

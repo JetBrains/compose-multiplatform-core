@@ -39,3 +39,10 @@ android {
     }
     namespace = "com.example.android.support.text.emoji"
 }
+
+androidComponents {
+    def emojiAssetsPath = new File(fontDir, "supported-emojis").getAbsolutePath()
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets.addStaticSourceDirectory(emojiAssetsPath)
+    }
+}

@@ -60,7 +60,7 @@ internal class GltfAnimationFeatureImpl(
 
     override val animationIndex: Int = index
 
-    override val animationName: String? = name
+    override val animationName: String? = name?.ifEmpty { null }
 
     override val animationDuration: Float = duration
 

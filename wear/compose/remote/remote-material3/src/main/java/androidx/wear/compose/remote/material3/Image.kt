@@ -20,8 +20,6 @@ package androidx.wear.compose.remote.material3
 
 import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -32,17 +30,17 @@ import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
-import androidx.compose.remote.creation.compose.state.asRdp
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 
 /**
  * A remote composable that displays a [RemoteBitmap] styled as an avatar.
@@ -167,10 +165,8 @@ private fun FallbackAvatar(
 @RemoteComposable
 @SuppressLint("RestrictedApiAndroidX")
 private fun BackgroundOverlay(modifier: RemoteModifier, overlayColor: RemoteColor) {
-    val density = LocalRemoteComposeCreationState.current.remoteDensity
     RemoteCanvas(modifier = modifier.clip(ImageDefaults.backgroundShape())) {
-        val cornerRadius =
-            RemoteDp(ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.value.rf).toPx(density)
+        val cornerRadius = ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx()
         drawRoundRect(
             paint = RemotePaint().apply { remoteColor = overlayColor },
             cornerRadius = RemoteOffset(cornerRadius, cornerRadius),
@@ -182,12 +178,13 @@ private fun BackgroundOverlay(modifier: RemoteModifier, overlayColor: RemoteColo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object ImageDefaults {
 
-    internal val AVATAR_SIZE_DP = 24.dp
-    internal val BACKGROUND_CORNER_RADIUS_DP = 26.dp
+    internal val AVATAR_SIZE_DP = 24.rdp
+    internal val BACKGROUND_CORNER_RADIUS_DP = 26.rdp
 
-    @RemoteComposable @Composable public fun avatarSize(): RemoteDp = AVATAR_SIZE_DP.asRdp()
+    @RemoteComposable @Composable public fun avatarSize(): RemoteDp = AVATAR_SIZE_DP
 
-    @Composable public fun avatarShape(): RoundedCornerShape = RoundedCornerShape(AVATAR_SIZE_DP)
+    @Composable
+    public fun avatarShape(): RemoteRoundedCornerShape = RemoteRoundedCornerShape(AVATAR_SIZE_DP)
 
     @Suppress("RestrictedApiAndroidX")
     @RemoteComposable
@@ -197,6 +194,6 @@ public object ImageDefaults {
     }
 
     @Composable
-    public fun backgroundShape(): RoundedCornerShape =
-        RoundedCornerShape(BACKGROUND_CORNER_RADIUS_DP)
+    public fun backgroundShape(): RemoteRoundedCornerShape =
+        RemoteRoundedCornerShape(BACKGROUND_CORNER_RADIUS_DP)
 }

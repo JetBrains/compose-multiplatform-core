@@ -84,6 +84,7 @@ androidXMultiplatform {
         packaging.jniLibs.useLegacyPackaging = true
     }
     ios()
+    js()
     jvm() {
         addNativeLibrariesToResources(it, extensionCompilation)
     }
@@ -91,26 +92,45 @@ androidXMultiplatform {
     mac()
     tvos()
     watchos()
+    wasmJs()
 
     sourceSets {
         commonTest.dependencies {
             implementation(project(":sqlite:sqlite"))
-            implementation(project(":sqlite:sqlite-bundled"))
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
             implementation(project(":kruth:kruth"))
         }
-        androidDeviceTest.dependencies {
-            implementation(project(":sqlite:sqlite-framework"))
-            implementation(libs.kotlinTestJunit)
-            implementation(libs.testRunner)
-            implementation(libs.testCore)
+        nonWebTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-bundled"))
+            }
         }
-        jvmTest.dependencies {
-            implementation(libs.kotlinTestJunit)
+        androidDeviceTest {
+            dependsOn(nonWebTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-framework"))
+                implementation(libs.kotlinTestJunit)
+                implementation(libs.testRunner)
+                implementation(libs.testCore)
+            }
         }
-        nativeTest.dependencies {
-            implementation(project(":sqlite:sqlite-framework"))
+        webTest.dependencies {
+            implementation(project(":sqlite:sqlite-web"))
+            implementation(project(":sqlite:sqlite-web-worker-test"))
+        }
+        jvmTest {
+            dependsOn(nonWebTest)
+            dependencies {
+                implementation(libs.kotlinTestJunit)
+            }
+        }
+        nativeTest {
+            dependsOn(nonWebTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-framework"))
+            }
         }
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {

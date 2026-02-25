@@ -28,6 +28,7 @@ import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.MovableComponent
 import androidx.xr.scenecore.runtime.MoveEvent
 import androidx.xr.scenecore.runtime.MoveEventListener
+import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getPose
 import androidx.xr.scenecore.spatial.core.RuntimeUtils.getVector3
@@ -219,8 +220,8 @@ internal class MovableComponentImpl(
             .setEnabledReform(reformOptions.enabledReform or ReformOptions.ALLOW_MOVE)
             .scaleWithDistanceMode = translateScaleWithDistanceMode(scaleWithDistanceMode)
 
-        // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
-        if (entity is PanelEntityImpl) {
+        // TODO: b/348037292 - Remove this special case for PanelEntity.
+        if (entity is PanelEntity) {
             size = entity.size
         }
 

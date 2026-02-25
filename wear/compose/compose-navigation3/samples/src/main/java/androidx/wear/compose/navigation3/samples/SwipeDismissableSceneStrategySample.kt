@@ -104,7 +104,7 @@ fun ListDetailNavDisplaySample(onExit: () -> Unit = {}) {
 
     NavDisplay(
         backStack = backStack,
-        sceneStrategy = rememberSwipeDismissableSceneStrategy(),
+        sceneStrategies = listOf(rememberSwipeDismissableSceneStrategy()),
         entryProvider =
             entryProvider {
                 entry<NotificationList> {
@@ -176,7 +176,7 @@ fun NavDisplayWithOnBackBehaviorSample() {
             swipedBackCount++
             backStack.removeLastOrNull()
         },
-        sceneStrategy = rememberSwipeDismissableSceneStrategy(),
+        sceneStrategies = listOf(rememberSwipeDismissableSceneStrategy()),
         entryProvider =
             entryProvider {
                 entry<First> {

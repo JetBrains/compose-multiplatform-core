@@ -58,8 +58,11 @@ android {
         // studio pipeline works only starting with Android O
         minSdk = 26
     }
-    sourceSets {
-        main.resources.srcDirs += "src/main/proto"
-    }
     namespace = "androidx.sqlite.inspection"
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.resources.addStaticSourceDirectory("src/main/proto")
+    }
 }

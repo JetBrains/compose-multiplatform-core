@@ -81,11 +81,11 @@ androidXMultiplatform {
             implementation(libs.atomicFu)
         }
 
-        unixMain {}.dependsOn(nativeMain)
+        create("unixMain").dependsOn(nativeMain)
         appleMain.dependsOn(unixMain)
         linuxMain.dependsOn(unixMain)
 
-        webMain {}.dependencies {
+        webMain.dependencies {
             implementation(libs.atomicFu)
         }
     }
