@@ -78,12 +78,6 @@ androidXMultiplatform {
             implementation(project(":navigation:navigation-testing"))
         }
 
-        nonAndroidMain.dependsOn(commonMain)
-        nonAndroidTest.dependsOn(commonTest)
-
-        desktopMain.dependsOn(nonAndroidMain)
-        desktopTest.dependsOn(nonAndroidTest)
-
         androidMain.dependencies {
             api(project(":lifecycle:lifecycle-runtime"))
             api(project(":lifecycle:lifecycle-viewmodel"))
