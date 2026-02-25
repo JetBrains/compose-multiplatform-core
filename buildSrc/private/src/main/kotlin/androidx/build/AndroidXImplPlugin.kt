@@ -725,6 +725,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             )
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
+            project.configureVerifyELFRegionAlignment(variant)
         }
 
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
@@ -886,22 +887,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     taskProvider.configure { task -> task.dependsOn("compileReleaseJavaWithJavac") }
                 }
             }
-            val verifyELFRegionAlignmentTaskProvider =
-                project.tasks.register(
-                    variant.name + "VerifyELFRegionAlignment",
-                    VerifyELFRegionAlignmentTask::class.java,
-                ) { task ->
-                    task.files.from(
-                        variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS).map { dir ->
-                            dir.asFileTree.files
-                                .filter { it.extension == "so" }
-                                .filter { it.path.contains("arm64-v8a") }
-                                .filterNot { prebuiltLibraries.contains(it.name) }
-                        }
-                    )
-                    task.cacheEvenIfNoOutputs()
-                }
-            project.addToBuildOnServer(verifyELFRegionAlignmentTaskProvider)
+            project.configureVerifyELFRegionAlignment(variant)
         }
         project.buildOnServerDependsOnAssembleRelease()
     }
