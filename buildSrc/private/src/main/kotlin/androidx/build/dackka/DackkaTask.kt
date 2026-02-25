@@ -213,24 +213,6 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                 DokkaAnalysisPlatform.valueOf(
                                     sourceSet.analysisPlatform.uppercase()
                                 )
-
-                            val dependentSourceSets = buildList {
-                                // Only include dependent source sets which have source files (the
-                                // source set metadata includes all possible source sets, and the
-                                // ones without source files are not created as dackka source sets)
-                                addAll(
-                                    sourceSet.dependencies.filter {
-                                        sourceDirForSourceSet(it).exists()
-                                    }
-                                )
-                                // Include a dependency on the main non-KMP source set for jvm
-                                // source sets to make references from these source sets to non
-                                // KMP projects resolve (b/484050995).
-                                if (analysisPlatform.androidOrJvm()) {
-                                    add("main")
-                                }
-                            }
-
                             DokkaInputModels.SourceSet(
                                 id = sourceSetIdForSourceSet(sourceSet.name),
                                 displayName = sourceSet.name,
@@ -252,7 +234,13 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                     ),
                                 externalDocumentationLinks = externalDocs,
                                 dependentSourceSets =
-                                    dependentSourceSets.map { sourceSetIdForSourceSet(it) },
+                                    sourceSet.dependencies
+                                        // Only include dependent source sets which have source
+                                        // files (the source set metadata includes all possible
+                                        // source sets, and the ones without source files are not
+                                        // created as dackka source sets)
+                                        .filter { sourceDirForSourceSet(it).exists() }
+                                        .map { sourceSetIdForSourceSet(it) },
                                 noJdkLink = !analysisPlatform.androidOrJvm(),
                                 noAndroidSdkLink =
                                     analysisPlatform != DokkaAnalysisPlatform.ANDROID,
