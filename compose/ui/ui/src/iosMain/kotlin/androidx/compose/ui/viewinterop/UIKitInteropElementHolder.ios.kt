@@ -72,6 +72,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
 
+    private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
 
     var properties = properties
@@ -83,6 +84,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         }
 
     init {
+        layout.attachUserComponent()
         onPropertiesChanged()
     }
 
@@ -119,7 +121,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
 
             container.scheduleUpdate {
                 UIView.performWithoutAnimation {
-                    group.setFrame(groupFrame)
+                    layout.updateGroupFrame(groupFrame)
                     group.accessibilityFrame = groupAccessibilityFrame
                 }
             }
@@ -139,16 +141,14 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
 
             // update the user component frame only if it changes
             if (userComponentRect != currentUserComponentRect) {
-                // Schedule frame update
-                val newUserComponentCGRect =
-                    userComponentRect
-                        .toRect()
-                        .toDpRect(density)
-                        .asCGRect()
+                val userComponentCGRect = userComponentRect
+                    .toRect()
+                    .toDpRect(density)
+                    .asCGRect()
 
                 container.scheduleUpdate {
                     UIView.performWithoutAnimation {
-                        userComponentCGRect = newUserComponentCGRect
+                        layout.updateUserComponentFrame(userComponentCGRect)
                     }
                 }
 
