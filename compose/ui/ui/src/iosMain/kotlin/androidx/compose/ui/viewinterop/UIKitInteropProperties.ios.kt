@@ -38,6 +38,9 @@ import androidx.compose.ui.semantics.semantics
  * cut-out in place of the interop view.
  * The default value is false.
  *
+ * @property remeasureRequester Allows explicitly requesting remeasurement of the interop view.
+ *
+ *
  * If this Composable is within a modifier chain that merges the semantics of its children (such as
  * `Modifier.clickable`), the merged subtree data will be ignored in favor of the native
  * UIAccessibility resolution for the interop view. For example, Compose Button containing
@@ -58,13 +61,25 @@ import androidx.compose.ui.semantics.semantics
  * you need rich accessibility capabilities of the interop view (such as web views).
  * Consider using [Modifier.semantics] instead.
  *
+ * A single [UIKitInteropRemeasureRequester] instance is intended to be attached to a single
+ * [UIKitView] or [UIKitViewController]. If the same [remeasureRequester] instance is provided to
+ * multiple interop views, it will only be effectively attached to one of them.
+ *
+ * When a [UIKitView] or [UIKitViewController] is constrained with a **fixed size**
+ * (e.g., due to explicit [Modifier.size] or [Modifier.fillMaxSize]), calling [remeasureRequester]
+ * typically will not change the interop view size because the size is fixed by the
+ * parent/modifiers. Using [remeasureRequester] is most useful when the interop view is allowed
+ * to wrap content on at least one axis (i.e., at least one dimension is not fixed).
+ *
  * @see Modifier.semantics
+ * @see UIKitInteropRemeasureRequester
  */
 @Immutable
 class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
     val isNativeAccessibilityEnabled: Boolean = false,
     @property:ExperimentalComposeUiApi val placedAsOverlay: Boolean = false,
+    @property:ExperimentalComposeUiApi val remeasureRequester: UIKitInteropRemeasureRequester? = null,
 ) {
     /**
      * Indicates whether the user can interact with the interop component.
@@ -88,6 +103,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = interactionMode,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
+        remeasureRequester = null,
     )
 
     /**
@@ -105,6 +121,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = if (isInteractive) UIKitInteropInteractionMode.Cooperative() else null,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
+        remeasureRequester = null,
     )
 
     internal companion object {
@@ -123,6 +140,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         if (interactionMode != other.interactionMode) return false
         if (isNativeAccessibilityEnabled != other.isNativeAccessibilityEnabled) return false
         if (placedAsOverlay != other.placedAsOverlay) return false
+        if (remeasureRequester != other.remeasureRequester) return false
 
         return true
     }
@@ -131,6 +149,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         var result = interactionMode.hashCode()
         result = 31 * result + isNativeAccessibilityEnabled.hashCode()
         result = 31 * result + placedAsOverlay.hashCode()
+        result = 31 * result + remeasureRequester.hashCode()
         return result
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.asCGRect
@@ -73,6 +74,9 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentUserComponentRect: IntRect? = null
 
     private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
+    private val measurer = UIKitInteropElementMeasurer(userComponentView)
+    override val measurePolicy: MeasurePolicy get() = measurer.measurePolicy
+
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
 
     var properties = properties
@@ -195,6 +199,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
 
     private fun onPropertiesChanged() {
         interopWrappingView.interactionMode = properties.interactionMode
+        measurer.measureRequester = properties.remeasureRequester
 
         platformModifier = Modifier
             .pointerInteropFilter(
@@ -206,5 +211,11 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 isEnabled = properties.isNativeAccessibilityEnabled,
                 interopWrappingView
             )
+    }
+
+    override fun onRelease() {
+        measurer.measureRequester = null
+
+        super.onRelease()
     }
 }
