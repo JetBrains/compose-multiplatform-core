@@ -23,20 +23,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 
 /**
- * A handle that allows explicitly requesting remeasurement of [UIKitView] or [UIKitViewController].
+ * Allows explicitly requesting remeasurement of [UIKitView] or [UIKitViewController].
  *
  * Calling [requestRemeasure] schedules a new Compose measurement pass for the associated interop node.
- * During that measurement pass, Compose will re-query UIKit for the view's fitting size and may update
- * the Compose size of the [UIKitView] or [UIKitViewController] accordingly.
+ * This is useful because UIKit does not reliably propagate intrinsic/fitting-size changes to Compose.
  *
- * UIKit does not reliably notify Compose when a UIKit view's intrinsic/fitting size changes due to
- * internal state updates. Call [requestRemeasure] after changes that can affect fitting size, such as
- *  - changing `UILabel.text` / `attributedText` / `font`,
- *  - updating internal Auto Layout constraint constants,
- *  - adding/removing subviews that affect layout.
- *
- * This requester is intended to be associated with a single [UIKitView] or [UIKitViewController] instance at a time.
- * If the same requester instance is passed to multiple [UIKitView] or [UIKitViewController] nodes, the last one wins.
+ * Call [requestRemeasure] after UIKit-side changes that may affect fitting size (e.g. changing
+ * `UILabel.text`/`attributedText`/`font`, updating constraint constants, or adding/removing subviews).
  *
  * @see rememberUIKitInteropRemeasureRequester
  */
