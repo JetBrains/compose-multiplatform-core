@@ -29,10 +29,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
  * During that measurement pass, Compose will re-query UIKit for the view's fitting size and may update
  * the Compose size of the [UIKitView] or [UIKitViewController] accordingly.
  *
- * Conceptually, this is the Compose interop equivalent of “trigger a new layout/measurement pass”
- * (similar in spirit to UIKit's `setNeedsLayout()` / `layoutIfNeeded()`), but it operates on the
- * Compose side of the layout pipeline.
- *
  * UIKit does not reliably notify Compose when a UIKit view's intrinsic/fitting size changes due to
  * internal state updates. Call [requestRemeasure] after changes that can affect fitting size, such as
  *  - changing `UILabel.text` / `attributedText` / `font`,
