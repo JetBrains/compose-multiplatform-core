@@ -63,6 +63,11 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         compositeKeyHashCode = compositeKeyHashCode
     )
 
+    /**
+     * The UIView to be embedded in the wrapping view.
+     */
+    protected abstract val userComponentView: UIView
+
     private var currentUnclippedRect: IntRect? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
@@ -76,12 +81,6 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 onPropertiesChanged()
             }
         }
-
-    /**
-     * Immediate frame of underlying user component. Can be different from
-     * [currentUserComponentRect] due to scheduling.
-     */
-    protected abstract var userComponentCGRect: CValue<CGRect>
 
     init {
         onPropertiesChanged()

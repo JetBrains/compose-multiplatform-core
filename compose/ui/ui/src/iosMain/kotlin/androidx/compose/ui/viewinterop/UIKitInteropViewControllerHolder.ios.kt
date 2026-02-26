@@ -45,11 +45,8 @@ internal class UIKitInteropViewControllerHolder<T : UIViewController>(
 
     override val measurePolicy: MeasurePolicy = UIKitInteropViewMeasurePolicy(interopView.view)
 
-    override var userComponentCGRect: CValue<CGRect>
-        get() = interopView.view.frame
-        set(value) {
-            interopView.view.setFrame(value)
-        }
+    override val userComponentView: UIView
+        get() = interopView.view
 
     override fun insertInteropView(root: InteropViewGroup, index: Int) {
         parentViewController.addChildViewController(interopView)
