@@ -760,7 +760,7 @@ class UIKitInteropUILabelSizingTest {
         runUIKitInstrumentedTestWithInterop { overlay ->
             var composeInteropSize = DpSize.Zero
 
-            val rowSize = DpSize(width = 400.dp, height = 200.dp)
+            val rowSize = DpSize(width = minOf(screenSize.width, 400.dp), height = 200.dp)
             val boxWidth = mutableStateOf(10.dp)
             val uiKitViewFactory = {
                 UILabel().apply {
