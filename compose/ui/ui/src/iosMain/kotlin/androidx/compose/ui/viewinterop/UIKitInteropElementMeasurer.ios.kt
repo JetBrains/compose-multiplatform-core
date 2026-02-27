@@ -76,14 +76,14 @@ internal class UIKitInteropElementMeasurer(
             }
 
             val minW = constraints.minWidth.toDp()
-            val maxW = constraints.maxWidth.toDp()
             val minH = constraints.minHeight.toDp()
+            val maxW = constraints.maxWidth.toDp()
             val maxH = constraints.maxHeight.toDp()
 
             val fixedW = if (constraints.hasFixedWidth) minW else null
             val fixedH = if (constraints.hasFixedHeight) minH else null
 
-            val measureKey = MeasureKey(fixedW, fixedH, maxW, maxH)
+            val measureKey = MeasureKey(fixedW, fixedH, minW, minH, maxW, maxH)
             val shouldMeasureFittingSize = lastMeasureKey != measureKey || lastMeasureTick != tick || lastMeasuredSize == null
 
             if (shouldMeasureFittingSize) {
@@ -117,6 +117,8 @@ internal class UIKitInteropElementMeasurer(
     private data class MeasureKey(
         val fixedWidth: Dp?,
         val fixedHeight: Dp?,
+        val minWidth: Dp,
+        val minHeight: Dp,
         val maxWidth: Dp,
         val maxHeight: Dp
     )
