@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusRequesterModifierNode
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -69,17 +68,15 @@ fun Modifier.onClick(
     onDoubleClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
-) = composed {
-    Modifier.onClick(
-        enabled = enabled,
-        matcher = matcher,
-        keyboardModifiers = keyboardModifiers,
-        interactionSource = remember { MutableInteractionSource() },
-        onDoubleClick = onDoubleClick,
-        onLongClick = onLongClick,
-        onClick = onClick
-    )
-}
+) = onClickImpl(
+    enabled = enabled,
+    matcher = matcher,
+    keyboardModifiers = keyboardModifiers,
+    interactionSource = null,
+    onDoubleClick = onDoubleClick,
+    onLongClick = onLongClick,
+    onClick = onClick
+)
 
 /**
  * Configure component to receive clicks, double clicks and long clicks via input only (no accessibility "click" event)
@@ -114,29 +111,48 @@ fun Modifier.onClick(
     onDoubleClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
-): Modifier = if (enabled) {
-        composed {
-            val focusRequester = remember { FocusRequester() }
-            this.then(
-                OnClickModifierElement(
-                    interactionSource = interactionSource,
-                    matcher = matcher,
-                    keyboardModifiers = keyboardModifiers,
-                    onDoubleClick = onDoubleClick,
-                    onLongClick = onLongClick,
-                    onClick = onClick,
-                    focusRequester = focusRequester
-                ).focusRequester(focusRequester)
-            )
-        }
-    } else {
-        this
-    }
+): Modifier = onClickImpl(
+    enabled = enabled,
+    interactionSource = interactionSource,
+    matcher = matcher,
+    keyboardModifiers = keyboardModifiers,
+    onDoubleClick = onDoubleClick,
+    onLongClick = onLongClick,
+    onClick = onClick
+)
 
+@ExperimentalFoundationApi
+private fun Modifier.onClickImpl(
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource?,
+    matcher: PointerMatcher = PointerMatcher.Primary,
+    keyboardModifiers: PointerKeyboardModifiers.() -> Boolean = { true },
+    onDoubleClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+): Modifier = if (enabled) {
+    composed {
+        val focusRequester = remember { FocusRequester() }
+
+        this.then(
+            OnClickModifierElement(
+                interactionSource = interactionSource,
+                matcher = matcher,
+                keyboardModifiers = keyboardModifiers,
+                onDoubleClick = onDoubleClick,
+                onLongClick = onLongClick,
+                onClick = onClick,
+                focusRequester = focusRequester
+            ).focusRequester(focusRequester)
+        )
+    }
+} else {
+    this
+}
 
 private class OnClickModifierElement(
     private val focusRequester: FocusRequester,
-    private val interactionSource: MutableInteractionSource,
+    private val interactionSource: MutableInteractionSource?,
     private val matcher: PointerMatcher,
     private val keyboardModifiers: PointerKeyboardModifiers.() -> Boolean,
     private val onDoubleClick: (() -> Unit)?,
@@ -144,7 +160,7 @@ private class OnClickModifierElement(
     private val onClick: () -> Unit,
 ): ModifierNodeElement<OnClickModifierNode>() {
     override fun create(): OnClickModifierNode = OnClickModifierNode(
-        interactionSource = interactionSource,
+        interactionSource = interactionSource ?: MutableInteractionSource(),
         matcher = matcher,
         keyboardModifiers = keyboardModifiers,
         onDoubleClick = onDoubleClick,
@@ -171,7 +187,7 @@ private class OnClickModifierElement(
     )
 
     override fun hashCode(): Int {
-        var result = interactionSource.hashCode()
+        var result = (interactionSource?.hashCode() ?: 0)
         result = 31 * result + matcher.hashCode()
         result = 31 * result + keyboardModifiers.hashCode()
         result = 31 * result + (onDoubleClick?.hashCode() ?: 0)
@@ -185,10 +201,10 @@ private class OnClickModifierElement(
         if (other !is OnClickModifierElement) return false
         return interactionSource == other.interactionSource &&
             matcher == other.matcher &&
-            keyboardModifiers == other.keyboardModifiers &&
-            onDoubleClick == other.onDoubleClick &&
-            onLongClick == other.onLongClick &&
-            onClick == other.onClick
+            keyboardModifiers === other.keyboardModifiers &&
+            onDoubleClick === other.onDoubleClick &&
+            onLongClick === other.onLongClick &&
+            onClick === other.onClick
     }
 }
 
@@ -260,7 +276,7 @@ private class OnClickModifierNode(
     }
 
     fun update(
-        interactionSource: MutableInteractionSource,
+        interactionSource: MutableInteractionSource?,
         matcher: PointerMatcher,
         keyboardModifiers: PointerKeyboardModifiers.() -> Boolean,
         onDoubleClick: (() -> Unit)?,
@@ -274,7 +290,9 @@ private class OnClickModifierNode(
             pointerInputNodeNeedsReset = true
             cancelAllPressInteractions()
         }
-        this.interactionSource = interactionSource
+        if (interactionSource != null) {
+            this.interactionSource = interactionSource
+        }
 
         if (this.onDoubleClick != onDoubleClick) {
             pointerInputEventHandlerNeedsResetTick = true
