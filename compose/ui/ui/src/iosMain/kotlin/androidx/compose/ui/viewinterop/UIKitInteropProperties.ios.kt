@@ -79,7 +79,6 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
     val isNativeAccessibilityEnabled: Boolean = false,
     @property:ExperimentalComposeUiApi val placedAsOverlay: Boolean = false,
-    @property:ExperimentalComposeUiApi val remeasureRequester: UIKitInteropRemeasureRequester? = null,
 ) {
     /**
      * Indicates whether the user can interact with the interop component.
@@ -103,7 +102,6 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = interactionMode,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
-        remeasureRequester = null,
     )
 
     /**
@@ -121,7 +119,6 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         interactionMode = if (isInteractive) UIKitInteropInteractionMode.Cooperative() else null,
         isNativeAccessibilityEnabled,
         placedAsOverlay = false,
-        remeasureRequester = null,
     )
 
     internal companion object {
@@ -140,7 +137,6 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         if (interactionMode != other.interactionMode) return false
         if (isNativeAccessibilityEnabled != other.isNativeAccessibilityEnabled) return false
         if (placedAsOverlay != other.placedAsOverlay) return false
-        if (remeasureRequester != other.remeasureRequester) return false
 
         return true
     }
@@ -149,7 +145,6 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
         var result = interactionMode.hashCode()
         result = 31 * result + isNativeAccessibilityEnabled.hashCode()
         result = 31 * result + placedAsOverlay.hashCode()
-        result = 31 * result + remeasureRequester.hashCode()
         return result
     }
 }

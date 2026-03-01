@@ -17,12 +17,14 @@
 package androidx.compose.ui.interop
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -33,6 +35,7 @@ import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitInteropRemeasureRequester
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.measureFittingSize
+import androidx.compose.ui.viewinterop.remeasureRequester
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,7 +55,7 @@ class UIKitInteropRemeasureRequesterTest {
     fun testInternalConstraintChangeTriggersRemeasure() = runUIKitInstrumentedTestWithInterop { overlay ->
         var composeSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
-        val measureRequester = UIKitInteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         // A view whose intrinsic size depends on an internal width/height constraint.
         class BoxUIView : UIView(frame = CGRectZero.readValue()) {
@@ -74,15 +77,13 @@ class UIKitInteropRemeasureRequesterTest {
             ) {
                 UIKitView(
                     factory = { v },
-                    properties = UIKitInteropProperties(
-                        placedAsOverlay = overlay,
-                        remeasureRequester = measureRequester
-                    ),
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay),
                     modifier = Modifier
                         .background(Color.Green)
                         .onGloballyPositioned {
                             composeSize = it.boundsInRoot().size.toDpSize(density)
                         }
+                        .remeasureRequester(remeasureRequester)
                 )
             }
         }
@@ -91,7 +92,8 @@ class UIKitInteropRemeasureRequesterTest {
 
         v.w.constant = 120.0
         v.h.constant = 90.0
-        measureRequester.requestRemeasure()
+
+        remeasureRequester.requestRemeasure()
 
         waitUntil {
             composeSize ==  DpSize(120.dp, 90.dp)
@@ -103,7 +105,7 @@ class UIKitInteropRemeasureRequesterTest {
         var composeSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
         val fixedWidth = 120.dp
-        val measureRequester = UIKitInteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
         val initialText = "TEXT"
         val changedText = "TEXT 2"
 
@@ -126,16 +128,14 @@ class UIKitInteropRemeasureRequesterTest {
             ) {
                 UIKitView(
                     factory = { label },
-                    properties = UIKitInteropProperties(
-                        placedAsOverlay = overlay,
-                        remeasureRequester = measureRequester
-                    ),
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay),
                     modifier = Modifier
                         .background(Color.Green)
                         .width(fixedWidth)
                         .onGloballyPositioned {
                             composeSize = it.boundsInRoot().size.toDpSize(density)
                         }
+                        .remeasureRequester(remeasureRequester)
                 )
             }
         }
@@ -157,7 +157,7 @@ class UIKitInteropRemeasureRequesterTest {
         // size did not change
         assertEquals(expectedShort, composeSize)
 
-        measureRequester.requestRemeasure()
+        remeasureRequester.requestRemeasure()
 
         waitForIdle()
 
@@ -175,51 +175,46 @@ class UIKitInteropRemeasureRequesterTest {
     }
 
     @Test
-    fun testMeasureRequesterNotInvalidated() = runUIKitInstrumentedTestWithInterop { overlay ->
-        val measureRequester = UIKitInteropRemeasureRequester()
+    fun testRemeasureRequesterRemeasureNotRequested() = runUIKitInstrumentedTestWithInterop { overlay ->
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         setContent {
             UIKitView(
                 factory = { UILabel() },
-                properties = UIKitInteropProperties(
-                    placedAsOverlay = overlay,
-                    remeasureRequester = measureRequester
-                )
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
-        assertTrue(measureRequester.isBound())
+        assertFalse(remeasureRequester.requestRemeasure())
     }
 
     @Test
-    fun testMeasureRequesterInvalidatedAfterInteropRemoved() = runUIKitInstrumentedTestWithInterop { overlay ->
-        val measureRequester = UIKitInteropRemeasureRequester()
+    fun testRemeasureRequesterRemeasureNotRequestedAfterInteropRemoved() = runUIKitInstrumentedTestWithInterop { overlay ->
+        val remeasureRequester = UIKitInteropRemeasureRequester()
         val showUIKitView = mutableStateOf(true)
 
         setContent {
             if (showUIKitView.value) {
                 UIKitView(
                     factory = { UILabel() },
-                    properties = UIKitInteropProperties(
-                        placedAsOverlay = overlay,
-                        remeasureRequester = measureRequester
-                    )
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay),
+                    modifier = Modifier.remeasureRequester(remeasureRequester)
                 )
             } else {
                 Box(Modifier.size(100.dp))
             }
         }
 
-        assertTrue(measureRequester.isBound())
+        assertTrue(remeasureRequester.requestRemeasure())
 
         showUIKitView.value = false
         waitForIdle()
 
-        assertFalse(measureRequester.isBound())
+        assertFalse(remeasureRequester.requestRemeasure())
     }
 
     @Test
-    fun testMeasureRequesterNotInvalidatedAfterInteropAdded() = runUIKitInstrumentedTestWithInterop { overlay ->
+    fun testRemeasureRequesterRemeasureRequestedAfterInteropAdded() = runUIKitInstrumentedTestWithInterop { overlay ->
         val measureRequester = UIKitInteropRemeasureRequester()
         val showUIKitView = mutableStateOf(false)
 
@@ -227,23 +222,129 @@ class UIKitInteropRemeasureRequesterTest {
             if (showUIKitView.value) {
                 UIKitView(
                     factory = { UILabel() },
-                    properties = UIKitInteropProperties(
-                        placedAsOverlay = overlay,
-                        remeasureRequester = measureRequester
-                    )
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay),
+                    modifier = Modifier.remeasureRequester(measureRequester)
                 )
             } else {
                 Box(Modifier.size(100.dp))
             }
         }
 
-        assertFalse(measureRequester.isBound())
+        assertFalse(measureRequester.requestRemeasure())
 
         showUIKitView.value = true
         waitForIdle()
 
-        assertTrue(measureRequester.isBound())
+        assertTrue(measureRequester.requestRemeasure())
+    }
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testRemeasureRequesterNotAttachedToInteropNode() = runUIKitInstrumentedTestWithInterop { overlay ->
+        var size = DpSize.Zero
+        val boxSize = DpSize(300.dp, 300.dp)
+        val remeasureRequester = UIKitInteropRemeasureRequester()
+
+        class BoxUIView(width: Double, height: Double) : UIView(frame = CGRectZero.readValue()) {
+            val w = widthAnchor.constraintEqualToConstant(width)
+            val h = heightAnchor.constraintEqualToConstant(height)
+            init {
+                translatesAutoresizingMaskIntoConstraints = false
+                backgroundColor = UIColor.blueColor
+                NSLayoutConstraint.activateConstraints(listOf(w, h))
+            }
+        }
+
+        val view = BoxUIView(50.0, 40.0)
+
+        setContent {
+            Box(
+                Modifier
+                    .background(Color.Red)
+                    .size(boxSize)
+            ) {
+                Column(Modifier.remeasureRequester(remeasureRequester)) {
+                    UIKitView(
+                        factory = { view },
+                        properties = UIKitInteropProperties(placedAsOverlay = overlay),
+                        modifier = Modifier.onGloballyPositioned {
+                            size = it.boundsInRoot().size.toDpSize(density)
+                        }
+                    )
+                }
+            }
+        }
+
+        assertEquals(DpSize(50.dp, 40.dp), size)
+
+        view.w.constant = 110.0
+        view.h.constant = 90.0
+
+        assertFalse(remeasureRequester.requestRemeasure())
+    }
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testRemeasureRequesterAttachedToMultipleInteropViews() = runUIKitInstrumentedTestWithInterop { overlay ->
+        var firstSize = DpSize.Zero
+        var secondSize = DpSize.Zero
+        val boxSize = DpSize(300.dp, 300.dp)
+        val remeasureRequester = UIKitInteropRemeasureRequester()
+
+        class BoxUIView(width: Double, height: Double) : UIView(frame = CGRectZero.readValue()) {
+            val w = widthAnchor.constraintEqualToConstant(width)
+            val h = heightAnchor.constraintEqualToConstant(height)
+            init {
+                translatesAutoresizingMaskIntoConstraints = false
+                backgroundColor = UIColor.blueColor
+                NSLayoutConstraint.activateConstraints(listOf(w, h))
+            }
+        }
+
+        val firstView = BoxUIView(50.0, 40.0)
+        val secondView = BoxUIView(70.0, 60.0)
+
+        setContent {
+            Box(
+                Modifier
+                    .background(Color.Red)
+                    .size(boxSize)
+            ) {
+                Column {
+                    UIKitView(
+                        factory = { firstView },
+                        properties = UIKitInteropProperties(placedAsOverlay = overlay),
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                firstSize = it.boundsInRoot().size.toDpSize(density)
+                            }
+                            .remeasureRequester(remeasureRequester)
+                    )
+                    UIKitView(
+                        factory = { secondView },
+                        properties = UIKitInteropProperties(placedAsOverlay = overlay),
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                secondSize = it.boundsInRoot().size.toDpSize(density)
+                            }
+                            .remeasureRequester(remeasureRequester)
+                    )
+                }
+            }
+        }
+
+        assertEquals(DpSize(50.dp, 40.dp), firstSize)
+        assertEquals(DpSize(70.dp, 60.dp), secondSize)
+
+        firstView.w.constant = 110.0
+        firstView.h.constant = 90.0
+        secondView.w.constant = 130.0
+        secondView.h.constant = 80.0
+
+        assertTrue(remeasureRequester.requestRemeasure())
+
+        waitUntil {
+            firstSize == DpSize(110.dp, 90.dp) && secondSize == DpSize(130.dp, 80.dp)
+        }
     }
 }
-
-private fun UIKitInteropRemeasureRequester.isBound() = requestImpl != null

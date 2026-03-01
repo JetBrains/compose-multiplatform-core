@@ -19,8 +19,12 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.annotation.RememberInComposition
+import androidx.compose.runtime.collection.MutableVector
+import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.requireLayoutNode
 
 /**
  * Allows explicitly requesting remeasurement of [UIKitView] or [UIKitViewController].
@@ -31,20 +35,24 @@ import androidx.compose.ui.ExperimentalComposeUiApi
  * Call [requestRemeasure] after UIKit-side changes that may affect fitting size (e.g. changing
  * `UILabel.text`/`attributedText`/`font`, updating constraint constants, or adding/removing subviews).
  *
+ * @see Modifier.remeasureRequester
  * @see rememberUIKitInteropRemeasureRequester
  */
 @Stable
 @ExperimentalComposeUiApi
 class UIKitInteropRemeasureRequester @RememberInComposition constructor() {
-    internal var requestImpl: (() -> Unit)? = null
+    internal val remeasureRequesterNodes: MutableVector<UIKitInteropRemeasureRequesterModifierNode> =
+        mutableVectorOf()
 
     /**
-     * Requests remeasurement of the associated [UIKitView] or [UIKitViewController], if attached.
+     * Requests remeasurement for all currently associated [UIKitView] or [UIKitViewController] interop nodes.
      *
-     * If this requester is not currently attached to any [UIKitView] or [UIKitViewController], this is a no-op.
+     * @return `true` if remeasurement was requested for at least one target node, `false` otherwise.
      */
-    fun requestRemeasure() {
-        requestImpl?.invoke()
+    fun requestRemeasure(): Boolean {
+        if (remeasureRequesterNodes.isEmpty()) return false
+        remeasureRequesterNodes.forEach { it.requireLayoutNode().requestRemeasure() }
+        return true
     }
 }
 
@@ -52,3 +60,6 @@ class UIKitInteropRemeasureRequester @RememberInComposition constructor() {
 @ExperimentalComposeUiApi
 fun rememberUIKitInteropRemeasureRequester(): UIKitInteropRemeasureRequester =
     remember { UIKitInteropRemeasureRequester() }
+
+
+

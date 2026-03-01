@@ -44,11 +44,12 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
 ) : TypedInteropViewHolder<T>(
-    factory = factory,
-    interopContainer = interopContainer,
-    group = interopWrappingView,
-    compositeKeyHashCode = compositeKeyHashCode,
-) {
+        factory = factory,
+        interopContainer = interopContainer,
+        group = interopWrappingView,
+        compositeKeyHashCode = compositeKeyHashCode,
+    ),
+    UIKitInteropLayoutNodeHolder {
     constructor(
         factory: () -> T,
         interopContainer: InteropContainer,
@@ -74,8 +75,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentUserComponentRect: IntRect? = null
 
     private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
-    private val measurer = UIKitInteropElementMeasurer(userComponentView)
-    override val measurePolicy: MeasurePolicy get() = measurer.measurePolicy
+    override val measurePolicy: MeasurePolicy get() = UIKitInteropElementMeasurePolicy(userComponentView)
 
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
 
@@ -199,7 +199,6 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
 
     private fun onPropertiesChanged() {
         interopWrappingView.interactionMode = properties.interactionMode
-        measurer.measureRequester = properties.remeasureRequester
 
         platformModifier = Modifier
             .pointerInteropFilter(
@@ -211,11 +210,5 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 isEnabled = properties.isNativeAccessibilityEnabled,
                 interopWrappingView
             )
-    }
-
-    override fun onRelease() {
-        measurer.measureRequester = null
-
-        super.onRelease()
     }
 }
