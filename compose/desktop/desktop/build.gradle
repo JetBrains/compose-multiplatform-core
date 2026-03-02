@@ -33,7 +33,6 @@ androidXMultiplatform {
         commonMain.dependencies {
             implementation(project(":compose:ui:ui-util"))
             api(project(":compose:foundation:foundation"))
-            api(project(":compose:material:material"))
             api(project(":compose:runtime:runtime"))
             api(project(":compose:ui:ui"))
             api(project(":compose:ui:ui-tooling-preview"))
@@ -95,6 +94,7 @@ def jvmOs(container, name, skikoDep) {
         attributes {
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
         }
+        outgoing.capability("${project.group}:${project.name}-jvm-${name}:${project.version}")
     }
     def runtimeElements = configurations.create("jvm${name}RuntimeElements") {
         canBeResolved = false
@@ -102,6 +102,7 @@ def jvmOs(container, name, skikoDep) {
         attributes {
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
         }
+        outgoing.capability("${project.group}:${project.name}-jvm-${name}:${project.version}")
     }
 
     def apiUsage = [

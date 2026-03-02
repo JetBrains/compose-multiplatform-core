@@ -33,10 +33,9 @@ kotlin {
             resources.srcDirs += "src/jvmMain/res"
 
             dependencies {
-                implementation(libs.skikoAwtRuntime)
                 implementation(project(":collection:collection"))
                 implementation(project(":compose:desktop:desktop"))
-
+                implementation(project(":compose:material:material"))
                 implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {
                     // exclude dependencies, because they override local projects when we build 0.0.0-* version
                     // (see https://repo1.maven.org/maven2/org/jetbrains/compose/material/material-icons-core-desktop/1.6.11/material-icons-core-desktop-1.6.11.module)
