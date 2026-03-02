@@ -568,6 +568,14 @@ internal class ComposeWindow(
     }
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
+    private val reusableTouchPointerList = mutableListOf<ComposeScenePointer>()
+    private fun getCoalescedTouchPointers(): List<ComposeScenePointer> {
+        reusableTouchPointerList.clear()
+        activeTouchPointers.forEachValue {
+            it.composePointers.fastForEach { p -> reusableTouchPointerList.add(p) }
+        }
+        return reusableTouchPointerList
+    }
 
     private fun onPointerEvent(event: PointerEvent) {
         val eventType = event.getPointerEventType()
@@ -602,15 +610,11 @@ internal class ComposeWindow(
                 current = TouchEventWithContainerOffset(event, active.containerOffset)
             }
             activeTouchPointers[event.pointerId] = current
-            val pointers = mutableListOf<ComposeScenePointer>()
-            activeTouchPointers.forEachValue {
-                it.composePointers.fastForEach { p -> pointers.add(p) }
-            }
 
             activeTouchOffset = current.position
             result = scene.sendPointerEvent(
                 eventType = eventType,
-                pointers = pointers,
+                pointers = getCoalescedTouchPointers(),
                 buttons = PointerButtons(),
                 keyboardModifiers = PointerKeyboardModifiers(),
                 scrollDelta = Offset.Zero,
