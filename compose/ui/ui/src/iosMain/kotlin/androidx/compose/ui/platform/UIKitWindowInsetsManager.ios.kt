@@ -90,7 +90,7 @@ internal class UIKitWindowInsetsManager(
         return edgeInsetsInView(view).toPlatformInsets(view.density)
     }
 
-    class UIKitWindowInsetsSnapshot(
+    internal class UIKitWindowInsetsSnapshot(
         val layoutMargins: PlatformInsets,
         val safeAreaInsets: PlatformInsets
     )
