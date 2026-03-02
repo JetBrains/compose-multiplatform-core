@@ -61,20 +61,26 @@ typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
         switch (_axis) {
             case CMPLayoutRegionAdaptivityAxisNone:
                 axis = UIViewLayoutRegionAdaptivityAxisNone;
+                break;
             case CMPLayoutRegionAdaptivityAxisHorizontal:
                 axis = UIViewLayoutRegionAdaptivityAxisHorizontal;
+                break;
             case CMPLayoutRegionAdaptivityAxisVertical:
                 axis = UIViewLayoutRegionAdaptivityAxisVertical;
+                break;
         }
         
         UIViewLayoutRegion *layoutRegion;
         switch (_kind) {
             case CMPLayoutRegionKindMargins:
                 layoutRegion = [UIViewLayoutRegion marginsLayoutRegionWithCornerAdaptation:axis];
+                break;
             case CMPLayoutRegionKindReadableContent:
                 layoutRegion = [UIViewLayoutRegion readableContentLayoutRegionWithCornerAdaptation:axis];
+                break;
             case CMPLayoutRegionKindSafeArea:
                 layoutRegion = [UIViewLayoutRegion safeAreaLayoutRegionWithCornerAdaptation:axis];
+                break;
         }
         
         return [view edgeInsetsForLayoutRegion:layoutRegion];
