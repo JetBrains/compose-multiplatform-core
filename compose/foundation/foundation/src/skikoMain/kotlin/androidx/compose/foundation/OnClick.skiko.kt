@@ -25,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusRequesterModifierNode
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -130,27 +132,21 @@ private fun Modifier.onClickImpl(
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ): Modifier = if (enabled) {
-    composed {
-        val focusRequester = remember { FocusRequester() }
-
-        this.then(
-            OnClickModifierElement(
-                interactionSource = interactionSource,
-                matcher = matcher,
-                keyboardModifiers = keyboardModifiers,
-                onDoubleClick = onDoubleClick,
-                onLongClick = onLongClick,
-                onClick = onClick,
-                focusRequester = focusRequester
-            ).focusRequester(focusRequester)
+    this.then(
+        OnClickModifierElement(
+            interactionSource = interactionSource,
+            matcher = matcher,
+            keyboardModifiers = keyboardModifiers,
+            onDoubleClick = onDoubleClick,
+            onLongClick = onLongClick,
+            onClick = onClick
         )
-    }
+    )
 } else {
     this
 }
 
 private class OnClickModifierElement(
-    private val focusRequester: FocusRequester,
     private val interactionSource: MutableInteractionSource?,
     private val matcher: PointerMatcher,
     private val keyboardModifiers: PointerKeyboardModifiers.() -> Boolean,
@@ -165,7 +161,6 @@ private class OnClickModifierElement(
         onDoubleClick = onDoubleClick,
         onLongClick = onLongClick,
         onClick = onClick,
-        focusRequester = focusRequester
     )
     override fun InspectorInfo.inspectableProperties() {
         name = "onClick"
@@ -208,14 +203,13 @@ private class OnClickModifierElement(
 }
 
 private class OnClickModifierNode(
-    private val focusRequester: FocusRequester,
     private var interactionSource: MutableInteractionSource,
     private var keyboardModifiers: PointerKeyboardModifiers.() -> Boolean,
     private var matcher: PointerMatcher,
     private var onClick: () -> Unit,
     private var onDoubleClick: (() -> Unit)?,
     private var onLongClick: (() -> Unit)?,
-): DelegatingNode() {
+): DelegatingNode(), FocusRequesterModifierNode {
     // TODO: never populated with values, only cleared is this intended?
     private val currentKeyPressInteractions = mutableMapOf<Key, PressInteraction.Press>()
     private val hasDoubleClick: Boolean get() = onDoubleClick != null
@@ -233,7 +227,7 @@ private class OnClickModifierNode(
                     onDoubleTap = if (hasDoubleClick) {
                         {
                             if (isRequestFocusOnClickEnabled()) {
-                                focusRequester.requestFocus()
+                                requestFocus()
                             }
                             onDoubleClick?.invoke()
                         }
@@ -243,7 +237,7 @@ private class OnClickModifierNode(
                     onLongPress = if (hasLongClick) {
                         {
                             if (isRequestFocusOnClickEnabled()) {
-                                focusRequester.requestFocus()
+                                requestFocus()
                             }
                             onLongClick?.invoke()
                         }
@@ -252,7 +246,7 @@ private class OnClickModifierNode(
                     },
                     onTap = {
                         if (isRequestFocusOnClickEnabled()) {
-                            focusRequester.requestFocus()
+                            requestFocus()
                         }
                         onClick()
                     },
