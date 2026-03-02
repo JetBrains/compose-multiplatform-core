@@ -121,7 +121,6 @@ fun Modifier.onClick(
     onClick = onClick
 )
 
-@ExperimentalFoundationApi
 private fun Modifier.onClickImpl(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource?,
