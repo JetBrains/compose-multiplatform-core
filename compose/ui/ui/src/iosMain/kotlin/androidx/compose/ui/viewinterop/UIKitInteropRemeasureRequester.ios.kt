@@ -56,6 +56,11 @@ class UIKitInteropRemeasureRequester @RememberInComposition constructor() {
     }
 }
 
+
+/**
+ * Creates and remembers a [UIKitInteropRemeasureRequester] to allow explicitly requesting
+ * remeasurement of [UIKitView] or [UIKitViewController].
+ */
 @Composable
 @ExperimentalComposeUiApi
 fun rememberUIKitInteropRemeasureRequester(): UIKitInteropRemeasureRequester =
