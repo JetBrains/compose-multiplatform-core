@@ -21,12 +21,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequesterModifierNode
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
