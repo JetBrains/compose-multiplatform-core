@@ -19,6 +19,7 @@
 package androidx.compose.ui.window
 
 import androidx.annotation.VisibleForTesting
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
@@ -75,6 +76,8 @@ import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -209,6 +212,7 @@ internal class ComposeWindow(
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = true
     }
+
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
@@ -357,7 +361,7 @@ internal class ComposeWindow(
 
         if (processed) {
             keyboardEvent.preventDefault()
-        } else if (keyEvent.type == KeyEventType.KeyDown){
+        } else if (keyEvent.type == KeyEventType.KeyDown) {
             processClipKeyDown(keyEvent)
         }
     }
@@ -529,14 +533,15 @@ internal class ComposeWindow(
         val composePointers: List<ComposeScenePointer> by lazy {
             val coalesced = getCoalescedEvents(event).toList()
             val list = coalesced.takeIf { it.isNotEmpty() } ?: listOf(event)
-            list.map { e ->
+            list.fastMap { e ->
+                val type = e.getPointerEventType()
                 ComposeScenePointer(
                     id = PointerId(e.pointerId.toLong()),
                     position = Offset(
                         x = (e.clientX - containerOffset.x) * density.density,
                         y = (e.clientY - containerOffset.y) * density.density
                     ),
-                    pressed = e.type == "pointerdown" || e.type == "pointermove",
+                    pressed = type == PointerEventType.Press || type == PointerEventType.Move,
                     type = PointerType.Touch,
                     pressure = e.pressure
                 )
@@ -562,21 +567,13 @@ internal class ComposeWindow(
         }
     }
 
-    private val activeTouchPointers = mutableMapOf<Int, TouchEventWithContainerOffset>()
+    private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
 
     private fun onPointerEvent(event: PointerEvent) {
-        val isTouch = event.pointerType == "touch"
-        val eventType = when (event.type) {
-            "pointerenter" -> PointerEventType.Enter
-            "pointerdown" -> PointerEventType.Press
-            "pointermove" -> PointerEventType.Move
-            "pointerup", "pointercancel" -> PointerEventType.Release
-            "pointerleave" -> PointerEventType.Exit
-            else -> PointerEventType.Unknown
-        }
+        val eventType = event.getPointerEventType()
         val result: PointerEventResult
 
-        if (isTouch) {
+        if (isTouchEvent(event)) {
             if (eventType == PointerEventType.Enter || eventType == PointerEventType.Exit) {
                 //Enter and Exit events have no sense for touches (Firefox and Safari send them)
                 return
@@ -605,11 +602,15 @@ internal class ComposeWindow(
                 current = TouchEventWithContainerOffset(event, active.containerOffset)
             }
             activeTouchPointers[event.pointerId] = current
+            val pointers = mutableListOf<ComposeScenePointer>()
+            activeTouchPointers.forEachValue {
+                it.composePointers.fastForEach { p -> pointers.add(p) }
+            }
 
             activeTouchOffset = current.position
             result = scene.sendPointerEvent(
                 eventType = eventType,
-                pointers = activeTouchPointers.values.flatMap { it.composePointers },
+                pointers = pointers,
                 buttons = PointerButtons(),
                 keyboardModifiers = PointerKeyboardModifiers(),
                 scrollDelta = Offset.Zero,
@@ -751,3 +752,39 @@ private fun clipTargetElement(canvas: HTMLCanvasElement): HTMLTextAreaElement {
 
     return clipTarget
 }
+
+// strings checks are faster on a JS side
+// language=js
+private fun isTouchEvent(event: PointerEvent): Boolean = js("event.pointerType === 'touch'")
+
+// strings checks are faster on a JS side
+// language=js
+private fun getPointerEventCode(event: PointerEvent): Int = js(
+    """{
+        switch (event.type) {
+          case 'pointerdown':
+            return 1; // PointerEventType.Press
+          case 'pointerup':
+          case 'pointercancel':
+            return 2; // PointerEventType.Release
+          case 'pointermove':
+            return 3; // PointerEventType.Move
+          case 'pointerenter':
+            return 4; //PointerEventType.Enter
+          case 'pointerleave':
+            return 5; //PointerEventType.Exit
+          default:
+            return 0; // PointerEventType.Unknown
+        } 
+    }"""
+)
+
+private fun PointerEvent.getPointerEventType(): PointerEventType =
+    when (getPointerEventCode(this)) {
+        PointerEventType.Press.value -> PointerEventType.Press
+        PointerEventType.Release.value -> PointerEventType.Release
+        PointerEventType.Move.value -> PointerEventType.Move
+        PointerEventType.Enter.value -> PointerEventType.Enter
+        PointerEventType.Exit.value -> PointerEventType.Exit
+        else -> PointerEventType.Unknown
+    }
