@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.viewinterop
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.InspectorInfo
  *
  * Applying this modifier to nodes other than [UIKitView] or [UIKitViewController] is a no-op.
  */
+@ExperimentalComposeUiApi
 fun Modifier.remeasureRequester(remeasureRequester: UIKitInteropRemeasureRequester): Modifier =
     this then UIKitInteropRemeasureRequesterModifierElement(remeasureRequester)
 
