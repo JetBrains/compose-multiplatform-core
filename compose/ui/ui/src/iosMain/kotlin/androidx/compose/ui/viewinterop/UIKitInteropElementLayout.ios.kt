@@ -78,8 +78,8 @@ internal class UIKitInteropElementLayout(
 
         NSLayoutConstraint.activateConstraints(
             listOf(
-                userComponent.leadingAnchor.constraintEqualToAnchor(userComponentHostView.leadingAnchor),
-                userComponent.trailingAnchor.constraintEqualToAnchor(userComponentHostView.trailingAnchor),
+                userComponent.leftAnchor.constraintEqualToAnchor(userComponentHostView.leftAnchor),
+                userComponent.rightAnchor.constraintEqualToAnchor(userComponentHostView.rightAnchor),
                 userComponent.topAnchor.constraintEqualToAnchor(userComponentHostView.topAnchor),
                 userComponent.bottomAnchor.constraintEqualToAnchor(userComponentHostView.bottomAnchor),
             )
