@@ -32,6 +32,7 @@ private fun bitmap(width: Int, height: Int) =
     Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteBitmapFontTest {
     val context =
         AndroidRemoteContext().apply {
@@ -58,7 +59,7 @@ class RemoteBitmapFontTest {
 
     @Test
     fun measureWidth() {
-        val result = bitmapFont.measureWidth(RemoteString("ab c"))
+        val result = bitmapFont.measureWidth(RemoteString("ab c"), RemoteFloat(0f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -68,6 +69,36 @@ class RemoteBitmapFontTest {
         //  : 20 = 20
         // c: 2 + 30 + 6 = 38
         assertThat(context.getInteger(resultId)).isEqualTo(14 + 60 + 20 + 38)
+    }
+
+    @Test
+    fun measureWidthPositiveGlyphSpacing() {
+        val result = bitmapFont.measureWidth(RemoteString("abc"), RemoteFloat(5f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // Width is the sum of:
+        // a: 1 + 10 + 3 = 14
+        //    5
+        // b: 10 + 20 + 30 = 60
+        //    5
+        // c: 2 + 30 + 6 = 38
+        assertThat(context.getInteger(resultId)).isEqualTo(14 + 5 + 60 + 5 + 38)
+    }
+
+    @Test
+    fun measureWidthNegativeGlyphSpacing() {
+        val result = bitmapFont.measureWidth(RemoteString("abc"), RemoteFloat(-5f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        // Width is the sum of:
+        // a: 1 + 10 + 3 = 14
+        //    -5
+        // b: 10 + 20 + 30 = 60
+        //    -5
+        // c: 2 + 30 + 6 = 38
+        assertThat(context.getInteger(resultId)).isEqualTo(14 - 5 + 60 - 5 + 38)
     }
 
     @Test

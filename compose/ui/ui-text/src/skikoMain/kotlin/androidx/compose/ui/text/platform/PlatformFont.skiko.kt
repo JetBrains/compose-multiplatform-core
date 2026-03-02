@@ -16,9 +16,9 @@
 package androidx.compose.ui.text.platform
 
 import org.jetbrains.skia.Typeface as SkTypeface
-import androidx.compose.ui.text.Cache
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.ExpireAfterAccessCache
+import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.font.DefaultFontFamily
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -31,7 +31,6 @@ import androidx.compose.ui.text.font.GenericFontFamily
 import androidx.compose.ui.text.font.LoadedFontFamily
 import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 import org.jetbrains.skia.FontMgrWithFallback
@@ -291,12 +290,12 @@ class FontLoader : Font.ResourceLoader {
 
 class FontLoadResult(val typeface: SkTypeface?, val aliases: List<String>)
 
-@OptIn(ExperimentalTextApi::class)
+@OptIn(ExperimentalTextApi::class, InternalTextApi::class)
 internal class FontCache {
     internal val fonts = FontCollection()
     private val fontProvider = TypefaceFontProviderWithFallback()
     private val registered: MutableSet<String> = HashSet()
-    private val typefacesCache: Cache<String, SkTypeface> = ExpireAfterAccessCache(
+    private val typefacesCache = ExpireAfterAccessCache<String, SkTypeface>(
         60_000_000_000 // 1 minute
     )
 
@@ -306,7 +305,7 @@ internal class FontCache {
     }
 
     internal fun load(font: PlatformFont): FontLoadResult {
-        val typeface = typefacesCache.get(font.cacheKey) {
+        val typeface = typefacesCache.getOrPut(font.cacheKey) {
             loadTypeface(font)
         }
         ensureRegistered(typeface, font.cacheKey)

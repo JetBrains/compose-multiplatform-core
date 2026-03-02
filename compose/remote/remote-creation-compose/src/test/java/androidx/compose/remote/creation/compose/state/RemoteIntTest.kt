@@ -44,12 +44,14 @@ fun RemoteInt.computeValue(creationState: RemoteComposeCreationState): Int? {
 }
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteIntTest {
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
     val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
+    val time = RemoteInt.createNamedRemoteInt("time", 100).createReference()
 
     @Test
     fun addition() {
@@ -111,8 +113,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLT_less() {
-        val result = selectIfLT(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfLt_less() {
+        val result = selectIfLt(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -120,8 +122,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLT_equal() {
-        val result = selectIfLT(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfLt_equal() {
+        val result = selectIfLt(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -129,8 +131,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLT_greater() {
-        val result = selectIfLT(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfLt_greater() {
+        val result = selectIfLt(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -138,8 +140,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLE_less() {
-        val result = selectIfLE(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfLe_less() {
+        val result = selectIfLe(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -147,8 +149,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLE_equal() {
-        val result = selectIfLE(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfLe_equal() {
+        val result = selectIfLe(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -156,8 +158,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfLE_greater() {
-        val result = selectIfLE(RemoteInt(2), RemoteInt(1), RemoteInt(100), RemoteInt(200))
+    fun selectIfLe_greater() {
+        val result = selectIfLe(RemoteInt(2), RemoteInt(1), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -165,8 +167,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGT_less() {
-        val result = selectIfGT(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfGt_less() {
+        val result = selectIfGt(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -174,8 +176,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGT_equal() {
-        val result = selectIfGT(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfGt_equal() {
+        val result = selectIfGt(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -183,8 +185,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGT_greater() {
-        val result = selectIfGT(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfGt_greater() {
+        val result = selectIfGt(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -192,8 +194,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGE_less() {
-        val result = selectIfGE(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfGe_less() {
+        val result = selectIfGe(RemoteInt(1), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -201,8 +203,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGE_equal() {
-        val result = selectIfGE(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+    fun selectIfGe_equal() {
+        val result = selectIfGe(RemoteInt(2), RemoteInt(2), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -210,8 +212,8 @@ class RemoteIntTest {
     }
 
     @Test
-    fun selectIfGE_greater() {
-        val result = selectIfGE(RemoteInt(2), RemoteInt(1), RemoteInt(100), RemoteInt(200))
+    fun selectIfGe_greater() {
+        val result = selectIfGe(RemoteInt(2), RemoteInt(1), RemoteInt(100), RemoteInt(200))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -356,7 +358,7 @@ class RemoteIntTest {
     fun constantValue_notConstant() {
         assertThat(
                 (RemoteInt(10) - RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC).toRemoteInt())
-                    .constantValue
+                    .constantValueOrNull
             )
             .isNull()
     }
@@ -369,7 +371,7 @@ class RemoteIntTest {
         assertThat(RemoteInt(10).minus(RemoteInt(2)).hasConstantValue).isTrue()
         assertThat(RemoteInt(10).div(RemoteInt(2)).hasConstantValue).isTrue()
         assertThat(
-                selectIfGT(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
+                selectIfGt(RemoteInt(3), RemoteInt(2), RemoteInt(100), RemoteInt(200))
                     .hasConstantValue
             )
             .isTrue()
@@ -407,7 +409,7 @@ class RemoteIntTest {
         val result = namedRemoteInt * RemoteInt(10)
         val resultId = result.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedIntegerOverride("testInt", 20) }
+        makeAndUpdateCoreDocument { context.setNamedIntegerOverride("USER:testInt", 20) }
 
         assertThat(context.getInteger(resultId)).isEqualTo(200)
     }
@@ -419,7 +421,7 @@ class RemoteIntTest {
         val result = plusOne * plusOne
         val resultId = result.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedIntegerOverride("testInt", 19) }
+        makeAndUpdateCoreDocument { context.setNamedIntegerOverride("USER:testInt", 19) }
 
         assertThat(context.getInteger(resultId)).isEqualTo(400)
     }
@@ -440,6 +442,199 @@ class RemoteIntTest {
 
         assertThat(result.size).isEqualTo(3)
     }
+
+    @Test
+    fun extensionFunctionMatches() {
+        assertThat(10.ri.constantValue).isEqualTo(10)
+        assertThat((-10).ri.constantValue).isEqualTo(-10)
+    }
+
+    @Test
+    fun peepholeOptimization_plus() {
+        val expr = (time + 10) + 1
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 11 +)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_minus() {
+        val expr = (time - 10) - 1
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 11 -)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_minus2() {
+        val expr = (time + 10) - 1
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 9 +)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_times() {
+        val expr = (time * 10) * 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 20 *)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_div() {
+        val expr = (time / 10) / 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 20 /)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_div2() {
+        val expr = (time * 10) / 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 5 *)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_complex() {
+        val expr = (time + 10) - 5 + 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 7 +)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_negative() {
+        val expr = (time * 10) + 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=4",
+                "IntegerConstant[43] = 100",
+                "IntegerExpression[44] = ([43] 10 * 2 +)",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_zeroDiv() {
+        val expr = RemoteInt(0) / time
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops).containsExactly("IntegerExpression[43] = (0)").inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_plusMinus() {
+        val expr = (time + 10) - 10
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=4", "IntegerConstant[43] = 100")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_minusPlus() {
+        val expr = (time - 10) + 10
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=4", "IntegerConstant[43] = 100")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_timesDiv() {
+        val expr = (time * 2) / 2
+        expr.getIdForCreationState(creationState)
+
+        val ops = getOperationsStrings()
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=4", "IntegerConstant[43] = 100")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    private fun getOperationsStrings(): List<String> =
+        CoreDocument().run {
+            val buffer = creationState.document.buffer
+            buffer.buffer.index = 0
+            initFromBuffer(buffer)
+            getOperations()
+                .onEach {
+                    if (it is VariableSupport) {
+                        it.updateVariables(context)
+                    }
+                }
+                .map { it.toString() }
+                .filter {
+                    !it.contains("HEADER") &&
+                        !it.contains("TextData") &&
+                        !it.contains("RootContentDescription")
+                }
+        }
 
     private fun makeAndPaintCoreDocument() =
         CoreDocument().apply {

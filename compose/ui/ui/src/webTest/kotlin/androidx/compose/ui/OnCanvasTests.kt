@@ -26,21 +26,27 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.ShadowRoot
 import org.w3c.dom.events.Event
@@ -74,26 +80,26 @@ internal interface OnCanvasTests {
         (getContainer() as CanReplaceChildren).replaceChildren()
     }
 
+    /*
+    <container>
+      <positioning_container>
+        <shadow_container.shadow>
+          <style/>
+          <app_container>
+            <canvas/>
+            <a11y_container/>
+          </app_container>
+        </shadow_container>
+        <interopContainer/>
+      <positioning_container/>
+    </container>
+    */
     private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
-
-    private fun getAppRoot() = getShadowRoot().children[1] as HTMLElement
-
-    fun getA11YContainer(): HTMLElement? {
-        return if (getAppRoot().children.length < 3) {
-            null
-        } else {
-            // The expected order is: canvas, interop container <div>, a11y container <div>
-            getAppRoot().children[2] as HTMLElement
-        }
-    }
-
-    fun getShadowRoot(): ExtendedShadowRoot =
-        (getContainer().shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
-
-    fun getCanvas(): HTMLCanvasElement {
-        val canvas = (getShadowRoot().querySelector("canvas") as? HTMLCanvasElement) ?: error("failed to get canvas")
-        return canvas
-    }
+    private fun getPositioningContainer() = getContainer().children[0] ?: error("failed to get positioning container")
+    fun getShadowRoot() = (getPositioningContainer().children[0]?.shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
+    private fun getAppRoot() = getShadowRoot().children[1] as? HTMLElement ?: error("failed to get app root")
+    fun getCanvas() = getAppRoot().children[0] as? HTMLCanvasElement ?: error("failed to get canvas")
+    fun getA11YContainer() = getAppRoot().children[1] as? HTMLDivElement
 
     suspend fun createComposeWindow(
         configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -101,20 +107,34 @@ internal interface OnCanvasTests {
     ) {
         ComposeViewport(viewportContainerId = containerId, configure = configure, content = content)
 
-        suspendCoroutine { continuation ->
-            // This helps reduce the flakiness.
-            // A potential cause of flakiness: the default Coroutine Dispatcher regularly postpones
-            // the resumption of the tasks in its queue to the next frame.
-            // (it does so to let the event loop run / release the single thread)
-            // I don't expect any issue from doing this, since a test will suspend and won't do anything.
-            window.requestAnimationFrame { continuation.resumeWith(Result.success(it)) }
+        withContext(Dispatchers.Default) {
+            val timeoutDuration = 1.seconds
+            try {
+                // Using withTimeout here for diagnostic. Some flaky tests fail due to timeout. But there is nothing else except this suspend call.
+                withTimeout(timeoutDuration) {
+                    suspendCoroutine<Unit> { continuation ->
+                        // This helps reduce the flakiness.
+                        // A potential cause of flakiness: the default Coroutine Dispatcher regularly postpones
+                        // the resumption of the tasks in its queue to the next frame.
+                        // (it does so to let the event loop run / release the single thread)
+                        // I don't expect any issue from doing this, since a test will suspend and won't do anything.
+                        window.requestAnimationFrame { continuation.resumeWith(Result.success(Unit)) }
+                    }
+                }
+            } catch (e: TimeoutCancellationException) {
+                throw AssertionError("Timed out ($timeoutDuration) waiting for AnimationFrame", e)
+            }
         }
     }
 
-    suspend fun awaitA11YChanges() {
+    suspend fun awaitA11YChanges(timeout: Duration = 2.seconds) {
         val a11yContainer = getA11YContainer() ?: return
+        var prevTime = currentTimeMillis()
 
         fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
+            val currentTime = currentTimeMillis()
+            assertTrue(currentTime - prevTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
+            prevTime = currentTime
             window.requestAnimationFrame {
                 if (!condition()) {
                     skipFramesUntil(condition, onTrue)
@@ -150,6 +170,18 @@ internal interface OnCanvasTests {
     fun runApplicationTest(body: suspend WebApplicationScope.() -> Unit): TestResult {
         return runTest {
             WebApplicationScope(this).body()
+        }
+    }
+
+    suspend fun <T> Channel<T>.receiveWithTimeout(timeout: Duration = 2.seconds): T {
+        return withContext(Dispatchers.Default) {
+            try {
+                withTimeout(timeout) {
+                    this@receiveWithTimeout.receive()
+                }
+            } catch (e: TimeoutCancellationException) {
+                throw AssertionError("Timed out ($timeout) waiting for value on channel", e)
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -42,6 +43,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -56,8 +58,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.platform.a11y.AccessibilityController
-import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
+import androidx.compose.ui.platform.a11y.ComposeSceneAccessibility
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.unit.Density
@@ -65,6 +66,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.asDpOffset
@@ -91,11 +94,9 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
-import javax.accessibility.Accessible
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
-import kotlin.math.roundToInt
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
@@ -105,16 +106,18 @@ import org.jetbrains.skiko.hostOs
 import org.jetbrains.skiko.swing.SkiaSwingLayer
 
 /**
- * Provides a mediator for integrating a Compose scene with AWT/Swing component.
+ * Provides a mediator for integrating a Compose scene with an AWT/Swing Component.
  * It allows setting Compose content by [setContent], this content should be drawn on [contentComponent].
  *
- * This mediator contain 2 components that should be added to the view hierarchy:
- * [contentComponent] the main visible Swing component with skia canvas, on which Compose will be shown
- * [invisibleComponent] service component used to bypass Swing issues:
- * - for forcing refocus on input methods change
+ * The mediator contains two Components that should be added to the view hierarchy:
+ * [contentComponent]: the main visible Swing Component with skia canvas, on which Compose content
+ * will be rendered.
+ * [invisibleComponent]: a service component used to work around an AWT problem with refocusing
+ * on input method change.
  */
 internal class ComposeSceneMediator(
     private val container: JComponent,
+    private val isWindowLevel: Boolean,
     private val windowContext: PlatformWindowContext,
     private var exceptionHandler: WindowExceptionHandler?,
     eventListener: AwtEventListener? = null,
@@ -134,11 +137,8 @@ internal class ComposeSceneMediator(
     private var isComponentAttached = false
     private val invisibleComponent = InvisibleComponent()
 
-    private val semanticsOwnerListener = DesktopSemanticsOwnerListener()
+    private val semanticsOwnerManager = DesktopSemanticsOwnerManager()
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
-    val accessible: Accessible = ComposeSceneAccessible {
-        semanticsOwnerListener.accessibilityControllers
-    }
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -148,12 +148,19 @@ internal class ComposeSceneMediator(
     private val _platformContext = DesktopPlatformContext()
     val platformContext: PlatformContext get() = _platformContext
 
+    val accessibility = ComposeSceneAccessibility(
+        platformComponent = platformComponent,
+        coroutineContext = coroutineContext,
+        isWindowLevel = isWindowLevel,
+        sceneRoot = { skiaLayerComponent.contentRoot },
+    )
+
     private val skiaLayerComponent: SkiaLayerComponent by lazy { skiaLayerComponentFactory(this) }
-    val contentComponent by skiaLayerComponent::contentComponent
+    val contentComponent by skiaLayerComponent::hierarchyRoot
     var fullscreen by skiaLayerComponent::fullscreen
     val windowHandle by skiaLayerComponent::windowHandle
     val renderApi by skiaLayerComponent::renderApi
-    val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerListener::semanticsOwners
+    val semanticsOwners: Collection<SemanticsOwner> by semanticsOwnerManager::semanticsOwners
 
     /**
      * @see ComposeFeatureFlags.useInteropBlending
@@ -265,9 +272,13 @@ internal class ComposeSceneMediator(
                     else -> Unit
                 }
             }
+
+            accessibility.onContentComponentGainedFocus()
         }
 
         override fun focusLost(e: FocusEvent) {
+            accessibility.onContentComponentLostFocus()
+
             // We don't reset focus for Compose when the component loses focus temporarily.
             // Partially because we don't support restoring focus after clearing it.
             // Focus can be lost temporarily when another window or popup takes focus.
@@ -323,6 +334,14 @@ internal class ComposeSceneMediator(
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext
         set(value) { scene.compositionLocalContext = value }
+    var showLayoutBounds: Boolean
+        get() = scene.showLayoutBounds
+        set(value) {
+            scene.showLayoutBounds = value
+        }
+
+    var redispatchUnconsumedMouseWheelEvents: Boolean =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
 
     /**
      * Provides the size of ComposeScene content inside infinity constraints
@@ -366,6 +385,8 @@ internal class ComposeSceneMediator(
     )
 
     private val composeInvalidationExecutor = DebouncingEdtExecutor()
+
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
     init {
         // Transparency is used during redrawer creation that triggered by [addNotify], so
@@ -483,7 +504,7 @@ internal class ComposeSceneMediator(
         processMouseEvent {
             val processingResult = scene.onMouseWheelEvent(event.position, event)
             if (!processingResult.anyChangeConsumed) {
-                if (ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value) {
+                if (redispatchUnconsumedMouseWheelEvents) {
                     redispatchUnconsumedMouseEvent(event)
                 }
             }
@@ -503,7 +524,7 @@ internal class ComposeSceneMediator(
     }
 
     /**
-     * (Re)Dispatches the given mouse event to the component that would have received it had
+     * (Re)dispatches the given mouse event to the component that would have received it had
      * this [ComposeSceneMediator] not been listening to the corresponding type of mouse events.
      *
      * The problem this attempts to solve is that [ComposeSceneMediator] has to register listeners
@@ -589,7 +610,7 @@ internal class ComposeSceneMediator(
     fun onComponentDetached() {
         isComponentAttached = false
         architectureComponentsOwner.navigationEventDispatcherOwner
-            .navigationEventDispatcher.addInput(navigationEventInput)
+            .navigationEventDispatcher.removeInput(navigationEventInput)
         scene.focusManager.releaseFocus()
     }
 
@@ -647,8 +668,8 @@ internal class ComposeSceneMediator(
         val size = sceneBoundsInPx?.size ?: container.sizeInPx
         scene.size = IntSize(
             // container.sizeInPx can be negative
-            width = size.width.coerceAtLeast(0f).roundToInt(),
-            height = size.height.coerceAtLeast(0f).roundToInt()
+            width = size.width.fastCoerceAtLeast(0f).fastRoundToInt(),
+            height = size.height.fastCoerceAtLeast(0f).fastRoundToInt()
         )
     }
 
@@ -742,41 +763,25 @@ internal class ComposeSceneMediator(
             }
     }
 
-    private inner class DesktopSemanticsOwnerListener : PlatformContext.SemanticsOwnerListener {
-        /**
-         * A new [SemanticsOwner] is always created above existing ones. So, usage of [LinkedHashMap]
-         * is required here to keep insertion-order (that equal to [SemanticsOwner]s order).
-         */
-        private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
-        val accessibilityControllers get() = _accessibilityControllers.values.reversed()
-
+    private inner class DesktopSemanticsOwnerManager : PlatformContext.SemanticsOwnerListener {
         val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-            check(semanticsOwner !in _accessibilityControllers)
-            _accessibilityControllers[semanticsOwner] = AccessibilityController(
-                owner = semanticsOwner,
-                desktopComponent = platformComponent,
-                onFocusReceived = {
-                    skiaLayerComponent.requestNativeFocusOnAccessible(it)
-                }
-            ).also {
-                it.launchSyncLoop(coroutineContext)
-            }
+            accessibility.onSemanticsOwnerAppended(semanticsOwner)
             semanticsOwners.add(semanticsOwner)
         }
 
         override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-            _accessibilityControllers.remove(semanticsOwner)?.dispose()
+            accessibility.onSemanticsOwnerRemoved(semanticsOwner)
             semanticsOwners.remove(semanticsOwner)
         }
 
         override fun onSemanticsChange(semanticsOwner: SemanticsOwner) {
-            _accessibilityControllers[semanticsOwner]?.onSemanticsChange()
+            accessibility.onSemanticsChange(semanticsOwner)
         }
 
         override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) {
-            _accessibilityControllers[semanticsOwner]?.onLayoutChanged(nodeId = semanticsNodeId)
+            accessibility.onLayoutChange(semanticsOwner, semanticsNodeId)
         }
     }
 
@@ -827,7 +832,9 @@ internal class ComposeSceneMediator(
         override val rootForTestListener
             get() = this@ComposeSceneMediator.rootForTestListener
         override val semanticsOwnerListener
-            get() = this@ComposeSceneMediator.semanticsOwnerListener
+            get() = this@ComposeSceneMediator.semanticsOwnerManager
+        override val isClearFocusOnMouseDownEnabled: Boolean
+            get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {

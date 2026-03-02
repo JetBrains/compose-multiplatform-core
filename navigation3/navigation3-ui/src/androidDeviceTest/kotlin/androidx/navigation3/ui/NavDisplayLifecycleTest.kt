@@ -17,7 +17,7 @@
 package androidx.navigation3.ui
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation3.runtime.NavEntry
@@ -85,7 +85,10 @@ class NavDisplayLifecycleTest {
 
         val actualEvents = mutableListOf<Pair<String, String>>()
         rule.setContent {
-            NavDisplay(backStack = backStack, sceneStrategy = TestTwoPaneSceneStrategy()) { key ->
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
+            ) { key ->
                 NavEntry(key) {
                     LifecycleResumeEffect(key1 = Unit) {
                         actualEvents += key to "ON_RESUME"
@@ -113,7 +116,10 @@ class NavDisplayLifecycleTest {
 
         val actualEvents = mutableListOf<Pair<String, String>>()
         rule.setContent {
-            NavDisplay(backStack = backStack, sceneStrategy = TestTwoPaneSceneStrategy()) { key ->
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
+            ) { key ->
                 NavEntry(key) {
                     LifecycleResumeEffect(key1 = Unit) {
                         actualEvents += key to "ON_RESUME"

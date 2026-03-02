@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReusableContent
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
@@ -51,6 +52,8 @@ import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.node.DelegatableNode.RegistrationHandle
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.padding
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.ComposeView
@@ -58,7 +61,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.spatial.RelativeLayoutBounds
 import androidx.compose.ui.test.TestActivity
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -461,7 +464,7 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
-    fun callbackCalledForChildWhenParentMoved_1000children() {
+    fun callbackCalledForChildWhenParentMoved_1500children() {
         var position by mutableStateOf(0)
         var childGlobalPosition = IntOffset(0, 0)
         rule.setContent {
@@ -471,12 +474,12 @@ class OnGlobalRectChangedTest {
                 },
                 content = {
                     Wrap(minWidth = 10, minHeight = 10) {
-                        repeat(1000) {
+                        repeat(1500) {
                             Wrap(
                                 minWidth = 10,
                                 minHeight = 10,
                                 modifier =
-                                    if (it == 999)
+                                    if (it == 1499)
                                         Modifier.onLayoutRectChanged(0, 0) { rect ->
                                             childGlobalPosition = rect.positionInRoot
                                         }
@@ -1854,6 +1857,61 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun testRemovingScaleUpdatedOffsetsForSubhierarchy() {
+        var actualBoundsChild: IntRect? = null
+        var actualBoundsGrandChild: IntRect? = null
+        var actualBoundsScaledGrandChild: IntRect? = null
+        var needLayer by mutableStateOf(true)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            if (needLayer) {
+                                placeable.placeWithLayer(10, 10) {
+                                    scaleX = 2f
+                                    scaleY = 2f
+                                }
+                            } else {
+                                placeable.place(10, 10)
+                            }
+                        }
+                    }
+                ) {
+                    Box(
+                        Modifier.onLayoutRectChanged(0, 0) { actualBoundsChild = it.boundsInWindow }
+                            .size(20.dp)
+                    ) {
+                        Box(
+                            Modifier.onLayoutRectChanged(0, 0) {
+                                    actualBoundsGrandChild = it.boundsInWindow
+                                }
+                                .size(10.dp)
+                        )
+                        Box(Modifier.graphicsLayer(scaleX = 2f, scaleY = 2f)) {
+                            Box(
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                        actualBoundsScaledGrandChild = it.boundsInWindow
+                                    }
+                                    .size(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { needLayer = false }
+
+        rule.runOnIdle {
+            assertThat(actualBoundsChild).isEqualTo(IntRect(10, 10, 30, 30))
+            assertThat(actualBoundsGrandChild).isEqualTo(IntRect(10, 10, 20, 20))
+            assertThat(actualBoundsScaledGrandChild).isEqualTo(IntRect(5, 5, 25, 25))
+        }
+    }
+
+    @Test
     fun removingLayoutModifierShouldInvalidateOffsetCacheForSubtree() {
         with(rule.density) {
             var actualPosition: IntOffset = IntOffset.Max
@@ -2159,5 +2217,135 @@ class OnGlobalRectChangedTest {
 
             rule.runOnIdle { verifyCoordinates() }
         }
+    }
+
+    @Test
+    fun havingTwoCallbacks_removingFirstDuringDispatching() {
+        with(rule.density) {
+            val size = 10
+            var regularModifierCallsCount = 0
+            var calledOnceModifierCallsCount = 0
+            var callbackModifiers: Modifier by mutableStateOf(Modifier)
+            rule.setContent {
+                Box(Modifier.requiredSize(size.toDp(), size.toDp()).then(callbackModifiers))
+            }
+
+            rule.runOnIdle {
+                callbackModifiers =
+                    Modifier.calledOnceOnLayoutRectChanged { calledOnceModifierCallsCount++ }
+                        .onLayoutRectChanged(0, 0) { regularModifierCallsCount++ }
+            }
+
+            rule.runOnIdle {
+                assertThat(regularModifierCallsCount).isEqualTo(1)
+                assertThat(calledOnceModifierCallsCount).isEqualTo(1)
+            }
+        }
+    }
+
+    @Test
+    fun havingTwoCallbacks_removingMiddleOneDuringDispatching() {
+        with(rule.density) {
+            val size = 10
+            var regularModifierCallsCount = 0
+            var regularModifier2CallsCount = 0
+            var calledOnceModifierCallsCount = 0
+            var callbackModifiers: Modifier by mutableStateOf(Modifier)
+            rule.setContent {
+                Box(Modifier.requiredSize(size.toDp(), size.toDp()).then(callbackModifiers))
+            }
+
+            rule.runOnIdle {
+                callbackModifiers =
+                    Modifier.onLayoutRectChanged(0, 0) { regularModifierCallsCount++ }
+                        .calledOnceOnLayoutRectChanged { calledOnceModifierCallsCount++ }
+                        .onLayoutRectChanged(0, 0) { regularModifier2CallsCount++ }
+            }
+
+            rule.runOnIdle {
+                assertThat(regularModifierCallsCount).isEqualTo(1)
+                assertThat(regularModifier2CallsCount).isEqualTo(1)
+                assertThat(calledOnceModifierCallsCount).isEqualTo(1)
+            }
+        }
+    }
+
+    @Test
+    fun testLayoutModifierPlacingWithScale_moveWithinScaledHierarchyAppliedForGrandChild() {
+        var actualPosition: IntOffset = IntOffset.Max
+        var actualPositionChild: IntOffset = IntOffset.Max
+        var offsetX by mutableStateOf(0)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    placeable.placeWithLayer(0, 0) {
+                                        scaleX = 2f
+                                        scaleY = 2f
+                                    }
+                                }
+                            }
+                            .offset(x = offsetX.dp)
+                            .onLayoutRectChanged(0, 0) { actualPosition = it.positionInRoot }
+                    ) {
+                        Box {
+                            Box(
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                        actualPositionChild = it.positionInRoot
+                                    }
+                                    .size(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { offsetX = 10 }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(15, -5)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(IntOffset(15, -5)) }
+    }
+}
+
+@Stable
+private fun Modifier.calledOnceOnLayoutRectChanged(callback: (RelativeLayoutBounds) -> Unit) =
+    this then CalledOnceOnLayoutRectChangedElement(callback)
+
+private data class CalledOnceOnLayoutRectChangedElement(
+    val callback: (RelativeLayoutBounds) -> Unit
+) : ModifierNodeElement<CalledOnceOnLayoutRectChangedNode>() {
+    override fun create() = CalledOnceOnLayoutRectChangedNode(callback)
+
+    override fun update(node: CalledOnceOnLayoutRectChangedNode) {
+        node.callback = callback
+        node.disposeAndRegister()
+    }
+}
+
+private class CalledOnceOnLayoutRectChangedNode(var callback: (RelativeLayoutBounds) -> Unit) :
+    Modifier.Node() {
+    var handle: RegistrationHandle? = null
+
+    fun disposeAndRegister() {
+        handle?.unregister()
+        handle =
+            registerOnLayoutRectChanged(0, 0) {
+                handle!!.unregister()
+                handle = null
+                callback(it)
+            }
+    }
+
+    override fun onAttach() {
+        disposeAndRegister()
+    }
+
+    override fun onDetach() {
+        handle?.unregister()
+        handle = null
     }
 }

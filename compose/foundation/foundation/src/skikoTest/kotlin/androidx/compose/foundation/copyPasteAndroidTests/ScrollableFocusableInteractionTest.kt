@@ -78,7 +78,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalTestApi::class)
 class ScrollableFocusableInteractionTest {
     companion object {
-        fun initParameters() = arrayOf(
+        fun initParameters() = arrayOf<Array<Any>>(
             arrayOf(Vertical, true),
             arrayOf(Vertical, false),
             arrayOf(Horizontal, true),
@@ -90,11 +90,11 @@ class ScrollableFocusableInteractionTest {
     private var reverseScrolling: Boolean? = null
 
     private val parameters = initParameters()
-    private fun runParametrizedTest(test: SkikoComposeUiTest.() -> Unit) {
+    private fun runParametrizedTest(test: SkikoComposeUiTest.() -> Unit) = runSkikoComposeUiTest {
         parameters.forEach {
             orientation = it[0] as Orientation
             reverseScrolling = it[1] as Boolean
-            runSkikoComposeUiTest { test() }
+            test()
         }
     }
 

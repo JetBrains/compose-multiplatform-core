@@ -13,108 +13,94 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
-import androidx.compose.remote.creation.compose.modifier.BackgroundModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
+import androidx.compose.remote.creation.compose.v2.RemoteBoxV2
+import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 
 /** Utility modifier to record the layout information */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteComposeBoxModifier(
+internal class RemoteComposeBoxModifier(
     private val modifier: RemoteModifier,
-    private val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    private val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    private val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startBox(
-                        modifier.toRemoteCompose(),
-                        horizontalAlignment.toRemoteCompose(),
-                        verticalArrangement.toRemoteCompose(),
-                    )
-                    drawContent()
-                    it.document.endBox()
-                }
-            }
+        drawIntoRemoteCanvas { canvas ->
+            canvas.document.startBox(
+                canvas.toRecordingModifier(modifier),
+                horizontalAlignment.toRemote(),
+                verticalArrangement.toRemote(),
+            )
+            this@draw.drawContent()
+            canvas.document.endBox()
         }
     }
 }
 
 /**
- * RemoteBox implements a Box layout, delegating to the foundation Box layout as needed. This allows
- * RemoteBox to both work as a normal Box when called within a normal Compose tree, and capture the
- * layout information when called within a capture pass for RemoteCompose.
+ * A layout composable that positions its children relative to its own edges.
+ *
+ * `RemoteBox` allows you to wrap multiple children and position them using [horizontalAlignment]
+ * and [verticalArrangement]. In Remote Compose, this layout is recorded as a Box command.
+ *
+ * @param modifier The modifier to be applied to this box.
+ * @param horizontalAlignment The horizontal alignment of the children.
+ * @param verticalArrangement The vertical arrangement of the children.
+ * @param content The content of the box.
  */
 @RemoteComposable
 @Composable
 public fun RemoteBox(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Center,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable () -> Unit,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
-    if (captureMode is NoRemoteCompose) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        androidx.compose.foundation.layout.Box(
-            modifier.toComposeUi(),
-            contentAlignment = boxAlignment(horizontalAlignment, verticalArrangement),
-        ) {
-            content()
-        }
-    } else {
-        val background = modifier.find<BackgroundModifier>()
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        androidx.compose.foundation.layout.Box(
-            RemoteComposeBoxModifier(modifier, horizontalAlignment, verticalArrangement)
-                .then(modifier.toComposeUiLayout())
-        ) {
-            if (background?.brush?.hasShader == true) {
-                RemoteCanvas(RemoteModifier.fillMaxSize()) { drawRect(background.brush) }
-            }
-
-            content()
-        }
+    if (currentComposer.applier is RemoteComposeApplierV2) {
+        RemoteBoxV2(modifier, horizontalAlignment, verticalArrangement) { content() }
+        return
+    }
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    androidx.compose.foundation.layout.Box(
+        RemoteComposeBoxModifier(modifier, horizontalAlignment, verticalArrangement)
+            .then(modifier.toComposeUiLayout())
+    ) {
+        content()
     }
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T? {
     return this.foldIn<T?>(null) { result, element -> result ?: element as? T }
 }
 
 public fun boxAlignment(
-    horizontal: Alignment.Horizontal,
-    vertical: Arrangement.Vertical,
+    horizontal: RemoteAlignment.Horizontal,
+    vertical: RemoteArrangement.Vertical,
 ): androidx.compose.ui.Alignment {
     return CombinedAlignment(horizontal.toComposeUi(), vertical.toComposeUiAlignment())
 }
 
-private fun Arrangement.Vertical.toComposeUiAlignment(): androidx.compose.ui.Alignment.Vertical {
+private fun RemoteArrangement.Vertical.toComposeUiAlignment():
+    androidx.compose.ui.Alignment.Vertical {
     return when (this) {
-        Arrangement.Top -> androidx.compose.ui.Alignment.Top
-        Arrangement.Center -> androidx.compose.ui.Alignment.CenterVertically
-        Arrangement.Bottom -> androidx.compose.ui.Alignment.Bottom
+        RemoteArrangement.Top -> androidx.compose.ui.Alignment.Top
+        RemoteArrangement.Center -> androidx.compose.ui.Alignment.CenterVertically
+        RemoteArrangement.Bottom -> androidx.compose.ui.Alignment.Bottom
         else -> {
-            System.err.println("Unsupported Arrangement $this")
+            System.err.println("Unsupported RemoteArrangement $this")
             androidx.compose.ui.Alignment.CenterVertically
         }
     }
@@ -131,9 +117,17 @@ private class CombinedAlignment(
     }
 }
 
-/** Utility function to support RemoteBox with no provided content */
+/**
+ * A version of [RemoteBox] with no content, often used as a spacer or a background placeholder.
+ *
+ * @param modifier The modifier to be applied to this box.
+ */
 @RemoteComposable
 @Composable
 public fun RemoteBox(modifier: RemoteModifier = RemoteModifier) {
+    if (currentComposer.applier is RemoteComposeApplierV2) {
+        RemoteBoxV2(modifier)
+        return
+    }
     RemoteBox(modifier) {}
 }

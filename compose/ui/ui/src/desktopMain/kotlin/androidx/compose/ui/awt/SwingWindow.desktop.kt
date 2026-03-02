@@ -17,9 +17,11 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.painter.Painter
@@ -92,6 +94,7 @@ import javax.swing.JFrame
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
+@ComposableOpenTarget(-1)
 fun SwingWindow(
     visible: Boolean = true,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
@@ -171,6 +174,7 @@ fun SwingWindow(
  */
 @ExperimentalComposeUiApi
 @Composable
+@ComposableOpenTarget(-1)
 fun SwingWindow(
     onCloseRequest: () -> Unit,
     state: WindowState = rememberWindowState(),
@@ -225,13 +229,18 @@ fun SwingWindow(
         }
     }
 
+    val coroutineContext = rememberCoroutineScope().coroutineContext
+
     SwingWindow(
         visible = visible,
         onPreviewKeyEvent = onPreviewKeyEvent,
         onKeyEvent = onKeyEvent,
         create = {
             val graphicsConfiguration = WindowLocationTracker.lastActiveGraphicsConfiguration
-            ComposeWindow(graphicsConfiguration = graphicsConfiguration).apply {
+            ComposeWindow(
+                graphicsConfiguration = graphicsConfiguration,
+                coroutineContext = coroutineContext
+            ).apply {
                 // close state is controlled by WindowState.isOpen
                 defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
                 listeners.windowListenerRef.registerWithAndSet(
@@ -314,4 +323,3 @@ fun SwingWindow(
         content = content
     )
 }
-

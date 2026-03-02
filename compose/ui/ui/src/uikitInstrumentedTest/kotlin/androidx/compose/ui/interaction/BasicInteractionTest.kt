@@ -5,8 +5,6 @@
 
 package androidx.compose.ui.interaction
 
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,31 +12,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
-import androidx.compose.ui.test.findNodeWithTag
-import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -47,15 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.UIPasteboard
 
 class BasicInteractionTest {
     /**
      *  Distance in pixels a touch can wander before we think the user is scrolling.
-     *  https://github.com/JetBrains/compose-multiplatform-core/blob/jb-main/compose/ui/ui/src/uikitMain/kotlin/androidx/compose/ui/platform/Constants.uikit.kt#L22
      */
     private val CUPERTINO_TOUCH_SLOP = 10.dp
 
@@ -123,168 +102,5 @@ class BasicInteractionTest {
 
         assertEquals(100 * density.density, state.value.toFloat())
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
-    }
-
-    @Test
-    fun testBasicTextFieldToolbar() = runContextMenuTest(false) {
-        UIPasteboard.generalPasteboard().string = "Paste text"
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        openToolbar(textFieldTag = "TextField")
-
-        verifyFullToolbarPresent()
-    }
-
-    @Test
-    fun testBasicTextField2Toolbar() = runContextMenuTest(false) {
-        UIPasteboard.generalPasteboard().string = "Paste text"
-        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        openToolbar(textFieldTag = "TextField")
-
-        verifyFullToolbarPresent()
-    }
-
-    @Test
-    fun testBasicTextFieldToolbarNewContextMenu() = runContextMenuTest(true) {
-        UIPasteboard.generalPasteboard().string = "Paste text"
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        openToolbar(textFieldTag = "TextField")
-
-        verifyFullToolbarPresent()
-    }
-
-    @Test
-    fun testBasicTextField2ToolbarNewContextMenu() = runContextMenuTest(true) {
-        UIPasteboard.generalPasteboard().string = "Paste text"
-        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        openToolbar(textFieldTag = "TextField")
-
-        verifyFullToolbarPresent()
-    }
-
-    @Test
-    fun textBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
-        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(
-                    value = textFieldValue.value,
-                    onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag("TextField")
-                )
-            }
-        }
-
-        fun MutableState<TextFieldValue>.isFullySelected(): Boolean =
-            value.selection.start == 0 && value.selection.end == value.text.length
-
-        openToolbar(textFieldTag = "TextField")
-
-        waitForContextMenu()
-        assertFalse(textFieldValue.isFullySelected())
-
-        findNodeWithLabel("Select All").tap()
-
-        waitForIdle()
-        assertTrue(textFieldValue.isFullySelected())
-    }
-
-    @Test
-    fun textBasicTextField2ToolbarInteraction() = runUIKitInstrumentedTest {
-        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        fun TextFieldState.isFullySelected(): Boolean =
-            selection.start == 0 && selection.end == text.length
-
-        openToolbar(textFieldTag = "TextField")
-
-        waitForContextMenu()
-        assertFalse(textFieldState.isFullySelected())
-
-        findNodeWithLabel("Select All").tap()
-
-        waitForIdle()
-        assertTrue(textFieldState.isFullySelected())
-    }
-
-    private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
-        findNodeWithTag("TextField").tap()
-        delay(500)
-        findNodeWithTag("TextField").doubleTap()
-        waitForContextMenu()
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    private fun runContextMenuTest(
-        newContextMenuEnabled: Boolean,
-        testBlock: UIKitInstrumentedTest.() -> Unit
-    ) = runUIKitInstrumentedTest {
-        val oldValue = ComposeFoundationFlags.isNewContextMenuEnabled
-        ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuEnabled
-        try {
-            testBlock()
-        } finally {
-            ComposeFoundationFlags.isNewContextMenuEnabled = oldValue
-        }
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
-        findNodeWithLabel("Cut").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Copy").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Paste").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-
-        findNodeWithLabel("Select All").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-    }
-
-    private fun UIKitInstrumentedTest.waitForContextMenu() {
-        waitForIdle()
-        waitUntil {
-            firstNodeOrNull { node ->
-                node.element?.let { it::class.simpleName } == "_UIEditMenuContainerView"
-            } != null
-        }
-        // Additional delay to wait until toolbar animation ends
-        delay(500)
     }
 }

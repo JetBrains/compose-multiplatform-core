@@ -53,7 +53,7 @@ class DesktopParagraphTest {
     private val fontFamilyMeasureFont =
         FontFamily(
             Font(
-                "font/sample_font.ttf",
+                "font_desktop/sample_font.ttf",
                 weight = FontWeight.Normal,
                 style = FontStyle.Normal
             )
@@ -481,6 +481,56 @@ class DesktopParagraphTest {
             .isEqualTo(0)
         assertThat(paragraph.getLineForOffset(3))
             .isEqualTo(1)
+    }
+
+    @Test
+    fun getLineForOffset_empty() {
+        val text = ""
+        val paragraph = simpleParagraph(
+            text = text,
+            style = TextStyle(fontSize = 50.sp)
+        )
+
+        assertThat(paragraph.getLineForOffset(0))
+            .isEqualTo(0)
+    }
+
+    @Test
+    fun getLineForOffset_withOnlyPlaceholder() {
+        val text = buildAnnotatedString {
+            pushStringAnnotation("test", "a")
+            append("\uFFFD")
+            pop()
+        }
+
+        val intrinsics = ParagraphIntrinsics(
+            text = text.text,
+            style = TextStyle(
+                fontSize = 50.sp,
+                fontFamily = fontFamilyMeasureFont,
+            ),
+            annotations = listOf(
+                AnnotatedString.Range(
+                    item = StringAnnotation("a"),
+                    start = 0,
+                    end = 1,
+                    tag = "test",
+                )
+            ),
+            placeholders = listOf(
+                AnnotatedString.Range(
+                    item = Placeholder(40.0.sp, 16.0.sp, PlaceholderVerticalAlign.Center),
+                    start = 0,
+                    end = 1,
+                    tag = "test",
+                )
+            ),
+            density = defaultDensity,
+            fontFamilyResolver = fontFamilyResolver,
+        )
+        val paragraph = simpleParagraph(intrinsics)
+        assertThat(paragraph.getLineForOffset(0))
+            .isEqualTo(0)
     }
 
     @Test

@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.test
 
-import kotlin.jvm.JvmField
-
 /**
  * This is a collection of flags which are used to guard against regressions in some of the
  * "riskier" refactors or new feature support that is added to this module. These flags are always
@@ -46,17 +44,8 @@ import kotlin.jvm.JvmField
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeUiTestFlags {
+ *      -assumevalues class androidx.compose.ui.test.ComposeUiTestFlags {
  *          public static boolean SomeFeatureEnabled return false
  *      }
  */
-@ExperimentalTestApi
-object ComposeUiTestFlags {
-    /**
-     * Enables support for providing a StandardTestDispatcher to ComposeTestRule. When false,
-     * previous behavior is restored even if a StandardTestDispatcher is explicitly provided.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isStandardTestDispatcherSupportEnabled: Boolean = true
-}
+@ExperimentalTestApi object ComposeUiTestFlags {}

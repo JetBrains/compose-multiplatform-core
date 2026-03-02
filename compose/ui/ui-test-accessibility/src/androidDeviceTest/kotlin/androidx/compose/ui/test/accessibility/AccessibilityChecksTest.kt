@@ -27,9 +27,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runAndroidComposeUiTest
-import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.test.v2.runAndroidComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.test.ext.junit.runners.AndroidJUnit4

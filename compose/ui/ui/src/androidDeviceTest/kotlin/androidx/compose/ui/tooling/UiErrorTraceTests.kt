@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import kotlin.test.Test
@@ -114,13 +114,21 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
 
     @Test
     fun initialModifierDraw() {
+        var drawn = false
         val traceContext =
             rule.testContent {
-                val drawModifier = Modifier.drawBehind { throwTestException() }
+                val drawModifier =
+                    Modifier.drawBehind {
+                        try {
+                            throwTestException()
+                        } finally {
+                            drawn = true
+                        }
+                    }
                 Box(Modifier.size(10.dp).then(drawModifier))
             }
 
-        rule.waitForIdle()
+        rule.waitUntil(1000) { drawn }
 
         assertFirstContentFrame(traceContext) { it.name == "Box" }
     }

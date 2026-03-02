@@ -19,11 +19,11 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.geometry.Offset
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteOffset {
-
     public val x: RemoteFloat
     public val y: RemoteFloat
 
@@ -32,13 +32,32 @@ public class RemoteOffset {
         this.y = y
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: Float, y: Float) : this(RemoteFloat(x), RemoteFloat(y))
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: Float, y: RemoteFloat) : this(RemoteFloat(x), y)
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: RemoteFloat, y: Float) : this(x, RemoteFloat(y))
 
-    public fun asOffset(): Offset {
-        return Offset(x.internalAsFloat(), y.internalAsFloat())
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(offset: Offset) {
+        this.x = offset.x.rf
+        this.y = offset.y.rf
+    }
+
+    public val minDimension: RemoteFloat
+        get() = x.min(y)
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun asOffset(scope: RemoteStateScope): Offset {
+        with(scope) {
+            return Offset(x.floatId, y.floatId)
+        }
+    }
+
+    public companion object {
+        public val Zero: RemoteOffset = RemoteOffset(0.rf, 0.rf)
     }
 }

@@ -18,11 +18,15 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -38,6 +42,8 @@ import java.awt.event.FocusListener
 import java.util.*
 import javax.swing.JLayeredPane
 import javax.swing.SwingUtilities.isEventDispatchThread
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
@@ -49,11 +55,13 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
  * @param savedState The saved state to restore the UI state from a previous instance.
  * @param renderSettings Configuration class for rendering settings.
+ * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
 class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     private var savedState: SavedState? = null,
-    private val renderSettings: RenderSettings = DefaultRenderSettings
+    private val renderSettings: RenderSettings = DefaultRenderSettings,
+    private val coroutineContext: CoroutineContext = EmptyCoroutineContext
 ) : JLayeredPane() {
     constructor() : this(
         savedState = null,
@@ -86,7 +94,6 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
                 " (use SwingUtilities.invokeLater).\n" +
                 "Creating from another thread isn't supported."
         }
-        background = Color.white
         layout = null
         focusTraversalPolicy = object : FocusTraversalPolicy() {
             override fun getComponentAfter(
@@ -121,13 +128,23 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private var _composeContent: (@Composable () -> Unit)? = null
 
     /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     */
+    @ExperimentalComposeUiApi
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+        set(value) {
+            field = value
+            _composeContainer?.isClearFocusOnMouseDownEnabled = value
+        }
+
+    /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
      * when panel is detached from Swing hierarchy (when [removeNotify] is called).
      *
      * If it is set to false, it is developer's responsibility to call [dispose] function
      * when Compose state and all related to [ComposePanel] resources are no longer needed.
-     * It can be useful for cases when [ComposePanel] can be attached/detached to Swing hierarchy multiple times,
-     * so with [isDisposeOnRemove] = `false` state will be preserved.
+     * It can be useful for cases when [ComposePanel] can be attached/detached to Swing hierarchy
+     * multiple times, so with [isDisposeOnRemove] = `false` state will be preserved.
      *
      * On the other hand, [isDisposeOnRemove] = `true` can be useful for stateless components,
      * that can be recreated for each attaching to Swing hierarchy.
@@ -136,6 +153,29 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
      */
     @ExperimentalComposeUiApi
     var isDisposeOnRemove: Boolean = true
+
+    /**
+     * Determines whether unconsumed mouse wheel events will be propagated to the parent component.
+     *
+     * When set to `true`, mouse wheel events that are not consumed by the Compose UI will be passed
+     * to Swing for further processing. This is useful when placing [ComposePanel] inside a
+     * scrollable Swing container (i.e. [javax.swing.JScrollPane]).
+     *
+     * When set to `false`, [ComposePanel] will behave like [javax.swing.JScrollPane], consuming all
+     * mouse wheel events that occur over it.
+     *
+     * To configure this behavior globally, set
+     * [ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents].
+     *
+     * @see ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents
+     */
+    @ExperimentalComposeUiApi
+    var redispatchUnconsumedMouseWheelEvents: Boolean =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value
+        set(value) {
+            field = value
+            _composeContainer?.redispatchUnconsumedMouseWheelEvents = value
+        }
 
     /**
      * Saves the current UI state into a [SavedState] object. The returned state can be used
@@ -171,8 +211,14 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
     override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
         super.getPreferredSize()
-    } else  {
+    } else {
         _composeContainer?.preferredSize ?: Dimension(0, 0)
+    }
+
+    override fun setBackground(bg: Color?) {
+        // Note that unless `setOpaque(true)` is called, JLayeredPane will not paint the background
+        super.setBackground(bg)
+        _composeContainer?.contentComponent?.background = bg
     }
 
     /**
@@ -240,6 +286,9 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it
+            it.redispatchUnconsumedMouseWheelEvents = redispatchUnconsumedMouseWheelEvents
+            @OptIn(InternalCoreApi::class)
+            it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
             if (composeContent != null) {
                 it.setContent(composeContent)
@@ -252,14 +301,17 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private fun createComposeContainer(): ComposeContainer {
         return ComposeContainer(
             container = this,
+            isWindowLevel = false,
             skiaLayerAnalytics = skiaLayerAnalytics,
             savedState = savedState,
             windowContainer = windowContainer,
             renderSettings = renderSettings,
+            coroutineContext = coroutineContext,
         ).apply {
             setBounds(0, 0, width, height)
             contentComponent.isFocusable = isFocusable
             contentComponent.isRequestFocusEnabled = isRequestFocusEnabled
+            contentComponent.background = background
             exceptionHandler = this@ComposePanel.exceptionHandler
 
             _focusListeners.forEach(contentComponent::addFocusListener)
@@ -272,6 +324,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
                                     focusManager.takeFocus(FocusDirection.Next)
                                 }
                             }
+
                             else -> Unit
                         }
                     }
@@ -279,6 +332,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
                 override fun focusLost(e: FocusEvent) = Unit
             })
+
+            isClearFocusOnMouseDownEnabled = this@ComposePanel.isClearFocusOnMouseDownEnabled
         }
     }
 
@@ -378,4 +433,17 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     fun renderImmediately() {
         _composeContainer?.renderImmediately()
     }
+
+    /**
+     * Set the visual debug option that shows bounds for all nodes in the hierarchy.
+     */
+    @InternalComposeUiApi
+    var showLayoutBounds: Boolean = _composeContainer?.showLayoutBounds ?: false
+        set(value) {
+            // We're assuming we own the scene and thus this value, and nobody
+            // else will change it from under us, so we never get out of sync.
+            field = value
+            @OptIn(InternalCoreApi::class)
+            _composeContainer?.showLayoutBounds = value
+        }
 }

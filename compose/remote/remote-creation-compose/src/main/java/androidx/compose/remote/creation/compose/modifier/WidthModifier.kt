@@ -13,94 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteStateScope
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class WidthModifier(public val type: Type, public val value: RemoteFloat) :
-    RemoteLayoutModifier {
-    override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return androidx.compose.remote.creation.modifiers.WidthModifier(
-            type,
-            value.internalAsFloat(),
-        )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return if (type == Type.EXACT) {
-            // TODO how to get the value of a RemoteFloat safely in preview mode
-            val valueDp = with(LocalDensity.current) { value.toFloat().toDp() }
-            width(valueDp)
-        } else if (type == Type.EXACT_DP) {
-            width(value.toFloat().dp)
-        } else if (type == Type.FILL) {
-            fillMaxWidth(value.toFloat())
-            //        } else if (type == Type.WEIGHT) {
-            //            @Suppress("INVISIBLE_REFERENCE")
-            //            with(androidx.compose.foundation.layout.RowScopeInstance as RowScope) {
-            //                weight(value.toFloat(), true)
-            //            }
-        } else {
-            System.err.println("Not handled width modifier $type")
-            this
-        }
+internal class WidthModifier(public val type: Type, public val value: RemoteFloat) :
+    RemoteModifier.Element {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
+        return androidx.compose.remote.creation.modifiers.WidthModifier(type, value.floatId)
     }
 }
 
-@Composable
-public fun RemoteModifier.size(width: Dp, height: Dp): RemoteModifier = width(width).height(height)
-
-@Composable public fun RemoteModifier.size(value: Dp): RemoteModifier = width(value).height(value)
-
-public fun RemoteModifier.fillMaxSize(weight: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
-    fillMaxWidth(weight).fillMaxHeight(weight)
-
+/** Sets the width of the content using [RemoteDp]. */
 public fun RemoteModifier.width(width: RemoteDp): RemoteModifier =
     then(WidthModifier(Type.EXACT_DP, width.value))
 
+/** Sets the width of the content using [RemoteFloat]. */
 public fun RemoteModifier.width(width: RemoteFloat): RemoteModifier =
     then(WidthModifier(Type.EXACT, width))
 
-public fun RemoteModifier.fillMaxWidth(width: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
-    then(WidthModifier(Type.FILL, width))
+/**
+ * Fills the maximum available width.
+ *
+ * @param fraction The fraction of the maximum width to use.
+ */
+public fun RemoteModifier.fillMaxWidth(fraction: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
+    then(WidthModifier(Type.FILL, fraction))
 
-public fun RemoteModifier.fillMaxWidth(width: Float): RemoteModifier =
-    then(WidthModifier(Type.FILL, RemoteFloat(width)))
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteModifier.fillMaxWidth(fraction: Float): RemoteModifier =
+    then(WidthModifier(Type.FILL, RemoteFloat(fraction)))
 
-public fun RemoteModifier.wrapContentSize(): RemoteModifier =
-    then(WidthModifier(Type.WRAP, RemoteFloat(1f))).then(HeightModifier(Type.WRAP, RemoteFloat(1f)))
+/**
+ * Fills the parent's maximum available width.
+ *
+ * @param fraction The fraction of the parent's maximum width to use.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteModifier.fillParentMaxWidth(fraction: Float): RemoteModifier =
+    then(WidthModifier(Type.FILL_PARENT_MAX_WIDTH, RemoteFloat(fraction)))
 
-@Composable
-public fun RemoteModifier.width(value: Dp): RemoteModifier {
-    val valuePx = with(LocalDensity.current) { value.toPx() }
+/**
+ * Fills the parent's maximum available width.
+ *
+ * @param fraction The fraction of the parent's maximum width to use.
+ */
+public fun RemoteModifier.fillParentMaxWidth(fraction: RemoteFloat = 1f.rf): RemoteModifier =
+    then(WidthModifier(Type.FILL_PARENT_MAX_WIDTH, fraction))
 
-    return then(WidthModifier(Type.EXACT, RemoteFloat(valuePx)))
-}
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteModifier.width(width: Int): RemoteModifier =
+    then(WidthModifier(Type.EXACT, width.rf))
 
-public fun RemoteModifier.width(value: Int): RemoteModifier =
-    then(WidthModifier(Type.EXACT, RemoteFloat(value.toFloat())))
-
-@Composable
-public fun RemoteModifier.width(value: IntrinsicSize): RemoteModifier {
-    if (value == IntrinsicSize.Min) {
-        return then(WidthModifier(Type.INTRINSIC_MIN, RemoteFloat(0f)))
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun RemoteModifier.width(width: IntrinsicSize): RemoteModifier {
+    return if (width == IntrinsicSize.Min) {
+        then(WidthModifier(Type.INTRINSIC_MIN, 0f.rf))
     } else {
-        return then(WidthModifier(Type.INTRINSIC_MAX, RemoteFloat(0f)))
+        then(WidthModifier(Type.INTRINSIC_MAX, 0f.rf))
     }
 }

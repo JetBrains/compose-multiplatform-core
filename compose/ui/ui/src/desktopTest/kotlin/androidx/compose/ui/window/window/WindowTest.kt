@@ -17,53 +17,39 @@
 package androidx.compose.ui.window.window
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Button
 import androidx.compose.material.Slider
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.LeakDetector
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
-import androidx.compose.ui.background
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.isLinux
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.toInt
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.*
-import androidx.compose.ui.window.runApplicationTest
 import com.google.common.truth.Truth.assertThat
-import java.awt.Dimension
-import java.awt.GraphicsEnvironment
-import java.awt.Point
-import java.awt.Robot
-import java.awt.Toolkit
-import java.awt.Window
+import java.awt.*
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import kotlin.concurrent.thread
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
+import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.*
 import org.jetbrains.skiko.MainUIDispatcher
 import org.junit.Assume.assumeFalse
 import org.junit.Ignore
-import org.junit.Test
 
 class WindowTest {
 
@@ -588,6 +574,7 @@ class WindowTest {
         assertThat(isWindowEffectEnded).isTrue()
     }
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun `undecorated resizable window with unspecified size`() = runApplicationTest {
         lateinit var window: ComposeWindow
@@ -825,4 +812,134 @@ class WindowTest {
 
         assertThat(nonBlackPixelDetected).isNull()
     }
+
+    @Test
+    fun testComposeWindowClearFocusOnMouseDownEnabled() =
+        testComposeWindowClearFocusOnMouseDownEnabledFlag(true)
+
+    @Test
+    fun testComposeWindowClearFocusOnMouseDownDisabled() =
+        testComposeWindowClearFocusOnMouseDownEnabledFlag(false)
+
+    fun testComposeWindowClearFocusOnMouseDownEnabledFlag(enabled: Boolean) = runApplicationTest {
+        val focusRequester = FocusRequester()
+        var textFieldIsFocused = false
+
+        val window = ComposeWindow()
+        try {
+            window.isClearFocusOnMouseDownEnabled = enabled
+            window.setContent {
+                Column(Modifier.size(300.dp, 400.dp)) {
+                    BasicTextField(
+                        state = rememberTextFieldState(),
+                        modifier = Modifier
+                            .testTag("textField")
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged {
+                                textFieldIsFocused = it.isFocused
+                            }
+                    )
+                    LaunchedEffect(Unit) {
+                        focusRequester.requestFocus()
+                    }
+                    Box(Modifier.testTag("box").fillMaxWidth().weight(1f))
+                }
+            }
+            window.size = Dimension(300, 400)
+            window.isVisible = true
+
+            awaitIdle()
+
+            assertThat(textFieldIsFocused).isTrue()
+            window.sendMousePress(x = 100, y = 300)
+            window.sendMouseRelease(x = 100, y = 300)
+            awaitIdle()
+
+            assertThat(textFieldIsFocused).isEqualTo(!enabled)
+        } finally {
+            window.dispose()
+        }
+    }
+
+    @Test
+    fun coroutineContextIsPropagatedToWindow() = coroutineContextIsPropagatedTo { content ->
+        Window(onCloseRequest = ::exitApplication) {
+            content()
+        }
+    }
+
+    @Test
+    fun animationsRunAtNonInfiniteRateInWindow() = animationsRunAtNonInfiniteRateIn { content ->
+        Window(onCloseRequest = ::exitApplication) {
+            content()
+        }
+    }
+}
+
+private object CtxElement : CoroutineContext.Element, CoroutineContext.Key<CtxElement> {
+    override val key: CoroutineContext.Key<*> = this
+}
+
+internal fun coroutineContextIsPropagatedTo(
+    window: @Composable ApplicationScope.(@Composable () -> Unit) -> Unit
+) = runApplicationTest {
+    var applicationContextElement: CtxElement? = null
+    var windowContextElement: CtxElement? = null
+    var innerWindowContextElement: CtxElement? = null
+    val scope = this + CtxElement
+    scope.launchTestApplication {
+        LaunchedEffect(Unit) {
+            applicationContextElement = currentCoroutineContext()[CtxElement]
+        }
+        window {
+            LaunchedEffect(Unit) {
+                windowContextElement = currentCoroutineContext()[CtxElement]
+            }
+
+            window {
+                LaunchedEffect(Unit) {
+                    innerWindowContextElement = currentCoroutineContext()[CtxElement]
+                }
+            }
+        }
+    }
+
+    awaitIdle()
+
+    assertThat(applicationContextElement).isNotNull()
+    assertThat(windowContextElement).isNotNull()
+    assertThat(innerWindowContextElement).isNotNull()
+}
+
+internal fun animationsRunAtNonInfiniteRateIn(
+    window: @Composable ApplicationScope.(@Composable () -> Unit) -> Unit
+) = runApplicationTest {
+    suspend fun countFramesForOneSecond(onFrame: () -> Unit) {
+        val startTime = System.nanoTime()
+        while (System.nanoTime() - startTime < 1.seconds.inWholeNanoseconds) {
+            withFrameNanos {
+                onFrame()
+            }
+        }
+    }
+
+    var appFrameCount = 0
+    var windowFrameCount = 0
+    launchTestApplication {
+        LaunchedEffect(Unit) {
+            countFramesForOneSecond { appFrameCount++ }
+        }
+        window {
+            LaunchedEffect(Unit) {
+                countFramesForOneSecond { windowFrameCount++ }
+            }
+        }
+    }
+
+    awaitIdle()
+
+    // Actually, just check that the application "frame rate" is significantly smaller than the window frame rate
+    assertThat(windowFrameCount * 10).isLessThan(appFrameCount)
 }

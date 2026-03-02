@@ -21,9 +21,11 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWith
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.awt.ComposeWindow
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.window.rememberPopupPositionProviderAtPosition
 import java.awt.Component
 import java.awt.MouseInfo
+import java.awt.Point
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
 import javax.swing.SwingUtilities
@@ -65,42 +68,48 @@ val DarkDefaultContextMenuRepresentation = DefaultContextMenuRepresentation(
 class DefaultContextMenuRepresentation(
     private val backgroundColor: Color,
     private val textColor: Color,
-    private val itemHoverColor: Color
+    private val itemHoverColor: Color,
+    private val disabledTextColor: Color = textColor.copy(alpha = 0.38f),
 ) : ContextMenuRepresentation {
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val status = state.status
-        if (status is ContextMenuState.Status.Open) {
-            val session = remember(state) {
-                object : TextContextMenuSession {
-                    override fun close() {
-                        state.status = ContextMenuState.Status.Closed
-                    }
+        if (status !is ContextMenuState.Status.Open) return
+
+        val session = remember(state) {
+            object : TextContextMenuSession {
+                override fun close() {
+                    state.status = ContextMenuState.Status.Closed
                 }
             }
-            val components by remember {
-                derivedStateOf {
-                    items().map {
-                        TextContextMenuItemWithComposableLeadingIcon(
-                            key = it,
-                            label = it.label,
-                            enabled = true,
-                            onClick = {
-                                session.close()
-                                it.onClick()
-                            }
-                        )
-                    }
+        }
+        val components by remember {
+            derivedStateOf {
+                items().map {
+                    TextContextMenuItemWithComposableLeadingIcon(
+                        key = it,
+                        label = it.label,
+                        enabled = it.enabled,
+                        onClick = {
+                            session.close()
+                            it.onClick()
+                        }
+                    )
                 }
             }
-            val colors = remember(backgroundColor, textColor, itemHoverColor) {
+        }
+
+        if (components.isEmpty()) {
+            SideEffect { session.close() }
+        } else {
+            val colors = remember(backgroundColor, textColor, itemHoverColor, disabledTextColor) {
                 ContextMenuColors(
                     backgroundColor = backgroundColor,
                     textColor = textColor,
-                    iconColor = Color.Unspecified,
-                    disabledTextColor = Color.Unspecified,
-                    disabledIconColor = Color.Unspecified,
+                    iconColor = textColor,
+                    disabledTextColor = disabledTextColor,
+                    disabledIconColor = disabledTextColor,
                     hoverColor = itemHoverColor,
                 )
             }
@@ -143,25 +152,41 @@ class JPopupContextMenuRepresentation(
     override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val isOpen = state.status is ContextMenuState.Status.Open
         if (isOpen) {
-            val menu = remember {
-                createMenu(items()).apply {
-                    addPopupMenuListener(object : PopupMenuListener {
-                        override fun popupMenuWillBecomeVisible(e: PopupMenuEvent?) = Unit
+            val menu = remember(createMenu) {
+                createMenu(items())
+            }
 
-                        override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
-                            state.status = ContextMenuState.Status.Closed
-                        }
+            // Remember the state to avoid closing the menu when the state object (but not the
+            // status) changes.
+            val currentState by rememberUpdatedState(state)
 
-                        override fun popupMenuCanceled(e: PopupMenuEvent?) = Unit
-                    })
+            // Remember the screen mouse position for as long as the menu is open to avoid having
+            // the popup move when recreating the menu due to other changes.
+            val mouseScreenPosition = remember { MouseInfo.getPointerInfo().location }
+
+            // The mouse position changes only when the owner changes.
+            val mousePosition = remember(owner) {
+                Point(mouseScreenPosition).also {
+                    SwingUtilities.convertPointFromScreen(it, owner)
                 }
             }
 
-            DisposableEffect(Unit) {
-                val mousePosition = MouseInfo.getPointerInfo().location
-                SwingUtilities.convertPointFromScreen(mousePosition, owner)
+            DisposableEffect(menu, owner, mousePosition) {
+                val popupMenuListener = object : PopupMenuListener {
+                    override fun popupMenuWillBecomeVisible(e: PopupMenuEvent?) = Unit
+
+                    override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
+                        currentState.status = ContextMenuState.Status.Closed
+                    }
+
+                    override fun popupMenuCanceled(e: PopupMenuEvent?) = Unit
+                }
+                menu.addPopupMenuListener(popupMenuListener)
+
                 menu.show(owner, mousePosition.x, mousePosition.y)
+
                 onDispose {
+                    menu.removePopupMenuListener(popupMenuListener)
                     menu.isVisible = false
                 }
             }

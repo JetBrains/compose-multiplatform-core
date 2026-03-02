@@ -58,7 +58,7 @@ package androidx.compose.foundation {
     field public static final long TooltipDuration = 1500L; // 0x5dcL
   }
 
-  public final class BasicTooltipKt {
+  @SuppressCompatibility public final class BasicTooltipKt {
     method @KotlinOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void BasicTooltipBox(androidx.compose.ui.window.PopupPositionProvider positionProvider, kotlin.jvm.functions.Function0<kotlin.Unit> tooltip, androidx.compose.foundation.BasicTooltipState state, optional androidx.compose.ui.Modifier modifier, optional boolean focusable, optional boolean enableUserInput, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void BasicTooltipBox(androidx.compose.ui.window.PopupPositionProvider, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.foundation.BasicTooltipState, androidx.compose.ui.Modifier?, boolean, boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public static androidx.compose.foundation.BasicTooltipState BasicTooltipState(optional boolean initialIsVisible, optional boolean isPersistent, optional androidx.compose.foundation.MutatorMutex mutatorMutex);
@@ -78,7 +78,7 @@ package androidx.compose.foundation {
     property public abstract boolean isVisible;
   }
 
-  public final class BasicTooltip_androidKt {
+  @SuppressCompatibility public final class BasicTooltip_androidKt {
     method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void BasicTooltipBox(androidx.compose.ui.window.PopupPositionProvider!, kotlin.jvm.functions.Function2!, androidx.compose.foundation.BasicTooltipState!, androidx.compose.ui.Modifier!, boolean, boolean, kotlin.jvm.functions.Function2!, androidx.compose.runtime.Composer!, int, int);
   }
 
@@ -149,27 +149,31 @@ package androidx.compose.foundation {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public final class ComposeFoundationFlags {
+    property public boolean isAnchoredDraggableTargetValueCalculationFixEnabled;
+    property public boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     property public boolean isCacheWindowForPagerEnabled;
-    property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    property public boolean isKeepInViewFocusObservationChangeEnabled;
-    property public boolean isMouseWheel1DAxisLockingEnabled;
+    property public boolean isCacheWindowRefillFixEnabled;
+    property public boolean isDelayPressesUsingGestureConsumptionEnabled;
+    property public boolean isInheritedTextStyleEnabled;
+    property public boolean isNestedDraggablesTouchConflictFixEnabled;
     property public boolean isNewContextMenuEnabled;
-    property public boolean isNonSuspendingPointerInputInClickableEnabled;
-    property public boolean isNonSuspendingPointerInputInDraggableEnabled;
+    property public boolean isNonSuspendingPointerInputInCombinedClickableEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
     property public boolean isSmartSelectionEnabled;
-    property public boolean isTextFieldDpadNavigationEnabled;
+    property public boolean isTrackpadGestureHandlingEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
+    field public static boolean isAnchoredDraggableTargetValueCalculationFixEnabled;
+    field public static boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     field public static boolean isCacheWindowForPagerEnabled;
-    field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    field public static boolean isKeepInViewFocusObservationChangeEnabled;
-    field public static boolean isMouseWheel1DAxisLockingEnabled;
+    field public static boolean isCacheWindowRefillFixEnabled;
+    field public static boolean isDelayPressesUsingGestureConsumptionEnabled;
+    field public static boolean isInheritedTextStyleEnabled;
+    field public static boolean isNestedDraggablesTouchConflictFixEnabled;
     field public static boolean isNewContextMenuEnabled;
-    field public static boolean isNonSuspendingPointerInputInClickableEnabled;
-    field public static boolean isNonSuspendingPointerInputInDraggableEnabled;
+    field public static boolean isNonSuspendingPointerInputInCombinedClickableEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
     field public static boolean isSmartSelectionEnabled;
-    field public static boolean isTextFieldDpadNavigationEnabled;
+    field public static boolean isTrackpadGestureHandlingEnabled;
   }
 
   public final class DarkThemeKt {
@@ -290,7 +294,6 @@ package androidx.compose.foundation {
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public final class OverscrollConfiguration {
-    ctor @Deprecated public OverscrollConfiguration();
     ctor @KotlinOnly @Deprecated public OverscrollConfiguration(optional androidx.compose.ui.graphics.Color glowColor, optional androidx.compose.foundation.layout.PaddingValues drawPadding);
     ctor @BytecodeOnly @Deprecated public OverscrollConfiguration(long, androidx.compose.foundation.layout.PaddingValues!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public OverscrollConfiguration(long, androidx.compose.foundation.layout.PaddingValues!, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -300,7 +303,7 @@ package androidx.compose.foundation {
     property @Deprecated public androidx.compose.ui.graphics.Color glowColor;
   }
 
-  public final class OverscrollConfiguration_androidKt {
+  @SuppressCompatibility public final class OverscrollConfiguration_androidKt {
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.OverscrollConfiguration?> getLocalOverscrollConfiguration();
     property @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.OverscrollConfiguration?> LocalOverscrollConfiguration;
   }
@@ -448,7 +451,7 @@ package androidx.compose.foundation.content {
     property public android.net.Uri? linkUri;
   }
 
-  public final class ReceiveContentKt {
+  @SuppressCompatibility public final class ReceiveContentKt {
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.ui.Modifier contentReceiver(androidx.compose.ui.Modifier, androidx.compose.foundation.content.ReceiveContentListener receiveContentListener);
   }
 
@@ -487,7 +490,7 @@ package androidx.compose.foundation.content {
     property public androidx.compose.foundation.content.TransferableContent.Source Keyboard;
   }
 
-  public final class TransferableContent_androidKt {
+  @SuppressCompatibility public final class TransferableContent_androidKt {
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.content.TransferableContent? consume(androidx.compose.foundation.content.TransferableContent, kotlin.jvm.functions.Function1<? super android.content.ClipData.Item,java.lang.Boolean> predicate);
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static boolean hasMediaType(androidx.compose.foundation.content.TransferableContent, androidx.compose.foundation.content.MediaType mediaType);
   }
@@ -496,7 +499,7 @@ package androidx.compose.foundation.content {
 
 package androidx.compose.foundation.draganddrop {
 
-  public final class AndroidDragAndDropSource_androidKt {
+  @SuppressCompatibility public final class AndroidDragAndDropSource_androidKt {
     method @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.ui.Modifier dragAndDropSource(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.draganddrop.DragAndDropSourceScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
   }
 
@@ -524,7 +527,7 @@ package androidx.compose.foundation.gestures {
   }
 
   public final class AnchoredDraggableDefaults {
-    method @BytecodeOnly @androidx.compose.runtime.Composable public <T> androidx.compose.foundation.gestures.TargetedFlingBehavior flingBehavior(androidx.compose.foundation.gestures.AnchoredDraggableState<T!>, kotlin.jvm.functions.Function1<? super java.lang.Float!,java.lang.Float!>?, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>?, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public <T> androidx.compose.foundation.gestures.TargetedFlingBehavior flingBehavior(androidx.compose.foundation.gestures.AnchoredDraggableState<T>, kotlin.jvm.functions.Function1<? super java.lang.Float!,java.lang.Float!>?, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public <T> androidx.compose.foundation.gestures.TargetedFlingBehavior flingBehavior(androidx.compose.foundation.gestures.AnchoredDraggableState<T> state, optional kotlin.jvm.functions.Function1<java.lang.Float,java.lang.Float> positionalThreshold, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec);
     method @InaccessibleFromKotlin public androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float> getDecayAnimationSpec();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<java.lang.Float,java.lang.Float> getPositionalThreshold();
@@ -617,7 +620,7 @@ package androidx.compose.foundation.gestures {
   public static final class BringIntoViewSpec.Companion {
   }
 
-  public final class BringIntoViewSpec_androidKt {
+  @SuppressCompatibility public final class BringIntoViewSpec_androidKt {
     method @InaccessibleFromKotlin @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.gestures.BringIntoViewSpec> getLocalBringIntoViewSpec();
     property @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.gestures.BringIntoViewSpec> LocalBringIntoViewSpec;
   }
@@ -713,9 +716,6 @@ package androidx.compose.foundation.gestures {
     method public void dispatchRawDelta(float delta);
     method public suspend Object? drag(optional androidx.compose.foundation.MutatePriority dragPriority, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.gestures.DragScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly public static Object! drag$default(androidx.compose.foundation.gestures.DraggableState!, androidx.compose.foundation.MutatePriority!, kotlin.jvm.functions.Function2!, kotlin.coroutines.Continuation!, int, Object!);
-  }
-
-  @Deprecated @SuppressCompatibility @kotlin.RequiresOptIn(message="This API feature-flags new behavior and will be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalTapGestureDetectorBehaviorApi {
   }
 
   @androidx.compose.runtime.Stable public interface FlingBehavior {
@@ -836,12 +836,9 @@ package androidx.compose.foundation.gestures {
     method @BytecodeOnly @Deprecated public static Object! awaitFirstDown$default(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, boolean, kotlin.coroutines.Continuation!, int, Object!);
     method public static suspend Object? detectTapGestures(androidx.compose.ui.input.pointer.PointerInputScope, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onDoubleTap, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onLongPress, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.gestures.PressGestureScope,? super androidx.compose.ui.geometry.Offset,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onPress, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? onTap, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly public static Object! detectTapGestures$default(androidx.compose.ui.input.pointer.PointerInputScope!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function3!, kotlin.jvm.functions.Function1!, kotlin.coroutines.Continuation!, int, Object!);
-    method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static boolean getDetectTapGesturesEnableNewDispatchingBehavior();
-    method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static void setDetectTapGesturesEnableNewDispatchingBehavior(boolean);
     method public static suspend Object? waitForUpOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope, optional androidx.compose.ui.input.pointer.PointerEventPass pass, kotlin.coroutines.Continuation<? super androidx.compose.ui.input.pointer.PointerInputChange?>);
     method @BytecodeOnly @Deprecated public static Object! waitForUpOrCancellation(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, kotlin.coroutines.Continuation!);
     method @BytecodeOnly public static Object! waitForUpOrCancellation$default(androidx.compose.ui.input.pointer.AwaitPointerEventScope!, androidx.compose.ui.input.pointer.PointerEventPass!, kotlin.coroutines.Continuation!, int, Object!);
-    property @Deprecated @SuppressCompatibility @androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi public static boolean DetectTapGesturesEnableNewDispatchingBehavior;
   }
 
   @androidx.compose.runtime.Stable public interface TargetedFlingBehavior extends androidx.compose.foundation.gestures.FlingBehavior {
@@ -867,6 +864,9 @@ package androidx.compose.foundation.gestures {
     method @KotlinOnly public void transformBy(optional float zoomChange, optional androidx.compose.ui.geometry.Offset panChange, optional float rotationChange);
     method @BytecodeOnly public void transformBy-d-4ec7I(float, long, float);
     method @BytecodeOnly public static void transformBy-d-4ec7I$default(androidx.compose.foundation.gestures.TransformScope!, float, long, float, int, Object!);
+    method @KotlinOnly public default void transformByWithCentroid(optional androidx.compose.ui.geometry.Offset centroid, optional float zoomChange, optional androidx.compose.ui.geometry.Offset panChange, optional float rotationChange);
+    method @BytecodeOnly public default void transformByWithCentroid-IEwrmTk(long, float, long, float);
+    method @BytecodeOnly public static void transformByWithCentroid-IEwrmTk$default(androidx.compose.foundation.gestures.TransformScope!, long, float, long, float, int, Object!);
   }
 
   public final class TransformableKt {
@@ -884,25 +884,46 @@ package androidx.compose.foundation.gestures {
   }
 
   public final class TransformableStateKt {
-    method public static androidx.compose.foundation.gestures.TransformableState TransformableState(kotlin.jvm.functions.Function3<? super java.lang.Float,? super androidx.compose.ui.geometry.Offset,? super java.lang.Float,kotlin.Unit> onTransformation);
-    method @KotlinOnly public static suspend Object? animateBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, androidx.compose.ui.geometry.Offset panOffset, float rotationDegrees, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> zoomAnimationSpec, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> panAnimationSpec, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> rotationAnimationSpec, kotlin.coroutines.Continuation<? super java.lang.Void>);
-    method @BytecodeOnly public static Object? animateBy-Su4bsnU(androidx.compose.foundation.gestures.TransformableState, float, long, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset!>, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
-    method @BytecodeOnly public static Object! animateBy-Su4bsnU$default(androidx.compose.foundation.gestures.TransformableState!, float, long, float, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
-    method @KotlinOnly public static suspend Object? animatePanBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset offset, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> animationSpec, kotlin.coroutines.Continuation<? super java.lang.Void>);
-    method @BytecodeOnly public static Object? animatePanBy-ubNVwUQ(androidx.compose.foundation.gestures.TransformableState, long, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset!>, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
-    method @BytecodeOnly public static Object! animatePanBy-ubNVwUQ$default(androidx.compose.foundation.gestures.TransformableState!, long, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
-    method public static suspend Object? animateRotateBy(androidx.compose.foundation.gestures.TransformableState, float degrees, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @BytecodeOnly public static Object! animateRotateBy$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
-    method public static suspend Object? animateZoomBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @BytecodeOnly public static Object! animateZoomBy$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
-    method @KotlinOnly public static suspend Object? panBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset offset, kotlin.coroutines.Continuation<? super java.lang.Void>);
-    method @BytecodeOnly public static Object? panBy-d-4ec7I(androidx.compose.foundation.gestures.TransformableState, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function3<? super java.lang.Float!,? super androidx.compose.ui.geometry.Offset!,? super java.lang.Float!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function3<java.lang.Float,androidx.compose.ui.geometry.Offset,java.lang.Float,kotlin.Unit> onTransformation);
-    method public static suspend Object? rotateBy(androidx.compose.foundation.gestures.TransformableState, float degrees, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated public static androidx.compose.foundation.gestures.TransformableState TransformableState(kotlin.jvm.functions.Function3<? super java.lang.Float,? super androidx.compose.ui.geometry.Offset,? super java.lang.Float,kotlin.Unit> onTransformation);
+    method public static androidx.compose.foundation.gestures.TransformableState TransformableState(kotlin.jvm.functions.Function4<? super androidx.compose.ui.geometry.Offset,? super java.lang.Float,? super androidx.compose.ui.geometry.Offset,? super java.lang.Float,kotlin.Unit> onTransformation);
+    method @KotlinOnly public static suspend Object? animateBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, androidx.compose.ui.geometry.Offset panOffset, float rotationDegrees, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> zoomAnimationSpec, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> panAnimationSpec, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> rotationAnimationSpec, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! animateBy-Su4bsnU(androidx.compose.foundation.gestures.TransformableState!, float, long, float, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!);
+    method @BytecodeOnly @Deprecated public static Object! animateBy-Su4bsnU$default(androidx.compose.foundation.gestures.TransformableState!, float, long, float, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly public static Object? animateBy-jlnHOkQ(androidx.compose.foundation.gestures.TransformableState, float, long, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset!>, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! animateBy-jlnHOkQ$default(androidx.compose.foundation.gestures.TransformableState!, float, long, float, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, androidx.compose.animation.core.AnimationSpec!, long, kotlin.coroutines.Continuation!, int, Object!);
+    method @KotlinOnly public static suspend Object? animatePanBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset offset, optional androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset> animationSpec, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! animatePanBy-ubNVwUQ(androidx.compose.foundation.gestures.TransformableState!, long, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!);
+    method @BytecodeOnly @Deprecated public static Object! animatePanBy-ubNVwUQ$default(androidx.compose.foundation.gestures.TransformableState!, long, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly public static Object? animatePanBy-umk_asQ(androidx.compose.foundation.gestures.TransformableState, long, androidx.compose.animation.core.AnimationSpec<androidx.compose.ui.geometry.Offset!>, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! animatePanBy-umk_asQ$default(androidx.compose.foundation.gestures.TransformableState!, long, androidx.compose.animation.core.AnimationSpec!, long, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly @Deprecated public static Object! animateRotateBy(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!);
+    method @KotlinOnly public static suspend Object? animateRotateBy(androidx.compose.foundation.gestures.TransformableState, float degrees, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! animateRotateBy$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly public static Object? animateRotateBy-Fgt4K4Q(androidx.compose.foundation.gestures.TransformableState, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! animateRotateBy-Fgt4K4Q$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, long, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly @Deprecated public static Object! animateZoomBy(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!);
+    method @KotlinOnly public static suspend Object? animateZoomBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, optional androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! animateZoomBy$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly public static Object? animateZoomBy-Fgt4K4Q(androidx.compose.foundation.gestures.TransformableState, float, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! animateZoomBy-Fgt4K4Q$default(androidx.compose.foundation.gestures.TransformableState!, float, androidx.compose.animation.core.AnimationSpec!, long, kotlin.coroutines.Continuation!, int, Object!);
+    method @KotlinOnly public static suspend Object? panBy(androidx.compose.foundation.gestures.TransformableState, androidx.compose.ui.geometry.Offset offset, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly public static Object? panBy-DUneCvk(androidx.compose.foundation.gestures.TransformableState, long, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! panBy-DUneCvk$default(androidx.compose.foundation.gestures.TransformableState!, long, long, kotlin.coroutines.Continuation!, int, Object!);
+    method @BytecodeOnly @Deprecated public static Object! panBy-d-4ec7I(androidx.compose.foundation.gestures.TransformableState!, long, kotlin.coroutines.Continuation!);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function3<? super java.lang.Float!,? super androidx.compose.ui.geometry.Offset!,? super java.lang.Float!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function3<java.lang.Float,androidx.compose.ui.geometry.Offset,java.lang.Float,kotlin.Unit> onTransformation);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function4<? super androidx.compose.ui.geometry.Offset!,? super java.lang.Float!,? super androidx.compose.ui.geometry.Offset!,? super java.lang.Float!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.foundation.gestures.TransformableState rememberTransformableState(kotlin.jvm.functions.Function4<androidx.compose.ui.geometry.Offset,java.lang.Float,androidx.compose.ui.geometry.Offset,java.lang.Float,kotlin.Unit> onTransformation);
+    method @KotlinOnly public static suspend Object? rotateBy(androidx.compose.foundation.gestures.TransformableState, float degrees, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! rotateBy(androidx.compose.foundation.gestures.TransformableState!, float, kotlin.coroutines.Continuation!);
+    method @BytecodeOnly public static Object? rotateBy-Rg1IO4c(androidx.compose.foundation.gestures.TransformableState, float, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! rotateBy-Rg1IO4c$default(androidx.compose.foundation.gestures.TransformableState!, float, long, kotlin.coroutines.Continuation!, int, Object!);
     method public static suspend Object? stopTransformation(androidx.compose.foundation.gestures.TransformableState, optional androidx.compose.foundation.MutatePriority terminationPriority, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly public static Object! stopTransformation$default(androidx.compose.foundation.gestures.TransformableState!, androidx.compose.foundation.MutatePriority!, kotlin.coroutines.Continuation!, int, Object!);
-    method public static suspend Object? zoomBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @KotlinOnly public static suspend Object? zoomBy(androidx.compose.foundation.gestures.TransformableState, float zoomFactor, optional androidx.compose.ui.geometry.Offset centroid, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method @BytecodeOnly @Deprecated public static Object! zoomBy(androidx.compose.foundation.gestures.TransformableState!, float, kotlin.coroutines.Continuation!);
+    method @BytecodeOnly public static Object? zoomBy-Rg1IO4c(androidx.compose.foundation.gestures.TransformableState, float, long, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
+    method @BytecodeOnly public static Object! zoomBy-Rg1IO4c$default(androidx.compose.foundation.gestures.TransformableState!, float, long, kotlin.coroutines.Continuation!, int, Object!);
   }
 
 }
@@ -1075,21 +1096,21 @@ package androidx.compose.foundation.lazy {
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void LazyRow(androidx.compose.ui.Modifier!, androidx.compose.foundation.lazy.LazyListState!, androidx.compose.foundation.layout.PaddingValues!, boolean, androidx.compose.foundation.layout.Arrangement.Horizontal!, androidx.compose.ui.Alignment.Vertical!, androidx.compose.foundation.gestures.FlingBehavior!, boolean, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void LazyRow(androidx.compose.ui.Modifier!, androidx.compose.foundation.lazy.LazyListState!, androidx.compose.foundation.layout.PaddingValues!, boolean, androidx.compose.foundation.layout.Arrangement.Horizontal!, androidx.compose.ui.Alignment.Vertical!, androidx.compose.foundation.gestures.FlingBehavior!, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int);
     method public static inline <T> void items(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method @BytecodeOnly @Deprecated public static <T> void items(androidx.compose.foundation.lazy.LazyListScope!, java.util.List<? extends T!>!, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T>, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly @Deprecated public static <T> void items(androidx.compose.foundation.lazy.LazyListScope!, java.util.List<? extends T>!, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>!, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
     method public static inline <T> void items(androidx.compose.foundation.lazy.LazyListScope, T[] items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.LazyListScope, T![], kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method @BytecodeOnly @Deprecated public static <T> void items(androidx.compose.foundation.lazy.LazyListScope!, T![]!, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.LazyListScope, T[], kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly @Deprecated public static <T> void items(androidx.compose.foundation.lazy.LazyListScope!, T[]!, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>!, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.LazyItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.LazyListScope!, Object![]!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method @BytecodeOnly @Deprecated public static void items$default(androidx.compose.foundation.lazy.LazyListScope!, Object![]!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.LazyListScope!, java.util.List!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method @BytecodeOnly @Deprecated public static void items$default(androidx.compose.foundation.lazy.LazyListScope!, java.util.List!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method @BytecodeOnly @Deprecated public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope!, java.util.List<? extends T!>!, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, java.util.List<? extends T>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly @Deprecated public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope!, java.util.List<? extends T>!, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>!, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, T[] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, T![], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
-    method @BytecodeOnly @Deprecated public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope!, T![]!, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>!, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, T[], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly @Deprecated public static <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope!, T[]!, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>!, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.LazyItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>!);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.LazyListScope!, Object![]!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
     method @BytecodeOnly @Deprecated public static void itemsIndexed$default(androidx.compose.foundation.lazy.LazyListScope!, Object![]!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.LazyListScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
@@ -1143,7 +1164,7 @@ package androidx.compose.foundation.lazy {
     property public abstract java.util.List<androidx.compose.foundation.lazy.LazyListItemInfo> visibleItemsInfo;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface LazyListPrefetchResultScope {
+  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed nonexhaustive interface LazyListPrefetchResultScope {
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public int getMainAxisSize();
     property public abstract int index;
@@ -1163,7 +1184,7 @@ package androidx.compose.foundation.lazy {
     property @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
   }
 
-  public final class LazyListPrefetchStrategyKt {
+  @SuppressCompatibility public final class LazyListPrefetchStrategyKt {
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.LazyListPrefetchStrategy LazyListPrefetchStrategy(optional int nestedPrefetchItemCount);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.LazyListPrefetchStrategy! LazyListPrefetchStrategy$default(int, int, Object!);
   }
@@ -1238,7 +1259,7 @@ package androidx.compose.foundation.lazy {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.foundation.lazy.LazyListState rememberLazyListState(int, int, androidx.compose.runtime.Composer?, int, int);
   }
 
-  @kotlin.DslMarker public @interface LazyScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface LazyScopeMarker {
   }
 
 }
@@ -1281,20 +1302,20 @@ package androidx.compose.foundation.lazy.grid {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void LazyVerticalGrid(androidx.compose.foundation.lazy.grid.GridCells columns, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.grid.LazyGridState state, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional boolean reverseLayout, optional androidx.compose.foundation.layout.Arrangement.Vertical verticalArrangement, optional androidx.compose.foundation.layout.Arrangement.Horizontal horizontalArrangement, optional androidx.compose.foundation.gestures.FlingBehavior flingBehavior, optional boolean userScrollEnabled, optional androidx.compose.foundation.OverscrollEffect? overscrollEffect, kotlin.jvm.functions.Function1<androidx.compose.foundation.lazy.grid.LazyGridScope,kotlin.Unit> content);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void LazyVerticalGrid(androidx.compose.foundation.lazy.grid.GridCells!, androidx.compose.ui.Modifier!, androidx.compose.foundation.lazy.grid.LazyGridState!, androidx.compose.foundation.layout.PaddingValues!, boolean, androidx.compose.foundation.layout.Arrangement.Vertical!, androidx.compose.foundation.layout.Arrangement.Horizontal!, androidx.compose.foundation.gestures.FlingBehavior!, boolean, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int);
     method public static inline <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan>? span, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super T!,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T>, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public static inline <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, T[] items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan>? span, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, T![], kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super T!,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.grid.LazyGridScope, T[], kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, Object![]!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, java.util.List!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope,? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan>? span, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super java.lang.Integer!,? super T!,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, java.util.List<? extends T>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super java.lang.Integer!,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, T[] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope,? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan>? span, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, T![], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super java.lang.Integer!,? super T!,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.grid.LazyGridScope, T[], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,? super java.lang.Integer!,? super T,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, Object![]!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function3!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function3!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
   }
 
-  public sealed interface LazyGridItemInfo {
+  public sealed nonexhaustive interface LazyGridItemInfo {
     method @InaccessibleFromKotlin public int getColumn();
     method @InaccessibleFromKotlin public Object? getContentType();
     method @InaccessibleFromKotlin public int getIndex();
@@ -1323,19 +1344,19 @@ package androidx.compose.foundation.lazy.grid {
     field public static final int UnknownRow = -1; // 0xffffffff
   }
 
-  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker @androidx.compose.runtime.Stable public sealed interface LazyGridItemScope {
+  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker @androidx.compose.runtime.Stable public sealed nonexhaustive interface LazyGridItemScope {
     method public androidx.compose.ui.Modifier animateItem(androidx.compose.ui.Modifier, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeInSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>? placementSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeOutSpec);
     method @BytecodeOnly public static androidx.compose.ui.Modifier! animateItem$default(androidx.compose.foundation.lazy.grid.LazyGridItemScope!, androidx.compose.ui.Modifier!, androidx.compose.animation.core.FiniteAnimationSpec!, androidx.compose.animation.core.FiniteAnimationSpec!, androidx.compose.animation.core.FiniteAnimationSpec!, int, Object!);
   }
 
-  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker public sealed interface LazyGridItemSpanScope {
+  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker public sealed nonexhaustive interface LazyGridItemSpanScope {
     method @InaccessibleFromKotlin public int getMaxCurrentLineSpan();
     method @InaccessibleFromKotlin public int getMaxLineSpan();
     property public abstract int maxCurrentLineSpan;
     property public abstract int maxLineSpan;
   }
 
-  public sealed interface LazyGridLayoutInfo {
+  public sealed nonexhaustive interface LazyGridLayoutInfo {
     method @InaccessibleFromKotlin public int getAfterContentPadding();
     method @InaccessibleFromKotlin public int getBeforeContentPadding();
     method @InaccessibleFromKotlin public int getMainAxisItemSpacing();
@@ -1360,7 +1381,7 @@ package androidx.compose.foundation.lazy.grid {
     property public abstract java.util.List<androidx.compose.foundation.lazy.grid.LazyGridItemInfo> visibleItemsInfo;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface LazyGridPrefetchResultScope {
+  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed nonexhaustive interface LazyGridPrefetchResultScope {
     method @InaccessibleFromKotlin public int getLineIndex();
     method @InaccessibleFromKotlin public int getLineItemCount();
     method public int getMainAxisSize(int itemIndexInLine);
@@ -1381,12 +1402,12 @@ package androidx.compose.foundation.lazy.grid {
     property @Deprecated public default androidx.compose.foundation.lazy.layout.PrefetchScheduler? prefetchScheduler;
   }
 
-  public final class LazyGridPrefetchStrategyKt {
+  @SuppressCompatibility public final class LazyGridPrefetchStrategyKt {
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy LazyGridPrefetchStrategy(optional int nestedPrefetchItemCount);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy! LazyGridPrefetchStrategy$default(int, int, Object!);
   }
 
-  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker public sealed interface LazyGridScope {
+  @androidx.compose.foundation.lazy.grid.LazyGridScopeMarker public sealed nonexhaustive interface LazyGridScope {
     method public void item(optional Object? key, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope,androidx.compose.foundation.lazy.grid.GridItemSpan>? span, optional Object? contentType, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope,kotlin.Unit> content);
     method @BytecodeOnly public void item(Object?, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope!,androidx.compose.foundation.lazy.grid.GridItemSpan!>?, Object?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.grid.LazyGridItemScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void item$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, Object!, kotlin.jvm.functions.Function1!, Object!, kotlin.jvm.functions.Function3!, int, Object!);
@@ -1398,7 +1419,7 @@ package androidx.compose.foundation.lazy.grid {
     method @BytecodeOnly public static void stickyHeader$default(androidx.compose.foundation.lazy.grid.LazyGridScope!, Object!, Object!, kotlin.jvm.functions.Function4!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface LazyGridScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface LazyGridScopeMarker {
   }
 
   public final class LazyGridScrollScopeKt {
@@ -1462,7 +1483,7 @@ package androidx.compose.foundation.lazy.grid {
 
 package androidx.compose.foundation.lazy.layout {
 
-  public sealed interface IntervalList<T> {
+  public sealed exhaustive interface IntervalList<T> {
     method public void forEach(optional int fromIndex, optional int toIndex, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.layout.IntervalList.Interval<? extends T>,kotlin.Unit> block);
     method @BytecodeOnly public static void forEach$default(androidx.compose.foundation.lazy.layout.IntervalList!, int, int, kotlin.jvm.functions.Function1!, int, Object!);
     method public operator androidx.compose.foundation.lazy.layout.IntervalList.Interval<T> get(int index);
@@ -1484,7 +1505,7 @@ package androidx.compose.foundation.lazy.layout {
     method public default int calculateBehindWindow(androidx.compose.ui.unit.Density, int viewport);
   }
 
-  public final class LazyLayoutCacheWindowKt {
+  @SuppressCompatibility public final class LazyLayoutCacheWindowKt {
     method @KotlinOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow LazyLayoutCacheWindow(optional androidx.compose.ui.unit.Dp ahead, optional androidx.compose.ui.unit.Dp behind);
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow LazyLayoutCacheWindow(optional @FloatRange(from=0.0) float aheadFraction, optional @FloatRange(from=0.0) float behindFraction);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow! LazyLayoutCacheWindow$default(float, float, int, Object!);
@@ -1540,7 +1561,7 @@ package androidx.compose.foundation.lazy.layout {
     method @BytecodeOnly public androidx.compose.ui.layout.MeasureResult measure-0kLqBqw(androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope, long);
   }
 
-  @androidx.compose.runtime.Stable public sealed interface LazyLayoutMeasureScope extends androidx.compose.ui.layout.MeasureScope {
+  @androidx.compose.runtime.Stable public sealed nonexhaustive interface LazyLayoutMeasureScope extends androidx.compose.ui.layout.MeasureScope {
     method public java.util.List<androidx.compose.ui.layout.Measurable> compose(@IntRange(from=0L) int index);
     method @KotlinOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public java.util.List<androidx.compose.ui.layout.Placeable> measure(int index, androidx.compose.ui.unit.Constraints constraints);
     method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public java.util.List<androidx.compose.ui.layout.Placeable!> measure-0kLqBqw(int, long);
@@ -1564,7 +1585,7 @@ package androidx.compose.foundation.lazy.layout {
     method @BytecodeOnly public boolean contains(Object!);
     method public boolean containsAll(java.util.Collection<androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList.PinnedItem> elements);
     method public operator androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList.PinnedItem get(int index);
-    method @BytecodeOnly public int getSize();
+    method public int getSize();
     method public int indexOf(androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList.PinnedItem element);
     method @BytecodeOnly public int indexOf(Object!);
     method public boolean isEmpty();
@@ -1585,11 +1606,11 @@ package androidx.compose.foundation.lazy.layout {
     method @BytecodeOnly public void sort(java.util.Comparator<? super androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList.PinnedItem!>!);
     method public java.util.List<androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList.PinnedItem> subList(int fromIndex, int toIndex);
     method @BytecodeOnly public Object![]! toArray();
-    method @BytecodeOnly public <T> T![]! toArray(T![]!);
+    method @BytecodeOnly public <T> T[]! toArray(T[]!);
     property public int size;
   }
 
-  public static sealed interface LazyLayoutPinnedItemList.PinnedItem {
+  public static sealed nonexhaustive interface LazyLayoutPinnedItemList.PinnedItem {
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public Object? getKey();
     property public abstract int index;
@@ -1608,12 +1629,12 @@ package androidx.compose.foundation.lazy.layout {
     method @BytecodeOnly public static androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle! schedulePrecompositionAndPremeasure-VKLhPVY$default(androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState!, int, long, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
-  public static sealed interface LazyLayoutPrefetchState.PrefetchHandle {
+  public static sealed nonexhaustive interface LazyLayoutPrefetchState.PrefetchHandle {
     method public void cancel();
     method public void markAsUrgent();
   }
 
-  public static sealed interface LazyLayoutPrefetchState.PrefetchResultScope {
+  public static sealed nonexhaustive interface LazyLayoutPrefetchState.PrefetchResultScope {
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public int getPlaceablesCount();
     method @KotlinOnly public androidx.compose.ui.unit.IntSize getSize(@IntRange(from=0L) int placeableIndex);
@@ -1650,7 +1671,7 @@ package androidx.compose.foundation.lazy.layout {
     property public int size;
   }
 
-  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface NestedPrefetchScope {
+  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed nonexhaustive interface NestedPrefetchScope {
     method @InaccessibleFromKotlin public default int getNestedPrefetchItemCount();
     method public void schedulePrecomposition(int index);
     method @KotlinOnly public void schedulePrecompositionAndPremeasure(int index, androidx.compose.ui.unit.Constraints constraints);
@@ -1661,7 +1682,7 @@ package androidx.compose.foundation.lazy.layout {
     property public default int nestedPrefetchItemCount;
   }
 
-  @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface PrefetchRequest {
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public sealed nonexhaustive interface PrefetchRequest {
     method @Deprecated public boolean execute(androidx.compose.foundation.lazy.layout.PrefetchRequestScope);
   }
 
@@ -1685,20 +1706,20 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void LazyVerticalStaggeredGrid-6qCrX9Q(androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells, androidx.compose.ui.Modifier?, androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState?, androidx.compose.foundation.layout.PaddingValues?, boolean, float, androidx.compose.foundation.layout.Arrangement.Horizontal?, androidx.compose.foundation.gestures.FlingBehavior?, boolean, androidx.compose.foundation.OverscrollEffect?, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void LazyVerticalStaggeredGrid-zadm560(androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells!, androidx.compose.ui.Modifier!, androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState!, androidx.compose.foundation.layout.PaddingValues!, boolean, float, androidx.compose.foundation.layout.Arrangement.Horizontal!, androidx.compose.foundation.gestures.FlingBehavior!, boolean, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int);
     method public static inline <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function1<? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan>? span, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super T!,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T>, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public static inline <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T[] items, optional kotlin.jvm.functions.Function1<? super T,?>? key, optional kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function1<? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan>? span, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T![], kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super T!,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void items(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T[], kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function1<? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function1<? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function4<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!, Object![]!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method @BytecodeOnly public static void items$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!, java.util.List!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function4!, int, Object!);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan>? span, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, java.util.List<? extends T>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T[] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan>? span, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T![], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T!,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super java.lang.Integer!,? super T!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+    method @BytecodeOnly public static <T> void itemsIndexed(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope, T[], kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!>?, kotlin.jvm.functions.Function5<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!, Object![]!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
   }
 
-  public sealed interface LazyStaggeredGridItemInfo {
+  public sealed nonexhaustive interface LazyStaggeredGridItemInfo {
     method @InaccessibleFromKotlin public Object? getContentType();
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public Object getKey();
@@ -1713,12 +1734,12 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     property public abstract androidx.compose.ui.unit.IntSize size;
   }
 
-  @androidx.compose.runtime.Stable public sealed interface LazyStaggeredGridItemScope {
+  @androidx.compose.runtime.Stable public sealed nonexhaustive interface LazyStaggeredGridItemScope {
     method public androidx.compose.ui.Modifier animateItem(androidx.compose.ui.Modifier, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeInSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>? placementSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeOutSpec);
     method @BytecodeOnly public static androidx.compose.ui.Modifier! animateItem$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!, androidx.compose.ui.Modifier!, androidx.compose.animation.core.FiniteAnimationSpec!, androidx.compose.animation.core.FiniteAnimationSpec!, androidx.compose.animation.core.FiniteAnimationSpec!, int, Object!);
   }
 
-  public sealed interface LazyStaggeredGridLayoutInfo {
+  public sealed nonexhaustive interface LazyStaggeredGridLayoutInfo {
     method @InaccessibleFromKotlin public int getAfterContentPadding();
     method @InaccessibleFromKotlin public int getBeforeContentPadding();
     method @InaccessibleFromKotlin public int getMainAxisItemSpacing();
@@ -1739,7 +1760,7 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     property public abstract java.util.List<androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemInfo> visibleItemsInfo;
   }
 
-  public sealed interface LazyStaggeredGridScope {
+  public sealed nonexhaustive interface LazyStaggeredGridScope {
     method public void item(optional Object? key, optional Object? contentType, optional androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan? span, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope,kotlin.Unit> content);
     method @BytecodeOnly public void item(Object?, Object?, androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void item$default(androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope!, Object!, Object!, androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan!, kotlin.jvm.functions.Function3!, int, Object!);
@@ -1827,7 +1848,7 @@ package androidx.compose.foundation.lazy.staggeredgrid {
 
 package androidx.compose.foundation.pager {
 
-  public sealed interface PageInfo {
+  public sealed nonexhaustive interface PageInfo {
     method @InaccessibleFromKotlin public int getIndex();
     method @InaccessibleFromKotlin public Object getKey();
     method @InaccessibleFromKotlin public int getOffset();
@@ -1872,7 +1893,7 @@ package androidx.compose.foundation.pager {
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public static void VerticalPager-oI3XNZo(androidx.compose.foundation.pager.PagerState!, androidx.compose.ui.Modifier!, androidx.compose.foundation.layout.PaddingValues!, androidx.compose.foundation.pager.PageSize!, int, float, androidx.compose.ui.Alignment.Horizontal!, androidx.compose.foundation.gestures.TargetedFlingBehavior!, boolean, boolean, kotlin.jvm.functions.Function1!, androidx.compose.ui.input.nestedscroll.NestedScrollConnection!, androidx.compose.foundation.gestures.snapping.SnapPosition!, kotlin.jvm.functions.Function4!, androidx.compose.runtime.Composer!, int, int, int);
   }
 
-  public sealed interface PagerLayoutInfo {
+  public sealed nonexhaustive interface PagerLayoutInfo {
     method @InaccessibleFromKotlin public int getAfterContentPadding();
     method @InaccessibleFromKotlin public int getBeforeContentPadding();
     method @InaccessibleFromKotlin public int getBeyondViewportPageCount();
@@ -1899,7 +1920,7 @@ package androidx.compose.foundation.pager {
     property public abstract java.util.List<androidx.compose.foundation.pager.PageInfo> visiblePagesInfo;
   }
 
-  public sealed interface PagerScope {
+  public sealed nonexhaustive interface PagerScope {
   }
 
   public final class PagerScrollScopeKt {
@@ -1966,7 +1987,7 @@ package androidx.compose.foundation.pager {
 
 package androidx.compose.foundation.relocation {
 
-  public sealed interface BringIntoViewRequester {
+  public sealed nonexhaustive interface BringIntoViewRequester {
     method public suspend Object? bringIntoView(optional androidx.compose.ui.geometry.Rect? rect, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly public static Object! bringIntoView$default(androidx.compose.foundation.relocation.BringIntoViewRequester!, androidx.compose.ui.geometry.Rect!, kotlin.coroutines.Continuation!, int, Object!);
   }
@@ -2156,6 +2177,268 @@ package androidx.compose.foundation.shape {
 
 }
 
+package androidx.compose.foundation.style {
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This foundation style API is experimental and is likely to change or be removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFoundationStyleApi {
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public final class MutableStyleState extends androidx.compose.foundation.style.StyleState {
+    ctor @androidx.compose.runtime.annotation.RememberInComposition public MutableStyleState(androidx.compose.foundation.interaction.InteractionSource? interactionSource);
+    method public operator <T> T get(androidx.compose.foundation.style.StyleStateKey<T> key);
+    method @InaccessibleFromKotlin public androidx.compose.ui.state.ToggleableState getTriStateToggle();
+    method @InaccessibleFromKotlin public boolean isChecked();
+    method @InaccessibleFromKotlin public boolean isEnabled();
+    method @InaccessibleFromKotlin public boolean isFocused();
+    method @InaccessibleFromKotlin public boolean isHovered();
+    method @InaccessibleFromKotlin public boolean isPressed();
+    method @InaccessibleFromKotlin public boolean isSelected();
+    method public <T> void remove(androidx.compose.foundation.style.StyleStateKey<T> key);
+    method public operator <T> void set(androidx.compose.foundation.style.StyleStateKey<T> key, T value);
+    method @InaccessibleFromKotlin public void setChecked(boolean);
+    method @InaccessibleFromKotlin public void setEnabled(boolean);
+    method @InaccessibleFromKotlin public void setFocused(boolean);
+    method @InaccessibleFromKotlin public void setHovered(boolean);
+    method @InaccessibleFromKotlin public void setPressed(boolean);
+    method @InaccessibleFromKotlin public void setSelected(boolean);
+    method @InaccessibleFromKotlin public void setTriStateToggle(androidx.compose.ui.state.ToggleableState);
+    property public boolean isChecked;
+    property public boolean isEnabled;
+    property public boolean isFocused;
+    property public boolean isHovered;
+    property public boolean isPressed;
+    property public boolean isSelected;
+    property public androidx.compose.ui.state.ToggleableState triStateToggle;
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public fun interface Style {
+    method public void applyStyle(androidx.compose.foundation.style.StyleScope);
+    field public static final androidx.compose.foundation.style.Style.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static final class Style.Companion implements androidx.compose.foundation.style.Style {
+    method public void applyStyle(androidx.compose.foundation.style.StyleScope);
+  }
+
+  @SuppressCompatibility public final class StyleKt {
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.foundation.style.Style Style(androidx.compose.foundation.style.Style style1, androidx.compose.foundation.style.Style style2);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.foundation.style.Style Style(androidx.compose.foundation.style.Style style1, androidx.compose.foundation.style.Style style2, androidx.compose.foundation.style.Style style3);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.foundation.style.Style Style(androidx.compose.foundation.style.Style... styles);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static infix androidx.compose.foundation.style.Style then(androidx.compose.foundation.style.Style, androidx.compose.foundation.style.Style other);
+  }
+
+  @SuppressCompatibility public final class StyleModifierKt {
+    method @Deprecated @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.ui.Modifier styleable(androidx.compose.ui.Modifier, androidx.compose.foundation.style.StyleState? styleState);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.ui.Modifier styleable(androidx.compose.ui.Modifier, optional androidx.compose.foundation.style.StyleState? styleState, androidx.compose.foundation.style.Style style);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.ui.Modifier styleable(androidx.compose.ui.Modifier, androidx.compose.foundation.style.StyleState? styleState, androidx.compose.foundation.style.Style... styles);
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static androidx.compose.ui.Modifier! styleable$default(androidx.compose.ui.Modifier!, androidx.compose.foundation.style.StyleState!, androidx.compose.foundation.style.Style!, int, Object!);
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public sealed nonexhaustive interface StyleScope extends androidx.compose.runtime.CompositionLocalAccessorScope androidx.compose.ui.unit.Density {
+    method public void alpha(@FloatRange(from=0.0, to=1.0) float value);
+    method public void animate(androidx.compose.animation.core.AnimationSpec<java.lang.Float> toSpec, androidx.compose.animation.core.AnimationSpec<java.lang.Float> fromSpec, androidx.compose.foundation.style.Style value);
+    method public void animate(androidx.compose.animation.core.AnimationSpec<java.lang.Float> spec, androidx.compose.foundation.style.Style value);
+    method public void animate(androidx.compose.foundation.style.Style value);
+    method public void background(androidx.compose.ui.graphics.Brush value);
+    method @KotlinOnly public void background(androidx.compose.ui.graphics.Color color);
+    method @BytecodeOnly public void background-8_81llA(long);
+    method @KotlinOnly public void baselineShift(androidx.compose.ui.text.style.BaselineShift value);
+    method @BytecodeOnly public void baselineShift-4Dl_Bck(float);
+    method @KotlinOnly public void border(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.Brush brush);
+    method @KotlinOnly public void border(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.Color color);
+    method @BytecodeOnly public void border-D5KLDUw(float, androidx.compose.ui.graphics.Brush);
+    method @BytecodeOnly public void border-cXLIe8U(float, long);
+    method public void borderBrush(androidx.compose.ui.graphics.Brush value);
+    method @KotlinOnly public void borderColor(androidx.compose.ui.graphics.Color value);
+    method @BytecodeOnly public void borderColor-8_81llA(long);
+    method @KotlinOnly public void borderWidth(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void borderWidth-0680j_4(float);
+    method @KotlinOnly public void bottom(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void bottom-0680j_4(float);
+    method public void clip(optional boolean value);
+    method @BytecodeOnly public static void clip$default(androidx.compose.foundation.style.StyleScope!, boolean, int, Object!);
+    method public void contentBrush(androidx.compose.ui.graphics.Brush value);
+    method @KotlinOnly public void contentColor(androidx.compose.ui.graphics.Color value);
+    method @BytecodeOnly public void contentColor-8_81llA(long);
+    method @KotlinOnly public void contentPadding(androidx.compose.ui.unit.Dp value);
+    method @KotlinOnly public void contentPadding(androidx.compose.ui.unit.Dp horizontal, androidx.compose.ui.unit.Dp vertical);
+    method @KotlinOnly public void contentPadding(androidx.compose.ui.unit.Dp start, androidx.compose.ui.unit.Dp top, androidx.compose.ui.unit.Dp end, androidx.compose.ui.unit.Dp bottom);
+    method @BytecodeOnly public void contentPadding-0680j_4(float);
+    method @BytecodeOnly public void contentPadding-YgX7TsA(float, float);
+    method @BytecodeOnly public void contentPadding-a9UjIt4(float, float, float, float);
+    method @KotlinOnly public void contentPaddingBottom(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingBottom-0680j_4(float);
+    method @KotlinOnly public void contentPaddingEnd(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingEnd-0680j_4(float);
+    method @KotlinOnly public void contentPaddingHorizontal(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingHorizontal-0680j_4(float);
+    method @KotlinOnly public void contentPaddingStart(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingStart-0680j_4(float);
+    method @KotlinOnly public void contentPaddingTop(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingTop-0680j_4(float);
+    method @KotlinOnly public void contentPaddingVertical(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void contentPaddingVertical-0680j_4(float);
+    method public void dropShadow(androidx.compose.ui.graphics.shadow.Shadow value);
+    method public void dropShadow(androidx.compose.ui.graphics.shadow.Shadow... value);
+    method @KotlinOnly public void externalPadding(androidx.compose.ui.unit.Dp value);
+    method @KotlinOnly public void externalPadding(androidx.compose.ui.unit.Dp horizontal, androidx.compose.ui.unit.Dp vertical);
+    method @KotlinOnly public void externalPadding(androidx.compose.ui.unit.Dp start, androidx.compose.ui.unit.Dp top, androidx.compose.ui.unit.Dp end, androidx.compose.ui.unit.Dp bottom);
+    method @BytecodeOnly public void externalPadding-0680j_4(float);
+    method @BytecodeOnly public void externalPadding-YgX7TsA(float, float);
+    method @BytecodeOnly public void externalPadding-a9UjIt4(float, float, float, float);
+    method @KotlinOnly public void externalPaddingBottom(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingBottom-0680j_4(float);
+    method @KotlinOnly public void externalPaddingEnd(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingEnd-0680j_4(float);
+    method @KotlinOnly public void externalPaddingHorizontal(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingHorizontal-0680j_4(float);
+    method @KotlinOnly public void externalPaddingStart(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingStart-0680j_4(float);
+    method @KotlinOnly public void externalPaddingTop(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingTop-0680j_4(float);
+    method @KotlinOnly public void externalPaddingVertical(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void externalPaddingVertical-0680j_4(float);
+    method public void fontFamily(androidx.compose.ui.text.font.FontFamily value);
+    method @KotlinOnly public void fontSize(androidx.compose.ui.unit.TextUnit value);
+    method @BytecodeOnly public void fontSize--R2X_6o(long);
+    method @KotlinOnly public void fontStyle(androidx.compose.ui.text.font.FontStyle value);
+    method @BytecodeOnly public void fontStyle-nzbMABs(int);
+    method @KotlinOnly public void fontSynthesis(androidx.compose.ui.text.font.FontSynthesis value);
+    method @BytecodeOnly public void fontSynthesis-6p3vJLY(int);
+    method public void fontWeight(androidx.compose.ui.text.font.FontWeight value);
+    method public void foreground(androidx.compose.ui.graphics.Brush value);
+    method @KotlinOnly public void foreground(androidx.compose.ui.graphics.Color value);
+    method @BytecodeOnly public void foreground-8_81llA(long);
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleState getState();
+    method @KotlinOnly public void height(androidx.compose.ui.unit.Dp value);
+    method public void height(@FloatRange(from=0.0, to=1.0) float fraction);
+    method @BytecodeOnly public void height-0680j_4(float);
+    method @KotlinOnly public void hyphens(androidx.compose.ui.text.style.Hyphens value);
+    method @BytecodeOnly public void hyphens--3fSNIE(int);
+    method public void innerShadow(androidx.compose.ui.graphics.shadow.Shadow value);
+    method public void innerShadow(androidx.compose.ui.graphics.shadow.Shadow... value);
+    method @KotlinOnly public void left(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void left-0680j_4(float);
+    method @KotlinOnly public void letterSpacing(androidx.compose.ui.unit.TextUnit value);
+    method @BytecodeOnly public void letterSpacing--R2X_6o(long);
+    method @KotlinOnly public void lineBreak(androidx.compose.ui.text.style.LineBreak value);
+    method @BytecodeOnly public void lineBreak-CZqVlQI(int);
+    method @KotlinOnly public void lineHeight(androidx.compose.ui.unit.TextUnit value);
+    method @BytecodeOnly public void lineHeight--R2X_6o(long);
+    method @KotlinOnly public void maxHeight(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void maxHeight-0680j_4(float);
+    method @KotlinOnly public void maxSize(androidx.compose.ui.unit.Dp width, androidx.compose.ui.unit.Dp height);
+    method @KotlinOnly public void maxSize(androidx.compose.ui.unit.DpSize size);
+    method @BytecodeOnly public void maxSize-EaSLcWc(long);
+    method @BytecodeOnly public void maxSize-YgX7TsA(float, float);
+    method @KotlinOnly public void maxWidth(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void maxWidth-0680j_4(float);
+    method @KotlinOnly public void minHeight(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void minHeight-0680j_4(float);
+    method @KotlinOnly public void minSize(androidx.compose.ui.unit.Dp width, androidx.compose.ui.unit.Dp height);
+    method @KotlinOnly public void minSize(androidx.compose.ui.unit.DpSize size);
+    method @BytecodeOnly public void minSize-EaSLcWc(long);
+    method @BytecodeOnly public void minSize-YgX7TsA(float, float);
+    method @KotlinOnly public void minWidth(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void minWidth-0680j_4(float);
+    method @KotlinOnly public void right(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void right-0680j_4(float);
+    method public void rotationX(float value);
+    method public void rotationY(float value);
+    method public void rotationZ(float value);
+    method public void scale(@FloatRange(from=0.0) float value);
+    method public void scaleX(@FloatRange(from=0.0) float value);
+    method public void scaleY(@FloatRange(from=0.0) float value);
+    method public void shape(androidx.compose.ui.graphics.Shape value);
+    method @KotlinOnly public void size(androidx.compose.ui.unit.Dp value);
+    method @KotlinOnly public void size(androidx.compose.ui.unit.Dp width, androidx.compose.ui.unit.Dp height);
+    method @KotlinOnly public void size(androidx.compose.ui.unit.DpSize value);
+    method @BytecodeOnly public void size-0680j_4(float);
+    method @BytecodeOnly public void size-EaSLcWc(long);
+    method @BytecodeOnly public void size-YgX7TsA(float, float);
+    method public <T> void state(androidx.compose.foundation.style.StyleStateKey<T> key, androidx.compose.foundation.style.Style value, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.style.StyleStateKey<T>,? super androidx.compose.foundation.style.StyleState,java.lang.Boolean> active);
+    method @KotlinOnly public void textAlign(androidx.compose.ui.text.style.TextAlign value);
+    method @BytecodeOnly public void textAlign-aXe7zB0(int);
+    method public void textDecoration(androidx.compose.ui.text.style.TextDecoration value);
+    method @KotlinOnly public void textDirection(androidx.compose.ui.text.style.TextDirection value);
+    method @BytecodeOnly public void textDirection-Hejc4pk(int);
+    method public void textIndent(androidx.compose.ui.text.style.TextIndent value);
+    method public void textStyle(androidx.compose.ui.text.TextStyle value);
+    method @KotlinOnly public void top(androidx.compose.ui.unit.Dp value);
+    method @BytecodeOnly public void top-0680j_4(float);
+    method @KotlinOnly public void transformOrigin(androidx.compose.ui.graphics.TransformOrigin value);
+    method @BytecodeOnly public void transformOrigin-__ExYCQ(long);
+    method @KotlinOnly public void translation(androidx.compose.ui.geometry.Offset offset);
+    method public void translation(@FloatRange(from=0.0) float x, @FloatRange(from=0.0) float y);
+    method @BytecodeOnly public void translation-k-4lQ0M(long);
+    method public void translationX(@FloatRange(from=0.0) float value);
+    method public void translationY(@FloatRange(from=0.0) float value);
+    method @KotlinOnly public void width(androidx.compose.ui.unit.Dp value);
+    method public void width(@FloatRange(from=0.0, to=1.0) float fraction);
+    method @BytecodeOnly public void width-0680j_4(float);
+    method public void zIndex(@FloatRange(from=0.0) float value);
+    property public abstract androidx.compose.foundation.style.StyleState state;
+  }
+
+  @SuppressCompatibility public final class StyleScopeKt {
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void apply(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style style);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void fillHeight(androidx.compose.foundation.style.StyleScope);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void fillSize(androidx.compose.foundation.style.StyleScope);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void fillWidth(androidx.compose.foundation.style.StyleScope);
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public abstract sealed exhaustive class StyleState {
+    method public abstract operator <T> T get(androidx.compose.foundation.style.StyleStateKey<T> key);
+    method @InaccessibleFromKotlin public abstract androidx.compose.ui.state.ToggleableState getTriStateToggle();
+    method @InaccessibleFromKotlin public abstract boolean isChecked();
+    method @InaccessibleFromKotlin public abstract boolean isEnabled();
+    method @InaccessibleFromKotlin public abstract boolean isFocused();
+    method @InaccessibleFromKotlin public abstract boolean isHovered();
+    method @InaccessibleFromKotlin public abstract boolean isPressed();
+    method @InaccessibleFromKotlin public abstract boolean isSelected();
+    property public abstract boolean isChecked;
+    property public abstract boolean isEnabled;
+    property public abstract boolean isFocused;
+    property public abstract boolean isHovered;
+    property public abstract boolean isPressed;
+    property public abstract boolean isSelected;
+    property public abstract androidx.compose.ui.state.ToggleableState triStateToggle;
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public class StyleStateKey<T> {
+    ctor public StyleStateKey(T defaultValue);
+    method protected suspend Object? processInteraction(androidx.compose.foundation.interaction.Interaction interaction, androidx.compose.foundation.style.MutableStyleState styleState, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    field public static final androidx.compose.foundation.style.StyleStateKey.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static final class StyleStateKey.Companion {
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> getEnabled();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> getFocused();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> getHovered();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> getPressed();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> getSelected();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.style.StyleStateKey<androidx.compose.ui.state.ToggleableState> getToggle();
+    property public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> Enabled;
+    property public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> Focused;
+    property public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> Hovered;
+    property public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> Pressed;
+    property public androidx.compose.foundation.style.StyleStateKey<java.lang.Boolean> Selected;
+    property public androidx.compose.foundation.style.StyleStateKey<androidx.compose.ui.state.ToggleableState> Toggle;
+  }
+
+  @SuppressCompatibility public final class StyleStateKt {
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void checked(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void disabled(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void focused(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void hovered(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void pressed(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void selected(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void triStateToggleIndeterminate(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void triStateToggleOff(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+    method @SuppressCompatibility @androidx.compose.foundation.style.ExperimentalFoundationStyleApi public static void triStateToggleOn(androidx.compose.foundation.style.StyleScope, androidx.compose.foundation.style.Style value);
+  }
+
+}
+
 package androidx.compose.foundation.text {
 
   public final class AutofillHighlightKt {
@@ -2257,7 +2540,6 @@ package androidx.compose.foundation.text {
   }
 
   @androidx.compose.runtime.Immutable public final class KeyboardOptions {
-    ctor public KeyboardOptions();
     ctor @KotlinOnly @Deprecated public KeyboardOptions(optional androidx.compose.ui.text.input.KeyboardCapitalization capitalization, boolean autoCorrect, optional androidx.compose.ui.text.input.KeyboardType keyboardType, optional androidx.compose.ui.text.input.ImeAction imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
     ctor @KotlinOnly public KeyboardOptions(optional androidx.compose.ui.text.input.KeyboardCapitalization capitalization, optional Boolean? autoCorrectEnabled, optional androidx.compose.ui.text.input.KeyboardType keyboardType, optional androidx.compose.ui.text.input.ImeAction imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
     ctor @BytecodeOnly public KeyboardOptions(int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -2521,7 +2803,7 @@ package androidx.compose.foundation.text.input {
     method @BytecodeOnly @androidx.compose.runtime.Composable public void Decoration(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
   }
 
-  @androidx.compose.runtime.Stable public sealed interface TextFieldLineLimits {
+  @androidx.compose.runtime.Stable public sealed exhaustive interface TextFieldLineLimits {
     field public static final androidx.compose.foundation.text.input.TextFieldLineLimits.Companion Companion;
   }
 
@@ -2605,7 +2887,7 @@ package androidx.compose.foundation.text.input {
 
 package androidx.compose.foundation.text.modifiers {
 
-  public sealed interface TextAutoSizeLayoutScope extends androidx.compose.ui.unit.Density {
+  public sealed nonexhaustive interface TextAutoSizeLayoutScope extends androidx.compose.ui.unit.Density {
     method @KotlinOnly public androidx.compose.ui.text.TextLayoutResult performLayout(androidx.compose.ui.unit.Constraints constraints, androidx.compose.ui.text.AnnotatedString text, androidx.compose.ui.unit.TextUnit fontSize);
     method @BytecodeOnly public androidx.compose.ui.text.TextLayoutResult performLayout-5ZSfY2I(long, androidx.compose.ui.text.AnnotatedString, long);
   }

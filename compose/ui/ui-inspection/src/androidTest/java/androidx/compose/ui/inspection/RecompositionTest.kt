@@ -27,8 +27,9 @@ import androidx.compose.ui.inspection.util.GetUpdateSettingsCommand
 import androidx.compose.ui.inspection.util.filter
 import androidx.compose.ui.inspection.util.flatten
 import androidx.compose.ui.inspection.util.toMap
+import androidx.compose.ui.inspection.validators.DoNotChangeMayRequireChangesInAndroidStudio
 import androidx.compose.ui.inspection.validators.validate
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.inspection.testing.InspectorTester
@@ -49,11 +50,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 
+@DoNotChangeMayRequireChangesInAndroidStudio
 private const val TRACE_BUTTON_EMPTY_INTERACTIONS =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.snapshots.SnapshotStateListKt.getReadable(SnapshotStateList.kt:215)
@@ -62,23 +64,35 @@ private const val TRACE_BUTTON_EMPTY_INTERACTIONS =
     at androidx.compose.material3.ButtonElevation.shadowElevation<any>(Button.kt:932)
     at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:52)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:12)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:10)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
     """
 
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_BUTTON_EMPTY_INTERACTIONS =
+    """
+    at androidx.compose.material3.ButtonElevation.animateElevation(Button.kt:969)
+    at androidx.compose.material3.ButtonElevation.shadowElevation<any>(Button.kt:932)
+    at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:52)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
 private const val TRACE_BUTTON_INTERACTIONS_WITH_PRESS =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.snapshots.SnapshotStateListKt.getReadable(SnapshotStateList.kt:215)
@@ -86,89 +100,129 @@ private const val TRACE_BUTTON_INTERACTIONS_WITH_PRESS =
     at androidx.compose.material3.ButtonElevation.animateElevation(Button.kt:969)
     at androidx.compose.material3.ButtonElevation.shadowElevation<any>(Button.kt:932)
     at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
-    at androidx.compose.material3.ButtonKt<any>.invoke(:31)
-    at androidx.compose.material3.ButtonKt<any>.invoke(:10)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:31)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
     """
 
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_BUTTON_INTERACTIONS_WITH_PRESS =
+    """
+    at androidx.compose.material3.ButtonElevation.animateElevation(Button.kt:969)
+    at androidx.compose.material3.ButtonElevation.shadowElevation<any>(Button.kt:932)
+    at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:31)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:10)
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
 private const val TRACE_BUTTON_EMPTY_SHADOW_ELEVATION =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.SnapshotMutableStateImpl.getValue(SnapshotState.kt:142)
     at androidx.compose.animation.core.AnimationState.getValue(AnimationState.kt:330)
     at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:52)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:12)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:10)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
     """
 
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_BUTTON_EMPTY_SHADOW_ELEVATION =
+    """
+    at androidx.compose.animation.core.AnimationState.getValue(AnimationState.kt:330)
+    at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:52)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
 private const val TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.SnapshotMutableStateImpl.getValue(SnapshotState.kt:142)
     at androidx.compose.animation.core.AnimationState.getValue(AnimationState.kt:330)
     at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
-    at androidx.compose.material3.ButtonKt<any>.invoke(:31)
-    at androidx.compose.material3.ButtonKt<any>.invoke(:10)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:31)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS =
+    """
+    at androidx.compose.animation.core.AnimationState.getValue(AnimationState.kt:330)
+    at androidx.compose.material3.ButtonKt.Button(Button.kt:124)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:31)
+    at androidx.compose.material3.ButtonKt<any>.invoke(<any>:10)
     """
 
 private const val TRACE_ITEM_UPDATE_COUNT_STATE =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.SnapshotMutableStateImpl.getValue(SnapshotState.kt:142)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:60)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:12)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:10)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
     """
 
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_ITEM_UPDATE_COUNT_STATE =
+    """
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:60)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
 private const val TRACE_ITEM_UPDATE_LIST_STATE =
     """
     at androidx.compose.runtime.CompositionImpl.recordReadOf(Composition.kt:1015)
     at androidx.compose.runtime.Recomposer.readObserverOf<any>(Recomposer.kt:1519)
-    at androidx.compose.runtime.Recomposer.<any>(:0)
+    ...
     at androidx.compose.runtime.Recomposer<any>.invoke(<any>:0)
     at androidx.compose.runtime.snapshots.SnapshotKt.readable(Snapshot.kt:2081)
     at androidx.compose.runtime.snapshots.SnapshotStateListKt.getReadable(SnapshotStateList.kt:215)
@@ -176,16 +230,24 @@ private const val TRACE_ITEM_UPDATE_LIST_STATE =
     at kotlin.collections.CollectionsKt___CollectionsKt.joinToString(_Collections.kt:3510)
     at kotlin.collections.CollectionsKt___CollectionsKt.joinToString<any>(_Collections.kt:3509)
     at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:60)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:12)
-    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(:10)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
     at androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:196)
-    at androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(ComposerImpl.kt:1709)
-    at androidx.compose.runtime.ComposerImpl.skipCurrentGroup(ComposerImpl.kt:2045)
-    at androidx.compose.runtime.ComposerImpl.doCompose<any>(ComposerImpl.kt:2676)
-    at androidx.compose.runtime.ComposerImpl.recompose<any>(ComposerImpl.kt:2600)
+    at androidx.compose.runtime.<composer>.recomposeToGroupEnd(<composer>.kt:1709)
+    at androidx.compose.runtime.<composer>.skipCurrentGroup(<composer>.kt:2045)
+    at androidx.compose.runtime.<composer>.doCompose<any>(<composer>.kt:2676)
+    at androidx.compose.runtime.<composer>.recompose<any>(<composer>.kt:2600)
     at androidx.compose.runtime.CompositionImpl.recompose(Composition.kt:1076)
     at androidx.compose.runtime.Recomposer.performRecompose(Recomposer.kt:1400)
     ...
+    """
+
+@DoNotChangeMayRequireChangesInAndroidStudio
+private const val UNFOLDED_TRACE_ITEM_UPDATE_LIST_STATE =
+    """
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity.Item(RecompositionTestActivity.kt:60)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:12)
+    at androidx.compose.ui.inspection.testdata.RecompositionTestActivity<any>.invoke(<any>:10)
     """
 
 @LargeTest
@@ -358,29 +420,46 @@ class RecompositionTest {
         validate(reads, nodes.button1.anchorHash) {
             recomposition(highRecomposition - 1) {
                 read {
-                    value(Type.ITERABLE, "List[1]") {
-                        parameter("[0]", Type.STRING, "Press") {
-                            parameter("pressPosition", Type.STRING, "Offset") {
-                                parameter("x", Type.DIMENSION_DP, 58.66f, 0.01f)
-                                parameter("y", Type.DIMENSION_DP, 20f, 0.01f)
+                    invalidated(true)
+                    valueOptions {
+                        value(Type.ITERABLE, "List[1]") {
+                            parameter("[0]", Type.STRING, "Press") {
+                                parameter("pressPosition", Type.STRING, "Offset") {
+                                    parameter("x", Type.DIMENSION_DP, 58.66f, 0.01f)
+                                    parameter("y", Type.DIMENSION_DP, 20f, 0.01f)
+                                }
+                            }
+                        }
+                        value(Type.ITERABLE, "List[2]") {
+                            parameter("[0]", Type.STRING, "Focus")
+                            parameter("[1]", Type.STRING, "Press") {
+                                parameter("pressPosition", Type.STRING, "Offset") {
+                                    parameter("x", Type.DIMENSION_DP, 58.66f, 0.01f)
+                                    parameter("y", Type.DIMENSION_DP, 20f, 0.01f)
+                                }
                             }
                         }
                     }
                     trace(TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
                 }
                 read {
                     value(Type.DIMENSION_DP, 0.0f)
                     trace(TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
                 }
             }
             recomposition(highRecomposition) {
                 read {
+                    invalidated(true)
                     value(Type.ITERABLE, "List[0]")
                     trace(TRACE_BUTTON_EMPTY_INTERACTIONS)
+                    folding(UNFOLDED_TRACE_BUTTON_EMPTY_INTERACTIONS)
                 }
                 read {
                     value(Type.DIMENSION_DP, 0.0f)
                     trace(TRACE_BUTTON_EMPTY_SHADOW_ELEVATION)
+                    folding(UNFOLDED_TRACE_BUTTON_EMPTY_SHADOW_ELEVATION)
                 }
             }
         }
@@ -395,6 +474,7 @@ class RecompositionTest {
         validate(reads, nodes.button1.anchorHash) {
             recomposition(highRecomposition - 3) {
                 read {
+                    invalidated(true)
                     value(Type.ITERABLE, "List[1]") {
                         parameter("[0]", Type.STRING, "Press") {
                             parameter("pressPosition", Type.STRING, "Offset") {
@@ -404,20 +484,25 @@ class RecompositionTest {
                         }
                     }
                     trace(TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
                 }
                 read {
                     value(Type.DIMENSION_DP, 0.0f)
                     trace(TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
                 }
             }
             recomposition(highRecomposition - 2) {
                 read {
+                    invalidated(true)
                     value(Type.ITERABLE, "List[0]")
                     trace(TRACE_BUTTON_EMPTY_INTERACTIONS)
+                    folding(UNFOLDED_TRACE_BUTTON_EMPTY_INTERACTIONS)
                 }
                 read {
                     value(Type.DIMENSION_DP, 0.0f)
                     trace(TRACE_BUTTON_EMPTY_SHADOW_ELEVATION)
+                    folding(UNFOLDED_TRACE_BUTTON_EMPTY_SHADOW_ELEVATION)
                 }
             }
         }
@@ -526,6 +611,7 @@ class RecompositionTest {
                     value(Type.INT32, 2)
                     invalidated(true)
                     trace(TRACE_ITEM_UPDATE_COUNT_STATE)
+                    folding(UNFOLDED_TRACE_ITEM_UPDATE_COUNT_STATE)
                 }
                 read {
                     value(Type.ITERABLE, "List[6]") {
@@ -536,6 +622,7 @@ class RecompositionTest {
                         parameter("[4]", Type.STRING, "e")
                     }
                     trace(TRACE_ITEM_UPDATE_LIST_STATE)
+                    folding(UNFOLDED_TRACE_ITEM_UPDATE_LIST_STATE)
                 }
             }
             recomposition(3) {
@@ -543,6 +630,7 @@ class RecompositionTest {
                     value(Type.INT32, 3)
                     invalidated(true)
                     trace(TRACE_ITEM_UPDATE_COUNT_STATE)
+                    folding(UNFOLDED_TRACE_ITEM_UPDATE_COUNT_STATE)
                 }
                 read {
                     value(Type.ITERABLE, "List[6]") {
@@ -553,6 +641,7 @@ class RecompositionTest {
                         parameter("[4]", Type.STRING, "e")
                     }
                     trace(TRACE_ITEM_UPDATE_LIST_STATE)
+                    folding(UNFOLDED_TRACE_ITEM_UPDATE_LIST_STATE)
                 }
             }
         }
@@ -619,10 +708,12 @@ class RecompositionTest {
                     }
                     invalidated(true)
                     trace(TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_INTERACTIONS_WITH_PRESS)
                 }
                 read {
                     value(Type.DIMENSION_DP, 0.0f)
                     trace(TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
+                    folding(UNFOLDED_TRACE_BUTTON_SHADOW_ELEVATION_DURING_PRESS)
                 }
             }
         }

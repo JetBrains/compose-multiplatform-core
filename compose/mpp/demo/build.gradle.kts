@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-import androidx.build.AndroidXComposePlugin
+@file:OptIn(ExperimentalWasmDsl::class)
+
 import java.util.*
-import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
-    id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
-//  [1.4 Update]  id("application")
-    kotlin("plugin.serialization") version "1.9.21"
-    id("JetBrainsAndroidXPlugin")
+    alias(libs.plugins.kotlinSerialization)
 }
 
-AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetBrainsAndroidXPlugin.applyAndConfigure(project)
-
-dependencies {
-
-}
-
-val resourcesDir = "$buildDir/resources"
+val resourcesDir = layout.buildDirectory.get().asFile.resolve("resources")
 val skikoWasm = configurations.findByName("skikoWasm") ?: configurations.create("skikoWasm")
 
 dependencies {
-    skikoWasm(libs.skikoWasm)
+    skikoWasm(libs.skikoJsWasmRuntime)
 }
 
 val unzipTask = tasks.register("unzipWasm", Copy::class) {
@@ -49,13 +40,10 @@ val unzipTask = tasks.register("unzipWasm", Copy::class) {
     from(skikoWasm.map { zipTree(it) })
 }
 
-repositories {
-    mavenLocal()
-}
-
 kotlin {
+    applyDefaultHierarchyTemplate()
     jvm("desktop")
-    js(IR) {
+    js {
         outputModuleName = "mpp-demo"
         browser {
             commonWebpackConfig {
@@ -67,6 +55,9 @@ kotlin {
     wasmJs {
         outputModuleName = "mpp-demo"
         browser {
+            // https://youtrack.jetbrains.com/issue/KT-68614
+            val rootDirPath = project.rootDir.path
+            val projectDirPath = project.projectDir.path
             commonWebpackConfig {
                 outputFileName = "demo.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -77,25 +68,13 @@ kotlin {
                     )
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
-                        add(project.rootDir.path)
-                        add(project.projectDir.path)
+                        add(rootDirPath)
+                        add(projectDirPath)
                     }
                 }
             }
         }
         binaries.executable()
-    }
-    macosX64() {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal"
-                )
-                // TODO: the current release binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
-            }
-        }
     }
     macosArm64() {
         binaries {
@@ -109,7 +88,7 @@ kotlin {
             }
         }
     }
-    iosX64("uikitX64") {
+    iosArm64("iosArm64") {
         binaries {
             executable() {
                 entryPoint = "androidx.compose.mpp.demo.main"
@@ -123,21 +102,7 @@ kotlin {
             }
         }
     }
-    iosArm64("uikitArm64") {
-        binaries {
-            executable() {
-                entryPoint = "androidx.compose.mpp.demo.main"
-                freeCompilerArgs += listOf(
-                    "-linker-option", "-framework", "-linker-option", "Metal",
-                    "-linker-option", "-framework", "-linker-option", "CoreText",
-                    "-linker-option", "-framework", "-linker-option", "CoreGraphics"
-                )
-                // TODO: the current compose binary surprises LLVM, so disable checks for now.
-                freeCompilerArgs += "-Xdisable-phases=VerifyBitcode"
-            }
-        }
-    }
-    iosSimulatorArm64("uikitSimArm64") {
+    iosSimulatorArm64("iosSimArm64") {
         binaries {
             executable() {
                 entryPoint = "androidx.compose.mpp.demo.main"
@@ -154,6 +119,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinSerializationCore)
+
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:foundation:foundation-layout"))
                 implementation(project(":compose:material3:material3"))
@@ -162,7 +130,6 @@ kotlin {
                 implementation(project(":compose:material3:adaptive:adaptive-layout"))
                 implementation(project(":compose:material3:adaptive:adaptive-navigation"))
                 implementation(project(":compose:material:material"))
-                implementation(project(":compose:mpp"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":compose:ui:ui-graphics"))
@@ -171,12 +138,11 @@ kotlin {
                 implementation(project(":lifecycle:lifecycle-common"))
                 implementation(project(":lifecycle:lifecycle-runtime"))
                 implementation(project(":lifecycle:lifecycle-runtime-compose"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
                 implementation(project(":navigation:navigation-common"))
                 implementation(project(":navigation:navigation-compose"))
                 implementation(project(":navigation:navigation-runtime"))
-                implementation(libs.kotlinStdlib)
-                implementation(libs.kotlinCoroutinesCore)
-                api(libs.kotlinSerializationCore)
 
                 implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {
                     // exclude dependencies, because they override local projects when we build 0.0.0-* version
@@ -190,7 +156,7 @@ kotlin {
         val skikoMain by creating {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.skikoCommon)
+                implementation(libs.skiko)
             }
         }
 
@@ -199,11 +165,10 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:desktop:desktop"))
             }
         }
 
-        val webMain by creating {
+        val webMain by getting {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             resources.srcDirs(unzipTask.map { it.destinationDir })
@@ -213,33 +178,22 @@ kotlin {
             }
         }
 
-        val jsMain by getting {
-            dependsOn(webMain)
-        }
-
         val wasmJsMain by getting {
-            dependsOn(webMain)
             dependencies {
                 api(libs.kotlinXw3c)
             }
         }
 
-        val nativeMain by creating { dependsOn(skikoMain) }
+        val nativeMain by getting { dependsOn(skikoMain) }
         val darwinMain by creating { dependsOn(nativeMain) }
-        val macosMain by creating { dependsOn(darwinMain) }
-        val macosX64Main by getting { dependsOn(macosMain) }
-        val macosArm64Main by getting { dependsOn(macosMain) }
-        val uikitMain by creating { dependsOn(darwinMain) }
-        val uikitX64Main by getting { dependsOn(uikitMain) }
-        val uikitArm64Main by getting { dependsOn(uikitMain) }
-        val uikitSimArm64Main by getting { dependsOn(uikitMain) }
+        val macosMain by getting { dependsOn(darwinMain) }
+        val iosMain by getting { dependsOn(darwinMain) }
     }
 }
 
 enum class Target(val simulator: Boolean, val key: String) {
-    UIKIT_X64(true, "uikitX64"),
-    UIKIT_ARM64(false, "uikitArm64"),
-    UIKIT_SIM_ARM64(true, "uikitSimArm64"),
+    IOS_ARM64(false, "iosArm64"),
+    IOS_SIM_ARM64(true, "iosSimArm64"),
 }
 
 if (System.getProperty("os.name") == "Mac OS X") {
@@ -248,16 +202,16 @@ if (System.getProperty("os.name") == "Mac OS X") {
 
     val target = sdkName.orEmpty().let {
         when {
-            it.startsWith("iphoneos") -> Target.UIKIT_ARM64
+            it.startsWith("iphoneos") -> Target.IOS_ARM64
             it.startsWith("iphonesimulator") -> {
                 if (System.getProperty("os.arch") == "aarch64") {
-                    Target.UIKIT_SIM_ARM64
+                    Target.IOS_SIM_ARM64
                 } else {
-                    Target.UIKIT_X64
+                    error("x64 host is not supported anymore!")
                 }
             }
 
-            else -> Target.UIKIT_X64
+            else -> Target.IOS_SIM_ARM64
         }
     }
 
@@ -274,13 +228,15 @@ if (System.getProperty("os.name") == "Mac OS X") {
     val packForXCode = if (sdkName == null || targetBuildDir == null || executablePath == null) {
         // The build is launched not by Xcode ->
         // We cannot create a copy task and just show a meaningful error message.
-        tasks.create("packForXCode").doLast {
-            group = xcodeIntegrationGroup
-            throw IllegalStateException("Please run the task from Xcode")
+        tasks.register("packForXCode") {
+            doLast {
+                group = xcodeIntegrationGroup
+                throw IllegalStateException("Please run the task from Xcode")
+            }
         }
     } else {
         // Otherwise copy the executable into the Xcode output directory.
-        tasks.create("packForXCode", Copy::class.java) {
+        tasks.register("packForXCode", Copy::class.java) {
             dependsOn(kotlinBinary.linkTaskProvider)
 
             group = xcodeIntegrationGroup
@@ -303,7 +259,7 @@ if (System.getProperty("os.name") == "Mac OS X") {
     }
 }
 
-tasks.create("runDesktop", JavaExec::class.java) {
+tasks.register("runDesktop", JavaExec::class.java) {
     dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass.set("androidx.compose.mpp.demo.Main_desktopKt")
     args = listOfNotNull(project.findProperty("args")?.toString())

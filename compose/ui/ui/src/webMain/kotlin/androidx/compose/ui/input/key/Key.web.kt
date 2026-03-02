@@ -30,11 +30,25 @@ actual value class Key(val keyCode: Long) {
         actual val Unknown = Key(-1)
 
         /**
-         * Home key.
+         * System Home key.
          *
          * This key is handled by the framework and is never delivered to applications.
          */
+        @Deprecated(
+            "`Key.Home` was mapped to the keyboard \"Home\" key in error. It is meant to be the" +
+                " \"system\" home key on Android, and should never be delivered to applications. " +
+                "For the keyboard \"Home\" key use `Key.MoveHome`. For the Android system " +
+                "\"Home\" key (unlikely to be needed), use `Key.SystemHome`",
+            level = DeprecationLevel.ERROR,
+        )
         actual val Home = Key(36)
+
+        /**
+         * System Home key.
+         *
+         * This key is handled by the framework and is never delivered to applications.
+         */
+        actual val SystemHome: Key = Key(-1000000207)
 
         /**
          * Up Arrow Key / Directional Pad Up key.
@@ -554,6 +568,16 @@ actual value class Key(val keyCode: Long) {
         actual val NumPadEquals = Key(-1000000195)
         actual val NumPadLeftParenthesis = Key(-1000000196)
         actual val NumPadRightParenthesis = Key(-1000000197)
+        actual val NumPadDirectionUp = Key(-1000000198)
+        actual val NumPadDirectionDown = Key(-1000000199)
+        actual val NumPadDirectionLeft = Key(-1000000200)
+        actual val NumPadDirectionRight = Key(-1000000201)
+        actual val NumPadMoveHome = Key(-1000000202)
+        actual val NumPadMoveEnd = Key(-1000000203)
+        actual val NumPadPageUp = Key(-1000000204)
+        actual val NumPadPageDown = Key(-1000000205)
+        actual val NumPadInsert = Key(-1000000206)
+        actual val NumPadDelete: Key = Key(-1000000208)
     }
 
     actual override fun toString() = "Key keyCode: $keyCode"

@@ -26,6 +26,7 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.OnFocusBehavior
+import androidx.compose.ui.uikit.utils.CMPMetalLayer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -33,28 +34,31 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.MetalRedrawer
+import androidx.compose.ui.window.SurfaceMetalRedrawer
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
-import platform.QuartzCore.CAMetalLayer
 
 class ComposeSceneMediatorTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() = runBlocking {
-        val mediator = makeMediator()
+        val context = Dispatchers.Main + Job()
+        val mediator = makeMediator(coroutineContext = context)
         mediator.setContent {}
-        mediator.dispose()
+        context.cancel()
 
         mediator.composeSceneDensity = Density(2f)
         mediator.layoutDirection = LayoutDirection.Rtl
         mediator.compositionLocalContext = null
         mediator.interactionBounds = IntRect.Zero
         mediator.isAccessibilityEnabled = true
-        mediator.prepareAndGetSizeTransitionAnimation().invoke(10.milliseconds)
+        mediator.prepareAndGetSizeTransitionAnimation { onFrame -> onFrame(1.0f) }
+        Unit
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -62,7 +66,7 @@ class ComposeSceneMediatorTest {
     fun testDisposedViewControllerTapNoCrash() = runUIKitInstrumentedTest {
         setContent {}
 
-        hostingViewController.viewControllerDidLeaveWindowHierarchy()
+        stopComposeScene()
 
         tap(screenSize.center)
 
@@ -74,31 +78,31 @@ class ComposeSceneMediatorTest {
     fun testDisposedViewControllerResizeNoCrash() = runUIKitInstrumentedTest {
         setContent {}
 
-        hostingViewController.viewControllerDidLeaveWindowHierarchy()
+        stopComposeScene()
 
-        hostingViewController.view.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
-        hostingViewController.view.layoutIfNeeded()
+        viewController.view.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
+        viewController.view.layoutIfNeeded()
 
         waitForIdle()
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun makeMediator(): ComposeSceneMediator {
+    private fun makeMediator(coroutineContext: CoroutineContext): ComposeSceneMediator {
         val mediator = ComposeSceneMediator(
             onFocusBehavior = OnFocusBehavior.DoNothing,
+            isClearFocusOnMouseDownEnabled = false,
             focusedViewsList = null,
             windowContext = PlatformWindowContext(),
             architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
-            coroutineContext = Dispatchers.Main,
-            redrawer = MetalRedrawer(
-                metalLayer = CAMetalLayer(),
+            coroutineContext = coroutineContext,
+            redrawer = SurfaceMetalRedrawer(
+                metalLayer = CMPMetalLayer(),
                 retrieveInteropTransaction = {
                     object : UIKitInteropTransaction {
                         override val actions: List<UIKitInteropAction> = emptyList()
                         override val isInteropActive: Boolean = false
                     }
                 },
-                useSeparateRenderThreadWhenPossible = false,
                 render = { _, _ -> }
             ),
             navigationEventInput = UIKitNavigationEventInput(

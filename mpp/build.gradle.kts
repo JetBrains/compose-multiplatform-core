@@ -1,6 +1,7 @@
-import org.jetbrains.androidx.build.AbstractComposePublishingTask
+import org.jetbrains.androidx.build.ComposePublishingTask
 import org.jetbrains.androidx.build.ArtifactRedirection
 import org.jetbrains.androidx.build.ComposePlatforms
+import org.jetbrains.androidx.build.ComposeProperties
 import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.androidx.build.artifactRedirection
 import org.jetbrains.androidx.build.hasRedirection
@@ -10,30 +11,30 @@ import org.jetbrains.androidx.build.hasRedirection
     evaluationDependsOn(it.path)
 }
 
-open class ComposePublishingTask : AbstractComposePublishingTask() {
-    override fun dependsOnComposeTask(task: String) {
-        dependsOn(task)
-    }
-}
-
 val libraryToComponents = JetBrainsPublication.libraryToComponents
 
 val pathToComposeComponent = libraryToComponents.values.flatten().associateBy { it.path }
 val Project.composeComponent get() = pathToComposeComponent[path]
 
+val parsedComposeProperties = ComposeProperties(project)
+
 tasks.register("publishComposeJb", ComposePublishingTask::class) {
+    group = "Compose Multiplatform"
     repository = "MavenRepository"
+    composeProperties = parsedComposeProperties
 
     libraries.forEach {
-        libraryToComponents[it]?.forEach(::publish)
+        libraryToComponents[it]?.forEach { publish(rootProject, it) }
     }
 }
 
 tasks.register("publishComposeJbToMavenLocal", ComposePublishingTask::class) {
+    group = "Compose Multiplatform"
     repository = "MavenLocal"
+    composeProperties = parsedComposeProperties
 
     libraries.forEach {
-        libraryToComponents[it]?.forEach(::publish)
+        libraryToComponents[it]?.forEach { publish(rootProject, it) }
     }
 }
 
@@ -43,20 +44,21 @@ val libraries = project.findProperty("jetbrains.publication.libraries")
 
 
 tasks.register("testDesktop") {
-    dependsOn(allTasksWith(name = "desktopTest"))
+    group = "Compose Multiplatform"
+    dependsOn(allTasksForPublishingProjectsWith(name = "desktopTest"))
+    dependsOn(allTasksForPublishingProjectsWith(name = "desktopHeadlessTest"))
     dependsOn(":collection:collection:jvmTest")
 }
 
 tasks.register("testWeb") {
+    group = "Compose Multiplatform"
     dependsOn(testWebJs)
     dependsOn(testWebWasm)
 }
 
 val testWebJs = tasks.register("testWebJs") {
-    dependsOn(":collection:collection:compileTestKotlinJs")
     dependsOn(":compose:foundation:foundation:jsTest")
     dependsOn(":compose:material3:material3:jsTest")
-    dependsOn(":compose:runtime:runtime:jsTest")
     dependsOn(":compose:ui:ui-text:jsTest")
     dependsOn(":compose:ui:ui:jsTest")
     dependsOn(":compose:ui:ui-test:jsTest")
@@ -65,33 +67,34 @@ val testWebJs = tasks.register("testWebJs") {
 
 val testWebWasm = tasks.register("testWebWasm") {
     // TODO: ideally we want to run all wasm tests that are possible but now we deal only with modules that have skikoTests
-    dependsOn(":collection:collection:wasmJsTest")
     dependsOn(":compose:foundation:foundation:wasmJsTest")
     dependsOn(":compose:material3:material3:wasmJsTest")
-    dependsOn(":compose:runtime:runtime:wasmJsTest")
     dependsOn(":compose:ui:ui-text:wasmJsTest")
     dependsOn(":compose:ui:ui:wasmJsTest")
     dependsOn(":compose:ui:ui-test:wasmJsTest")
     dependsOn(":navigation:navigation-runtime:wasmJsTest")
 }
 
-tasks.register("testUIKit") {
-    val suffix = if (System.getProperty("os.arch") == "aarch64") "SimArm64Test" else "X64Test"
-    val uikitTestSubtaskName = "uikit$suffix"
+tasks.register("testIos") {
+    group = "Compose Multiplatform"
+    val suffix = if (System.getProperty("os.arch") == "aarch64") "SimulatorArm64Test" else "X64Test"
+    val iosTestSubtaskName = "ios$suffix"
 
-    dependsOn(":compose:runtime:runtime:$uikitTestSubtaskName")
-    dependsOn(":compose:ui:ui-text:$uikitTestSubtaskName")
-    dependsOn(":compose:ui:ui:$uikitTestSubtaskName")
-    dependsOn(":compose:material3:material3:$uikitTestSubtaskName")
-    dependsOn(":compose:foundation:foundation:$uikitTestSubtaskName")
-    dependsOn(":collection:collection:$uikitTestSubtaskName")
+    dependsOn(":compose:runtime:runtime:$iosTestSubtaskName")
+    dependsOn(":compose:ui:ui-text:$iosTestSubtaskName")
+    dependsOn(":compose:ui:ui:$iosTestSubtaskName")
+    dependsOn(":compose:material3:material3:$iosTestSubtaskName")
+    dependsOn(":compose:foundation:foundation:$iosTestSubtaskName")
+    dependsOn(":collection:collection:$iosTestSubtaskName")
 }
 
 tasks.register("testRuntimeNative") {
+    group = "Compose Multiplatform"
     dependsOn(":compose:runtime:runtime:macosX64Test")
 }
 
 tasks.register("testComposeModules") { // used in https://github.com/JetBrains/androidx/tree/jb-main/.github/workflows
+    group = "Compose Multiplatform"
     // TODO: download robolectrict to run ui:ui:test
     // dependsOn(":compose:ui:ui:test")
 
@@ -115,10 +118,12 @@ tasks.register("testComposeModules") { // used in https://github.com/JetBrains/a
 }
 
 tasks.register("jbApiDump") {
+    group = "Compose Multiplatform"
     dependsOn(apiValidationTasks(suffix = "ApiDump"))
 }
 
 tasks.register("jbApiCheck") {
+    group = "Compose Multiplatform"
     dependsOn(apiValidationTasks(suffix = "ApiCheck"))
 }
 
@@ -137,10 +142,10 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
     fun Iterable<Task>.filterComposePlatforms(platforms: Set<ComposePlatforms>) =
         filterComposePlatforms(*platforms.toTypedArray())
 
-    this += allTasksWith(name = "desktop$suffix")
+    this += allTasksForPublishingProjectsWith(name = "desktop$suffix")
         .filterComposePlatforms(ComposePlatforms.Desktop)
 
-    this += allTasksWith(name = "android$suffix")
+    this += allTasksForPublishingProjectsWith(name = "android$suffix")
         .filterComposePlatforms(ComposePlatforms.ANDROID)
 
     val klibPlatforms = if (System.getProperty("os.name") == "Mac OS X") {
@@ -148,13 +153,17 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
     } else {
         ComposePlatforms.GENERATE_KLIB - ComposePlatforms.DARWIN
     }
-    this += allTasksWith(name = "klib$suffix")
+    this += allTasksForPublishingProjectsWith(name = "klib$suffix")
         .filterComposePlatforms(klibPlatforms)
 }
 
-fun allTasksWith(name: String): List<Task> =
+fun allTasksForPublishingProjectsWith(name: String): List<Task> =
     rootProject.subprojects.mapNotNull { project ->
-        project.tasks.findByName(name)
+         if (JetBrainsPublication.shouldPublish(project)) {
+             project.tasks.findByName(name)
+         } else {
+             null
+         }
     }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle

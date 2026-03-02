@@ -32,7 +32,11 @@ import java.awt.FocusTraversalPolicy
 import java.awt.Window
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import org.jetbrains.skiko.DelicateSkikoApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
+import org.jetbrains.skiko.transparentWindowBackgroundHack
 
 /**
  * A panel used as a main view in [ComposeWindow] and [ComposeDialog].
@@ -42,6 +46,7 @@ internal class ComposeWindowPanel(
     private val isUndecorated: () -> Boolean,
     skiaLayerAnalytics: SkiaLayerAnalytics,
     savedState: SavedState? = null,
+    coroutineContext: CoroutineContext = EmptyCoroutineContext,
 ) : JLayeredPaneWithTransparencyHack() {
     private var isDisposed = false
 
@@ -51,6 +56,7 @@ internal class ComposeWindowPanel(
     // big objects in memory (like the whole LayoutNode tree of the window)
     private var _composeContainer: ComposeContainer? = ComposeContainer(
         container = this,
+        isWindowLevel = true,
         skiaLayerAnalytics = skiaLayerAnalytics,
         window = window,
         windowContainer = this,
@@ -63,7 +69,8 @@ internal class ComposeWindowPanel(
         },
         // Swing graphics is not supposed to be used here.
         // TODO: Add isVsyncEnabled flag to ComposeWindowPanel constructor
-        renderSettings = RenderSettings.SkiaSurface()
+        renderSettings = RenderSettings.SkiaSurface(),
+        coroutineContext = coroutineContext
     )
     private val composeContainer
         get() = requireNotNull(_composeContainer) {
@@ -71,7 +78,6 @@ internal class ComposeWindowPanel(
         }
     private val contentComponent by composeContainer::contentComponent
 
-    val windowAccessible by composeContainer::accessible
     val windowContext by composeContainer::windowContext
     var rootForTestListener by composeContainer::rootForTestListener
     var fullscreen by composeContainer::fullscreen
@@ -80,6 +86,8 @@ internal class ComposeWindowPanel(
     val windowHandle by composeContainer::windowHandle
     val renderApi by composeContainer::renderApi
     val semanticsOwners by composeContainer::semanticsOwners
+
+    var isClearFocusOnMouseDownEnabled: Boolean by composeContainer::isClearFocusOnMouseDownEnabled
 
     var isWindowTransparent: Boolean = false
         set(value) {
@@ -91,7 +99,9 @@ internal class ComposeWindowPanel(
                 field = value
                 composeContainer.onWindowTransparencyChanged(value)
                 isOpaque = !value
-                window.background = getTransparentWindowBackground(value, renderApi)
+
+                @OptIn(DelicateSkikoApi::class)
+                window.background = if (value) transparentWindowBackgroundHack(renderApi) else null
             }
         }
 
@@ -190,4 +200,12 @@ internal class ComposeWindowPanel(
     override fun removeMouseMotionListener(listener: MouseMotionListener) {
         contentComponent.removeMouseMotionListener(listener)
     }
+
+    var showLayoutBounds: Boolean
+        get() {
+            return _composeContainer?.showLayoutBounds ?: false
+        }
+        set(value) {
+            _composeContainer?.showLayoutBounds = value
+        }
 }

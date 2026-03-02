@@ -25,11 +25,17 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.systemGesturesPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -45,12 +51,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
+import platform.UIKit.UIDevice
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeRight
+import platform.UIKit.UIUserInterfaceIdiomPad
 
 class WindowInsetsPaddingTest {
     @Test
-    fun composableDoesNotRecomposeOnWindowInsetsImeChange() = runUIKitInstrumentedTest {
+    fun testComposableNotRecomposedOnWindowInsetsImeChange() = runUIKitInstrumentedTest {
         var compositionCount = 0
 
         setContent {
@@ -74,7 +85,10 @@ class WindowInsetsPaddingTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest {
+    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
+    ) {
         var boxRect = DpRectZero()
 
         setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeLeft) {
@@ -92,7 +106,7 @@ class WindowInsetsPaddingTest {
         assertEquals(
             DpRect(
                 DpOffset.Zero, size = DpSize(
-                    screenSize.width - hostingViewController.view.safeAreaInsets.useContents { right }.dp,
+                    screenSize.width - viewController.view.safeAreaInsets.useContents { right }.dp,
                     screenSize.height
                 )
             ),
@@ -102,7 +116,10 @@ class WindowInsetsPaddingTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest {
+    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
+    ) {
         var boxRect = DpRectZero()
 
         setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeRight) {
@@ -117,7 +134,7 @@ class WindowInsetsPaddingTest {
             }
         }
 
-        val xOffset = hostingViewController.view.safeAreaInsets.useContents { left }.dp
+        val xOffset = viewController.view.safeAreaInsets.useContents { left }.dp
 
         assertEquals(
             DpRect(
@@ -128,4 +145,28 @@ class WindowInsetsPaddingTest {
             boxRect
         )
     }
+
+    @Test
+    fun testContentNotRecomposedWhenContainerRecomposed() = runUIKitInstrumentedTest {
+        var forceRecomposition by mutableStateOf(0)
+        val recomposed = mutableStateOf(false)
+
+        setContent {
+            Box(Modifier.fillMaxSize()) {
+                forceRecomposition
+                InnerContent(Modifier.systemGesturesPadding(), recomposed)
+            }
+        }
+
+        recomposed.value = false
+        forceRecomposition++
+        waitForIdle()
+
+        assertEquals(false, recomposed.value)
+    }
+}
+
+@Composable
+private fun InnerContent(modifier: Modifier, state: MutableState<Boolean>) {
+    Box(modifier) { state.value = true }
 }

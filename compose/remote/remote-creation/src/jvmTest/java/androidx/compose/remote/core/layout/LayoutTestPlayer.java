@@ -57,7 +57,7 @@ public class LayoutTestPlayer {
         int th1 = 1000;
         byte[] byteBuffer = writer.buffer();
         int bufferSize = writer.bufferSize();
-        CoreDocument doc = new CoreDocument();
+        CoreDocument doc = new CoreDocument(testParameters.getClock());
         RemoteComposeBuffer buffer = RemoteComposeBuffer.fromInputStream(
                 new ByteArrayInputStream(byteBuffer, 0, bufferSize));
         doc.initFromBuffer(buffer);
@@ -99,6 +99,7 @@ public class LayoutTestPlayer {
             if (needsRepaint == 0 && forceRepaint) {
                 needsRepaint = 1;
             }
+            doc.needsMeasure();
             count = 0;
             while (needsRepaint != 0 && count < max) {
                 debugContext.currentTime += needsRepaint;

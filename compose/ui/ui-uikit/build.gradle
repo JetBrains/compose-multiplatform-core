@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-
-import androidx.build.LibraryType
-import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import androidx.build.KotlinTarget
+import org.jetbrains.androidx.build.XcodeBuildLock
 
 plugins {
     id("AndroidXPlugin")
@@ -24,30 +23,20 @@ plugins {
     id("JetBrainsAndroidXPlugin")
 }
 
-JetBrainsAndroidXPlugin.applyAndConfigure(project)
-
 kotlin {
-    iosX64("uikitX64") {
-        configure(it, false, "x86_64", "uikitX64Test")
+    applyDefaultHierarchyTemplate()
+
+    iosArm64("iosArm64") {
+        configure(it, true, "arm64", null /*"iosArm64Test"*/)
     }
-    iosArm64("uikitArm64") {
-        configure(it, true, "arm64", null /*"uikitArm64Test"*/)
-    }
-    iosSimulatorArm64("uikitSimArm64") {
-        configure(it, false, "arm64", "uikitSimArm64Test")
+    iosSimulatorArm64("iosSimulatorArm64") {
+        configure(it, false, "arm64", "iosSimulatorArm64Test")
     }
 
     sourceSets {
-        commonMain {}
-        def uikitMain = sourceSets.create("uikitMain")
-        def uikitX64Main = sourceSets.getByName("uikitX64Main")
-        def uikitArm64Main = sourceSets.getByName("uikitArm64Main")
-        def uikitSimArm64Main = sourceSets.getByName("uikitSimArm64Main")
-
-        uikitMain.dependsOn(commonMain)
-        uikitX64Main.dependsOn(uikitMain)
-        uikitArm64Main.dependsOn(uikitMain)
-        uikitSimArm64Main.dependsOn(uikitMain)
+        configureEach {
+            languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        }
     }
 }
 
@@ -55,7 +44,7 @@ private def configure(target, isDevice, architecture, testTarget) {
     def frameworkName = "CMPUIKitUtils"
     def buildSchemeName = frameworkName
     def testSchemeName = "${frameworkName}Tests"
-    def objcDir = new File(project.projectDir, "src/uikitMain/objc")
+    def objcDir = new File(project.projectDir, "src/iosMain/objc")
     def frameworkSourcesDir = new File(objcDir, frameworkName)
     def sdkName
     def destination
@@ -99,6 +88,7 @@ private def configure(target, isDevice, architecture, testTarget) {
         def testFrameworkTask = project.tasks.register(testFrameworkTaskName) {
             dependsOn getTargetDeviceTask
             doLast {
+                usesService(XcodeBuildLock.instance(project))
                 project.exec {
                     workingDir frameworkSourcesDir
                     commandLine "xcodebuild",
@@ -117,6 +107,7 @@ private def configure(target, isDevice, architecture, testTarget) {
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}ObjCLib"
         project.tasks.register(libTaskName, Exec) {
+            usesService(XcodeBuildLock.instance(project))
             inputs.dir(frameworkSourcesDir)
                     .withPropertyName("${frameworkName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -168,8 +159,7 @@ private def configure(target, isDevice, architecture, testTarget) {
 }
 
 androidx {
-    name = "Compose UIKit Utils"
-    type = LibraryType.PUBLISHED_LIBRARY
+    name = "Compose UIKit"
     inceptionYear = "2023"
     description = "Internal iOS UIKit utilities including Objective-C library."
     legacyDisableKotlinStrictApiMode = true

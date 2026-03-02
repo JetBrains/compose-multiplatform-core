@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, watchosArm32, watchosArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [iosArm64, iosSimulatorArm64, js, linuxArm64, linuxX64, macosArm64, tvosArm64, tvosSimulatorArm64, wasmJs, watchosArm32, watchosArm64, watchosSimulatorArm64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -111,6 +111,3 @@ open annotation class androidx.navigation/ExperimentalBrowserHistoryApi : kotlin
 
 // Targets: [js, wasmJs]
 final suspend fun (androidx.navigation/NavController).androidx.navigation/bindToBrowserNavigation(kotlin/Function1<androidx.navigation/NavBackStackEntry, kotlin/String>? = ...) // androidx.navigation/bindToBrowserNavigation|bindToBrowserNavigation@androidx.navigation.NavController(kotlin.Function1<androidx.navigation.NavBackStackEntry,kotlin.String>?){}[0]
-
-// Targets: [js, wasmJs]
-final suspend fun (org.w3c.dom/Window).androidx.navigation/bindToNavigation(androidx.navigation/NavController, kotlin/Function1<androidx.navigation/NavBackStackEntry, kotlin/String>? = ...) // androidx.navigation/bindToNavigation|bindToNavigation@org.w3c.dom.Window(androidx.navigation.NavController;kotlin.Function1<androidx.navigation.NavBackStackEntry,kotlin.String>?){}[0]

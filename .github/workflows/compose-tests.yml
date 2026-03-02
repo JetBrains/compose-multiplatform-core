@@ -6,6 +6,15 @@ on:
     branches:
       - jb-main
 
+env:
+  # TODO: https://youtrack.jetbrains.com/issue/CMP-9497/Investgate-CfW-tests-flakiness-with-enabled-gradle-configuration-cache-on-CI
+  # Web Tests require running additional processes: karma in node, browser;
+  # To reduce the memory pressure, we change some defaults:
+  GRADLE_WEB_TESTS_FLAGS: >-
+    --no-daemon --stacktrace --no-parallel --no-configuration-cache
+    -Dorg.gradle.jvmargs="-Xmx6g -XX:+UseParallelGC"
+    -Porg.gradle.workers.max=1
+
 jobs:
   compose-desktop-tests:
     runs-on: ubuntu-24.04
@@ -60,7 +69,7 @@ jobs:
       - name: Run iOS Tests
         timeout-minutes: 15
         run: |
-          ./gradlew testUIKit \
+          ./gradlew testIos \
             --no-daemon --stacktrace
 
       - name: Test Summary
@@ -87,7 +96,7 @@ jobs:
       - name: Run iOS Utils Tests
         timeout-minutes: 15
         shell: bash
-        working-directory: compose/ui/ui-uikit/src/uikitMain/objc/CMPUIKitUtils
+        working-directory: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils
         run: |
           xcodebuild test \
             -resultBundlePath TestResults.xcresult \
@@ -100,11 +109,15 @@ jobs:
         if: failure()
         with:
           name: TestResults-${{ github.run_number }}.xcresult
-          path: compose/ui/ui-uikit/src/uikitMain/objc/CMPUIKitUtils/TestResults.xcresult
+          path: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
     runs-on: macos-15-xlarge
-    name: Compose iOS Instrumented Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [ 'iPhone 16', 'iPad Pro 11-inch (M4)' ]
+    name: Compose iOS Instrumented Tests ${{ matrix.device }}
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -117,12 +130,44 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
+      - name: Get iOS Simulator UDID
+        id: get-simulator-udid
+        shell: bash
+        run: |
+          DEVICE_NAME="${{ matrix.device }}"
+          DEVICE_VERSION="18.6"
+          
+          DEVICE_DASH="${DEVICE_VERSION//./-}"   # 16.0 -> 16-0
+          
+          echo "Looking for device: '$DEVICE_NAME' ($DEVICE_VERSION)"
+          
+          SIMULATOR_ID=$(xcrun simctl list devices available -j \
+          | jq -r --arg device "$DEVICE_NAME" --arg vdot "$DEVICE_VERSION" --arg vdash "$DEVICE_DASH" '
+          .devices
+          | to_entries[]
+          | select(.key | (contains($vdot) or contains($vdash)))
+          | .value[]
+          | select(.name == $device)
+          | .udid
+          ' | head -n 1)
+          
+          if [ -z "$SIMULATOR_ID" ]; then
+          echo "Simulator not found for $DEVICE_NAME ($DEVICE_VERSION)"
+          echo "Available runtimes and matching devices:"
+          xcrun simctl list devices available -j | jq -r '
+          .devices | to_entries[] | "\(.key):\n  " + ( [.value[] | "\(.name) \(.udid) \(.state)"] | join("\n  ") )
+          '
+          exit 1
+          fi
+          
+          echo "Found simulator ID: $SIMULATOR_ID"
+
+          # make available to later steps
+          echo "simulator-id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+
       - name: Configure Simulator
         run: |
-          xcrun simctl list devices
-
-          # Boot a test simulator
-          xcrun simctl boot "iPhone 16"
+          xcrun simctl boot "${{ steps.get-simulator-udid.outputs.simulator-id }}"
 
           # Write the accessibility flags inside the Simulator:
           xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
@@ -139,9 +184,17 @@ jobs:
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
         run: |
           xcodebuild test \
+            -resultBundlePath TestResults.xcresult \
             -scheme Launcher \
             -project Launcher.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+            -destination 'platform=iOS Simulator,id=${{ steps.get-simulator-udid.outputs.simulator-id }}'
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: TestResults-${{ github.run_number }}.xcresult
+          path: compose/ui/ui/src/uikitInstrumentedTest/launcher/TestResults.xcresult
 
       - name: Test Summary
         uses: test-summary/action@v2
@@ -155,7 +208,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chrome: [ '118', 'stable' ]
+        chrome: [ '134', 'stable' ]
         task: [ 'Js', 'Wasm' ]
     steps:
       - name: Checkout Repository
@@ -164,30 +217,76 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
-      # Compile tests as a separate step to reduce memory usage and potential OOM during running tests.
-      - name: Compile ${{ matrix.task }} Tests
-        run: |
-          ./gradlew compileTestKotlin${{ matrix.task }} \
-            --no-daemon --stacktrace
-
       - name: Setup Google Chrome
         uses: browser-actions/setup-chrome@v2
+        id: setup-chrome
         with:
           chrome-version: ${{ matrix.chrome }}
           install-chromedriver: true
           install-dependencies: true
+
+      # Compile tests as a separate step to reduce memory usage and potential OOM during running tests.
+      # We want to compile only the tests to be run later, so we extract the test tasks from --dry-run output.
+      - name: Compile web test executables
+        run: |
+          set -euo pipefail
+          TASKS=$(
+            ./gradlew :mpp:testWeb${{ matrix.task }} -m --console=plain --no-configuration-cache \
+              --no-daemon -Pkotlin.compiler.execution.strategy=in-process \
+              | awk '/^:.*compileTestDevelopmentExecutable/ {print $1}' \
+              | tr '\n' ' '
+          )
+
+          if [ -n "$TASKS" ]; then
+            ./gradlew $TASKS \
+              --no-daemon --stacktrace --no-parallel --no-configuration-cache \
+              -Dorg.gradle.jvmargs="-Xmx12g -XX:+UseParallelGC" \
+              -Porg.gradle.workers.max=1 -Pkotlin.compiler.execution.strategy=in-process
+          fi
 
       - name: Start X Server
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
+      - name: Memory snapshot
+        run: |
+          echo "=== free -h ==="
+          free -h
+          echo "=== meminfo ==="
+          head -n 5 /proc/meminfo
+
+      - name: Top memory consumers
+        run: |
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
+
       - name: Run Web Chrome Tests
         run: |
-          ./gradlew :mpp:testWeb${{ matrix.task }} \
-            --no-daemon --stacktrace --no-parallel \
+          set -euo pipefail
+          (while true; do
+            echo "=== meminfo $(date -u +%H:%M:%S) ==="
+            head -n 5 /proc/meminfo
+            sleep 10
+          done) &
+          MEM_SAMPLER_PID=$!
+          trap "kill ${MEM_SAMPLER_PID} || true" EXIT
+          echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns && \
+          CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }} /usr/bin/time -v ./gradlew :mpp:testWeb${{ matrix.task }} ${{ env.GRADLE_WEB_TESTS_FLAGS }} \
             -Pjetbrains.androidx.web.tests.enableFirefox=false \
             -Pjetbrains.androidx.web.tests.enableChrome=true
+
+      - name: Post-test memory snapshot
+        if: always()
+        run: |
+          echo "=== free -h ==="
+          free -h
+          echo "=== meminfo ==="
+          head -n 5 /proc/meminfo
+
+      - name: Post-test top memory consumers
+        if: always()
+        run: |
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
       - name: Test Summary
         uses: test-summary/action@v2
@@ -203,7 +302,7 @@ jobs:
       matrix:
         # FIXME: Even after installation of '119.0', tests still use latest one. Fix and restore.
         firefox: [ 'latest' ]
-        task: [ 'Js', 'Wasm' ]
+        task: [ 'Wasm' ] # excluded Js for Firefox due to high flakiness
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -212,10 +311,23 @@ jobs:
         uses: ./.github/actions/setup-prerequisites
 
       # Compile tests as a separate step to reduce memory usage and potential OOM during running tests.
-      - name: Compile ${{ matrix.task }} Tests
+      # We want to compile only the tests to be run later, so we extract the test tasks from --dry-run output.
+      - name: Compile web test executables
         run: |
-          ./gradlew compileTestKotlin${{ matrix.task }} \
-            --no-daemon --stacktrace
+          set -euo pipefail
+          TASKS=$(
+            ./gradlew :mpp:testWeb${{ matrix.task }} -m --console=plain --no-configuration-cache \
+              --no-daemon -Pkotlin.compiler.execution.strategy=in-process \
+              | awk '/^:.*compileTestDevelopmentExecutable/ {print $1}' \
+              | tr '\n' ' '
+          )
+
+          if [ -n "$TASKS" ]; then
+            ./gradlew $TASKS \
+              --no-daemon --stacktrace --no-parallel --no-configuration-cache \
+              -Dorg.gradle.jvmargs="-Xmx12g -XX:+UseParallelGC" \
+              -Porg.gradle.workers.max=1 -Pkotlin.compiler.execution.strategy=in-process
+          fi
 
       - name: Setup Missing Packages
         run: |
@@ -232,10 +344,28 @@ jobs:
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
+      - name: Memory snapshot
+        run: |
+          echo "=== free -h ==="
+          free -h
+          echo "=== meminfo ==="
+          head -n 5 /proc/meminfo
+
+      - name: Top memory consumers
+        run: |
+          ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
+
       - name: Run Web Firefox Tests
         run: |
-          ./gradlew :mpp:testWeb${{ matrix.task }} \
-            --no-daemon --stacktrace --no-parallel \
+          set -euo pipefail
+          (while true; do
+            echo "=== meminfo $(date -u +%H:%M:%S) ==="
+            head -n 5 /proc/meminfo
+            sleep 10
+          done) &
+          MEM_SAMPLER_PID=$!
+          trap "kill ${MEM_SAMPLER_PID} || true" EXIT
+          ./gradlew :mpp:testWeb${{ matrix.task }} ${{ env.GRADLE_WEB_TESTS_FLAGS }} \
             -Pjetbrains.androidx.web.tests.enableFirefox=true \
             -Pjetbrains.androidx.web.tests.enableChrome=false
 

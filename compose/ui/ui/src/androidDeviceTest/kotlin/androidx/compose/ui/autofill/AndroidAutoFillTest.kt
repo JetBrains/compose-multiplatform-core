@@ -21,13 +21,12 @@ import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillValue
 import androidx.autofill.HintConstants.AUTOFILL_HINT_PERSON_NAME
-import androidx.compose.ui.ComposeUiFlags.isSemanticAutofillEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -98,13 +97,11 @@ class AndroidAutoFillTest {
         assertThat(viewStructure)
             .isEqualTo(
                 FakeViewStructure().apply {
-                    if (isSemanticAutofillEnabled) {
-                        autofillId = ownerView.autofillId
-                        bounds = android.graphics.Rect(0, 0, 0, 0)
-                        packageName = currentPackageName
-                        virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
-                        dataIsSensitive = true
-                    }
+                    autofillId = ownerView.autofillId
+                    bounds = android.graphics.Rect(0, 0, 0, 0)
+                    packageName = currentPackageName
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                    dataIsSensitive = true
                     children.add(
                         FakeViewStructure().apply {
                             autofillHints = mutableListOf(AUTOFILL_HINT_PERSON_NAME)

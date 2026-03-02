@@ -261,7 +261,23 @@ constructor(
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal var defaultIconButtonShapesCached: IconButtonShapes? = null
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal var defaultInteractiveListItemShapesCached: InteractiveListItemShapes? = null
+    internal var defaultListItemShapesCached: ListItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingItemShapesCached: MenuItemShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuStandaloneGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuLeadingGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuMiddleGroupShapesCached: MenuGroupShapes? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultMenuTrailingGroupShapesCached: MenuGroupShapes? = null
 }
 
 /** Contains the default values used by [Shapes] */

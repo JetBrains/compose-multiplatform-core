@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -147,8 +148,14 @@ internal interface Owner : PositionCalculator {
     /**
      * Sets the [RetainedValuesStore] for the composition. On Android, this is a lifecycle-aware
      * RetainedValuesStore that persists values across configuration changes and activity
-     * recreations. [androidx.compose.runtime.ForgetfulRetainedValuesStore] is a reasonable default
-     * for platforms without window-level retain scenarios.
+     * recreations. [androidx.compose.runtime.retain.ForgetfulRetainedValuesStore] is a reasonable
+     * default for platforms without window-level retain scenarios.
+     *
+     * This store is managed outside of the composition and does not receive the default calls to
+     * [RetainedValuesStore.onContentEnteredComposition] and
+     * [RetainedValuesStore.onContentExitComposition] because it is installed directly through
+     * [androidx.compose.runtime.retain.LocalRetainedValuesStore]. The Owner is responsible for
+     * tracking the content presence w.r.t. this store.
      */
     val retainedValuesStore: RetainedValuesStore
 
@@ -165,6 +172,8 @@ internal interface Owner : PositionCalculator {
     val fontFamilyResolver: FontFamily.Resolver
 
     val layoutDirection: LayoutDirection
+
+    val localeList: LocaleList
 
     /** `true` when layout should draw debug bounds. */
     var showLayoutBounds: Boolean
@@ -385,6 +394,12 @@ internal interface Owner : PositionCalculator {
      * @param offset Delta scrolled.
      */
     fun dispatchOnScrollChanged(delta: Offset) {}
+
+    /**
+     * Invalidates the layer that the root elements are drawn in. This does not invalidate any child
+     * layers.
+     */
+    fun invalidateRootLayer() {}
 
     companion object {
         /**

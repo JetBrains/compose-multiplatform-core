@@ -159,8 +159,16 @@ sealed interface ComposeScene : AutoCloseable {
     fun invalidatePositionOnScreen()
 
     /**
-     * Returns true if there are pending recompositions, renders or dispatched tasks.
+     * Returns whether there are pending recompositions, renders, or dispatched tasks.
      * Can be called from any thread.
+     *
+     * Note that changes to snapshot state don't immediately trigger an invalidation.
+     * To guarantee that there are no changes expected in the scene use
+     * ```
+     * !Snapshot.current.hasPendingChanges()
+     *     && !Snapshot.isApplyObserverNotificationPending
+     *     && !scene.hasInvalidations()
+     * ```
      */
     fun hasInvalidations(): Boolean
 
@@ -284,4 +292,9 @@ sealed interface ComposeScene : AutoCloseable {
      * provided by the [androidx.compose.runtime.Recomposer] of the current scene.
      */
     suspend fun withMonotonicFrameClock(block: suspend () -> Unit)
+
+    /**
+     * Set the visual debug option that shows bounds for all nodes in the hierarchy.
+     */
+    var showLayoutBounds: Boolean
 }

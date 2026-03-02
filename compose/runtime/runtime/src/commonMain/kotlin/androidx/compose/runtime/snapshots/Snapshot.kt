@@ -37,6 +37,7 @@ import androidx.compose.runtime.snapshots.Snapshot.Companion.takeSnapshot
 import androidx.compose.runtime.snapshots.tooling.creatingSnapshot
 import androidx.compose.runtime.snapshots.tooling.dispatchObserverOnApplied
 import androidx.compose.runtime.snapshots.tooling.dispatchObserverOnPreDispose
+import androidx.compose.runtime.tooling.verboseTrace
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -879,13 +880,17 @@ internal constructor(
         if (globalModified != null) {
             val nonNullGlobalModified = globalModified!!.wrapIntoSet()
             if (nonNullGlobalModified.isNotEmpty()) {
-                observers.fastForEach { it(nonNullGlobalModified, this) }
+                verboseTrace("Compose:applyObservers") {
+                    observers.fastForEach { it(nonNullGlobalModified, this) }
+                }
             }
         }
 
         if (modified != null && modified.isNotEmpty()) {
             val modifiedSet = modified.wrapIntoSet()
-            observers.fastForEach { it(modifiedSet, this) }
+            verboseTrace("Compose:applyObservers") {
+                observers.fastForEach { it(modifiedSet, this) }
+            }
         }
 
         dispatchObserverOnApplied(this, modified)
@@ -2020,7 +2025,10 @@ private fun <T> advanceGlobalSnapshot(block: (invalid: SnapshotIdSet) -> T): T {
     modified?.let {
         try {
             val observers = applyObservers
-            observers.fastForEach { observer -> observer(it.wrapIntoSet(), globalSnapshot) }
+            val modifiedSet = it.wrapIntoSet()
+            verboseTrace("Compose:applyObservers") {
+                observers.fastForEach { observer -> observer(modifiedSet, globalSnapshot) }
+            }
         } finally {
             pendingApplyObserverCount.add(-1)
         }

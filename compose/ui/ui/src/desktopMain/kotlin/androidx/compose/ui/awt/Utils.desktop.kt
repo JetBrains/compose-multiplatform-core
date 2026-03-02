@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.util.fastRoundToInt
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Graphics
@@ -32,7 +33,6 @@ import javax.swing.JLayeredPane
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
-import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
 
@@ -78,31 +78,14 @@ internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRecta
  */
 internal fun Rect.toAwtRectangleRounded(density: Density): Rectangle {
     val densityValue = density.density
-    val left = (this.left / densityValue).roundToInt()
-    val top = (this.top / densityValue).roundToInt()
-    val right = (this.right / densityValue).roundToInt()
-    val bottom = (this.bottom / densityValue).roundToInt()
+    val left = (this.left / densityValue).fastRoundToInt()
+    val top = (this.top / densityValue).fastRoundToInt()
+    val right = (this.right / densityValue).fastRoundToInt()
+    val bottom = (this.bottom / densityValue).fastRoundToInt()
     return Rectangle(left, top, right - left, bottom - top)
 }
 
 internal fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)
-
-internal fun getTransparentWindowBackground(
-    isWindowTransparent: Boolean,
-    renderApi: GraphicsApi
-): java.awt.Color? {
-    /**
-     * There is a hack inside skiko OpenGL and Software redrawers for Windows that makes current
-     * window transparent without setting `background` to JDK's window. It's done by getting native
-     * component parent and calling `DwmEnableBlurBehindWindow`.
-     *
-     * FIXME: Make OpenGL work inside transparent window (background == Color(0, 0, 0, 0)) without this hack.
-     *
-     * See `enableTransparentWindow` (skiko/src/awtMain/cpp/windows/window_util.cc)
-     */
-    val skikoTransparentWindowHack = hostOs == OS.Windows && renderApi != GraphicsApi.DIRECT3D
-    return if (isWindowTransparent && !skikoTransparentWindowHack) java.awt.Color(0, 0, 0, 0) else null
-}
 
 // See https://developer.apple.com/library/archive/technotes/tn2007/tn2196.html#WINDOW_SHADOW
 private var JComponent.hasMacOsShadow: Boolean

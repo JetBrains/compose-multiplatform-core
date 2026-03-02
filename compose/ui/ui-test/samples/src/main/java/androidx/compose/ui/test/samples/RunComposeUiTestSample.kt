@@ -30,10 +30,10 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 
-@Sampled
 @OptIn(ExperimentalTestApi::class)
+@Sampled
 fun RunComposeUiTestSample() = runComposeUiTest {
     var counter by mutableIntStateOf(1)
     setContent {

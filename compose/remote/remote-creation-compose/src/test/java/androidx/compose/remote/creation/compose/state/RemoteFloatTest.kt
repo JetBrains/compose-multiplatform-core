@@ -20,26 +20,32 @@ import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
+import androidx.compose.remote.core.operations.TextFromFloat
+import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-@SdkSuppress(minSdkVersion = 26)
+@SdkSuppress(minSdkVersion = 29)
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteFloatTest {
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
     val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
+    val time = RemoteFloat.createNamedRemoteFloat("time", 100f).createReference()
 
     val JUN_06_2025_UTC =
         RemoteLong(
@@ -77,9 +83,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLT_less() {
+    fun selectIfLt_less() {
         val result =
-            selectIfLT(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLt(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -87,9 +93,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLT_equal() {
+    fun selectIfLt_equal() {
         val result =
-            selectIfLT(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLt(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -97,9 +103,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLT_greater() {
+    fun selectIfLt_greater() {
         val result =
-            selectIfLT(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLt(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -107,9 +113,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLE_less() {
+    fun selectIfLe_less() {
         val result =
-            selectIfLE(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLe(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -117,9 +123,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLE_equal() {
+    fun selectIfLe_equal() {
         val result =
-            selectIfLE(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLe(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -127,9 +133,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfLE_greater() {
+    fun selectIfLe_greater() {
         val result =
-            selectIfLE(RemoteFloat(2f), RemoteFloat(1f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfLe(RemoteFloat(2f), RemoteFloat(1f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -137,9 +143,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGT_less() {
+    fun selectIfGt_less() {
         val result =
-            selectIfGT(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGt(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -147,9 +153,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGT_equal() {
+    fun selectIfGt_equal() {
         val result =
-            selectIfGT(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGt(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -157,9 +163,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGT_greater() {
+    fun selectIfGt_greater() {
         val result =
-            selectIfGT(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGt(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -167,9 +173,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGE_less() {
+    fun selectIfGe_less() {
         val result =
-            selectIfGE(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGe(RemoteFloat(1f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -177,9 +183,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGE_equal() {
+    fun selectIfGe_equal() {
         val result =
-            selectIfGE(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGe(RemoteFloat(2f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -187,9 +193,9 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun selectIfGE_greater() {
+    fun selectIfGe_greater() {
         val result =
-            selectIfGE(RemoteFloat(2f), RemoteFloat(1f), RemoteFloat(100f), RemoteFloat(200f))
+            selectIfGe(RemoteFloat(2f), RemoteFloat(1f), RemoteFloat(100f), RemoteFloat(200f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
@@ -204,6 +210,26 @@ class RemoteFloatTest {
         makeAndPaintCoreDocument()
 
         assertThat(context.getFloat(resultId)).isEqualTo(-2.5f)
+    }
+
+    @Test
+    fun unaryMinus_complexExpression() {
+        // Create a complex float expression
+        var complexFloat = RemoteFloat(0f)
+        for (i in 1..50) {
+            complexFloat += RemoteFloat(i.toFloat())
+        }
+
+        val result = -complexFloat
+
+        // Assertions
+        val finalArray = result.arrayForCreationState(creationState)
+        assertThat(finalArray.size < 20).isTrue()
+
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+        val expected = -((50 * 51) / 2f)
+        assertThat(context.getFloat(resultId)).isEqualTo(expected)
     }
 
     @Test
@@ -324,9 +350,20 @@ class RemoteFloatTest {
     @Test
     fun constantValue_notConstant() {
         assertThat(
-                (RemoteFloat(10f) - RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)).constantValue
+                (RemoteFloat(10f) - RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
+                    .constantValueOrNull
             )
             .isNull()
+    }
+
+    @Test
+    fun one_divided_by() {
+        val result = RemoteFloat(1f) / RemoteFloat(2f)
+        val resultId = result.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(resultId)).isEqualTo(0.5f)
     }
 
     @Test
@@ -338,7 +375,7 @@ class RemoteFloatTest {
         assertThat(RemoteFloat(21.5f).div(RemoteFloat(21.5f)).hasConstantValue).isTrue()
         assertThat(clamp(10.5f, 20.5f, RemoteFloat(21.5f)).hasConstantValue).isTrue()
         assertThat(
-                selectIfGT(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
+                selectIfGt(RemoteFloat(3f), RemoteFloat(2f), RemoteFloat(100f), RemoteFloat(200f))
                     .hasConstantValue
             )
             .isTrue()
@@ -487,7 +524,7 @@ class RemoteFloatTest {
         val result = namedRemoteFloat * RemoteFloat(10f)
         val resultId = result.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedFloatOverride("testFloat", 20f) }
+        makeAndUpdateCoreDocument { context.setNamedFloatOverride("USER:testFloat", 20f) }
 
         assertThat(context.getFloat(resultId)).isEqualTo(200f)
     }
@@ -499,7 +536,7 @@ class RemoteFloatTest {
         val result = plusOne * plusOne
         val resultId = result.getIdForCreationState(creationState)
 
-        makeAndUpdateCoreDocument { context.setNamedFloatOverride("testFloat", 19f) }
+        makeAndUpdateCoreDocument { context.setNamedFloatOverride("USER:testFloat", 19f) }
 
         assertThat(context.getFloat(resultId)).isEqualTo(400f)
     }
@@ -538,6 +575,390 @@ class RemoteFloatTest {
 
         assertThat(resultId).isEqualTo(resultDpId)
     }
+
+    @Test
+    fun longExpression_usesReferences() {
+        // This test checks that when we create a very long expression, we don't just
+        // inline everything. The MAX_SAFE_FLOAT_ARRAY is 30, so we create an expression
+        // that would be much larger than that if inlined.
+        var longExpression = RemoteFloat.createNamedRemoteFloat("test", 1f)
+        for (i in 0..50) {
+            longExpression += RemoteFloat(i.toFloat())
+        }
+
+        // The array should be relatively small, having been split up.
+        val finalArray = longExpression.arrayForCreationState(creationState)
+        assertThat(finalArray.size < 20).isTrue()
+
+        // The initial value is 1, and we add the sum of 0..50.
+        val expected = 1f + (50 * 51) / 2f
+        val longExpressionId = longExpression.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+        assertThat(context.getFloat(longExpressionId)).isEqualTo(expected)
+    }
+
+    fun testTextFromFloat(
+        expected: String,
+        value: RemoteFloat,
+        before: Int,
+        after: Int = 2,
+        flags: Int = TextFromFloat.PAD_AFTER_ZERO,
+    ) {
+        val constantFloatString = value.toRemoteString(before, after, flags)
+
+        val constantStringId = constantFloatString.getIdForCreationState(creationState)
+
+        // ensure we have an id to look up
+        val variableFloat = value.createReference()
+        val variableFloatId = variableFloat.getIdForCreationState(creationState)
+        val variableFloatString = variableFloat.toRemoteString(before, after, flags)
+        val variableStringId = variableFloatString.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(variableFloatId)).isEqualTo(value.constantValue)
+        assertThat(context.getText(constantStringId)).isEqualTo(expected)
+        assertThat(context.getText(variableStringId)).isEqualTo(expected)
+    }
+
+    @Test
+    fun textFromFloat() {
+        testTextFromFloat(".50", 0.5f.rf, 0)
+        testTextFromFloat("-.50", (-0.5f).rf, 0)
+        testTextFromFloat(
+            "00.5000",
+            0.5f.rf,
+            2,
+            4,
+            TextFromFloat.PAD_AFTER_ZERO or TextFromFloat.PAD_PRE_ZERO,
+        )
+        testTextFromFloat(
+            "5000000",
+            5000000.rf,
+            10,
+            0,
+            TextFromFloat.PAD_PRE_NONE or TextFromFloat.PAD_AFTER_NONE,
+        )
+    }
+
+    fun testTextFromFloat(expected: String, value: RemoteFloat, formatter: DecimalFormat) {
+        val constantFloatString = value.toRemoteString(formatter)
+
+        val constantStringId = constantFloatString.getIdForCreationState(creationState)
+
+        // ensure we have an id to look up
+        val variableFloat = value.createReference()
+        val variableFloatId = variableFloat.getIdForCreationState(creationState)
+        val variableFloatString = variableFloat.toRemoteString(formatter)
+        val variableStringId = variableFloatString.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(variableFloatId)).isEqualTo(value.constantValue)
+        assertThat(context.getText(constantStringId)).isEqualTo(expected)
+        assertThat(context.getText(variableStringId)).isEqualTo(expected)
+    }
+
+    @Test
+    fun textFromFloatFormatting() {
+        testTextFromFloat("0.500", 0.5f.rf, DecimalFormat("#0.000"))
+        testTextFromFloat("-0.500", (-0.5f).rf, DecimalFormat("#0.000"))
+        testTextFromFloat("0.50", 0.5f.rf, DecimalFormat("#,##0.00;(#,##0.00)"))
+        testTextFromFloat("(0.50)", (-0.5f).rf, DecimalFormat("#,##0.00;(#,##0.00)"))
+        testTextFromFloat("(50,000.50)", (-50000.50001f).rf, DecimalFormat("#,##0.00;(#,##0.00)"))
+        testTextFromFloat("5000000.0", 5000000.rf, DecimalFormat("#0.##"))
+
+        //        val indianFormatter = DecimalFormat.getNumberInstance(Locale("hi", "IN")) as
+        // DecimalFormat
+        //        testTextFromFloat("50,00,000.0", 5000000.rf, indianFormatter)
+    }
+
+    @Test
+    fun addAndAddPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) + 100f + 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 150.0 + ")
+    }
+
+    @Test
+    fun addAndSubtractPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) + 100f - 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 50.0 + ")
+    }
+
+    @Test
+    fun subtractAndSubtractPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) - 100f - 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 150.0 - ")
+    }
+
+    @Test
+    fun subtractAndAddPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) - 100f + 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 50.0 - ")
+    }
+
+    @Test
+    fun multiplyAndMultiplyPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) * 4f * 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 8.0 * ")
+    }
+
+    @Test
+    fun multiplyAndDividePeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) * 4f / 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 2.0 * ")
+    }
+
+    @Test
+    fun divideAndDividePeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) / 4f / 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 8.0 / ")
+    }
+
+    @Test
+    fun divideAndMultiplyPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) / 4f * 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 2.0 / ")
+    }
+
+    @Test
+    fun createReference_resolvesToSameValue() {
+        val rf = RemoteFloat(10f)
+        val ref = rf.createReference()
+
+        assertThat(rf.constantValue).isEqualTo(10f)
+        // createReference preserves constantValue for optimization
+        assertThat(ref.constantValue).isEqualTo(10f)
+
+        val refId = ref.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(refId)).isEqualTo(10f)
+    }
+
+    @Test
+    fun createReference_forcedResolvesToSameValue() {
+        val rf = RemoteFloat(10f)
+        val ref = rf.createReference(forceRemote = true)
+
+        assertThat(rf.constantValue).isEqualTo(10f)
+        assertThat(ref.constantValueOrNull).isNull()
+
+        val refId = ref.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(refId)).isEqualTo(10f)
+    }
+
+    @Test
+    fun animateRemoteFloat_smokeTest() {
+        val rf1 = RemoteFloat(10f).createReference(forceRemote = true)
+        val rf2 = RemoteFloat(5f).createReference(forceRemote = true)
+        val animated = animateRemoteFloat(duration = 2f, type = CUBIC_DECELERATE) { rf1 / rf2 }
+
+        assertThat(animated).isInstanceOf(AnimatedRemoteFloat::class.java)
+
+        val animatedId = animated.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        val floatId = animated.getFloatIdForCreationState(creationState)
+        assertThat(floatId).isNaN()
+
+        assertThat(context.getFloat(animatedId)).isEqualTo(2f)
+    }
+
+    @Test
+    fun peepholeOptimization_plus() {
+        val expr = (time + 10f) + 1f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 11.0 + )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_minus() {
+        val expr = (time - 10f) - 1f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 11.0 - )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_minus2() {
+        val expr = (time + 10f) - 1f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 9.0 + )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_times() {
+        val expr = (time * 10f) * 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 20.0 * )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_div() {
+        val expr = (time / 10f) / 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 20.0 / )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_div2() {
+        val expr = (time * 10f) / 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 5.0 * )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_complex() {
+        val expr = (time + 10f) - 5f + 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 7.0 + )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_notPossible() {
+        val expr = (time * 10f) + 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly(
+                "VariableName[43] = \"USER:time\" type=1",
+                "FloatConstant[43] = 100.0",
+                "FloatExpression[44] = ([43] 10.0 * 2.0 + )",
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_zeroDiv() {
+        val expr = RemoteFloat(0f) / time
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops).containsExactly("FloatExpression[43] = (0.0 )").inOrder()
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_plusMinus() {
+        val expr = (time + 10f) - 10f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=1", "FloatConstant[43] = 100.0")
+            .inOrder()
+        // expr.getIdForCreationState should return the same ID as time
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_minusPlus() {
+        val expr = (time - 10f) + 10f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=1", "FloatConstant[43] = 100.0")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_timesDiv() {
+        val expr = (time * 2f) / 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=1", "FloatConstant[43] = 100.0")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    @Test
+    fun peepholeOptimization_trimToIdentity_divTimes() {
+        val expr = (time / 2f) * 2f
+
+        val ops = getOperationsStrings(expr)
+        assertThat(ops)
+            .containsExactly("VariableName[43] = \"USER:time\" type=1", "FloatConstant[43] = 100.0")
+            .inOrder()
+        assertThat(expr.getIdForCreationState(creationState))
+            .isEqualTo(time.getIdForCreationState(creationState))
+    }
+
+    private fun getOperationsStrings(expr: RemoteFloat): List<String> =
+        CoreDocument().run {
+            expr.getIdForCreationState(creationState)
+
+            val buffer = creationState.document.buffer
+            buffer.buffer.index = 0
+            initFromBuffer(buffer)
+            getOperations()
+                .map { it.toString() }
+                .filter {
+                    !it.contains("HEADER") &&
+                        !it.contains("TextData") &&
+                        !it.contains("RootContentDescription")
+                }
+        }
 
     private fun makeAndPaintCoreDocument() =
         CoreDocument().apply {

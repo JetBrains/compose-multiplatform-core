@@ -17,12 +17,23 @@
 package androidx.compose.ui
 
 import kotlin.jvm.JvmField
-import kotlin.jvm.JvmName
 
 internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var useLegacyRenderNodeLayers: Boolean = false
+
+    @Suppress("MutableBareField")
+    @JvmField
+    var isClearFocusOnMouseDownEnabled: Boolean = true
+
+    @Suppress("MutableBareField")
+    @JvmField
+    var isDialogAnimationEnabled: Boolean = true
+
+    @Suppress("MutableBareField")
+    @JvmField
+    var areWindowInsetsRulersEnabled: Boolean = true
 }
 
 /**
@@ -33,3 +44,36 @@ internal object SkikoComposeUiFlags {
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.useLegacyRenderNodeLayers by SkikoComposeUiFlags::useLegacyRenderNodeLayers
+
+/**
+ * This flag enables clearing focus on mouse down by default.
+ *
+ * More granular control is available in the various platform-specific entry points.
+ */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.isClearFocusOnMouseDownEnabled by SkikoComposeUiFlags::isClearFocusOnMouseDownEnabled
+
+/**
+ * When enabled the [androidx.compose.ui.window.Dialog] appear and disappear with animation.
+ *
+ * Note that it's a temporary flag, it will be removed in the future.
+ */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.isDialogAnimationEnabled by SkikoComposeUiFlags::isDialogAnimationEnabled
+
+/**
+ * Enable WindowInsets rulers:
+ * * `SystemBarsRulers`
+ * * `ImeRulers`
+ * * `StatusBarsRulers`
+ * * `NavigationBarsRulers`
+ * * `CaptionBarRulers`
+ * * `MandatorySystemGesturesRulers`
+ * * `TappableElementRulers`
+ * * `WaterfallRulers`
+ * * `SafeDrawingRulers`
+ * * `SafeGesturesRulers`
+ * * `SafeContentRulers`
+ */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.areWindowInsetsRulersEnabled by SkikoComposeUiFlags::areWindowInsetsRulersEnabled

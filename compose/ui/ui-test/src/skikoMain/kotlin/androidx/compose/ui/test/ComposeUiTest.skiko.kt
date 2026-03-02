@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
@@ -42,11 +43,14 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,6 +70,13 @@ import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.currentNanoTime
 
+@Deprecated(
+    message =
+        "Use `androidx.compose.ui.test.v2.runComposeUiTest` instead. The v2 APIs use " +
+            "`StandardTestDispatcher` by default to better simulate production behavior where " +
+            "coroutines are queued rather than executed immediately.",
+    level = DeprecationLevel.WARNING,
+)
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
@@ -112,6 +123,7 @@ fun runInternalSkikoComposeUiTest(
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = Duration.INFINITE,
     semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
+    windowInsets: PlatformWindowInsets? = null,
     coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
     block: suspend SkikoComposeUiTest.() -> Unit
 ): TestResult {
@@ -124,6 +136,7 @@ fun runInternalSkikoComposeUiTest(
             testTimeout = testTimeout,
             density = density,
             semanticsOwnerListener = semanticsOwnerListener,
+            windowInsets = windowInsets,
             coroutineDispatcher = coroutineDispatcher,
         ).runTest(block)
     }
@@ -157,6 +170,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private val testTimeout: Duration = Duration.INFINITE,
     override val density: Density = Density(1f),
     private val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?,
+    private val windowInsets: PlatformWindowInsets?,
     private val coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
 ) : ComposeUiTest {
     init {
@@ -177,6 +191,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         effectContext = effectContext,
         density = density,
         semanticsOwnerListener = null,
+        windowInsets = null,
     )
 
     constructor(
@@ -194,6 +209,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         testTimeout = testTimeout,
         density = density,
         semanticsOwnerListener = null,
+        windowInsets = null,
     )
 
     private val composeRootRegistry = ComposeRootRegistry()
@@ -201,7 +217,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private val mainClockImpl = MainTestClockImpl(
         scheduler = coroutineDispatcher.scheduler,
         frameDelayMillis = FRAME_DELAY_MILLIS,
-        isStandardTestDispatcherSupportEnabled = ComposeUiTestFlags.isStandardTestDispatcherSupportEnabled,
+        // TODO: https://youtrack.jetbrains.com/issue/CMP-9519/Implement-ComposeUiTest-v2-APIs-and-migrate-the-tests
+        // It used to be ComposeUiTestFlags.isStandardTestDispatcherSupportEnabled which was true by default
+        // Now it's removed.
+        isStandardTestDispatcherSupportEnabled = true
     )
     override val mainClock: MainTestClock
         get() = mainClockImpl
@@ -312,6 +331,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             platformContext = TestContext(),
             invalidate = { }
         )
+        architectureComponentsOwner.enableSavedStateHandles()
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
@@ -348,7 +368,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     override fun waitForIdle() {
-        // TODO: consider adding a timeout to avoid an infinite loop?
+        val startedAt = currentNanoTime().toDuration(DurationUnit.NANOSECONDS)
+        var lastReportedElapsedSeconds = 0L
         // always check even if we are idle
         uncaughtExceptionHandler.throwUncaught()
         while (!isIdle()) {
@@ -356,6 +377,12 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             uncaughtExceptionHandler.throwUncaught()
             if (!areAllResourcesIdle()) {
                 sleep(IDLING_RESOURCES_CHECK_INTERVAL_MS)
+            }
+            val currentTime = currentNanoTime().toDuration(DurationUnit.NANOSECONDS)
+            val elapsedSeconds = (currentTime - startedAt).inWholeSeconds
+            if (elapsedSeconds > lastReportedElapsedSeconds) {
+                println("Suspicious! waitForIdle has not finished after $elapsedSeconds seconds.")
+                lastReportedElapsedSeconds = elapsedSeconds
             }
         }
     }
@@ -441,8 +468,12 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap {
         val rect = semanticsNode.boundsInWindow
-        val iRect = IRect.makeLTRB(rect.left.toInt(), rect.top.toInt(), rect.right.toInt(), rect.bottom.toInt())
-        val image = surface.makeImageSnapshot(iRect)
+        val image = surface.makeImageSnapshot(
+                rect.left.toInt(),
+                rect.top.toInt(),
+                rect.right.toInt(),
+                rect.bottom.toInt()
+        )
         return image!!.toComposeImageBitmap()
     }
 
@@ -518,6 +549,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
         override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
             get() = this@SkikoComposeUiTest.semanticsOwnerListener
+        override val windowInsets: PlatformWindowInsets
+            get() = this@SkikoComposeUiTest.windowInsets ?: super.windowInsets
 
         override val dragAndDropManager: PlatformDragAndDropManager = TestDragAndDropManager()
 

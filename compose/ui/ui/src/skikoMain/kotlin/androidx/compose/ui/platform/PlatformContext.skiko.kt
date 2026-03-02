@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
@@ -28,6 +29,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -179,6 +182,12 @@ interface PlatformContext {
      */
     val semanticsOwnerListener: SemanticsOwnerListener? get() = null
 
+    /**
+     * Returns whether mouse-down on an unfocusable element clears focus.
+     */
+    val isClearFocusOnMouseDownEnabled: Boolean
+        get() = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)
@@ -252,12 +261,11 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
 }
 
-private object EmptyArchitectureComponentsOwner : DefaultArchitectureComponentsOwner(
+private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(
     enforceMainThread = false
-) {
-    init {
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    }
+).apply {
+    enableSavedStateHandles()
+    setLifecycleState(Lifecycle.State.RESUMED)
 }
 
 internal class DefaultInputModeManager(
@@ -302,7 +310,6 @@ private object EmptyTextToolbar : TextToolbar {
 }
 
 private object EmptyDragAndDropManager : PlatformDragAndDropManager
-private object EmptyPlatformWindowInsets : PlatformWindowInsets
 
 /**
  * Helper delegate to re-send missing events to a new listener.
@@ -322,11 +329,18 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
     }
 
     @Suppress("RedundantNullableReturnType")
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): PlatformContext.RootForTestListener? {
+    operator fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>
+    ): PlatformContext.RootForTestListener? {
         return this
     }
 
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: PlatformContext.RootForTestListener?) {
+    operator fun setValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+        value: PlatformContext.RootForTestListener?
+    ) {
         listener = value
         sendMissingEvents()
     }

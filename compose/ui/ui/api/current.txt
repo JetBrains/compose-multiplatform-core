@@ -70,6 +70,24 @@ package androidx.compose.ui {
     method public default operator androidx.compose.ui.Alignment plus(androidx.compose.ui.Alignment.Horizontal other);
   }
 
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public final class AndroidComposeUiFlags {
+    property public boolean isAccessibilityShowOnScreenNestedScrollingEnabled;
+    property public boolean isSharedAccessibilityManagerEnabled;
+    property public boolean isSharedClipboardManagerEnabled;
+    property public boolean isSharedComposeViewContextEnabled;
+    property public boolean isSharedDrawingEnabled;
+    property public boolean isSharedViewConfigurationEnabled;
+    property public boolean isSharedWindowInfoEnabled;
+    field public static final androidx.compose.ui.AndroidComposeUiFlags INSTANCE;
+    field public static boolean isAccessibilityShowOnScreenNestedScrollingEnabled;
+    field public static boolean isSharedAccessibilityManagerEnabled;
+    field public static boolean isSharedClipboardManagerEnabled;
+    field public static boolean isSharedComposeViewContextEnabled;
+    field public static boolean isSharedDrawingEnabled;
+    field public static boolean isSharedViewConfigurationEnabled;
+    field public static boolean isSharedWindowInfoEnabled;
+  }
+
   @androidx.compose.runtime.Immutable public final class BiasAbsoluteAlignment implements androidx.compose.ui.Alignment {
     ctor public BiasAbsoluteAlignment(float horizontalBias, float verticalBias);
     method @KotlinOnly public androidx.compose.ui.unit.IntOffset align(androidx.compose.ui.unit.IntSize size, androidx.compose.ui.unit.IntSize space, androidx.compose.ui.unit.LayoutDirection layoutDirection);
@@ -140,46 +158,26 @@ package androidx.compose.ui {
   }
 
   @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public final class ComposeUiFlags {
-    property public boolean areWindowInsetsRulersEnabled;
-    property public boolean isAdaptiveRefreshRateEnabled;
+    property public boolean isAccessibilityShouldIncludeOffscreenChildrenEnabled;
     property public boolean isBypassUnfocusableComposeViewEnabled;
-    property public boolean isCanScrollUsingLastDownEventFixEnabled;
-    property @Deprecated public boolean isClearFocusOnResetEnabled;
-    property @Deprecated public boolean isFocusActionExitsTouchModeEnabled;
+    property public boolean isFocusRestorationEnabled;
     property public boolean isGraphicsLayerShapeSemanticsEnabled;
-    property public boolean isIgnoreInvalidPrevFocusRectEnabled;
     property public boolean isIndirectPointerNavigationGestureDetectorEnabled;
     property public boolean isInitialFocusOnFocusableAvailable;
-    property public boolean isNestedScrollInteropIntegerPropagationEnabled;
-    property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOptimizedFocusEventDispatchEnabled;
-    property public boolean isPre26FocusFinderFixEnabled;
-    property public boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
-    property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
-    property public boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
-    property public boolean isScrollCaptureCenteringEnabled;
-    property public boolean isSemanticAutofillEnabled;
+    property public boolean isTrackpadGestureHandlingEnabled;
+    property public boolean isTraversableDelegatesFixEnabled;
     property public boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
-    field public static boolean areWindowInsetsRulersEnabled;
-    field public static boolean isAdaptiveRefreshRateEnabled;
+    field public static boolean isAccessibilityShouldIncludeOffscreenChildrenEnabled;
     field public static boolean isBypassUnfocusableComposeViewEnabled;
-    field public static boolean isCanScrollUsingLastDownEventFixEnabled;
-    field @Deprecated public static boolean isClearFocusOnResetEnabled;
-    field @Deprecated public static boolean isFocusActionExitsTouchModeEnabled;
+    field public static boolean isFocusRestorationEnabled;
     field public static boolean isGraphicsLayerShapeSemanticsEnabled;
-    field public static boolean isIgnoreInvalidPrevFocusRectEnabled;
     field public static boolean isIndirectPointerNavigationGestureDetectorEnabled;
     field public static boolean isInitialFocusOnFocusableAvailable;
-    field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
-    field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOptimizedFocusEventDispatchEnabled;
-    field public static boolean isPre26FocusFinderFixEnabled;
-    field public static boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
-    field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;
-    field public static boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
-    field public static boolean isScrollCaptureCenteringEnabled;
-    field public static boolean isSemanticAutofillEnabled;
+    field public static boolean isTrackpadGestureHandlingEnabled;
+    field public static boolean isTraversableDelegatesFixEnabled;
     field public static boolean isViewFocusFixEnabled;
   }
 
@@ -371,7 +369,7 @@ package androidx.compose.ui.autofill {
     enum_constant @Deprecated public static final androidx.compose.ui.autofill.AutofillType Username;
   }
 
-  public sealed interface ContentDataType {
+  public sealed nonexhaustive interface ContentDataType {
     field public static final androidx.compose.ui.autofill.ContentDataType.Companion Companion;
   }
 
@@ -394,7 +392,7 @@ package androidx.compose.ui.autofill {
     property public static int androidx.compose.ui.autofill.ContentDataType.dataType;
   }
 
-  public sealed interface ContentType {
+  public sealed nonexhaustive interface ContentType {
     method public operator androidx.compose.ui.autofill.ContentType plus(androidx.compose.ui.autofill.ContentType other);
     field public static final androidx.compose.ui.autofill.ContentType.Companion Companion;
   }
@@ -506,9 +504,9 @@ package androidx.compose.ui.autofill {
 
 }
 
-package androidx.compose.ui.contentcapture {
+package @SuppressCompatibility androidx.compose.ui.contentcapture {
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public sealed interface ContentCaptureManager {
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public sealed exhaustive interface ContentCaptureManager {
     field public static final androidx.compose.ui.contentcapture.ContentCaptureManager.Companion Companion;
   }
 
@@ -539,7 +537,7 @@ package androidx.compose.ui.draganddrop {
     method public static androidx.compose.ui.draganddrop.DragAndDropTargetModifierNode DragAndDropTargetModifierNode(kotlin.jvm.functions.Function1<? super androidx.compose.ui.draganddrop.DragAndDropEvent,java.lang.Boolean> shouldStartDragAndDrop, androidx.compose.ui.draganddrop.DragAndDropTarget target);
   }
 
-  public sealed interface DragAndDropSourceModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
+  public sealed nonexhaustive interface DragAndDropSourceModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
     method @InaccessibleFromKotlin public boolean isRequestDragAndDropTransferRequired();
     method @KotlinOnly public void requestDragAndDropTransfer(androidx.compose.ui.geometry.Offset offset);
     method @BytecodeOnly public void requestDragAndDropTransfer-k-4lQ0M(long);
@@ -561,7 +559,7 @@ package androidx.compose.ui.draganddrop {
     method public default void onStarted(androidx.compose.ui.draganddrop.DragAndDropEvent event);
   }
 
-  public sealed interface DragAndDropTargetModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
+  public sealed nonexhaustive interface DragAndDropTargetModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
   }
 
   public final class DragAndDropTransferData {
@@ -623,7 +621,7 @@ package androidx.compose.ui.draw {
     property public abstract androidx.compose.ui.geometry.Size size;
   }
 
-  public sealed interface CacheDrawModifierNode extends androidx.compose.ui.node.DrawModifierNode {
+  public sealed nonexhaustive interface CacheDrawModifierNode extends androidx.compose.ui.node.DrawModifierNode {
     method public void invalidateDrawCache();
   }
 
@@ -757,7 +755,7 @@ package androidx.compose.ui.focus {
     property public androidx.compose.ui.focus.FocusDirection Up;
   }
 
-  public sealed interface FocusEnterExitScope {
+  public sealed nonexhaustive interface FocusEnterExitScope {
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public default void cancelFocus();
     method public void cancelFocusChange();
     method @BytecodeOnly public int getRequestedFocusDirection-dhqQ-8s();
@@ -965,7 +963,7 @@ package androidx.compose.ui.focus {
     property public abstract boolean isFocused;
   }
 
-  public sealed interface FocusTargetModifierNode extends androidx.compose.ui.node.DelegatableNode {
+  public sealed nonexhaustive interface FocusTargetModifierNode extends androidx.compose.ui.node.DelegatableNode {
     method @InaccessibleFromKotlin public androidx.compose.ui.focus.FocusState getFocusState();
     method @BytecodeOnly public int getFocusability-LCbbffg();
     method @BytecodeOnly @Deprecated public boolean requestFocus();
@@ -1191,7 +1189,7 @@ package androidx.compose.ui.graphics.vector {
     method @BytecodeOnly public static androidx.compose.ui.graphics.vector.ImageVector.Builder! path-R_LF-3I$default(androidx.compose.ui.graphics.vector.ImageVector.Builder!, String!, androidx.compose.ui.graphics.Brush!, float, androidx.compose.ui.graphics.Brush!, float, float, int, int, float, int, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
-  public abstract sealed class VNode {
+  public abstract sealed nonexhaustive class VNode {
     method public abstract void draw(androidx.compose.ui.graphics.drawscope.DrawScope);
     method public final void invalidate();
   }
@@ -1290,7 +1288,7 @@ package androidx.compose.ui.graphics.vector {
     field public static final float DefaultTrimPathStart = 0.0f;
   }
 
-  public abstract sealed class VectorNode {
+  public abstract sealed exhaustive class VectorNode {
   }
 
   public final class VectorPainter extends androidx.compose.ui.graphics.painter.Painter {
@@ -1344,7 +1342,7 @@ package androidx.compose.ui.graphics.vector {
     property public float trimPathStart;
   }
 
-  public abstract sealed class VectorProperty<T> {
+  public abstract sealed exhaustive class VectorProperty<T> {
   }
 
   public static final class VectorProperty.Fill extends androidx.compose.ui.graphics.vector.VectorProperty<androidx.compose.ui.graphics.Brush?> {
@@ -1494,7 +1492,7 @@ package androidx.compose.ui.input.indirect {
     property public static android.view.MotionEvent androidx.compose.ui.input.indirect.IndirectPointerEvent.nativeEvent;
   }
 
-  public sealed interface IndirectPointerEvent {
+  public sealed nonexhaustive interface IndirectPointerEvent {
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange> getChanges();
     method @BytecodeOnly public int getPrimaryDirectionalMotionAxis-nZO2Niw();
     method @BytecodeOnly public int getType-4ZHQPSE();
@@ -1690,7 +1688,7 @@ package androidx.compose.ui.input.key {
     method @BytecodeOnly public long getHeadsetHook-EK5gGoQ();
     method @BytecodeOnly public long getHelp-EK5gGoQ();
     method @BytecodeOnly public long getHenkan-EK5gGoQ();
-    method @BytecodeOnly public long getHome-EK5gGoQ();
+    method @BytecodeOnly @Deprecated public long getHome-EK5gGoQ();
     method @BytecodeOnly public long getI-EK5gGoQ();
     method @BytecodeOnly public long getInfo-EK5gGoQ();
     method @BytecodeOnly public long getInsert-EK5gGoQ();
@@ -1751,12 +1749,22 @@ package androidx.compose.ui.input.key {
     method @BytecodeOnly public long getNumPad9-EK5gGoQ();
     method @BytecodeOnly public long getNumPadAdd-EK5gGoQ();
     method @BytecodeOnly public long getNumPadComma-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadDelete-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadDirectionDown-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadDirectionLeft-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadDirectionRight-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadDirectionUp-EK5gGoQ();
     method @BytecodeOnly public long getNumPadDivide-EK5gGoQ();
     method @BytecodeOnly public long getNumPadDot-EK5gGoQ();
     method @BytecodeOnly public long getNumPadEnter-EK5gGoQ();
     method @BytecodeOnly public long getNumPadEquals-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadInsert-EK5gGoQ();
     method @BytecodeOnly public long getNumPadLeftParenthesis-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadMoveEnd-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadMoveHome-EK5gGoQ();
     method @BytecodeOnly public long getNumPadMultiply-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadPageDown-EK5gGoQ();
+    method @BytecodeOnly public long getNumPadPageUp-EK5gGoQ();
     method @BytecodeOnly public long getNumPadRightParenthesis-EK5gGoQ();
     method @BytecodeOnly public long getNumPadSubtract-EK5gGoQ();
     method @BytecodeOnly public long getNumber-EK5gGoQ();
@@ -1806,6 +1814,7 @@ package androidx.compose.ui.input.key {
     method @BytecodeOnly public long getStemPrimary-EK5gGoQ();
     method @BytecodeOnly public long getSwitchCharset-EK5gGoQ();
     method @BytecodeOnly public long getSymbol-EK5gGoQ();
+    method @BytecodeOnly public long getSystemHome-EK5gGoQ();
     method @BytecodeOnly public long getSystemNavigationDown-EK5gGoQ();
     method @BytecodeOnly public long getSystemNavigationLeft-EK5gGoQ();
     method @BytecodeOnly public long getSystemNavigationRight-EK5gGoQ();
@@ -1977,7 +1986,7 @@ package androidx.compose.ui.input.key {
     property public androidx.compose.ui.input.key.Key HeadsetHook;
     property public androidx.compose.ui.input.key.Key Help;
     property public androidx.compose.ui.input.key.Key Henkan;
-    property public androidx.compose.ui.input.key.Key Home;
+    property @Deprecated public androidx.compose.ui.input.key.Key Home;
     property public androidx.compose.ui.input.key.Key I;
     property public androidx.compose.ui.input.key.Key Info;
     property public androidx.compose.ui.input.key.Key Insert;
@@ -2038,12 +2047,22 @@ package androidx.compose.ui.input.key {
     property public androidx.compose.ui.input.key.Key NumPad9;
     property public androidx.compose.ui.input.key.Key NumPadAdd;
     property public androidx.compose.ui.input.key.Key NumPadComma;
+    property public androidx.compose.ui.input.key.Key NumPadDelete;
+    property public androidx.compose.ui.input.key.Key NumPadDirectionDown;
+    property public androidx.compose.ui.input.key.Key NumPadDirectionLeft;
+    property public androidx.compose.ui.input.key.Key NumPadDirectionRight;
+    property public androidx.compose.ui.input.key.Key NumPadDirectionUp;
     property public androidx.compose.ui.input.key.Key NumPadDivide;
     property public androidx.compose.ui.input.key.Key NumPadDot;
     property public androidx.compose.ui.input.key.Key NumPadEnter;
     property public androidx.compose.ui.input.key.Key NumPadEquals;
+    property public androidx.compose.ui.input.key.Key NumPadInsert;
     property public androidx.compose.ui.input.key.Key NumPadLeftParenthesis;
+    property public androidx.compose.ui.input.key.Key NumPadMoveEnd;
+    property public androidx.compose.ui.input.key.Key NumPadMoveHome;
     property public androidx.compose.ui.input.key.Key NumPadMultiply;
+    property public androidx.compose.ui.input.key.Key NumPadPageDown;
+    property public androidx.compose.ui.input.key.Key NumPadPageUp;
     property public androidx.compose.ui.input.key.Key NumPadRightParenthesis;
     property public androidx.compose.ui.input.key.Key NumPadSubtract;
     property public androidx.compose.ui.input.key.Key Number;
@@ -2093,6 +2112,7 @@ package androidx.compose.ui.input.key {
     property public androidx.compose.ui.input.key.Key StemPrimary;
     property public androidx.compose.ui.input.key.Key SwitchCharset;
     property public androidx.compose.ui.input.key.Key Symbol;
+    property public androidx.compose.ui.input.key.Key SystemHome;
     property public androidx.compose.ui.input.key.Key SystemNavigationDown;
     property public androidx.compose.ui.input.key.Key SystemNavigationLeft;
     property public androidx.compose.ui.input.key.Key SystemNavigationRight;
@@ -2320,11 +2340,17 @@ package androidx.compose.ui.input.pointer {
   }
 
   @androidx.compose.runtime.Immutable public final class HistoricalChange {
-    ctor @KotlinOnly public HistoricalChange(long uptimeMillis, androidx.compose.ui.geometry.Offset position);
-    ctor @BytecodeOnly public HistoricalChange(long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @KotlinOnly public HistoricalChange(long uptimeMillis, androidx.compose.ui.geometry.Offset position, optional float scaleGestureFactor, optional androidx.compose.ui.geometry.Offset panGestureOffset);
+    ctor @BytecodeOnly public HistoricalChange(long, long, float, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public HistoricalChange(long, long, float, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public HistoricalChange(long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @BytecodeOnly public long getPanGestureOffset-F1C5BW0();
     method @BytecodeOnly public long getPosition-F1C5BW0();
+    method @InaccessibleFromKotlin public float getScaleGestureFactor();
     method @InaccessibleFromKotlin public long getUptimeMillis();
+    property public androidx.compose.ui.geometry.Offset panGestureOffset;
     property public androidx.compose.ui.geometry.Offset position;
+    property public float scaleGestureFactor;
     property public long uptimeMillis;
   }
 
@@ -2395,15 +2421,19 @@ package androidx.compose.ui.input.pointer {
     method @BytecodeOnly public int getEnter-7fucELk();
     method @BytecodeOnly public int getExit-7fucELk();
     method @BytecodeOnly public int getMove-7fucELk();
+    method @BytecodeOnly public int getPan-7fucELk();
     method @BytecodeOnly public int getPress-7fucELk();
     method @BytecodeOnly public int getRelease-7fucELk();
+    method @BytecodeOnly public int getScale-7fucELk();
     method @BytecodeOnly public int getScroll-7fucELk();
     method @BytecodeOnly public int getUnknown-7fucELk();
     property public androidx.compose.ui.input.pointer.PointerEventType Enter;
     property public androidx.compose.ui.input.pointer.PointerEventType Exit;
     property public androidx.compose.ui.input.pointer.PointerEventType Move;
+    property public androidx.compose.ui.input.pointer.PointerEventType Pan;
     property public androidx.compose.ui.input.pointer.PointerEventType Press;
     property public androidx.compose.ui.input.pointer.PointerEventType Release;
+    property public androidx.compose.ui.input.pointer.PointerEventType Scale;
     property public androidx.compose.ui.input.pointer.PointerEventType Scroll;
     property public androidx.compose.ui.input.pointer.PointerEventType Unknown;
   }
@@ -2486,17 +2516,22 @@ package androidx.compose.ui.input.pointer {
   }
 
   @androidx.compose.runtime.Immutable public final class PointerInputChange {
-    ctor @KotlinOnly public PointerInputChange(androidx.compose.ui.input.pointer.PointerId id, long uptimeMillis, androidx.compose.ui.geometry.Offset position, boolean pressed, float pressure, long previousUptimeMillis, androidx.compose.ui.geometry.Offset previousPosition, boolean previousPressed, boolean isInitiallyConsumed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta);
-    ctor @KotlinOnly public PointerInputChange(androidx.compose.ui.input.pointer.PointerId id, long uptimeMillis, androidx.compose.ui.geometry.Offset position, boolean pressed, long previousUptimeMillis, androidx.compose.ui.geometry.Offset previousPosition, boolean previousPressed, boolean isInitiallyConsumed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta);
+    ctor @KotlinOnly public PointerInputChange(androidx.compose.ui.input.pointer.PointerId id, long uptimeMillis, androidx.compose.ui.geometry.Offset position, boolean pressed, float pressure, long previousUptimeMillis, androidx.compose.ui.geometry.Offset previousPosition, boolean previousPressed, boolean isInitiallyConsumed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta, optional float scaleGestureFactor, optional androidx.compose.ui.geometry.Offset panGestureOffset);
+    ctor @KotlinOnly public PointerInputChange(androidx.compose.ui.input.pointer.PointerId id, long uptimeMillis, androidx.compose.ui.geometry.Offset position, boolean pressed, long previousUptimeMillis, androidx.compose.ui.geometry.Offset previousPosition, boolean previousPressed, boolean isInitiallyConsumed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta, optional float scaleGestureFactor, optional androidx.compose.ui.geometry.Offset panGestureOffset);
+    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, float, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, float, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, long, long, boolean, androidx.compose.ui.input.pointer.ConsumedData!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public PointerInputChange(long, long, long, boolean, long, long, boolean, androidx.compose.ui.input.pointer.ConsumedData!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, float, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, float, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor @BytecodeOnly public PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void consume();
     method @KotlinOnly public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional float pressure, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta);
     method @KotlinOnly public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional float pressure, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, optional androidx.compose.ui.input.pointer.PointerType type, optional java.util.List<androidx.compose.ui.input.pointer.HistoricalChange> historical, optional androidx.compose.ui.geometry.Offset scrollDelta);
+    method @KotlinOnly public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional float pressure, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, optional androidx.compose.ui.input.pointer.PointerType type, optional java.util.List<androidx.compose.ui.input.pointer.HistoricalChange> historical, optional androidx.compose.ui.geometry.Offset scrollDelta, optional float scaleGestureFactor, optional androidx.compose.ui.geometry.Offset panGestureOffset);
     method @KotlinOnly @Deprecated public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, androidx.compose.ui.input.pointer.ConsumedData consumed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta);
     method @KotlinOnly public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, optional androidx.compose.ui.input.pointer.PointerType type, optional androidx.compose.ui.geometry.Offset scrollDelta);
     method @KotlinOnly @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public androidx.compose.ui.input.pointer.PointerInputChange copy(optional androidx.compose.ui.input.pointer.PointerId id, optional long currentTime, optional androidx.compose.ui.geometry.Offset currentPosition, optional boolean currentPressed, optional long previousTime, optional androidx.compose.ui.geometry.Offset previousPosition, optional boolean previousPressed, optional androidx.compose.ui.input.pointer.PointerType type, java.util.List<androidx.compose.ui.input.pointer.HistoricalChange> historical, optional androidx.compose.ui.geometry.Offset scrollDelta);
@@ -2510,17 +2545,21 @@ package androidx.compose.ui.input.pointer {
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static androidx.compose.ui.input.pointer.PointerInputChange! copy-OHpmEuE$default(androidx.compose.ui.input.pointer.PointerInputChange!, long, long, long, boolean, long, long, boolean, int, java.util.List!, long, int, Object!);
     method @BytecodeOnly public androidx.compose.ui.input.pointer.PointerInputChange copy-Tn9QgHE(long, long, long, boolean, float, long, long, boolean, int, long);
     method @BytecodeOnly public static androidx.compose.ui.input.pointer.PointerInputChange! copy-Tn9QgHE$default(androidx.compose.ui.input.pointer.PointerInputChange!, long, long, long, boolean, float, long, long, boolean, int, long, int, Object!);
+    method @BytecodeOnly public androidx.compose.ui.input.pointer.PointerInputChange copy-lGhnTh8(long, long, long, boolean, float, long, long, boolean, int, java.util.List<androidx.compose.ui.input.pointer.HistoricalChange!>, long, float, long);
+    method @BytecodeOnly public static androidx.compose.ui.input.pointer.PointerInputChange! copy-lGhnTh8$default(androidx.compose.ui.input.pointer.PointerInputChange!, long, long, long, boolean, float, long, long, boolean, int, java.util.List!, long, float, long, int, Object!);
     method @BytecodeOnly public androidx.compose.ui.input.pointer.PointerInputChange copy-wbzehF4(long, long, long, boolean, float, long, long, boolean, int, java.util.List<androidx.compose.ui.input.pointer.HistoricalChange!>, long);
     method @BytecodeOnly public static androidx.compose.ui.input.pointer.PointerInputChange! copy-wbzehF4$default(androidx.compose.ui.input.pointer.PointerInputChange!, long, long, long, boolean, float, long, long, boolean, int, java.util.List!, long, int, Object!);
     method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.input.pointer.ConsumedData getConsumed();
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.input.pointer.HistoricalChange> getHistorical();
     method @BytecodeOnly public long getId-J3iCeTQ();
+    method @BytecodeOnly public long getPanGestureOffset-F1C5BW0();
     method @BytecodeOnly public long getPosition-F1C5BW0();
     method @InaccessibleFromKotlin public boolean getPressed();
     method @InaccessibleFromKotlin public float getPressure();
     method @BytecodeOnly public long getPreviousPosition-F1C5BW0();
     method @InaccessibleFromKotlin public boolean getPreviousPressed();
     method @InaccessibleFromKotlin public long getPreviousUptimeMillis();
+    method @InaccessibleFromKotlin public float getScaleGestureFactor();
     method @BytecodeOnly public long getScrollDelta-F1C5BW0();
     method @BytecodeOnly public int getType-T8wyACA();
     method @InaccessibleFromKotlin public long getUptimeMillis();
@@ -2529,12 +2568,14 @@ package androidx.compose.ui.input.pointer {
     property public java.util.List<androidx.compose.ui.input.pointer.HistoricalChange> historical;
     property public androidx.compose.ui.input.pointer.PointerId id;
     property public boolean isConsumed;
+    property public androidx.compose.ui.geometry.Offset panGestureOffset;
     property public androidx.compose.ui.geometry.Offset position;
     property public boolean pressed;
     property public float pressure;
     property public androidx.compose.ui.geometry.Offset previousPosition;
     property public boolean previousPressed;
     property public long previousUptimeMillis;
+    property public float scaleGestureFactor;
     property public androidx.compose.ui.geometry.Offset scrollDelta;
     property public androidx.compose.ui.input.pointer.PointerType type;
     property public long uptimeMillis;
@@ -2624,7 +2665,7 @@ package androidx.compose.ui.input.pointer {
     method @Deprecated public static androidx.compose.ui.Modifier pointerInput(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
   }
 
-  public sealed interface SuspendingPointerInputModifierNode extends androidx.compose.ui.node.PointerInputModifierNode {
+  public sealed nonexhaustive interface SuspendingPointerInputModifierNode extends androidx.compose.ui.node.PointerInputModifierNode {
     method @InaccessibleFromKotlin public default androidx.compose.ui.input.pointer.PointerInputEventHandler getPointerInputEventHandler();
     method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function2<androidx.compose.ui.input.pointer.PointerInputScope,kotlin.coroutines.Continuation<? super kotlin.Unit>,java.lang.Object?> getPointerInputHandler();
     method public void resetPointerInputHandler();
@@ -2700,7 +2741,7 @@ package androidx.compose.ui.input.rotary {
 
 package androidx.compose.ui.layout {
 
-  @androidx.compose.runtime.Immutable public abstract sealed class AlignmentLine {
+  @androidx.compose.runtime.Immutable public abstract sealed exhaustive class AlignmentLine {
     field public static final androidx.compose.ui.layout.AlignmentLine.Companion Companion;
     field public static final int Unspecified = -2147483648; // 0x80000000
   }
@@ -2716,7 +2757,7 @@ package androidx.compose.ui.layout {
     property public static androidx.compose.ui.layout.HorizontalAlignmentLine LastBaseline;
   }
 
-  public sealed interface ApproachIntrinsicMeasureScope extends androidx.compose.ui.layout.IntrinsicMeasureScope {
+  public sealed nonexhaustive interface ApproachIntrinsicMeasureScope extends androidx.compose.ui.layout.IntrinsicMeasureScope {
     method @BytecodeOnly public long getLookaheadConstraints-msEJaDk();
     method @BytecodeOnly public long getLookaheadSize-YbymL2g();
     property public abstract androidx.compose.ui.unit.Constraints lookaheadConstraints;
@@ -2737,12 +2778,12 @@ package androidx.compose.ui.layout {
     method public default int minApproachIntrinsicWidth(androidx.compose.ui.layout.ApproachIntrinsicMeasureScope, androidx.compose.ui.layout.IntrinsicMeasurable measurable, int height);
   }
 
-  public sealed interface ApproachMeasureScope extends androidx.compose.ui.layout.ApproachIntrinsicMeasureScope androidx.compose.ui.layout.MeasureScope {
+  public sealed nonexhaustive interface ApproachMeasureScope extends androidx.compose.ui.layout.ApproachIntrinsicMeasureScope androidx.compose.ui.layout.MeasureScope {
   }
 
   public interface BeyondBoundsLayout {
     method @KotlinOnly public <T> T? layout(androidx.compose.ui.layout.BeyondBoundsLayout.LayoutDirection direction, kotlin.jvm.functions.Function1<androidx.compose.ui.layout.BeyondBoundsLayout.BeyondBoundsScope,T?> block);
-    method @BytecodeOnly public <T> T? layout-o7g1Pn8(int, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.BeyondBoundsLayout.BeyondBoundsScope!,? extends T!>);
+    method @BytecodeOnly public <T> T? layout-o7g1Pn8(int, kotlin.jvm.functions.Function1<? super androidx.compose.ui.layout.BeyondBoundsLayout.BeyondBoundsScope!,? extends T>);
   }
 
   public static interface BeyondBoundsLayout.BeyondBoundsScope {
@@ -3033,7 +3074,7 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly public static androidx.compose.ui.layout.MeasureResult! layout$default(androidx.compose.ui.layout.MeasureScope!, int, int, java.util.Map!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
-  @kotlin.DslMarker public @interface MeasureScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface MeasureScopeMarker {
   }
 
   public interface Measured {
@@ -3067,8 +3108,8 @@ package androidx.compose.ui.layout {
   }
 
   public final class OnFirstVisibleModifierKt {
-    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onFirstVisible(androidx.compose.ui.Modifier, optional @IntRange(from=0L) long minDurationMs, optional @FloatRange(from=0.0, to=1.0) float minFractionVisible, optional androidx.compose.ui.layout.LayoutBoundsHolder? viewportBounds, kotlin.jvm.functions.Function0<kotlin.Unit> callback);
-    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier! onFirstVisible$default(androidx.compose.ui.Modifier!, long, float, androidx.compose.ui.layout.LayoutBoundsHolder!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onFirstVisible(androidx.compose.ui.Modifier, optional @IntRange(from=0L) long minDurationMs, optional @FloatRange(from=0.0, to=1.0) float minFractionVisible, optional androidx.compose.ui.layout.LayoutBoundsHolder? viewportBounds, kotlin.jvm.functions.Function0<kotlin.Unit> callback);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier! onFirstVisible$default(androidx.compose.ui.Modifier!, long, float, androidx.compose.ui.layout.LayoutBoundsHolder!, kotlin.jvm.functions.Function0!, int, Object!);
   }
 
   public final class OnGlobalLayoutListenerKt {
@@ -3200,7 +3241,7 @@ package androidx.compose.ui.layout {
     property protected abstract int parentWidth;
   }
 
-  @kotlin.DslMarker public @interface PlacementScopeMarker {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface PlacementScopeMarker {
   }
 
   public interface RectRulers {
@@ -3232,7 +3273,7 @@ package androidx.compose.ui.layout {
     method public void onRemeasurementAvailable(androidx.compose.ui.layout.Remeasurement remeasurement);
   }
 
-  public abstract sealed class Ruler {
+  public abstract sealed exhaustive class Ruler {
   }
 
   @androidx.compose.ui.layout.MeasureScopeMarker public interface RulerScope extends androidx.compose.ui.unit.Density {
@@ -3309,7 +3350,7 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly public androidx.compose.ui.layout.SubcomposeLayoutState.PrecomposedSlotHandle precompose(Object?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
   }
 
-  public static sealed interface SubcomposeLayoutState.PausedPrecomposition {
+  public static sealed nonexhaustive interface SubcomposeLayoutState.PausedPrecomposition {
     method public androidx.compose.ui.layout.SubcomposeLayoutState.PrecomposedSlotHandle apply();
     method public void cancel();
     method @InaccessibleFromKotlin public boolean isComplete();
@@ -3356,7 +3397,7 @@ package androidx.compose.ui.layout {
     method public boolean retainAll(kotlin.jvm.functions.Function1<java.lang.Object?,java.lang.Boolean> predicate);
     method @BytecodeOnly public int size();
     method @BytecodeOnly public Object![]! toArray();
-    method @BytecodeOnly public <T> T![]! toArray(T![]!);
+    method @BytecodeOnly public <T> T[]! toArray(T[]!);
     method public void trimToSize(int maxSlotsToRetainForReuse);
     property public int size;
   }
@@ -3376,7 +3417,7 @@ package androidx.compose.ui.layout {
     method public androidx.compose.ui.layout.VerticalRuler minOf(androidx.compose.ui.layout.VerticalRuler... rulers);
   }
 
-  public sealed interface WindowInsetsAnimation {
+  public sealed nonexhaustive interface WindowInsetsAnimation {
     method @InaccessibleFromKotlin @FloatRange(from=0.0, to=1.0) public float getAlpha();
     method @InaccessibleFromKotlin @IntRange(from=0L) public long getDurationMillis();
     method @InaccessibleFromKotlin public float getFraction();
@@ -3393,7 +3434,7 @@ package androidx.compose.ui.layout {
     property public abstract androidx.compose.ui.layout.RectRulers target;
   }
 
-  public sealed interface WindowInsetsRulers {
+  public sealed nonexhaustive interface WindowInsetsRulers {
     method public androidx.compose.ui.layout.WindowInsetsAnimation getAnimation(androidx.compose.ui.layout.Placeable.PlacementScope scope);
     method @InaccessibleFromKotlin public androidx.compose.ui.layout.RectRulers getCurrent();
     method @InaccessibleFromKotlin public androidx.compose.ui.layout.RectRulers getMaximum();
@@ -3440,7 +3481,7 @@ package androidx.compose.ui.layout {
 
 package androidx.compose.ui.modifier {
 
-  @androidx.compose.runtime.Stable public abstract sealed class ModifierLocal<T> {
+  @androidx.compose.runtime.Stable public abstract sealed exhaustive class ModifierLocal<T> {
   }
 
   @androidx.compose.runtime.Stable @kotlin.jvm.JvmDefaultWithCompatibility public interface ModifierLocalConsumer extends androidx.compose.ui.Modifier.Element {
@@ -3455,7 +3496,7 @@ package androidx.compose.ui.modifier {
     method public static <T> androidx.compose.ui.modifier.ProvidableModifierLocal<T> modifierLocalOf(kotlin.jvm.functions.Function0<? extends T> defaultFactory);
   }
 
-  public abstract sealed class ModifierLocalMap {
+  public abstract sealed nonexhaustive class ModifierLocalMap {
   }
 
   public interface ModifierLocalModifierNode extends androidx.compose.ui.modifier.ModifierLocalReadScope androidx.compose.ui.node.DelegatableNode {
@@ -3530,11 +3571,6 @@ package androidx.compose.ui.node {
     method public static androidx.compose.ui.graphics.GraphicsContext requireGraphicsContext(androidx.compose.ui.node.DelegatableNode);
     method public static androidx.compose.ui.layout.LayoutCoordinates requireLayoutCoordinates(androidx.compose.ui.node.DelegatableNode);
     method public static androidx.compose.ui.unit.LayoutDirection requireLayoutDirection(androidx.compose.ui.node.DelegatableNode);
-    method @BytecodeOnly public static void visitAncestors-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitChildren-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSelfAndChildren-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSubtree-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSubtreeIf-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   public final class DelegatableNode_androidKt {
@@ -3600,11 +3636,11 @@ package androidx.compose.ui.node {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is internal to library.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER}) public @interface InternalCoreApi {
   }
 
-  @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public sealed interface InteroperableComposeUiNode {
+  @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public sealed nonexhaustive interface InteroperableComposeUiNode {
     method public android.view.View? getInteropView();
   }
 
-  public interface LayoutAwareModifierNode extends androidx.compose.ui.node.DelegatableNode {
+  public interface LayoutAwareModifierNode extends androidx.compose.ui.node.MeasuredSizeAwareModifierNode androidx.compose.ui.node.DelegatableNode {
     method public default void onPlaced(androidx.compose.ui.layout.LayoutCoordinates coordinates);
     method @KotlinOnly public default void onRemeasured(androidx.compose.ui.unit.IntSize size);
     method @BytecodeOnly public default void onRemeasured-ozmzZPI(long);
@@ -3625,6 +3661,11 @@ package androidx.compose.ui.node {
     method public static void invalidatePlacement(androidx.compose.ui.node.LayoutModifierNode);
     method public static void remeasureSync(androidx.compose.ui.node.LayoutModifierNode);
     method public static void updateLayerBlock(androidx.compose.ui.node.LayoutModifierNode, kotlin.jvm.functions.Function1<? super androidx.compose.ui.graphics.GraphicsLayerScope,kotlin.Unit>? layerBlock);
+  }
+
+  public interface MeasuredSizeAwareModifierNode extends androidx.compose.ui.node.DelegatableNode {
+    method @KotlinOnly public void onRemeasured(androidx.compose.ui.unit.IntSize size);
+    method @BytecodeOnly public void onRemeasured-ozmzZPI(long);
   }
 
   public abstract class ModifierNodeElement<N extends androidx.compose.ui.Modifier.Node> implements androidx.compose.ui.platform.InspectableValue androidx.compose.ui.Modifier.Element {
@@ -3812,7 +3853,7 @@ package androidx.compose.ui.platform {
     method public static androidx.compose.ui.platform.ClipMetadata toClipMetadata(android.content.ClipDescription);
   }
 
-  public final class AndroidComposeViewAccessibilityDelegateCompat_androidKt {
+  @SuppressCompatibility public final class AndroidComposeViewAccessibilityDelegateCompat_androidKt {
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean getDisableContentCapture();
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void setDisableContentCapture(boolean);
     property @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean DisableContentCapture;
@@ -3851,8 +3892,8 @@ package androidx.compose.ui.platform {
 
   public final class AndroidUiFrameClock implements androidx.compose.runtime.MonotonicFrameClock {
     ctor public AndroidUiFrameClock(android.view.Choreographer choreographer);
-    method @BytecodeOnly public <R> R! fold(R!, kotlin.jvm.functions.Function2<? super R!,? super kotlin.coroutines.CoroutineContext.Element!,? extends R!>);
-    method @BytecodeOnly public <E extends kotlin.coroutines.CoroutineContext.Element> E? get(kotlin.coroutines.CoroutineContext.Key<E!>);
+    method @BytecodeOnly public <R> R fold(R, kotlin.jvm.functions.Function2<? super R,? super kotlin.coroutines.CoroutineContext.Element!,? extends R>);
+    method @BytecodeOnly public <E extends kotlin.coroutines.CoroutineContext.Element> E? get(kotlin.coroutines.CoroutineContext.Key<E>);
     method @InaccessibleFromKotlin public android.view.Choreographer getChoreographer();
     method @BytecodeOnly public kotlin.coroutines.CoroutineContext minusKey(kotlin.coroutines.CoroutineContext.Key<? extends java.lang.Object!>);
     method @BytecodeOnly public kotlin.coroutines.CoroutineContext plus(kotlin.coroutines.CoroutineContext);
@@ -3917,7 +3958,7 @@ package androidx.compose.ui.platform {
     property public abstract android.content.ClipboardManager nativeClipboard;
   }
 
-  public final class ClipboardExtensions_androidKt {
+  @SuppressCompatibility public final class ClipboardExtensions_androidKt {
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static android.net.Uri? firstUriOrNull(androidx.compose.ui.platform.ClipEntry);
   }
 
@@ -3941,6 +3982,14 @@ package androidx.compose.ui.platform {
     method public void setContent(kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly public void setContent(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     property protected boolean shouldCreateCompositionOnAttachedToWindow;
+    field public static final androidx.compose.ui.platform.ComposeView.Companion Companion;
+  }
+
+  public static final class ComposeView.Companion {
+  }
+
+  @SuppressCompatibility public final class ComposeView_androidKt {
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void disableWindowInsetsRulers(androidx.compose.ui.platform.ComposeView.Companion);
   }
 
   public final class CompositionLocalsKt {
@@ -3958,6 +4007,8 @@ package androidx.compose.ui.platform {
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.hapticfeedback.HapticFeedback> getLocalHapticFeedback();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.input.InputModeManager> getLocalInputModeManager();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.LayoutDirection> getLocalLayoutDirection();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.CompositionLocal<androidx.compose.ui.text.intl.Locale> getLocalLocale();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.CompositionLocal<androidx.compose.ui.text.intl.LocaleList> getLocalLocaleList();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.CompositionLocal<java.lang.Boolean> getLocalScrollCaptureInProgress();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoftwareKeyboardController?> getLocalSoftwareKeyboardController();
     method @InaccessibleFromKotlin @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.input.TextInputService?> getLocalTextInputService();
@@ -3979,6 +4030,8 @@ package androidx.compose.ui.platform {
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.hapticfeedback.HapticFeedback> LocalHapticFeedback;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.input.InputModeManager> LocalInputModeManager;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.LayoutDirection> LocalLayoutDirection;
+    property public static androidx.compose.runtime.CompositionLocal<androidx.compose.ui.text.intl.Locale> LocalLocale;
+    property public static androidx.compose.runtime.CompositionLocal<androidx.compose.ui.text.intl.LocaleList> LocalLocaleList;
     property public static androidx.compose.runtime.CompositionLocal<java.lang.Boolean> LocalScrollCaptureInProgress;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoftwareKeyboardController?> LocalSoftwareKeyboardController;
     property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.input.TextInputService?> LocalTextInputService;
@@ -4606,6 +4659,7 @@ package androidx.compose.ui.semantics {
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.String> getStateDescription();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.String> getTestTag();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.util.List<androidx.compose.ui.text.AnnotatedString>> getText();
+    method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getTextEntryKey();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.text.TextRange> getTextSelectionRange();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.text.AnnotatedString> getTextSubstitution();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.state.ToggleableState> getToggleableState();
@@ -4648,6 +4702,7 @@ package androidx.compose.ui.semantics {
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.String> StateDescription;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.String> TestTag;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.util.List<androidx.compose.ui.text.AnnotatedString>> Text;
+    property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> TextEntryKey;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.text.TextRange> TextSelectionRange;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.text.AnnotatedString> TextSubstitution;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.state.ToggleableState> ToggleableState;
@@ -4797,6 +4852,7 @@ package androidx.compose.ui.semantics {
     method @InaccessibleFromKotlin public static void setVerticalScrollAxisRange(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.semantics.ScrollAxisRange);
     method public static void showTextSubstitution(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function1<? super java.lang.Boolean,java.lang.Boolean>? action);
     method @BytecodeOnly public static void showTextSubstitution$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function1!, int, Object!);
+    method public static void textEntryKey(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     property public static androidx.compose.ui.semantics.CollectionInfo androidx.compose.ui.semantics.SemanticsPropertyReceiver.collectionInfo;
     property public static androidx.compose.ui.semantics.CollectionItemInfo androidx.compose.ui.semantics.SemanticsPropertyReceiver.collectionItemInfo;
     property public static androidx.compose.ui.autofill.ContentDataType androidx.compose.ui.semantics.SemanticsPropertyReceiver.contentDataType;
@@ -4913,8 +4969,8 @@ package androidx.compose.ui.text {
 package androidx.compose.ui.viewinterop {
 
   public final class AndroidView_androidKt {
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super T!,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function1<? super T,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<? super android.content.Context!,? extends T>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function1<? super T,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super T,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super T,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<android.content.Context,T> factory, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function1<T,kotlin.Unit> update);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static <T extends android.view.View> void AndroidView(kotlin.jvm.functions.Function1<android.content.Context,T> factory, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function1<T,kotlin.Unit>? onReset, optional kotlin.jvm.functions.Function1<T,kotlin.Unit> onRelease, optional kotlin.jvm.functions.Function1<T,kotlin.Unit> update);
     method @InaccessibleFromKotlin public static kotlin.jvm.functions.Function1<android.view.View,kotlin.Unit> getNoOpUpdate();
@@ -4980,8 +5036,10 @@ package androidx.compose.ui.window {
     ctor public PopupProperties(optional boolean focusable, optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional androidx.compose.ui.window.SecureFlagPolicy securePolicy, optional boolean excludeFromSystemGesture, optional boolean clippingEnabled, optional boolean usePlatformDefaultWidth);
     ctor @BytecodeOnly public PopupProperties(boolean, boolean, boolean, androidx.compose.ui.window.SecureFlagPolicy!, boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly public PopupProperties(boolean, boolean, boolean, androidx.compose.ui.window.SecureFlagPolicy!, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor public PopupProperties(optional boolean focusable, optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean clippingEnabled);
-    ctor @BytecodeOnly public PopupProperties(boolean, boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public PopupProperties(boolean, boolean, boolean, boolean);
+    ctor public PopupProperties(optional boolean focusable, optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean clippingEnabled, optional boolean usePlatformDefaultWidth);
+    ctor @BytecodeOnly public PopupProperties(boolean, boolean, boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public PopupProperties(boolean, boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public PopupProperties(int flags, optional boolean inheritSecurePolicy, optional boolean dismissOnBackPress, optional boolean dismissOnClickOutside, optional boolean excludeFromSystemGesture, optional boolean usePlatformDefaultWidth);
     ctor @BytecodeOnly public PopupProperties(int, boolean, boolean, boolean, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public boolean getClippingEnabled();

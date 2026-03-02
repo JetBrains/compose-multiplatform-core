@@ -30,8 +30,6 @@ import androidx.compose.ui.window.WindowPosition
 import java.awt.*
 import java.awt.event.InputMethodEvent
 import java.awt.event.KeyEvent
-import java.awt.event.KeyEvent.KEY_PRESSED
-import java.awt.event.KeyEvent.KEY_RELEASED
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.font.TextHitInfo
@@ -41,8 +39,12 @@ import java.awt.image.MultiResolutionImage
 import java.text.AttributedString
 import javax.swing.Icon
 import javax.swing.ImageIcon
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.withContext
 import org.jetbrains.skiko.MainUIDispatcher
 
 fun testImage(color: Color): Painter = run {
@@ -102,10 +104,24 @@ fun Window.sendKeyTypedEvent(
     modifiers = modifiers
 )
 
-fun Window.sendCharTypedEvents(char: Char) {
-    sendKeyEvent(char.code, char, KEY_PRESSED)
+fun Window.sendCharTypedEvents(
+    char: Char,
+    triggerAccentedInputHack: Boolean = false
+) {
+    sendKeyEvent(char.code, char, KeyEvent.KEY_PRESSED)
     sendKeyTypedEvent(char)
-    sendKeyEvent(char.code, char, KEY_RELEASED)
+    if (triggerAccentedInputHack) {
+        triggerNeedsToDeletePreviousChar()
+    }
+    sendKeyEvent(char.code, char, KeyEvent.KEY_RELEASED)
+}
+
+fun Window.triggerNeedsToDeletePreviousChar() {
+    // This triggers the "needToDeletePreviousChar" hack in DesktopTextInputService(2).
+    // If the implementation of this ever changes, this test will need to change as well.
+    // Note that using java.awt.Robot to test this doesn't appear to work, as the accented
+    // characters toolbar isn't displayed.
+    focusOwner.inputMethodRequests.getSelectedText(null)
 }
 
 fun Window.sendInputMethodEvent(
@@ -240,18 +256,13 @@ fun Component.performClick() {
     dispatchEvent(MouseEvent(this, MouseEvent.MOUSE_RELEASED, 0, 0,1, 1, 1, false, MouseEvent.BUTTON1))
 }
 
-// TODO(demin): It seems this not-so-good synchronization
-//  doesn't cause flakiness in our window tests.
-//  But more robust solution will be to using something like UiUtil
 /**
- * Wait until all scheduled tasks in Event Dispatch Thread are performed.
- * New scheduled tasks in these tasks also will be performed
+ * Wait until all scheduled tasks in the Event Dispatch Thread are performed.
+ * New scheduled tasks in these tasks also will be performed.
  */
-suspend fun awaitEDT() {
-    // Most of the work usually is done after the first yield(), almost all the work -
-    // after fourth yield()
-    repeat(100) {
-        yield()
+suspend fun Robot.awaitEDT() {
+    withContext(Dispatchers.IO) {
+        waitForIdle()
     }
 }
 
@@ -272,4 +283,18 @@ internal inline fun <R> ImageComposeScene.useInUiThread(
     crossinline block: (ImageComposeScene) -> R
 ): R = runBlocking(MainUIDispatcher) {
     use(block)
+}
+
+@OptIn(ExperimentalTime::class)
+internal fun ImageComposeScene.runUntilIdle(
+    initialTime: Duration = Duration.ZERO,
+    frameDuration: Duration = 16.milliseconds
+): Duration {
+    var time = initialTime
+    render(time)
+    while (hasInvalidations()) {
+        time += frameDuration
+        render(time)
+    }
+    return time
 }

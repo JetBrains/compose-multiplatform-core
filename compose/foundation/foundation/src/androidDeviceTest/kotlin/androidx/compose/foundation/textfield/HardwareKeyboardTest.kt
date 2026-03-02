@@ -39,7 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.requestFocus
@@ -563,6 +563,16 @@ class HardwareKeyboardTest {
             Key.DirectionRight.downAndUp(META_SHIFT_ON)
             Key.Enter.downAndUp()
             expectedText("t\nt")
+        }
+    }
+
+    @Test
+    fun textField_ctrlAltA() {
+        keysSequenceTest(initText = "text") {
+            Key.A.downAndUp(META_CTRL_ON or META_ALT_ON)
+            // ctrl-alt-A shouldn't do anything
+            expectedSelection(TextRange.Zero)
+            expectedText("text")
         }
     }
 

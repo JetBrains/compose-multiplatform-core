@@ -14,41 +14,32 @@
  * limitations under the License.
  */
 
-
-import androidx.build.LibraryType
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
+import org.jetbrains.androidx.build.XcodeBuildLock
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.Architecture
+
+// TODO: Correctly apply AndroidXPlugin to pass all verification checks.
 
 plugins {
     id("AndroidXPlugin")
     id("kotlin-multiplatform")
-    id("JetBrainsAndroidXPlugin")
 }
 
 kotlin {
-    iosX64("uikitX64") {
-        configure(it, false)
-    }
-    iosArm64("uikitArm64") {
+    iosArm64("iosArm64") {
         configure(it, true)
     }
-    iosSimulatorArm64("uikitSimArm64") {
+    iosSimulatorArm64("iosSimulatorArm64") {
         configure(it, false)
     }
 
     sourceSets {
         commonMain {}
-        def uikitMain = sourceSets.create("uikitMain")
-        def uikitX64Main = sourceSets.getByName("uikitX64Main")
-        def uikitArm64Main = sourceSets.getByName("uikitArm64Main")
-        def uikitSimArm64Main = sourceSets.getByName("uikitSimArm64Main")
-
-        uikitMain.dependsOn(commonMain)
-        uikitX64Main.dependsOn(uikitMain)
-        uikitArm64Main.dependsOn(uikitMain)
-        uikitSimArm64Main.dependsOn(uikitMain)
 
         configureEach {
+            languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
             languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
@@ -89,7 +80,7 @@ private static String frameworksPath(target) {
 private def configure(target, isDevice) {
     def frameworkName = "CMPTestUtils"
     def buildSchemeName = frameworkName
-    def frameworkSourcesDir = new File(project.projectDir, "src/uikitMain/objc")
+    def frameworkSourcesDir = new File(project.projectDir, "src/iosMain/objc")
     def headersPath = new File(frameworkSourcesDir, frameworkName)
     def sdkName
     def destination
@@ -129,6 +120,7 @@ private def configure(target, isDevice) {
     target.compilations.main {
         def libTaskName = "${compileTaskProvider.name}ObjCLib"
         project.tasks.register(libTaskName, Exec) {
+            usesService(XcodeBuildLock.instance(project))
             inputs.dir(frameworkSourcesDir)
                     .withPropertyName("${frameworkName}-${sdkName}")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -184,7 +176,7 @@ private def configure(target, isDevice) {
 
 androidx {
     name = "Compose Instrumented Test Utils"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Internal utilities that convert kotlin.test into XCTest."
     legacyDisableKotlinStrictApiMode = true

@@ -13,30 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.RcPlatformServices
-import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableLongState
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 
 /**
  * Abstract base class for all remote long representations. This class extends [RemoteState<Long>].
- *
- * @property hasConstantValue A boolean indicating whether this [RemoteLong] will always evaluate to
- *   the same [value]. This is a conservative check; some expressions that are effectively constant
- *   might still return `false` due to the cost of tracking their dependencies.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteLong : RemoteState<Long> {
-
-    public abstract val id: Int
+@Stable
+public abstract class RemoteLong internal constructor() : BaseRemoteState<Long>() {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
@@ -47,43 +37,45 @@ public abstract class RemoteLong : RemoteState<Long> {
          * @param v The constant [Long] value.
          * @return A [MutableRemoteLong] representing the constant value.
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public operator fun invoke(v: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(v), v) { creationState ->
-                creationState.document.addLong(v)
-            }
+            return MutableRemoteLong(v) { creationState -> creationState.document.addLong(v) }
         }
+
+        /**
+         * Creates a [RemoteLong] referencing a remote ID.
+         *
+         * @param id The remote ID.
+         * @return A [RemoteLong] referencing the ID.
+         */
+        internal fun createForId(id: Int): RemoteLong = MutableRemoteLong(id)
 
         /**
          * Creates a named [RemoteLong] with an initial value. Named remote longs can be set via
          * AndroidRemoteContext.setNamedLong.
          *
          * @param name The unique name for this remote long.
-         * @param initialValue The initial [Long] value for the named remote long.
+         * @param defaultValue The initial [Long] value for the named remote long.
          * @return A [RemoteLong] representing the named long.
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        public fun createNamedRemoteLong(name: String, initialValue: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(initialValue), constantValue = null) {
-                creationState ->
-                creationState.document.addNamedLong(name, initialValue)
+        public fun createNamedRemoteLong(
+            name: String,
+            defaultValue: Long,
+            domain: RemoteState.Domain = RemoteState.Domain.User,
+        ): RemoteLong {
+            return MutableRemoteLong(constantValueOrNull = null) { creationState ->
+                creationState.document.addNamedLong("$domain:$name", defaultValue)
             }
         }
     }
 }
 
-/**
- * A mutable implementation of [RemoteLong] that holds its value in a [MutableLongState].
- *
- * @property content The underlying [MutableLongState] that stores the actual long value.
- * @property hasConstantValue A boolean indicating whether this [MutableRemoteLong] is expected to
- *   remain constant. For mutable states, this is typically `false`.
- * @property idProvider A lambda that provides the unique ID for this mutable long within the
- *   [RemoteComposeCreationState]. This ID is used to identify the long in the remote document.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class MutableRemoteLong(
-    private val content: MutableLongState,
-    public override val constantValue: Long?,
+/** A mutable implementation of [RemoteLong]. */
+public class MutableRemoteLong
+internal constructor(
+    @get:Suppress("AutoBoxing") public override val constantValueOrNull: Long?,
     private val idProvider: (creationState: RemoteComposeCreationState) -> Int,
 ) : RemoteLong(), MutableRemoteState<Long> {
 
@@ -91,70 +83,100 @@ public class MutableRemoteLong(
      * Constructor for [MutableRemoteLong] that allows specifying an optional initial ID. If no ID
      * is provided, a new float variable ID is reserved.
      *
-     * @param content The [MutableLongState] to hold the value.
      * @param id An optional explicit ID for this mutable long. If `null`, a new ID is reserved.
      */
-    public constructor(
-        content: MutableLongState,
-        id: Int? = null,
-    ) : this(
-        content,
-        constantValue = null,
-        { creationState -> id ?: Utils.idFromNan(creationState.document.reserveFloatVariable()) },
-    )
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(id: Int) : this(constantValueOrNull = null, { _ -> id })
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         idProvider(creationState)
 
-    @Deprecated("Use getIdForCreationState directly")
-    public override val id: Int
-        get() {
-            FallbackCreationState.state.platform.log(
-                RcPlatformServices.LogCategory.TODO,
-                "Use RemoteLong.getIdForCreationState directly",
-            )
-            return getIdForCreationState(FallbackCreationState.state)
-        }
-
-    public override var value: Long
-        get() {
-            return content.longValue
-        }
-        set(newValue) {
-            content.longValue = newValue
-        }
-
-    public override operator fun component1(): Long = value
-
-    public override operator fun component2(): (Long) -> Unit = { newValue ->
-        content.longValue = newValue
+    public override fun toString(): String {
+        return "MutableRemoteLong@${this.hashCode()} =" + constantValueOrNull
     }
 
-    public override fun toString(): String {
-        return "MutableRemoteLong@${this.hashCode()} =" + content.longValue
+    public companion object {
+        /**
+         * Creates a new mutable state (allocates an ID).
+         *
+         * @param initialValue The initial value for the state.
+         * @return A new [MutableRemoteLong] instance.
+         */
+        public fun createMutable(initialValue: Long): MutableRemoteLong {
+            return MutableRemoteLong(constantValueOrNull = null) { creationState ->
+                creationState.document.addLong(initialValue)
+            }
+        }
+
+        /**
+         * Maps an existing mutable ID to a state instance.
+         *
+         * @param id The existing mutable ID.
+         * @return A [MutableRemoteLong] instance mapping to the ID.
+         */
+        internal fun createMutableForId(id: Int): MutableRemoteLong = MutableRemoteLong(id)
     }
 }
 
 /**
- * A Composable function to remember and provide a mutable remote long value.
+ * Factory composable for mutable remote long state.
  *
- * @param name The unique name for this remote long, used for identification in the remote document.
- * @param domain The domain of the remote long (defaults to [RemoteDomains.USER]). This helps
- *   organize named values.
- * @param value A lambda that provides the initial [Long] value for this remote long.
+ * @param initialValue The initial [Long] value.
  * @return A [MutableRemoteLong] instance that will be remembered across recompositions.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
+public fun rememberMutableRemoteLong(initialValue: Long): MutableRemoteLong {
+    return remember {
+        MutableRemoteLong(
+            constantValueOrNull = null,
+            idProvider = { creationState -> creationState.document.addLong(initialValue) },
+        )
+    }
+}
+
+/** Factory composable for mutable remote long state. */
+@Composable
+@Deprecated("Use rememberMutableRemoteLong(value())")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun rememberRemoteLongValue(value: () -> Long): MutableRemoteLong =
+    rememberMutableRemoteLong(value())
+
+/**
+ * Remembers a named remote long expression.
+ *
+ * @param name The unique name for this remote long.
+ * @param domain The domain of the named long (defaults to [RemoteState.Domain.User]).
+ * @param defaultValue The initial long value.
+ * @return A [RemoteLong] representing the named remote long expression.
+ */
+@Composable
+public fun rememberNamedRemoteLong(
+    name: String,
+    defaultValue: Long,
+    domain: RemoteState.Domain = RemoteState.Domain.User,
+): RemoteLong {
+    return rememberNamedState(name, domain) {
+        MutableRemoteLong(constantValueOrNull = null) { creationState ->
+            creationState.document.addNamedLong("$domain:$name", defaultValue)
+        }
+    }
+}
+
+/** A Composable function to remember and provide a **named** mutable remote long value. */
+@Composable
+@Deprecated("Use rememberNamedRemoteLong(name, domain, content = { RemoteLong(value()) })")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun rememberRemoteLongValue(
     name: String,
-    domain: RemoteDomains = RemoteDomains.USER,
+    domain: RemoteState.Domain = RemoteState.Domain.User,
     value: () -> Long,
-): MutableRemoteLong {
+): RemoteLong {
     return rememberNamedState(name, domain) {
         val initial = value()
-        MutableRemoteLong(mutableLongStateOf(initial), constantValue = null) { creationState ->
-            val id = creationState.document.addNamedLong(name, initial)
-            creationState.document.setStringName(id.toInt(), "$domain:$name")
+        MutableRemoteLong(constantValueOrNull = null) { creationState ->
+            val id = creationState.document.addNamedLong("$domain:$name", initial)
             id
         }
     }

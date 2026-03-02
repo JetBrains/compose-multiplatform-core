@@ -98,7 +98,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -209,7 +209,7 @@ class TextFieldTest {
                 .height
                 .assertIsEqualTo(ExpectedDefaultTextFieldHeight)
 
-            rule.mainClock.advanceTimeBy(tick.toLong())
+            rule.mainClock.advanceTimeBy(tick)
         }
     }
 
@@ -251,7 +251,7 @@ class TextFieldTest {
                     .assertIsEqualTo(tfHeight.value!!)
             }
 
-            rule.mainClock.advanceTimeBy(tick.toLong())
+            rule.mainClock.advanceTimeBy(tick)
         }
     }
 
@@ -284,7 +284,7 @@ class TextFieldTest {
                         MinSupportingTextLineHeight
                 )
 
-            rule.mainClock.advanceTimeBy(tick.toLong())
+            rule.mainClock.advanceTimeBy(tick)
         }
     }
 

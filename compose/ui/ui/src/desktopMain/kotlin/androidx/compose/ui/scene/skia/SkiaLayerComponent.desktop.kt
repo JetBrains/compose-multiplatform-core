@@ -19,7 +19,7 @@ package androidx.compose.ui.scene.skia
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
-import javax.accessibility.Accessible
+import java.awt.Component
 import javax.swing.JComponent
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.GraphicsApi
@@ -34,7 +34,12 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  * It's implemented as adapter to [SkiaLayer] or [SkiaSwingLayer].
  */
 internal interface SkiaLayerComponent {
-    val contentComponent: JComponent
+    // The component that needs to be added to the AWT hierarchy
+    val hierarchyRoot: JComponent
+    // The component that is actually the root of the composable content.
+    // It may be the same hierarchyRoot, or a descendant of it.
+    // For accessibility to work properly, this should implement `javax.accessibility.Accessible`
+    val contentRoot: Component
     val interopBlendingSupported: Boolean
     val renderApi: GraphicsApi
     val clipComponents: MutableList<ClipRectangle>
@@ -44,7 +49,6 @@ internal interface SkiaLayerComponent {
     val windowHandle: Long
 
     fun dispose()
-    fun requestNativeFocusOnAccessible(accessible: Accessible)
 
     fun onComposeInvalidation()
     fun renderImmediately()

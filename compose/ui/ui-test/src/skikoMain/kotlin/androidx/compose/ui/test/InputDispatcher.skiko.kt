@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.scene.ComposeScenePointer
+import androidx.compose.ui.util.fastForEach
 
 @OptIn(InternalComposeUiApi::class)
 internal actual fun createInputDispatcher(
@@ -124,7 +125,7 @@ internal class SkikoInputDispatcher(
         // desktop don't have cancel events as Android does
     }
 
-    override fun MouseInputState.enqueuePress(buttonId: Int) {
+    override fun CursorInputState.enqueueMousePress(buttonId: Int) {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -138,7 +139,7 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueMove() {
+    override fun CursorInputState.enqueueMouseMove() {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -151,7 +152,7 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueRelease(buttonId: Int) {
+    override fun CursorInputState.enqueueMouseRelease(buttonId: Int) {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -165,7 +166,7 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueEnter() {
+    override fun CursorInputState.enqueueMouseEnter() {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -178,7 +179,7 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueExit() {
+    override fun CursorInputState.enqueueMouseExit() {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -191,12 +192,12 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueCancel() {
+    override fun CursorInputState.enqueueMouseCancel() {
         // desktop don't have cancel events as Android does
     }
 
     @OptIn(ExperimentalTestApi::class)
-    override fun MouseInputState.enqueueScroll(delta: Float, scrollWheel: ScrollWheel) {
+    override fun CursorInputState.enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -210,7 +211,7 @@ internal class SkikoInputDispatcher(
         }
     }
 
-    override fun MouseInputState.enqueueScroll(offset: Offset) {
+    override fun CursorInputState.enqueueMouseScroll(offset: Offset) {
         val position = lastPosition
         val timeMillis = currentTime
         enqueue(timeMillis) {
@@ -222,6 +223,39 @@ internal class SkikoInputDispatcher(
                 scrollDelta = offset
             )
         }
+    }
+
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-9457
+    override fun CursorInputState.enqueueTrackpadPress(buttonId: Int) {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadMove() {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadRelease(buttonId: Int) {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadEnter() {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadExit() {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadCancel() {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadScroll(offset: Offset) {
+        TODO("No yet implemented - CMP-9457")
+    }
+
+    override fun CursorInputState.enqueueTrackpadPinch(scaleFactor: Float) {
+        TODO("No yet implemented - CMP-9457")
     }
 
     override fun KeyInputState.enqueueDown(key: Key) {
@@ -267,7 +301,7 @@ internal class SkikoInputDispatcher(
     override fun flush() {
         val copy = batchedEvents.toList()
         batchedEvents.clear()
-        for (event in copy) {
+        copy.fastForEach { event ->
             advanceClockTime(event.eventTime - currentClockTime)
             currentClockTime = event.eventTime
             event.action()

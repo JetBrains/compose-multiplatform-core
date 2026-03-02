@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
@@ -61,7 +60,7 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertValueEquals
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -154,24 +153,14 @@ class SemanticsTests {
             Box(modifier = Modifier.count().count().count())
         }
         rule.runOnIdle {
-            if (ComposeUiFlags.isSemanticAutofillEnabled) {
-                // with autofill on, semantics is eagerly evaluated
-                assertThat(count).isEqualTo(3)
-            } else {
-                // before autofill, semantics was lazily evaluated
-                assertThat(count).isEqualTo(0)
-            }
+            // with autofill on, semantics is eagerly evaluated
+            assertThat(count).isEqualTo(3)
             count = 0
             recomposeScope!!.invalidate()
         }
         rule.runOnIdle {
-            if (ComposeUiFlags.isSemanticAutofillEnabled) {
-                // with autofill on, semantics is eagerly evaluated
-                assertThat(count).isEqualTo(3)
-            } else {
-                // before autofill, semantics was lazily evaluated
-                assertThat(count).isEqualTo(0)
-            }
+            // with autofill on, semantics is eagerly evaluated
+            assertThat(count).isEqualTo(3)
         }
     }
 

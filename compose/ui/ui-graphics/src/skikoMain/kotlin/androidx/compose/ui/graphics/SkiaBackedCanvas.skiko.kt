@@ -17,40 +17,49 @@
 package androidx.compose.ui.graphics
 
 import androidx.compose.runtime.InternalComposeApi
-import org.jetbrains.skia.ClipMode as SkClipMode
-import org.jetbrains.skia.RRect as SkRRect
-import org.jetbrains.skia.Rect as SkRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
+import org.jetbrains.skia.Canvas as SkCanvas
+import org.jetbrains.skia.ClipMode as SkClipMode
 import org.jetbrains.skia.CubicResampler
 import org.jetbrains.skia.FilterMipmap
 import org.jetbrains.skia.FilterMode
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Matrix44
 import org.jetbrains.skia.MipmapMode
+import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.impl.use
 
-actual typealias NativeCanvas = org.jetbrains.skia.Canvas
+@Deprecated(
+    message = "Use direct reference to org.jetbrains.skia.Canvas instead of typealias",
+    replaceWith = ReplaceWith("Canvas", "org.jetbrains.skia.Canvas"),
+)
+actual typealias NativeCanvas = SkCanvas
 
 internal actual fun ActualCanvas(image: ImageBitmap): Canvas {
     val skiaBitmap = image.asSkiaBitmap()
     require(!skiaBitmap.isImmutable) {
         "Cannot draw on immutable ImageBitmap"
     }
-    return SkiaBackedCanvas(org.jetbrains.skia.Canvas(skiaBitmap))
+    return SkiaBackedCanvas(SkCanvas(skiaBitmap))
 }
 
 /**
  * Convert the [org.jetbrains.skia.Canvas] instance into a Compose-compatible Canvas
  */
-fun org.jetbrains.skia.Canvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
+fun SkCanvas.asComposeCanvas(): Canvas = SkiaBackedCanvas(this)
 
-actual val Canvas.nativeCanvas: NativeCanvas get() = (this as SkiaBackedCanvas).skia
+val Canvas.nativeCanvas: SkCanvas
+    get() {
+        requirePrecondition(this is SkiaBackedCanvas) {
+            "Extracting skia canvas reference is only supported from androidx.compose.ui.graphics.SkiaBackedCanvas instances but received ${this::class}"
+        }
+        return skiaCanvas
+    }
 
 // This was added for internal usage from old render layers (another submodule),
 // but wasn't properly marked as internal. Keep it as deprecated for some time to be safe.
@@ -63,69 +72,92 @@ var Canvas.alphaMultiplier: Float
     get() = (this as SkiaBackedCanvas).alphaMultiplier
     set(value) { (this as SkiaBackedCanvas).alphaMultiplier = value }
 
-internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
+internal class SkiaBackedCanvas(
+    val skiaCanvas: SkCanvas,
+) : Canvas {
     internal var alphaMultiplier: Float = 1.0f
 
-    private val Paint.skia get() = (this as SkiaBackedPaint).apply {
+    private fun Paint.asSkiaPaintWithAppliedAlphaMultiplier(): SkPaint {
+        require(this is SkiaBackedPaint)
         this.alphaMultiplier = this@SkiaBackedCanvas.alphaMultiplier
-    }.skia
+        return skiaPaint
+    }
 
     override fun save() {
-        skia.save()
+        skiaCanvas.save()
     }
 
     override fun restore() {
-        skia.restore()
+        skiaCanvas.restore()
     }
 
     override fun saveLayer(bounds: Rect, paint: Paint) {
-        skia.saveLayer(
+        skiaCanvas.saveLayer(
             bounds.left,
             bounds.top,
             bounds.right,
             bounds.bottom,
-            paint.skia
+            paint.asSkiaPaintWithAppliedAlphaMultiplier()
         )
     }
 
     override fun translate(dx: Float, dy: Float) {
-        skia.translate(dx, dy)
+        skiaCanvas.translate(dx, dy)
     }
 
     override fun scale(sx: Float, sy: Float) {
-        skia.scale(sx, sy)
+        skiaCanvas.scale(sx, sy)
     }
 
     override fun rotate(degrees: Float) {
-        skia.rotate(degrees)
+        skiaCanvas.rotate(degrees)
     }
 
     override fun skew(sx: Float, sy: Float) {
-        skia.skew(sx, sy)
+        skiaCanvas.skew(sx, sy)
     }
 
     override fun concat(matrix: Matrix) {
         if (!matrix.isIdentity()) {
-            skia.concat(matrix.toSkia())
+            skiaCanvas.concat(matrix.toSkia())
         }
     }
 
     override fun clipRect(left: Float, top: Float, right: Float, bottom: Float, clipOp: ClipOp) {
         val antiAlias = true
-        skia.clipRect(SkRect.makeLTRB(left, top, right, bottom), clipOp.toSkia(), antiAlias)
+        skiaCanvas.clipRect(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            mode = clipOp.toSkia(),
+            antiAlias = antiAlias
+        )
     }
 
     override fun clipPath(path: Path, clipOp: ClipOp) {
         val antiAlias = true
-        skia.clipPath(path.asSkiaPath(), clipOp.toSkia(), antiAlias)
+        skiaCanvas.clipPath(path.asSkiaPath(), clipOp.toSkia(), antiAlias)
     }
 
     override fun drawLine(p1: Offset, p2: Offset, paint: Paint) {
-        skia.drawLine(p1.x, p1.y, p2.x, p2.y, paint.skia)
+        skiaCanvas.drawLine(
+            x0 = p1.x,
+            y0 = p1.y,
+            x1 = p2.x,
+            y1 = p2.y,
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+        )
     }
 
     override fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
-        skia.drawRect(SkRect.makeLTRB(left, top, right, bottom), paint.skia)
+        skiaCanvas.drawRect(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+        )
     }
 
     override fun drawRoundRect(
@@ -137,25 +169,33 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
         radiusY: Float,
         paint: Paint
     ) {
-        skia.drawRRect(
-            SkRRect.makeLTRB(
-                left,
-                top,
-                right,
-                bottom,
-                radiusX,
-                radiusY
-            ),
-            paint.skia
+        skiaCanvas.drawRRect(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            radii = floatArrayOf(radiusX, radiusY),
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
         )
     }
 
     override fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
-        skia.drawOval(SkRect.makeLTRB(left, top, right, bottom), paint.skia)
+        skiaCanvas.drawOval(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+        )
     }
 
     override fun drawCircle(center: Offset, radius: Float, paint: Paint) {
-        skia.drawCircle(center.x, center.y, radius, paint.skia)
+        skiaCanvas.drawCircle(
+            x = center.x,
+            y = center.y,
+            radius = radius,
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+        )
     }
 
     override fun drawArc(
@@ -168,25 +208,38 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
         useCenter: Boolean,
         paint: Paint
     ) {
-        skia.drawArc(
-            left,
-            top,
-            right,
-            bottom,
-            startAngle,
-            sweepAngle,
-            useCenter,
-            paint.skia
+        skiaCanvas.drawArc(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            startAngle = startAngle,
+            sweepAngle = sweepAngle,
+            includeCenter = useCenter,
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
         )
     }
 
     override fun drawPath(path: Path, paint: Paint) {
-        skia.drawPath(path.asSkiaPath(), paint.skia)
+        skiaCanvas.drawPath(
+            path = path.asSkiaPath(),
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+        )
     }
 
     override fun drawImage(image: ImageBitmap, topLeftOffset: Offset, paint: Paint) {
-        val size = Size(image.width.toFloat(), image.height.toFloat())
-        drawImageRect(image, Offset.Zero, size, topLeftOffset, size, paint)
+        drawImageRect(
+            image = image,
+            srcLeft = 0f,
+            srcTop = 0f,
+            srcRight = image.width.toFloat(),
+            srcBottom = image.height.toFloat(),
+            dstLeft = topLeftOffset.x,
+            dstTop = topLeftOffset.y,
+            dstRight = topLeftOffset.x + image.width.toFloat(),
+            dstBottom = topLeftOffset.y + image.height.toFloat(),
+            paint = paint,
+        )
     }
 
     override fun drawImageRect(
@@ -198,48 +251,48 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
         paint: Paint
     ) {
         drawImageRect(
-            image,
-            Offset(srcOffset.x.toFloat(), srcOffset.y.toFloat()),
-            Size(srcSize.width.toFloat(), srcSize.height.toFloat()),
-            Offset(dstOffset.x.toFloat(), dstOffset.y.toFloat()),
-            Size(dstSize.width.toFloat(), dstSize.height.toFloat()),
-            paint
+            image = image,
+            srcLeft = srcOffset.x.toFloat(),
+            srcTop = srcOffset.y.toFloat(),
+            srcRight = srcOffset.x.toFloat() + srcSize.width.toFloat(),
+            srcBottom = srcOffset.y.toFloat() + srcSize.height.toFloat(),
+            dstLeft = dstOffset.x.toFloat(),
+            dstTop = dstOffset.y.toFloat(),
+            dstRight = dstOffset.x.toFloat() + dstSize.width.toFloat(),
+            dstBottom = dstOffset.y.toFloat() + dstSize.height.toFloat(),
+            paint = paint,
         )
     }
 
     // TODO(demin): probably this method should be in the common Canvas
     private fun drawImageRect(
         image: ImageBitmap,
-        srcOffset: Offset,
-        srcSize: Size,
-        dstOffset: Offset,
-        dstSize: Size,
+        srcLeft: Float,
+        srcTop: Float,
+        srcRight: Float,
+        srcBottom: Float,
+        dstLeft: Float,
+        dstTop: Float,
+        dstRight: Float,
+        dstBottom: Float,
         paint: Paint
     ) {
         val bitmap = image.asSkiaBitmap()
-        // TODO(gorshenev): need to use skiko's .use() rather than jvm one here.
-        // But can't do that as skiko is jvmTarget=11 for now, so can't inline
-        // into jvmTarget=8 compose.
-        // After this issue is resolved use:
-        //     import org.jetbrains.skia.impl.use
+
         Image.makeFromBitmap(bitmap).use { skiaImage ->
-            skia.drawImageRect(
-                skiaImage,
-                SkRect.makeXYWH(
-                    srcOffset.x,
-                    srcOffset.y,
-                    srcSize.width,
-                    srcSize.height
-                ),
-                SkRect.makeXYWH(
-                    dstOffset.x,
-                    dstOffset.y,
-                    dstSize.width,
-                    dstSize.height
-                ),
-                paint.filterQuality.toSkia(),
-                paint.skia,
-                true
+            skiaCanvas.drawImageRect(
+                image = skiaImage,
+                srcLeft = srcLeft,
+                srcTop = srcTop,
+                srcRight = srcRight,
+                srcBottom = srcBottom,
+                dstLeft = dstLeft,
+                dstTop = dstTop,
+                dstRight = dstRight,
+                dstBottom = dstBottom,
+                samplingMode = paint.filterQuality.toSkia(),
+                paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
+                strict = true,
             )
         }
     }
@@ -263,11 +316,12 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
     override fun disableZ() = Unit
 
     private fun drawPoints(points: List<Offset>, paint: Paint) {
+        val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
         points.fastForEach { point ->
-            skia.drawPoint(
-                point.x,
-                point.y,
-                paint.skia
+            skiaCanvas.drawPoint(
+                x = point.x,
+                y = point.y,
+                paint = skiaPaint,
             )
         }
     }
@@ -286,16 +340,13 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
      */
     private fun drawLines(points: List<Offset>, paint: Paint, stepBy: Int) {
         if (points.size >= 2) {
-            for (i in 0 until points.size - 1 step stepBy) {
+            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            var i = 0
+            while (i < points.size - 1) {
                 val p1 = points[i]
                 val p2 = points[i + 1]
-                skia.drawLine(
-                    p1.x,
-                    p1.y,
-                    p2.x,
-                    p2.y,
-                    paint.skia
-                )
+                skiaCanvas.drawLine(p1.x, p1.y, p2.x, p2.y, skiaPaint)
+                i += stepBy
             }
         }
     }
@@ -316,10 +367,13 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
 
     private fun drawRawPoints(points: FloatArray, paint: Paint, stepBy: Int) {
         if (points.size % 2 == 0) {
-            for (i in 0 until points.size - 1 step stepBy) {
+            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            var i = 0
+            while (i < points.size - 1) {
                 val x = points[i]
                 val y = points[i + 1]
-                skia.drawPoint(x, y, paint.skia)
+                skiaCanvas.drawPoint(x, y, skiaPaint)
+                i += stepBy
             }
         }
     }
@@ -341,31 +395,28 @@ internal class SkiaBackedCanvas(val skia: org.jetbrains.skia.Canvas) : Canvas {
         // Float array is treated as alternative set of x and y coordinates
         // x1, y1, x2, y2, x3, y3, ... etc.
         if (points.size >= 4 && points.size % 2 == 0) {
-            for (i in 0 until points.size - 3 step stepBy * 2) {
+            val skiaPaint = paint.asSkiaPaintWithAppliedAlphaMultiplier()
+            var i = 0
+            while (i < points.size - 3) {
                 val x1 = points[i]
                 val y1 = points[i + 1]
                 val x2 = points[i + 2]
                 val y2 = points[i + 3]
-                skia.drawLine(
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    paint.skia
-                )
+                skiaCanvas.drawLine(x1, y1, x2, y2, skiaPaint)
+                i += stepBy * 2
             }
         }
     }
 
     override fun drawVertices(vertices: Vertices, blendMode: BlendMode, paint: Paint) {
-        skia.drawVertices(
-            vertices.vertexMode.toSkiaVertexMode(),
-            vertices.positions,
-            vertices.colors,
-            vertices.textureCoordinates,
-            vertices.indices,
-            blendMode.toSkia(),
-            paint.asFrameworkPaint()
+        skiaCanvas.drawVertices(
+            vertexMode = vertices.vertexMode.toSkiaVertexMode(),
+            positions = vertices.positions,
+            colors = vertices.colors,
+            texCoords = vertices.textureCoordinates,
+            indices = vertices.indices,
+            blendMode = blendMode.toSkia(),
+            paint = paint.asSkiaPaintWithAppliedAlphaMultiplier(),
         )
     }
 

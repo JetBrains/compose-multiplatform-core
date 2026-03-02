@@ -17,9 +17,10 @@
 package androidx.compose.ui.node
 
 import androidx.collection.MutableObjectIntMap
+import androidx.collection.MutableScatterSet
 import androidx.collection.mutableObjectIntMapOf
+import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
@@ -212,19 +213,20 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     override val providedAlignmentLines: Set<AlignmentLine>
         get() {
-            var set: MutableSet<AlignmentLine>? = null
+            var set: MutableScatterSet<AlignmentLine>? = null
             var coordinator: NodeCoordinator? = this
             while (coordinator != null) {
                 val alignmentLines = coordinator._measureResult?.alignmentLines
                 if (alignmentLines?.isNotEmpty() == true) {
                     if (set == null) {
-                        set = mutableSetOf()
+                        set = mutableScatterSetOf()
                     }
                     set.addAll(alignmentLines.keys)
                 }
                 coordinator = coordinator.wrapped
             }
-            return set ?: emptySet()
+            @Suppress("AsCollectionCall")
+            return set?.asSet() ?: emptySet()
         }
 
     /**
@@ -247,6 +249,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         }
         visitNodes(Nodes.Draw) { it.onMeasureResultChanged() }
         layoutNode.owner?.onLayoutChange(layoutNode)
+        layoutNode.onCoordinatorRectChanged(this)
     }
 
     override var position: IntOffset = IntOffset.Zero
@@ -417,24 +420,22 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         if (this.position != position) {
             layoutNode.requireOwner().voteFrameRate(FrameRateCategory.High.value)
             this.position = position
-            layoutNode.layoutDelegate.measurePassDelegate
-                .notifyChildrenUsingCoordinatesWhilePlacing()
             val layer = layer
             if (layer != null) {
                 layer.move(position)
             } else {
                 wrappedBy?.invalidateLayer()
             }
-            layoutNode.onCoordinatorPositionChanged()
+            layoutNode.onCoordinatorRectChanged(this)
             invalidateAlignmentLinesFromPositionChange()
             layoutNode.owner?.onLayoutChange(layoutNode)
         }
         this.zIndex = zIndex
+        if (this === layoutNode.outerCoordinator) {
+            layoutNode.requireOwner().rectManager.recalculateRectIfDirty(layoutNode)
+        }
         if (!isPlacingForAlignment) {
             captureRulersIfNeeded(measureResult)
-        }
-        if (this === layoutNode.outerCoordinator) {
-            layoutNode.requireOwner().rectManager.onLayoutPositionChanged(layoutNode)
         }
     }
 
@@ -563,7 +564,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             this.layerBlock = null
             layer?.let {
                 if (!it.underlyingMatrix.isIdentity()) {
-                    layoutNode.onCoordinatorPositionChanged()
+                    layoutNode.onCoordinatorRectChanged(this)
                 }
                 it.destroy()
                 layoutNode.innerLayerCoordinatorIsDirty = true
@@ -595,7 +596,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
-                val hasShapeChanged = lastShape !== graphicsLayerScope.shape
+                val hasShapeChanged = lastShape != graphicsLayerScope.shape
                 val hasClipChanged = lastClip != graphicsLayerScope.clip
                 if (hasShapeChanged || hasClipChanged) {
                     lastShape = graphicsLayerScope.shape
@@ -628,28 +629,9 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             }
             if (positionalPropertiesChanged) {
                 val layoutNode = layoutNode
-                val layoutDelegate = layoutNode.layoutDelegate
-                if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
-                    if (
-                        layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
-                            layoutDelegate.coordinatesAccessedDuringPlacement
-                    ) {
-                        layoutNode.requestRelayout()
-                    }
-                    layoutDelegate.measurePassDelegate.notifyChildrenUsingCoordinatesWhilePlacing()
-                }
-                layoutNode.onCoordinatorPositionChanged()
-                val owner = layoutNode.requireOwner()
-                val rectManager = owner.rectManager
-                if (this === layoutNode.outerCoordinator) {
-                    // transformations on the outer coordinator define the layout position
-                    rectManager.onLayoutPositionChanged(layoutNode)
-                } else {
-                    // transformations on other coordinators invalidate outerToInnerOffset
-                    rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                }
+                layoutNode.onCoordinatorRectChanged(this)
                 if (layoutNode.globallyPositionedObservers > 0) {
-                    owner.requestOnPositionedCallback(layoutNode)
+                    layoutNode.requireOwner().requestOnPositionedCallback(layoutNode)
                 }
             }
         } else {
@@ -1170,13 +1152,15 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         var coordinator: NodeCoordinator? = this
         var position = relativeToLocal
         while (coordinator != null) {
-            if (ComposeUiFlags.isRectManagerOffsetUsageFromLayoutCoordinatesEnabled) {
-                val layoutNode = coordinator.layoutNode
-                if (
-                    coordinator === layoutNode.outerCoordinator &&
-                        layoutNode.offsetFromRoot != IntOffset.Max
-                ) {
-                    return position + layoutNode.offsetFromRoot
+            val layoutNode = coordinator.layoutNode
+            if (
+                coordinator === layoutNode.outerCoordinator &&
+                    !layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot
+            ) {
+                val offsetFromRectList =
+                    layoutNode.requireOwner().rectManager.getOffsetFromRectListFor(layoutNode)
+                if (offsetFromRectList != IntOffset.Max) {
+                    return position + offsetFromRectList
                 }
             }
             position = coordinator.toParentPosition(position)
@@ -1265,7 +1249,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         invalidateParentLayer()
         releaseLayer()
         if (position != IntOffset.Zero) {
-            layoutNode.onCoordinatorPositionChanged()
+            layoutNode.onCoordinatorRectChanged(this)
         }
     }
 
@@ -1284,14 +1268,16 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             if (isClipping) {
                 if (clipToMinimumTouchTargetSize) {
                     val minTouch = minimumTouchTargetSize
-                    val horz = minTouch.width / 2f
-                    val vert = minTouch.height / 2f
-                    bounds.intersect(
-                        -horz,
-                        -vert,
-                        size.width.toFloat() + horz,
-                        size.height.toFloat() + vert,
-                    )
+                    val (left, top) = calculateMinimumTouchTargetOffset(bounds, minTouch)
+                    val (width, height) = size
+                    val right =
+                        minOf(width + minTouch.width, maxOf(width.toFloat(), left + minTouch.width))
+                    val bottom =
+                        minOf(
+                            height + minTouch.height,
+                            maxOf(height.toFloat(), top + minTouch.height),
+                        )
+                    bounds.intersect(left, top, right, bottom)
                 } else if (clipBounds) {
                     bounds.intersect(0f, 0f, size.width.toFloat(), size.height.toFloat())
                 }
@@ -1440,6 +1426,44 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         val widthDiff = minimumTouchTargetSize.width - measuredWidth.toFloat()
         val heightDiff = minimumTouchTargetSize.height - measuredHeight.toFloat()
         return Size(maxOf(0f, widthDiff / 2f), maxOf(0f, heightDiff / 2f))
+    }
+
+    /**
+     * Returns the offset of the child to give the best minimum touch target to it. If the child is
+     * smaller than minimum touch target size, then the offset will be away from the child position
+     * such that it is centered within the minimum touch target space, which may be outside of the
+     * parent. Otherwise, it will return the child offset.
+     */
+    protected fun calculateMinimumTouchTargetOffset(
+        childRect: MutableRect,
+        minimumTouchTargetSize: Size,
+    ): Offset {
+        val childLeft = childRect.left
+        val childTop = childRect.top
+        if (
+            childRect.right < 0 ||
+                childLeft > size.width ||
+                childRect.bottom < 0 ||
+                childTop > size.height
+        ) {
+            return Offset.Zero
+        }
+        val (mttWidth, mttHeight) = minimumTouchTargetSize
+        val underWidth = (mttWidth - childRect.width) / 2f
+        val left =
+            if (underWidth > 0) {
+                childLeft - underWidth
+            } else {
+                childLeft.coerceAtLeast(-mttWidth / 2f)
+            }
+        val underHeight = (mttHeight - childRect.height) / 2f
+        val top =
+            if (underHeight > 0) {
+                childTop - underHeight
+            } else {
+                childTop.coerceAtLeast(-mttHeight / 2f)
+            }
+        return Offset(left, top)
     }
 
     /**

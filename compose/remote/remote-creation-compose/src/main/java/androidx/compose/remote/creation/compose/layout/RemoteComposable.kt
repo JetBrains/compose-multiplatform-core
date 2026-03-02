@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.ComposableTargetMarker
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/**
+ * An annotation that can be used to mark a composable function as being expected to be used in a
+ * composable function that is also marked or inferred to be marked as a [RemoteComposable].
+ *
+ * Content marked with [RemoteComposable] will be recorded into a Remote Compose document during the
+ * recording phase. This document can then be transmitted and played back by a Remote Compose
+ * Player, potentially on a different device or process.
+ */
 @Retention(AnnotationRetention.BINARY)
 @ComposableTargetMarker(description = "RemoteCompose Composable")
 @Target(

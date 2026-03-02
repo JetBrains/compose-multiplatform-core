@@ -18,11 +18,11 @@ package androidx.compose.ui.node
 
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
-import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
@@ -31,6 +31,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -68,14 +69,16 @@ import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
+import androidx.compose.ui.platform.LegacyRenderNodeLayer
 import androidx.compose.ui.platform.OwnedLayerManager
-import androidx.compose.ui.platform.PlatformClipboardManager
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
-import androidx.compose.ui.platform.LegacyRenderNodeLayer
+import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
 import androidx.compose.ui.platform.createPlatformClipboard
+import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.platform.setLightingInfo
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
@@ -89,6 +92,7 @@ import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -143,8 +147,10 @@ internal class RootNodeOwner(
     val semanticsOwner get() = owner.semanticsOwner
     var size: IntSize? = size
         set(value) {
-            field = value
-            onRootConstrainsChanged(value?.toConstraints())
+            if (field != value) {
+                field = value
+                onRootConstrainsChanged(value?.toConstraints())
+            }
         }
     var density by mutableStateOf(density)
 
@@ -216,7 +222,7 @@ internal class RootNodeOwner(
                 height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
-            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
+            measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(size?.toConstraints())
         }
     }
 
@@ -245,7 +251,7 @@ internal class RootNodeOwner(
         } else false
 
         if (hasPositionOnScreenChanged || hasPositionInWindowChanged) {
-            owner.root.layoutDelegate.measurePassDelegate.notifyChildrenUsingCoordinatesWhilePlacing()
+            owner.root.layoutDelegate.measurePassDelegate.requestLayoutIfCoordinatesAreUsedAndNotifyChildren()
         }
         val containerSize = platformContext.windowInfo.containerSize
         owner.rectManager.updateOffsets(
@@ -355,10 +361,10 @@ internal class RootNodeOwner(
     }
 
     private fun isInBounds(localPosition: Offset): Boolean =
-        size?.toIntRect()?.toRect()?.contains(localPosition) ?: true
+        size?.toRect()?.contains(localPosition) ?: true
 
     private fun calculateBoundsInWindow(): Rect? {
-        val rect = size?.toIntRect()?.toRect() ?: return null
+        val rect = size?.toRect() ?: return null
         val p0 = platformContext.convertLocalToWindowPosition(Offset(rect.left, rect.top))
         val p1 = platformContext.convertLocalToWindowPosition(Offset(rect.left, rect.bottom))
         val p3 = platformContext.convertLocalToWindowPosition(Offset(rect.right, rect.top))
@@ -396,11 +402,9 @@ internal class RootNodeOwner(
 
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
-        val rootModifier = if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
-                RulerProviderModifierElement(platformContext.windowInsets)
-            } else {
-                Modifier
-            }
+        val rootModifier = Modifier
+            .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
+            .rulerProvider(platformContext.windowInsets)
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
                 onExit = {
@@ -430,7 +434,7 @@ internal class RootNodeOwner(
         override val rootForTest get() = this@RootNodeOwner.rootForTest
         override val hapticFeedBack = DefaultHapticFeedback()
         override val inputModeManager get() = platformContext.inputModeManager
-        override val clipboardManager = PlatformClipboardManager()
+        override val clipboardManager = createPlatformClipboardManager()
         override val clipboard = createPlatformClipboard()
         override val accessibilityManager = DefaultAccessibilityManager()
         override val graphicsContext get() = this@RootNodeOwner.graphicsContext
@@ -498,7 +502,10 @@ internal class RootNodeOwner(
         override val fontLoader = androidx.compose.ui.text.platform.FontLoader()
         override val fontFamilyResolver = createFontFamilyResolver()
         override val layoutDirection get() = _layoutDirection
-        override var showLayoutBounds = false
+        override val localeList: LocaleList
+            // TODO: https://youtrack.jetbrains.com/issue/CMP-9514/Implement-Owner.localeList-for-CMP
+            get() = LocaleList(emptyList())
+        override var showLayoutBounds by mutableStateOf(false)
             @InternalCoreApi
             set
 
@@ -714,6 +721,11 @@ internal class RootNodeOwner(
             keepScreenOnCount--
             platformContext.isKeepScreenOnEnabled = keepScreenOnCount > 0
         }
+
+        override fun invalidateRootLayer() {
+            // TODO: https://youtrack.jetbrains.com/issue/CMP-9533/Implement-SkikoOwner.invalidateRootLayer
+            super.invalidateRootLayer()
+        }
     }
 
     private inner class PlatformRootForTestImpl : PlatformRootForTest {
@@ -723,7 +735,7 @@ internal class RootNodeOwner(
         override val semanticsOwner get() = owner.semanticsOwner
         override val visibleBounds: Rect
             get() {
-                val windowRect = platformContext.windowInfo.containerSize.toIntRect().toRect()
+                val windowRect = platformContext.windowInfo.containerSize.toRect()
                 val ownerRect = calculateBoundsInWindow()
                 return ownerRect?.intersect(windowRect) ?: windowRect
             }
@@ -887,8 +899,6 @@ internal class RootNodeOwner(
         private var currentFrameRateCategory = 0f
 
         override fun voteFrameRate(frameRate: Float) {
-            if (!ComposeUiFlags.isAdaptiveRefreshRateEnabled) return
-
             val isCurrentFrameRateUnset = currentFrameRate.isNaN()
             val isCurrentFrameRateCategoryUnset = currentFrameRateCategory == 0f
 
@@ -935,7 +945,7 @@ internal class RootNodeOwner(
             }
 
             val isAnyCurrentFrameRateSet = !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
-            if (ComposeUiFlags.isAdaptiveRefreshRateEnabled && isAnyCurrentFrameRateSet) {
+            if (isAnyCurrentFrameRateSet) {
                 platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
                 currentFrameRate = Float.NaN
                 currentFrameRateCategory = 0f
@@ -997,4 +1007,28 @@ private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = 
 private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
     override fun localToScreen(localPosition: Offset): Offset = localPosition
+}
+
+private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
+    if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
+
+private data class RootWindowInsetsProviderModifierElement(
+    val windowInsets: PlatformWindowInsets,
+): ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
+    override fun create(): RootPlatformWindowInsetsProviderNode = RootPlatformWindowInsetsProviderNode(windowInsets)
+    override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
+}
+
+private class RootPlatformWindowInsetsProviderNode(
+    private var insets: PlatformWindowInsets,
+): PlatformWindowInsetsProviderNode(insets) {
+    override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets =
+        insets
+
+    fun update(windowInsets: PlatformWindowInsets) {
+        if (insets != windowInsets) {
+            insets = windowInsets
+            windowInsetsInvalidated()
+        }
+    }
 }

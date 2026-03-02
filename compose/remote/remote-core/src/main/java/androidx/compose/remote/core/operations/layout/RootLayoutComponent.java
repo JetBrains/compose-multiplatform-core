@@ -29,6 +29,7 @@ import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.operations.layout.measure.Measurable;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
+import androidx.compose.remote.core.operations.layout.utils.DebugLog;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.SerializeTags;
@@ -63,6 +64,10 @@ public class RootLayoutComponent extends Component {
             float height,
             @Nullable Component parent) {
         super(parent, componentId, -1, x, y, width, height);
+    }
+
+    public RootLayoutComponent(int componentId) {
+        super(null, componentId, -1, 0, 0, 0, 0);
     }
 
     @NonNull
@@ -140,10 +145,15 @@ public class RootLayoutComponent extends Component {
         if (!mNeedsMeasure) {
             return;
         }
+        if (context.isLayoutDebug()) {
+            DebugLog.clear();
+        }
         mNeedsMeasure = false;
         context.mLastComponent = this;
         setWidth(context.mWidth);
         setHeight(context.mHeight);
+        context.mViewportWidth = context.mWidth;
+        context.mViewportHeight = context.mHeight;
 
         // TODO: reuse MeasurePass
         MeasurePass measurePass = new MeasurePass();
@@ -153,6 +163,41 @@ public class RootLayoutComponent extends Component {
                 m.measure(context.getPaintContext(), 0f, mWidth, 0f, mHeight, measurePass);
                 m.layout(context, measurePass);
             }
+        }
+        if (context.isLayoutDebug()) {
+            DebugLog.display();
+        }
+    }
+
+    /**
+     * Measure the document and layout the components
+     */
+    public void measure(@NonNull RemoteContext context, float minWidth, float maxWidth,
+            float minHeight, float maxHeight) {
+        mNeedsMeasure = false;
+        context.mLastComponent = this;
+        setWidth(context.mWidth);
+        setHeight(context.mHeight);
+        context.mViewportWidth = context.mWidth;
+        context.mViewportHeight = context.mHeight;
+
+        // TODO: reuse MeasurePass
+        MeasurePass measurePass = new MeasurePass();
+        LayoutComponent firstComponent = null;
+        for (Operation op : mList) {
+            if (op instanceof Measurable) {
+                Measurable m = (Measurable) op;
+                if (firstComponent == null && op instanceof LayoutComponent) {
+                    firstComponent = (LayoutComponent) op;
+                }
+                m.measure(context.getPaintContext(), minWidth, maxWidth, minHeight, maxHeight,
+                        measurePass);
+                m.layout(context, measurePass);
+            }
+        }
+        if (firstComponent != null) {
+            setWidth(firstComponent.getWidth());
+            setHeight(firstComponent.getHeight());
         }
     }
 
@@ -193,8 +238,8 @@ public class RootLayoutComponent extends Component {
     /**
      * Display the component hierarchy
      *
-     * @param component the current component
-     * @param indent the current indentation level
+     * @param component  the current component
+     * @param indent     the current indentation level
      * @param serializer the serializer we write to
      */
     public void displayHierarchy(
@@ -232,9 +277,6 @@ public class RootLayoutComponent extends Component {
 
     /**
      * Write the operation on the buffer
-     *
-     * @param buffer
-     * @param componentId
      */
     public static void apply(@NonNull WireBuffer buffer, int componentId) {
         buffer.start(Operations.LAYOUT_ROOT);
@@ -244,7 +286,7 @@ public class RootLayoutComponent extends Component {
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer the buffer to read
+     * @param buffer     the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
@@ -259,11 +301,11 @@ public class RootLayoutComponent extends Component {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Layout Operations", id(), name())
-                .field(INT, "COMPONENT_ID", "unique id for this component")
+                .field(INT, "componentId", "Unique ID for this component")
                 .description(
                         "Root element for a document. Other components / layout managers are"
                                 + " children in the component tree starting from"
-                                + "this Root component.");
+                                + " this Root component.");
     }
 
     @Override

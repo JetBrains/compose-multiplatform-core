@@ -20,7 +20,10 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusOwner
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.node.requireLayoutCoordinates
 
 /**
  * The extension of [FocusManager] to manage focus within a [ComposeScene].
@@ -35,7 +38,7 @@ class ComposeSceneFocusManager internal constructor(
      */
     val hasFocus: Boolean get() = focusOwner().rootState.hasFocus
 
-    private inline fun <T: Any?> measureAndLayoutThen(request: () -> T): T {
+    private inline fun <T> measureAndLayoutThen(request: () -> T): T {
         measureAndLayout()
         return request()
     }
@@ -66,4 +69,27 @@ class ComposeSceneFocusManager internal constructor(
      * Release focus from [ComposeScene].
      */
     fun releaseFocus() = measureAndLayoutThen { focusOwner().releaseFocus() }
+
+    /**
+     * If [position] is outside the bounds of the currently focused node, clear focus.
+     */
+    fun clearFocusIfOutsideOfActiveFocusTargetNode(position: Offset) = measureAndLayoutThen {
+        val focusOwner = focusOwner()
+        val activeFocusTargetNode = focusOwner.activeFocusTargetNode
+        if (activeFocusTargetNode != null) {
+            val focusedNodeBounds =
+                activeFocusTargetNode.requireLayoutCoordinates().boundsInRoot()
+            // Only clear focus if the motion event doesn't fall inside the bounds
+            // of the node that is currently focused
+            // Note that we don't use the current focusRect which can be different
+            // from the bounds of the currently focused node.
+            // If a focusable node is choosing to have the focusRect be different from
+            // its own bounds, we shouldn't clear focus from it if the down event
+            // occurs over that node.
+            if (!focusedNodeBounds.contains(position)) {
+                focusOwner.clearFocus()
+            }
+        }
+
+    }
 }

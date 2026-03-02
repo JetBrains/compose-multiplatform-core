@@ -18,6 +18,7 @@ package androidx.compose.ui.awt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
@@ -38,12 +39,13 @@ import java.awt.event.MouseMotionListener
 import java.awt.event.MouseWheelListener
 import java.util.Locale
 import javax.swing.JDialog
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
 /**
- * ComposeDialog is a dialog for building UI using Compose for Desktop.
- * ComposeDialog inherits javax.swing.JDialog.
+ * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
  */
 class ComposeDialog : JDialog {
     private val composePanel: ComposeWindowPanel
@@ -51,21 +53,25 @@ class ComposeDialog : JDialog {
     private fun createComposePanel(
         skiaLayerAnalytics: SkiaLayerAnalytics,
         savedState: SavedState?,
+        coroutineContext: CoroutineContext
     ) = ComposeWindowPanel(
         window = this,
         isUndecorated = ::isUndecorated,
         skiaLayerAnalytics = skiaLayerAnalytics,
         savedState = savedState,
+        coroutineContext = coroutineContext
     )
 
     /**
-     * ComposeDialog is a dialog for building UI using Compose for Desktop.
-     * ComposeDialog inherits javax.swing.JDialog.
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
      *
-     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
-     * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
+     * @param owner the [java.awt.Window] from which the dialog is displayed or `null` if this dialog has no owner.
+     * @param modalityType specifies whether dialog blocks input to other windows when shown.
+     * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+     * [GraphicsConfiguration] is assumed.
+     * @param skiaLayerAnalytics Allows receiving notifications about the underlying Skia layer behavior.
      * @param savedState The saved state to restore the UI state from a previous instance.
+     * @param coroutineContext The coroutine context for Compose content rendering and effects.
      */
     // All constructors that want to call JDialog(Window?) should call this constructor.
     // On Windows, it will show a taskbar icon if the owner window is null
@@ -76,19 +82,22 @@ class ComposeDialog : JDialog {
         graphicsConfiguration: GraphicsConfiguration? = null,
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState: SavedState? = null,
+        coroutineContext: CoroutineContext = EmptyCoroutineContext,
     ) : super(owner, "", modalityType, graphicsConfiguration) {
-        composePanel = createComposePanel(skiaLayerAnalytics, savedState)
+        composePanel = createComposePanel(skiaLayerAnalytics, savedState, coroutineContext)
         contentPane.add(composePanel)
     }
 
     /**
-     * ComposeDialog is a dialog for building UI using Compose for Desktop.
-     * ComposeDialog inherits javax.swing.JDialog.
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
      *
-     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
-     * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
+     * @param owner the [java.awt.Frame] from which the dialog is displayed or `null` if this dialog has no owner.
+     * @param modal Whether the dialog blocks input to other windows of the app.
+     * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+     * [GraphicsConfiguration] is assumed.
+     * @param skiaLayerAnalytics Allows receiving notifications about the underlying Skia layer behavior.
      * @param savedState The saved state to restore the UI state from a previous instance.
+     * @param coroutineContext The coroutine context for Compose content rendering and effects.
      */
     // All constructors that want to call JDialog(Frame?) should call this constructor first.
     // It will not show a taskbar icon if the owner frame is null
@@ -99,30 +108,39 @@ class ComposeDialog : JDialog {
         graphicsConfiguration: GraphicsConfiguration? = null,
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState: SavedState? = null,
+        coroutineContext: CoroutineContext = EmptyCoroutineContext,
     ) : super(owner, "", modal, graphicsConfiguration) {
-        composePanel = createComposePanel(skiaLayerAnalytics, savedState)
+        composePanel = createComposePanel(skiaLayerAnalytics, savedState, coroutineContext)
         contentPane.add(composePanel)
     }
 
     /**
-     * ComposeDialog is a dialog for building UI using Compose for Desktop.
-     * ComposeDialog inherits javax.swing.JDialog.
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
      *
-     * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behavior.
-     * SkiaLayer is the underlying class used internally to draw Compose content.
-     * Implementation usually uses a third-party solution to send info to an analytics gatherer.
+     * @param skiaLayerAnalytics Allows receiving notifications about the underlying Skia layer behavior.
      * @param savedState The saved state to restore the UI state from a previous instance.
+     * @param coroutineContext The coroutine context for Compose content rendering and effects.
      */
     @ExperimentalComposeUiApi
     constructor(
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
         savedState: SavedState? = null,
+        coroutineContext: CoroutineContext = EmptyCoroutineContext,
     ): this(
         owner = null as Frame?,
         skiaLayerAnalytics = skiaLayerAnalytics,
-        savedState = savedState
+        savedState = savedState,
+        coroutineContext = coroutineContext
     )
 
+    /**
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
+     *
+     * @param owner the [java.awt.Window] from which the dialog is displayed or `null` if this dialog has no owner.
+     * @param modalityType specifies whether dialog blocks input to other windows when shown.
+     * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+     * [GraphicsConfiguration] is assumed.
+     */
     constructor(
         owner: Window?,
         modalityType: ModalityType = ModalityType.MODELESS,
@@ -132,18 +150,46 @@ class ComposeDialog : JDialog {
         modalityType = modalityType,
         graphicsConfiguration = graphicsConfiguration,
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-        savedState = null
+        savedState = null,
     )
 
+    /**
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
+     *
+     * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+     * [GraphicsConfiguration] is assumed.
+     * @param coroutineContext The coroutine context for Compose content rendering and effects.
+     */
+    @ExperimentalComposeUiApi
+    constructor(
+        graphicsConfiguration: GraphicsConfiguration? = null,
+        coroutineContext: CoroutineContext = EmptyCoroutineContext
+    ) : this(
+        owner = null as Frame?,
+        graphicsConfiguration = graphicsConfiguration,
+        skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+        savedState = null,
+        coroutineContext = coroutineContext
+    )
+
+    /**
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
+     *
+     * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+     * [GraphicsConfiguration] is assumed.
+     */
     constructor(
         graphicsConfiguration: GraphicsConfiguration? = null,
     ) : this(
         owner = null as Frame?,
         graphicsConfiguration = graphicsConfiguration,
         skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
-        savedState = null
+        savedState = null,
     )
 
+    /**
+     * System dialog for displaying Compose UI, inheriting [javax.swing.JDialog].
+     */
     constructor() : this(
         owner = null as Frame?,
     )
@@ -151,6 +197,14 @@ class ComposeDialog : JDialog {
     internal var rootForTestListener
         get() = composePanel.rootForTestListener
         set(value) { composePanel.rootForTestListener = value }
+
+    /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     */
+    @ExperimentalComposeUiApi
+    var isClearFocusOnMouseDownEnabled: Boolean
+        get() = composePanel.isClearFocusOnMouseDownEnabled
+        set(value) { composePanel.isClearFocusOnMouseDownEnabled = value }
 
     private val undecoratedWindowResizer = UndecoratedWindowResizer(this)
 
@@ -341,4 +395,16 @@ class ComposeDialog : JDialog {
 
     override fun removeMouseWheelListener(listener: MouseWheelListener) =
         composePanel.removeMouseWheelListener(listener)
+
+    /**
+     * Set the visual debug option that shows bounds for all nodes in the hierarchy.
+     */
+    @InternalComposeUiApi
+    var showLayoutBounds: Boolean
+        get() {
+            return composePanel.showLayoutBounds
+        }
+        set(value) {
+            composePanel.showLayoutBounds = value
+        }
 }

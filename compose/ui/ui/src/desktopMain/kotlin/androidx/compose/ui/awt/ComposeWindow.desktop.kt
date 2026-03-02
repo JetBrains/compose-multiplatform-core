@@ -18,6 +18,7 @@ package androidx.compose.ui.awt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
@@ -35,30 +36,29 @@ import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
 import java.awt.event.MouseWheelListener
 import java.util.Locale
-import javax.accessibility.Accessible
 import javax.swing.JFrame
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
 
 /**
- * ComposeWindow is a window for building UI using Compose for Desktop.
- * ComposeWindow inherits javax.swing.JFrame.
+ * System window for displaying Compose UI, inheriting [javax.swing.JFrame].
  *
- * @param graphicsConfiguration the GraphicsConfiguration that is used to construct the new window.
- * If null, the system default GraphicsConfiguration is assumed.
- * @param skiaLayerAnalytics Analytics that helps to know more about SkiaLayer behaviour.
- * SkiaLayer is underlying class used internally to draw Compose content.
- * Implementation usually uses third-party solution to send info to some centralized analytics gatherer.
+ * @param graphicsConfiguration [GraphicsConfiguration] of the target screen device; if `null`, the default system
+ * [GraphicsConfiguration] is assumed.
+ * @param skiaLayerAnalytics Allows receiving notifications about the underlying Skia layer behavior.
  * @param savedState The saved state to restore the UI state from a previous instance.
+ * @param coroutineContext The coroutine context for Compose content rendering and effects.
  */
 class ComposeWindow @ExperimentalComposeUiApi constructor(
     graphicsConfiguration: GraphicsConfiguration? = null,
     skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
     savedState: SavedState? = null,
+    coroutineContext: CoroutineContext = EmptyCoroutineContext
 ) : JFrame(graphicsConfiguration) {
     /**
-     * ComposeWindow is a window for building UI using Compose for Desktop.
-     * ComposeWindow inherits javax.swing.JFrame.
+     * System window for displaying Compose UI, inheriting [javax.swing.JFrame].
      *
      * @param graphicsConfiguration the GraphicsConfiguration that is used to construct the new window.
      * If null, the system default GraphicsConfiguration is assumed.
@@ -72,15 +72,12 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
         isUndecorated = ::isUndecorated,
         skiaLayerAnalytics = skiaLayerAnalytics,
         savedState = savedState,
+        coroutineContext = coroutineContext
     )
     private val undecoratedWindowResizer = UndecoratedWindowResizer(this)
 
     internal val windowContext by composePanel::windowContext
     internal var rootForTestListener by composePanel::rootForTestListener
-
-    // Don't override the accessible context of JFrame, since accessibility work through HardwareLayer
-    internal val windowAccessible: Accessible
-        get() = composePanel.windowAccessible
 
     /**
      * Returns the [SemanticsOwner]s corresponding to the roots of the semantics trees in this
@@ -92,6 +89,12 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     @ExperimentalComposeUiApi
     val semanticsOwners: Collection<SemanticsOwner>
         get() = composePanel.semanticsOwners
+
+    /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     */
+    @ExperimentalComposeUiApi
+    var isClearFocusOnMouseDownEnabled: Boolean by composePanel::isClearFocusOnMouseDownEnabled
 
     init {
         contentPane.add(composePanel)
@@ -327,4 +330,16 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
 
     override fun removeMouseWheelListener(listener: MouseWheelListener) =
         composePanel.removeMouseWheelListener(listener)
+
+    /**
+     * Set the visual debug option that shows bounds for all nodes in the hierarchy.
+     */
+    @InternalComposeUiApi
+    var showLayoutBounds: Boolean
+        get() {
+            return composePanel.showLayoutBounds
+        }
+        set(value) {
+            composePanel.showLayoutBounds = value
+        }
 }

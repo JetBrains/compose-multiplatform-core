@@ -22,6 +22,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
+import androidx.compose.ui.platform.excludeWindowInsets
 import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
@@ -79,9 +81,26 @@ actual class PopupProperties constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
     actual val clippingEnabled: Boolean = true,
-    val usePlatformDefaultWidth: Boolean = false,
+    actual val usePlatformDefaultWidth: Boolean = false,
     val usePlatformInsets: Boolean = true,
 ) {
+
+    actual constructor(
+        focusable: Boolean,
+        dismissOnBackPress: Boolean,
+        dismissOnClickOutside: Boolean,
+        clippingEnabled: Boolean,
+        usePlatformDefaultWidth: Boolean
+    ): this(
+        focusable = focusable,
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        clippingEnabled = clippingEnabled,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        usePlatformInsets = true
+    )
+
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
     actual constructor(
         focusable: Boolean,
         dismissOnBackPress: Boolean,
@@ -379,8 +398,9 @@ fun Popup(
 
     // Any focusable [Popup] must consume all back events
     if (properties.focusable) {
-        val onBackHandler = remember {
-            OnBackClickEventHandler { currentOnDismissRequest?.invoke() }
+        val compositeKey = currentCompositeKeyHashCode
+        val onBackHandler = remember(compositeKey) {
+            OnBackClickEventHandler(compositeKey) { currentOnDismissRequest?.invoke() }
         }
         LaunchedEffect(onBackHandler, properties.dismissOnBackPress) {
             onBackHandler.backClickIsEnabled = properties.dismissOnBackPress
@@ -389,7 +409,7 @@ fun Popup(
             requireNotNull(findDefaultNavigationEventDispatcherOwner()) {
                 error("NavigationEventDispatcherOwner not found")
             }.navigationEventDispatcher
-        DisposableEffect(navigationEventDispatcher) {
+        DisposableEffect(navigationEventDispatcher, onBackHandler) {
             navigationEventDispatcher.addHandler(onBackHandler)
             onDispose { onBackHandler.remove() }
         }
@@ -461,15 +481,23 @@ private fun PopupLayout(
             layoutDirection = layoutDirection,
             parentBoundsInWindow = parentBoundsInWindow
         )
+        // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
         LocalPlatformWindowInsets.current.exclude(
             properties.usePlatformInsets,
             false
         ) {
             Layout(
                 content = currentContent,
-                modifier = modifier,
+                modifier = modifier
+                    .excludeWindowInsets(properties.usePlatformInsets, false),
                 measurePolicy = measurePolicy
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            layer.close()
         }
     }
 }

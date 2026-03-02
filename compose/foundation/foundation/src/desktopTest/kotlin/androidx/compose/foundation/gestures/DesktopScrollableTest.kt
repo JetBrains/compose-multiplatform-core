@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.sqrt
+import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -62,6 +63,7 @@ class DesktopScrollableTest {
     private fun scrollLineMacOs() = density.density * 10f
     private fun scrollPage(bounds: Dp) = bounds.value * density.density
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun `linux, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -77,7 +79,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -105,6 +107,7 @@ class DesktopScrollableTest {
         assertThat(context.offset).isWithin(0.1f).of(-6 * scrollLineLinux(20.dp))
     }
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun `windows, scroll vertical`() = runSkikoComposeUiTest(
         size = size,
@@ -120,7 +123,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -163,7 +166,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -196,7 +199,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = context.controller()
+                            state = context.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -229,7 +232,7 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = column.controller()
+                            state = column.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -247,6 +250,7 @@ class DesktopScrollableTest {
         assertThat(column.offset).isEqualTo(0f)
     }
 
+    @Ignore("Flaky https://youtrack.jetbrains.com/issue/CMP-9422")
     @Test
     fun multipleScrollingModifiers() = runSkikoComposeUiTest(
         size = size,
@@ -264,11 +268,11 @@ class DesktopScrollableTest {
                     Modifier
                         .scrollable(
                             orientation = Orientation.Vertical,
-                            state = verticalContext.controller()
+                            state = verticalContext.controller
                         )
                         .scrollable(
                             orientation = Orientation.Horizontal,
-                            state = horizontalContext.controller()
+                            state = horizontalContext.controller
                         )
                         .size(10.dp, 20.dp)
                 )
@@ -316,7 +320,7 @@ class DesktopScrollableTest {
                         Modifier
                             .scrollable(
                                 orientation = Orientation.Vertical,
-                                state = context.controller()
+                                state = context.controller
                             )
                             .size(10.dp, 20.dp)
                     )
@@ -386,8 +390,7 @@ class DesktopScrollableTest {
         var offset = 0f
             private set
 
-        @Composable
-        fun controller() = ScrollableState(::consumeScrollDelta)
+        val controller = ScrollableState(::consumeScrollDelta)
 
         private fun consumeScrollDelta(delta: Float): Float {
             offset += delta

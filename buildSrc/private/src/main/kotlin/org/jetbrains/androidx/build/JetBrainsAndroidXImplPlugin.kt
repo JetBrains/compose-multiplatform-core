@@ -18,9 +18,7 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.AndroidXComposeMultiplatformExtension
-import androidx.build.AndroidXExtension
-import androidx.build.AndroidXMultiplatformExtension
+import androidx.build.ProjectLayoutType.Companion.isJetBrainsFork
 import androidx.build.multiplatformExtension
 import javax.inject.Inject
 import kotlinx.validation.ApiValidationExtension
@@ -28,14 +26,19 @@ import kotlinx.validation.ExperimentalBCVApi
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
+import org.gradle.api.tasks.testing.AbstractTestTask
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
+import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.mpp.AbstractKotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinSoftwareComponentWithCoordinatesAndPublication
+import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 open class JetBrainsExtensions(
@@ -88,20 +91,6 @@ open class JetBrainsExtensions(
         val test = compilations.getByName("test")
 
         val targetName = name.lowercase()
-        // The target name in a dependency project might be different from this project,
-        // so we check for an alternative name too.
-        // Historically, we had such aliases only for the 'ios <-> uikit' pair.
-        val altName = if (targetName.startsWith("ios")) {
-            targetName
-                .replace("iossimulator", "uikitsim")
-                .replace("ios", "uikit")
-        } else if (targetName.startsWith("uikit")) {
-            targetName
-                .replace("uikitsim", "iossimulator")
-                .replace("uikit", "ios")
-        } else {
-            null
-        }
 
         val rootProjectName = project.rootProject.name // compose-multiplatform-core
         val redirectedProjects by lazy {
@@ -111,7 +100,7 @@ open class JetBrainsExtensions(
                     // they have a group name with rootProjectName in it
                     !it.group.toString().contains(rootProjectName)
                 }?.artifactRedirection()?.takeIf {
-                    it.targetNames.contains(targetName) || it.targetNames.contains(altName)
+                    it.targetNames.contains(targetName)
                 }?.let {
                     project.path to it.groupId + ":" + project.name + ":" + it.versionForTargetOrDefault(targetName)
                 }
@@ -154,18 +143,12 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
-        check(project.plugins.hasPlugin("AndroidXPlugin")) {
-            "JetBrainsAndroidXPlugin should be applied after AndroidXPlugin"
-        }
+        if (!isJetBrainsFork(project)) return
 
-        val androidxExtension =
-            project.extensions.getByType(AndroidXExtension::class.java)
-        val androidxMultiplatformExtension =
-            project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
-        project.changeMavenCoordinatesToJetBrains(androidxExtension)
-        project.configureMavenArtifactUpload(
-            androidxExtension, androidxMultiplatformExtension, componentFactory)
-
+        project.configureTests()
+        project.changeMavenCoordinatesToJetBrains()
+        project.configureMavenArtifactUpload(componentFactory)
+        project.configureDependencyVerification()
         project.plugins.all { plugin ->
             if (plugin is KotlinMultiplatformPluginWrapper) {
                 onKotlinMultiplatformPluginApplied(project)
@@ -174,12 +157,6 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
-        project.extensions.create(
-            AndroidXComposeMultiplatformExtension::class.java,
-            "androidXComposeMultiplatform",
-            AndroidXComposeMultiplatformExtensionImpl::class.java
-        )
-
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
         val multiplatformExtension =
@@ -198,7 +175,26 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 }
 
+private fun Project.configureTests() {
+    tasks.withType(AbstractTestTask::class.java) { task ->
+        task.testLogging.apply {
+            events = hashSetOf(
+                TestLogEvent.FAILED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_OUT,
+                TestLogEvent.PASSED
+            )
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+    }
+}
+
+@OptIn(ExternalKotlinTargetApi::class)
 private fun enableArtifactRedirectionPublishing(project: Project) {
+    if (!JetBrainsPublication.shouldPublish(project)) return
     val redirection = project.artifactRedirection() ?: return
 
     val ext = project.multiplatformExtension ?: error("expected a multiplatform project")
@@ -215,16 +211,18 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
                 configuration.name.startsWith(it, ignoreCase = true)
             }
             val targetVersion = redirection.versionForTargetOrDefault(targetName ?: "")
-            project.dependencies.create(
-                redirection.groupId, project.name, targetVersion
-            )
+            project.dependencies.create("${redirection.groupId}:${project.name}:${targetVersion}") as org.gradle.api.artifacts.ModuleDependency
         }
     }
 
     @OptIn(InternalKotlinGradlePluginApi::class)
     ext.targets.all { target ->
         if (target.name.lowercase() in redirection.targetNames) {
-            project.publishAndroidxReference(target as AbstractKotlinTarget, newRootComponent)
+            if (target is AbstractKotlinTarget) {
+                project.setupRedirection(target, newRootComponent)
+            } else if (target is DecoratedExternalKotlinTarget) {
+                project.setupRedirection(target, newRootComponent)
+            }
         }
     }
 }
