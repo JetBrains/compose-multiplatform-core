@@ -318,8 +318,6 @@ internal class ComposeSceneMediator(
         requestRedraw = redrawer::setNeedsRedraw
     )
 
-    var interactionBounds = IntRect.Zero
-
     private val dragAndDropManager = UIKitDragAndDropManager(
         view = _overlayView,
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
@@ -544,6 +542,10 @@ internal class ComposeSceneMediator(
             lastFocusedRect = it
         } ?: lastFocusedRect
     }
+
+    var onOutsidePointerEvent: (eventType: PointerEventType) -> Unit by _overlayView::onOutsidePointerEvent
+    var isInterceptingOutsideEvents: Boolean by _overlayView::isInterceptingOutsideEvents
+    var interactionBounds = IntRect.Zero
 
     fun setContent(content: @Composable () -> Unit) {
         _backgroundView.runOnceOnAppeared {
