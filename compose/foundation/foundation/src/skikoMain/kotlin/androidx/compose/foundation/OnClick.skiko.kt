@@ -66,11 +66,11 @@ fun Modifier.onClick(
     onDoubleClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
-) = onClickImpl(
+) = onClick(
     enabled = enabled,
+    interactionSource = null,
     matcher = matcher,
     keyboardModifiers = keyboardModifiers,
-    interactionSource = null,
     onDoubleClick = onDoubleClick,
     onLongClick = onLongClick,
     onClick = onClick
@@ -102,24 +102,6 @@ fun Modifier.onClick(
  */
 @ExperimentalFoundationApi
 fun Modifier.onClick(
-    enabled: Boolean = true,
-    interactionSource: MutableInteractionSource,
-    matcher: PointerMatcher = PointerMatcher.Primary,
-    keyboardModifiers: PointerKeyboardModifiers.() -> Boolean = { true },
-    onDoubleClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-    onClick: () -> Unit,
-): Modifier = onClickImpl(
-    enabled = enabled,
-    interactionSource = interactionSource,
-    matcher = matcher,
-    keyboardModifiers = keyboardModifiers,
-    onDoubleClick = onDoubleClick,
-    onLongClick = onLongClick,
-    onClick = onClick
-)
-
-private fun Modifier.onClickImpl(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource?,
     matcher: PointerMatcher = PointerMatcher.Primary,
